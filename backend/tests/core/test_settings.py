@@ -8,7 +8,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
-from pydantic import ValidationError
+from pydantic import SecretStr, ValidationError
 
 from app.core.settings import Settings
 from tests.support import FAKE_DATABASE_URL as FAKE_URL
@@ -49,6 +49,74 @@ def test_a_missing_secret_file_names_the_variable(monkeypatch: pytest.MonkeyPatc
 
     with pytest.raises(ValueError, match="DATABASE_URL_FILE"):
         Settings()
+
+
+def test_a_secret_file_named_in_lower_case_is_read(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    # the plain variables match in any case, so their files must too
+    secret = tmp_path / "database_url"
+    secret.write_text("postgresql://kka:from-file@db/kka", encoding="utf-8")
+    monkeypatch.setenv("database_url", FAKE_URL)
+    monkeypatch.setenv("database_url_file", str(secret))
+
+    assert Settings().database_url.get_secret_value() == "postgresql://kka:from-file@db/kka"
+
+
+def test_a_byte_order_mark_is_not_part_of_the_secret(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    secret = tmp_path / "database_url"
+    byte_order_mark = chr(0xFEFF)  # what PowerShell 5.1 puts in front of a UTF-8 file
+    secret.write_text(f"{byte_order_mark}postgresql://kka:bom@db/kka\r\n", encoding="utf-8")
+    monkeypatch.setenv("DATABASE_URL_FILE", str(secret))
+
+    assert Settings().database_url.get_secret_value() == "postgresql://kka:bom@db/kka"
+
+
+def test_a_secret_file_that_is_not_utf8_is_refused_without_its_bytes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    secret = tmp_path / "database_url"
+    secret.write_bytes(b"postgresql://kka:" + bytes([0xFF, 0xFE]) + b"@db/kka")
+    monkeypatch.setenv("DATABASE_URL_FILE", str(secret))
+
+    with pytest.raises(ValueError, match="DATABASE_URL_FILE") as caught:
+        Settings()
+
+    assert "0xff" not in str(caught.value)
+    assert "position" not in str(caught.value)
+
+
+@pytest.mark.parametrize("content", ["", "\n", "\r\n"], ids=["empty", "newline", "crlf"])
+def test_an_empty_secret_file_counts_as_missing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, content: str
+) -> None:
+    secret = tmp_path / "database_url"
+    secret.write_text(content, encoding="utf-8")
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+    monkeypatch.setenv("DATABASE_URL_FILE", str(secret))
+
+    with pytest.raises(ValidationError, match="database_url"):
+        Settings()
+
+
+def test_an_empty_required_variable_counts_as_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", "")
+
+    with pytest.raises(ValidationError, match="database_url"):
+        Settings()
+
+
+def test_an_optional_secret_is_read_from_its_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    class WithOptionalSecret(Settings):
+        invented_key: SecretStr | None = None
+
+    secret = tmp_path / "invented_key"
+    secret.write_text("invented-value", encoding="utf-8")
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+    monkeypatch.setenv("INVENTED_KEY_FILE", str(secret))
+
+    key = WithOptionalSecret().invented_key
+
+    assert key is not None
+    assert key.get_secret_value() == "invented-value"
 
 
 def test_a_missing_required_value_names_the_field_and_no_value(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -104,10 +172,19 @@ def test_a_root_path_is_taken(monkeypatch: pytest.MonkeyPatch) -> None:
     assert Settings().root_path == "/kka"
 
 
-@pytest.mark.parametrize("root", ["kka", "/kka/", "/"])
-def test_a_root_path_without_a_leading_or_with_a_trailing_slash_is_refused(
-    monkeypatch: pytest.MonkeyPatch, root: str
-) -> None:
+@pytest.mark.parametrize("root", ["/kka/v1", "/k-a_b.c~"])
+def test_a_root_path_of_plain_segments_is_taken(monkeypatch: pytest.MonkeyPatch, root: str) -> None:
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+    monkeypatch.setenv("ROOT_PATH", root)
+
+    assert Settings().root_path == root
+
+
+@pytest.mark.parametrize(
+    "root",
+    ["kka", "/kka/", "/", "/kka ", "/k k", "/kka?x=1", "/kka#f", "/kka\n", "/k'a", "//kka"],
+)
+def test_a_root_path_other_than_plain_segments_is_refused(monkeypatch: pytest.MonkeyPatch, root: str) -> None:
     monkeypatch.setenv("DATABASE_URL", FAKE_URL)
     monkeypatch.setenv("ROOT_PATH", root)
 

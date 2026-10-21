@@ -6,7 +6,7 @@ secrets); the file wins over the plain variable. Errors never echo a value.
 
 import os
 from pathlib import Path
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Any, Literal, Self, get_args
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic.fields import FieldInfo
@@ -17,17 +17,22 @@ Port = Annotated[int, Field(ge=1, le=65535)]
 
 
 class SecretFileSource(PydanticBaseSettingsSource):
-    """Reads each ``SecretStr`` field from the file its ``<NAME>_FILE`` variable names."""
+    """Reads each secret field (``SecretStr``, optional or not) from the file its ``<NAME>_FILE`` names.
+
+    The file is UTF-8; a byte order mark and the final line end are not part of the secret.
+    """
 
     def get_field_value(self, field: FieldInfo, field_name: str) -> tuple[Any, str, bool]:
         variable = f"{field_name.upper()}_FILE"
-        path = os.environ.get(variable)
-        if field.annotation is not SecretStr or not path:
+        path = _environment_value(variable) if _is_secret(field.annotation) else None
+        if not path:
             return None, field_name, False
         try:
-            content = Path(path).read_text(encoding="utf-8")
+            content = Path(path).read_text(encoding="utf-8-sig")
         except OSError as error:
             raise ValueError(f"{variable} names a file that cannot be read: {error.strerror}") from None
+        except UnicodeDecodeError:  # its message quotes a byte of the secret
+            raise ValueError(f"{variable} names a file that is not UTF-8 text") from None
         return content.rstrip("\r\n"), field_name, False
 
     def __call__(self) -> dict[str, Any]:
@@ -39,16 +44,28 @@ class SecretFileSource(PydanticBaseSettingsSource):
         return values
 
 
+def _is_secret(annotation: object) -> bool:
+    return annotation is SecretStr or SecretStr in get_args(annotation)
+
+
+def _environment_value(name: str) -> str | None:
+    """``name`` in the environment in any case, as pydantic matches the plain variables."""
+    if name in os.environ:
+        return os.environ[name]
+    return next((value for key, value in os.environ.items() if key.upper() == name), None)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(hide_input_in_errors=True)
 
-    database_url: SecretStr
+    database_url: Annotated[SecretStr, Field(min_length=1)]
     # Loopback unless set: the image sets 0.0.0.0, a developer's start stays off the network
     host: str = "127.0.0.1"
     public_port: Port = 8000
     internal_port: Port = 9000
-    # The prefix an ingress serves the API under, without the trailing slash; empty for none
-    root_path: Annotated[str, Field(pattern=r"^(/[^/]+)*$")] = ""
+    # The prefix an ingress serves the API under and strips before it forwards (uvicorn's root
+    # path): plain segments without a trailing slash; empty for none
+    root_path: Annotated[str, Field(pattern=r"^(/[A-Za-z0-9._~-]+)*$")] = ""
     log_level: LogLevel = "INFO"
     log_format: Literal["text", "json"] = "text"
 
