@@ -3,24 +3,28 @@ name = "kompetenzkartierer-ai"
 version = "0.1.0"
 description = "Curricula nach Curriculum-Kern 1.0 erfassen, andocken und vernetzen"
 requires-python = "==3.13.*"
+# Floors are the versions the code was tested with: request_log uses
+# fastapi.routing.iter_route_contexts, new in the 0.14x line
 dependencies = [
-    "fastapi>=0.115",
-    "uvicorn>=0.30",
-    "pydantic-settings>=2.4",
-    "psycopg[binary,pool]>=3.2",
-    "prometheus-client>=0.20",
-    "rdflib>=7.0",
+    "fastapi>=0.143",
+    "starlette>=1.7",
+    "uvicorn>=0.54",
+    "pydantic>=2.13",
+    "pydantic-settings>=2.15",
+    "psycopg[binary,pool]>=3.3",
+    "prometheus-client>=0.26",
+    "rdflib>=7.6",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest>=8.3",
-    "pytest-cov>=5.0",
+    "pytest>=9.1",
+    "pytest-cov>=7.1",
     # the client starlette's TestClient takes; with plain httpx it warns that support ends
     "httpx2>=2.13",
-    "ruff>=0.6",
-    "mypy>=1.11",
-    "pyshacl>=0.26",
+    "ruff>=0.16",
+    "mypy>=2.3",
+    "pyshacl>=0.40",
 ]
 
 [tool.uv]

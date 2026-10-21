@@ -74,6 +74,7 @@ psycopg-pool==3.3.1
     #   psycopg
 pydantic==2.13.5
     # via
+    #   kompetenzkartierer-ai (pyproject.toml)
     #   fastapi
     #   pydantic-settings
 pydantic-core==2.46.5
@@ -102,7 +103,9 @@ rdflib==7.6.0
 ruff==0.16.8
     # via kompetenzkartierer-ai (pyproject.toml:dev)
 starlette==1.7.0
-    # via fastapi
+    # via
+    #   kompetenzkartierer-ai (pyproject.toml)
+    #   fastapi
 truststore==0.10.5
     # via
     #   httpcore2
