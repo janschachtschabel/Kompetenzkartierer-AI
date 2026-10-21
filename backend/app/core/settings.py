@@ -43,8 +43,12 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(hide_input_in_errors=True)
 
     database_url: SecretStr
+    # Loopback unless set: the image sets 0.0.0.0, a developer's start stays off the network
+    host: str = "127.0.0.1"
     public_port: Port = 8000
     internal_port: Port = 9000
+    # The prefix an ingress serves the API under, without the trailing slash; empty for none
+    root_path: Annotated[str, Field(pattern=r"^(/[^/]+)*$")] = ""
     log_level: LogLevel = "INFO"
     log_format: Literal["text", "json"] = "text"
 

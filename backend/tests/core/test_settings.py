@@ -19,6 +19,8 @@ OWN_VARIABLES = (
     "INTERNAL_PORT",
     "LOG_LEVEL",
     "LOG_FORMAT",
+    "HOST",
+    "ROOT_PATH",
 )
 
 
@@ -93,6 +95,33 @@ def test_the_log_level_is_case_insensitive(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setenv("LOG_LEVEL", "debug")
 
     assert Settings().log_level == "DEBUG"
+
+
+def test_the_server_stays_on_loopback_without_a_root_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+
+    settings = Settings()
+
+    assert settings.host == "127.0.0.1"
+    assert settings.root_path == ""
+
+
+def test_a_root_path_is_taken(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+    monkeypatch.setenv("ROOT_PATH", "/kka")
+
+    assert Settings().root_path == "/kka"
+
+
+@pytest.mark.parametrize("root", ["kka", "/kka/", "/"])
+def test_a_root_path_without_a_leading_or_with_a_trailing_slash_is_refused(
+    monkeypatch: pytest.MonkeyPatch, root: str
+) -> None:
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+    monkeypatch.setenv("ROOT_PATH", root)
+
+    with pytest.raises(ValidationError, match="root_path"):
+        Settings()
 
 
 def test_the_two_ports_must_differ(monkeypatch: pytest.MonkeyPatch) -> None:

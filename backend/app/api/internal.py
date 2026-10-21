@@ -1,0 +1,46 @@
+"""Paths for the cluster: probes and metrics, answered on the internal port only.
+
+The ingress releases the public port; the internal one stays inside the cluster. On the public
+port an internal path answers 404 as if it did not exist, also with a trailing slash (the
+router's redirect would otherwise confirm it) and under a root path.
+"""
+
+from fastapi import APIRouter
+from starlette.responses import JSONResponse
+from starlette.types import ASGIApp, Receive, Scope, Send
+
+from app.api.paths import route_path
+
+INTERNAL_PATHS = frozenset({"/health", "/ready", "/metrics"})
+
+router = APIRouter(include_in_schema=False)
+
+
+@router.get("/health")
+async def health() -> dict[str, str]:
+    """Liveness: the process answers. The database is a matter for /ready."""
+    return {"status": "ok"}
+
+
+def is_internal(path: str) -> bool:
+    return path.rstrip("/") in INTERNAL_PATHS
+
+
+class InternalOnly:
+    """ASGI middleware: 404 for an internal path asked on any port but ``port``."""
+
+    def __init__(self, app: ASGIApp, port: int) -> None:
+        self.app = app
+        self.port = port
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http" and is_internal(route_path(scope)) and _server_port(scope) != self.port:
+            await JSONResponse({"detail": "Not Found"}, status_code=404)(scope, receive, send)
+            return
+        await self.app(scope, receive, send)
+
+
+def _server_port(scope: Scope) -> int | None:
+    """The port of the socket the request came in on, not what a proxy or the Host header says."""
+    server = scope.get("server")
+    return int(server[1]) if server else None
