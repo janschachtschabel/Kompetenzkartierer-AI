@@ -1,0 +1,7 @@
+# One line ending everywhere: the code runs in Linux containers, and mixed endings break
+# byte comparisons and shell scripts.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary
+*.gz binary
