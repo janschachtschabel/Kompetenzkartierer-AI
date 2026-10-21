@@ -3,6 +3,7 @@
 import gc
 import io
 import json
+import os
 import socket
 import sys
 import threading
@@ -12,6 +13,7 @@ import urllib.request
 import warnings
 from collections.abc import Iterator
 from dataclasses import dataclass
+from unittest import mock
 
 import pytest
 from uvicorn.config import STARTUP_FAILURE
@@ -137,12 +139,16 @@ def test_main_ends_with_the_startup_failure_code(
     restore_logging: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     with without_settings_variables(), exclusive_socket() as blocker:
-        monkeypatch.setenv("DATABASE_URL", FAKE_DATABASE_URL)
-        monkeypatch.setenv("PUBLIC_PORT", str(free_port()))
-        monkeypatch.setenv("INTERNAL_PORT", str(blocker.getsockname()[1]))
+        # set inside the hiding, undone with it: monkeypatch would restore "unset" afterwards
+        # and so delete the process's own values
+        invented = {
+            "DATABASE_URL": FAKE_DATABASE_URL,
+            "PUBLIC_PORT": str(free_port()),
+            "INTERNAL_PORT": str(blocker.getsockname()[1]),
+        }
         monkeypatch.setattr(sys, "stdout", io.StringIO())
 
-        with pytest.raises(SystemExit) as caught:
+        with mock.patch.dict(os.environ, invented), pytest.raises(SystemExit) as caught:
             main()
 
     assert caught.value.code == STARTUP_FAILURE
