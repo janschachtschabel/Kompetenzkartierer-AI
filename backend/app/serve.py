@@ -10,12 +10,14 @@ to a request head over 16 KB.
 
 import contextlib
 import socket
+import sys
 
 import uvicorn
 from fastapi import FastAPI
 from uvicorn.config import STARTUP_FAILURE
 
 from app.api.app import create_app
+from app.core.logging import configure_logging
 from app.core.settings import Settings
 
 
@@ -29,13 +31,22 @@ def build_server(settings: Settings) -> tuple[uvicorn.Server, list[socket.socket
 
 
 def _config(app: FastAPI, settings: Settings, port: int) -> uvicorn.Config:
+    # log_config=None: uvicorn's lines go through the service's handler (app.core.logging)
     return uvicorn.Config(
-        app, host=settings.host, port=port, http="h11", access_log=False, root_path=settings.root_path
+        app,
+        host=settings.host,
+        port=port,
+        http="h11",
+        access_log=False,
+        root_path=settings.root_path,
+        log_config=None,
     )
 
 
 def main() -> None:
-    server, sockets = build_server(Settings())
+    settings = Settings()
+    configure_logging(settings.log_level, settings.log_format, stream=sys.stdout)
+    server, sockets = build_server(settings)
     # as uvicorn.main.run: Ctrl+C ends without a traceback
     with contextlib.suppress(KeyboardInterrupt):
         server.run(sockets=sockets)
