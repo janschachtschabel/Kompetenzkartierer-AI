@@ -3,9 +3,12 @@
 from collections.abc import Iterator
 
 import pytest
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.testclient import TestClient
 from prometheus_client import REGISTRY
+from starlette.applications import Starlette
+from starlette.responses import PlainTextResponse
+from starlette.routing import Route
 
 from app.api.app import create_app
 from tests.support import make_settings
@@ -107,3 +110,61 @@ def test_a_scrape_is_not_counted(internal: TestClient) -> None:
     internal.get("/metrics")
 
     assert sample(REQUESTS, method="GET", route="/metrics", status="200") == 0
+
+
+@pytest.fixture
+def routed() -> Iterator[TestClient]:
+    """Routers included the usual FastAPI ways: with a prefix, nested, and a mounted app."""
+    application = create_app(make_settings())
+    items = APIRouter()
+
+    @items.get("/items/{item_id}")
+    async def item(item_id: int) -> dict[str, int]:
+        return {"id": item_id}
+
+    application.include_router(items, prefix="/api/v1/a", tags=["system"])
+    application.include_router(items, prefix="/api/v1/b", tags=["system"])
+    inner = APIRouter(prefix="/inner")
+
+    @inner.get("/deep/{x}")
+    async def deep(x: str) -> dict[str, str]:
+        return {"x": x}
+
+    outer = APIRouter(prefix="/api/v1/outer")
+    outer.include_router(inner)
+    application.include_router(outer, tags=["system"])
+
+    async def hello(request: Request) -> PlainTextResponse:
+        return PlainTextResponse(request.path_params["name"])
+
+    application.mount("/files", Starlette(routes=[Route("/hello/{name}", hello)]))
+    with TestClient(application, base_url=PUBLIC) as client:
+        yield client
+
+
+@pytest.mark.parametrize(
+    ("path", "status", "route"),
+    [
+        ("/api/v1/a/items/1", "200", "/api/v1/a/items/{item_id}"),
+        ("/api/v1/b/items/2", "200", "/api/v1/b/items/{item_id}"),
+        ("/api/v1/outer/inner/deep/abc", "200", "/api/v1/outer/inner/deep/{x}"),
+        ("/files/hello/bob", "200", "/files"),
+        ("/files/nothing-here", "404", "/files"),
+    ],
+)
+def test_the_label_is_the_full_template_of_the_route(
+    routed: TestClient, path: str, status: str, route: str
+) -> None:
+    before = sample(REQUESTS, method="GET", route=route, status=status)
+
+    routed.get(path)
+
+    assert sample(REQUESTS, method="GET", route=route, status=status) == before + 1
+
+
+def test_a_refused_metrics_path_counts_as_unmatched(public: TestClient) -> None:
+    before = sample(REQUESTS, method="GET", route="unmatched", status="404")
+
+    public.get("/metrics")
+
+    assert sample(REQUESTS, method="GET", route="unmatched", status="404") == before + 1

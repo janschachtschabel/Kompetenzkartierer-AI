@@ -50,6 +50,7 @@ class RequestLog:
             return
         request_id = set_request_id(_header(scope, REQUEST_ID))
         take_trace_headers(scope["headers"], request_id)
+        asked = dict(scope)  # the request as it came in: the router changes the scope (a mount its root path)
         started = time.perf_counter()
         status = 500  # what the client sees when the app ends without an answer
         answered = False
@@ -70,12 +71,12 @@ class RequestLog:
                 content = {"detail": INTERNAL_ERROR, "request_id": request_id}
                 await JSONResponse(content, status_code=500)(scope, receive, named)
         finally:
-            self._record(scope, status, time.perf_counter() - started)
+            self._record(asked, bool(scope.get(REFUSED_INTERNAL)), status, time.perf_counter() - started)
 
-    def _record(self, scope: Scope, status: int, seconds: float) -> None:
+    def _record(self, scope: Scope, refused: bool, status: int, seconds: float) -> None:
         path = route_path(scope).rstrip("/")
-        route = UNMATCHED_ROUTE if scope.get(REFUSED_INTERNAL) else route_template(self.routes, scope)
-        if path != METRICS_PATH:  # a scrape is no request of the service
+        route = UNMATCHED_ROUTE if refused else route_template(self.routes, scope)
+        if path != METRICS_PATH or refused:  # a scrape is no request of the service
             observe_request(scope["method"], route, status, seconds)
         if path in INTERNAL_PATHS and status < 400:
             return
@@ -92,18 +93,21 @@ class RequestLog:
 
 
 def route_template(routes: Sequence[BaseRoute], scope: Scope) -> str:
-    """The template of the route a request was meant for - a bounded label, never the raw path.
+    """The full template of the route a request was meant for - a bounded label, never the raw path.
 
-    FastAPI leaves its route in the scope; plain Starlette routes (/openapi.json) do not.
+    Matched as Starlette's router does: the first full match, else the first partial one (405).
+    ``scope`` must be the request as it came in. The route FastAPI leaves in the scope will not
+    do: it names the path within its router, without the prefix it was included under, and a
+    mounted app counts under its mount path.
     """
-    route = getattr(scope.get("route"), "path", None)
-    if route:
-        return str(route)
+    partial: str | None = None
     for context in iter_route_contexts(routes):
         match, _ = context.matches(scope)
-        if match is not Match.NONE:
+        if match is Match.FULL:
             return context.path or UNMATCHED_ROUTE
-    return UNMATCHED_ROUTE
+        if match is Match.PARTIAL and partial is None:
+            partial = context.path
+    return partial or UNMATCHED_ROUTE
 
 
 def _target(scope: Scope) -> str:
