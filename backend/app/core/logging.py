@@ -100,9 +100,12 @@ def configure_logging(level: str, format_: str, *, stream: TextIO) -> None:
         root.removeHandler(handler)
     handler = _ServiceHandler(stream)
     handler.setFormatter(JsonFormatter() if format_ == "json" else logging.Formatter(TEXT_FORMAT))
-    handler.addFilter(_QuietFilter())
     handler.addFilter(_RequestIdFilter())
     root.addHandler(handler)
+    # On every root handler, a library's own one too (the openai SDK's basicConfig)
+    for each in root.handlers:
+        if not any(isinstance(existing, _QuietFilter) for existing in each.filters):
+            each.addFilter(_QuietFilter())
     root.setLevel(level)
     # A Python warning wrote its own line to stderr, outside the format a JSON collector reads
     logging.captureWarnings(True)

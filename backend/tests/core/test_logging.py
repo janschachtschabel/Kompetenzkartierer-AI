@@ -172,3 +172,15 @@ def test_http_clients_stay_quiet_even_when_a_library_lowers_their_level(name: st
     logging.getLogger(name).warning("retrying")
 
     assert [line["message"] for line in json_lines(stream)] == ["retrying"]
+
+
+def test_the_floor_holds_at_a_handler_a_library_put_on_the_root_before(restore_logging: None) -> None:
+    # the openai SDK runs logging.basicConfig on import when OPENAI_LOG is set
+    foreign = io.StringIO()
+    logging.getLogger().addHandler(logging.StreamHandler(foreign))
+    configured("json")
+    logging.getLogger("httpx").setLevel(logging.DEBUG)
+
+    logging.getLogger("httpx").debug("Authorization: Bearer invented-key")
+
+    assert "invented-key" not in foreign.getvalue()
