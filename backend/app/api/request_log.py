@@ -7,15 +7,20 @@ a search term or a token in a query is the caller's, an address is personal data
 answers writes no line. An error nothing else handled is logged once with its traceback and
 answered with a 500 naming the request id. Each request but a scrape is counted for /metrics.
 
+The method is one of the known ones or ``other``, as in the metrics: h11 takes any token up
+to 16 KB, and a long one would split the line in the container log. An error after the answer
+began counts as a failed request (500, ``aborted``); uvicorn adds a line of its own then.
+
 A plain ASGI middleware, not Starlette's BaseHTTPMiddleware: that one runs the app in a task
 group, and an error came out wrapped in an ExceptionGroup with every frame twice
 (compendious-text-fastapi, logging review of 2026-10-08).
 """
 
 import logging
+import re
 import time
 from collections.abc import Sequence
-from urllib.parse import parse_qsl, quote
+from urllib.parse import quote, unquote_plus
 
 from fastapi.routing import iter_route_contexts
 from starlette.datastructures import MutableHeaders
@@ -26,7 +31,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from app.api.internal import INTERNAL_PATHS, METRICS_PATH, REFUSED_INTERNAL
 from app.api.paths import route_path
 from app.core.logging import set_request_id
-from app.core.metrics import observe_request
+from app.core.metrics import bounded_method, observe_request
 from app.core.tracing import REQUEST_ID, take_trace_headers
 
 log = logging.getLogger(__name__)
@@ -34,6 +39,7 @@ log = logging.getLogger(__name__)
 UNMATCHED_ROUTE = "unmatched"  # the raw path of a 404 is caller input
 MAX_TARGET_CHARS = 500  # h11 refuses a request head over 16 KB; a line stays readable
 MAX_CAUSE_CHARS = 300
+_QUERY_KEY = re.compile(r"[A-Za-z_][A-Za-z0-9_.-]{0,39}")
 INTERNAL_ERROR = "Internal error; please report the request id."
 
 
@@ -53,7 +59,7 @@ class RequestLog:
         asked = dict(scope)  # the request as it came in: the router changes the scope (a mount its root path)
         started = time.perf_counter()
         status = 500  # what the client sees when the app ends without an answer
-        answered = False
+        answered = aborted = False
 
         async def named(message: Message) -> None:
             nonlocal status, answered
@@ -66,14 +72,20 @@ class RequestLog:
             await self.app(scope, receive, named)
         except Exception as error:
             cause = " ".join(f"{type(error).__name__}: {error}".split())[:MAX_CAUSE_CHARS]
-            log.exception("unhandled error in %s %s: %s", scope["method"], _target(scope), cause)
-            if not answered:  # an answer begun cannot be taken back; the connection ends with it
+            method = bounded_method(scope["method"])
+            log.exception("unhandled error in %s %s: %s", method, _target(scope), cause)
+            if answered:
+                # The answer begun cannot be taken back: the client gets a cut-off body, so the
+                # request counts as failed, not with the status it started with
+                status, aborted = 500, True
+            else:
                 content = {"detail": INTERNAL_ERROR, "request_id": request_id}
                 await JSONResponse(content, status_code=500)(scope, receive, named)
         finally:
-            self._record(asked, bool(scope.get(REFUSED_INTERNAL)), status, time.perf_counter() - started)
+            refused = bool(scope.get(REFUSED_INTERNAL))
+            self._record(asked, refused, status, aborted, time.perf_counter() - started)
 
-    def _record(self, scope: Scope, refused: bool, status: int, seconds: float) -> None:
+    def _record(self, scope: Scope, refused: bool, status: int, aborted: bool, seconds: float) -> None:
         path = route_path(scope).rstrip("/")
         route = UNMATCHED_ROUTE if refused else route_template(self.routes, scope)
         if path != METRICS_PATH or refused:  # a scrape is no request of the service
@@ -81,15 +93,19 @@ class RequestLog:
         if path in INTERNAL_PATHS and status < 400:
             return
         target = _target(scope)
+        method = bounded_method(scope["method"])
         duration_ms = round(seconds * 1000)
-        fields = {
-            "method": scope["method"],
+        fields: dict[str, object] = {
+            "method": method,
             "path": target,
             "route": route,
             "status": status,
             "duration_ms": duration_ms,
         }
-        log.info("%s %s %d %d ms", scope["method"], target, status, duration_ms, extra={"fields": fields})
+        if aborted:
+            fields["aborted"] = True
+        message = "%s %s %d %d ms" + (" (aborted)" if aborted else "")
+        log.info(message, method, target, status, duration_ms, extra={"fields": fields})
 
 
 def route_template(routes: Sequence[BaseRoute], scope: Scope) -> str:
@@ -112,9 +128,23 @@ def route_template(routes: Sequence[BaseRoute], scope: Scope) -> str:
 
 def _target(scope: Scope) -> str:
     """Path and query keys as a line holds them: quoted, so no sign can break or forge a line."""
-    query = scope.get("query_string", b"").decode("latin-1")
-    keys = "&".join(quote(key) for key, _ in parse_qsl(query, keep_blank_values=True))
+    keys = _query_keys(scope.get("query_string", b"").decode("latin-1"))
     return (quote(scope["path"]) + (f"?{keys}" if keys else ""))[:MAX_TARGET_CHARS]
+
+
+def _query_keys(query: str) -> str:
+    """The keys of ``key=value`` items that are plain names; ``_`` for any other item.
+
+    An item without ``=`` is a value itself (``?Klimawandel``, ``?<token>``), as is a key that
+    reads like text rather than a parameter name.
+    """
+    keys = []
+    for item in query.split("&"):
+        if item:
+            key, has_value, _ = item.partition("=")
+            key = unquote_plus(key)
+            keys.append(key if has_value and _QUERY_KEY.fullmatch(key) else "_")
+    return "&".join(keys)
 
 
 def _header(scope: Scope, name: str) -> str | None:

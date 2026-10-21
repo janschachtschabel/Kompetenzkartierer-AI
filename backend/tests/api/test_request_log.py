@@ -3,12 +3,14 @@
 import io
 import json
 import re
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
 import pytest
 from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
 from fastapi.testclient import TestClient
+from prometheus_client import REGISTRY
 
 from app.api.app import create_app
 from app.core.logging import configure_logging
@@ -33,7 +35,15 @@ def app() -> FastAPI:
     async def boom() -> None:
         raise RuntimeError("database gone")
 
+    async def broken_stream() -> StreamingResponse:
+        async def chunks() -> AsyncIterator[bytes]:
+            yield b"first chunk"
+            raise RuntimeError("disk gone")
+
+        return StreamingResponse(chunks(), media_type="text/plain")
+
     application.add_api_route("/api/v1/boom", boom, tags=["system"])
+    application.add_api_route("/api/v1/stream", broken_stream, tags=["system"])
     return application
 
 
@@ -45,7 +55,7 @@ def client(app: FastAPI) -> Iterator[TestClient]:
 
 def request_lines(stream: io.StringIO) -> list[dict[str, Any]]:
     lines = [json.loads(line) for line in stream.getvalue().splitlines()]
-    return [line for line in lines if line["logger"] == REQUEST_LOGGER]
+    return [line for line in lines if line["logger"] == REQUEST_LOGGER and "status" in line]
 
 
 def test_an_answer_carries_a_new_request_id(client: TestClient) -> None:
@@ -133,5 +143,36 @@ def test_an_unhandled_error_is_answered_500_and_logged_once(client: TestClient, 
     errors = [line for line in lines if line["level"] == "ERROR"]
     assert len(errors) == 1
     assert "RuntimeError: database gone" in errors[0]["exc"]
-    [request] = request_lines(log)[-1:]
+    [request] = request_lines(log)
     assert request["status"] == 500
+
+
+def test_a_query_item_that_is_no_plain_key_is_not_logged(client: TestClient, log: io.StringIO) -> None:
+    client.get("/api/v1/info?s3cretTokenValue&q=x&Klima%20wandel=1&page=2")
+
+    [line] = request_lines(log)
+    assert line["path"] == "/api/v1/info?_&q&_&page"
+    assert "s3cretTokenValue" not in log.getvalue()
+    assert "Klima" not in log.getvalue()
+
+
+def test_an_invented_method_is_logged_as_other(client: TestClient, log: io.StringIO) -> None:
+    client.request("GET|forged|" + "X" * 2000, "/api/v1/info")
+
+    [line] = request_lines(log)
+    assert line["method"] == "other"
+    assert "forged" not in log.getvalue().lower()
+
+
+def test_an_error_after_the_answer_began_counts_as_a_failed_request(
+    client: TestClient, log: io.StringIO
+) -> None:
+    labels = {"method": "GET", "route": "/api/v1/stream"}
+    failed = REGISTRY.get_sample_value("kka_http_requests_total", {**labels, "status": "500"}) or 0.0
+
+    client.get("/api/v1/stream")
+
+    [line] = request_lines(log)
+    assert line["status"] == 500
+    assert line["aborted"] is True
+    assert REGISTRY.get_sample_value("kka_http_requests_total", {**labels, "status": "500"}) == failed + 1

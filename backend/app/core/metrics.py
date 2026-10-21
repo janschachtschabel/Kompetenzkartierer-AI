@@ -27,8 +27,13 @@ HTTP_DURATION = Histogram(
 )
 
 
+def bounded_method(method: str) -> str:
+    """The method as a label or a log field: one of the known ones, or ``other``."""
+    return method if method in HTTP_METHODS else OTHER_METHOD
+
+
 def observe_request(method: str, route: str, status: int, seconds: float) -> None:
-    method = method if method in HTTP_METHODS else OTHER_METHOD
+    method = bounded_method(method)
     HTTP_REQUESTS.labels(method, route, str(status)).inc()
     HTTP_DURATION.labels(method, route).observe(seconds)
 
