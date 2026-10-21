@@ -30,6 +30,10 @@ def create_app(settings: Settings) -> FastAPI:
         description=DESCRIPTION,
         version=__version__,
         openapi_tags=TAGS,
+        # FastAPI's /docs and /redoc load scripts, styles and fonts from third-party hosts into
+        # the visitor's browser; the spec stays at /openapi.json
+        docs_url=None,
+        redoc_url=None,
     )
     app.include_router(internal.router)
     app.include_router(system.router)

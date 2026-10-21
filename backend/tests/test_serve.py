@@ -76,3 +76,9 @@ def test_uvicorn_logs_in_the_service_format(running: Running) -> None:
     messages = [line["message"] for line in lines if line["logger"].startswith("uvicorn")]
     assert "Application startup complete." in messages
     assert sum("Uvicorn running on" in message for message in messages) == 2
+
+
+def test_answers_do_not_name_the_server_software(running: Running) -> None:
+    url = f"http://127.0.0.1:{running.settings.public_port}/api/v1/info"
+    with urllib.request.urlopen(url, timeout=5) as response:
+        assert response.headers.get("server") is None

@@ -40,6 +40,7 @@ def _config(app: FastAPI, settings: Settings, port: int) -> uvicorn.Config:
         access_log=False,
         root_path=settings.root_path,
         log_config=None,
+        server_header=False,  # no need to tell the world which server stack answers
     )
 
 

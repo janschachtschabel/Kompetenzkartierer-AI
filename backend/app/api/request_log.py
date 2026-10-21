@@ -94,7 +94,7 @@ class RequestLog:
 def route_template(routes: Sequence[BaseRoute], scope: Scope) -> str:
     """The template of the route a request was meant for - a bounded label, never the raw path.
 
-    FastAPI leaves its route in the scope; plain Starlette routes (/openapi.json, /docs) do not.
+    FastAPI leaves its route in the scope; plain Starlette routes (/openapi.json) do not.
     """
     route = getattr(scope.get("route"), "path", None)
     if route:

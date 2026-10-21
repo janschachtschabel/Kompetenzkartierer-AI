@@ -52,3 +52,11 @@ def test_info_names_the_service_and_its_version() -> None:
 
     assert response.status_code == 200
     assert response.json() == {"name": "Kompetenzkartierer-AI", "version": __version__}
+
+
+@pytest.mark.parametrize("path", ["/docs", "/redoc", "/docs/oauth2-redirect"])
+def test_no_documentation_page_loads_assets_from_third_parties(path: str) -> None:
+    # FastAPI's pages pull scripts, styles and fonts from CDNs into the visitor's browser
+    client = TestClient(create_app(make_settings()), base_url="http://testserver:8000")
+
+    assert client.get(path).status_code == 404
