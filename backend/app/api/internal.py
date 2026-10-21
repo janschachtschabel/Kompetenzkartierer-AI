@@ -5,13 +5,17 @@ port an internal path answers 404 as if it did not exist, also with a trailing s
 router's redirect would otherwise confirm it) and under a root path.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, Response
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.api.paths import route_path
+from app.core import metrics
 
-INTERNAL_PATHS = frozenset({"/health", "/ready", "/metrics"})
+METRICS_PATH = "/metrics"
+INTERNAL_PATHS = frozenset({"/health", "/ready", METRICS_PATH})
+# Set in the scope of a request refused here: the metrics count it unmatched, not as traffic of the path
+REFUSED_INTERNAL = "kka.refused_internal"
 
 router = APIRouter(include_in_schema=False)
 
@@ -20,6 +24,12 @@ router = APIRouter(include_in_schema=False)
 async def health() -> dict[str, str]:
     """Liveness: the process answers. The database is a matter for /ready."""
     return {"status": "ok"}
+
+
+@router.get(METRICS_PATH)
+async def scrape(request: Request) -> Response:
+    content, content_type = metrics.render(request.headers.get("accept", ""))
+    return Response(content=content, media_type=content_type)
 
 
 def is_internal(path: str) -> bool:
@@ -35,6 +45,7 @@ class InternalOnly:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http" and is_internal(route_path(scope)) and _server_port(scope) != self.port:
+            scope[REFUSED_INTERNAL] = True
             await JSONResponse({"detail": "Not Found"}, status_code=404)(scope, receive, send)
             return
         await self.app(scope, receive, send)

@@ -5,7 +5,7 @@ the trace headers, adds ``X-Request-ID`` to every answer, and writes one line wi
 route template, status and duration. Query values and the client's address stay out of the line:
 a search term or a token in a query is the caller's, an address is personal data. A probe that
 answers writes no line. An error nothing else handled is logged once with its traceback and
-answered with a 500 naming the request id.
+answered with a 500 naming the request id. Each request but a scrape is counted for /metrics.
 
 A plain ASGI middleware, not Starlette's BaseHTTPMiddleware: that one runs the app in a task
 group, and an error came out wrapped in an ExceptionGroup with every frame twice
@@ -23,9 +23,10 @@ from starlette.responses import JSONResponse
 from starlette.routing import BaseRoute, Match
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from app.api.internal import INTERNAL_PATHS
+from app.api.internal import INTERNAL_PATHS, METRICS_PATH, REFUSED_INTERNAL
 from app.api.paths import route_path
 from app.core.logging import set_request_id
+from app.core.metrics import observe_request
 from app.core.tracing import REQUEST_ID, take_trace_headers
 
 log = logging.getLogger(__name__)
@@ -72,14 +73,18 @@ class RequestLog:
             self._record(scope, status, time.perf_counter() - started)
 
     def _record(self, scope: Scope, status: int, seconds: float) -> None:
-        if route_path(scope).rstrip("/") in INTERNAL_PATHS and status < 400:
+        path = route_path(scope).rstrip("/")
+        route = UNMATCHED_ROUTE if scope.get(REFUSED_INTERNAL) else route_template(self.routes, scope)
+        if path != METRICS_PATH:  # a scrape is no request of the service
+            observe_request(scope["method"], route, status, seconds)
+        if path in INTERNAL_PATHS and status < 400:
             return
         target = _target(scope)
         duration_ms = round(seconds * 1000)
         fields = {
             "method": scope["method"],
             "path": target,
-            "route": route_template(self.routes, scope),
+            "route": route,
             "status": status,
             "duration_ms": duration_ms,
         }
