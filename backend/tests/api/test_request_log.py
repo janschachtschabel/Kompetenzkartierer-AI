@@ -7,10 +7,11 @@ from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
 import pytest
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
+from fastapi import Depends, FastAPI
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.testclient import TestClient
 from prometheus_client import REGISTRY
+from starlette.background import BackgroundTask
 
 from app.api.app import create_app
 from app.core.logging import configure_logging
@@ -42,6 +43,20 @@ def app() -> FastAPI:
 
         return StreamingResponse(chunks(), media_type="text/plain")
 
+    def paging(page: int = 1) -> int:
+        return page
+
+    async def search(q: str, page: int = Depends(paging)) -> dict[str, object]:
+        return {"q": q, "page": page}
+
+    async def failing_task() -> None:
+        raise RuntimeError("mail server gone")
+
+    async def queued() -> JSONResponse:
+        return JSONResponse({"status": "queued"}, background=BackgroundTask(failing_task))
+
+    application.add_api_route("/api/v1/search", search, tags=["system"])
+    application.add_api_route("/api/v1/queued", queued, tags=["system"])
     application.add_api_route("/api/v1/boom", boom, tags=["system"])
     application.add_api_route("/api/v1/stream", broken_stream, tags=["system"])
     return application
@@ -84,7 +99,7 @@ def test_one_line_per_request_with_its_route_and_without_query_values(
 
     [line] = request_lines(log)
     assert line["method"] == "GET"
-    assert line["path"] == "/api/v1/info?q&token"
+    assert line["path"] == "/api/v1/info?_&_"
     assert line["route"] == "/api/v1/info"
     assert line["status"] == 200
     assert isinstance(line["duration_ms"], int)
@@ -148,13 +163,14 @@ def test_an_unhandled_error_is_answered_500_and_logged_once(client: TestClient, 
     assert request["status"] == 500
 
 
-def test_a_query_item_that_is_no_plain_key_is_not_logged(client: TestClient, log: io.StringIO) -> None:
-    client.get("/api/v1/info?s3cretTokenValue&q=x&Klima%20wandel=1&page=2")
+def test_only_query_names_the_route_declares_are_logged(client: TestClient, log: io.StringIO) -> None:
+    # a padded base64 token and a search term written as a key look like names, but are values
+    client.get("/api/v1/search?s3cretTokenValue&q=x&Klimawandel=&page=2&dGhpcyBpcyBhIHNlY3JldA==")
 
     [line] = request_lines(log)
-    assert line["path"] == "/api/v1/info?_&q&_&page"
-    assert "s3cretTokenValue" not in log.getvalue()
-    assert "Klima" not in log.getvalue()
+    assert line["path"] == "/api/v1/search?_&q&_&page&_"
+    for value in ("s3cretTokenValue", "Klimawandel", "dGhpcyBpcyBhIHNlY3JldA"):
+        assert value not in log.getvalue()
 
 
 def test_an_invented_method_is_logged_as_other(client: TestClient, log: io.StringIO) -> None:
@@ -177,3 +193,29 @@ def test_an_error_after_the_answer_began_counts_as_a_failed_request(
     assert line["status"] == 500
     assert line["aborted"] is True
     assert REGISTRY.get_sample_value("kka_http_requests_total", {**labels, "status": "500"}) == failed + 1
+
+
+def test_an_error_after_a_complete_answer_keeps_its_status(client: TestClient, log: io.StringIO) -> None:
+    # a background task fails after the client got its whole answer
+    response = client.get("/api/v1/queued")
+
+    assert response.json() == {"status": "queued"}
+    [line] = request_lines(log)
+    assert line["status"] == 200
+    assert "aborted" not in line
+    assert any(
+        "mail server gone" in json.loads(entry).get("exc", "") for entry in log.getvalue().splitlines()
+    )
+
+
+def test_a_route_added_after_the_first_request_is_named(app: FastAPI, log: io.StringIO) -> None:
+    with TestClient(app, base_url=PUBLIC) as client:
+        client.get("/api/v1/info")
+
+        async def late(item_id: int) -> dict[str, int]:
+            return {"id": item_id}
+
+        app.add_api_route("/api/v1/late/{item_id}", late, tags=["system"])
+        client.get("/api/v1/late/7")
+
+    assert [line["route"] for line in request_lines(log)] == ["/api/v1/info", "/api/v1/late/{item_id}"]

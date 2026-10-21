@@ -4,8 +4,9 @@ The cluster scales by replicas, not by worker processes; heavy work runs in the 
 One process keeps the Prometheus values in memory, without a multiprocess collector.
 
 uvicorn parses with h11: httptools bounds neither the URL nor the headers, and uvicorn put a
-long URL together piece by piece in quadratic time (compendious audit SE-19). h11 answers 400
-to a request head over 16 KB.
+long URL together piece by piece in quadratic time (compendious audit SE-19). h11 bounds the
+part of a request head it has to collect over several reads (16 KB); what one read brings, it
+takes whole.
 """
 
 import contextlib
