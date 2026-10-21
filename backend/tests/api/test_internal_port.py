@@ -6,15 +6,10 @@ from fastapi.testclient import TestClient
 from app.api.app import create_app
 from app.api.internal import INTERNAL_PATHS
 from app.api.paths import route_path
-from app.core.settings import Settings
+from tests.support import make_settings
 
 PUBLIC = "http://testserver:8000"
 INTERNAL = "http://testserver:9000"
-
-
-def make_settings(**values: object) -> Settings:
-    # model_validate skips the environment sources: only these invented values count
-    return Settings.model_validate({"database_url": "postgresql://kka:fake@localhost/kka", **values})
 
 
 @pytest.fixture

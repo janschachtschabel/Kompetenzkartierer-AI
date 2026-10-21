@@ -15,6 +15,7 @@ import pytest
 from app.core.logging import configure_logging
 from app.core.settings import Settings
 from app.serve import build_server
+from tests.support import make_settings
 
 START_TIMEOUT_S = 10.0
 
@@ -45,14 +46,8 @@ class Running:
 def running(restore_logging: None) -> Iterator[Running]:
     log = io.StringIO()
     configure_logging("INFO", "json", stream=log)
-    settings = Settings.model_validate(
-        {
-            "database_url": "postgresql://kka:fake@localhost/kka",
-            "host": "127.0.0.1",
-            "public_port": free_port(),
-            "internal_port": free_port(),
-            "root_path": "/kka",
-        }
+    settings = make_settings(
+        host="127.0.0.1", public_port=free_port(), internal_port=free_port(), root_path="/kka"
     )
     server, sockets = build_server(settings)
     thread = threading.Thread(target=server.run, kwargs={"sockets": sockets}, daemon=True)

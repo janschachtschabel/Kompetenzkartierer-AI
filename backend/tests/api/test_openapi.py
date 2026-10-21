@@ -7,13 +7,12 @@ from fastapi.testclient import TestClient
 
 from app import __version__
 from app.api.app import create_app
-from app.core.settings import Settings
+from tests.support import make_settings
 
 
 @pytest.fixture(scope="module")
 def spec() -> dict[str, Any]:
-    settings = Settings.model_validate({"database_url": "postgresql://kka:fake@localhost/kka"})
-    client = TestClient(create_app(settings), base_url="http://testserver:8000")
+    client = TestClient(create_app(make_settings()), base_url="http://testserver:8000")
     response = client.get("/openapi.json")
     assert response.status_code == 200
     document: dict[str, Any] = response.json()
@@ -47,8 +46,7 @@ def test_every_operation_has_a_tag_and_a_summary(spec: dict[str, Any]) -> None:
 
 
 def test_info_names_the_service_and_its_version() -> None:
-    settings = Settings.model_validate({"database_url": "postgresql://kka:fake@localhost/kka"})
-    client = TestClient(create_app(settings), base_url="http://testserver:8000")
+    client = TestClient(create_app(make_settings()), base_url="http://testserver:8000")
 
     response = client.get("/api/v1/info")
 

@@ -4,30 +4,21 @@ Only invented values are used here: a settings object built from the real enviro
 would read real keys, and pydantic would print them in a validation error.
 """
 
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
 
 from app.core.settings import Settings
-
-FAKE_URL = "postgresql://kka:fake@localhost:55432/kka"
-OWN_VARIABLES = (
-    "DATABASE_URL",
-    "DATABASE_URL_FILE",
-    "PUBLIC_PORT",
-    "INTERNAL_PORT",
-    "LOG_LEVEL",
-    "LOG_FORMAT",
-    "HOST",
-    "ROOT_PATH",
-)
+from tests.support import FAKE_DATABASE_URL as FAKE_URL
+from tests.support import without_settings_variables
 
 
 @pytest.fixture(autouse=True)
-def clean_environment(monkeypatch: pytest.MonkeyPatch) -> None:
-    for name in OWN_VARIABLES:
-        monkeypatch.delenv(name, raising=False)
+def no_settings_variables() -> Iterator[None]:
+    with without_settings_variables():
+        yield
 
 
 def test_defaults_apply_when_only_the_required_value_is_set(monkeypatch: pytest.MonkeyPatch) -> None:

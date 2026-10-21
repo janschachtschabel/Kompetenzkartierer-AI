@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from prometheus_client import REGISTRY
 
 from app.api.app import create_app
-from app.core.settings import Settings
+from tests.support import make_settings
 
 PUBLIC = "http://testserver:8000"
 INTERNAL = "http://testserver:9000"
@@ -22,7 +22,7 @@ def sample(name: str, **labels: str) -> float:
 
 @pytest.fixture
 def app() -> FastAPI:
-    application = create_app(Settings.model_validate({"database_url": "postgresql://kka:fake@localhost/kka"}))
+    application = create_app(make_settings())
 
     async def item(item_id: int) -> dict[str, int]:
         return {"id": item_id}
