@@ -65,6 +65,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(hide_input_in_errors=True)
 
     database_url: Annotated[SecretStr, Field(min_length=1)]
+    # Connections per process: the API holds a few; the cluster's total is replicas times max
+    db_pool_min_size: Annotated[int, Field(ge=0)] = 1
+    db_pool_max_size: Annotated[int, Field(ge=1)] = 10
     # Loopback unless set: the image sets 0.0.0.0, a developer's start stays off the network
     host: str = "127.0.0.1"
     public_port: Port = 8000
@@ -102,4 +105,6 @@ class Settings(BaseSettings):
     def _ports_differ(self) -> Self:
         if self.internal_port == self.public_port:
             raise ValueError("internal_port must differ from public_port")
+        if self.db_pool_max_size < self.db_pool_min_size:
+            raise ValueError("db_pool_max_size must not be smaller than db_pool_min_size")
         return self

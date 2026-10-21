@@ -232,3 +232,20 @@ def test_a_blank_required_secret_counts_as_missing(monkeypatch: pytest.MonkeyPat
 
     with pytest.raises(ValidationError, match="database_url"):
         Settings()
+
+
+def test_the_database_pool_has_bounded_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+
+    settings = Settings()
+
+    assert (settings.db_pool_min_size, settings.db_pool_max_size) == (1, 10)
+
+
+def test_the_pool_cannot_be_smaller_than_its_minimum(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+    monkeypatch.setenv("DB_POOL_MIN_SIZE", "5")
+    monkeypatch.setenv("DB_POOL_MAX_SIZE", "4")
+
+    with pytest.raises(ValidationError, match="db_pool_max_size"):
+        Settings()

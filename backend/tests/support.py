@@ -6,16 +6,21 @@ would carry real keys, and pydantic prints input values in its errors. So the va
 settings class reads are hidden while it is built; those of the operating system stay.
 """
 
+import asyncio
 import os
 from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import Any
 from unittest import mock
 
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from pydantic_settings import BaseSettings
 
 from app.core.settings import Settings
 
-FAKE_DATABASE_URL = "postgresql://kka:fake@localhost:55432/kka"
+# A closed port: an app under test that opens its pool reaches no server, and no real one
+FAKE_DATABASE_URL = "postgresql://kka:fake@127.0.0.1:1/kka"
 
 
 def settings_variables(settings_cls: type[BaseSettings]) -> set[str]:
@@ -34,6 +39,13 @@ def without_settings_variables(settings_cls: type[BaseSettings] = Settings) -> I
         yield
 
 
+def selector_client(app: FastAPI, **options: Any) -> TestClient:
+    """A TestClient on a selector event loop: psycopg's async mode refuses Windows' proactor loop."""
+    return TestClient(app, backend_options={"loop_factory": asyncio.SelectorEventLoop}, **options)
+
+
 def make_settings(**values: object) -> Settings:
+    """Invented settings; the pool opens no connection until a test asks for one."""
+    defaults = {"database_url": FAKE_DATABASE_URL, "db_pool_min_size": 0}
     with without_settings_variables():
-        return Settings(**{"database_url": FAKE_DATABASE_URL, **values})  # type: ignore[arg-type]
+        return Settings(**{**defaults, **values})  # type: ignore[arg-type]

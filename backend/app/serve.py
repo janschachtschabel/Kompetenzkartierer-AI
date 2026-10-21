@@ -48,6 +48,8 @@ def _config(app: FastAPI, settings: Settings, port: int) -> uvicorn.Config:
         root_path=settings.root_path,
         log_config=None,
         server_header=False,  # no need to tell the world which server stack answers
+        # psycopg's async mode needs a selector loop; uvicorn's choice on Windows is the proactor
+        loop="asyncio:SelectorEventLoop",
     )
 
 

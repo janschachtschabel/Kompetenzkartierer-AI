@@ -5,15 +5,20 @@ port an internal path answers 404 as if it did not exist, also with a trailing s
 router's redirect would otherwise confirm it) and under a root path.
 """
 
+import psycopg
 from fastapi import APIRouter, Request, Response
+from psycopg_pool import AsyncConnectionPool, PoolTimeout
+from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.api.errors import error_response
 from app.api.paths import route_path
 from app.core import metrics
+from app.db.migrate import applied_versions
 
 METRICS_PATH = "/metrics"
 INTERNAL_PATHS = frozenset({"/health", "/ready", METRICS_PATH})
+READY_TIMEOUT_S = 2.0  # a probe has a short deadline of its own; waiting longer helps nobody
 # Set in the scope of a request refused here: the metrics count it unmatched, not as traffic of the path
 REFUSED_INTERNAL = "kka.refused_internal"
 
@@ -24,6 +29,28 @@ router = APIRouter(include_in_schema=False)
 async def health() -> dict[str, str]:
     """Liveness: the process answers. The database is a matter for /ready."""
     return {"status": "ok"}
+
+
+@router.get("/ready")
+async def ready(request: Request) -> JSONResponse:
+    """Readiness: the database answers and has every migration this code expects.
+
+    A database ahead of the code is ready: during a rolling update the new release has
+    migrated while the old pods still serve (migrations add before they remove).
+    """
+    pool: AsyncConnectionPool = request.app.state.pool
+    try:
+        async with pool.connection(timeout=READY_TIMEOUT_S) as connection:
+            applied = await applied_versions(connection)
+    except (PoolTimeout, psycopg.Error):
+        return _unavailable("database")
+    if not request.app.state.expected_migrations <= applied:
+        return _unavailable("migration")
+    return JSONResponse({"status": "ready"})
+
+
+def _unavailable(reason: str) -> JSONResponse:
+    return JSONResponse({"status": "unavailable", "reason": reason}, status_code=503)
 
 
 @router.get(METRICS_PATH)

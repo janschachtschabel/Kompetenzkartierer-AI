@@ -19,7 +19,7 @@ from importlib.resources.abc import Traversable
 
 import psycopg
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("app.db.migrate")  # also when run as __main__
 
 MIGRATIONS: Traversable = files("app.db") / "migrations"
 # Any fixed number serves; all runs against one database must agree on it
@@ -112,6 +112,16 @@ def _apply(connection: psycopg.Connection, migration: Migration) -> None:
     except psycopg.Error as error:
         raise MigrationError(f"{migration.filename} failed: {error}") from error
     log.info("applied %s", migration.filename)
+
+
+async def applied_versions(connection: psycopg.AsyncConnection) -> frozenset[int]:
+    """The versions recorded in ``schema_migration``; none before the first run made the table."""
+    cursor = await connection.execute("SELECT to_regclass('schema_migration') IS NOT NULL")
+    exists = await cursor.fetchone()
+    if not (exists and exists[0]):
+        return frozenset()
+    cursor = await connection.execute("SELECT version FROM schema_migration")
+    return frozenset(int(version) for (version,) in await cursor.fetchall())
 
 
 def main() -> int:

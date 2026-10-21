@@ -1,5 +1,8 @@
 """The ASGI application: routers and middlewares, built from the settings."""
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 from app import __version__
@@ -7,6 +10,8 @@ from app.api import internal, system
 from app.api.errors import ERROR_RESPONSES, install_error_handlers
 from app.api.request_log import RequestLog
 from app.core.settings import Settings
+from app.db.migrate import load_migrations
+from app.db.pool import create_pool
 
 SUMMARY = "Curricula captured after Curriculum-Kern 1.0, docked to competence and level schemes, linked."
 DESCRIPTION = """\
@@ -25,7 +30,20 @@ TAGS = [
 
 
 def create_app(settings: Settings) -> FastAPI:
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        # Opened without waiting: the process starts and answers /health while the database
+        # is away; /ready says so
+        pool = create_pool(settings)
+        await pool.open(wait=False)
+        app.state.pool = pool
+        try:
+            yield
+        finally:
+            await pool.close()
+
     app = FastAPI(
+        lifespan=lifespan,
         title=system.SERVICE_NAME,
         summary=SUMMARY,
         description=DESCRIPTION,
@@ -37,6 +55,7 @@ def create_app(settings: Settings) -> FastAPI:
         docs_url=None,
         redoc_url=None,
     )
+    app.state.expected_migrations = frozenset(migration.version for migration in load_migrations())
     install_error_handlers(app)
     app.include_router(internal.router)
     app.include_router(system.router)
