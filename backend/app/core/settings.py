@@ -13,6 +13,8 @@ from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 
+# The repository's copy; the image sets ONTOLOGY_DIR to the folder it ships
+REPOSITORY_ONTOLOGY = Path(__file__).resolve().parents[3] / "ontology"
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 Port = Annotated[int, Field(ge=1, le=65535)]
 
@@ -76,6 +78,7 @@ class Settings(BaseSettings):
     # path): plain segments without a trailing slash; empty for none
     root_path: Annotated[str, Field(pattern=r"^(/[A-Za-z0-9._~-]+)*$")] = ""
     log_level: LogLevel = "INFO"
+    ontology_dir: Path = REPOSITORY_ONTOLOGY
     log_format: Literal["text", "json"] = "text"
 
     @classmethod

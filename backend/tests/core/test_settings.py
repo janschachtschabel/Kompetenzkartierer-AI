@@ -249,3 +249,9 @@ def test_the_pool_cannot_be_smaller_than_its_minimum(monkeypatch: pytest.MonkeyP
 
     with pytest.raises(ValidationError, match="db_pool_max_size"):
         Settings()
+
+
+def test_the_ontology_folder_defaults_to_the_repository_copy(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+
+    assert (Settings().ontology_dir / "ontologie" / "cur-kern.ttl").is_file()
