@@ -159,3 +159,16 @@ def test_a_request_id_keeps_only_harmless_signs_and_is_cut() -> None:
 def test_the_request_id_holds_for_its_request_only() -> None:
     assert in_request(lambda: (set_request_id("inner"), current_request_id())[1]) == "inner"
     assert current_request_id() == NO_REQUEST
+
+
+@pytest.mark.parametrize("name", ["httpx", "httpcore.http11", "openai._base_client"])
+def test_http_clients_stay_quiet_even_when_a_library_lowers_their_level(name: str) -> None:
+    # the openai SDK sets its loggers and httpx to DEBUG on import when OPENAI_LOG=debug
+    stream = configured("json")
+    logging.getLogger(name.split(".")[0]).setLevel(logging.DEBUG)
+
+    logging.getLogger(name).debug("Authorization: Bearer invented-key")
+    logging.getLogger(name).info("HTTP Request: GET https://example.invalid/?token=invented")
+    logging.getLogger(name).warning("retrying")
+
+    assert [line["message"] for line in json_lines(stream)] == ["retrying"]

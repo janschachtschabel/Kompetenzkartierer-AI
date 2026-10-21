@@ -52,6 +52,19 @@ class _RequestIdFilter(logging.Filter):
         return True
 
 
+class _QuietFilter(logging.Filter):
+    """Drops what the HTTP clients log below WARNING, whatever level a library set later.
+
+    The level set in configure_logging alone did not hold: the openai SDK sets its loggers and
+    httpx to DEBUG when it is imported with OPENAI_LOG=debug.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.levelno >= logging.WARNING:
+            return True
+        return not any(record.name == name or record.name.startswith(f"{name}.") for name in QUIET_LOGGERS)
+
+
 class JsonFormatter(logging.Formatter):
     """One JSON object per event; a traceback stays inside its line.
 
@@ -87,6 +100,7 @@ def configure_logging(level: str, format_: str, *, stream: TextIO) -> None:
         root.removeHandler(handler)
     handler = _ServiceHandler(stream)
     handler.setFormatter(JsonFormatter() if format_ == "json" else logging.Formatter(TEXT_FORMAT))
+    handler.addFilter(_QuietFilter())
     handler.addFilter(_RequestIdFilter())
     root.addHandler(handler)
     root.setLevel(level)
