@@ -42,6 +42,19 @@ aufbaut. Keine Fachlogik außer dem Vokabular-Lader.
 - LLM-Einstellungen nach der alten App ohne B-API: `OPENAI_BASE_URL`, `OPENAI_MODEL`
   (`gpt-6-luna`), `OPENAI_REASONING_EFFORT`, `OPENAI_TEXT_VERBOSITY`, `LLM_PROVIDER`
   (`openai` | `openai-compatible`), `LLM_CONTEXT_TOKENS`.
+- Fehler antworten einheitlich als `{"code", "message", "details"}` (`app/api/errors.py`);
+  `code` ist der Name des HTTP-Status oder ein eigener fester Code, das Frontend wählt seinen
+  Text danach. Validierungsfehler nennen Feld und Art, nie die Eingabe.
+- Keine `/docs` und `/redoc`: FastAPIs Seiten laden Skripte, Stile und Google Fonts von
+  Fremdservern. Die Spec liegt unter `/openapi.json`; eine Doku-Seite nur mit eigenen Dateien
+  (nach Download-Freigabe).
+- Tests bauen Settings nur über `tests/support.py` (`make_settings`,
+  `without_settings_variables`): Auch `Settings.model_validate` liest die Umgebung.
+- Tabellen entstehen mit der Logik, die sie nutzt (Test treibt das Schema): B2 legt nur die
+  Erweiterungen und `entity` an; `job` kommt mit C1, `account`, `role_grant`, `api_key`,
+  `audit_log` mit C3, `llm_usage`, `conversion_usage`, `quota` mit der Abrechnung in M1.
+- Migrationen liegen im Paket (`app/db/migrations/NNNN_name.sql`, gelesen über
+  `importlib.resources`), damit das Image sie ohne Zusatzpfad mitnimmt.
 
 ## Paket A: Gerüst und Betriebsseite
 
@@ -60,18 +73,18 @@ aufbaut. Keine Fachlogik außer dem Vokabular-Lader.
 
 | # | Aufgabe | Dateien | Test zuerst | Nachweis |
 |---|---|---|---|---|
-| B1 | Pool und Migrationsläufer | `app/db/pool.py`, `app/db/migrate.py`, `migrations/0001_schema_migration.sql` | zwei Läufe parallel wenden jede Datei genau einmal an; neuere DB als Code wird abgewiesen; Prüfsumme einer schon angewendeten Datei darf sich nicht ändern | `pytest -m pg tests/db/` |
-| B2 | Grundtabellen | `migrations/0002_core.sql` | `entity`, `account`, `role_grant`, `api_key`, `job`, `llm_usage`, `conversion_usage`, `quota`, `audit_log`; Erweiterungen `vector`, `pg_trgm`, `unaccent`; Fremdschlüssel und Eindeutigkeit greifen | `pytest -m pg` |
-| B3 | Bereitschaft | `app/api/internal.py` | `/ready` 503 ohne Datenbank oder bei fehlender Migration, 200 sonst | Test mit gestoppter bzw. leerer DB |
-| B4 | Vokabular-Lader | `app/vocab/loader.py`, `migrations/0003_vocab.sql`, Einstieg `python -m app.vocab.load` | Zahl der Schemata und Stufen in `lvl:` gleich der TTL (24 und 135); zweiter Lauf ändert nichts; geänderte TTL ergibt neuen Stand | `pytest -m pg tests/vocab/` |
+| B1 | Pool und Migrationsläufer | `app/db/pool.py`, `app/db/migrate.py` (legt `schema_migration` selbst an) | zwei Läufe parallel wenden jede Datei genau einmal an; neuere DB als Code wird abgewiesen; Prüfsumme einer schon angewendeten Datei darf sich nicht ändern; Fehler in einer Datei lässt die vorigen stehen und nichts von ihr | `pytest -m pg tests/db/` |
+| B2 | Grundtabellen | `app/db/migrations/0001_core.sql` | Erweiterungen `vector`, `pg_trgm`, `unaccent`; `entity` mit Pflicht-`kind` (die übrigen Tabellen mit ihrer Logik, siehe Festlegungen) | `pytest -m pg` |
+| B3 | Bereitschaft | `app/api/internal.py` | `/ready` 503 ohne Datenbank oder bei fehlender Migration, 200 sonst (auch wenn die DB voraus ist: rollendes Update) | Test mit gestoppter bzw. leerer DB |
+| B4 | Vokabular-Lader | `app/vocab/loader.py`, `app/db/migrations/0002_vocab.sql`, Einstieg `python -m app.vocab.load` | Zahl der Schemata und Stufen in `lvl:` gleich der TTL (24 Schemata, 135 `cur:LevelConcept` über `skos:inScheme`); zweiter Lauf ändert nichts; geänderte TTL ergibt neuen Stand | `pytest -m pg tests/vocab/` |
 
 ## Paket C: Jobs, Auth, LLM, Speicher
 
 | # | Aufgabe | Dateien | Test zuerst | Nachweis |
 |---|---|---|---|---|
-| C1 | Warteschlange | `app/jobs/queue.py` | anlegen, holen mit `SKIP LOCKED` und Spur je Konto (abwechselnd), Lease verlängern, abgelaufene Lease freigeben, Abbruch per Markierung, begrenzte Wiederholung | `pytest -m pg tests/jobs/` |
+| C1 | Warteschlange | `app/jobs/queue.py`, Migration `job` | anlegen, holen mit `SKIP LOCKED` und Spur je Konto (abwechselnd), Lease verlängern, abgelaufene Lease freigeben, Abbruch per Markierung, begrenzte Wiederholung | `pytest -m pg tests/jobs/` |
 | C2 | Worker | `app/jobs/worker.py` | zwei Worker verarbeiten 50 Jobs ohne Doppelausführung; ein Worker ohne Lebenszeichen verliert die Lease, ein anderer übernimmt; abgebrochene Jobs laufen nicht | Stresstest mit zwei Prozessen |
-| C3 | Auth | `app/core/auth.py`, `app/api/deps.py`, `app/api/accounts.py` (Admin legt Konto und Token an) | ohne Token 401 bei `off`; `lookup` öffnet nur Lesepfade; LLM-Pfad ohne Token 401; falsche Rolle 403; gesperrtes Konto 401; Limit für Fehlversuche | `pytest -m pg tests/core/test_auth.py` |
+| C3 | Auth | `app/core/auth.py`, `app/api/deps.py`, `app/api/accounts.py` (Admin legt Konto und Token an), Migration `account`, `role_grant`, `api_key`, `audit_log` | ohne Token 401 bei `off`; `lookup` öffnet nur Lesepfade; LLM-Pfad ohne Token 401; falsche Rolle 403; gesperrtes Konto 401; Limit für Fehlversuche | `pytest -m pg tests/core/test_auth.py` |
 | C4 | LLM-Einstellungen | `app/llm/settings.py`, `app/llm/client.py` | Standardwerte; unbekannter Anbieter beim Start abgewiesen; Wertelisten gegen die Typen der Bibliothek; Basis-URL wird für Responses- und Chat-API genutzt (Mock-Transport); Schlüssel nie in Log oder Fehler | `pytest tests/llm/` |
 | C5 | Objektspeicher | `app/core/storage.py` | Dateisystem: schreiben, lesen, löschen, Pfad-Ausbruch abgewiesen; S3 folgt in D | `pytest tests/core/test_storage.py` |
 
@@ -79,7 +92,7 @@ aufbaut. Keine Fachlogik außer dem Vokabular-Lader.
 
 | # | Aufgabe | Dateien | Nachweis |
 |---|---|---|---|
-| D1 | API-Image | `deploy/api.Dockerfile`, `.dockerignore` | Image läuft als 10001, HEALTHCHECK am internen Port, keine Daten; Größe gemessen |
+| D1 | API-Image | `deploy/api.Dockerfile`, `.dockerignore` | Image läuft als 10001, `HOST=0.0.0.0`, HEALTHCHECK am internen Port per GET (HEAD auf `/health` gibt 405, `wget --spider` sendet HEAD), keine Daten; Größe gemessen |
 | D2 | Compose | `deploy/docker-compose.yml` | api ×2, worker ×2, migrate, postgres, minio, valkey optional; `/ready` 200; Migration genau einmal |
 | D3 | S3-Speicher | `app/core/storage.py` | Integrationstest gegen MinIO (Marker `s3`) |
 | D4 | CI | `.github/workflows/ci.yml` | Ontologie-Prüfung, ruff, mypy, Tests mit PostgreSQL-Dienst, Image-Build; grüner Lauf erst nach Push |
