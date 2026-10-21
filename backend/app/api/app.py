@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 from app import __version__
 from app.api import internal, system
-from app.api.errors import install_error_handlers
+from app.api.errors import ERROR_RESPONSES, install_error_handlers
 from app.api.request_log import RequestLog
 from app.core.settings import Settings
 
@@ -31,6 +31,7 @@ def create_app(settings: Settings) -> FastAPI:
         description=DESCRIPTION,
         version=__version__,
         openapi_tags=TAGS,
+        responses=ERROR_RESPONSES,
         # FastAPI's /docs and /redoc load scripts, styles and fonts from third-party hosts into
         # the visitor's browser; the spec stays at /openapi.json
         docs_url=None,
