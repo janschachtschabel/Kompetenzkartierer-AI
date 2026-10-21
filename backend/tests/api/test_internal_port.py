@@ -35,9 +35,10 @@ def test_an_internal_path_does_not_exist_on_the_public_port(
     app_client: TestClient, path: str, suffix: str
 ) -> None:
     response = app_client.get(path + suffix, follow_redirects=False)
+    genuine = app_client.get("/api/v1/nowhere")
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "Not Found"}
+    assert response.json() == genuine.json()
 
 
 def test_under_a_root_path_the_internal_path_stays_internal() -> None:

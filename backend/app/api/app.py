@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app import __version__
 from app.api import internal, system
+from app.api.errors import install_error_handlers
 from app.api.request_log import RequestLog
 from app.core.settings import Settings
 
@@ -35,6 +36,7 @@ def create_app(settings: Settings) -> FastAPI:
         docs_url=None,
         redoc_url=None,
     )
+    install_error_handlers(app)
     app.include_router(internal.router)
     app.include_router(system.router)
     app.add_middleware(internal.InternalOnly, port=settings.internal_port)

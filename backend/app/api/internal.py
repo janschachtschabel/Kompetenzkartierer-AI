@@ -6,9 +6,9 @@ router's redirect would otherwise confirm it) and under a root path.
 """
 
 from fastapi import APIRouter, Request, Response
-from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from app.api.errors import error_response
 from app.api.paths import route_path
 from app.core import metrics
 
@@ -46,7 +46,7 @@ class InternalOnly:
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http" and is_internal(route_path(scope)) and _server_port(scope) != self.port:
             scope[REFUSED_INTERNAL] = True
-            await JSONResponse({"detail": "Not Found"}, status_code=404)(scope, receive, send)
+            await error_response(404)(scope, receive, send)
             return
         await self.app(scope, receive, send)
 

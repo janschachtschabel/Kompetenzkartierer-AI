@@ -24,10 +24,10 @@ from urllib.parse import quote, unquote_plus
 
 from fastapi.routing import iter_route_contexts
 from starlette.datastructures import MutableHeaders
-from starlette.responses import JSONResponse
 from starlette.routing import BaseRoute, Match
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from app.api.errors import error_response
 from app.api.internal import INTERNAL_PATHS, METRICS_PATH, REFUSED_INTERNAL
 from app.api.paths import route_path
 from app.core.logging import set_request_id
@@ -79,8 +79,8 @@ class RequestLog:
                 # request counts as failed, not with the status it started with
                 status, aborted = 500, True
             else:
-                content = {"detail": INTERNAL_ERROR, "request_id": request_id}
-                await JSONResponse(content, status_code=500)(scope, receive, named)
+                answer = error_response(500, INTERNAL_ERROR, details={"request_id": request_id})
+                await answer(scope, receive, named)
         finally:
             refused = bool(scope.get(REFUSED_INTERNAL))
             self._record(asked, refused, status, aborted, time.perf_counter() - started)

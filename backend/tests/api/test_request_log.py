@@ -137,7 +137,8 @@ def test_an_unhandled_error_is_answered_500_and_logged_once(client: TestClient, 
 
     assert response.status_code == 500
     body = response.json()
-    assert body["request_id"] == response.headers["X-Request-ID"]
+    assert body["code"] == "internal_server_error"
+    assert body["details"] == {"request_id": response.headers["X-Request-ID"]}
     assert "database gone" not in response.text
     lines = [json.loads(line) for line in log.getvalue().splitlines()]
     errors = [line for line in lines if line["level"] == "ERROR"]
