@@ -1,10 +1,13 @@
 """Internal paths answer on the internal port only; on the public one they do not exist."""
 
+import asyncio
+
 import pytest
 from fastapi.testclient import TestClient
+from starlette.types import Message, Receive, Scope, Send
 
 from app.api.app import create_app
-from app.api.internal import INTERNAL_PATHS
+from app.api.internal import INTERNAL_PATHS, InternalOnly
 from app.api.paths import route_path
 from tests.support import make_settings
 
@@ -77,3 +80,33 @@ def test_the_internal_port_follows_the_settings() -> None:
 )
 def test_route_path_strips_the_root_path_as_the_router_does(path: str, root: str, expected: str) -> None:
     assert route_path({"type": "http", "path": path, "root_path": root}) == expected
+
+
+def test_a_forged_host_header_does_not_open_the_internal_port(app_client: TestClient) -> None:
+    # the port is the socket's, never what the client says
+    assert app_client.get("/health", headers={"host": "testserver:9000"}).status_code == 404
+
+
+@pytest.mark.parametrize("server", [None, ("/run/kka.sock", None)], ids=["no-server", "unix-socket"])
+def test_an_unknown_socket_port_is_refused(server: tuple[str, None] | None) -> None:
+    reached: list[str] = []
+
+    async def inner(scope: Scope, receive: Receive, send: Send) -> None:
+        reached.append(scope["path"])
+
+    sent: list[Message] = []
+
+    async def send(message: Message) -> None:
+        sent.append(message)
+
+    async def receive() -> Message:
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    scope: Scope = {"type": "http", "method": "GET", "path": "/metrics", "root_path": "", "headers": []}
+    if server is not None:
+        scope["server"] = server
+
+    asyncio.run(InternalOnly(inner, port=9000)(scope, receive, send))
+
+    assert reached == []
+    assert sent[0]["status"] == 404

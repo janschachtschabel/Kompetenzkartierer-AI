@@ -27,7 +27,13 @@ def build_server(settings: Settings) -> tuple[uvicorn.Server, list[socket.socket
     public = _config(app, settings, settings.public_port)
     internal = _config(app, settings, settings.internal_port)
     # uvicorn's own binding for both: IPv6 hosts, SO_REUSEADDR, a port in use ends the start
-    return uvicorn.Server(public), [public.bind_socket(), internal.bind_socket()]
+    public_socket = public.bind_socket()
+    try:
+        internal_socket = internal.bind_socket()
+    except BaseException:  # bind_socket ends the start with SystemExit
+        public_socket.close()
+        raise
+    return uvicorn.Server(public), [public_socket, internal_socket]
 
 
 def _config(app: FastAPI, settings: Settings, port: int) -> uvicorn.Config:

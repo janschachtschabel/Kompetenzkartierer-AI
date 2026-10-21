@@ -52,6 +52,9 @@ class InternalOnly:
 
 
 def _server_port(scope: Scope) -> int | None:
-    """The port of the socket the request came in on, not what a proxy or the Host header says."""
+    """The port of the socket the request came in on, not what a proxy or the Host header says.
+
+    ``None`` without a server or on a unix socket, whose port ASGI leaves ``None``.
+    """
     server = scope.get("server")
-    return int(server[1]) if server else None
+    return int(server[1]) if server and server[1] is not None else None
