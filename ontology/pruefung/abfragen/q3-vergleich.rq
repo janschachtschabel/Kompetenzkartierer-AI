@@ -1,0 +1,19 @@
+# Anwendungsfall „Lehrpläne vergleichen“: Aussagen zweier Spezifikationen,
+# die dasselbe Kompetenz- oder Inhaltskonzept ausdrücken – mit Fach, Zeit und
+# Kante, falls vorhanden (geprüft oder vorgeschlagen).
+PREFIX cur: <https://w3id.org/wlo/curriculum/core#>
+
+SELECT DISTINCT ?specA ?a ?specB ?b ?shared ?relation ?status WHERE {
+  ?da cur:decomposes ?a . ?db cur:decomposes ?b .
+  { ?da cur:mentions ?shared . ?db cur:mentions ?shared . }
+  UNION
+  { ?da cur:expresses ?shared . ?db cur:expresses ?shared . }
+  ?a cur:partOf+ ?specA . ?b cur:partOf+ ?specB .
+  ?docA cur:represents ?specA . ?docB cur:represents ?specB .
+  FILTER(?specA != ?specB && STR(?a) < STR(?b))
+  OPTIONAL {
+    ?al a cur:Alignment ; cur:relation ?relation ; cur:reviewStatus ?status .
+    { ?al cur:source ?a ; cur:target ?b } UNION { ?al cur:source ?b ; cur:target ?a }
+  }
+}
+ORDER BY ?shared

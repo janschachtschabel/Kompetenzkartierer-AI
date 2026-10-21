@@ -1,0 +1,20 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-RP;Bildungs- und Lerndokumentation;cue;elem:BeobachtungDokumentation;Beobachtung und Dokumentation;heading;;;0.90;ja;;elem:lex-0fff4d927f80-RP
+DE-RP;Bildungs- und Erziehungsbereich;cue;elem:Bildungsbereich;Bildungsbereich;heading, toc;;;0.95;ja;;elem:lex-8d6f0a76c05e-RP
+DE-RP;Bildungs- und Erziehungsempfehlungen;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.9;nein;;elem:cue-gen-bildungsempfehlungen
+DE-RP;Bildungs- und Erziehungsempfehlungen für Kindertagesstätten;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.98;ja;Kurzform BEE. Querschnittsthemen in Kapitel 2, Bereiche in Kapitel 3.;elem:lex-e8cad8d63522-RP
+DE-RP;Qualitätsempfehlungen;homonym;elem:dt-Qualitaetsempfehlung;Qualitätsempfehlung;heading, titlePage;;;0.70;nein;Zweiter Teil der rheinland-pfälzischen Empfehlungen.;elem:lex-867d82f0769a-RP
+DE-RP;Künstlerische Ausdrucksformen;cue;elem:f-aesthetik;Ästhetische Bildung;heading;;;0.95;ja;;elem:lex-6d0d27eeec39-RP
+DE-RP;Bewegung;pref;elem:f-bewegung;Bewegung;heading;;;0.80;ja;;elem:lex-80122321ca4d-RP
+DE-RP;Gestaltung von Gemeinschaft und Beziehungen;cue;elem:f-demokratie-gesellschaft, elem:f-soziale-beziehungen;Demokratie und Gesellschaft, Soziale Beziehungen, Kooperation und Konflikte;heading;;;0.95;ja;;elem:lex-fa5c6c1351a8-RP
+DE-RP;Körper – Gesundheit – Sexualität;cue;elem:f-gesundheit-ernaehrung, elem:f-koerper, elem:f-koerperwahrnehmung-sexualitaet;Gesundheit, Ernährung und Hygiene, Körper, Bewegung, Gesundheit und Prävention, Körperwahrnehmung und Sexualität;heading;;;0.95;ja;;elem:lex-ee70752b06dd-RP
+DE-RP;Interkulturelles und interreligiöses Lernen;cue;elem:f-kulturelle-vielfalt, elem:f-religion-weltanschauung;Kulturelle Vielfalt und interkulturelles Lernen, Religion und Weltanschauung;heading;;;0.95;ja;;elem:lex-a503acdb0f69-RP
+DE-RP;Medien;cue;elem:f-medien;Medien und digitale Bildung;heading;;;0.80;ja;;elem:lex-ae7ad1da4203-RP
+DE-RP;Mathematik – Naturwissenschaft – Technik;cue;elem:f-mint;Mathematik, Informatik, Naturwissenschaft und Technik;heading;;;0.95;ja;;elem:lex-f44805552b39-RP
+DE-RP;Naturerfahrung – Ökologie;cue;elem:f-natur-oekologie;Naturerfahrung und Ökologie;heading;;;0.95;ja;;elem:lex-c1d10a2e0523-RP
+DE-RP;Religiöse Bildung;cue;elem:f-religion-weltanschauung;Religion und Weltanschauung;heading;;;0.95;ja;;elem:lex-04cac81a5d6e-RP
+DE-RP;Wahrnehmung;cue;elem:f-sinneswahrnehmung;Sinneswahrnehmung;heading;;;0.85;ja;;elem:lex-18f264006c02-RP
+DE-RP;Sprache;cue;elem:f-sprache;Sprache, Kommunikation und Literacy;heading;;;0.80;ja;;elem:lex-3e53709be652-RP
+DE-RP;Geschlechtssensible Pädagogik;cue;elem:p-geschlechtersensibel;Geschlechtersensible Pädagogik;heading;;;0.95;ja;Querschnittsthema 2.3.;elem:lex-f22bc5636e68-RP
+DE-RP;Lernmethodische Kompetenz;pref;kd:ec-learning;Lernmethodische Kompetenz;body, heading;;;0.95;ja;;elem:lex-55571cc3f904-RP
+DE-RP;Resilienz;pref;kd:ec-resilience;Resilienz;heading;;;0.90;ja;Querschnittsthema 2.1.;elem:lex-e9054a60e197-RP

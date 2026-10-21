@@ -1,0 +1,198 @@
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix and:   <https://w3id.org/wlo/curriculum/kern#> .
+@prefix sco:   <https://w3id.org/oeh/curriculum/kern#> .
+@prefix elm0:  <https://w3id.org/curriculum-core/ontology#> .
+@prefix bbo:   <https://w3id.org/wlo/cur#> .
+@prefix hcc:   <https://w3id.org/curriculum-core/> .
+@prefix ebc:   <https://w3id.org/wlo/curriculum-core/> .
+
+# =============================================================================
+# Migrationstabelle: Klassen der sechs Vorentwürfe → Curriculum-Kern 1.0.
+#
+# Die Vorentwürfe nutzten sechs verschiedene cur:/cc:-Namensräume:
+#   and:  Andock-Entwurf (curricula-andocken/curriculum-kern.ttl)
+#   sco:  Schule SCO v2 (schule/cur-kern.ttl)
+#   elm0: Elementar ELEM V2 (elementarbildung/curriculum-kern.ttl)
+#   bbo:  Berufsbildung BBO v0.2 (berufsbildung/bbo-core.ttl)
+#   hcc:  Hochschule HCO v1.0 (hochschule/cc-core.ttl)
+#   ebc:  Erwachsenenbildung EB-CO v0.2 (erwachsenenbildung/cc-core.ttl)
+# dct:isReplacedBy nennt das neue Ziel; skos:scopeNote, wenn sich die
+# Bedeutung verschiebt (Klasse → Wert, Aufteilung, Zusammenlegung).
+# Abwärtskompatibilität ist kein Ziel; die Tabelle dient dem Umzug von
+# Beispielen, Prompts und Prüfregeln.
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/migration> a owl:Ontology ;
+    dct:title "Curriculum-Kern: Migration aus den Vorentwürfen"@de ;
+    owl:versionInfo "1.0-entwurf" ;
+    dct:created "2026-10-19"^^xsd:date .
+
+# --- Andock-Entwurf -----------------------------------------------------------
+and:Dokument dct:isReplacedBy cur:Document ; skos:scopeNote "Jetzt Fassung; Datei = cur:SourceFile, Werk = cur:Work."@de .
+and:Curriculum dct:isReplacedBy cur:Curriculum ; skos:scopeNote "Jetzt einer von vier Untertypen von cur:Specification."@de .
+and:Gliederungseinheit dct:isReplacedBy cur:CurriculumNode .
+and:CurriculareAussage dct:isReplacedBy cur:Statement .
+and:Lernergebnis dct:isReplacedBy cur:LearningOutcome ; skos:scopeNote "Definierte Klasse über cur:statementKind cv:kind_learningOutcome."@de .
+and:Inhalt dct:isReplacedBy cur:ContentStatement .
+and:Bildungsziel dct:isReplacedBy cur:DevelopmentGoal .
+and:Standard dct:isReplacedBy cur:Standard .
+and:Hinweis dct:isReplacedBy cur:Guidance .
+and:Verweis dct:isReplacedBy cur:Reference .
+and:Geltungsbereich dct:isReplacedBy cur:ApplicabilityContext .
+and:Zeitangabe dct:isReplacedBy cur:TimeSpan , cur:Workload ; skos:scopeNote "Aufgeteilt: Lage (Alter, Jahrgang, Semester) ≠ Umfang (Wert + Einheit + Art)."@de .
+and:Thema dct:isReplacedBy cur:ContentConcept .
+and:Querschnittsziel dct:isReplacedBy cur:CrossCuttingObjective .
+and:Kompetenzmodell dct:isReplacedBy cur:CompetencyModel .
+and:Kompetenzdimension dct:isReplacedBy cur:CompetenceDimension .
+and:Kompetenzraster dct:isReplacedBy cur:CompetencyFramework ; skos:scopeNote "Raster = Rahmen aus Kriterien-Knoten × niveaugebundenen Standard-Aussagen."@de .
+and:Kriterium dct:isReplacedBy cur:CurriculumNode ; skos:scopeNote "Rasterzeile als Knoten (Funktion area) im Rahmen."@de .
+and:Deskriptor dct:isReplacedBy cur:Standard ; skos:scopeNote "Rasterzelle: Aussage cv:kind_standard mit cur:levelAssignment."@de .
+and:Niveau dct:isReplacedBy cur:LevelConcept .
+and:Leistungsnachweis dct:isReplacedBy cur:Assessment .
+and:Ebenentyp dct:isReplacedBy cur:NodeType .
+and:Bezeichnung dct:isReplacedBy cur:LexicalCue .
+
+# --- Schule (SCO v2) ---------------------------------------------------------
+sco:SourceArtifact dct:isReplacedBy cur:SourceFile .
+sco:CurriculumDocument dct:isReplacedBy cur:Document .
+sco:DocumentPart dct:isReplacedBy cur:CurriculumNode ; skos:scopeNote "Funktion frame/nonCurricular am Dokument."@de .
+sco:SourceFragment dct:isReplacedBy cur:SourceAnchor .
+sco:ExtractionAssertion dct:isReplacedBy cur:ExtractionAssertion .
+sco:CurriculumCollection dct:isReplacedBy cur:Collection .
+sco:Curriculum dct:isReplacedBy cur:Curriculum .
+sco:CurriculumNode dct:isReplacedBy cur:CurriculumNode .
+sco:ApplicabilityContext dct:isReplacedBy cur:ApplicabilityContext .
+sco:Statement dct:isReplacedBy cur:Statement .
+sco:LearningOutcomeStatement dct:isReplacedBy cur:LearningOutcome .
+sco:ContentStatement dct:isReplacedBy cur:ContentStatement .
+sco:GuidanceStatement dct:isReplacedBy cur:Guidance .
+sco:StatementClause dct:isReplacedBy cur:Decomposition .
+sco:CurriculumConcept dct:isReplacedBy skos:Concept .
+sco:CompetencyConcept dct:isReplacedBy cur:CompetencyConcept .
+sco:ContentConcept dct:isReplacedBy cur:ContentConcept .
+sco:AreaConcept dct:isReplacedBy cur:AreaConcept .
+sco:CompetencyModel dct:isReplacedBy cur:CompetencyModel .
+sco:CrossCurricularObjective dct:isReplacedBy cur:CrossCuttingObjective .
+sco:LevelConcept dct:isReplacedBy cur:LevelConcept .
+sco:Benchmark dct:isReplacedBy cur:LevelConcept ; skos:scopeNote "Niveaudimension als Eigenschaft des Schemas (cv:dim_*), nicht als Unterklasse."@de .
+sco:AttainmentExpectation dct:isReplacedBy cur:LevelConcept ; skos:scopeNote "lvl:Attainment, Dimension cv:dim_attainment."@de .
+sco:ProficiencyLevel dct:isReplacedBy cur:LevelConcept ; skos:scopeNote "Dimension cv:dim_proficiency."@de .
+sco:QualificationTarget dct:isReplacedBy cur:LevelConcept ; skos:scopeNote "lvl:SchoolLeaving, Dimension cv:dim_qualification."@de .
+sco:CourseLevel dct:isReplacedBy cur:LevelConcept ; skos:scopeNote "Dimension cv:dim_course."@de .
+sco:TaskDemandLevel dct:isReplacedBy cur:LevelConcept ; skos:scopeNote "lvl:AFB, Dimension cv:dim_taskDemand, nur an Aufgaben."@de .
+sco:Alignment dct:isReplacedBy cur:Alignment .
+sco:ProgressionRelation dct:isReplacedBy cur:Alignment ; skos:scopeNote "Kantenart cv:rel_buildsOn, cv:rel_requires oder cv:rel_revisits."@de .
+sco:TerminologyProfile dct:isReplacedBy cur:TerminologyProfile .
+sco:LexicalCue dct:isReplacedBy cur:LexicalCue .
+sco:LearningResource dct:isReplacedBy cur:LearningResource .
+sco:LearningScenario dct:isReplacedBy cur:LearningScenario .
+
+# --- Elementar (ELEM V2) -----------------------------------------------------
+elm0:Curriculumverbund dct:isReplacedBy cur:Collection ; skos:scopeNote "Meist entbehrlich: Kanten cur:derivedFrom/cur:supplements zwischen Spezifikationen."@de .
+elm0:Curriculum dct:isReplacedBy cur:Curriculum .
+elm0:Dokument dct:isReplacedBy cur:Work .
+elm0:Dokumentversion dct:isReplacedBy cur:Document .
+elm0:Rechtsgrundlage dct:isReplacedBy cur:Document ; skos:scopeNote "Dokumenttyp elem:dt-Rechtsnorm statt Klasse."@de .
+elm0:Altersband dct:isReplacedBy cur:TimeSpan ; skos:scopeNote "cur:timeKind cv:time_age; Monate in cur:from/cur:to."@de .
+elm0:Gliederungsknoten dct:isReplacedBy cur:CurriculumNode .
+elm0:Aussage dct:isReplacedBy cur:Statement .
+elm0:Satzzerlegung dct:isReplacedBy cur:Decomposition .
+elm0:Konzept dct:isReplacedBy skos:Concept .
+elm0:Themenkonzept dct:isReplacedBy cur:ContentConcept ; skos:scopeNote "Bereiche des Gemeinsamen Rahmens jetzt elem:Fields (Fach/Feld), Prinzipien elem:Principles (Querschnitt)."@de .
+elm0:Kompetenzdimension dct:isReplacedBy cur:CompetenceDimension .
+elm0:Kontextkonzept dct:isReplacedBy cur:ContextConcept .
+elm0:Kompetenzkonzept dct:isReplacedBy cur:CompetencyConcept .
+elm0:Inhaltskonzept dct:isReplacedBy cur:ContentConcept .
+elm0:Steuerbegriff dct:isReplacedBy skos:Concept .
+elm0:Extraktionshinweis dct:isReplacedBy cur:LexicalCue .
+elm0:Quellstelle dct:isReplacedBy cur:SourceAnchor .
+elm0:Extraktionslauf dct:isReplacedBy cur:ExtractionRun .
+elm0:Zuordnung dct:isReplacedBy cur:Alignment .
+
+# --- Berufsbildung (BBO v0.2) ------------------------------------------------
+bbo:CurriculumDokument dct:isReplacedBy cur:Document .
+bbo:Geltungstraeger dct:isReplacedBy cur:Specification , cur:Variant .
+bbo:Bildungsprogramm dct:isReplacedBy cur:Programme .
+bbo:Qualifikation dct:isReplacedBy cur:Qualification .
+bbo:CurriculumElement dct:isReplacedBy cur:CurriculumNode , cur:Statement .
+bbo:Strukturknoten dct:isReplacedBy cur:CurriculumNode .
+bbo:Gliederungsabschnitt dct:isReplacedBy cur:CurriculumNode ; skos:scopeNote "Rolle E2 → Funktion grouping/area über den Knotentyp."@de .
+bbo:Kerneinheit dct:isReplacedBy cur:CurriculumNode ; skos:scopeNote "Rolle E3 → Funktion unit über den Knotentyp."@de .
+bbo:Aussage dct:isReplacedBy cur:Statement .
+bbo:Lernergebnis dct:isReplacedBy cur:Decomposition ; skos:scopeNote "BBO-Lernergebnis war die normalisierte Zerlegung, nicht die Aussage."@de .
+bbo:Thema dct:isReplacedBy cur:ContentConcept .
+bbo:Geltungsaussage dct:isReplacedBy cur:ApplicabilityContext .
+bbo:Zeitrichtwert dct:isReplacedBy cur:Workload ; skos:scopeNote "cv:wl_guidanceValue."@de .
+bbo:Pruefungsspezifikation dct:isReplacedBy cur:AssessmentSpecification , cur:Assessment .
+bbo:Zuordnung dct:isReplacedBy cur:Alignment .
+bbo:Fundstelle dct:isReplacedBy cur:SourceAnchor .
+bbo:Extraktionslauf dct:isReplacedBy cur:ExtractionRun .
+
+# --- Hochschule (HCO v1.0, cc:) ----------------------------------------------
+hcc:SourceFile dct:isReplacedBy cur:SourceFile .
+hcc:CurriculumDocument dct:isReplacedBy cur:Document .
+hcc:DocumentSection dct:isReplacedBy cur:CurriculumNode .
+hcc:SourceSpan dct:isReplacedBy cur:SourceAnchor .
+hcc:ExternalReference dct:isReplacedBy cur:Reference ; skos:scopeNote "cur:citedCode + cur:resolutionStatus."@de .
+hcc:Organisation dct:isReplacedBy cur:issuer ; skos:scopeNote "Organisation als IRI (ROR, GND, Wikidata) am Dokument."@de .
+hcc:Programme dct:isReplacedBy cur:Programme .
+hcc:ProgrammeVersion dct:isReplacedBy cur:Curriculum ; skos:scopeNote "Fassung = Dokument + cur:edition; Identität per Code + Hochschule."@de .
+hcc:Qualification dct:isReplacedBy cur:Qualification .
+hcc:CurriculumPlan dct:isReplacedBy cur:Curriculum .
+hcc:StructuralUnit dct:isReplacedBy cur:CurriculumNode .
+hcc:CurricularPlacement dct:isReplacedBy cur:Placement .
+hcc:CurricularUnit dct:isReplacedBy cur:CurriculumNode .
+hcc:CurricularUnitVersion dct:isReplacedBy cur:CurriculumNode .
+hcc:GoalStatement dct:isReplacedBy cur:Statement .
+hcc:LearningOutcomeStatement dct:isReplacedBy cur:LearningOutcome .
+hcc:ContentStatement dct:isReplacedBy cur:ContentStatement .
+hcc:CompetenceConcept dct:isReplacedBy cur:CompetencyConcept .
+hcc:ContentConcept dct:isReplacedBy cur:ContentConcept .
+hcc:LearningActivity dct:isReplacedBy cur:CurriculumNode ; skos:scopeNote "Lehrveranstaltung als Knoten hs:Lehrveranstaltung; Lehrform als hs:teachingFormat."@de .
+hcc:Assessment dct:isReplacedBy cur:Assessment .
+hcc:Workload dct:isReplacedBy cur:Workload .
+hcc:Requirement dct:isReplacedBy cur:PrerequisiteRule .
+hcc:LearningSetting dct:isReplacedBy cur:ContextConcept ; skos:scopeNote "Lernorte in ctx:settings."@de .
+hcc:CurriculumRule dct:isReplacedBy cur:Rule .
+hcc:EquivalenceRule dct:isReplacedBy cur:RecognitionRule .
+hcc:Framework dct:isReplacedBy cur:CompetencyFramework .
+hcc:FrameworkItem dct:isReplacedBy cur:Statement .
+hcc:Alignment dct:isReplacedBy cur:Alignment .
+hcc:ExtractionRun dct:isReplacedBy cur:ExtractionRun .
+hcc:ExtractionAssertion dct:isReplacedBy cur:ExtractionAssertion .
+hcc:ConflictResolution dct:isReplacedBy cur:ConflictResolution .
+
+# --- Erwachsenenbildung (EB-CO v0.2, cc:) ------------------------------------
+ebc:CurriculumDocument dct:isReplacedBy cur:Document .
+ebc:Specification dct:isReplacedBy cur:Specification .
+ebc:Curriculum dct:isReplacedBy cur:Curriculum .
+ebc:CompetencyFramework dct:isReplacedBy cur:CompetencyFramework .
+ebc:QualificationSpecification dct:isReplacedBy cur:QualificationSpecification .
+ebc:AssessmentSpecification dct:isReplacedBy cur:AssessmentSpecification .
+ebc:CurricularUnit dct:isReplacedBy cur:CurriculumNode .
+ebc:CurricularStatement dct:isReplacedBy cur:Statement .
+ebc:LearningOutcome dct:isReplacedBy cur:LearningOutcome .
+ebc:DevelopmentObjective dct:isReplacedBy cur:DevelopmentGoal .
+ebc:AssessmentCriterion dct:isReplacedBy cur:Standard .
+ebc:ContentItem dct:isReplacedBy cur:ContentStatement .
+ebc:Context dct:isReplacedBy cur:ContextConcept .
+ebc:Guidance dct:isReplacedBy cur:Guidance .
+ebc:ResourceReference dct:isReplacedBy cur:LearningResource .
+ebc:LevelAssignment dct:isReplacedBy cur:LevelAssignment .
+ebc:Workload dct:isReplacedBy cur:Workload .
+ebc:Audience dct:isReplacedBy cur:targetGroup ; skos:scopeNote "Zielgruppe als Eigenschaft; Dokument-Adressat als cur:documentAudience."@de .
+ebc:Qualification dct:isReplacedBy cur:Qualification .
+ebc:Assessment dct:isReplacedBy cur:Assessment .
+ebc:ApplicabilityRule dct:isReplacedBy cur:ApplicabilityContext .
+ebc:SourceAnchor dct:isReplacedBy cur:SourceAnchor .
+ebc:ExtractionRun dct:isReplacedBy cur:ExtractionRun .
+ebc:Competency dct:isReplacedBy cur:CompetencyConcept .
+ebc:Alignment dct:isReplacedBy cur:Alignment .
+ebc:TerminologyProfile dct:isReplacedBy cur:TerminologyProfile .
+ebc:AliasRule dct:isReplacedBy cur:LexicalCue .

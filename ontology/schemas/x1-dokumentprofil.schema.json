@@ -1,0 +1,393 @@
+{
+  "type": "object",
+  "description": "Stufe X1: Metadaten, Spezifikationen (Geltungseinheiten) und dokumenteigene Begriffe aus Titelei, Inhaltsverzeichnis und Vorwortanfang. Ein Aufruf je Dokument.",
+  "additionalProperties": false,
+  "required": [
+    "document",
+    "specifications",
+    "termMappings",
+    "newTerms"
+  ],
+  "properties": {
+    "document": {
+      "type": "object",
+      "description": "Dokument (Fassung)",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "documentType",
+        "legalForm",
+        "documentBinding",
+        "lifecycle",
+        "educationSectors",
+        "regions",
+        "issuerText",
+        "issuedText",
+        "validFromText",
+        "editionText",
+        "evidenceBlockIds"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Titel wörtlich."
+        },
+        "documentType": {
+          "type": "string",
+          "description": "Knotentyp-ID eines Dokumenttyps aus der Liste im Prompt (aktives Profil)."
+        },
+        "legalForm": {
+          "type": "string",
+          "enum": [
+            "administrativeRegulation",
+            "institutionalDocument",
+            "law",
+            "officialRecommendation",
+            "ordinance",
+            "providerDocument",
+            "resolution",
+            "statute",
+            "unknown"
+          ],
+          "description": "Rechtsform; unknown, wenn nicht genannt.",
+          "x-cv-scheme": "LegalForms"
+        },
+        "documentBinding": {
+          "type": "string",
+          "enum": [
+            "binding",
+            "informative",
+            "none",
+            "orienting",
+            "partial",
+            "recommending",
+            "unknown"
+          ],
+          "description": "Verbindlichkeit des Dokuments; unknown, wenn nicht genannt.",
+          "x-cv-scheme": "DocumentBindings"
+        },
+        "lifecycle": {
+          "type": "string",
+          "enum": [
+            "adopted",
+            "consultation",
+            "draft",
+            "futureInForce",
+            "inForce",
+            "superseded",
+            "unknown",
+            "withdrawn"
+          ],
+          "description": "Lebenszyklus; Anhörungsfassung = consultation.",
+          "x-cv-scheme": "Lifecycles"
+        },
+        "educationSectors": {
+          "type": "array",
+          "description": "Alle Bildungsbereiche, für die das Dokument Spezifikationen enthält.",
+          "x-cv-scheme": "EducationSectors",
+          "items": {
+            "type": "string",
+            "enum": [
+              "adult",
+              "elementary",
+              "higher",
+              "school",
+              "vocational"
+            ]
+          }
+        },
+        "regions": {
+          "type": "array",
+          "description": "Länder als ISO-3166-2-Code (DE-NW); DE für länderübergreifend.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "issuerText": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Herausgeber im Wortlaut."
+        },
+        "issuedText": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Datum der Ausgabe/des Beschlusses im Wortlaut."
+        },
+        "validFromText": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Inkrafttreten im Wortlaut."
+        },
+        "editionText": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Fassungs- oder Versionsangabe im Wortlaut."
+        },
+        "evidenceBlockIds": {
+          "type": "array",
+          "description": "Block-IDs aus Stufe X0 (Muster p<Seite>-b<Block>), in Lesereihenfolge. Nie Seitenzahlen erfinden.",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "specifications": {
+      "type": "array",
+      "description": "Geltungseinheiten des Dokuments (Curricula, Rahmen, Qualifikations- oder Prüfungsspezifikationen).",
+      "items": {
+        "type": "object",
+        "description": "Spezifikation",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "kind",
+          "title",
+          "fieldText",
+          "applicability",
+          "variants"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Laufende Kennung S1, S2 …"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "curriculum",
+              "competencyFramework",
+              "qualificationSpecification",
+              "assessmentSpecification"
+            ],
+            "description": "Untertyp der Spezifikation (Kernklassen)."
+          },
+          "title": {
+            "type": "string",
+            "description": "Bezeichnung wörtlich (Fach, Beruf, Studiengang, Kurs)."
+          },
+          "fieldText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Fach/Feld im Wortlaut."
+          },
+          "applicability": {
+            "type": "object",
+            "description": "Geltung der Spezifikation; nur Angaben, die das Dokument macht.",
+            "additionalProperties": false,
+            "required": [
+              "sector",
+              "formality",
+              "timeKind",
+              "timeText",
+              "levelText",
+              "institutionText",
+              "targetGroupText",
+              "evidenceBlockIds"
+            ],
+            "properties": {
+              "sector": {
+                "type": "string",
+                "enum": [
+                  "adult",
+                  "elementary",
+                  "higher",
+                  "school",
+                  "vocational"
+                ],
+                "description": "Bildungsbereich der Spezifikation.",
+                "x-cv-scheme": "EducationSectors"
+              },
+              "formality": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "formal",
+                  "informal",
+                  "nonFormal",
+                  null
+                ],
+                "description": "formal, nicht formal oder informell.",
+                "x-cv-scheme": "Formalities"
+              },
+              "timeKind": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "age",
+                  "courseSection",
+                  "gradeLevel",
+                  "phase",
+                  "semester",
+                  "studyYear",
+                  "trainingMonth",
+                  "trainingYear",
+                  null
+                ],
+                "description": "Art der Zeitangabe (Alter, Jahrgang, Ausbildungsjahr …).",
+                "x-cv-scheme": "TimeKinds"
+              },
+              "timeText": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Zeitangabe im Wortlaut („Klassen 5/6“, „0 bis 10 Jahre“)."
+              },
+              "levelText": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Niveau- oder Abschlussangabe im Wortlaut („Mittlerer Schulabschluss“, „B1“)."
+              },
+              "institutionText": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Schulart, Einrichtungsart, Hochschul- oder Lernort im Wortlaut."
+              },
+              "targetGroupText": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Zielgruppe im Wortlaut."
+              },
+              "evidenceBlockIds": {
+                "type": "array",
+                "description": "Block-IDs aus Stufe X0 (Muster p<Seite>-b<Block>), in Lesereihenfolge. Nie Seitenzahlen erfinden.",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "variants": {
+            "type": "array",
+            "description": "Varianten (Fachrichtung, Schwerpunkt, Wahlqualifikation, Teilcurriculum …).",
+            "items": {
+              "type": "object",
+              "description": "Variante",
+              "additionalProperties": false,
+              "required": [
+                "key",
+                "label",
+                "variantKind"
+              ],
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "description": "Kennung V1, V2 …"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Bezeichnung wörtlich."
+                },
+                "variantKind": {
+                  "type": "string",
+                  "enum": [
+                    "additionalQualification",
+                    "electiveQualification",
+                    "focus",
+                    "placementArea",
+                    "specialisation",
+                    "subCurriculum",
+                    "targetGroup",
+                    "track"
+                  ],
+                  "description": "Art der Variante.",
+                  "x-cv-scheme": "VariantKinds"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "termMappings": {
+      "type": "array",
+      "description": "Dokumenteigene Bezeichnungen, die auf Knotentypen oder Aussage-Unterarten des Profils zeigen.",
+      "items": {
+        "type": "object",
+        "description": "Termzuordnung",
+        "additionalProperties": false,
+        "required": [
+          "documentTerm",
+          "mapsTo",
+          "evidenceBlockId"
+        ],
+        "properties": {
+          "documentTerm": {
+            "type": "string",
+            "description": "Bezeichnung wie im Dokument."
+          },
+          "mapsTo": {
+            "type": "string",
+            "description": "ID aus der Liste im Prompt."
+          },
+          "evidenceBlockId": {
+            "type": "string",
+            "description": "Block, in dem der Begriff erklärt oder benutzt wird."
+          }
+        }
+      }
+    },
+    "newTerms": {
+      "type": "array",
+      "description": "Gliederungsbegriffe ohne Treffer im Profil – gehen in die Prüfliste für das Lexikon.",
+      "items": {
+        "type": "object",
+        "description": "Neuer Begriff",
+        "additionalProperties": false,
+        "required": [
+          "documentTerm",
+          "suggestedFunction",
+          "evidenceBlockId"
+        ],
+        "properties": {
+          "documentTerm": {
+            "type": "string",
+            "description": "Bezeichnung wie im Dokument."
+          },
+          "suggestedFunction": {
+            "type": "string",
+            "enum": [
+              "area",
+              "crossCutting",
+              "frame",
+              "grouping",
+              "nonCurricular",
+              "subunit",
+              "unit"
+            ],
+            "description": "Vorgeschlagene Kernfunktion.",
+            "x-cv-scheme": "NodeFunctions"
+          },
+          "evidenceBlockId": {
+            "type": "string",
+            "description": "Block mit dem ersten Vorkommen."
+          }
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/wlo/curriculum/schema/x1-dokumentprofil",
+  "title": "X1 Dokumentprofil"
+}

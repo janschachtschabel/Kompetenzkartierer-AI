@@ -1,0 +1,13 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-HE;Basiskompetenzen;pref;elem:Basiskompetenzen;Basiskompetenzen;heading, toc;;;0.95;ja;Kompetenzmodell nach Fthenakis.;elem:lex-543b5f00abe9-HE
+DE-HE;^([A-ZÄÖÜ][a-zäöüß-]+(,| und| oder)? )+Kinder$;cue;elem:Leitbild;Leitbild/Vision;;;;0.85;nein;"Nicht als Bildungsbereich instanziieren; die Unterkapitel sind die Bereiche.";elem:cue-leitbild-muster
+DE-HE;Kommunikationsfreudige und medienkompetente Kinder;cue;elem:Leitbild;Leitbild/Vision;heading;;;0.8;nein;;elem:cue-he-kommunikation
+DE-HE;Kreative, fantasievolle und künstlerische Kinder;cue;elem:Leitbild;Leitbild/Vision;heading;;;0.8;nein;;elem:cue-he-kreativ
+DE-HE;Lernende, forschende und entdeckungsfreudige Kinder;cue;elem:Leitbild;Leitbild/Vision;heading;;;0.8;nein;;elem:cue-he-lernend
+DE-HE;Starke Kinder;cue;elem:Leitbild;Leitbild/Vision;heading;;;0.8;nein;HE-BEP: gemeinsamer Teil für Kita und Grundschule (cur:scopeShare cv:share_common).;elem:cue-he-starke
+DE-HE;Verantwortungsvoll und wertorientiert handelnde Kinder;cue;elem:Leitbild;Leitbild/Vision;heading;;;0.8;nein;;elem:cue-he-verantwortung
+DE-HE;Bildungs- und Erziehungsplan für Kinder von 0 bis 10 Jahren;cue;elem:dt-Bildungsplan-0-10;Altersübergreifender Bildungsplan;titlePage;;;0.98;ja;Kurzform BEP. Ein Plan für Kita und Grundschule – mindestens zwei Curricula anlegen.;elem:lex-3a68e61d6dd0-HE
+DE-HE;Lernmethodische Kompetenz;pref;kd:ec-learning;Lernmethodische Kompetenz;body, heading;;;0.95;ja;;elem:lex-55571cc3f904-HE
+DE-HE;Personale Kompetenzen;pref;kd:ec-personal;Personale Kompetenzen;heading;;;0.90;ja;;elem:lex-7cc79407232b-HE
+DE-HE;Widerstandsfähigkeit (Resilienz);cue;kd:ec-resilience;Resilienz;heading;;;0.95;ja;;elem:lex-57480152ad17-HE
+DE-HE;Kompetenzen zum Handeln im sozialen Kontext;cue;kd:ec-social;Soziale Kompetenzen;heading;;;0.95;ja;;elem:lex-2c0b1256d617-HE

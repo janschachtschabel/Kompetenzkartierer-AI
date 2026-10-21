@@ -1,0 +1,38 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-BE;Teil C;cue;cur:Curriculum;Curriculum;;;;0.85;nein;Fachteil = eigenes Curriculum: C1 Kompetenzentwicklung, C2 Kompetenzen und Standards (Niveaustufen A–H), C3 Themen und Inhalte.;schul:cue-dt-teilC
+DE-BE;Lernmaterial;cue;cv:kind_unclassified;unklar;;;;0.6;nein;"FWU-Basistyp nur „Curriculares Element“; Art am Dokument bestimmen.";schul:fwu-LP_0001446
+DE-BE;Zusatzmaterial;cue;cv:kind_unclassified;unklar;;;;0.6;nein;"FWU-Basistyp nur „Curriculares Element“; Art am Dokument bestimmen.";schul:fwu-LP_0001450
+DE-BE;Übung;cue;cv:kind_unclassified;unklar;;;;0.6;nein;"FWU-Basistyp nur „Curriculares Element“; Art am Dokument bestimmen.";schul:fwu-LP_0001451
+DE-BE;Niveaustufe;cue;lvl:BEBB;Niveaustufen A–H (Rahmenlehrplan 1–10 Berlin/Brandenburg);;;;0.9;nein;"Spaltenköpfe oder Randmarken A bis H; eine leere Zelle setzt die Spanne der Nachbarzelle fort.";schul:cue-nv-niveaustufe
+DE-BE;Beispiel für Differenzierungsmöglichkeiten;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030118
+DE-BE;Beispiel für Unterrichtseinheiten;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030124
+DE-BE;Beispiel zu einem Basiskonzept;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030044
+DE-BE;Experiment/Untersuchung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030119
+DE-BE;Möglicher Kontext;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030116
+DE-BE;Unterrichtsanregung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0001227
+DE-BE;Vertiefungsmöglichkeit;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030068
+DE-BE;Fachbegriff;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030117
+DE-BE;Fachmethode;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030122
+DE-BE;Gegenstand;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:cue-in-gegenstand
+DE-BE;Inhalt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0001445
+DE-BE;Technik;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030120
+DE-BE;Themen und Inhalte;cue;schul:Inhalt;Inhalt;;;;0.8;nein;BE/BB C3: verbindliche und wahlobligatorische Themen unterscheiden (cur:obligation).;schul:cue-in-themeninhalte
+DE-BE;Basiskonzept;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030123
+DE-BE;Thema;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0001448
+DE-BE;Themenfeld;homonym;schul:Inhaltsbereich;Inhaltsbereich;;;;0.75;nein;"Einheit, wenn das Themenfeld einen Zeitumfang, einen festen Jahrgang oder eine Verbindlichkeit (verbindlich/wahlobligatorisch) trägt (BE/BB C3, HE Oberstufe); sonst Inhaltsbereich.";schul:cue-ib-themenfeld
+DE-BE;Kompetenzbereich;pref;schul:Kompetenzbereich;Kompetenzbereich;;;;0.8;nein;;schul:cue-kb-kompetenzbereich
+DE-BE;Eingangsvoraussetzung;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0001226
+DE-BE;Kompetenzerwerb im Themenfeld;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030248
+DE-BE;Standard;homonym;schul:NiveaugebundeneErwartung;niveaugebundene Erwartung;;;;0.7;nein;"Im Landeslehrplan ist ein „Standard“ eine Kompetenzerwartung (learningOutcome; BE/BB: Tabelle mit Niveaustufen A–H). Nur im Dokumenttyp KMK-Bildungsstandards ist er ein Regelstandard (standard).";schul:cue-ke-standard
+DE-BE;Basiscurriculum;cue;schul:Querschnittsbereich;Querschnittsbereich;;;;0.85;nein;;schul:cue-qs-basiscurriculum
+DE-BE;Fachübergreifendes Thema;cue;schul:Querschnittsbereich;Querschnittsbereich;;;;0.6;nein;;schul:fwu-LP_0030332
+DE-BE;Teil B;cue;schul:Querschnittsbereich;Querschnittsbereich;;;;0.85;nein;Fachübergreifende Kompetenzentwicklung: Basiscurricula Sprach- und Medienbildung, übergreifende Themen (qz:BEBB-TeilB).;schul:cue-dt-teilB
+DE-BE;übergreifende Themen;cue;schul:Querschnittsbereich;Querschnittsbereich;;;;0.85;nein;;schul:cue-qs-uebergreifendethemen
+DE-BE;Kompetenzentwicklung;cue;schul:Rahmenteil;Rahmenteil;;;;0.8;nein;BE/BB C1: Kompetenzmodell des Fachs – in X3 als Kompetenzmodell lesen.;schul:cue-kb-kompetenzentwicklung
+DE-BE;Lehrplanfragment;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0001223
+DE-BE;Teil A;cue;schul:Rahmenteil;Rahmenteil;;;;0.85;nein;Teil A Bildung und Erziehung in der Grundschule und Sekundarstufe I – gilt für alle Fächer (cur:appliesTo).;schul:cue-dt-teilA
+DE-BE;Verweis auf Bezüge zu den Basiskonzepten;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030045
+DE-BE;Verweis auf Materialien;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0000425
+DE-BE;Verweis auf standardillustrierende Aufgaben;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0000423
+DE-BE;Verweis auf vernetzte Kompetenzen;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0000424
+DE-BE;Rahmenlehrplan;homonym;schul:dt-Lehrplan;Lehrplan;;;;0.9;nein;BE/BB: ländergemeinsamer Rahmenlehrplan 1–10 mit Teil A, B, C.;schul:cue-dt-rahmenlehrplan

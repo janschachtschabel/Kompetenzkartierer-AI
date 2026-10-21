@@ -1,0 +1,32 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-BY;entwicklungsbezogene Kompetenzen;cue;kd:sk-development, schul:Entwicklungsbereich;entwicklungsbezogen, Entwicklungsbereich;;schul:dt-Sonderpaedagogisch;;0.85;nein;;schul:cue-eb-entwicklungsbezogen
+DE-BY;prozessbezogene Kompetenzen;cue;kd:sk-process, schul:Kompetenzbereich;prozessbezogen, Kompetenzbereich;;;;0.9;nein;;schul:cue-kb-prozessbezogen
+DE-BY;Erläuterung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030303
+DE-BY;Inhalt zu den Kompetenzen;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0002050
+DE-BY;Inhalte zu den Kompetenzen;cue;schul:Inhalt;Inhalt;;;;0.95;nein;"Zweite Spalte neben den Kompetenzerwartungen; Zeilenpaare → cur:targetsContent.";schul:cue-in-inhaltezukompetenzen
+DE-BY;Gegenstandsbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.8;nein;;schul:cue-ib-gegenstandsbereich
+DE-BY;Lernbereich;homonym;schul:Inhaltsbereich;Inhaltsbereich;;;;0.7;nein;BY Grundschule Deutsch: Lernbereich = Bereich des Kompetenzstrukturmodells (integriert).;schul:cue-ib-lernbereich
+DE-BY;Prozessbezogene Kompetenz;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030310
+DE-BY;Kompetenzbereich;cue;schul:Kompetenzbereich;Kompetenzbereich;;;;0.6;nein;;schul:fwu-LP_0030309
+DE-BY;Kompetenzerwartung;pref;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.95;nein;NW: übergeordnete und konkretisierte Kompetenzerwartungen unterscheiden.;schul:cue-ke-kompetenzerwartung
+DE-BY;Kompetenzerwartung und Inhalt;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0002048
+DE-BY;übergreifende Bildungs- und Erziehungsziele;cue;schul:Querschnittsbereich;Querschnittsbereich;;;;0.85;nein;;schul:cue-qs-uebergreifendeziele
+DE-BY;Übergreifendes Bildungs- und Erziehungsziel;cue;schul:Querschnittsbereich;Querschnittsbereich;;;;0.6;nein;;schul:fwu-LP_0030331
+DE-BY;Bayerische Leitlinie für die Bildung und Erziehung von Kindern bis zum Ender der Grundschulzeit;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0030308
+DE-BY;Bildungs- und Erziehungsauftrag;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0030304
+DE-BY;Fachprofil;cue;schul:Rahmenteil;Rahmenteil;;;;0.9;nein;Enthält das Kompetenzstrukturmodell (kein Niveaumodell) – in X3 als Kompetenzmodell lesen.;schul:cue-rt-fachprofil
+DE-BY;Grundlegende Kompetenzen (Jahrgangsstufenprofil);cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0030307
+DE-BY;Lehrplanfragment;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0002044
+DE-BY;Teilbereich;pref;schul:Teilbereich;Teilbereich;;;;0.8;nein;;schul:cue-tb-teilbereich
+DE-BY;Modul;cue;schul:Unterrichtseinheit;Unterrichtseinheit;;;;0.6;nein;"BY Mittelschule/LehrplanPLUS: Module als Unterrichtseinheiten; am Plan prüfen.";schul:cue-ib-modul-by
+DE-BY;Verweis auf Aufgabe;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030299
+DE-BY;Verweis auf DaZ;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030180
+DE-BY;Verweis auf Erläuterung;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030302
+DE-BY;Verweis auf Material;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030300
+DE-BY;Verweis auf mebis;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030301
+DE-BY;Verweis auf Querverweise;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030182
+DE-BY;Verweis auf Servicematerialien;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030183
+DE-BY;Verweis auf übergreifende Ziele;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030181
+DE-BY;Grundlegende Kompetenzen;cue;schul:Zusammenfassung;zusammenfassende Kompetenzerwartung;;;;0.8;nein;"Zusammenfassung im Jahrgangsstufenprofil, keine neue Erwartung; nicht mit Fachlehrplan-Erwartungen deduplizieren.";schul:cue-ke-grundlegende
+DE-BY;Fachlehrplan;alt;schul:dt-Lehrplan;Lehrplan;;;;0.9;nein;;schul:cue-dt-fachlehrplan
+DE-BY;LehrplanPLUS;cue;schul:dt-Lehrplan;Lehrplan;;;LehrplanPLUS;0.95;nein;;schul:cue-dt-lehrplanplus

@@ -1,0 +1,352 @@
+@prefix fld:   <https://w3id.org/wlo/curriculum/field/> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix kimi13: <https://w3id.org/kim/isced-2013/> .
+@prefix iscedf: <http://data.europa.eu/snb/isced-f/> .
+@prefix kimsf: <http://w3id.org/kim/schulfaecher/> .
+
+# =============================================================================
+# Fach-Hub (Andockpunkt 4): ISCED-F 2013 als bereichsübergreifendes Rückgrat.
+# Begründung: ISCED-F ist offen, international, deckt Berufs-, Hochschul- und
+# Erwachsenenbildung ab und hat belegte URIs (EU-Vokabular, KIM, ESCO); die
+# KIM-Hochschulfächersystematik hat eine geschlossene Lizenz und eignet sich
+# deshalb nur als zusätzliches Mapping.
+# Fächer der Schule (KIM-Schulfächer), Bildungsbereiche der Kita und
+# Programmbereiche der Erwachsenenbildung hängen per SKOS-Mapping am Hub
+# (siehe auch Profile). Der Fach-Hub dient als Kandidatenfilter für Kanten:
+# verglichen wird nur, was sich ein Feld oder ein verwandtes Feld teilt.
+#
+# Mappings: kimi13: Muster n<Code> für alle Ebenen belegt (2026-10-19);
+# iscedf: Muster an 071 und 0713 belegt, hier nur für drei- und vierstellige
+# Codes gesetzt. Deutsche Labels sind eigene Übersetzungen (KIM und EU führen
+# nur englische).
+# skos:related zwischen Feldern verschiedener Breitfelder = redaktionelle
+# Fachverwandtschaft (Vorschlag, je Fächerpaar zu prüfen).
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/field> a owl:Ontology ;
+    dct:title "Fach-Hub (ISCED-F 2013)"@de , "field hub (ISCED-F 2013)"@en ;
+    owl:versionInfo "1.0-entwurf" ;
+    dct:created "2026-10-19"^^xsd:date .
+
+fld:ISCEDF a skos:ConceptScheme ;
+    skos:prefLabel "Fach-Hub nach ISCED-F 2013"@de , "field hub based on ISCED-F 2013"@en ;
+    dct:source "UNESCO-UIS, ISCED Fields of Education and Training 2013" .
+
+# --- 00 Allgemeine Bildungsgänge und Qualifikationen -------------------------
+fld:00 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:topConceptOf fld:ISCEDF ; skos:notation "00" ;
+    skos:prefLabel "Allgemeine Bildungsgänge und Qualifikationen"@de , "Generic programmes and qualifications"@en ; skos:exactMatch kimi13:n00 .
+fld:0011 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:001 ; skos:notation "0011" ;
+    skos:prefLabel "Grundlegende Bildungsgänge"@de , "Basic programmes and qualifications"@en ; skos:exactMatch kimi13:n0011 , iscedf:0011 .
+fld:0021 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:002 ; skos:notation "0021" ;
+    skos:prefLabel "Lesen, Schreiben, Rechnen (Grundbildung)"@de , "Literacy and numeracy"@en ; skos:exactMatch kimi13:n0021 , iscedf:0021 .
+fld:0031 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:003 ; skos:notation "0031" ;
+    skos:prefLabel "Persönliche Fähigkeiten und Entwicklung"@de , "Personal skills and development"@en ; skos:exactMatch kimi13:n0031 , iscedf:0031 .
+
+# --- 01 Pädagogik ------------------------------------------------------------
+fld:01 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:topConceptOf fld:ISCEDF ; skos:notation "01" ;
+    skos:prefLabel "Pädagogik"@de , "Education"@en ; skos:exactMatch kimi13:n01 .
+fld:0111 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:011 ; skos:notation "0111" ;
+    skos:prefLabel "Erziehungswissenschaft"@de , "Education science"@en ; skos:exactMatch kimi13:n0111 , iscedf:0111 ;
+    skos:closeMatch kimsf:s1045 .
+fld:0112 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:011 ; skos:notation "0112" ;
+    skos:prefLabel "Ausbildung von Fachkräften für Kindertageseinrichtungen"@de , "Training for pre-school teachers"@en ; skos:exactMatch kimi13:n0112 , iscedf:0112 .
+fld:0113 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:011 ; skos:notation "0113" ;
+    skos:prefLabel "Lehrerbildung ohne Fachspezialisierung"@de , "Teacher training without subject specialisation"@en ; skos:exactMatch kimi13:n0113 , iscedf:0113 .
+fld:0114 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:011 ; skos:notation "0114" ;
+    skos:prefLabel "Lehrerbildung mit Fachspezialisierung"@de , "Teacher training with subject specialisation"@en ; skos:exactMatch kimi13:n0114 , iscedf:0114 .
+
+# --- 02 Geisteswissenschaften und Künste --------------------------------------
+fld:02 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:topConceptOf fld:ISCEDF ; skos:notation "02" ;
+    skos:prefLabel "Geisteswissenschaften und Künste"@de , "Arts and humanities"@en ; skos:exactMatch kimi13:n02 .
+fld:021 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:02 ; skos:notation "021" ;
+    skos:prefLabel "Künste"@de , "Arts"@en ; skos:exactMatch kimi13:n021 , iscedf:021 .
+fld:0211 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:021 ; skos:notation "0211" ;
+    skos:prefLabel "Audiovisuelle Techniken und Medienproduktion"@de , "Audio-visual techniques and media production"@en ; skos:exactMatch kimi13:n0211 , iscedf:0211 ;
+    skos:relatedMatch kimsf:s1046 .
+fld:0212 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:021 ; skos:notation "0212" ;
+    skos:prefLabel "Mode-, Innen- und Industriedesign"@de , "Fashion, interior and industrial design"@en ; skos:exactMatch kimi13:n0212 , iscedf:0212 .
+fld:0213 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:021 ; skos:notation "0213" ;
+    skos:prefLabel "Bildende Kunst"@de , "Fine arts"@en ; skos:exactMatch kimi13:n0213 , iscedf:0213 ;
+    skos:closeMatch kimsf:s1015 .
+fld:0214 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:021 ; skos:notation "0214" ;
+    skos:prefLabel "Kunsthandwerk"@de , "Handicrafts"@en ; skos:exactMatch kimi13:n0214 , iscedf:0214 ;
+    skos:relatedMatch kimsf:s1060 , kimsf:s1061 .
+fld:0215 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:021 ; skos:notation "0215" ;
+    skos:prefLabel "Musik und darstellende Kunst"@de , "Music and performing arts"@en ; skos:exactMatch kimi13:n0215 , iscedf:0215 ;
+    skos:closeMatch kimsf:s1020 ; skos:relatedMatch kimsf:s1004 .
+fld:022 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:02 ; skos:notation "022" ;
+    skos:prefLabel "Geisteswissenschaften (ohne Sprachen)"@de , "Humanities (except languages)"@en ; skos:exactMatch kimi13:n022 , iscedf:022 .
+fld:0221 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:022 ; skos:notation "0221" ;
+    skos:prefLabel "Religion und Theologie"@de , "Religion and theology"@en ; skos:exactMatch kimi13:n0221 , iscedf:0221 ;
+    skos:closeMatch kimsf:s1055 ; skos:narrowMatch kimsf:s1024 , kimsf:s1025 , kimsf:s1026 , kimsf:s1056 , kimsf:s1057 .
+fld:0222 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:022 ; skos:notation "0222" ;
+    skos:prefLabel "Geschichte und Archäologie"@de , "History and archaeology"@en ; skos:exactMatch kimi13:n0222 , iscedf:0222 ;
+    skos:closeMatch kimsf:s1011 .
+fld:0223 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:022 ; skos:notation "0223" ;
+    skos:prefLabel "Philosophie und Ethik"@de , "Philosophy and ethics"@en ; skos:exactMatch kimi13:n0223 , iscedf:0223 ;
+    skos:closeMatch kimsf:s1021 , kimsf:s1008 .
+fld:023 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:02 ; skos:notation "023" ;
+    skos:prefLabel "Sprachen"@de , "Languages"@en ; skos:exactMatch kimi13:n023 , iscedf:023 ;
+    skos:broadMatch kimsf:s1050 .
+fld:0231 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:023 ; skos:notation "0231" ;
+    skos:prefLabel "Spracherwerb"@de , "Language acquisition"@en ; skos:exactMatch kimi13:n0231 , iscedf:0231 ;
+    skos:narrowMatch kimsf:s1007 , kimsf:s1009 , kimsf:s1030 , kimsf:s1014 , kimsf:s1027 , kimsf:s1032 , kimsf:s1003 ,
+        kimsf:s1035 , kimsf:s1036 , kimsf:s1037 , kimsf:s1038 , kimsf:s1034 , kimsf:s1039 , kimsf:s1053 , kimsf:s1006 ,
+        kimsf:s1041 , kimsf:s1051 , kimsf:s1016 , kimsf:s1000 .
+fld:0232 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:023 ; skos:notation "0232" ;
+    skos:prefLabel "Literatur und Sprachwissenschaft"@de , "Literature and linguistics"@en ; skos:exactMatch kimi13:n0232 , iscedf:0232 ;
+    skos:relatedMatch kimsf:s1005 .
+
+# --- 03 Sozialwissenschaften, Journalismus und Informationswesen -------------
+fld:03 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:topConceptOf fld:ISCEDF ; skos:notation "03" ;
+    skos:prefLabel "Sozialwissenschaften, Journalismus und Informationswesen"@de , "Social sciences, journalism and information"@en ; skos:exactMatch kimi13:n03 .
+fld:031 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:03 ; skos:notation "031" ;
+    skos:prefLabel "Sozial- und Verhaltenswissenschaften"@de , "Social and behavioural sciences"@en ; skos:exactMatch kimi13:n031 , iscedf:031 ;
+    skos:broadMatch kimsf:s1042 .
+fld:0311 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:031 ; skos:notation "0311" ;
+    skos:prefLabel "Volkswirtschaftslehre/Wirtschaft"@de , "Economics"@en ; skos:exactMatch kimi13:n0311 , iscedf:0311 ;
+    skos:closeMatch kimsf:s1033 .
+fld:0312 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:031 ; skos:notation "0312" ;
+    skos:prefLabel "Politikwissenschaft und politische Bildung"@de , "Political sciences and civics"@en ; skos:exactMatch kimi13:n0312 , iscedf:0312 ;
+    skos:closeMatch kimsf:s1023 ; skos:relatedMatch kimsf:s1058 .
+fld:0313 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:031 ; skos:notation "0313" ;
+    skos:prefLabel "Psychologie"@de , "Psychology"@en ; skos:exactMatch kimi13:n0313 , iscedf:0313 ;
+    skos:closeMatch kimsf:s1043 .
+fld:0314 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:031 ; skos:notation "0314" ;
+    skos:prefLabel "Soziologie und Kulturwissenschaften"@de , "Sociology and cultural studies"@en ; skos:exactMatch kimi13:n0314 , iscedf:0314 ;
+    skos:relatedMatch kimsf:s1058 , kimsf:s1010 .
+fld:032 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:03 ; skos:notation "032" ;
+    skos:prefLabel "Journalismus und Informationswesen"@de , "Journalism and information"@en ; skos:exactMatch kimi13:n032 , iscedf:032 .
+fld:0321 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:032 ; skos:notation "0321" ;
+    skos:prefLabel "Journalismus und Berichterstattung"@de , "Journalism and reporting"@en ; skos:exactMatch kimi13:n0321 , iscedf:0321 .
+fld:0322 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:032 ; skos:notation "0322" ;
+    skos:prefLabel "Bibliotheks-, Informations- und Archivwesen"@de , "Library, information and archival studies"@en ; skos:exactMatch kimi13:n0322 , iscedf:0322 .
+
+# --- 04 Wirtschaft, Verwaltung und Recht ------------------------------------
+fld:04 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:topConceptOf fld:ISCEDF ; skos:notation "04" ;
+    skos:prefLabel "Wirtschaft, Verwaltung und Recht"@de , "Business, administration and law"@en ; skos:exactMatch kimi13:n04 .
+fld:041 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:04 ; skos:notation "041" ;
+    skos:prefLabel "Wirtschaft und Verwaltung"@de , "Business and administration"@en ; skos:exactMatch kimi13:n041 , iscedf:041 .
+fld:0411 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:041 ; skos:notation "0411" ;
+    skos:prefLabel "Rechnungswesen und Steuern"@de , "Accounting and taxation"@en ; skos:exactMatch kimi13:n0411 , iscedf:0411 .
+fld:0412 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:041 ; skos:notation "0412" ;
+    skos:prefLabel "Finanz-, Bank- und Versicherungswesen"@de , "Finance, banking and insurance"@en ; skos:exactMatch kimi13:n0412 , iscedf:0412 .
+fld:0413 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:041 ; skos:notation "0413" ;
+    skos:prefLabel "Management und Verwaltung"@de , "Management and administration"@en ; skos:exactMatch kimi13:n0413 , iscedf:0413 .
+fld:0414 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:041 ; skos:notation "0414" ;
+    skos:prefLabel "Marketing und Werbung"@de , "Marketing and advertising"@en ; skos:exactMatch kimi13:n0414 , iscedf:0414 .
+fld:0415 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:041 ; skos:notation "0415" ;
+    skos:prefLabel "Sekretariats- und Büroarbeit"@de , "Secretarial and office work"@en ; skos:exactMatch kimi13:n0415 , iscedf:0415 .
+fld:0416 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:041 ; skos:notation "0416" ;
+    skos:prefLabel "Groß- und Einzelhandel"@de , "Wholesale and retail sales"@en ; skos:exactMatch kimi13:n0416 , iscedf:0416 .
+fld:0417 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:041 ; skos:notation "0417" ;
+    skos:prefLabel "Arbeitsweltbezogene Fähigkeiten"@de , "Work skills"@en ; skos:exactMatch kimi13:n0417 , iscedf:0417 ;
+    skos:relatedMatch kimsf:s1048 , kimsf:s1049 .
+fld:042 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:04 ; skos:notation "042" ;
+    skos:prefLabel "Recht"@de , "Law"@en ; skos:exactMatch kimi13:n042 , iscedf:042 .
+fld:0421 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:042 ; skos:notation "0421" ;
+    skos:prefLabel "Rechtswissenschaft"@de , "Law"@en ; skos:exactMatch kimi13:n0421 , iscedf:0421 ;
+    skos:closeMatch kimsf:s1054 .
+
+# --- 05 Naturwissenschaften, Mathematik und Statistik -----------------------
+fld:05 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:topConceptOf fld:ISCEDF ; skos:notation "05" ;
+    skos:prefLabel "Naturwissenschaften, Mathematik und Statistik"@de , "Natural sciences, mathematics and statistics"@en ; skos:exactMatch kimi13:n05 ;
+    skos:broadMatch kimsf:s1052 , kimsf:s1019 .
+fld:051 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:05 ; skos:notation "051" ;
+    skos:prefLabel "Biologie und verwandte Wissenschaften"@de , "Biological and related sciences"@en ; skos:exactMatch kimi13:n051 , iscedf:051 .
+fld:0511 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:051 ; skos:notation "0511" ;
+    skos:prefLabel "Biologie"@de , "Biology"@en ; skos:exactMatch kimi13:n0511 , iscedf:0511 ; skos:closeMatch kimsf:s1001 .
+fld:0512 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:051 ; skos:notation "0512" ;
+    skos:prefLabel "Biochemie"@de , "Biochemistry"@en ; skos:exactMatch kimi13:n0512 , iscedf:0512 .
+fld:052 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:05 ; skos:notation "052" ;
+    skos:prefLabel "Umwelt"@de , "Environment"@en ; skos:exactMatch kimi13:n052 , iscedf:052 .
+fld:0521 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:052 ; skos:notation "0521" ;
+    skos:prefLabel "Umweltwissenschaften"@de , "Environmental sciences"@en ; skos:exactMatch kimi13:n0521 , iscedf:0521 .
+fld:0522 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:052 ; skos:notation "0522" ;
+    skos:prefLabel "Natürliche Umwelt und Wildtiere"@de , "Natural environments and wildlife"@en ; skos:exactMatch kimi13:n0522 , iscedf:0522 .
+fld:053 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:05 ; skos:notation "053" ;
+    skos:prefLabel "Exakte Naturwissenschaften"@de , "Physical sciences"@en ; skos:exactMatch kimi13:n053 , iscedf:053 .
+fld:0531 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:053 ; skos:notation "0531" ;
+    skos:prefLabel "Chemie"@de , "Chemistry"@en ; skos:exactMatch kimi13:n0531 , iscedf:0531 ; skos:closeMatch kimsf:s1002 .
+fld:0532 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:053 ; skos:notation "0532" ;
+    skos:prefLabel "Geowissenschaften"@de , "Earth sciences"@en ; skos:exactMatch kimi13:n0532 , iscedf:0532 ;
+    skos:relatedMatch kimsf:s1010 .
+fld:0533 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:053 ; skos:notation "0533" ;
+    skos:prefLabel "Physik"@de , "Physics"@en ; skos:exactMatch kimi13:n0533 , iscedf:0533 ;
+    skos:closeMatch kimsf:s1022 ; skos:narrowMatch kimsf:s1040 .
+fld:054 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:05 ; skos:notation "054" ;
+    skos:prefLabel "Mathematik und Statistik"@de , "Mathematics and statistics"@en ; skos:exactMatch kimi13:n054 , iscedf:054 .
+fld:0541 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:054 ; skos:notation "0541" ;
+    skos:prefLabel "Mathematik"@de , "Mathematics"@en ; skos:exactMatch kimi13:n0541 , iscedf:0541 ; skos:closeMatch kimsf:s1017 .
+fld:0542 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:054 ; skos:notation "0542" ;
+    skos:prefLabel "Statistik"@de , "Statistics"@en ; skos:exactMatch kimi13:n0542 , iscedf:0542 .
+
+# --- 06 Informations- und Kommunikationstechnologien ------------------------
+fld:06 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:topConceptOf fld:ISCEDF ; skos:notation "06" ;
+    skos:prefLabel "Informations- und Kommunikationstechnologien"@de , "Information and Communication Technologies"@en ; skos:exactMatch kimi13:n06 .
+fld:061 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:06 ; skos:notation "061" ;
+    skos:prefLabel "Informatik und IKT"@de , "Information and Communication Technologies (ICTs)"@en ; skos:exactMatch kimi13:n061 , iscedf:061 ;
+    skos:closeMatch kimsf:s1013 .
+fld:0611 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:061 ; skos:notation "0611" ;
+    skos:prefLabel "Computeranwendung"@de , "Computer use"@en ; skos:exactMatch kimi13:n0611 , iscedf:0611 .
+fld:0612 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:061 ; skos:notation "0612" ;
+    skos:prefLabel "Datenbank- und Netzwerkdesign und -administration"@de , "Database and network design and administration"@en ; skos:exactMatch kimi13:n0612 , iscedf:0612 .
+fld:0613 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:061 ; skos:notation "0613" ;
+    skos:prefLabel "Software- und Anwendungsentwicklung und -analyse"@de , "Software and applications development and analysis"@en ; skos:exactMatch kimi13:n0613 , iscedf:0613 .
+
+# --- 07 Ingenieurwesen, verarbeitendes Gewerbe und Baugewerbe --------------
+fld:07 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:topConceptOf fld:ISCEDF ; skos:notation "07" ;
+    skos:prefLabel "Ingenieurwesen, verarbeitendes Gewerbe und Baugewerbe"@de , "Engineering, manufacturing and construction"@en ; skos:exactMatch kimi13:n07 .
+fld:071 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:07 ; skos:notation "071" ;
+    skos:prefLabel "Ingenieurwesen und technische Berufe"@de , "Engineering and engineering trades"@en ; skos:exactMatch kimi13:n071 , iscedf:071 ;
+    skos:broadMatch kimsf:s1059 .
+fld:0711 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:071 ; skos:notation "0711" ;
+    skos:prefLabel "Chemieingenieurwesen und Verfahrenstechnik"@de , "Chemical engineering and processes"@en ; skos:exactMatch kimi13:n0711 , iscedf:0711 .
+fld:0712 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:071 ; skos:notation "0712" ;
+    skos:prefLabel "Umweltschutztechnik"@de , "Environmental protection technology"@en ; skos:exactMatch kimi13:n0712 , iscedf:0712 .
+fld:0713 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:071 ; skos:notation "0713" ;
+    skos:prefLabel "Elektrizität und Energie"@de , "Electricity and energy"@en ; skos:exactMatch kimi13:n0713 , iscedf:0713 .
+fld:0714 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:071 ; skos:notation "0714" ;
+    skos:prefLabel "Elektronik und Automatisierung"@de , "Electronics and automation"@en ; skos:exactMatch kimi13:n0714 , iscedf:0714 .
+fld:0715 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:071 ; skos:notation "0715" ;
+    skos:prefLabel "Maschinenbau und Metallverarbeitung"@de , "Mechanics and metal trades"@en ; skos:exactMatch kimi13:n0715 , iscedf:0715 .
+fld:0716 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:071 ; skos:notation "0716" ;
+    skos:prefLabel "Kraftfahrzeuge, Schiffe und Flugzeuge"@de , "Motor vehicles, ships and aircraft"@en ; skos:exactMatch kimi13:n0716 , iscedf:0716 .
+fld:072 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:07 ; skos:notation "072" ;
+    skos:prefLabel "Verarbeitendes Gewerbe"@de , "Manufacturing and processing"@en ; skos:exactMatch kimi13:n072 , iscedf:072 .
+fld:0721 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:072 ; skos:notation "0721" ;
+    skos:prefLabel "Lebensmittelverarbeitung"@de , "Food processing"@en ; skos:exactMatch kimi13:n0721 , iscedf:0721 ;
+    skos:relatedMatch kimsf:s1044 .
+fld:0722 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:072 ; skos:notation "0722" ;
+    skos:prefLabel "Werkstoffe (Glas, Papier, Kunststoff, Holz)"@de , "Materials (glass, paper, plastic and wood)"@en ; skos:exactMatch kimi13:n0722 , iscedf:0722 .
+fld:0723 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:072 ; skos:notation "0723" ;
+    skos:prefLabel "Textilien (Kleidung, Schuhe, Leder)"@de , "Textiles (clothes, footwear and leather)"@en ; skos:exactMatch kimi13:n0723 , iscedf:0723 .
+fld:0724 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:072 ; skos:notation "0724" ;
+    skos:prefLabel "Bergbau und Rohstoffgewinnung"@de , "Mining and extraction"@en ; skos:exactMatch kimi13:n0724 , iscedf:0724 .
+fld:073 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:07 ; skos:notation "073" ;
+    skos:prefLabel "Architektur und Baugewerbe"@de , "Architecture and construction"@en ; skos:exactMatch kimi13:n073 , iscedf:073 .
+fld:0731 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:073 ; skos:notation "0731" ;
+    skos:prefLabel "Architektur und Städteplanung"@de , "Architecture and town planning"@en ; skos:exactMatch kimi13:n0731 , iscedf:0731 .
+fld:0732 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:073 ; skos:notation "0732" ;
+    skos:prefLabel "Hoch- und Tiefbau"@de , "Building and civil engineering"@en ; skos:exactMatch kimi13:n0732 , iscedf:0732 .
+
+# --- 08 Landwirtschaft, Forstwirtschaft, Fischerei und Tiermedizin ---------
+fld:08 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:topConceptOf fld:ISCEDF ; skos:notation "08" ;
+    skos:prefLabel "Landwirtschaft, Forstwirtschaft, Fischerei und Tiermedizin"@de , "Agriculture, forestry, fisheries and veterinary"@en ; skos:exactMatch kimi13:n08 .
+fld:0811 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:081 ; skos:notation "0811" ;
+    skos:prefLabel "Pflanzenbau und Tierhaltung"@de , "Crop and livestock production"@en ; skos:exactMatch kimi13:n0811 , iscedf:0811 .
+fld:0812 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:081 ; skos:notation "0812" ;
+    skos:prefLabel "Gartenbau"@de , "Horticulture"@en ; skos:exactMatch kimi13:n0812 , iscedf:0812 .
+fld:0821 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:082 ; skos:notation "0821" ;
+    skos:prefLabel "Forstwirtschaft"@de , "Forestry"@en ; skos:exactMatch kimi13:n0821 , iscedf:0821 .
+fld:0831 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:083 ; skos:notation "0831" ;
+    skos:prefLabel "Fischerei"@de , "Fisheries"@en ; skos:exactMatch kimi13:n0831 , iscedf:0831 .
+fld:0841 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:084 ; skos:notation "0841" ;
+    skos:prefLabel "Tiermedizin"@de , "Veterinary"@en ; skos:exactMatch kimi13:n0841 , iscedf:0841 .
+
+# --- 09 Gesundheit und Sozialwesen ------------------------------------------
+fld:09 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:topConceptOf fld:ISCEDF ; skos:notation "09" ;
+    skos:prefLabel "Gesundheit und Sozialwesen"@de , "Health and welfare"@en ; skos:exactMatch kimi13:n09 .
+fld:091 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:09 ; skos:notation "091" ;
+    skos:prefLabel "Gesundheit"@de , "Health"@en ; skos:exactMatch kimi13:n091 , iscedf:091 ;
+    skos:relatedMatch kimsf:s1012 .
+fld:0911 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:091 ; skos:notation "0911" ;
+    skos:prefLabel "Zahnmedizin"@de , "Dental studies"@en ; skos:exactMatch kimi13:n0911 , iscedf:0911 .
+fld:0912 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:091 ; skos:notation "0912" ;
+    skos:prefLabel "Medizin"@de , "Medicine"@en ; skos:exactMatch kimi13:n0912 , iscedf:0912 .
+fld:0913 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:091 ; skos:notation "0913" ;
+    skos:prefLabel "Krankenpflege und Geburtshilfe"@de , "Nursing and midwifery"@en ; skos:exactMatch kimi13:n0913 , iscedf:0913 .
+fld:0914 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:091 ; skos:notation "0914" ;
+    skos:prefLabel "Medizinische Diagnostik und Behandlungstechnik"@de , "Medical diagnostic and treatment technology"@en ; skos:exactMatch kimi13:n0914 , iscedf:0914 .
+fld:0915 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:091 ; skos:notation "0915" ;
+    skos:prefLabel "Therapie und Rehabilitation"@de , "Therapy and rehabilitation"@en ; skos:exactMatch kimi13:n0915 , iscedf:0915 .
+fld:0916 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:091 ; skos:notation "0916" ;
+    skos:prefLabel "Pharmazie"@de , "Pharmacy"@en ; skos:exactMatch kimi13:n0916 , iscedf:0916 .
+fld:0917 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:091 ; skos:notation "0917" ;
+    skos:prefLabel "Traditionelle und komplementäre Medizin"@de , "Traditional and complementary medicine and therapy"@en ; skos:exactMatch kimi13:n0917 , iscedf:0917 .
+fld:092 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:09 ; skos:notation "092" ;
+    skos:prefLabel "Sozialwesen"@de , "Welfare"@en ; skos:exactMatch kimi13:n092 , iscedf:092 .
+fld:0921 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:092 ; skos:notation "0921" ;
+    skos:prefLabel "Betreuung älterer und behinderter Erwachsener"@de , "Care of the elderly and of disabled adults"@en ; skos:exactMatch kimi13:n0921 , iscedf:0921 .
+fld:0922 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:092 ; skos:notation "0922" ;
+    skos:prefLabel "Kinder- und Jugendhilfe"@de , "Child care and youth services"@en ; skos:exactMatch kimi13:n0922 , iscedf:0922 .
+fld:0923 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:092 ; skos:notation "0923" ;
+    skos:prefLabel "Sozialarbeit und Beratung"@de , "Social work and counselling"@en ; skos:exactMatch kimi13:n0923 , iscedf:0923 .
+
+# --- 10 Dienstleistungen ----------------------------------------------------
+fld:10 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:topConceptOf fld:ISCEDF ; skos:notation "10" ;
+    skos:prefLabel "Dienstleistungen"@de , "Services"@en ; skos:exactMatch kimi13:n10 .
+fld:1011 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:101 ; skos:notation "1011" ;
+    skos:prefLabel "Hauswirtschaftliche Dienste"@de , "Domestic services"@en ; skos:exactMatch kimi13:n1011 , iscedf:1011 ;
+    skos:closeMatch kimsf:s1047 ; skos:relatedMatch kimsf:s1044 .
+fld:1012 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:101 ; skos:notation "1012" ;
+    skos:prefLabel "Friseurgewerbe und Schönheitspflege"@de , "Hair and beauty services"@en ; skos:exactMatch kimi13:n1012 , iscedf:1012 .
+fld:1013 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:101 ; skos:notation "1013" ;
+    skos:prefLabel "Hotel- und Gaststättengewerbe, Catering"@de , "Hotel, restaurants and catering"@en ; skos:exactMatch kimi13:n1013 , iscedf:1013 .
+fld:1014 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:101 ; skos:notation "1014" ;
+    skos:prefLabel "Sport"@de , "Sports"@en ; skos:exactMatch kimi13:n1014 , iscedf:1014 ; skos:closeMatch kimsf:s1031 .
+fld:1015 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:101 ; skos:notation "1015" ;
+    skos:prefLabel "Reisen, Tourismus und Freizeit"@de , "Travel, tourism and leisure"@en ; skos:exactMatch kimi13:n1015 , iscedf:1015 .
+fld:1021 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:102 ; skos:notation "1021" ;
+    skos:prefLabel "Kommunale Hygiene"@de , "Community sanitation"@en ; skos:exactMatch kimi13:n1021 , iscedf:1021 .
+fld:1022 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:102 ; skos:notation "1022" ;
+    skos:prefLabel "Arbeitsschutz und Arbeitssicherheit"@de , "Occupational health and safety"@en ; skos:exactMatch kimi13:n1022 , iscedf:1022 .
+fld:1031 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:103 ; skos:notation "1031" ;
+    skos:prefLabel "Militär und Verteidigung"@de , "Military and defence"@en ; skos:exactMatch kimi13:n1031 , iscedf:1031 .
+fld:1032 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:103 ; skos:notation "1032" ;
+    skos:prefLabel "Personen- und Objektschutz"@de , "Protection of persons and property"@en ; skos:exactMatch kimi13:n1032 , iscedf:1032 .
+fld:1041 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:104 ; skos:notation "1041" ;
+    skos:prefLabel "Verkehrsdienstleistungen"@de , "Transport services"@en ; skos:exactMatch kimi13:n1041 , iscedf:1041 .
+
+# --- Engere Felder, die oben nur als Elternteil vorkommen ----------------------
+fld:001 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:00 ; skos:notation "001" ;
+    skos:prefLabel "Grundlegende Bildungsgänge und Qualifikationen"@de , "Basic programmes and qualifications"@en ; skos:exactMatch kimi13:n001 , iscedf:001 .
+fld:002 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:00 ; skos:notation "002" ;
+    skos:prefLabel "Lesen, Schreiben und Rechnen"@de , "Literacy and numeracy"@en ; skos:exactMatch kimi13:n002 , iscedf:002 .
+fld:003 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:00 ; skos:notation "003" ;
+    skos:prefLabel "Persönliche Fähigkeiten und Entwicklung"@de , "Personal skills and development"@en ; skos:exactMatch kimi13:n003 , iscedf:003 .
+fld:011 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:01 ; skos:notation "011" ;
+    skos:prefLabel "Pädagogik"@de , "Education"@en ; skos:exactMatch kimi13:n011 , iscedf:011 .
+fld:081 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:08 ; skos:notation "081" ;
+    skos:prefLabel "Landwirtschaft"@de , "Agriculture"@en ; skos:exactMatch kimi13:n081 , iscedf:081 .
+fld:082 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:08 ; skos:notation "082" ;
+    skos:prefLabel "Forstwirtschaft"@de , "Forestry"@en ; skos:exactMatch kimi13:n082 , iscedf:082 .
+fld:083 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:08 ; skos:notation "083" ;
+    skos:prefLabel "Fischerei"@de , "Fisheries"@en ; skos:exactMatch kimi13:n083 , iscedf:083 .
+fld:084 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:08 ; skos:notation "084" ;
+    skos:prefLabel "Tiermedizin"@de , "Veterinary"@en ; skos:exactMatch kimi13:n084 , iscedf:084 .
+fld:101 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:10 ; skos:notation "101" ;
+    skos:prefLabel "Persönliche Dienstleistungen"@de , "Personal services"@en ; skos:exactMatch kimi13:n101 , iscedf:101 .
+fld:102 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:10 ; skos:notation "102" ;
+    skos:prefLabel "Hygiene und Arbeitsschutz"@de , "Hygiene and occupational health services"@en ; skos:exactMatch kimi13:n102 , iscedf:102 .
+fld:103 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:10 ; skos:notation "103" ;
+    skos:prefLabel "Sicherheitsdienstleistungen"@de , "Security services"@en ; skos:exactMatch kimi13:n103 , iscedf:103 .
+fld:104 a skos:Concept ; skos:inScheme fld:ISCEDF ; skos:broader fld:10 ; skos:notation "104" ;
+    skos:prefLabel "Verkehrsdienstleistungen"@de , "Transport services"@en ; skos:exactMatch kimi13:n104 , iscedf:104 .
+
+# -----------------------------------------------------------------------------
+# Fächerverbünde der Schule ohne eindeutiges ISCED-F-Feld
+# -----------------------------------------------------------------------------
+fld:0533 skos:relatedMatch kimsf:s1052 .
+fld:0511 skos:relatedMatch kimsf:s1028 .
+fld:0314 skos:relatedMatch kimsf:s1028 .
+
+# -----------------------------------------------------------------------------
+# Fachverwandtschaft über Breitfelder (Vorschlag, je Fächerpaar zu prüfen)
+# -----------------------------------------------------------------------------
+fld:0533 skos:related fld:0713 , fld:0714 , fld:0715 , fld:0716 .
+fld:0541 skos:related fld:0542 , fld:0613 , fld:0311 .
+fld:0531 skos:related fld:0711 , fld:0512 , fld:0916 .
+fld:0511 skos:related fld:0512 , fld:0912 , fld:0811 , fld:0521 .
+fld:0613 skos:related fld:0714 .
+fld:0311 skos:related fld:041 .
+fld:0312 skos:related fld:0421 .
+fld:0532 skos:related fld:0521 , fld:0731 .
+fld:0213 skos:related fld:0212 , fld:0211 .
+fld:0223 skos:related fld:0221 .
+fld:0111 skos:related fld:0922 , fld:0113 .
+fld:1014 skos:related fld:0915 .

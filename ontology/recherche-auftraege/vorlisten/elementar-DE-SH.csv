@@ -1,0 +1,13 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-SH;Bildungs- und Erziehungsthema;cue;elem:Bildungsbereich;Bildungsbereich;heading;;;0.80;nein;Bezeichnung der Neufassung 2026 (prüfen).;elem:lex-61e6b09c4251-SH
+DE-SH;Handlungsprinzip;cue;elem:Querschnitt;Querschnitt/Leitprinzip;heading;;;0.80;nein;Neufassung 2026: Kinderschutz, Inklusion, Nachhaltigkeit, demokratische Mitbestimmung (prüfen).;elem:lex-8e358ed6e2ad-SH
+DE-SH;Erfolgreich starten;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.90;nein;Leitlinien für Bildung und Erziehung in Kitas und Kindertagespflege, Neufassung 2026.;elem:lex-8519e6698cc0-SH
+DE-SH;Musisch-ästhetische Bildung;cue;elem:f-aesthetik, elem:f-musik;Ästhetische Bildung, Musik und Rhythmik;heading;;SH-Leitlinien vor der Neufassung 2026;0.95;nein;;elem:lex-d92658d5ddf9-SH
+DE-SH;Kultur, Gesellschaft, Demokratie und Antidiskriminierung;cue;elem:f-demokratie-gesellschaft, elem:f-kulturelle-vielfalt, elem:p-diversitaet;Demokratie und Gesellschaft, Kulturelle Vielfalt und interkulturelles Lernen, Diversität und vorurteilsbewusste Bildung;heading;;;0.80;nein;Bezeichnung der Neufassung 2026 (prüfen).;elem:lex-beef05cd95f6-SH
+DE-SH;demokratische Mitbestimmung;cue;elem:f-demokratie-gesellschaft, elem:p-partizipation;Demokratie und Gesellschaft, Partizipation;body, heading;;;0.80;nein;Handlungsprinzip der Neufassung 2026 (prüfen).;elem:lex-1d002a5aa4b7-SH
+DE-SH;Medien und Digitalisierung;cue;elem:f-digitale-technologien, elem:f-medien;Digitale Geräte und Technologien, Medien und digitale Bildung;heading;;SH-Leitlinien vor der Neufassung 2026;0.85;nein;;elem:lex-96c9613429f0-SH
+DE-SH;Körper, Gesundheit und Bewegung;cue;elem:f-koerper;Körper, Bewegung, Gesundheit und Prävention;heading;;SH-Leitlinien vor der Neufassung 2026;0.85;nein;;elem:lex-203fcaeb4339-SH
+DE-SH;Sprache(n), Zeichen/Schrift und Kommunikation;cue;elem:f-literacy, elem:f-mehrsprachigkeit, elem:f-sprache;Literacy, Erzähl- und Schriftkultur, Mehrsprachigkeit, Sprache, Kommunikation und Literacy;heading;;SH-Leitlinien vor der Neufassung 2026;0.85;nein;;elem:lex-dd91015e3314-SH
+DE-SH;Mathematik, Naturwissenschaft und Technik;cue;elem:f-mint;Mathematik, Informatik, Naturwissenschaft und Technik;heading;;SH-Leitlinien vor der Neufassung 2026;0.85;nein;;elem:lex-b048dba75b91-SH
+DE-SH;Ethik, Religion und Philosophie;cue;elem:f-religion-weltanschauung, elem:f-werte-ethik-philosophie;Religion und Weltanschauung, Werte, Ethik und Philosophieren;heading;;SH-Leitlinien vor der Neufassung 2026;0.90;nein;;elem:lex-91da8e00d3ca-SH
+DE-SH;Inklusion;pref;elem:p-inklusion;Inklusion;heading;;;0.85;ja;;elem:lex-18a3dd4fa837-SH

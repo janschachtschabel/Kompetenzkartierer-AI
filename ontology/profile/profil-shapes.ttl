@@ -1,0 +1,193 @@
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix shs:   <https://w3id.org/wlo/curriculum/shapes#> .
+@prefix sh:    <http://www.w3.org/ns/shacl#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix schul: <https://w3id.org/wlo/curriculum/profile/school#> .
+@prefix elem:  <https://w3id.org/wlo/curriculum/profile/early-childhood#> .
+@prefix beruf: <https://w3id.org/wlo/curriculum/profile/vocational#> .
+@prefix hs:    <https://w3id.org/wlo/curriculum/profile/higher-education#> .
+@prefix eb:    <https://w3id.org/wlo/curriculum/profile/adult-education#> .
+
+# =============================================================================
+# Profil-Shapes: Vollständigkeit und Plausibilität je Bildungsbereich.
+# Nur sh:Warning und sh:Info – ein Dokument, das eine Angabe nicht macht, ist
+# kein fehlerhafter Datensatz. Strukturregeln stehen in cur-shapes.ttl.
+# Aufruf wie cur-shapes.ttl (ohne Inferenz, Modell im Datengraph).
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/profile-shapes> a owl:Ontology ;
+    dct:title "Curriculum-Profile: SHACL-Shapes"@de ;
+    owl:imports <https://w3id.org/wlo/curriculum/shapes> ;
+    owl:versionInfo "1.0-entwurf" ;
+    sh:declare
+        [ sh:prefix "cur" ; sh:namespace "https://w3id.org/wlo/curriculum/core#"^^xsd:anyURI ] ,
+        [ sh:prefix "cv" ; sh:namespace "https://w3id.org/wlo/curriculum/vocab#"^^xsd:anyURI ] ,
+        [ sh:prefix "schul" ; sh:namespace "https://w3id.org/wlo/curriculum/profile/school#"^^xsd:anyURI ] ,
+        [ sh:prefix "elem" ; sh:namespace "https://w3id.org/wlo/curriculum/profile/early-childhood#"^^xsd:anyURI ] ,
+        [ sh:prefix "beruf" ; sh:namespace "https://w3id.org/wlo/curriculum/profile/vocational#"^^xsd:anyURI ] ,
+        [ sh:prefix "hs" ; sh:namespace "https://w3id.org/wlo/curriculum/profile/higher-education#"^^xsd:anyURI ] ,
+        [ sh:prefix "eb" ; sh:namespace "https://w3id.org/wlo/curriculum/profile/adult-education#"^^xsd:anyURI ] .
+
+# -----------------------------------------------------------------------------
+# Hochschule
+# -----------------------------------------------------------------------------
+shs:HsModuleShape a sh:NodeShape ;
+    sh:targetClass cur:CurriculumNode ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Modul ohne Leistungspunkte (weder am Modul noch an einer Verwendung)."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:nodeType hs:Modul .
+                FILTER NOT EXISTS { $this cur:workload ?w . ?w cur:unit cv:unit_ectsCredit }
+                FILTER NOT EXISTS { ?p cur:placedUnit $this ; cur:workload ?w2 . ?w2 cur:unit cv:unit_ectsCredit }
+            }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "MRVO: Modul ohne Lernergebnisse (Qualifikationsziele/angestrebte Lernergebnisse)."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:nodeType hs:Modul .
+                FILTER NOT EXISTS { ?s cur:partOf $this ; cur:statementKind cv:kind_learningOutcome }
+                FILTER NOT EXISTS { $this cur:checkedAbsent cv:dock_competency }
+            }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Modul dauert länger als zwei Semester (zulässig nur für künstlerische Kernfächer)."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:nodeType ?t ; hs:durationSemesters ?d .
+                FILTER(?t != hs:KuenstlerischesHauptfach && ?d > 2)
+            }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Arbeitsaufwand je Leistungspunkt außerhalb 25–30 Stunden."@de ;
+        sh:select """
+            SELECT $this ?ratio WHERE {
+                $this cur:workload ?h , ?c .
+                ?h cur:unit cv:unit_hour ; cur:workloadKind cv:wl_totalWorkload ; cur:amount ?hours .
+                ?c cur:unit cv:unit_ectsCredit ; cur:amount ?credits .
+                FILTER(?credits > 0)
+                BIND(?hours / ?credits AS ?ratio)
+                FILTER(?ratio < 25 || ?ratio > 30)
+            }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Kontaktzeit und Selbststudium ergeben nicht den Gesamtaufwand."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:workload ?t , ?k , ?s .
+                ?t cur:workloadKind cv:wl_totalWorkload ; cur:unit cv:unit_hour ; cur:amount ?total .
+                ?k cur:workloadKind cv:wl_contactTime ; cur:unit cv:unit_hour ; cur:amount ?contact .
+                ?s cur:workloadKind cv:wl_selfStudy ; cur:unit cv:unit_hour ; cur:amount ?self .
+                FILTER(?contact + ?self != ?total)
+            }""" ] .
+
+shs:HsSemesterLoadShape a sh:NodeShape ;
+    sh:targetClass cur:Curriculum ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Pflichtmodule eines Fachsemesters summieren über 40 LP (Regel ≈ 30 LP je Semester)."@de ;
+        sh:select """
+            SELECT $this ?sem (SUM(?lp) AS ?sum) WHERE {
+                ?p cur:inSpecification $this ; cur:obligation cv:obl_binding ; cur:timeSpan ?ts ; cur:placedUnit ?u .
+                ?ts cur:timeKind cv:time_semester ; cur:from ?sem .
+                OPTIONAL { ?p cur:workload ?pw . ?pw cur:unit cv:unit_ectsCredit ; cur:amount ?plp }
+                OPTIONAL { ?u cur:workload ?uw . ?uw cur:unit cv:unit_ectsCredit ; cur:amount ?ulp }
+                BIND(COALESCE(?plp, ?ulp) AS ?lp)
+            } GROUP BY $this ?sem HAVING (SUM(?lp) > 40)""" ] .
+
+# -----------------------------------------------------------------------------
+# Berufliche Bildung
+# -----------------------------------------------------------------------------
+shs:BerufLernfeldShape a sh:NodeShape ;
+    sh:targetClass cur:CurriculumNode ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Lernfeld ohne Zeitrichtwert."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:nodeType beruf:Lernfeld .
+                FILTER NOT EXISTS { $this cur:workload ?w }
+                FILTER NOT EXISTS { $this cur:checkedAbsent cv:dock_time }
+            }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Lernfeld ohne Ausbildungsjahr."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:nodeType beruf:Lernfeld .
+                FILTER NOT EXISTS { $this cur:timeSpan ?t . ?t cur:timeKind cv:time_trainingYear }
+                FILTER NOT EXISTS { $this cur:checkedAbsent cv:dock_time }
+            }""" ] .
+
+shs:BerufZeitrichtwertShape a sh:NodeShape ;
+    sh:targetClass cur:CurriculumNode ;
+    sh:severity sh:Info ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Zeitrichtwert eines Lernfelds nicht durch 20 teilbar – Lesefehler prüfen."@de ;
+        sh:select """
+            SELECT $this ?a WHERE {
+                $this cur:nodeType beruf:Lernfeld ; cur:workload ?w .
+                ?w cur:unit cv:unit_lesson ; cur:amount ?a .
+                FILTER(?a - 20 * FLOOR(?a / 20) != 0)
+            }""" ] .
+
+shs:BerufZwischenpruefungShape a sh:NodeShape ;
+    sh:targetClass cur:Assessment ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Zwischenprüfung mit Gewicht im Ergebnis – ist es Abschlussprüfung Teil 1?"@de ;
+        sh:select """SELECT $this WHERE { $this beruf:examType beruf:ex-zwischen ; cur:weightPercent ?w . FILTER(?w > 0) }""" ] .
+
+# -----------------------------------------------------------------------------
+# Schule
+# -----------------------------------------------------------------------------
+shs:SchulRegelstandardShape a sh:NodeShape ;
+    sh:targetClass cur:Statement ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Regelstandard außerhalb der KMK-Bildungsstandards – ein „Standard“ im Landeslehrplan ist eine Kompetenzerwartung."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:statementSubkind schul:Regelstandard ; cur:anchor ?a .
+                ?a cur:inDocument ?d . ?d cur:documentType ?t .
+                FILTER(?t != schul:dt-Bildungsstandards)
+            }""" ] .
+
+# -----------------------------------------------------------------------------
+# Elementarbildung
+# -----------------------------------------------------------------------------
+shs:ElemBereichShape a sh:NodeShape ;
+    sh:targetClass cur:CurriculumNode ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Bildungsbereich ohne Feld und ohne Kompetenzdimension."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:nodeType elem:Bildungsbereich .
+                FILTER NOT EXISTS { $this cur:field ?f }
+                FILTER NOT EXISTS { $this cur:competenceDimension ?k }
+                FILTER NOT EXISTS { $this cur:checkedAbsent cv:dock_field }
+            }""" ] .
+
+# -----------------------------------------------------------------------------
+# Erwachsenen- und Weiterbildung
+# -----------------------------------------------------------------------------
+shs:EbNiveaustufeShape a sh:NodeShape ;
+    sh:targetClass cur:CurriculumNode ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Niveaustufe als Gliederung ohne Niveauzuordnung."@de ;
+        sh:select """SELECT $this WHERE { $this cur:nodeType eb:Niveaustufe . FILTER NOT EXISTS { $this cur:levelAssignment ?l } }""" ] .

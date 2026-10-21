@@ -1,0 +1,78 @@
+{
+  "type": "object",
+  "description": "Stufe X1, zweiter Aufruf: nur für Überschriften, die Muster und Lexikon nicht typisieren konnten. Das Gerüst selbst baut die Pipeline deterministisch aus Inhaltsverzeichnis, Layout und Lexikon.",
+  "additionalProperties": false,
+  "required": [
+    "headings"
+  ],
+  "properties": {
+    "headings": {
+      "type": "array",
+      "description": "Je unklare Überschrift eine Entscheidung.",
+      "items": {
+        "type": "object",
+        "description": "Überschrift",
+        "additionalProperties": false,
+        "required": [
+          "headingId",
+          "nodeType",
+          "nodeFunction",
+          "appliesTo",
+          "scopeShare"
+        ],
+        "properties": {
+          "headingId": {
+            "type": "string",
+            "description": "ID der Überschrift aus der Liste im Prompt."
+          },
+          "nodeType": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Knotentyp-ID aus der Liste oder null, wenn keiner passt."
+          },
+          "nodeFunction": {
+            "type": "string",
+            "enum": [
+              "area",
+              "crossCutting",
+              "frame",
+              "grouping",
+              "nonCurricular",
+              "subunit",
+              "unit"
+            ],
+            "description": "Kernfunktion.",
+            "x-cv-scheme": "NodeFunctions"
+          },
+          "appliesTo": {
+            "type": "array",
+            "description": "Kennungen der Spezifikationen (S1 …), für die der Abschnitt gilt; leer = erbt.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "scopeShare": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "alternative",
+              "common",
+              "specific",
+              "supplementary",
+              null
+            ],
+            "description": "Gemeinsam, spezifisch, ergänzend oder alternativ.",
+            "x-cv-scheme": "ScopeShares"
+          }
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/wlo/curriculum/schema/x1-gliederung",
+  "title": "X1 Gerüst typisieren"
+}

@@ -1,0 +1,543 @@
+@prefix beruf: <https://w3id.org/wlo/curriculum/profile/vocational#> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix lvl:   <https://w3id.org/wlo/curriculum/level/> .
+@prefix qz:    <https://w3id.org/wlo/curriculum/crosscutting/> .
+@prefix kd:    <https://w3id.org/wlo/curriculum/dimension/> .
+@prefix land:  <https://w3id.org/wlo/curriculum/region/> .
+@prefix ctx:   <https://w3id.org/wlo/curriculum/context/> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix lp:    <https://w3id.org/lehrplan/ontology/> .
+@prefix kimsa: <https://w3id.org/kim/schularten/> .
+
+# =============================================================================
+# Profil Berufliche Bildung (beruf:) – duale Ausbildung (Ausbildungsordnung
+# mit Ausbildungsrahmenplan, KMK-Rahmenlehrplan, Landeslehrpläne),
+# Gesundheitsfachberufe (PflAPrV, Rahmenpläne nach § 53 PflBG),
+# landesrechtliche Bildungsgänge (Berufskolleg, Fachschule, Berufsfachschule),
+# Fortbildung (§§ 53–54 BBiG, Meisterprüfung), § 66 BBiG / § 42r HwO, ÜLU.
+#
+# Ein Beruf hat mehrere Spezifikationen an verschiedenen Lernorten (AO/ARP
+# für den Betrieb, RLP für die Berufsschule, Landeslehrplan). Der stabile
+# Andockpunkt ist der Beruf (cur:Occupation mit BIBB-Bezeichnung und
+# Jahresstand), nicht ein Fach. Lernortkooperation ist eine eigene Kante
+# (cv:rel_correspondsTo, amtlich über die Entsprechungsliste) – nicht
+# „konkretisiert“. DQR hängt nur an der Qualifikation; Ausbildungsjahr und
+# Ausbildungsmonat sind Zeit, kein Niveau.
+#
+# Quellen: BBO v0.2 (bbo-core, bbo-vocab, bbo-extraction: 43 Hinweise, fünf
+# Muster korrigiert), ältere bb-*-Vorarbeit (Inhalte, nicht Struktur),
+# Deep-Research-Bericht Berufsbildung.
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/profile/vocational> a owl:Ontology ;
+    dct:title "Curriculum-Profil Berufliche Bildung"@de , "curriculum profile vocational education and training"@en ;
+    owl:imports <https://w3id.org/wlo/curriculum/core> , <https://w3id.org/wlo/curriculum/vocab> ,
+        <https://w3id.org/wlo/curriculum/level> , <https://w3id.org/wlo/curriculum/dimension> ,
+        <https://w3id.org/wlo/curriculum/crosscutting> , <https://w3id.org/wlo/curriculum/context> ;
+    owl:versionInfo "1.0-entwurf" ;
+    dct:created "2026-10-19"^^xsd:date .
+
+# =============================================================================
+# 1. Profil-Eigenschaften
+# =============================================================================
+beruf:learningPlace a owl:ObjectProperty ; rdfs:subPropertyOf cur:context ;
+    rdfs:label "Lernort"@de , "learning place"@en ;
+    skos:definition "Lernort einer Spezifikation, Einheit oder Aussage (ctx:company, ctx:vocational-school, ctx:intercompany, ctx:fulltime-vocational, ctx:nursing-school, ctx:practice-placement, ctx:course-provider)."@de .
+beruf:legalLevel a owl:ObjectProperty ;
+    rdfs:label "Rechtsebene"@de , "legal level"@en ;
+    skos:definition "Bund, KMK, Land, zuständige Stelle (Kammer), sonstige. Ergänzt cur:legalForm."@de .
+beruf:competentBody a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "zuständige Stelle"@de , "competent body"@en ;
+    skos:definition "Kammer oder zuständige Stelle im Wortlaut (IHK München, HWK Köln). Gehört bei § 54- und § 66-Regelungen zur Identität der Spezifikation."@de .
+beruf:responsibilityArea a owl:ObjectProperty ;
+    rdfs:label "Zuständigkeitsbereich"@de , "area of responsibility"@en .
+beruf:structuralParadigm a owl:ObjectProperty ;
+    rdfs:label "Strukturparadigma"@de , "structural paradigm"@en .
+beruf:differentiationModel a owl:ObjectProperty ;
+    rdfs:label "Differenzierungsmodell"@de , "differentiation model"@en .
+beruf:regime a owl:ObjectProperty ;
+    rdfs:label "Ordnungsregime"@de , "regulatory regime"@en .
+beruf:durationMonths a owl:DatatypeProperty ; rdfs:range xsd:integer ;
+    rdfs:label "Ausbildungsdauer in Monaten"@de , "duration in months"@en ;
+    skos:definition "Regelausbildungsdauer laut Verordnung (24, 36, 42). Nie aus Zeitrichtwerten umrechnen."@de .
+beruf:examType a owl:ObjectProperty ; rdfs:domain cur:Assessment ;
+    rdfs:label "Prüfungstyp"@de , "examination type"@en ;
+    skos:definition "Berufsbildungstyp der Prüfung neben der Kern-Prüfungsart (cv:AssessmentKinds): Zwischenprüfung ≠ Abschlussprüfung Teil 1."@de .
+beruf:actionPhase a owl:ObjectProperty ; rdfs:domain cur:Decomposition ;
+    rdfs:label "Handlungsphase"@de , "action phase"@en ;
+    skos:definition "Optional in N1, nur wenn eindeutig: informieren, planen, entscheiden, durchführen, kontrollieren, bewerten."@de .
+beruf:bibbId a owl:DatatypeProperty ; rdfs:domain cur:Occupation ; rdfs:range xsd:string ;
+    rdfs:label "BIBB-Kennung"@de , "BIBB identifier"@en ;
+    skos:definition "Kennung im Verzeichnis der anerkannten Ausbildungsberufe mit Jahresstand (cur:validFrom am Beruf)."@de .
+beruf:kldbCode a owl:DatatypeProperty ; rdfs:domain cur:Occupation ; rdfs:range xsd:string ;
+    rdfs:label "KldB-2010-Schlüssel"@de , "KldB 2010 code"@en .
+
+# =============================================================================
+# 2. Dokumenttypen
+# =============================================================================
+beruf:DocumentTypes a skos:ConceptScheme ; skos:prefLabel "Dokumenttypen Berufliche Bildung"@de .
+
+beruf:dt-Ausbildungsordnung a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Ausbildungsordnung"@de ; skos:altLabel "Ausbildungsverordnung"@de ;
+    skos:scopeNote "Verordnung des Bundes; der Ausbildungsrahmenplan ist ihre Anlage (eigene cur:Curriculum-Spezifikation, Lernort Betrieb), kein eigenes Dokument. Prüfungs-§§ ergeben cur:AssessmentSpecification."@de .
+beruf:dt-Rahmenlehrplan a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_curriculum ;
+    skos:prefLabel "KMK-Rahmenlehrplan"@de ;
+    skos:scopeNote "Lernort Berufsschule; verbindlich erst nach Übernahme durch ein Land (cur:documentBinding cv:bind_partial bis zum Landesakt). Teile I–IV einmal je Fassung der Handreichung speichern, nicht je Beruf."@de .
+beruf:dt-Landeslehrplan a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_curriculum ;
+    skos:prefLabel "Landeslehrplan berufliche Schule"@de ; skos:altLabel "Bildungsplan Berufskolleg"@de .
+beruf:dt-Fortbildungsordnung a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Fortbildungsordnung"@de ; skos:altLabel "Meisterprüfungsverordnung"@de ;
+    skos:scopeNote "Ergibt eine cur:QualificationSpecification; die Prüfungsgliederung ist die einzige Struktur (Knotentyp beruf:Pruefungsbereich), Lernziele stecken in den Prüfungsanforderungen."@de .
+beruf:dt-Fortbildungsregelung a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Fortbildungsprüfungsregelung der zuständigen Stelle (§ 54 BBiG)"@de .
+beruf:dt-Regelung66 a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Ausbildungsregelung nach § 66 BBiG / § 42r HwO"@de ; skos:altLabel "Fachpraktiker-Regelung"@de ;
+    skos:scopeNote "Abgeleitet vom Regelberuf (cur:derivedFrom); Kammer gehört zur Identität."@de .
+beruf:dt-Umschulungsordnung a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Umschulungsordnung"@de .
+beruf:dt-AusbildungsPruefungsverordnung a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Ausbildungs- und Prüfungsverordnung"@de ; skos:example "PflAPrV" .
+beruf:dt-PflegeRahmenplan a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_curriculum ;
+    skos:prefLabel "Rahmenplan der Fachkommission nach § 53 PflBG"@de ;
+    skos:scopeNote "Zwei Spezifikationen: Rahmenlehrplan (Pflegeschule) und Rahmenausbildungsplan (Praxiseinsatz); empfehlend."@de .
+beruf:dt-UeLU a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_curriculum ;
+    skos:prefLabel "ÜLU-Unterweisungsplan"@de ;
+    skos:scopeNote "Lehrgang der überbetrieblichen Lehrlingsunterweisung (Handwerk); Zuordnungen zu Berufsbildpositionen sind immer maschinell."@de .
+beruf:dt-Umsetzungshilfe a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_guidance ;
+    skos:prefLabel "Umsetzungshilfe"@de ; skos:altLabel "Ausbildung gestalten"@de .
+beruf:dt-Entsprechungsliste a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_other ;
+    skos:prefLabel "Liste der Entsprechungen"@de ;
+    skos:scopeNote "Wird regelbasiert in amtliche Kanten cv:rel_correspondsTo (Methode cv:meth_officialList) übersetzt, nicht als Curriculum extrahiert; n:m, nicht 1:1."@de .
+beruf:dt-Kompetenzmatrix a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_other ;
+    skos:prefLabel "Kompetenzmatrix"@de .
+beruf:dt-Rahmenvereinbarung a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "KMK-Rahmenvereinbarung"@de ; skos:example "Rahmenvereinbarung über Fachschulen" .
+beruf:dt-Anrechnungsverordnung a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Anrechnungsverordnung"@de ;
+    skos:scopeNote "Liefert cur:RecognitionRule (Zeitanrechnung, Prüfungsbefreiung)."@de .
+beruf:dt-Rahmenplan-Fortbildung a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_guidance ;
+    skos:prefLabel "Rahmenplan der Fortbildung"@de ; skos:scopeNote "DIHK/ZDH-Rahmenplan; nichtamtlich."@de .
+beruf:dt-Jahresplanung a cur:DocumentType ; skos:inScheme beruf:DocumentTypes ; skos:broader cv:dk_institutional ;
+    skos:prefLabel "Didaktische Jahresplanung"@de ; skos:altLabel "Betrieblicher Ausbildungsplan"@de ;
+    skos:scopeNote "Lernsituationen und Umsetzung vor Ort; nie amtlich."@de .
+
+# =============================================================================
+# 3. Knotentypen
+# =============================================================================
+beruf:NodeTypes a skos:ConceptScheme ; skos:prefLabel "Knotentypen Berufliche Bildung"@de .
+
+beruf:Verordnungsteil a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_frame ;
+    skos:prefLabel "Verordnungsteil/Paragraf"@de ; cur:extractionDepth cv:depth_typed ;
+    skos:definition "§§ der Verordnung (Dauer, Struktur, Berufsbild, Prüfung). Liefert Regeln (cur:Rule), Prüfungen (cur:Assessment) und Varianten; keine Lernergebnisse."@de .
+beruf:Ausbildungsberufsbild a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_frame ;
+    skos:prefLabel "Ausbildungsberufsbild"@de ; cur:extractionDepth cv:depth_typed ;
+    skos:definition "§ mit der Liste der Berufsbildpositionen; dient als Skelett-Vorgabe für den ARP (deterministisch)."@de .
+beruf:RLP-Rahmenteil a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_frame ;
+    skos:prefLabel "RLP-Teile I–IV"@de ; cur:extractionDepth cv:depth_typed ;
+    skos:definition "Vorbemerkungen, Bildungsauftrag der Berufsschule, didaktische Grundsätze, berufsbezogene Vorbemerkungen. Bildungsauftrag → Bildungsziele; einmal je Fassung der KMK-Handreichung speichern und per cur:appliesTo teilen."@de .
+beruf:AbschnittARP a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_grouping ;
+    skos:prefLabel "Abschnitt des Ausbildungsrahmenplans"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Abschnitt A/B/C bzw. Teil A/B: berufsprofilgebende, fachrichtungsübergreifende, integrativ zu vermittelnde Fertigkeiten, Kenntnisse und Fähigkeiten."@de ;
+    cur:delimitation "Die Buchstaben sind nicht fest an Funktionen gebunden; die Überschrift entscheidet (übergreifend → cv:share_common, „in der Fachrichtung X“ → cv:share_specific, „integrativ“ → cur:integrative true)."@de .
+beruf:Kernqualifikationen a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_grouping ;
+    skos:prefLabel "Gemeinsame Kernqualifikationen"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Anlage einer Sammelverordnung, die für mehrere Berufe gilt („zu den §§ 8, 12, 16“) – einmal anlegen, cur:appliesTo auf alle Curricula."@de .
+beruf:Lernfeldteil a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_grouping ;
+    skos:prefLabel "Lernfeldteil (Teil V)"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "„Teil V Lernfelder“ mit der Übersicht über die Lernfelder (Zeitrichtwerte je Ausbildungsjahr) – Quelle des deterministischen Skeletts."@de .
+beruf:Lernbereich a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Lernbereich"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Fachrichtungs- oder berufsübergreifender bzw. -bezogener Lernbereich (Fachschule, Berufskolleg)."@de .
+beruf:Handlungsfeld a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Handlungsfeld"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Berufliches Handlungsfeld (Bildungspläne BFS NRW: erste Ziffer der Anforderungssituation)."@de ;
+    cur:impliesContext ctx:occupationalFields ;
+    cur:delimitation "Kein Lernfeld; im KMK-RLP nur rekonstruierbar, nicht extrahieren."@de .
+beruf:Kompetenzbereich a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Kompetenzbereich"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Kompetenzbereich I–V der PflAPrV-Anlagen."@de .
+beruf:Kompetenzschwerpunkt a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_subunit ;
+    skos:prefLabel "Kompetenzschwerpunkt"@de ; cur:extractionDepth cv:depth_full ;
+    cur:typicalParent beruf:Kompetenzbereich ;
+    skos:definition "Arabisch nummerierte Untergliederung eines PflAPrV-Kompetenzbereichs (ohne Zeitwert)."@de .
+beruf:Buendelungsfach a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Bündelungsfach"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Fach eines NRW-Bildungsplans, das Lernfelder bündelt (Stundentafel)."@de .
+beruf:Lernfeld a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "Lernfeld"@de ; skos:altLabel "LF"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Durch Ziel, Inhalte und Zeitrichtwert beschriebene thematische Einheit (KMK-Handreichung 2021); Kopfzeile mit Nummer, Titel, Ausbildungsjahr und Zeitrichtwert."@de ;
+    cur:typicalParent beruf:Lernfeldteil , beruf:Buendelungsfach ;
+    cur:impliesTimeKind cv:time_trainingYear ;
+    cur:positiveExample "„Lernfeld 5: Kunden akquirieren und binden – 2. Ausbildungsjahr – Zeitrichtwert: 80 Stunden“"@de .
+beruf:Berufsbildposition a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "Berufsbildposition"@de ; skos:altLabel "Teil des Ausbildungsberufsbildes"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Zeile der ARP-Tabelle (Spalte 2) mit Lernzielen a), b) … und zeitlichen Richtwerten in Wochen je Zeitraum."@de ;
+    cur:typicalParent beruf:AbschnittARP , beruf:Kernqualifikationen ;
+    cur:impliesTimeKind cv:time_trainingMonth ;
+    skos:closeMatch lp:LP_0000261 .
+beruf:Standardberufsbildposition a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_crossCutting ;
+    skos:prefLabel "Standardberufsbildposition"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Seit 2021 in allen neu geordneten Berufen wortgleich: Organisation, Sicherheit und Gesundheit, Umweltschutz und Nachhaltigkeit, digitalisierte Arbeitswelt (qz:SBBP2021). Integrativ zu vermitteln, ohne Wochenwerte."@de ;
+    skos:scopeNote "Doppelrolle: Knoten im ARP und Querschnittsziel. Wortgleiche SBBP werden über cur:contributesTo am Quellschema qz:SBBP2021 zusammengeführt; die Lernergebnisse bleiben je Beruf."@de .
+beruf:CurriculareEinheit a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "Curriculare Einheit"@de ; skos:altLabel "CE"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "CE 01–11 der Rahmenpläne nach § 53 PflBG, mit Ausbildungsdrittel und Zeitrichtwert; übernimmt PflAPrV-Kompetenzen wörtlich (regelbasierte, amtliche exactMatch-Kante)."@de .
+beruf:Anforderungssituation a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "Anforderungssituation"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Einheit der NRW-Bildungspläne (Berufskolleg Anlage C) mit „Zeitrichtwert: 40–50 UStd.“; Code „1.1“ = Handlungsfeld.Anforderungssituation."@de ;
+    cur:typicalParent beruf:Handlungsfeld .
+beruf:Fach a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "Fach"@de ; skos:altLabel "Unterrichtsfach"@de ; cur:extractionDepth cv:depth_full .
+beruf:Lerngebiet a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "Lerngebiet"@de ; cur:extractionDepth cv:depth_full .
+beruf:Modul a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "Modul"@de ; skos:altLabel "Ausbildungsbaustein"@de ; cur:extractionDepth cv:depth_full .
+beruf:Wahlqualifikationseinheit a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "Wahlqualifikationseinheit"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Einheit, die einer cur:Variant (cv:var_electiveQualification) zugeordnet ist; die Auswahl regelt eine cur:SelectionRule."@de .
+beruf:ULULehrgang a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "ÜLU-Lehrgang"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Lehrgang mit Kennziffer („G-ETEM1/22“, „G-“ = Grundstufe), meist eine Woche."@de .
+beruf:Pruefungsbereich a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Prüfungs- oder Handlungsbereich"@de ; skos:altLabel "Handlungsbereich"@de , "Qualifikationsbereich"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Gliederung einer Fortbildungsordnung nach Prüfungsteilen und -bereichen; zugleich cur:Assessment (gleiches Element mit beiden Typen)."@de ;
+    cur:delimitation "Nicht ohne Einzelprüfung einem Lernfeld zuordnen."@de .
+beruf:Qualifikationsschwerpunkt a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_subunit ;
+    skos:prefLabel "Qualifikationsschwerpunkt"@de ; cur:extractionDepth cv:depth_full ;
+    cur:typicalParent beruf:Pruefungsbereich .
+beruf:Lernsituation a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_subunit ;
+    skos:prefLabel "Lernsituation"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Konkretisierung eines Lernfelds in der didaktischen Jahresplanung; nichtamtlich."@de ;
+    cur:typicalParent beruf:Lernfeld .
+beruf:Verzeichnis a cur:NodeType ; skos:inScheme beruf:NodeTypes ; skos:broader cv:fn_nonCurricular ;
+    skos:prefLabel "Verzeichnis/Impressum"@de ; cur:extractionDepth cv:depth_skip .
+
+# =============================================================================
+# 4. Aussage-Unterarten
+# =============================================================================
+beruf:StatementSubkinds a skos:ConceptScheme ; skos:prefLabel "Aussage-Unterarten Berufliche Bildung"@de .
+
+beruf:Kernkompetenz a cur:StatementSubkind ; skos:inScheme beruf:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "Kernkompetenz"@de ;
+    skos:definition "Erster, fett gesetzter Satz eines Lernfelds („Die Schülerinnen und Schüler verfügen über die Kompetenz, …“). Fasst die Zielformulierungen zusammen (cur:summarizes)."@de ;
+    cur:segmentation cv:seg_wholeUnit ; cur:defaultAddressee cv:addr_learner .
+beruf:Zielformulierung a cur:StatementSubkind ; skos:inScheme beruf:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "Zielformulierung"@de ; skos:altLabel "ZF"@de ;
+    skos:definition "Satz im Präsens im Fließtext des Lernfelds („Sie analysieren …“). Ein Satz = eine Aussage; Mehrfachoperatoren trennt N1."@de ;
+    cur:segmentation cv:seg_sentence ; cur:defaultAddressee cv:addr_learner ;
+    cur:wordingRule "Kursiv gesetzte Inhalte im Satz bleiben im Wortlaut und werden zusätzlich als Inhaltsaussagen mit cur:layoutMarker cv:mark_italic und cur:targetsContent erfasst."@de .
+beruf:FKF a cur:StatementSubkind ; skos:inScheme beruf:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "Lernziel (Fertigkeiten, Kenntnisse und Fähigkeiten)"@de ; skos:altLabel "FKF"@de ;
+    skos:definition "Infinitivsatz a), b), c) in Spalte 3 der ARP-Tabelle („Aufbau und Organisation des Ausbildungsbetriebes erläutern“)."@de ;
+    cur:segmentation cv:seg_tableRow ; cur:defaultAddressee cv:addr_learner .
+beruf:PflegeKompetenz a cur:StatementSubkind ; skos:inScheme beruf:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "Kompetenz (PflAPrV)"@de ;
+    skos:definition "„Die Auszubildenden …“ a)–h) unter einem Kompetenzschwerpunkt."@de ;
+    cur:segmentation cv:seg_bullet ; cur:defaultAddressee cv:addr_learner .
+beruf:Qualifikationsinhalt a cur:StatementSubkind ; skos:inScheme beruf:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "Qualifikationsinhalt"@de ;
+    skos:definition "Lernziel einer Fortbildungsordnung, meist als „In diesem Rahmen können … geprüft werden: a) …“."@de .
+beruf:Pruefungsanforderung a cur:StatementSubkind ; skos:inScheme beruf:StatementSubkinds ; skos:broader cv:kind_standard ;
+    skos:prefLabel "Prüfungsanforderung"@de ;
+    skos:definition "Anforderung in den Prüfungs-§§ („Der Prüfling soll nachweisen, dass er …“)."@de .
+beruf:Inhalt a cur:StatementSubkind ; skos:inScheme beruf:StatementSubkinds ; skos:broader cv:kind_content ;
+    skos:prefLabel "Inhalt"@de ;
+    cur:wordingRule "„verbindliche Mindestinhalte“ → cv:obl_binding; „mögliche Inhalte“ → cv:obl_exemplary; kursive Inhalte im RLP konkretisieren oder schränken Kompetenzen ein (Bedeutung je Fassung der Handreichung prüfen)."@de .
+beruf:Bildungsauftrag a cur:StatementSubkind ; skos:inScheme beruf:StatementSubkinds ; skos:broader cv:kind_developmentGoal ;
+    skos:prefLabel "Bildungsauftrag"@de ;
+    skos:definition "Ziele im Teil II des RLP (Bildungsauftrag der Berufsschule), meist gemeinsam für alle RLP einer Handreichungsfassung."@de .
+beruf:Hinweis a cur:StatementSubkind ; skos:inScheme beruf:StatementSubkinds ; skos:broader cv:kind_guidance ;
+    skos:prefLabel "Hinweis/Erläuterung"@de .
+beruf:Ausbildungsauftrag a cur:StatementSubkind ; skos:inScheme beruf:StatementSubkinds ; skos:broader cv:kind_mandate ;
+    skos:prefLabel "Auftrag an den Ausbildungsbetrieb/die Schule"@de ;
+    skos:definition "„Die Ausbildenden haben …“, „Die Berufsschule …“."@de ;
+    cur:defaultAddressee cv:addr_institution .
+
+# =============================================================================
+# 5. Wertelisten
+# =============================================================================
+beruf:LegalLevels a skos:ConceptScheme ; skos:prefLabel "Rechtsebenen"@de .
+beruf:ll-bund a skos:Concept ; skos:inScheme beruf:LegalLevels ; skos:topConceptOf beruf:LegalLevels ; skos:prefLabel "Bund"@de .
+beruf:ll-kmk a skos:Concept ; skos:inScheme beruf:LegalLevels ; skos:topConceptOf beruf:LegalLevels ; skos:prefLabel "KMK/Bildungsministerkonferenz"@de .
+beruf:ll-land a skos:Concept ; skos:inScheme beruf:LegalLevels ; skos:topConceptOf beruf:LegalLevels ; skos:prefLabel "Land"@de .
+beruf:ll-kammer a skos:Concept ; skos:inScheme beruf:LegalLevels ; skos:topConceptOf beruf:LegalLevels ; skos:prefLabel "zuständige Stelle/Kammer"@de .
+beruf:ll-sonstige a skos:Concept ; skos:inScheme beruf:LegalLevels ; skos:topConceptOf beruf:LegalLevels ; skos:prefLabel "sonstige"@de .
+
+beruf:ResponsibilityAreas a skos:ConceptScheme ; skos:prefLabel "Zuständigkeitsbereiche (BBiG §§ 71 ff.)"@de .
+beruf:ra-ih a skos:Concept ; skos:inScheme beruf:ResponsibilityAreas ; skos:topConceptOf beruf:ResponsibilityAreas ; skos:prefLabel "Industrie und Handel"@de ; skos:altLabel "IH"@de .
+beruf:ra-hw a skos:Concept ; skos:inScheme beruf:ResponsibilityAreas ; skos:topConceptOf beruf:ResponsibilityAreas ; skos:prefLabel "Handwerk"@de ; skos:altLabel "HW"@de .
+beruf:ra-lw a skos:Concept ; skos:inScheme beruf:ResponsibilityAreas ; skos:topConceptOf beruf:ResponsibilityAreas ; skos:prefLabel "Landwirtschaft"@de .
+beruf:ra-oed a skos:Concept ; skos:inScheme beruf:ResponsibilityAreas ; skos:topConceptOf beruf:ResponsibilityAreas ; skos:prefLabel "öffentlicher Dienst"@de .
+beruf:ra-fb a skos:Concept ; skos:inScheme beruf:ResponsibilityAreas ; skos:topConceptOf beruf:ResponsibilityAreas ; skos:prefLabel "freie Berufe"@de .
+beruf:ra-hwi a skos:Concept ; skos:inScheme beruf:ResponsibilityAreas ; skos:topConceptOf beruf:ResponsibilityAreas ; skos:prefLabel "Hauswirtschaft"@de .
+beruf:ra-see a skos:Concept ; skos:inScheme beruf:ResponsibilityAreas ; skos:topConceptOf beruf:ResponsibilityAreas ; skos:prefLabel "Seeschifffahrt"@de ;
+    skos:editorialNote "Vollständigkeit der Bereichsliste am BBiG prüfen."@de .
+
+beruf:StructuralParadigms a skos:ConceptScheme ; skos:prefLabel "Strukturparadigmen"@de .
+beruf:sp-lernfeld a skos:Concept ; skos:inScheme beruf:StructuralParadigms ; skos:topConceptOf beruf:StructuralParadigms ; skos:prefLabel "lernfeldstrukturiert"@de ;
+    skos:scopeNote "Regelfall der KMK-Rahmenlehrpläne seit der Handreichung vom 09.05.1996."@de .
+beruf:sp-fach a skos:Concept ; skos:inScheme beruf:StructuralParadigms ; skos:topConceptOf beruf:StructuralParadigms ; skos:prefLabel "fach- oder lerngebietsstrukturiert"@de .
+beruf:sp-kompetenzbereich a skos:Concept ; skos:inScheme beruf:StructuralParadigms ; skos:topConceptOf beruf:StructuralParadigms ; skos:prefLabel "kompetenzbereichsstrukturiert"@de .
+beruf:sp-handlungsbereich a skos:Concept ; skos:inScheme beruf:StructuralParadigms ; skos:topConceptOf beruf:StructuralParadigms ; skos:prefLabel "handlungsbereichsstrukturiert"@de .
+beruf:sp-position a skos:Concept ; skos:inScheme beruf:StructuralParadigms ; skos:topConceptOf beruf:StructuralParadigms ; skos:prefLabel "positionsstrukturiert (Ausbildungsrahmenplan)"@de .
+
+beruf:DifferentiationModels a skos:ConceptScheme ; skos:prefLabel "Differenzierungsmodelle"@de .
+beruf:dm-ohne a skos:Concept ; skos:inScheme beruf:DifferentiationModels ; skos:topConceptOf beruf:DifferentiationModels ; skos:prefLabel "ohne Spezialisierung"@de .
+beruf:dm-einsatzgebiete a skos:Concept ; skos:inScheme beruf:DifferentiationModels ; skos:topConceptOf beruf:DifferentiationModels ; skos:prefLabel "Einsatzgebiete"@de .
+beruf:dm-wahlqualifikationen a skos:Concept ; skos:inScheme beruf:DifferentiationModels ; skos:topConceptOf beruf:DifferentiationModels ; skos:prefLabel "Wahlqualifikationen"@de .
+beruf:dm-schwerpunkte a skos:Concept ; skos:inScheme beruf:DifferentiationModels ; skos:topConceptOf beruf:DifferentiationModels ; skos:prefLabel "Schwerpunkte"@de .
+beruf:dm-fachrichtungen a skos:Concept ; skos:inScheme beruf:DifferentiationModels ; skos:topConceptOf beruf:DifferentiationModels ; skos:prefLabel "Fachrichtungen"@de .
+beruf:dm-kombi a skos:Concept ; skos:inScheme beruf:DifferentiationModels ; skos:topConceptOf beruf:DifferentiationModels ; skos:prefLabel "Kombinationsmodell"@de .
+beruf:dm-berufsgruppe a skos:Concept ; skos:inScheme beruf:DifferentiationModels ; skos:topConceptOf beruf:DifferentiationModels ; skos:prefLabel "Berufsgruppe"@de .
+
+beruf:Regimes a skos:ConceptScheme ; skos:prefLabel "Ordnungsregime"@de .
+beruf:r1-dual a skos:Concept ; skos:inScheme beruf:Regimes ; skos:topConceptOf beruf:Regimes ; skos:notation "R1" ; skos:prefLabel "duale Ausbildung nach BBiG/HwO"@de .
+beruf:r2-bundesberufe a skos:Concept ; skos:inScheme beruf:Regimes ; skos:topConceptOf beruf:Regimes ; skos:notation "R2" ;
+    skos:prefLabel "bundesrechtliche Berufe außerhalb BBiG/HwO"@de ; skos:scopeNote "PflBG, HebG, NotSanG, MT-Berufe."@de .
+beruf:r3-landesrecht a skos:Concept ; skos:inScheme beruf:Regimes ; skos:topConceptOf beruf:Regimes ; skos:notation "R3" ;
+    skos:prefLabel "landesrechtliche Bildungsgänge"@de ; skos:scopeNote "Berufsfachschule, Berufskolleg, Fachschule, Fachoberschule, berufliches Gymnasium."@de .
+beruf:r4-fortbildung a skos:Concept ; skos:inScheme beruf:Regimes ; skos:topConceptOf beruf:Regimes ; skos:notation "R4" ; skos:prefLabel "Fortbildung"@de .
+beruf:r5-sonstige a skos:Concept ; skos:inScheme beruf:Regimes ; skos:topConceptOf beruf:Regimes ; skos:notation "R5" ;
+    skos:prefLabel "Ausbildungsvorbereitung, Umschulung, § 66 BBiG"@de .
+
+beruf:ExamTypes a skos:ConceptScheme ; skos:prefLabel "Prüfungstypen Berufliche Bildung"@de .
+beruf:ex-zwischen a skos:Concept ; skos:inScheme beruf:ExamTypes ; skos:topConceptOf beruf:ExamTypes ; skos:prefLabel "Zwischenprüfung"@de ;
+    skos:scopeNote "Lernstandsfeststellung ohne Gewicht im Ergebnis; nicht mit Abschlussprüfung Teil 1 verwechseln."@de .
+beruf:ex-ap a skos:Concept ; skos:inScheme beruf:ExamTypes ; skos:topConceptOf beruf:ExamTypes ; skos:prefLabel "Abschlussprüfung"@de .
+beruf:ex-ap1 a skos:Concept ; skos:inScheme beruf:ExamTypes ; skos:broader beruf:ex-ap ; skos:prefLabel "Abschlussprüfung Teil 1"@de .
+beruf:ex-ap2 a skos:Concept ; skos:inScheme beruf:ExamTypes ; skos:broader beruf:ex-ap ; skos:prefLabel "Abschlussprüfung Teil 2"@de .
+beruf:ex-gesellen a skos:Concept ; skos:inScheme beruf:ExamTypes ; skos:broader beruf:ex-ap ; skos:prefLabel "Gesellenprüfung"@de .
+beruf:ex-fortbildung a skos:Concept ; skos:inScheme beruf:ExamTypes ; skos:topConceptOf beruf:ExamTypes ; skos:prefLabel "Fortbildungsprüfung"@de ; skos:altLabel "Meisterprüfung"@de .
+beruf:ex-staatlich a skos:Concept ; skos:inScheme beruf:ExamTypes ; skos:topConceptOf beruf:ExamTypes ; skos:prefLabel "staatliche Prüfung"@de .
+
+beruf:AssessmentForms a skos:ConceptScheme ; skos:prefLabel "Prüfungsinstrumente Berufliche Bildung"@de ;
+    skos:editorialNote "Abgleich mit der BIBB-Hauptausschussempfehlung zu Prüfungsinstrumenten offen."@de .
+beruf:af-schriftlich a skos:Concept ; skos:inScheme beruf:AssessmentForms ; skos:topConceptOf beruf:AssessmentForms ; skos:prefLabel "schriftlich zu bearbeitende Aufgaben"@de .
+beruf:af-fachgespraech a skos:Concept ; skos:inScheme beruf:AssessmentForms ; skos:topConceptOf beruf:AssessmentForms ; skos:prefLabel "fallbezogenes Fachgespräch"@de .
+beruf:af-auftrag a skos:Concept ; skos:inScheme beruf:AssessmentForms ; skos:topConceptOf beruf:AssessmentForms ; skos:prefLabel "betrieblicher Auftrag/Arbeitsauftrag"@de .
+beruf:af-pruefungsstueck a skos:Concept ; skos:inScheme beruf:AssessmentForms ; skos:topConceptOf beruf:AssessmentForms ; skos:prefLabel "Prüfungsstück/Gesellenstück"@de .
+beruf:af-praesentation a skos:Concept ; skos:inScheme beruf:AssessmentForms ; skos:topConceptOf beruf:AssessmentForms ; skos:prefLabel "Präsentation"@de .
+beruf:af-praktisch a skos:Concept ; skos:inScheme beruf:AssessmentForms ; skos:topConceptOf beruf:AssessmentForms ; skos:prefLabel "praktische Prüfung"@de .
+beruf:af-muendlich a skos:Concept ; skos:inScheme beruf:AssessmentForms ; skos:topConceptOf beruf:AssessmentForms ; skos:prefLabel "mündliche Prüfung"@de .
+
+beruf:ActionPhases a skos:ConceptScheme ; skos:prefLabel "Phasen der vollständigen Handlung"@de .
+beruf:ap-informieren a skos:Concept ; skos:inScheme beruf:ActionPhases ; skos:topConceptOf beruf:ActionPhases ; skos:prefLabel "informieren"@de .
+beruf:ap-planen a skos:Concept ; skos:inScheme beruf:ActionPhases ; skos:topConceptOf beruf:ActionPhases ; skos:prefLabel "planen"@de .
+beruf:ap-entscheiden a skos:Concept ; skos:inScheme beruf:ActionPhases ; skos:topConceptOf beruf:ActionPhases ; skos:prefLabel "entscheiden"@de .
+beruf:ap-durchfuehren a skos:Concept ; skos:inScheme beruf:ActionPhases ; skos:topConceptOf beruf:ActionPhases ; skos:prefLabel "durchführen"@de .
+beruf:ap-kontrollieren a skos:Concept ; skos:inScheme beruf:ActionPhases ; skos:topConceptOf beruf:ActionPhases ; skos:prefLabel "kontrollieren"@de .
+beruf:ap-bewerten a skos:Concept ; skos:inScheme beruf:ActionPhases ; skos:topConceptOf beruf:ActionPhases ; skos:prefLabel "bewerten/reflektieren"@de .
+
+# Kompetenzmodell der Ausbildungsordnungen (FKF-Trias); das KMK-Modell der
+# Rahmenlehrpläne ist kd:KMKActionCompetence, die DQR-Kategorien kd:Bridge.
+beruf:FKFModel a cur:CompetencyModel ;
+    skos:prefLabel "Fertigkeiten, Kenntnisse und Fähigkeiten (Ausbildungsordnung)"@de ;
+    dct:source "§ 1 Abs. 3 BBiG (berufliche Handlungsfähigkeit)" ;
+    skos:hasTopConcept beruf:fkf-fertigkeiten , beruf:fkf-kenntnisse , beruf:fkf-faehigkeiten .
+beruf:fkf-fertigkeiten a cur:CompetenceDimension ; skos:inScheme beruf:FKFModel ; skos:topConceptOf beruf:FKFModel ;
+    skos:prefLabel "Fertigkeiten"@de ; skos:closeMatch kd:skills .
+beruf:fkf-kenntnisse a cur:CompetenceDimension ; skos:inScheme beruf:FKFModel ; skos:topConceptOf beruf:FKFModel ;
+    skos:prefLabel "Kenntnisse"@de ; skos:closeMatch kd:knowledge .
+beruf:fkf-faehigkeiten a cur:CompetenceDimension ; skos:inScheme beruf:FKFModel ; skos:topConceptOf beruf:FKFModel ;
+    skos:prefLabel "Fähigkeiten"@de ; skos:relatedMatch kd:personal .
+
+# Fortbildungsstufen: die Werte sind lvl:AdvancedVocational (DQR 5/6/7);
+# Mindestlernumfänge 400/1200/1600 h als cur:Workload an der Qualifikation.
+
+# =============================================================================
+# 6. Terminologieprofil (43 BBO-Hinweise, Muster korrigiert, plus D.4/D.5)
+#    Jeder Hinweis mit Muster trägt Positiv- und Negativbeispiele; das
+#    Prüfskript wendet das Muster darauf an.
+# =============================================================================
+beruf:Terminology a cur:TerminologyProfile ;
+    rdfs:label "Terminologie Berufliche Bildung"@de ;
+    cur:profileScope cv:sec_vocational ;
+    cur:hasCue beruf:c-ao-1 , beruf:c-ao-2 , beruf:c-ao-3 , beruf:c-rlp-1 , beruf:c-rlp-2 , beruf:c-llp-1 , beruf:c-fo-1 , beruf:c-fo-2 ,
+        beruf:c-66-1 , beruf:c-66-2 , beruf:c-pflege-1 , beruf:c-pflege-2 , beruf:c-uelu-1 , beruf:c-uelu-2 , beruf:c-el-1 ,
+        beruf:c-lf-1 , beruf:c-lf-2 , beruf:c-lft-1 , beruf:c-bbp-1 , beruf:c-bbp-2 , beruf:c-bbp-3 , beruf:c-zq-1 , beruf:c-abs-1 ,
+        beruf:c-kq-1 , beruf:c-ce-1 , beruf:c-kb-1 , beruf:c-as-1 , beruf:c-hf-1 , beruf:c-lb-1 , beruf:c-lg-1 , beruf:c-qs-1 ,
+        beruf:c-qb-1 , beruf:c-hb-1 , beruf:c-kk-1 , beruf:c-kk-2 , beruf:c-kk-3 , beruf:c-inh-1 , beruf:c-inh-2 , beruf:c-inh-3 ,
+        beruf:c-inh-4 , beruf:c-fkf-1 , beruf:c-fkf-2 , beruf:c-fkf-3 , beruf:c-gem-1 , beruf:c-spez-1 , beruf:c-int-1 , beruf:c-wahl-1 ,
+        beruf:c-zrw-1 , beruf:c-mon-1 , beruf:c-ajahr-1 , beruf:c-pruef-1 , beruf:c-zq-2 , beruf:c-fs-1 , beruf:c-entspr-1 , beruf:c-nicht-dqr .
+
+beruf:c-ao-1 a cur:LexicalCue ; cur:surfaceForm "Verordnung über die Berufsausbildung zum" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_titlePage ; cur:mapsTo beruf:dt-Ausbildungsordnung ; cur:strength 0.95 ; cur:verified true .
+beruf:c-ao-2 a cur:LexicalCue ; cur:surfaceForm "Bundesgesetzblatt" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_headerFooter ; cur:mapsTo beruf:dt-Ausbildungsordnung ; cur:strength 0.5 .
+beruf:c-ao-3 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Anlage\\s*(\\d+\\s*)?\\(zu\\s+(den\\s+)?§" ; cur:mapsTo beruf:dt-Ausbildungsordnung , beruf:AbschnittARP ; cur:strength 0.85 ;
+    cur:positiveExample "Anlage (zu § 4)" , "Anlage 1 (zu den §§ 8, 12, 16)" ; cur:negativeExample "Anlagenmechaniker" ;
+    cur:recognitionHint "Anlage mit Ausbildungsrahmenplan; „zu den §§ …“ mit mehreren Nummern → mehrere Berufe (Sammelverordnung)."@de .
+beruf:c-rlp-1 a cur:LexicalCue ; cur:surfaceForm "Rahmenlehrplan für den Ausbildungsberuf" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_titlePage ; cur:mapsTo beruf:dt-Rahmenlehrplan ; cur:strength 0.95 ; cur:verified true .
+beruf:c-rlp-2 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "Beschluss der (Kultusministerkonferenz|Bildungsministerkonferenz) vom" ; cur:mapsTo beruf:dt-Rahmenlehrplan ; cur:strength 0.8 ;
+    cur:positiveExample "(Beschluss der Kultusministerkonferenz vom 27.09.2013)" ; cur:negativeExample "Beschluss vom 1. Mai" .
+beruf:c-llp-1 a cur:LexicalCue ; cur:surfaceForm "Bündelungsfach" ; cur:cueRole cv:role_pref ; cur:cueKind cv:ck_term ;
+    cur:mapsTo beruf:Buendelungsfach , beruf:dt-Landeslehrplan ; cur:scopeRegion land:DE-NW ; cur:strength 0.9 .
+beruf:c-fo-1 a cur:LexicalCue ; cur:surfaceForm "Prüfung zum anerkannten Fortbildungsabschluss" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_titlePage ; cur:mapsTo beruf:dt-Fortbildungsordnung ; cur:strength 0.9 .
+beruf:c-fo-2 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "§\\s*54\\s*BBiG|§\\s*42a\\s*HwO" ; cur:mapsTo beruf:dt-Fortbildungsregelung ; cur:strength 0.8 ;
+    cur:positiveExample "nach § 54 BBiG" ; cur:negativeExample "§ 53 BBiG" ;
+    cur:recognitionHint "Regelung einer zuständigen Stelle: Kammer in beruf:competentBody."@de .
+beruf:c-66-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "§\\s*66\\s*BBiG|§\\s*42[mr]\\s*HwO" ; cur:mapsTo beruf:dt-Regelung66 ; cur:strength 0.9 ;
+    cur:positiveExample "nach § 66 BBiG" , "§ 42r HwO" , "§42m HwO" ; cur:negativeExample "§ 64 BBiG" ;
+    cur:recognitionHint "Ältere Texte § 42m HwO, neuere § 42r HwO."@de .
+beruf:c-66-2 a cur:LexicalCue ; cur:surfaceForm "Fachpraktiker" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_titlePage ; cur:mapsTo beruf:dt-Regelung66 ; cur:strength 0.8 .
+beruf:c-pflege-1 a cur:LexicalCue ; cur:surfaceForm "Fachkommission nach § 53 PflBG" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo beruf:dt-PflegeRahmenplan ; cur:strength 0.95 .
+beruf:c-pflege-2 a cur:LexicalCue ; cur:surfaceForm "Rahmenausbildungsplan" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo beruf:dt-PflegeRahmenplan , ctx:practice-placement ; cur:strength 0.85 ;
+    cur:recognitionHint "Lernort Praxiseinsatz (beruf:learningPlace ctx:practice-placement)."@de .
+beruf:c-uelu-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ;
+    cur:pattern "^(G-)?[A-Z]+\\d+/\\d{2}\\b" ; cur:mapsTo beruf:ULULehrgang , beruf:dt-UeLU ; cur:strength 0.85 ;
+    cur:positiveExample "G-MET2/19 Schweißen" , "ETEM1/22" ; cur:negativeExample "Lernfeld 2/19" , "g-met2/19" ;
+    cur:recognitionHint "Kennziffer als cur:code; „G-“ = Grundstufe."@de ;
+    skos:editorialNote "BBO c-uelu-1 korrigiert: der $-Anker verhinderte Treffer, wenn der Titel folgt."@de .
+beruf:c-uelu-2 a cur:LexicalCue ; cur:surfaceForm "Unterweisungsplan für einen Lehrgang der überbetrieblichen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_titlePage ; cur:mapsTo beruf:dt-UeLU ; cur:strength 0.9 .
+beruf:c-el-1 a cur:LexicalCue ; cur:surfaceForm "Liste der Entsprechungen" ; cur:cueRole cv:role_pref ; cur:cueKind cv:ck_term ;
+    cur:mapsTo beruf:dt-Entsprechungsliste ; cur:strength 0.95 .
+beruf:c-lf-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Lernfeld\\s+\\d+[A-Z]*\\b\\s*:?" ; cur:mapsTo beruf:Lernfeld ; cur:strength 0.95 ;
+    cur:positiveExample "Lernfeld 5: Kunden akquirieren" , "Lernfeld 5 Kunden akquirieren" , "Lernfeld 13GH: Projekt" ;
+    cur:negativeExample "Lernfelder 1 bis 4" , "Übersicht über die Lernfelder" ;
+    cur:recognitionHint "Nummer als cur:code (Zeichenkette, auch „13GH“); Ausbildungsjahr als cur:timeSpan, Zeitrichtwert als cur:workload (cv:unit_lesson, cv:wl_guidanceValue)."@de ;
+    skos:editorialNote "BBO c-lf-1 korrigiert: der Doppelpunkt war Pflicht."@de .
+beruf:c-lf-2 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_layout ; cur:layoutSignal cv:mark_tableCell ;
+    cur:mapsTo beruf:Lernfeld ; cur:scopeDocumentType beruf:dt-Rahmenlehrplan ; cur:strength 0.9 ;
+    cur:recognitionHint "Kopfzeile mit Lernfeldnummer, Titel, Ausbildungsjahr und Zeitrichtwert."@de .
+beruf:c-lft-1 a cur:LexicalCue ; cur:surfaceForm "Übersicht über die Lernfelder" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo beruf:Lernfeldteil ; cur:scopeDocumentType beruf:dt-Rahmenlehrplan ; cur:strength 0.9 ;
+    cur:recognitionHint "Tabelle liefert in X2 das Skelett (Nummer, Titel, Zeitrichtwerte je Jahr) ohne LLM."@de .
+beruf:c-bbp-1 a cur:LexicalCue ; cur:surfaceForm "Berufsbildposition" ; cur:cueRole cv:role_pref ; cur:cueKind cv:ck_term ;
+    cur:mapsTo beruf:Berufsbildposition ; cur:scopeDocumentType beruf:dt-Ausbildungsordnung ; cur:strength 0.95 .
+beruf:c-bbp-2 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ; cur:occursIn cv:occ_tableHeader ;
+    cur:pattern "^Lfd\\.?\\s*Nr\\.?$" ; cur:mapsTo beruf:Berufsbildposition ; cur:strength 0.9 ;
+    cur:positiveExample "Lfd. Nr." , "Lfd Nr" ; cur:negativeExample "Nr. 3" ;
+    cur:recognitionHint "Vierspaltige ARP-Tabelle: Spalte 1 laufende Nummer (cur:code), Spalte 2 Berufsbildposition, Spalte 3 Lernziele a), b) …, Spalte 4 Wochen je Zeitraum. Leere Zellen mit der zuletzt gesehenen Position füllen; Kopfzeilen „1 | 2 | 3 | 4“ verwerfen."@de .
+beruf:c-bbp-3 a cur:LexicalCue ; cur:surfaceForm "Teil des Ausbildungsberufsbildes" ; cur:cueRole cv:role_alt ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_tableHeader ; cur:mapsTo beruf:Berufsbildposition ; cur:strength 0.9 .
+beruf:c-zq-1 a cur:LexicalCue ; cur:surfaceForm "Teil der Zusatzqualifikation" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_tableHeader ; cur:mapsTo beruf:Berufsbildposition , cv:var_additionalQualification ; cur:strength 0.85 ;
+    cur:recognitionHint "Position gehört zu einer cur:Variant der Art Zusatzqualifikation (gesondert geprüft, cv:share_supplementary)."@de .
+beruf:c-abs-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^(Abschnitt|Teil)\\s+[A-E]\\s*:" ; cur:mapsTo beruf:AbschnittARP ; cur:scopeDocumentType beruf:dt-Ausbildungsordnung ; cur:strength 0.9 ;
+    cur:positiveExample "Abschnitt A: berufsprofilgebende Fertigkeiten" , "Teil A: Sachliche Gliederung" ;
+    cur:negativeExample "Abschnitte A und B" , "Teil V Lernfelder" ;
+    skos:editorialNote "BBO c-abs-1 korrigiert: „Teil A:“ wurde nicht erkannt."@de .
+beruf:c-kq-1 a cur:LexicalCue ; cur:surfaceForm "Gemeinsame Kernqualifikationen" ; cur:cueRole cv:role_pref ; cur:cueKind cv:ck_term ;
+    cur:mapsTo beruf:Kernqualifikationen ; cur:strength 0.95 .
+beruf:c-ce-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ;
+    cur:pattern "^CE\\s*\\d{2}\\b" ; cur:mapsTo beruf:CurriculareEinheit ; cur:scopeDocumentType beruf:dt-PflegeRahmenplan ; cur:strength 0.95 ;
+    cur:positiveExample "CE 01 Ausbildungsstart" , "CE01" ; cur:negativeExample "CEO" , "CE 1" .
+beruf:c-kb-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Kompetenzbereich\\s+(I|II|III|IV|V)\\b" ; cur:mapsTo beruf:Kompetenzbereich ; cur:scopeDocumentType beruf:dt-AusbildungsPruefungsverordnung ; cur:strength 0.9 ;
+    cur:positiveExample "Kompetenzbereich III: Intra- und interprofessionelles Handeln" ; cur:negativeExample "Kompetenzbereich Fachkompetenz" ;
+    cur:recognitionHint "PflAPrV: Kompetenzbereich → Kompetenzschwerpunkt → Kompetenz a)–h)."@de .
+beruf:c-as-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Anforderungssituation\\s+\\d+\\.\\d+" ; cur:mapsTo beruf:Anforderungssituation ; cur:scopeRegion land:DE-NW ; cur:strength 0.95 ;
+    cur:positiveExample "Anforderungssituation 1.1" ; cur:negativeExample "Anforderungssituationen" ;
+    cur:recognitionHint "Erste Ziffer = Handlungsfeld (typischer Elternknoten)."@de .
+beruf:c-hf-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Handlungsfeld\\s+\\d+" ; cur:mapsTo beruf:Handlungsfeld ; cur:strength 0.8 ;
+    cur:positiveExample "Handlungsfeld 1: Bildung und Erziehung" ; cur:negativeExample "Handlungsfelder" ;
+    cur:negativeHint "Kein Lernfeld. Im Integrationskurs (Profil eb:) bedeutet „Handlungsfeld“ einen Lebensbereich."@de .
+beruf:c-lb-1 a cur:LexicalCue ; cur:surfaceForm "fachrichtungsübergreifender Lernbereich" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo beruf:Lernbereich , cv:share_common ; cur:scopeDocumentType beruf:dt-Landeslehrplan ; cur:strength 0.85 .
+beruf:c-lg-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Lerngebiet\\s+\\d+" ; cur:mapsTo beruf:Lerngebiet ; cur:strength 0.85 ;
+    cur:positiveExample "Lerngebiet 3" ; cur:negativeExample "Lerngebiete" .
+beruf:c-qs-1 a cur:LexicalCue ; cur:surfaceForm "Qualifikationsschwerpunkte" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo beruf:Qualifikationsschwerpunkt ; cur:scopeDocumentType beruf:dt-Fortbildungsordnung ; cur:strength 0.85 .
+beruf:c-qb-1 a cur:LexicalCue ; cur:surfaceForm "Qualifikationsbereich" ; cur:cueRole cv:role_alt ; cur:cueKind cv:ck_term ;
+    cur:mapsTo beruf:Pruefungsbereich ; cur:scopeDocumentType beruf:dt-Fortbildungsordnung ; cur:strength 0.7 .
+beruf:c-hb-1 a cur:LexicalCue ; cur:surfaceForm "Handlungsbereich" ; cur:cueRole cv:role_alt ; cur:cueKind cv:ck_term ;
+    cur:mapsTo beruf:Pruefungsbereich ; cur:scopeDocumentType beruf:dt-Fortbildungsordnung ; cur:strength 0.85 .
+beruf:c-kk-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_layout ; cur:layoutSignal cv:mark_bold ;
+    cur:mapsTo beruf:Kernkompetenz ; cur:scopeDocumentType beruf:dt-Rahmenlehrplan ; cur:strength 0.9 ;
+    cur:recognitionHint "Erster, fett gesetzter Satz eines Lernfelds."@de .
+beruf:c-kk-2 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "\\b(besitzen|verfügen)\\s+(über\\s+)?die\\s+Kompetenz" ; cur:mapsTo beruf:Kernkompetenz ; cur:strength 0.85 ;
+    cur:positiveExample "Die Schülerinnen und Schüler verfügen über die Kompetenz, Kunden zu beraten" , "besitzen die Kompetenz" ;
+    cur:negativeExample "Kompetenzen werden erworben" .
+beruf:c-kk-3 a cur:LexicalCue ; cur:surfaceForm "Kernkompetenz der übergeordneten beruflichen Handlung" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo beruf:Kernkompetenz ; cur:scopeRegion land:DE-SN ; cur:strength 0.85 .
+beruf:c-inh-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_layout ; cur:layoutSignal cv:mark_italic ;
+    cur:mapsTo beruf:Inhalt ; cur:scopeDocumentType beruf:dt-Rahmenlehrplan ; cur:strength 0.9 ;
+    cur:recognitionHint "„Inhalte stehen kursiv, wenn sie Kompetenzen konkretisieren oder einschränken.“ Kursivsatz als cur:layoutMarker erhalten."@de .
+beruf:c-inh-2 a cur:LexicalCue ; cur:surfaceForm "verbindliche Mindestinhalte" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo beruf:Inhalt , cv:obl_binding ; cur:strength 0.85 .
+beruf:c-inh-3 a cur:LexicalCue ; cur:surfaceForm "mögliche Inhalte" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo beruf:Inhalt , cv:obl_exemplary ; cur:strength 0.85 .
+beruf:c-inh-4 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Inhalte\\s*:" ; cur:mapsTo beruf:Inhalt ; cur:scopeDocumentType beruf:dt-Rahmenlehrplan ; cur:strength 0.8 ;
+    cur:positiveExample "Inhalte: Angebotsvergleich" ; cur:negativeExample "Inhalte zu den Kompetenzen" ;
+    cur:recognitionHint "Ältere Rahmenlehrpläne."@de .
+beruf:c-fkf-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ;
+    cur:pattern "^[a-z]\\)\\s" ; cur:mapsTo beruf:FKF ; cur:scopeDocumentType beruf:dt-Ausbildungsordnung ; cur:strength 0.85 ;
+    cur:positiveExample "a) Aufbau und Organisation des Ausbildungsbetriebes erläutern" ; cur:negativeExample "ab) x" , "A) x" ;
+    cur:recognitionHint "Buchstabe als cur:code; ein Buchstabe = eine Aussage."@de .
+beruf:c-fkf-2 a cur:LexicalCue ; cur:surfaceForm "Kernqualifikationen, die unter Einbeziehung selbstständigen Planens, Durchführens und Kontrollierens" ;
+    cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:occursIn cv:occ_tableHeader ;
+    cur:mapsTo beruf:FKF ; cur:scopeDocumentType beruf:dt-Ausbildungsordnung ; cur:strength 0.9 ;
+    cur:recognitionHint "Spaltenkopf in Sammelverordnungen."@de .
+beruf:c-fkf-3 a cur:LexicalCue ; cur:surfaceForm "Lernziele" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_term ;
+    cur:mapsTo beruf:FKF ; cur:alsoMapsTo beruf:Zielformulierung ; cur:strength 0.6 ;
+    cur:recognitionHint "In Entsprechungslisten und ARP → FKF; in Landeslehrplänen eher Zielformulierung."@de .
+beruf:c-gem-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "(fachrichtungs|wahlqualifikations|schwerpunkt|einsatzgebiets|berufs)übergreifend" ; cur:mapsTo cv:share_common ; cur:strength 0.9 ;
+    cur:positiveExample "fachrichtungsübergreifende Fertigkeiten" , "berufsübergreifend" ; cur:negativeExample "übergreifend" .
+beruf:c-spez-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "\\b(in der Fachrichtung|im Schwerpunkt|im Einsatzgebiet|in der Wahlqualifikation)\\b" ; cur:mapsTo cv:share_specific ; cur:strength 0.85 ;
+    cur:positiveExample "in der Fachrichtung Zerspanungstechnik" , "im Schwerpunkt Kundenbetreuung" , "im Einsatzgebiet Produktion" , "in der Wahlqualifikation Assistenz" ;
+    cur:negativeExample "fachrichtungsübergreifend" , "Fachrichtungen" ;
+    cur:recognitionHint "Der Name hinter der Wendung benennt die cur:Variant (cur:appliesToVariant)."@de ;
+    skos:editorialNote "BBO c-spez-1 korrigiert: der alte Ausdruck traf nur „in der Fachrichtung“."@de .
+beruf:c-int-1 a cur:LexicalCue ; cur:surfaceForm "integrativ zu vermittelnde" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo cv:obl_binding , beruf:Standardberufsbildposition ; cur:strength 0.7 ;
+    cur:recognitionHint "Setzt cur:integrative true am Abschnitt; Positionen darin haben keine Wochenwerte."@de .
+beruf:c-wahl-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "\\b(zwei|drei|vier|fünf|\\d+)\\s+(der|aus den)\\s+(folgenden|nachstehenden)\\s+(\\w+\\s+)?Wahlqualifikationen|\\b(zwei|drei|vier|fünf|\\d+)\\s+Wahlqualifikationen\\s+aus\\s+(den\\s+)?(folgenden|nachstehenden)" ;
+    cur:mapsTo cv:obl_selectionPool , cur:SelectionRule ; cur:strength 0.9 ;
+    cur:positiveExample "zwei der folgenden zehn Wahlqualifikationen" , "zwei Wahlqualifikationen aus den folgenden" , "drei aus den folgenden Wahlqualifikationen" ;
+    cur:negativeExample "die Wahlqualifikationen" , "Wahlqualifikation 3" ;
+    cur:recognitionHint "Erzeugt eine cur:SelectionRule (cur:minCount = cur:maxCount = Zahl; Optionen = folgende Liste) und Varianten der Art cv:var_electiveQualification."@de ;
+    skos:editorialNote "BBO c-wahl-1 korrigiert; der Originalwortlaut der Verordnungen ist am Primärtext noch zu prüfen."@de .
+beruf:c-zrw-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "Zeitrichtwert:?\\s*\\d+(\\s*[–-]\\s*\\d+)?\\s*(UStd|Unterrichtsstunden|Std)" ; cur:mapsTo cv:wl_guidanceValue ; cur:strength 0.9 ;
+    cur:positiveExample "Zeitrichtwert: 40–50 UStd." , "Zeitrichtwert 80 Unterrichtsstunden" ; cur:negativeExample "Zeitrichtwerte" ;
+    cur:recognitionHint "cur:amount (und cur:amountTo bei Spannen) mit cv:unit_lesson; „Stunden“ im RLP sind Unterrichtsstunden, nie in Zeitstunden umrechnen."@de .
+beruf:c-mon-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ;
+    cur:pattern "\\b\\d+\\.\\s*(bis|–|-)\\s*\\d+\\.\\s*(Ausbildungs)?[Mm]onat" ; cur:mapsTo cv:time_trainingMonth ; cur:scopeDocumentType beruf:dt-Ausbildungsordnung ; cur:strength 0.9 ;
+    cur:positiveExample "1. bis 15. Monat" , "16.–36. Ausbildungsmonat" ; cur:negativeExample "15 Monate" ;
+    cur:recognitionHint "Zeitraum der Wochenwerte in Spalte 4: cur:timeSpan (cv:time_trainingMonth, cur:from, cur:to); Wochen als cur:workload cv:unit_week je Zeitraum."@de .
+beruf:c-ajahr-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "\\b([1-4])\\.\\s*Ausbildungsjahr" ; cur:mapsTo cv:time_trainingYear ; cur:strength 0.9 ;
+    cur:positiveExample "2. Ausbildungsjahr" ; cur:negativeExample "Ausbildungsjahre" .
+beruf:c-pruef-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^§\\s*\\d+\\s+(Zwischenprüfung|Abschlussprüfung|Gesellenprüfung|Teil\\s+[12]\\s+der\\s+(Abschluss|Gesellen)prüfung|Prüfungsbereich)" ;
+    cur:mapsTo cur:Assessment , beruf:Verordnungsteil ; cur:strength 0.9 ;
+    cur:positiveExample "§ 9 Teil 1 der Abschlussprüfung" , "§ 12 Prüfungsbereich Kundenbeziehungsprozesse" , "§ 8 Zwischenprüfung" ;
+    cur:negativeExample "§ 5 Ausbildungsberufsbild" ;
+    cur:recognitionHint "Prüfung als cur:Assessment mit beruf:examType, Teile und Bereiche über cur:partOf, Dauer cur:durationMinutes, Gewicht cur:weightPercent, geprüfte Positionen/Lernfelder über cur:assesses."@de .
+beruf:c-zq-2 a cur:LexicalCue ; cur:surfaceForm "Zusatzqualifikation" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo cv:var_additionalQualification ; cur:strength 0.85 .
+beruf:c-fs-1 a cur:LexicalCue ; cur:surfaceForm "Der Erwerb von Fremdsprachenkompetenz ist in den Lernfeldern integriert" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo qz:Plurilingual ; cur:scopeDocumentType beruf:dt-Rahmenlehrplan ; cur:strength 0.8 ;
+    cur:recognitionHint "Querschnittssignal: alle Lernfelder cur:contributesTo qz:Plurilingual (Herkunft cv:orig_inherited)."@de .
+beruf:c-entspr-1 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "entsprechend dem Rahmenlehrplan zu vermittelnden Lehrstoff" ; cur:mapsTo cv:rel_correspondsTo ; cur:strength 0.8 ;
+    cur:positiveExample "im Berufsschulunterricht entsprechend dem Rahmenlehrplan zu vermittelnden Lehrstoff" ; cur:negativeExample "Rahmenlehrplan" ;
+    cur:recognitionHint "Normverweis der Prüfungs-§§ auf den RLP: amtliche Kante Prüfung → Rahmenlehrplan (rel_correspondsTo, Methode cv:meth_verbatim)."@de .
+beruf:c-nicht-dqr a cur:LexicalCue ; cur:surfaceForm "DQR-Niveau" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo lvl:DQR ; cur:strength 0.9 ;
+    cur:recognitionHint "Nur an der Qualifikation (cur:Qualification) speichern; DQR-Kategorien an Aussagen (NRW Anlage C) sind Kompetenzdimensionen (kd:Bridge), kein Niveau."@de .

@@ -1,0 +1,408 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+ohne-land;Assessment;alt;cur:Assessment;Prüfung;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-Assessment-alt-assessment
+ohne-land;Examination;alt;cur:Assessment;Prüfung;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-Assessment-alt-examination
+ohne-land;Form der Prüfung;alt;cur:Assessment;Prüfung;;;;0.8;nein;;hs:lex-Assessment-alt-form-der-pruefung
+ohne-land;Prüfung;alt;cur:Assessment;Prüfung;;;;0.8;nein;;hs:lex-Assessment-alt-pruefung
+ohne-land;Prüfungsart;alt;cur:Assessment;Prüfung;;;;0.8;nein;;hs:lex-Assessment-alt-pruefungsart
+ohne-land;Prüfungsform;alt;cur:Assessment;Prüfung;;;;0.8;nein;;hs:lex-Assessment-alt-pruefungsform
+ohne-land;Prüfungsleistung;pref;cur:Assessment;Prüfung;;;;0.8;nein;;hs:lex-Assessment-pref-pruefungsleistung
+ohne-land;Prüfungsvorleistung;homonym;cur:Assessment;Prüfung;;;;0.5;nein;hco:isPrerequisiteAssessment=true.;hs:lex-Assessment-homonym-pruefungsvorleistung
+ohne-land;Studienleistung;homonym;cur:Assessment;Prüfung;;;;0.5;nein;Unbenotet bzw. Bestehensvoraussetzung: hco:graded=false.;hs:lex-Assessment-homonym-studienleistung
+ohne-land;Testat;homonym;cur:Assessment;Prüfung;;;;0.5;nein;Meist unbenotete Studienleistung.;hs:lex-Assessment-homonym-testat
+ohne-land;Aufbau des Studiums;alt;cur:Curriculum;Curriculum;;;;0.8;nein;;hs:lex-CurriculumPlan-alt-aufbau-des-studiums
+ohne-land;Curriculum;homonym;cur:Curriculum;Curriculum;;;;0.5;nein;"Als Überschrift einer Ordnung („§ 5 Curriculum“) = Studienstruktur; im Fließtext ohne Signalwert.";hs:lex-CurriculumPlan-cue-curriculum
+ohne-land;Gliederung des Studiums;alt;cur:Curriculum;Curriculum;;;;0.8;nein;;hs:lex-CurriculumPlan-alt-gliederung-des-studiums
+ohne-land;Studienaufbau;alt;cur:Curriculum;Curriculum;;;;0.8;nein;;hs:lex-CurriculumPlan-alt-studienaufbau
+ohne-land;Studienplan;cue;cur:Curriculum;Curriculum;;;;0.7;nein;;hs:lex-CurriculumPlan-cue-studienplan
+ohne-land;Studienstruktur;pref;cur:Curriculum;Curriculum;;;;0.8;nein;;hs:lex-CurriculumPlan-pref-studienstruktur
+ohne-land;Studienverlaufsplan;cue;cur:Curriculum;Curriculum;;;;0.7;nein;;hs:lex-CurriculumPlan-cue-studienverlaufsplan
+ohne-land;Applicability;cue;cur:Placement;Verwendung;;;;0.7;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-ComponentUse-cue-applicability
+ohne-land;Einordnung in das Curriculum;cue;cur:Placement;Verwendung;;;;0.7;nein;;hs:lex-ComponentUse-cue-einordnung-in-das-curriculum
+ohne-land;Modulübersicht;cue;cur:Placement;Verwendung;;;;0.7;nein;;hs:lex-ComponentUse-cue-moduluebersicht
+ohne-land;Polyvalenz;cue;cur:Placement;Verwendung;;;;0.7;nein;;hs:lex-ComponentUse-cue-polyvalenz
+ohne-land;Studienverlaufsplan;cue;cur:Placement;Verwendung;;;;0.7;nein;;hs:lex-ComponentUse-cue-studienverlaufsplan
+ohne-land;Verwendbarkeit des Moduls;homonym;cur:Placement;Verwendung;;;;0.6;ja;"Freitext liefert nur KANDIDATEN für Verwendungen; bestätigen erst, wenn eine Modulübersicht/ein Verlaufsplan das Modul ebenfalls nennt.";hs:lex-ComponentUse-homonym-verwendbarkeit-des-moduls
+ohne-land;Verwendung im Studiengang;pref;cur:Placement;Verwendung;;;;0.8;nein;;hs:lex-ComponentUse-pref-verwendung-im-studiengang
+ohne-land;Zuordnung zum Curriculum;cue;cur:Placement;Verwendung;;;;0.7;nein;;hs:lex-ComponentUse-cue-zuordnung-zum-curriculum
+ohne-land;empfohlene Vorkenntnisse;cue;cur:PrerequisiteRule;Voraussetzungsregel;;;;0.7;nein;-> requirementKind = inhaltlich/empfohlen;hs:lex-ParticipationRequirement-cue-empfohlene-vorkenntnisse
+ohne-land;formale Voraussetzungen;cue;cur:PrerequisiteRule;Voraussetzungsregel;;;;0.7;nein;-> requirementKind = formal;hs:lex-ParticipationRequirement-cue-formale-voraussetzungen
+ohne-land;inhaltliche Voraussetzungen;cue;cur:PrerequisiteRule;Voraussetzungsregel;;;;0.7;nein;;hs:lex-ParticipationRequirement-cue-inhaltliche-voraussetzungen
+ohne-land;keine;cue;cur:PrerequisiteRule;Voraussetzungsregel;;;;0.7;nein;Explizit 'keine' als leere Menge speichern, nicht als fehlendes Feld.;hs:lex-ParticipationRequirement-cue-keine
+ohne-land;Prerequisites;alt;cur:PrerequisiteRule;Voraussetzungsregel;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-ParticipationRequirement-alt-prerequisites
+ohne-land;setzt das Bestehen ... voraus;cue;cur:PrerequisiteRule;Voraussetzungsregel;;;;0.7;nein;;hs:lex-PrerequisiteRule-cue-setzt-das-bestehen-voraus
+ohne-land;Teilnahmevoraussetzungen;alt;cur:PrerequisiteRule;Voraussetzungsregel;;;;0.8;nein;;hs:lex-ParticipationRequirement-alt-teilnahmevoraussetzungen
+ohne-land;Voraussetzung für die Anmeldung;cue;cur:PrerequisiteRule;Voraussetzungsregel;;;;0.7;nein;;hs:lex-PrerequisiteRule-cue-voraussetzung-fuer-die-anmeldung
+ohne-land;Voraussetzungen für die Teilnahme;pref;cur:PrerequisiteRule;Voraussetzungsregel;;;;0.9;ja;;hs:lex-ParticipationRequirement-pref-voraussetzungen-fuer-die-teilnahme
+ohne-land;Vorkenntnisse;cue;cur:PrerequisiteRule;Voraussetzungsregel;;;;0.7;nein;;hs:lex-ParticipationRequirement-cue-vorkenntnisse
+ohne-land;Zulassungsvoraussetzung;cue;cur:PrerequisiteRule;Voraussetzungsregel;;;;0.7;nein;;hs:lex-PrerequisiteRule-cue-zulassungsvoraussetzung
+ohne-land;Admission requirements;alt;cur:PrerequisiteRule, hs:rk-zugang;Voraussetzungsregel, Studienzugang;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-AdmissionRequirement-alt-admission-requirements
+ohne-land;Eignungsfeststellungsverfahren;cue;cur:PrerequisiteRule, hs:rk-zugang;Voraussetzungsregel, Studienzugang;;;;0.7;nein;;hs:lex-AdmissionRequirement-cue-eignungsfeststellungsverfahren
+ohne-land;Eignungsprüfung;cue;cur:PrerequisiteRule, hs:rk-zugang;Voraussetzungsregel, Studienzugang;;;;0.7;nein;;hs:lex-AdmissionRequirement-cue-eignungspruefung
+ohne-land;Hochschulzugangsberechtigung;cue;cur:PrerequisiteRule, hs:rk-zugang;Voraussetzungsregel, Studienzugang;;;;0.7;nein;;hs:lex-AdmissionRequirement-cue-hochschulzugangsberechtigung
+ohne-land;Zugangsberechtigung;alt;cur:PrerequisiteRule, hs:rk-zugang;Voraussetzungsregel, Studienzugang;;;;0.8;nein;;hs:lex-AdmissionRequirement-alt-zugangsberechtigung
+ohne-land;Zugangsvoraussetzungen;pref;cur:PrerequisiteRule, hs:rk-zugang;Voraussetzungsregel, Studienzugang;;;;0.8;nein;;hs:lex-AdmissionRequirement-pref-zugangsvoraussetzungen
+ohne-land;Zulassungsvoraussetzungen;alt;cur:PrerequisiteRule, hs:rk-zugang;Voraussetzungsregel, Studienzugang;;;;0.8;nein;;hs:lex-AdmissionRequirement-alt-zulassungsvoraussetzungen
+ohne-land;2-Fach-Bachelor;cue;cur:Programme;Bildungsprogramm;;;;0.7;nein;;hs:lex-StudyProgramme-cue-2-fach-bachelor
+ohne-land;Bachelorstudiengang;cue;cur:Programme;Bildungsprogramm;;;;0.7;nein;;hs:lex-StudyProgramme-cue-bachelorstudiengang
+ohne-land;degree programme;alt;cur:Programme;Bildungsprogramm;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-StudyProgramme-alt-degree-programme
+ohne-land;Kombi-Bachelor;cue;cur:Programme;Bildungsprogramm;;;;0.7;nein;;hs:lex-StudyProgramme-cue-kombi-bachelor
+ohne-land;Kombinationsstudiengang;cue;cur:Programme;Bildungsprogramm;;;;0.7;nein;;hs:lex-StudyProgramme-cue-kombinationsstudiengang
+ohne-land;Masterstudiengang;cue;cur:Programme;Bildungsprogramm;;;;0.7;nein;;hs:lex-StudyProgramme-cue-masterstudiengang
+ohne-land;programme of study;alt;cur:Programme;Bildungsprogramm;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-StudyProgramme-alt-programme-of-study
+ohne-land;Studienangebot;alt;cur:Programme;Bildungsprogramm;;;;0.8;nein;;hs:lex-StudyProgramme-alt-studienangebot
+ohne-land;Studienfach;homonym;cur:Programme;Bildungsprogramm;;;;0.5;nein;"Im Kombi-/Lehramtsstudium = Teilstudiengang; in der Destatis-Systematik eine Klassifikationsebene (dann hco:destatisSubjectCode).";hs:lex-StudyProgramme-homonym-studienfach
+ohne-land;Studiengang;pref;cur:Programme;Bildungsprogramm;;;;0.8;nein;;hs:lex-StudyProgramme-pref-studiengang
+ohne-land;Studienprogramm;alt;cur:Programme;Bildungsprogramm;;;;0.8;nein;;hs:lex-StudyProgramme-alt-studienprogramm
+ohne-land;study programme;alt;cur:Programme;Bildungsprogramm;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-StudyProgramme-alt-study-programme
+ohne-land;Teilstudiengang;cue;cur:Programme;Bildungsprogramm;;;;0.7;nein;;hs:lex-StudyProgramme-cue-teilstudiengang
+ohne-land;Zwei-Fächer-Bachelor;cue;cur:Programme;Bildungsprogramm;;;;0.7;nein;;hs:lex-StudyProgramme-cue-zwei-faecher-bachelor
+ohne-land;Fristüberschreitung;cue;cur:ProgressionRule;Fortschrittsregel;;;;0.7;nein;;hs:lex-ProgressionRule-cue-fristueberschreitung
+ohne-land;Grundlagen- und Orientierungsprüfung;cue;cur:ProgressionRule;Fortschrittsregel;;;;0.7;nein;;hs:lex-ProgressionRule-cue-grundlagen-und-orientierungspruefung
+ohne-land;Orientierungsprüfung;cue;cur:ProgressionRule;Fortschrittsregel;;;;0.7;nein;;hs:lex-ProgressionRule-cue-orientierungspruefung
+ohne-land;Wiederholung von Prüfungen;cue;cur:ProgressionRule;Fortschrittsregel;;;;0.7;nein;;hs:lex-ProgressionRule-cue-wiederholung-von-pruefungen
+ohne-land;Anerkennung;alt;cur:RecognitionRule;Anrechnungsregel;;;;0.8;nein;;hs:lex-RecognitionRule-alt-anerkennung
+ohne-land;Anrechnung;pref;cur:RecognitionRule;Anrechnungsregel;;;;0.8;nein;;hs:lex-RecognitionRule-pref-anrechnung
+ohne-land;Anrechnung außerhochschulisch erworbener Kompetenzen;alt;cur:RecognitionRule;Anrechnungsregel;;;;0.8;nein;;hs:lex-RecognitionRule-alt-anrechnung-ausserhochschulisch-erworbene
+ohne-land;gleichwertig nach Inhalt und Niveau;cue;cur:RecognitionRule;Anrechnungsregel;;;;0.7;nein;;hs:lex-RecognitionRule-cue-gleichwertig-nach-inhalt-und-niveau
+ohne-land;höchstens 50 %;cue;cur:RecognitionRule;Anrechnungsregel;;;;0.7;nein;;hs:lex-RecognitionRule-cue-hoechstens-50
+ohne-land;pauschale Anrechnung;cue;cur:RecognitionRule;Anrechnungsregel;;;;0.7;nein;;hs:lex-RecognitionRule-cue-pauschale-anrechnung
+ohne-land;Recognition of prior learning;alt;cur:RecognitionRule;Anrechnungsregel;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-RecognitionRule-alt-recognition-of-prior-learning
+ohne-land;aus dem Katalog;cue;cur:SelectionRule;Auswahlregel;;;;0.7;nein;;hs:lex-SelectionRule-cue-aus-dem-katalog
+ohne-land;eines der folgenden Module;cue;cur:SelectionRule;Auswahlregel;;;;0.7;nein;;hs:lex-SelectionRule-cue-eines-der-folgenden-module
+ohne-land;entweder ... oder;cue;cur:SelectionRule;Auswahlregel;;;;0.7;nein;;hs:lex-SelectionRule-cue-entweder-oder
+ohne-land;mindestens ... LP;cue;cur:SelectionRule;Auswahlregel;;;;0.7;nein;;hs:lex-SelectionRule-cue-mindestens-lp
+ohne-land;nach Wahl der Studierenden;cue;cur:SelectionRule;Auswahlregel;;;;0.7;nein;;hs:lex-SelectionRule-cue-nach-wahl-der-studierenden
+ohne-land;sind ... LP aus folgenden Modulen zu wählen;cue;cur:SelectionRule;Auswahlregel;;;;0.7;nein;;hs:lex-SelectionRule-cue-sind-lp-aus-folgenden-modulen-zu-waehlen
+ohne-land;Wahlregel;pref;cur:SelectionRule;Auswahlregel;;;;0.8;nein;;hs:lex-SelectionRule-pref-wahlregel
+ohne-land;Artikel 1;cue;cur:amends;ändert;;;;0.7;nein;;hs:lex-amends-cue-artikel-1
+ohne-land;Satzung zur Änderung;cue;cur:amends;ändert;;;;0.7;nein;;hs:lex-amends-cue-satzung-zur-aenderung
+ohne-land;wird wie folgt geändert;cue;cur:amends;ändert;;;;0.7;nein;;hs:lex-amends-cue-wird-wie-folgt-geaendert
+ohne-land;Änderungssatzung;cue;cur:amends;ändert;;;;0.7;nein;;hs:lex-amends-cue-aenderungssatzung
+ohne-land;abweichend gilt für;cue;cur:appliesTo;gilt für;;;;0.7;nein;;hs:lex-ScopeAssignment-cue-abweichend-gilt-fuer
+ohne-land;für den Schwerpunkt ... gilt;cue;cur:appliesTo;gilt für;;;;0.7;nein;;hs:lex-ScopeAssignment-cue-fuer-den-schwerpunkt-gilt
+ohne-land;gilt nur für;cue;cur:appliesTo;gilt für;;;;0.7;nein;;hs:lex-ScopeAssignment-cue-gilt-nur-fuer
+ohne-land;gilt für Studierende, die ihr Studium ab dem ... aufnehmen;cue;cur:appliesToCohort;gilt für Kohorte;;;;0.7;nein;;hs:lex-appliesToCohort-cue-gilt-fuer-studierende-die-ihr-studium-ab
+ohne-land;Studienbeginn ab;cue;cur:appliesToCohort;gilt für Kohorte;;;;0.7;nein;;hs:lex-appliesToCohort-cue-studienbeginn-ab
+ohne-land;Übergangsbestimmungen;cue;cur:appliesToCohort;gilt für Kohorte;;;;0.7;nein;;hs:lex-appliesToCohort-cue-uebergangsbestimmungen
+ohne-land;Übergangsregelung;cue;cur:appliesToCohort;gilt für Kohorte;;;;0.7;nein;;hs:lex-appliesToCohort-cue-uebergangsregelung
+ohne-land;Kennziffer;alt;cur:code;Code;;;;0.8;nein;;hs:lex-componentCode-alt-kennziffer
+ohne-land;Kürzel;alt;cur:code;Code;;;;0.8;nein;;hs:lex-componentCode-alt-kuerzel
+ohne-land;Modul-ID;alt;cur:code;Code;;;;0.8;nein;;hs:lex-componentCode-alt-modul-id
+ohne-land;Modul-Nr.;alt;cur:code;Code;;;;0.8;nein;;hs:lex-componentCode-alt-modul-nr
+ohne-land;Modulcode;alt;cur:code;Code;;;;0.8;nein;;hs:lex-componentCode-alt-modulcode
+ohne-land;Module code;alt;cur:code;Code;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-componentCode-alt-module-code
+ohne-land;Modulkennung;alt;cur:code;Code;;;;0.8;nein;;hs:lex-componentCode-alt-modulkennung
+ohne-land;Modulnummer;pref;cur:code;Code;;;;0.8;nein;;hs:lex-componentCode-pref-modulnummer
+ohne-land;^[A-Z]{2,6}[-_ ]?[A-Z]{0,3}[-_ ]?\d{2,4}[a-z]?\b;cue;cur:code, hs:Modul;Code, Modul;;;;0.7;nein;"Codes beginnen mit Buchstabenkürzel und Nummer; Code + Hochschule ist der Zusammenführungsschlüssel über Dokumente.";hs:cue-modulcode
+ohne-land;Fassung vom;cue;cur:edition;Fassung (Wortlaut);;;;0.7;nein;;hs:lex-ProgrammeVersion-cue-fassung-vom
+ohne-land;gültig ab;cue;cur:edition;Fassung (Wortlaut);;;;0.7;nein;;hs:lex-ProgrammeVersion-cue-gueltig-ab
+ohne-land;PO 20xx;cue;cur:edition;Fassung (Wortlaut);;;;0.7;nein;;hs:lex-ProgrammeVersion-cue-po-20xx
+ohne-land;PO-Version;cue;cur:edition;Fassung (Wortlaut);;;;0.7;nein;;hs:lex-ProgrammeVersion-cue-po-version
+ohne-land;SPO-Version;cue;cur:edition;Fassung (Wortlaut);;;;0.7;nein;;hs:lex-ProgrammeVersion-cue-spo-version
+ohne-land;Studiengangsfassung;pref;cur:edition;Fassung (Wortlaut);;;;0.8;nein;;hs:lex-ProgrammeVersion-pref-studiengangsfassung
+ohne-land;Faktor;cue;cur:gradeWeight;Notengewicht;;;;0.7;nein;;hs:lex-gradeWeight-cue-faktor
+ohne-land;Gewichtung der Note;alt;cur:gradeWeight;Notengewicht;;;;0.8;nein;;hs:lex-gradingScheme-alt-gewichtung-der-note
+ohne-land;Gewichtung für die Gesamtnote;pref;cur:gradeWeight;Notengewicht;;;;0.8;nein;;hs:lex-gradeWeight-pref-gewichtung-fuer-die-gesamtnote
+ohne-land;Notengewicht;alt;cur:gradeWeight;Notengewicht;;;;0.8;nein;;hs:lex-gradeWeight-alt-notengewicht
+ohne-land;Stellenwert der Note für die Endnote;alt;cur:gradeWeight;Notengewicht;;;;0.8;nein;;hs:lex-gradeWeight-alt-stellenwert-der-note-fuer-die-endnote
+ohne-land;Benotung;pref;cur:graded, hs:gradingText;benotet, Benotung (Wortlaut);;;;0.9;ja;;hs:lex-gradingScheme-pref-benotung
+ohne-land;bestanden/nicht bestanden;cue;cur:graded, hs:gradingText;benotet, Benotung (Wortlaut);;;;0.7;nein;;hs:lex-gradingScheme-cue-bestanden-nicht-bestanden
+ohne-land;unbenotet;cue;cur:graded, hs:gradingText;benotet, Benotung (Wortlaut);;;;0.7;nein;;hs:lex-gradingScheme-cue-unbenotet
+ohne-land;Besonderer Teil;cue;cur:inheritsFrom;erbt von;;;;0.7;nein;;hs:lex-inheritsFrom-cue-besonderer-teil
+ohne-land;ergänzend gelten die Allgemeinen Bestimmungen;cue;cur:inheritsFrom;erbt von;;;;0.7;nein;;hs:lex-inheritsFrom-cue-ergaenzend-gelten-die-allgemeinen-bestim
+ohne-land;fachspezifische Bestimmungen zur Rahmenprüfungsordnung;cue;cur:inheritsFrom;erbt von;;;;0.7;nein;;hs:lex-inheritsFrom-cue-fachspezifische-bestimmungen-zur-rahmenp
+ohne-land;i. V. m. der Allgemeinen Prüfungsordnung;cue;cur:inheritsFrom;erbt von;;;;0.7;nein;;hs:lex-inheritsFrom-cue-i-v-m-der-allgemeinen-pruefungsordnung
+ohne-land;in Verbindung mit;cue;cur:inheritsFrom;erbt von;;;;0.7;nein;;hs:lex-inheritsFrom-cue-in-verbindung-mit
+ohne-land;im Umfang von ... LP;cue;cur:minAmount;mindestens Umfang;;;;0.7;nein;;hs:lex-ectsRequired-cue-im-umfang-von-lp
+ohne-land;Summe LP;cue;cur:minAmount;mindestens Umfang;;;;0.7;nein;;hs:lex-ectsRequired-cue-summe-lp
+ohne-land;zu erbringende Leistungspunkte;pref;cur:minAmount;mindestens Umfang;;;;0.8;nein;;hs:lex-ectsRequired-pref-zu-erbringende-leistungspunkte
+ohne-land;Art des Moduls;cue;cur:obligation;Verbindlichkeit;;;;0.7;nein;;hs:lex-obligation-cue-art-des-moduls
+ohne-land;Modulart;homonym;cur:obligation;Verbindlichkeit;;;;0.5;nein;Kann Verbindlichkeit (Pflicht/WP) oder lokalen Modultyp (Basis/Aufbau) meinen.;hs:lex-obligation-homonym-modulart
+ohne-land;P;homonym;cur:obligation;Verbindlichkeit;;;;0.5;nein;"In Tabellen: Pflicht; in SWS-Angaben: Praktikum.";hs:lex-obligation-homonym-p
+ohne-land;P/WP/W;cue;cur:obligation;Verbindlichkeit;;;;0.7;nein;;hs:lex-obligation-cue-p-wp-w
+ohne-land;Pflicht/Wahlpflicht;cue;cur:obligation;Verbindlichkeit;;;;0.7;nein;;hs:lex-obligation-cue-pflicht-wahlpflicht
+ohne-land;Status;cue;cur:obligation;Verbindlichkeit;;;;0.7;nein;;hs:lex-obligation-cue-status
+ohne-land;Gesamtumfang;cue;cur:totalWorkload;Gesamtumfang;;;;0.7;nein;;hs:lex-totalCredits-cue-gesamtumfang
+ohne-land;insgesamt ... Leistungspunkte;cue;cur:totalWorkload;Gesamtumfang;;;;0.7;nein;;hs:lex-totalCredits-cue-insgesamt-leistungspunkte
+ohne-land;Umfang des Studiums;cue;cur:totalWorkload;Gesamtumfang;;;;0.7;nein;;hs:lex-totalCredits-cue-umfang-des-studiums
+ohne-land;Arbeitsaufwand;pref;cur:workload;Umfang;;;;0.9;ja;;hs:lex-Workload-pref-arbeitsaufwand
+ohne-land;Arbeitsbelastung;alt;cur:workload;Umfang;;;;0.8;nein;;hs:lex-Workload-alt-arbeitsbelastung
+ohne-land;Eigenstudium;cue;cur:workload;Umfang;;;;0.7;nein;;hs:lex-Workload-cue-eigenstudium
+ohne-land;Gesamtaufwand;alt;cur:workload;Umfang;;;;0.8;nein;;hs:lex-Workload-alt-gesamtaufwand
+ohne-land;Kontaktzeit;cue;cur:workload;Umfang;;;;0.7;nein;;hs:lex-Workload-cue-kontaktzeit
+ohne-land;Präsenzzeit;cue;cur:workload;Umfang;;;;0.7;nein;;hs:lex-Workload-cue-praesenzzeit
+ohne-land;Selbststudium;cue;cur:workload;Umfang;;;;0.7;nein;;hs:lex-Workload-cue-selbststudium
+ohne-land;studentischer Arbeitsaufwand;alt;cur:workload;Umfang;;;;0.8;nein;;hs:lex-Workload-alt-studentischer-arbeitsaufwand
+ohne-land;SWS;homonym;cur:workload;Umfang;;;;0.5;nein;"Semesterwochenstunden sind keine Arbeitsstunden; 1 SWS ≈ 15 Präsenzstunden pro Semester [A].";hs:lex-Workload-homonym-sws
+ohne-land;Workload;alt;cur:workload;Umfang;;;;0.8;nein;;hs:lex-Workload-alt-workload
+ohne-land;Amtliche Bekanntmachung;cue;cv:bind_binding;verbindlich;;;;0.7;nein;;hs:lex-ns_binding-cue-amtliche-bekanntmachung
+ohne-land;Amtliche Mitteilungen;cue;cv:bind_binding;verbindlich;;;;0.7;nein;;hs:lex-ns_binding-cue-amtliche-mitteilungen
+ohne-land;Amtsblatt der Hochschule;cue;cv:bind_binding;verbindlich;;;;0.7;nein;;hs:lex-ns_binding-cue-amtsblatt-der-hochschule
+ohne-land;Aufgrund von § ... des Hochschulgesetzes hat der Senat/Fakultätsrat ... beschlossen;cue;cv:bind_binding;verbindlich;;;;0.7;nein;;hs:lex-ns_binding-cue-aufgrund-von-des-hochschulgesetzes-hat-d
+ohne-land;Mitteilungsblatt;cue;cv:bind_binding;verbindlich;;;;0.7;nein;;hs:lex-ns_binding-cue-mitteilungsblatt
+ohne-land;tritt am Tage nach ihrer Veröffentlichung in Kraft;cue;cv:bind_binding;verbindlich;;;;0.7;nein;;hs:lex-ns_binding-cue-tritt-am-tage-nach-ihrer-veroeffentlichu
+ohne-land;Verkündungsblatt;cue;cv:bind_binding;verbindlich;;;;0.7;nein;;hs:lex-ns_binding-cue-verkuendungsblatt
+ohne-land;Es gilt die jeweils gültige Prüfungsordnung;cue;cv:bind_informative;informativ (Begleit- oder Lesefassung);;;;0.7;nein;;hs:lex-ns_informative-cue-es-gilt-die-jeweils-gueltige-pruefungsor
+ohne-land;Lesefassung;cue;cv:bind_informative;informativ (Begleit- oder Lesefassung);;;;0.7;nein;Nicht-amtliche konsolidierte Fassung: Inhalt stammt aus verbindlichen Ordnungen, das Dokument selbst ist nicht verbindlich.;hs:lex-ns_informative-cue-lesefassung
+ohne-land;nicht rechtsverbindlich;cue;cv:bind_informative;informativ (Begleit- oder Lesefassung);;;;0.7;nein;;hs:lex-ns_informative-cue-nicht-rechtsverbindlich
+ohne-land;Stand:;cue;cv:bind_informative;informativ (Begleit- oder Lesefassung);;;;0.7;nein;Datumsangabe ohne Beschluss/Bekanntmachung deutet auf Begleitdokument.;hs:lex-ns_informative-cue-stand
+ohne-land;^(\d)\.\s*(FS|Sem\.?|Semester|Fachsemester)$;cue;cv:time_semester;Fachsemester;;;;0.85;nein;Spalte im Verlaufsplan = empfohlenes Fachsemester an cur:Placement (cur:isRecommendation true).;hs:cue-semester
+ohne-land;empfohlenes Fachsemester;pref;cv:time_semester;Fachsemester;;;;0.8;nein;;hs:lex-recommendedSemester-pref-empfohlenes-fachsemester
+ohne-land;Fachsemester;alt;cv:time_semester;Fachsemester;;;;0.8;nein;;hs:lex-recommendedSemester-alt-fachsemester
+ohne-land;FS;cue;cv:time_semester;Fachsemester;;;;0.7;nein;;hs:lex-recommendedSemester-cue-fs
+ohne-land;Lage im Studienverlauf;alt;cv:time_semester;Fachsemester;;;;0.8;nein;;hs:lex-recommendedSemester-alt-lage-im-studienverlauf
+ohne-land;Sem.;cue;cv:time_semester;Fachsemester;;;;0.7;nein;;hs:lex-recommendedSemester-cue-sem
+ohne-land;Semester;homonym;cv:time_semester;Fachsemester;;;;0.5;nein;"Spalte in Modulübersicht = empfohlenes Semester (an ComponentUse); im Modulsteckbrief kann 'Semester' auch Angebotsturnus meinen.";hs:lex-recommendedSemester-homonym-semester
+ohne-land;Semesterlage;alt;cv:time_semester;Fachsemester;;;;0.8;nein;;hs:lex-recommendedSemester-alt-semesterlage
+ohne-land;Studiensemester;alt;cv:time_semester;Fachsemester;;;;0.8;nein;;hs:lex-recommendedSemester-alt-studiensemester
+ohne-land;\b(\d+(,\d+)?)\s*(LP|CP|ECTS|ECTS-Punkte|Leistungspunkte|Credits)\b;cue;cv:unit_ectsCredit;ECTS-Leistungspunkt;;;;0.9;nein;"cur:workload mit cv:unit_ectsCredit und cv:wl_credits; am Modul Regelwert, an der Verwendung im Kontext, am Bereich gefordert (cur:minAmount).";hs:cue-lp
+ohne-land;CP;alt;cv:unit_ectsCredit;ECTS-Leistungspunkt;;;;0.8;nein;;hs:lex-ectsCredits-alt-cp
+ohne-land;Credit Points;alt;cv:unit_ectsCredit;ECTS-Leistungspunkt;;;;0.8;nein;;hs:lex-ectsCredits-alt-credit-points
+ohne-land;Credits;alt;cv:unit_ectsCredit;ECTS-Leistungspunkt;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-ectsCredits-alt-credits
+ohne-land;ECTS;alt;cv:unit_ectsCredit;ECTS-Leistungspunkt;;;;0.8;nein;;hs:lex-ectsCredits-alt-ects
+ohne-land;ECTS-Leistungspunkte;pref;cv:unit_ectsCredit;ECTS-Leistungspunkt;;;;0.9;ja;;hs:lex-ectsCredits-pref-ects-leistungspunkte
+ohne-land;ECTS-Punkte;alt;cv:unit_ectsCredit;ECTS-Leistungspunkt;;;;0.8;nein;;hs:lex-ectsCredits-alt-ects-punkte
+ohne-land;KP;alt;cv:unit_ectsCredit;ECTS-Leistungspunkt;;;;0.8;nein;;hs:lex-ectsCredits-alt-kp
+ohne-land;Kreditpunkte;alt;cv:unit_ectsCredit;ECTS-Leistungspunkt;;;;0.8;nein;;hs:lex-ectsCredits-alt-kreditpunkte
+ohne-land;Leistungspunkte;alt;cv:unit_ectsCredit;ECTS-Leistungspunkt;;;;0.8;nein;;hs:lex-ectsCredits-alt-leistungspunkte
+ohne-land;LP;alt;cv:unit_ectsCredit;ECTS-Leistungspunkt;;;;0.8;nein;;hs:lex-ectsCredits-alt-lp
+ohne-land;Abschlussarbeit;pref;hs:Abschlussarbeit;Abschlussarbeit;;;;0.8;nein;;hs:lex-Thesis-pref-abschlussarbeit
+ohne-land;Abschlussmodul;alt;hs:Abschlussarbeit;Abschlussarbeit;;;;0.8;nein;;hs:lex-Thesis-alt-abschlussmodul
+ohne-land;Bachelor-Thesis;alt;hs:Abschlussarbeit;Abschlussarbeit;;;;0.8;nein;;hs:lex-Thesis-alt-bachelor-thesis
+ohne-land;Bachelorarbeit;alt;hs:Abschlussarbeit;Abschlussarbeit;;;;0.8;nein;;hs:lex-Thesis-alt-bachelorarbeit
+ohne-land;Diplomarbeit;alt;hs:Abschlussarbeit;Abschlussarbeit;;;;0.8;nein;;hs:lex-Thesis-alt-diplomarbeit
+ohne-land;Kolloquium zur Abschlussarbeit;cue;hs:Abschlussarbeit;Abschlussarbeit;;;;0.7;nein;;hs:lex-Thesis-cue-kolloquium-zur-abschlussarbeit
+ohne-land;Master-Thesis;alt;hs:Abschlussarbeit;Abschlussarbeit;;;;0.8;nein;;hs:lex-Thesis-alt-master-thesis
+ohne-land;Masterarbeit;alt;hs:Abschlussarbeit;Abschlussarbeit;;;;0.8;nein;;hs:lex-Thesis-alt-masterarbeit
+ohne-land;Staatsexamensarbeit;alt;hs:Abschlussarbeit;Abschlussarbeit;;;;0.8;nein;;hs:lex-Thesis-alt-staatsexamensarbeit
+ohne-land;Wissenschaftliche Hausarbeit;alt;hs:Abschlussarbeit;Abschlussarbeit;;;;0.8;nein;;hs:lex-Thesis-alt-wissenschaftliche-hausarbeit
+ohne-land;Content;alt;hs:Inhalt;Modulinhalt;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-ContentStatement-alt-content
+ohne-land;Die Studierenden können;negative;hs:Inhalt;Modulinhalt;;;;0.7;nein;;hs:lex-ContentStatement-negative-die-studierenden-koennen
+ohne-land;Gliederung;cue;hs:Inhalt;Modulinhalt;;;;0.7;nein;;hs:lex-ContentStatement-alt-gliederung
+ohne-land;Inhalt;alt;hs:Inhalt;Modulinhalt;;;;0.8;nein;;hs:lex-ContentStatement-alt-inhalt
+ohne-land;Inhalte;pref;hs:Inhalt;Modulinhalt;;;;0.8;nein;;hs:lex-ContentStatement-pref-inhalte
+ohne-land;Lehrinhalte;alt;hs:Inhalt;Modulinhalt;;;;0.8;nein;;hs:lex-ContentStatement-alt-lehrinhalte
+ohne-land;Modulinhalte;alt;hs:Inhalt;Modulinhalt;;;;0.8;nein;;hs:lex-ContentStatement-alt-modulinhalte
+ohne-land;Studieninhalte;alt;hs:Inhalt;Modulinhalt;;;;0.9;ja;;hs:lex-ContentStatement-alt-studieninhalte
+ohne-land;Syllabus;alt;hs:Inhalt;Modulinhalt;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-ContentStatement-alt-syllabus
+ohne-land;Themen;alt;hs:Inhalt;Modulinhalt;;;;0.8;nein;;hs:lex-ContentStatement-alt-themen
+ohne-land;Hauptfach;homonym;hs:KuenstlerischesHauptfach;Künstlerisches Hauptfach;;;;0.5;nein;"An Kunst-/Musikhochschulen künstlerisches Kernfach; im Kombi-Studium Rolle eines Teilstudiengangs.";hs:lex-ArtisticComponent-homonym-hauptfach
+ohne-land;Hauptfach Gesang;alt;hs:KuenstlerischesHauptfach;Künstlerisches Hauptfach;;;;0.8;nein;;hs:lex-ArtisticComponent-alt-hauptfach-gesang
+ohne-land;Hauptfach Instrument;alt;hs:KuenstlerischesHauptfach;Künstlerisches Hauptfach;;;;0.8;nein;;hs:lex-ArtisticComponent-alt-hauptfach-instrument
+ohne-land;Künstlerischer Einzelunterricht;alt;hs:KuenstlerischesHauptfach;Künstlerisches Hauptfach;;;;0.8;nein;;hs:lex-ArtisticComponent-alt-kuenstlerischer-einzelunterricht
+ohne-land;Künstlerisches Hauptfach;pref;hs:KuenstlerischesHauptfach;Künstlerisches Hauptfach;;;;0.8;nein;;hs:lex-ArtisticComponent-pref-kuenstlerisches-hauptfach
+ohne-land;Künstlerisches Kernfach;alt;hs:KuenstlerischesHauptfach;Künstlerisches Hauptfach;;;;0.8;nein;;hs:lex-ArtisticComponent-alt-kuenstlerisches-kernfach
+ohne-land;Course unit;alt;hs:Lehrveranstaltung;Lehrveranstaltung;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-CourseUnit-alt-course-unit
+ohne-land;Lehrveranstaltung;pref;hs:Lehrveranstaltung;Lehrveranstaltung;;;;0.8;nein;;hs:lex-CourseUnit-pref-lehrveranstaltung
+ohne-land;Lehrveranstaltungen und Lehrformen;cue;hs:Lehrveranstaltung;Lehrveranstaltung;;;;0.7;nein;;hs:lex-CourseUnit-cue-lehrveranstaltungen-und-lehrformen
+ohne-land;Modul;negative;hs:Lehrveranstaltung;Lehrveranstaltung;;;;0.7;nein;;hs:lex-CourseUnit-negative-modul
+ohne-land;Modulelement;alt;hs:Lehrveranstaltung;Lehrveranstaltung;;;;0.8;nein;;hs:lex-CourseUnit-alt-modulelement
+ohne-land;Modulteil;alt;hs:Lehrveranstaltung;Lehrveranstaltung;;;;0.8;nein;;hs:lex-CourseUnit-alt-modulteil
+ohne-land;Teilmodul;alt;hs:Lehrveranstaltung;Lehrveranstaltung;;;;0.8;nein;;hs:lex-CourseUnit-alt-teilmodul
+ohne-land;Veranstaltung;alt;hs:Lehrveranstaltung;Lehrveranstaltung;;;;0.8;nein;;hs:lex-CourseUnit-alt-veranstaltung
+ohne-land;^Modul\s+([A-Z0-9][\w.-]*\s*)?[:–-]\s*\S;cue;hs:Modul;Modul;;;;0.75;nein;;hs:cue-modulkopf
+ohne-land;Kurs;homonym;hs:Modul;Modul;;;;0.5;nein;"In Weiterbildung/Zertifikaten oft = Modul; sonst meist Lehrveranstaltung.";hs:lex-Module-homonym-kurs
+ohne-land;Lehrveranstaltung;negative;hs:Modul;Modul;;;;0.7;nein;Lehrveranstaltungen liegen unterhalb des Moduls.;hs:lex-Module-negative-lehrveranstaltung
+ohne-land;Modul;pref;hs:Modul;Modul;;;;0.8;nein;;hs:lex-Module-pref-modul
+ohne-land;Module;alt;hs:Modul;Modul;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-Module-alt-module
+ohne-land;Moduleinheit;alt;hs:Modul;Modul;;;;0.8;nein;;hs:lex-Module-alt-moduleinheit
+ohne-land;Unit;alt;hs:Modul;Modul;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-Module-alt-unit
+ohne-land;Vorlesung innerhalb des Moduls;negative;hs:Modul;Modul;;;;0.7;nein;;hs:lex-Module-negative-vorlesung-innerhalb-des-moduls
+ohne-land;angestrebte Lernergebnisse;alt;hs:Modulziel;Lernergebnis des Moduls;;;;0.9;ja;;hs:lex-LearningOutcomeStatement-alt-angestrebte-lernergebnisse
+ohne-land;Die Studierenden können;cue;hs:Modulziel;Lernergebnis des Moduls;;;;0.7;nein;;hs:lex-LearningOutcomeStatement-cue-die-studierenden-koennen
+ohne-land;Die Studierenden sind in der Lage;cue;hs:Modulziel;Lernergebnis des Moduls;;;;0.7;nein;;hs:lex-LearningOutcomeStatement-cue-die-studierenden-sind-in-der-lage
+ohne-land;Inhalte;negative;hs:Modulziel;Lernergebnis des Moduls;;;;0.7;nein;;hs:lex-LearningOutcomeStatement-negative-inhalte
+ohne-land;Inhalte und Qualifikationsziele des Moduls;homonym;hs:Modulziel;Lernergebnis des Moduls;;;;0.6;ja;Kombiniertes MRVO-2017-Feld: in Lernergebnis- und Inhaltsaussagen auftrennen.;hs:lex-LearningOutcomeStatement-homonym-inhalte-und-qualifikationsziele-des-modu
+ohne-land;Intended learning outcomes;alt;hs:Modulziel;Lernergebnis des Moduls;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-LearningOutcomeStatement-alt-intended-learning-outcomes
+ohne-land;Kompetenzen;cue;hs:Modulziel;Lernergebnis des Moduls;;;;0.7;nein;;hs:lex-LearningOutcomeStatement-alt-kompetenzen
+ohne-land;Kompetenzziele;alt;hs:Modulziel;Lernergebnis des Moduls;;;;0.8;nein;;hs:lex-LearningOutcomeStatement-alt-kompetenzziele
+ohne-land;Learning outcomes;alt;hs:Modulziel;Lernergebnis des Moduls;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-LearningOutcomeStatement-alt-learning-outcomes
+ohne-land;Lern- und Qualifikationsziele;alt;hs:Modulziel;Lernergebnis des Moduls;;;;0.8;nein;;hs:lex-LearningOutcomeStatement-alt-lern-und-qualifikationsziele
+ohne-land;Lernergebnisse;alt;hs:Modulziel;Lernergebnis des Moduls;;;;0.8;nein;;hs:lex-LearningOutcomeStatement-alt-lernergebnisse
+ohne-land;Lernziele;alt;hs:Modulziel;Lernergebnis des Moduls;;;;0.8;nein;;hs:lex-LearningOutcomeStatement-alt-lernziele
+ohne-land;Modulziele;alt;hs:Modulziel;Lernergebnis des Moduls;;;;0.8;nein;;hs:lex-LearningOutcomeStatement-alt-modulziele
+ohne-land;Nach erfolgreichem Abschluss des Moduls;cue;hs:Modulziel;Lernergebnis des Moduls;;;;0.7;nein;;hs:lex-LearningOutcomeStatement-cue-nach-erfolgreichem-abschluss-des-moduls
+ohne-land;Qualifikations- und Kompetenzziele;alt;hs:Modulziel;Lernergebnis des Moduls;;;;0.8;nein;;hs:lex-LearningOutcomeStatement-alt-qualifikations-und-kompetenzziele
+ohne-land;Qualifikationsziele;pref;hs:Modulziel;Lernergebnis des Moduls;;;;0.9;ja;"Wortlaut MRVO 2017; Fassung 2024: 'angestrebte Lernergebnisse'.";hs:lex-LearningOutcomeStatement-pref-qualifikationsziele
+ohne-land;Students will be able to;cue;hs:Modulziel;Lernergebnis des Moduls;;;;0.7;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-LearningOutcomeStatement-cue-students-will-be-able-to
+ohne-land;Ziele;homonym;hs:Modulziel;Lernergebnis des Moduls;;;;0.5;nein;'Ziel der Veranstaltung ist es, ... zu vermitteln' ist Lehrendenperspektive und eher Inhalt.;hs:lex-LearningOutcomeStatement-homonym-ziele
+ohne-land;Berufspraktikum;alt;hs:Praxisphase;Praxisphase;;;;0.8;nein;;hs:lex-Placement-alt-berufspraktikum
+ohne-land;Famulatur;alt;hs:Praxisphase;Praxisphase;;;;0.8;nein;;hs:lex-Placement-alt-famulatur
+ohne-land;Internship;alt;hs:Praxisphase;Praxisphase;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-Placement-alt-internship
+ohne-land;Orientierungspraktikum;alt;hs:Praxisphase;Praxisphase;;;;0.8;nein;;hs:lex-Placement-alt-orientierungspraktikum
+ohne-land;Pflichtpraktikum;alt;hs:Praxisphase;Praxisphase;;;;0.8;nein;;hs:lex-Placement-alt-pflichtpraktikum
+ohne-land;Praktikum;homonym;hs:Praxisphase;Praxisphase;;;;0.5;nein;Praxisphase außerhalb der Hochschule vs. Laborpraktikum als Lehrform.;hs:lex-Placement-homonym-praktikum
+ohne-land;Praktisches Jahr;alt;hs:Praxisphase;Praxisphase;;;;0.8;nein;;hs:lex-Placement-alt-praktisches-jahr
+ohne-land;Praxismodul;alt;hs:Praxisphase;Praxisphase;;;;0.8;nein;;hs:lex-Placement-alt-praxismodul
+ohne-land;Praxisphase;pref;hs:Praxisphase;Praxisphase;;;;0.8;nein;;hs:lex-Placement-pref-praxisphase
+ohne-land;Praxisprojekt;alt;hs:Praxisphase;Praxisphase;;;;0.8;nein;;hs:lex-Placement-alt-praxisprojekt
+ohne-land;Praxissemester;alt;hs:Praxisphase;Praxisphase;;;;0.8;nein;;hs:lex-Placement-alt-praxissemester
+ohne-land;Schulpraktikum;alt;hs:Praxisphase;Praxisphase;;;;0.8;nein;;hs:lex-Placement-alt-schulpraktikum
+ohne-land;Lehrforschungsprojekt;alt;hs:Projektmodul;Projekt;;;;0.8;nein;;hs:lex-ProjectComponent-alt-lehrforschungsprojekt
+ohne-land;Projekt;pref;hs:Projektmodul;Projekt;;;;0.8;nein;;hs:lex-ProjectComponent-pref-projekt
+ohne-land;Projektmodul;alt;hs:Projektmodul;Projekt;;;;0.8;nein;;hs:lex-ProjectComponent-alt-projektmodul
+ohne-land;Studienarbeit;alt;hs:Projektmodul;Projekt;;;;0.8;nein;;hs:lex-ProjectComponent-alt-studienarbeit
+ohne-land;Studienprojekt;alt;hs:Projektmodul;Projekt;;;;0.8;nein;;hs:lex-ProjectComponent-alt-studienprojekt
+ohne-land;Teamprojekt;alt;hs:Projektmodul;Projekt;;;;0.8;nein;;hs:lex-ProjectComponent-alt-teamprojekt
+ohne-land;Fachrichtung;homonym;hs:Schwerpunkt;Schwerpunkt/Studienrichtung;;;;0.5;nein;"In der Berufsbildung Variante eines Ausbildungsberufs (Profil beruf:); an Hochschulen Schwerpunkt.";hs:lex-Specialisation-alt-fachrichtung
+ohne-land;Profil;homonym;hs:Schwerpunkt;Schwerpunkt/Studienrichtung;;;;0.5;nein;Kann Schwerpunkt meinen oder das Masterprofil (forschungs-/anwendungsorientiert, hco:programmeProfile).;hs:lex-Specialisation-homonym-profil
+ohne-land;Profillinie;alt;hs:Schwerpunkt;Schwerpunkt/Studienrichtung;;;;0.8;nein;;hs:lex-Specialisation-alt-profillinie
+ohne-land;Schwerpunkt;pref;hs:Schwerpunkt;Schwerpunkt/Studienrichtung;;;;0.8;nein;;hs:lex-Specialisation-pref-schwerpunkt
+ohne-land;Specialisation;alt;hs:Schwerpunkt;Schwerpunkt/Studienrichtung;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-Specialisation-alt-specialisation
+ohne-land;Spezialisierung;alt;hs:Schwerpunkt;Schwerpunkt/Studienrichtung;;;;0.8;nein;;hs:lex-Specialisation-alt-spezialisierung
+ohne-land;Studienrichtung;alt;hs:Schwerpunkt;Schwerpunkt/Studienrichtung;;;;0.8;nein;;hs:lex-Specialisation-alt-studienrichtung
+ohne-land;Track;alt;hs:Schwerpunkt;Schwerpunkt/Studienrichtung;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-Specialisation-alt-track
+ohne-land;Vertiefung;alt;hs:Schwerpunkt;Schwerpunkt/Studienrichtung;;;;0.8;nein;;hs:lex-Specialisation-alt-vertiefung
+ohne-land;Vertiefungsrichtung;alt;hs:Schwerpunkt;Schwerpunkt/Studienrichtung;;;;0.8;nein;;hs:lex-Specialisation-alt-vertiefungsrichtung
+ohne-land;Grundstudium;cue;hs:Studienabschnitt;Studienabschnitt;;;;0.7;nein;;hs:lex-StudyPhase-cue-grundstudium
+ohne-land;Hauptstudium;cue;hs:Studienabschnitt;Studienabschnitt;;;;0.7;nein;;hs:lex-StudyPhase-cue-hauptstudium
+ohne-land;Klinischer Abschnitt;cue;hs:Studienabschnitt;Studienabschnitt;;;;0.7;nein;;hs:lex-StudyPhase-cue-klinischer-abschnitt
+ohne-land;Orientierungsphase;cue;hs:Studienabschnitt;Studienabschnitt;;;;0.7;nein;;hs:lex-StudyPhase-cue-orientierungsphase
+ohne-land;Studienabschnitt;pref;hs:Studienabschnitt;Studienabschnitt;;;;0.8;nein;;hs:lex-StudyPhase-pref-studienabschnitt
+ohne-land;Studieneingangsphase;cue;hs:Studienabschnitt;Studienabschnitt;;;;0.7;nein;;hs:lex-StudyPhase-cue-studieneingangsphase
+ohne-land;Studienjahr;cue;hs:Studienabschnitt;Studienabschnitt;;;;0.7;nein;;hs:lex-StudyPhase-cue-studienjahr
+ohne-land;Studienphase;alt;hs:Studienabschnitt;Studienabschnitt;;;;0.8;nein;;hs:lex-StudyPhase-alt-studienphase
+ohne-land;Vorklinischer Abschnitt;cue;hs:Studienabschnitt;Studienabschnitt;;;;0.7;nein;;hs:lex-StudyPhase-cue-vorklinischer-abschnitt
+ohne-land;Bildungswissenschaften;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-bildungswissenschaften
+ohne-land;Block;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-block
+ohne-land;Ergänzungsbereich;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-ergaenzungsbereich
+ohne-land;Grundlagenbereich;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-grundlagenbereich
+ohne-land;Kompetenzfeld;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-kompetenzfeld
+ohne-land;Komplementärbereich;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-komplementaerbereich
+ohne-land;Modulbereich;alt;hs:Studienbereich;Studienbereich;;;;0.8;nein;;hs:lex-ProgrammeArea-alt-modulbereich
+ohne-land;Modulgruppe;homonym;hs:Studienbereich;Studienbereich;;;;0.5;nein;"Bereich, wenn Unterbereiche folgen; Wahlkatalog, wenn direkt Module mit Wahlregel folgen.";hs:lex-ProgrammeArea-homonym-modulgruppe
+ohne-land;Optionalbereich;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-optionalbereich
+ohne-land;Pflichtbereich;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-pflichtbereich
+ohne-land;Professionalisierungsbereich;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-professionalisierungsbereich
+ohne-land;Profilbereich;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-profilbereich
+ohne-land;Schlüsselqualifikationen;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-schluesselqualifikationen
+ohne-land;SQ-Bereich;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-sq-bereich
+ohne-land;Studienbereich;homonym;hs:Studienbereich;Studienbereich;;;;0.5;nein;"Auch Ebene der Destatis-Fächersystematik; nur als Strukturknoten werten, wenn Module/LP zugeordnet sind.";hs:lex-ProgrammeArea-homonym-studienbereich
+ohne-land;Studium fundamentale;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-studium-fundamentale
+ohne-land;Studium generale;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-studium-generale
+ohne-land;Säule;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-saeule
+ohne-land;Wahlbereich;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-wahlbereich
+ohne-land;Wahlpflichtbereich;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-wahlpflichtbereich
+ohne-land;4.2 Lernergebnisse des Studiengangs;cue;hs:Studiengangsziel;Lernergebnis des Studiengangs;;;;0.7;nein;Diploma Supplement Abschnitt 4.2.;hs:lex-ProgrammeQualificationGoal-cue-4-2-lernergebnisse-des-studiengangs
+ohne-land;Absolvent*innen verfügen über;cue;hs:Studiengangsziel;Lernergebnis des Studiengangs;;;;0.7;nein;;hs:lex-ProgrammeQualificationGoal-cue-absolvent-innen-verfuegen-ueber
+ohne-land;Ausbildungsziel;alt;hs:Studiengangsziel;Lernergebnis des Studiengangs;;;;0.8;nein;;hs:lex-ProgrammeQualificationGoal-alt-ausbildungsziel
+ohne-land;Das Studium befähigt;cue;hs:Studiengangsziel;Lernergebnis des Studiengangs;;;;0.7;nein;;hs:lex-ProgrammeQualificationGoal-cue-das-studium-befaehigt
+ohne-land;Die Absolventinnen und Absolventen;cue;hs:Studiengangsziel;Lernergebnis des Studiengangs;;;;0.7;nein;;hs:lex-ProgrammeQualificationGoal-cue-die-absolventinnen-und-absolventen
+ohne-land;Fachspezifisches Kompetenzprofil;alt;hs:Studiengangsziel;Lernergebnis des Studiengangs;;;;0.8;nein;;hs:lex-ProgrammeQualificationGoal-alt-fachspezifisches-kompetenzprofil
+ohne-land;Graduate attributes;alt;hs:Studiengangsziel;Lernergebnis des Studiengangs;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-ProgrammeQualificationGoal-alt-graduate-attributes
+ohne-land;Kompetenzprofil;alt;hs:Studiengangsziel;Lernergebnis des Studiengangs;;;;0.8;nein;;hs:lex-ProgrammeQualificationGoal-alt-kompetenzprofil
+ohne-land;Programme learning outcomes;alt;hs:Studiengangsziel;Lernergebnis des Studiengangs;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-ProgrammeQualificationGoal-alt-programme-learning-outcomes
+ohne-land;Qualifikationsprofil;alt;hs:Studiengangsziel;Lernergebnis des Studiengangs;;;;0.8;nein;;hs:lex-ProgrammeQualificationGoal-alt-qualifikationsprofil
+ohne-land;Qualifikationsziele des Studiengangs;pref;hs:Studiengangsziel;Lernergebnis des Studiengangs;;;;0.8;nein;;hs:lex-ProgrammeQualificationGoal-pref-qualifikationsziele-des-studiengangs
+ohne-land;Studienziele;alt;hs:Studiengangsziel;Lernergebnis des Studiengangs;;;;0.8;nein;;hs:lex-ProgrammeQualificationGoal-alt-studienziele
+ohne-land;Ziel des Studiums ist;cue;hs:Studiengangsziel;Lernergebnis des Studiengangs;;;;0.7;nein;;hs:lex-ProgrammeQualificationGoal-cue-ziel-des-studiums-ist
+ohne-land;Ziele des Studiums;alt;hs:Studiengangsziel;Lernergebnis des Studiengangs;;;;0.8;nein;;hs:lex-ProgrammeQualificationGoal-alt-ziele-des-studiums
+ohne-land;aus dem Angebot der Fakultät;cue;hs:Verweis;Verweis/Importmodul;;;;0.7;nein;;hs:lex-ExternalComponentReference-cue-aus-dem-angebot-der-fakultaet
+ohne-land;gemäß Modulhandbuch des Studiengangs;cue;hs:Verweis;Verweis/Importmodul;;;;0.7;nein;;hs:lex-ExternalComponentReference-cue-gemaess-modulhandbuch-des-studiengangs
+ohne-land;Importmodul;cue;hs:Verweis;Verweis/Importmodul;;;;0.7;nein;;hs:lex-ExternalComponentReference-cue-importmodul
+ohne-land;nach Maßgabe der Prüfungsordnung;cue;hs:Verweis;Verweis/Importmodul;;;;0.7;nein;;hs:lex-ExternalComponentReference-cue-nach-massgabe-der-pruefungsordnung
+ohne-land;siehe Modulbeschreibung;cue;hs:Verweis;Verweis/Importmodul;;;;0.7;nein;;hs:lex-ExternalComponentReference-cue-siehe-modulbeschreibung
+ohne-land;Elective catalogue;alt;hs:Wahlpflichtkatalog;Wahlpflichtkatalog;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-ComponentGroup-alt-elective-catalogue
+ohne-land;Katalog;alt;hs:Wahlpflichtkatalog;Wahlpflichtkatalog;;;;0.8;nein;;hs:lex-ComponentGroup-alt-katalog
+ohne-land;Modulkatalog;homonym;hs:Wahlpflichtkatalog;Wahlpflichtkatalog;;;;0.5;nein;"Als Dokumenttitel = Modulhandbuch; innerhalb einer Ordnung = Wahlliste.";hs:lex-ComponentGroup-homonym-modulkatalog
+ohne-land;Modulliste;alt;hs:Wahlpflichtkatalog;Wahlpflichtkatalog;;;;0.8;nein;;hs:lex-ComponentGroup-alt-modulliste
+ohne-land;Modulpool;alt;hs:Wahlpflichtkatalog;Wahlpflichtkatalog;;;;0.8;nein;;hs:lex-ComponentGroup-alt-modulpool
+ohne-land;Wahlkatalog;alt;hs:Wahlpflichtkatalog;Wahlpflichtkatalog;;;;0.8;nein;;hs:lex-ComponentGroup-alt-wahlkatalog
+ohne-land;Wahlpflichtkatalog;pref;hs:Wahlpflichtkatalog;Wahlpflichtkatalog;;;;0.8;nein;;hs:lex-ComponentGroup-pref-wahlpflichtkatalog
+ohne-land;Wahlpflichtmodulgruppe;alt;hs:Wahlpflichtkatalog;Wahlpflichtkatalog;;;;0.8;nein;;hs:lex-ComponentGroup-alt-wahlpflichtmodulgruppe
+ohne-land;Anhang;alt;hs:annexOf;Anlage zu;;;;0.8;nein;;hs:lex-Annex-alt-anhang
+ohne-land;Anlage;pref;hs:annexOf;Anlage zu;;;;0.8;nein;;hs:lex-Annex-pref-anlage
+ohne-land;Annex;alt;hs:annexOf;Anlage zu;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-Annex-alt-annex
+ohne-land;Appendix;alt;hs:annexOf;Anlage zu;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-Annex-alt-appendix
+ohne-land;Modulübersicht;cue;hs:annexOf;Anlage zu;;;;0.7;nein;;hs:lex-Annex-cue-moduluebersicht
+ohne-land;Prüfungsplan;cue;hs:annexOf;Anlage zu;;;;0.7;nein;;hs:lex-Annex-cue-pruefungsplan
+ohne-land;Anlage zur Prüfungsordnung;cue;hs:annexOf, cv:bind_binding;Anlage zu, verbindlich;;;;0.7;nein;;hs:lex-ns_bindingAnnex-cue-anlage-zur-pruefungsordnung
+ohne-land;Das Modulhandbuch ist Anlage;cue;hs:annexOf, cv:bind_binding;Anlage zu, verbindlich;;;;0.7;nein;;hs:lex-ns_bindingAnnex-cue-das-modulhandbuch-ist-anlage
+ohne-land;ist Bestandteil dieser Ordnung;cue;hs:annexOf, cv:bind_binding;Anlage zu, verbindlich;;;;0.7;nein;;hs:lex-ns_bindingAnnex-cue-ist-bestandteil-dieser-ordnung
+ohne-land;Modulkategorie;alt;hs:componentType;Modultyp (lokal);;;;0.8;nein;;hs:lex-componentType-alt-modulkategorie
+ohne-land;Modultyp;pref;hs:componentType;Modultyp (lokal);;;;0.8;nein;;hs:lex-componentType-pref-modultyp
+ohne-land;Leistungsnachweis;homonym;hs:creditAwardCondition;Voraussetzungen für die Vergabe von Leistungspunkten (Wortlaut);;;;0.5;nein;"Als Feld = Voraussetzung für die LP-Vergabe; als Prüfung selbst = cur:Assessment.";hs:lex-creditAwardCondition-alt-leistungsnachweis
+ohne-land;Modulabschluss;alt;hs:creditAwardCondition;Voraussetzungen für die Vergabe von Leistungspunkten (Wortlaut);;;;0.8;nein;;hs:lex-creditAwardCondition-alt-modulabschluss
+ohne-land;Modulprüfung;homonym;hs:creditAwardCondition;Voraussetzungen für die Vergabe von Leistungspunkten (Wortlaut);;;;0.5;nein;"Bezeichnet oft das Feld und zugleich die Prüfung selbst; Prüfung als hco:Assessment anlegen.";hs:lex-creditAwardCondition-homonym-modulpruefung
+ohne-land;Requirements for the award of credits;alt;hs:creditAwardCondition;Voraussetzungen für die Vergabe von Leistungspunkten (Wortlaut);;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-creditAwardCondition-alt-requirements-for-the-award-of-credits
+ohne-land;Studien- und Prüfungsleistungen;alt;hs:creditAwardCondition;Voraussetzungen für die Vergabe von Leistungspunkten (Wortlaut);;;;0.8;nein;;hs:lex-creditAwardCondition-alt-studien-und-pruefungsleistungen
+ohne-land;Voraussetzungen für die Vergabe von ECTS-Leistungspunkten;pref;hs:creditAwardCondition;Voraussetzungen für die Vergabe von Leistungspunkten (Wortlaut);;;;0.9;ja;;hs:lex-creditAwardCondition-pref-voraussetzungen-fuer-die-vergabe-von-ect
+ohne-land;Voraussetzungen für die Vergabe von Leistungspunkten;alt;hs:creditAwardCondition;Voraussetzungen für die Vergabe von Leistungspunkten (Wortlaut);;;;0.8;nein;;hs:lex-creditAwardCondition-alt-voraussetzungen-fuer-die-vergabe-von-lei
+ohne-land;Lehramtsprüfungsordnung;alt;hs:dt-Lehramt;Lehramtsrechtliche Vorgabe;;;;0.8;nein;;hs:lex-dt_TeacherTrainingRegulation-alt-lehramtspruefungsordnung
+ohne-land;ECTS Course Catalogue;alt;hs:dt-Modulhandbuch;Modulhandbuch;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-dt_ModuleCatalogue-alt-ects-course-catalogue
+ohne-land;Studienführer;cue;hs:dt-Modulhandbuch;Modulhandbuch;;;;0.7;nein;Kann auch reine Informationsbroschüre sein.;hs:lex-dt_ModuleCatalogue-cue-studienfuehrer
+ohne-land;Praxissemesterordnung;alt;hs:dt-Praxisordnung;Praktikums-/Praxisphasenordnung;;;;0.8;nein;;hs:lex-dt_PlacementRegulation-alt-praxissemesterordnung
+ohne-land;Rahmenausbildungsplan;cue;hs:dt-Praxisordnung;Praktikums-/Praxisphasenordnung;;;;0.7;nein;;hs:lex-dt_PlacementRegulation-cue-rahmenausbildungsplan
+ohne-land;Fachspezifische Prüfungsordnung;alt;hs:dt-Pruefungsordnung;(Fach-)Prüfungsordnung;;;;0.8;nein;;hs:lex-dt_ExaminationRegulation-alt-fachspezifische-pruefungsordnung
+ohne-land;FSB;cue;hs:dt-Pruefungsordnung;(Fach-)Prüfungsordnung;;;;0.7;nein;;hs:lex-dt_ExaminationRegulation-cue-fsb
+ohne-land;APO;cue;hs:dt-RahmenPO;Rahmen-/Allgemeine Prüfungsordnung;;;;0.7;nein;;hs:lex-dt_GeneralExaminationRegulation-cue-apo
+ohne-land;ASPO;cue;hs:dt-RahmenPO;Rahmen-/Allgemeine Prüfungsordnung;;;;0.7;nein;;hs:lex-dt_GeneralExaminationRegulation-cue-aspo
+ohne-land;Gemeinsame Prüfungsordnung;alt;hs:dt-RahmenPO;Rahmen-/Allgemeine Prüfungsordnung;;;;0.8;nein;;hs:lex-dt_GeneralExaminationRegulation-alt-gemeinsame-pruefungsordnung
+ohne-land;RPO;cue;hs:dt-RahmenPO;Rahmen-/Allgemeine Prüfungsordnung;;;;0.7;nein;;hs:lex-dt_GeneralExaminationRegulation-cue-rpo
+ohne-land;RSPO;cue;hs:dt-RahmenPO;Rahmen-/Allgemeine Prüfungsordnung;;;;0.7;nein;;hs:lex-dt_GeneralExaminationRegulation-cue-rspo
+ohne-land;Studien- und Prüfungsordnung;pref;hs:dt-SPO;Studien- und Prüfungsordnung;;;;0.8;nein;;hs:lex-dt_CombinedStudyExaminationRegulation-pref-studien-und-pruefungsordnung
+ohne-land;JAPO;cue;hs:dt-Staatsexamen;Approbations-/Ausbildungsordnung (Staatsexamen);;;;0.7;nein;;hs:lex-dt_StateExaminationRegulation-cue-japo
+ohne-land;ÄApprO;cue;hs:dt-Staatsexamen;Approbations-/Ausbildungsordnung (Staatsexamen);;;;0.7;nein;;hs:lex-dt_StateExaminationRegulation-cue-aeappro
+ohne-land;Eignungsprüfungsordnung;alt;hs:dt-Zugangsordnung;Zugangs-/Zulassungsordnung;;;;0.8;nein;;hs:lex-dt_AdmissionRegulation-alt-eignungspruefungsordnung
+ohne-land;Dauer;alt;hs:durationSemesters;Dauer in Semestern;;;;0.8;nein;;hs:lex-durationSemesters-alt-dauer
+ohne-land;Dauer des Moduls;pref;hs:durationSemesters;Dauer in Semestern;;;;0.9;ja;;hs:lex-durationSemesters-pref-dauer-des-moduls
+ohne-land;Duration;alt;hs:durationSemesters;Dauer in Semestern;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-durationSemesters-alt-duration
+ohne-land;einsemestrig;cue;hs:durationSemesters;Dauer in Semestern;;;;0.7;nein;;hs:lex-durationSemesters-cue-einsemestrig
+ohne-land;Moduldauer;alt;hs:durationSemesters;Dauer in Semestern;;;;0.8;nein;;hs:lex-durationSemesters-alt-moduldauer
+ohne-land;zweisemestrig;cue;hs:durationSemesters;Dauer in Semestern;;;;0.7;nein;;hs:lex-durationSemesters-cue-zweisemestrig
+ohne-land;Literatur;cue;hs:if-literatur;Literatur;heading;;;0.85;nein;"Feldgrenze im Modulsteckbrief; Literaturangaben nicht als Aussagen.";hs:cue-literatur
+ohne-land;Modulbeauftragte:r;alt;hs:if-person;Personenangaben;;;;0.8;nein;;hs:lex-responsiblePerson-alt-modulbeauftragte-r
+ohne-land;Module coordinator;alt;hs:if-person;Personenangaben;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-responsiblePerson-alt-module-coordinator
+ohne-land;Modulkoordination;alt;hs:if-person;Personenangaben;;;;0.8;nein;;hs:lex-responsiblePerson-alt-modulkoordination
+ohne-land;Modulverantwortliche:r;pref;hs:if-person;Personenangaben;;;;0.8;nein;;hs:lex-responsiblePerson-pref-modulverantwortliche-r
+ohne-land;Verantwortlich;alt;hs:if-person;Personenangaben;;;;0.8;nein;;hs:lex-responsiblePerson-alt-verantwortlich
+ohne-land;Language of instruction;alt;hs:instructionLanguage;Lehrsprache;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-instructionLanguage-alt-language-of-instruction
+ohne-land;Lehrsprache;pref;hs:instructionLanguage;Lehrsprache;;;;0.8;nein;;hs:lex-instructionLanguage-pref-lehrsprache
+ohne-land;Sprache;alt;hs:instructionLanguage;Lehrsprache;;;;0.8;nein;;hs:lex-instructionLanguage-alt-sprache
+ohne-land;Unterrichtssprache;alt;hs:instructionLanguage;Lehrsprache;;;;0.8;nein;;hs:lex-instructionLanguage-alt-unterrichtssprache
+ohne-land;BA;homonym;hs:it-dual;Duale Hochschule/Berufsakademie;;;;0.4;nein;"„Berufsakademie“ nur als Herausgeber; „B.A.“ oder „Bachelor of Arts“ hinter dem Studiengang ist der Grad.";hs:cue-ba
+ohne-land;Technische Hochschule;homonym;hs:it-haw;Hochschule für angewandte Wissenschaften;;;;0.5;nein;"In BY und NW meist HAW; einige Technische Hochschulen sind Universitäten (RWTH, KIT-Vorläufer). Hochschultyp aus Grundordnung oder Landesgesetz, nicht aus dem Namen.";hs:cue-th
+ohne-land;Angebotshäufigkeit;alt;hs:offerFrequency;Angebotsturnus;;;;0.8;nein;;hs:lex-offerFrequency-alt-angebotshaeufigkeit
+ohne-land;Angebotsturnus;alt;hs:offerFrequency;Angebotsturnus;;;;0.8;nein;;hs:lex-offerFrequency-alt-angebotsturnus
+ohne-land;Frequency;alt;hs:offerFrequency;Angebotsturnus;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-offerFrequency-alt-frequency
+ohne-land;Häufigkeit des Angebots;alt;hs:offerFrequency;Angebotsturnus;;;;0.8;nein;;hs:lex-offerFrequency-alt-haeufigkeit-des-angebots
+ohne-land;Häufigkeit des Angebots des Moduls;pref;hs:offerFrequency;Angebotsturnus;;;;0.9;ja;;hs:lex-offerFrequency-pref-haeufigkeit-des-angebots-des-moduls
+ohne-land;Turnus;alt;hs:offerFrequency;Angebotsturnus;;;;0.8;nein;;hs:lex-offerFrequency-alt-turnus
+ohne-land;dual;homonym;hs:sm-dual-praxis;dual, praxisintegrierend;;;;0.4;nein;"Nur als dual klassifizieren, wenn curriculare und organisatorische Verzahnung der Lernorte beschrieben ist (WR 2013); ausbildungsintegrierend nur mit Berufsabschluss.";hs:cue-dualkurz
+ohne-land;Regelstudienzeit;pref;hs:standardDurationSemesters;Regelstudienzeit;;;;0.8;nein;;hs:lex-standardDurationSemesters-pref-regelstudienzeit
+ohne-land;standard period of study;alt;hs:standardDurationSemesters;Regelstudienzeit;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-standardDurationSemesters-alt-standard-period-of-study
+ohne-land;Studiendauer;alt;hs:standardDurationSemesters;Regelstudienzeit;;;;0.8;nein;;hs:lex-standardDurationSemesters-alt-studiendauer
+ohne-land;ausbildungsintegrierend;cue;hs:studyMode;Studienform;;;;0.7;nein;;hs:lex-studyMode-cue-ausbildungsintegrierend
+ohne-land;berufsbegleitend;cue;hs:studyMode;Studienform;;;;0.7;nein;;hs:lex-studyMode-cue-berufsbegleitend
+ohne-land;dual;homonym;hs:studyMode;Studienform;;;;0.5;nein;Nur als dual klassifizieren, wenn curriculare und organisatorische Verzahnung der Lernorte beschrieben ist (WR 2013).;hs:lex-studyMode-homonym-dual
+ohne-land;praxisintegrierend;cue;hs:studyMode;Studienform;;;;0.7;nein;;hs:lex-studyMode-cue-praxisintegrierend
+ohne-land;Studienart;alt;hs:studyMode;Studienform;;;;0.8;nein;;hs:lex-studyMode-alt-studienart
+ohne-land;Studienform;pref;hs:studyMode;Studienform;;;;0.8;nein;;hs:lex-studyMode-pref-studienform
+ohne-land;Studienmodell;alt;hs:studyMode;Studienform;;;;0.8;nein;;hs:lex-studyMode-alt-studienmodell
+ohne-land;\b(\d+)\s*SWS\b;cue;hs:sws;Semesterwochenstunden;;;;0.9;nein;SWS sind keine Arbeitsstunden und keine LP.;hs:cue-sws
+ohne-land;2 SWS V + 2 SWS Ü;cue;hs:teachingFormat;Lehrform;;;;0.7;nein;;hs:lex-TeachingLearningActivity-cue-2-sws-v-2-sws-ue
+ohne-land;Lehr- und Lernformen;pref;hs:teachingFormat;Lehrform;;;;0.9;ja;;hs:lex-TeachingLearningActivity-pref-lehr-und-lernformen
+ohne-land;Lehr- und Lernmethoden;alt;hs:teachingFormat;Lehrform;;;;0.8;nein;;hs:lex-TeachingLearningActivity-alt-lehr-und-lernmethoden
+ohne-land;Lehrformen;alt;hs:teachingFormat;Lehrform;;;;0.8;nein;;hs:lex-TeachingLearningActivity-alt-lehrformen
+ohne-land;Lehrmethoden;alt;hs:teachingFormat;Lehrform;;;;0.8;nein;;hs:lex-TeachingLearningActivity-alt-lehrmethoden
+ohne-land;Lehrveranstaltungsart;alt;hs:teachingFormat;Lehrform;;;;0.8;nein;;hs:lex-TeachingLearningActivity-alt-lehrveranstaltungsart
+ohne-land;Lernformen;alt;hs:teachingFormat;Lehrform;;;;0.8;nein;;hs:lex-TeachingLearningActivity-alt-lernformen
+ohne-land;Teaching methods;alt;hs:teachingFormat;Lehrform;;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-TeachingLearningActivity-alt-teaching-methods
+ohne-land;Veranstaltungsform;alt;hs:teachingFormat;Lehrform;;;;0.8;nein;;hs:lex-TeachingLearningActivity-alt-veranstaltungsform
+ohne-land;UE;homonym;hs:tf-uebung;Übung;;;;0.4;nein;"In Lehrformangaben (2 V + 2 UE) Übung; mit Zahl als Umfang (40 UE) Unterrichtseinheit.";hs:cue-ue
+ohne-land;Applicability;alt;hs:usabilityText;Verwendbarkeit (Wortlaut);;;;0.8;nein;Englischsprachige Fassung oder Modulhandbuch.;hs:lex-usabilityText-alt-applicability
+ohne-land;Einsetzbarkeit;alt;hs:usabilityText;Verwendbarkeit (Wortlaut);;;;0.8;nein;;hs:lex-usabilityText-alt-einsetzbarkeit
+ohne-land;Verwendbarkeit;alt;hs:usabilityText;Verwendbarkeit (Wortlaut);;;;0.8;nein;;hs:lex-usabilityText-alt-verwendbarkeit
+ohne-land;Verwendbarkeit des Moduls;pref;hs:usabilityText;Verwendbarkeit (Wortlaut);;;;0.9;ja;;hs:lex-usabilityText-pref-verwendbarkeit-des-moduls
+ohne-land;Verwendung in anderen Studiengängen;alt;hs:usabilityText;Verwendbarkeit (Wortlaut);;;;0.8;nein;;hs:lex-usabilityText-alt-verwendung-in-anderen-studiengaengen
+ohne-land;Nachhaltigkeit;cue;qz:BNE;Bildung für nachhaltige Entwicklung;;;;0.6;nein;;hs:cue-uek-bne
+ohne-land;Digitalkompetenz;cue;qz:DigitalWorld;Medienbildung und Bildung in der digitalen Welt;;;;0.7;nein;Auch „Data Literacy“, „KI-Kompetenz“.;hs:cue-uek-dig
+ohne-land;Umgang mit Heterogenität;cue;qz:Diversity;Akzeptanz von Vielfalt und Inklusion;;;;0.7;nein;;hs:cue-uek-ink
+ohne-land;Entrepreneurship;cue;qz:Entrepreneurship;Unternehmerisches Denken und Handeln;;;;0.7;nein;;hs:cue-uek-ent
+ohne-land;Gute wissenschaftliche Praxis;cue;qz:Ethics;Ethik und Verantwortung;;;;0.7;nein;;hs:cue-uek-eth
+ohne-land;Internationalisierung;cue;qz:Intercultural;Interkulturelle Bildung;;;;0.6;nein;;hs:cue-uek-int
+ohne-land;Forschendes Lernen;cue;qz:Research;Wissenschaftliche Befähigung und Forschungskompetenz;;;;0.7;nein;;hs:cue-uek-res
+ohne-land;Befähigung zu einer qualifizierten Erwerbstätigkeit;cue;qz:mrvo-EW;Befähigung zu einer qualifizierten Erwerbstätigkeit;;;;0.9;nein;;hs:cue-qz-ew
+ohne-land;gesellschaftliches Engagement;cue;qz:mrvo-GE;Gesellschaftliches Engagement;;;;0.8;nein;;hs:cue-qz-ge
+ohne-land;Persönlichkeitsentwicklung;cue;qz:mrvo-PE;Persönlichkeitsentwicklung;;;;0.8;nein;;hs:cue-qz-pe
+ohne-land;wissenschaftliche Befähigung;cue;qz:mrvo-WB;Wissenschaftliche oder künstlerische Befähigung;;;;0.8;nein;;hs:cue-qz-wb

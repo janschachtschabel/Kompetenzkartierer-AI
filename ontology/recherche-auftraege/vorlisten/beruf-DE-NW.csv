@@ -1,0 +1,3 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-NW;^Anforderungssituation\s+\d+\.\d+;cue;beruf:Anforderungssituation;Anforderungssituation;;;;0.95;nein;Erste Ziffer = Handlungsfeld (typischer Elternknoten).;beruf:c-as-1
+DE-NW;Bündelungsfach;pref;beruf:Buendelungsfach, beruf:dt-Landeslehrplan;Bündelungsfach, Landeslehrplan berufliche Schule;;;;0.9;nein;;beruf:c-llp-1

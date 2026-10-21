@@ -1,0 +1,148 @@
+@prefix ex:    <https://w3id.org/wlo/curriculum/example/> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix lvl:   <https://w3id.org/wlo/curriculum/level/> .
+@prefix ctx:   <https://w3id.org/wlo/curriculum/context/> .
+@prefix fld:   <https://w3id.org/wlo/curriculum/field/> .
+@prefix qz:    <https://w3id.org/wlo/curriculum/crosscutting/> .
+@prefix land:  <https://w3id.org/wlo/curriculum/region/> .
+@prefix op:    <https://w3id.org/wlo/curriculum/operator/> .
+@prefix eb:    <https://w3id.org/wlo/curriculum/profile/adult-education#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+# =============================================================================
+# Beispiel Erwachsenenbildung: fiktive Auszüge nach dem Muster
+#   (a) Rahmencurriculum Integrationskurs (Handlungsfeld → Teilbereich →
+#       sprachliche Handlung → Lernziel-Tabelle mit Niveau, Aktivität,
+#       Handlungsziel; „kein Lehrplan“ = Auswahlpool; Mindestniveau)
+#   (b) Kurskonzept, das Umfang in UE ergänzt (cur:supplements)
+#   (c) Rahmencurriculum Schreiben mit Alpha-Level als Gliederung und
+#       Spiralverweis (rel_revisits)
+# Wortlaute FIKTIV.
+# =============================================================================
+
+# --- (a) Rahmencurriculum Zweitsprache --------------------------------------
+ex:eb-doc-rc a cur:Document ;
+    dct:title "Rahmencurriculum für Integrationskurse Deutsch als Zweitsprache (fiktives Beispiel)"@de ; dct:publisher "Bundesbehörde (fiktiv)" ;
+    cur:documentType eb:dt-D2 ; cur:educationSector cv:sec_adult ; cur:region land:DE ;
+    cur:legalForm cv:lf_providerDocument ; cur:documentBinding cv:bind_orienting ; cur:lifecycle cv:life_inForce ;
+    cur:documentAudience cv:addr_educator ;
+    cur:represents ex:eb-rc .
+ex:eb-rc a cur:Curriculum ; dct:title "Integrationskurs Deutsch als Zweitsprache"@de ;
+    cur:field fld:0231 ; eb:programArea eb:pa-sprachen ;
+    cur:applicability ex:eb-rc-ctx ; cur:competencyModel eb:CEFRActivities .
+ex:eb-rc-ctx a cur:ApplicabilityContext ; cur:educationSector cv:sec_adult ; cur:formality cv:form_nonFormal ;
+    cur:targetGroup ctx:newly-arrived , ctx:long-term-resident ;
+    cur:levelAssignment ex:eb-rc-niveau , ex:eb-rc-niveau-hoeren .
+ex:eb-rc-niveau a cur:LevelAssignment ; cur:level lvl:cefr-A1 ; cur:levelTo lvl:cefr-B1 ;
+    cur:levelRelation cv:lrel_range ; cur:origin cv:orig_source .
+ex:eb-rc-niveau-hoeren a cur:LevelAssignment ; cur:level lvl:cefr-B1 ; cur:levelRelation cv:lrel_target ;
+    cur:competenceDimension eb:act-hoeren ; cur:origin cv:orig_source ;
+    skos:note "Niveau je Fertigkeit: Das Ziel B1 gilt hier nur für das Hörverstehen (fiktiv)."@de .
+
+ex:eb-hf-behoerden a cur:CurriculumNode ; cur:partOf ex:eb-rc ;
+    cur:nodeFunction cv:fn_area ; cur:nodeType eb:Handlungsfeld ; cur:code "1" ;
+    cur:originalTitle "ÄMTER UND BEHÖRDEN"@de ; cur:context ctx:hf-authorities ;
+    cur:obligation cv:obl_selectionPool ; cur:anchor ex:eb-anc-1 .
+ex:eb-tb a cur:CurriculumNode ; cur:partOf ex:eb-hf-behoerden ;
+    cur:nodeFunction cv:fn_subunit ; cur:nodeType eb:Teilbereich ; cur:code "1.2" ;
+    cur:originalTitle "KOMMUNIKATION MIT BEHÖRDENMITARBEITENDEN"@de ; cur:anchor ex:eb-anc-2 .
+ex:eb-sh a cur:CurriculumNode ; cur:partOf ex:eb-tb ;
+    cur:nodeFunction cv:fn_subunit ; cur:nodeType eb:SprachlicheHandlung ; cur:code "1.2.2" ;
+    cur:originalTitle "FORMULARE AUSFÜLLEN"@de ; cur:anchor ex:eb-anc-3 .
+
+# Tabellenzeile: Lernziel + Aktivität + Niveau + Handlungsziel
+ex:eb-st-1 a cur:Statement ; cur:partOf ex:eb-sh ;
+    cur:verbatim "Kann in einfachen Formularen persönliche Angaben eintragen."@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:statementSubkind eb:KannBeschreibung ;
+    cur:addressee cv:addr_learner ; cur:origin cv:orig_source ; cur:obligation cv:obl_selectionPool ;
+    cur:competenceDimension eb:act-schreiben ;
+    cur:purpose "Möchte einen Antrag selbstständig stellen."@de ;
+    cur:levelAssignment ex:eb-st-1-niveau ;
+    cur:anchor ex:eb-anc-4 .
+ex:eb-st-1-niveau a cur:LevelAssignment ; cur:level lvl:cefr-A1 ; cur:levelRelation cv:lrel_minimum ;
+    cur:origin cv:orig_inherited ;
+    skos:note "Zuordnungsart aus der Dokumenterklärung (niedrigste mögliche Stufe), einmal je Dokument bestimmt."@de .
+ex:eb-dec-1 a cur:Decomposition ; cur:decomposes ex:eb-st-1 ;
+    cur:actionText "eintragen" ; cur:objectText "persönliche Angaben" ; cur:conditionText "in einfachen Formularen" ;
+    cur:origin cv:orig_model ; cur:confidence 0.87 ; cur:mentions ex:eb-ic-formular .
+ex:eb-st-2 a cur:Statement ; cur:partOf ex:eb-sh ;
+    cur:verbatim "Weiß, dass Behörden für Anträge bestimmte Fristen setzen."@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:statementSubkind eb:Wissensaussage ;
+    cur:addressee cv:addr_learner ; cur:origin cv:orig_source ; cur:contributesTo qz:eb-landeskunde ;
+    cur:anchor ex:eb-anc-5 .
+ex:eb-st-3 a cur:Statement ; cur:partOf ex:eb-sh ;
+    cur:verbatim "Ist sensibilisiert für den Schutz eigener Daten in Formularen."@de ;
+    cur:statementKind cv:kind_developmentGoal ; cur:statementSubkind eb:Sensibilisierung ;
+    cur:addressee cv:addr_learner ; cur:origin cv:orig_source ; cur:contributesTo qz:DataProtection ;
+    cur:anchor ex:eb-anc-6 .
+
+ex:eb-hub a skos:ConceptScheme ; skos:prefLabel "Inhalts-Hub (Beispiel EB)"@de .
+ex:eb-ic-formular a cur:ContentConcept ; skos:inScheme ex:eb-hub ; skos:prefLabel "Formular"@de .
+
+# --- (b) Kurskonzept ergänzt den Umfang ----------------------------------------
+ex:eb-doc-kk a cur:Document ;
+    dct:title "Konzept für einen bundesweiten Integrationskurs (fiktives Beispiel)"@de ; dct:publisher "Bundesbehörde (fiktiv)" ;
+    cur:documentType eb:dt-D3 ; cur:educationSector cv:sec_adult ; cur:legalForm cv:lf_providerDocument ;
+    cur:represents ex:eb-kurs .
+ex:eb-kurs a cur:Curriculum ; dct:title "Allgemeiner Integrationskurs"@de ; cur:supplements ex:eb-rc ;
+    cur:field fld:0231 ; cur:totalWorkload ex:eb-kurs-ue ; eb:courseFormat eb:cf-allgemein .
+ex:eb-kurs-ue a cur:Workload ; cur:amount 600.0 ; cur:unit cv:unit_teachingUnit ; cur:workloadKind cv:wl_teachingTime ;
+    eb:minutesPerTeachingUnit 45 .
+ex:eb-kurs-abschnitt a cur:CurriculumNode ; cur:partOf ex:eb-kurs ;
+    cur:nodeFunction cv:fn_unit ; cur:nodeType eb:Modul ; cur:code "Kursabschnitt 1" ;
+    cur:workload ex:eb-ka-ue ; cur:anchor ex:eb-anc-7 .
+ex:eb-ka-ue a cur:Workload ; cur:amount 100.0 ; cur:unit cv:unit_teachingUnit ; cur:workloadKind cv:wl_teachingTime .
+
+# --- (c) Rahmencurriculum Schreiben (Alpha-Level als Gliederung) --------------
+ex:eb-doc-alpha a cur:Document ;
+    dct:title "Rahmencurriculum Schreiben (fiktives Beispiel)"@de ; dct:publisher "Verband (fiktiv)" ;
+    cur:documentType eb:dt-D1 ; cur:educationSector cv:sec_adult ; cur:legalForm cv:lf_providerDocument ;
+    cur:documentBinding cv:bind_recommending ;
+    cur:represents ex:eb-alpha .
+ex:eb-alpha a cur:Curriculum ; dct:title "Rahmencurriculum Schreiben"@de ; cur:field fld:0021 ; eb:programArea eb:pa-grundbildung .
+
+ex:eb-al1 a cur:CurriculumNode ; cur:partOf ex:eb-alpha ; cur:nodeFunction cv:fn_grouping ; cur:nodeType eb:Niveaustufe ;
+    cur:originalTitle "Alpha-Level 1"@de ; cur:levelAssignment ex:eb-al1-niv ; cur:anchor ex:eb-anc-8 .
+ex:eb-al1-niv a cur:LevelAssignment ; cur:level lvl:alpha-1 ; cur:levelRelation cv:lrel_assigned ; cur:origin cv:orig_source .
+ex:eb-al2 a cur:CurriculumNode ; cur:partOf ex:eb-alpha ; cur:nodeFunction cv:fn_grouping ; cur:nodeType eb:Niveaustufe ;
+    cur:originalTitle "Alpha-Level 2"@de ; cur:levelAssignment ex:eb-al2-niv ; cur:anchor ex:eb-anc-9 .
+ex:eb-al2-niv a cur:LevelAssignment ; cur:level lvl:alpha-2 ; cur:levelRelation cv:lrel_assigned ; cur:origin cv:orig_source .
+
+ex:eb-k1-l1 a cur:CurriculumNode ; cur:partOf ex:eb-al1 ; cur:nodeFunction cv:fn_subunit ; cur:nodeType eb:Kompetenzeinheit ;
+    cur:code "K1" ; cur:originalTitle "K1 Grundlegende Fähigkeiten 1"@de ; cur:anchor ex:eb-anc-8 .
+ex:eb-k1-l2 a cur:CurriculumNode ; cur:partOf ex:eb-al2 ; cur:nodeFunction cv:fn_subunit ; cur:nodeType eb:Kompetenzeinheit ;
+    cur:code "K1" ; cur:originalTitle "K1 Grundlegende Fähigkeiten 1"@de ; cur:anchor ex:eb-anc-9 .
+ex:eb-kann-l1 a cur:Statement ; cur:partOf ex:eb-k1-l1 ;
+    cur:verbatim "Kann einzelne Buchstaben abschreiben."@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:statementSubkind eb:KannBeschreibung ;
+    cur:addressee cv:addr_learner ; cur:origin cv:orig_source ; cur:citedCode "1.1.02" ; cur:anchor ex:eb-anc-8 .
+ex:eb-kann-l2 a cur:Statement ; cur:partOf ex:eb-k1-l2 ;
+    cur:verbatim "Kann kurze Wörter mit offenen Silben schreiben."@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:statementSubkind eb:KannBeschreibung ;
+    cur:addressee cv:addr_learner ; cur:origin cv:orig_source ; cur:citedCode "2.1.14" ;
+    cur:referenceMarker "Spiralcurriculum: L1/K1" ; cur:anchor ex:eb-anc-9 .
+
+# Spiralverweis, deterministisch aufgelöst (Herkunft rule, Methode pattern) und
+# damit als Strukturkante bestätigt.
+ex:eb-al-spiral a cur:Alignment ; cur:source ex:eb-k1-l2 ; cur:target ex:eb-k1-l1 ;
+    cur:relation cv:rel_revisits ; cur:origin cv:orig_rule ; cur:reviewStatus cv:rev_confirmed ;
+    cur:method cv:meth_pattern ; cur:anchor ex:eb-anc-9 .
+ex:eb-k1-l2 cur:revisits ex:eb-k1-l1 .
+
+# Fundstellen
+ex:eb-anc-1 a cur:SourceAnchor ; cur:inDocument ex:eb-doc-rc ; cur:pageStart 40 ; cur:pageEnd 52 ; cur:blockId "p40-b1" ; cur:quote "1 ÄMTER UND BEHÖRDEN" ; cur:matchKind cv:match_exact .
+ex:eb-anc-2 a cur:SourceAnchor ; cur:inDocument ex:eb-doc-rc ; cur:pageStart 44 ; cur:pageEnd 47 ; cur:blockId "p44-b1" ; cur:quote "1.2 KOMMUNIKATION MIT BEHÖRDENMITARBEITENDEN" ; cur:matchKind cv:match_exact .
+ex:eb-anc-3 a cur:SourceAnchor ; cur:inDocument ex:eb-doc-rc ; cur:pageStart 45 ; cur:pageEnd 45 ; cur:blockId "p45-b2" ; cur:quote "1.2.2 FORMULARE AUSFÜLLEN" ; cur:matchKind cv:match_exact .
+ex:eb-anc-4 a cur:SourceAnchor ; cur:inDocument ex:eb-doc-rc ; cur:pageStart 45 ; cur:pageEnd 45 ; cur:blockId "p45-b5" ; cur:tableCell "R2C1" ;
+    cur:quote "Kann in einfachen Formularen persönliche Angaben eintragen." ; cur:matchKind cv:match_exact .
+ex:eb-anc-5 a cur:SourceAnchor ; cur:inDocument ex:eb-doc-rc ; cur:pageStart 45 ; cur:pageEnd 45 ; cur:blockId "p45-b9" ; cur:tableCell "R3C1" ;
+    cur:quote "Weiß, dass Behörden für Anträge bestimmte Fristen setzen." ; cur:matchKind cv:match_exact .
+ex:eb-anc-6 a cur:SourceAnchor ; cur:inDocument ex:eb-doc-rc ; cur:pageStart 45 ; cur:pageEnd 45 ; cur:blockId "p45-b11" ; cur:tableCell "R4C1" ;
+    cur:quote "Ist sensibilisiert für den Schutz eigener Daten in Formularen." ; cur:matchKind cv:match_exact .
+ex:eb-anc-7 a cur:SourceAnchor ; cur:inDocument ex:eb-doc-kk ; cur:pageStart 8 ; cur:pageEnd 8 ; cur:blockId "p8-b3" ; cur:quote "Kursabschnitt 1" ; cur:matchKind cv:match_exact .
+ex:eb-anc-8 a cur:SourceAnchor ; cur:inDocument ex:eb-doc-alpha ; cur:pageStart 20 ; cur:pageEnd 20 ; cur:blockId "p20-b2" ; cur:matchKind cv:match_exact .
+ex:eb-anc-9 a cur:SourceAnchor ; cur:inDocument ex:eb-doc-alpha ; cur:pageStart 34 ; cur:pageEnd 34 ; cur:blockId "p34-b2" ; cur:matchKind cv:match_exact .

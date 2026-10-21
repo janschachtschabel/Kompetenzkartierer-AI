@@ -1,0 +1,31 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+ohne-land;^Möchte\s;cue;cur:purpose;Handlungsziel;;;;0.8;nein;;eb:c-handlungsziel-muster
+ohne-land;Handlungsziele;cue;cur:purpose;Handlungsziel;tableHeader;;;0.85;nein;"„Möchte …“ als Wortlaut in cur:purpose der Aussage der Zeile, kein eigenes Lernergebnis; leere Zelle erbt nicht.";eb:r14
+ohne-land;(jeweils )?der niedrigsten (möglichen )?(Niveau)?[Ss]tufe zugeordnet|niedrigste[ns]? mögliche[ns]? (Niveau|Stufe);cue;cv:lrel_minimum;Mindestniveau;;;;0.9;nein;Dokumenterklärung zur Niveauzuordnung: einmal in X1/X3 lesen und als cur:defaultLevelRelation im Dokumentprofil setzen.;eb:c-mindestniveau
+ohne-land;kein Lehrplan;cue;cv:obl_selectionPool;Auswahlpool;;;;0.8;nein;Das Rahmencurriculum ist ein Auswahlpool für Kurskonzepte und Lehrwerke: cur:obligation cv:obl_selectionPool vererbt an alle Lernziele.;eb:c-kein-lehrplan
+ohne-land;\b[LK]\d+(/K\d+(\s?[-–]\s?K?\d+)?)?\b;cue;cv:rel_revisits;greift wieder auf;;;;0.7;nein;"„L2/K3-K5“ = Alpha-Level 2, Kompetenzen 3 bis 5 (expandieren); „K1/11“ = gleiche Ebene; „alle weiteren Kompetenzen“ und „- -“ nicht auflösen.";eb:r22-kurz
+ohne-land;Prüfung zum anerkannten Fortbildungsabschluss;negative;cv:sec_vocational;Berufsbildung;titlePage;;;0.95;nein;Fortbildungsordnungen und DIHK-Rahmenpläne (EB-CO D8) gehören ins Profil beruf:.;eb:c-fortbildung
+ohne-land;\b(\d+)\s*(UE|Unterrichtseinheiten)\b;cue;cv:unit_teachingUnit;Unterrichtseinheit (UE);;;;0.9;nein;"cur:workload mit cv:unit_teachingUnit; „Stundenempfehlung“/„Richtwert“ → cur:isRecommendation true; Minuten je UE nur aus dem Dokument.";eb:r23
+ohne-land;Aktivitäten;cue;eb:CEFRActivities;Sprachliche Aktivitäten (GER-Begleitband 2020);tableHeader;;;0.85;nein;Zellwerte auf eb:CEFRActivities abbilden (mehrere je Zelle) und als cur:competenceDimension an die Aussagen der Zeile setzen.;eb:r11
+ohne-land;Fertigkeiten;homonym;eb:CEFRActivities;Sprachliche Aktivitäten (GER-Begleitband 2020);tableHeader, heading;;;0.6;nein;"Werte Lesen/Schreiben/Hören/Sprechen → Aktivität; sonst Kompetenzbereich.";eb:r12
+ohne-land;^\d{1,2}\s+[A-ZÄÖÜ][A-ZÄÖÜß0-9 ,/-]+$;cue;eb:Handlungsfeld;Handlungsfeld;;;;0.85;nein;;eb:r01-muster
+ohne-land;Handlungsfeld;pref;eb:Handlungsfeld;Handlungsfeld;heading;;;0.9;nein;In der Berufsbildung (BFS NRW) bedeutet Handlungsfeld eine berufliche Gliederung (Profil beruf:).;eb:r01
+ohne-land;Lernfeld;homonym;eb:Handlungsfeld;Handlungsfeld;;;;0.5;nein;"Fremdbegriff aus der Berufsbildung: Quellbezeichnung in cur:originalTerm erhalten; Kante zu Lernfeldern nur in G1.";eb:r10
+ohne-land;Kann-Beschreibung;cue;eb:KannBeschreibung;Kann-Beschreibung;;;;0.95;nein;;eb:r17
+ohne-land;lea.-Bezug;cue;eb:KannBeschreibung, cv:rel_derivedFrom;Kann-Beschreibung, übernommen aus;;;;0.9;nein;"Alle Treffer je Zeile auswerten (finditer), nicht nur den ersten; Nummer = cur:citedCode des lea.-Items.";eb:r18
+ohne-land;Kompetenzgruppe;cue;eb:Kompetenzbereich;Kompetenzbereich/Kompetenzgruppe;;;;0.85;nein;;eb:r07
+ohne-land;Kompetenz;homonym;eb:Kompetenzeinheit;Kompetenzeinheit;;;;0.85;nein;"„K1 …“ ist eine Einheit, kein Lernergebnis; nur Sätze mit Verb darunter sind Aussagen.";eb:r06
+ohne-land;Kursabschnitt;cue;eb:Modul;Modul/Kursabschnitt;heading;;;0.8;nein;"Auch Modul, Baustein, Lerneinheit; UE- oder Stundenangabe als cur:workload.";eb:r08
+ohne-land;^Ist (sensibilisiert|sich (dessen )?bewusst);cue;eb:Sensibilisierung;Sensibilisierungs-/Haltungsziel;;;;0.9;nein;;eb:r21
+ohne-land;Spiralcurriculum;cue;eb:Spiralverweis, cv:rel_revisits;Spiralverweis, greift wieder auf;;;;0.9;nein;;eb:r22
+ohne-land;sprachliche Handlung;cue;eb:SprachlicheHandlung;Sprachliche Handlung;;;;0.85;nein;;eb:r04
+ohne-land;Teilbereich;cue;eb:Teilbereich;Teilbereich;;;;0.75;nein;Zweite Nummernebene. Hat das Handlungsfeld keine Teilbereiche, ist die zweite Ebene schon die sprachliche Handlung („3.4 E-MAILS SCHREIBEN“): Ebene relativ zum Elternknoten bestimmen.;eb:r03
+ohne-land;Handlungsfelder übergreifender Kommunikation;cue;eb:UebergreifenderBereich;Handlungsfeld übergreifender Kommunikation;heading;;;0.9;nein;"Auch „übergreifender Kommunikationsbereich“; Buchstaben A–E; kein Lebensbereich-Kontext.";eb:r02
+ohne-land;^(Die )?(Kursteilnehmer(/-innen|innen und Kursteilnehmer)?|Teilnehmenden|KT)\b.*\bkönnen\b;cue;eb:Uebersichtsziel;Übersichts-Lernergebnis;;;;0.8;nein;"Satzstamm in cur:leadIn; Klammerverweis „(K1)“ → cur:summarizes.";eb:r19
+ohne-land;Hinweise zur Vermittlung;cue;eb:Vermittlungshinweis;Hinweis zur Vermittlung;tableHeader, heading;;;0.85;nein;"Auch Erläuterungen, didaktische Hinweise, Unterrichtstipps; Bezug per cur:refersTo, nie Lernziel.";eb:r16
+ohne-land;^(Weiß|Kennt|Kennen)\b;cue;eb:Wissensaussage;Wissensaussage;;;;0.85;nein;;eb:r20
+ohne-land;GRETA;cue;eb:dt-D13;Kompetenzmodell für EB-Personal;;;;0.8;nein;Kompetenzmodell für Lehrende in der EB: Adressat der Kompetenzen sind Lehrende (cur:targetGroup), die Aussagen sind trotzdem Lernergebnisse der Lehrenden als Lernende.;eb:c-greta
+ohne-land;Alpha-Level;cue;lvl:AlphaLevel, eb:Niveaustufe;Alpha-Level (lea.), Niveaustufe (als Gliederung);;;;0.9;nein;"Knoten Niveaustufe + cur:levelAssignment (cv:lrel_assigned); in Kopfzeilen nur Hinweis, kein Knoten.";eb:r05
+ohne-land;Niveau;cue;lvl:CEFR;Gemeinsamer Europäischer Referenzrahmen für Sprachen (GER);tableHeader;;;0.85;nein;"Zellwerte A1–C2 → lvl:CEFR; Zuordnungsart einmal je Dokument aus der Dokumenterklärung (BAMF: niedrigste mögliche Stufe → cv:lrel_minimum).";eb:r13
+ohne-land;Fokus Diversität und Interkulturalität;cue;qz:eb-diversity, eb:Rubrik;Fokus Diversität und Interkulturalität, Rubrik/Fokusteil;heading, tableHeader;;;0.9;nein;;eb:r09-diversitaet
+ohne-land;Fokus Landeskunde;cue;qz:eb-landeskunde, eb:Rubrik;Fokus Landeskunde, Rubrik/Fokusteil;heading, tableHeader;;;0.9;nein;"Am Anfang eines Handlungsfelds Knoten; als Spalte Wissensaussagen mit cur:contributesTo qz:eb-landeskunde.";eb:r09-landeskunde

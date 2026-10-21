@@ -1,0 +1,63 @@
+{
+  "type": "object",
+  "description": "Stufe G1: für jede Quelle aus höchstens 40 nummerierten Kandidaten (Retrieval + Rerank) die passende Relation wählen. Konfidenz berechnet die Pipeline; das Modell begründet mit einem Zitat.",
+  "additionalProperties": false,
+  "required": [
+    "decisions"
+  ],
+  "properties": {
+    "decisions": {
+      "type": "array",
+      "description": "Je Quelle eine oder mehrere Entscheidungen.",
+      "items": {
+        "type": "object",
+        "description": "Entscheidung",
+        "additionalProperties": false,
+        "required": [
+          "sourceId",
+          "candidate",
+          "relation",
+          "rationale"
+        ],
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "description": "ID der Quelle aus dem Prompt."
+          },
+          "candidate": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Nummer des Kandidaten oder null, wenn keiner passt."
+          },
+          "relation": {
+            "type": "string",
+            "enum": [
+              "exactMatch",
+              "closeMatch",
+              "broadMatch",
+              "narrowMatch",
+              "relatedMatch",
+              "buildsOn",
+              "requires",
+              "revisits",
+              "concretizes",
+              "noCorrespondence"
+            ],
+            "description": "Relation der Quelle zum Kandidaten.",
+            "x-cv-scheme": "AlignmentRelations",
+            "x-cv-subset": true
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Kurze Begründung mit dem entscheidenden Wortlaut aus Quelle oder Kandidat."
+          }
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/wlo/curriculum/schema/g1-kanten",
+  "title": "G1 Kantenentscheidung"
+}

@@ -1,0 +1,112 @@
+{
+  "type": "object",
+  "description": "Stufe N1: Lernergebnisse, Bildungsziele und Standards in Handlung × Gegenstand × Bedingung zerlegen. Mehrere Operatoren = mehrere Zerlegungen. Alle Teile stehen wörtlich in der Aussage (Rückprobe).",
+  "additionalProperties": false,
+  "required": [
+    "decompositions"
+  ],
+  "properties": {
+    "decompositions": {
+      "type": "array",
+      "description": "Zerlegungen.",
+      "items": {
+        "type": "object",
+        "description": "Zerlegung",
+        "additionalProperties": false,
+        "required": [
+          "statementId",
+          "actionText",
+          "operatorLemma",
+          "objectText",
+          "conditionText",
+          "qualityCriterion",
+          "developmentQualifier",
+          "autonomy",
+          "knowledgeType",
+          "competenceDimension"
+        ],
+        "properties": {
+          "statementId": {
+            "type": "string",
+            "description": "ID der Aussage aus dem Prompt."
+          },
+          "actionText": {
+            "type": "string",
+            "description": "Handlung wörtlich; trennbare Verben als „wählen … aus“."
+          },
+          "operatorLemma": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Operator-Lemma aus der Liste im Prompt oder null."
+          },
+          "objectText": {
+            "type": "string",
+            "description": "Gegenstand wörtlich."
+          },
+          "conditionText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Bedingung oder Kontext wörtlich."
+          },
+          "qualityCriterion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Qualitätskriterium wörtlich („sachgerecht“)."
+          },
+          "developmentQualifier": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Entwicklungs- oder Fortschrittssignal wörtlich („zunehmend selbstständig“)."
+          },
+          "autonomy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "guided",
+              "independent",
+              "responsible",
+              null
+            ],
+            "description": "Selbstständigkeit nur, wenn im Wortlaut ausgedrückt.",
+            "x-cv-scheme": "Autonomies"
+          },
+          "knowledgeType": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "conceptual",
+              "factual",
+              "metacognitive",
+              "procedural",
+              null
+            ],
+            "description": "Wissensart nur bei Wissensaussagen.",
+            "x-cv-scheme": "KnowledgeTypes"
+          },
+          "competenceDimension": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Dimension aus dem Kompetenzmodell des Dokuments (Liste im Prompt) oder null."
+          }
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/wlo/curriculum/schema/n1-zerlegung",
+  "title": "N1 Zerlegung"
+}

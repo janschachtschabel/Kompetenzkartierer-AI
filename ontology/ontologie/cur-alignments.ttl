@@ -1,0 +1,145 @@
+@prefix cur:    <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:     <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct:    <http://purl.org/dc/terms/> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix oa:     <http://www.w3.org/ns/oa#> .
+@prefix schema: <https://schema.org/> .
+@prefix ceasn:  <https://purl.org/ctdlasn/terms/> .
+@prefix asn:    <http://purl.org/ASN/schema/core/> .
+@prefix elm:    <http://data.europa.eu/snb/model/ontology/> .
+@prefix esco:   <http://data.europa.eu/esco/model#> .
+@prefix lp:     <https://w3id.org/lehrplan/ontology/> .
+@prefix oehec:  <http://w3id.org/openeduhub/vocabs/educationalContext/> .
+@prefix kimel:  <https://w3id.org/kim/educationalLevel/> .
+
+# =============================================================================
+# Abbildung des Curriculum-Kerns auf externe Standards (Alignment-Modul).
+#
+# Getrennt vom Kern, damit kein Werkzeug fremde Semantik importiert: alle
+# Abbildungen sind skos:*Match (OWL-2-Punning für Klassen und Eigenschaften),
+# nie rdfs:subClassOf oder owl:equivalentClass. Ausnahme: cur:ExtractionRun
+# ⊑ prov:Activity steht im Kern.
+#
+# Richtung wie in SKOS: „A skos:broadMatch B“ heißt B ist breiter.
+# CTDL-ASN broadAlignment heißt ebenso „das Ziel ist breiter“ (Fehler im
+# Andock-Entwurf: dort war die Richtung vertauscht).
+# CASE 1.1 hat keine RDF-Terme; die Assoziationstypen stehen als Literal in
+# cur:caseAssociationType.
+# Belegstand der externen IRIs: siehe konzept.md, Abschnitt „Externe Bezüge“.
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/alignments> a owl:Ontology ;
+    dct:title "Curriculum-Kern: Abbildung auf externe Standards"@de ;
+    owl:imports <https://w3id.org/wlo/curriculum/core> , <https://w3id.org/wlo/curriculum/vocab> ;
+    owl:versionInfo "1.0-entwurf" ;
+    dct:created "2026-10-19"^^xsd:date .
+
+cur:caseAssociationType a owl:AnnotationProperty ;
+    rdfs:label "CASE-Assoziationstyp"@de , "CASE association type"@en ;
+    skos:definition "Token des 1EdTech-CASE-1.1-CFAssociation-Typs, auf den eine Kantenart beim Export abgebildet wird."@de .
+cur:exportNote a owl:AnnotationProperty ;
+    rdfs:label "Exporthinweis"@de , "export note"@en .
+
+# -----------------------------------------------------------------------------
+# 1. Kantenarten → CTDL-ASN, CASE, SKOS, FWU
+# -----------------------------------------------------------------------------
+cv:rel_exactMatch skos:closeMatch ceasn:exactAlignment , skos:exactMatch ; cur:caseAssociationType "exactMatchOf" .
+cv:rel_closeMatch skos:closeMatch skos:closeMatch ; cur:caseAssociationType "isRelatedTo" ;
+    cur:exportNote "CASE kennt keine Nähe-Stufen; Export als isRelatedTo verliert Information."@de .
+cv:rel_broadMatch skos:closeMatch ceasn:broadAlignment , skos:broadMatch ; cur:caseAssociationType "isRelatedTo" .
+cv:rel_narrowMatch skos:closeMatch ceasn:narrowAlignment , skos:narrowMatch ; cur:caseAssociationType "isRelatedTo" .
+cv:rel_relatedMatch skos:closeMatch skos:relatedMatch ; cur:caseAssociationType "isRelatedTo" .
+cv:rel_majorOverlap skos:closeMatch ceasn:majorAlignment .
+cv:rel_minorOverlap skos:closeMatch ceasn:minorAlignment .
+cv:rel_requires skos:closeMatch ceasn:prerequisiteAlignment ; cur:caseAssociationType "precedes" ;
+    cur:exportNote "CASE precedes ist schwächer (nur Reihenfolge); beim Re-Import nicht als requires lesen."@de .
+cv:rel_precedes cur:caseAssociationType "precedes" ;
+    cur:exportNote "Nur ausdrücklich vorgegebene Lernreihenfolge; die Dokumentreihenfolge (cur:position) wird nie als precedes exportiert."@de .
+cv:rel_crossSubject skos:closeMatch ceasn:crossSubjectReference .
+cv:rel_concretizes skos:closeMatch lp:LP_0000017 ;
+    cur:exportNote "Lehrplan konkretisiert Bildungsstandard; FWU-Eigenschaft „konkretisiert“."@de .
+cv:rel_replaces cur:caseAssociationType "replacedBy" ;
+    cur:exportNote "Inverse Richtung: A rel_replaces B wird als CFAssociation B replacedBy A exportiert."@de .
+cv:rel_derivedFrom skos:closeMatch prov:wasDerivedFrom .
+
+# -----------------------------------------------------------------------------
+# 2. Klassen und Eigenschaften → CTDL-ASN
+# -----------------------------------------------------------------------------
+cur:CompetencyFramework skos:closeMatch ceasn:CompetencyFramework .
+cur:Statement skos:relatedMatch ceasn:Competency ;
+    cur:exportNote "Export einer Aussage als ceasn:Competency mit ceasn:competencyText = cur:verbatim, ceasn:codedNotation = cur:code, ceasn:isPartOf = Rahmen, ceasn:isChildOf = Elternknoten. Nur Lernergebnisse und Standards exportieren."@de .
+cur:CompetencyConcept skos:relatedMatch ceasn:Competency .
+cur:verbatim skos:closeMatch ceasn:competencyText .
+cur:code skos:closeMatch ceasn:codedNotation .
+cur:LevelScheme skos:closeMatch asn:ProgressionModel ;
+    skos:editorialNote "asn:ProgressionModel nur teilweise belegt; vor Export prüfen."@de .
+
+# -----------------------------------------------------------------------------
+# 3. Europass/ELM 3.3
+# -----------------------------------------------------------------------------
+cur:Qualification skos:closeMatch elm:Qualification .
+cur:Specification skos:closeMatch elm:LearningAchievementSpecification ;
+    skos:editorialNote "ELM 3.2 nutzte den Namensraum http://data.europa.eu/snb/model/elm/ (so auch die lokalen ELM-Shapes in data/sources)."@de .
+cur:LearningOutcome skos:closeMatch elm:LearningOutcome .
+cur:Programme skos:relatedMatch elm:LearningOpportunity .
+cur:field skos:closeMatch elm:ISCEDFCode ;
+    cur:exportNote "Nur Werte aus fld: mit exactMatch auf http://data.europa.eu/snb/isced-f/ exportieren."@de .
+cur:levelAssignment skos:relatedMatch elm:EQFLevel ;
+    cur:exportNote "Nur am cur:Qualification mit Stufe aus lvl:EQF oder lvl:DQR (über closeMatch auf EQF)."@de .
+cur:workload skos:relatedMatch elm:creditPoint , elm:volumeOfLearning ;
+    cur:exportNote "cv:unit_ectsCredit → elm:creditPoint; Zeitstunden → elm:volumeOfLearning (xsd:duration). Unterrichtseinheiten nicht umrechnen."@de .
+cur:expresses skos:relatedMatch elm:relatedESCOSkill .
+
+# -----------------------------------------------------------------------------
+# 4. schema.org, LRMI, AMB (WLO/OER-Metadaten)
+# -----------------------------------------------------------------------------
+cur:Programme skos:closeMatch schema:EducationalOccupationalProgram .
+cur:Alignment skos:closeMatch schema:AlignmentObject ;
+    cur:exportNote "AlignmentObject.alignmentType aus der Kantenart, educationalFramework = Spezifikation des Ziels, targetUrl = Ziel-IRI."@de .
+cur:CompetencyConcept skos:relatedMatch schema:DefinedTerm .
+cur:ContentConcept skos:relatedMatch schema:DefinedTerm .
+cur:LearningResource skos:closeMatch schema:LearningResource ;
+    cur:exportNote "AMB: schema:teaches und schema:assesses zeigen auf cur:CompetencyConcept oder auf Aussagen mit Adressat Lernende (cv:addr_learner); schema:educationalLevel auf lvl:-Stufen der Dimensionen stage und qualification oder auf KIM-Bildungsstufen; keine Noten-, Verhaltens- oder Heuristikstufen."@de .
+cur:Occupation skos:closeMatch esco:Occupation .
+cur:CompetencyConcept skos:relatedMatch esco:Skill ;
+    cur:exportNote "ESCO-Bezug nur am normalisierten Kompetenzkonzept, nie exactMatch von einer Aussage."@de .
+
+# -----------------------------------------------------------------------------
+# 5. W3C PROV und Web Annotation
+# -----------------------------------------------------------------------------
+cur:SourceAnchor skos:closeMatch oa:SpecificResource .
+cur:quote skos:closeMatch oa:exact ;
+    cur:exportNote "Mit cur:charStart/cur:charEnd als oa:TextQuoteSelector + oa:TextPositionSelector."@de .
+cur:charStart skos:closeMatch oa:start .
+cur:charEnd skos:closeMatch oa:end .
+cur:derivedFrom skos:closeMatch prov:wasDerivedFrom .
+cur:supersedes skos:closeMatch prov:wasRevisionOf ;
+    cur:exportNote "cur:amends ist keine Revision: eine Änderungssatzung ändert, erst die konsolidierte Fassung ersetzt."@de .
+
+# -----------------------------------------------------------------------------
+# 6. FWU/MEM-Lehrplan-Ontologie (lp:)
+# -----------------------------------------------------------------------------
+cur:Curriculum skos:closeMatch lp:LP_0000438 .
+cur:CurriculumNode skos:broadMatch lp:LP_0000261 .
+cv:kind_learningOutcome skos:closeMatch lp:LP_0000263 .
+cv:kind_content skos:closeMatch lp:LP_0000332 .
+cv:kind_guidance skos:closeMatch lp:LP_0000852 .
+cv:kind_reference skos:closeMatch lp:LP_0030065 .
+cur:CrossCuttingObjective skos:closeMatch lp:LP_0030325 .
+cv:time_gradeLevel skos:closeMatch lp:LP_0000009 .
+cur:levelAssignment skos:closeMatch lp:LP_0000840 .
+
+# -----------------------------------------------------------------------------
+# 7. Bildungsbereiche → OpenEduHub-Bildungskontext und KIM-Bildungsstufen
+# -----------------------------------------------------------------------------
+cv:sec_elementary skos:exactMatch oehec:elementarbereich ; skos:closeMatch kimel:level_0 .
+cv:sec_school skos:closeMatch oehec:schule ;
+    skos:narrowMatch oehec:grundschule , oehec:sekundarstufe_1 , oehec:sekundarstufe_2 , oehec:foerderschule .
+cv:sec_vocational skos:exactMatch oehec:berufliche_bildung .
+cv:sec_higher skos:exactMatch oehec:hochschule ; skos:closeMatch kimel:level_A .
+cv:sec_adult skos:closeMatch oehec:erwachsenenbildung ; skos:relatedMatch oehec:fortbildung , kimel:level_C .
+cv:form_informal skos:closeMatch oehec:informelles_lernen .

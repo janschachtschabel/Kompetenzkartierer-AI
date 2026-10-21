@@ -1,0 +1,33 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-ST;prozessbezogene Kompetenzen;cue;kd:sk-process, schul:Kompetenzbereich;prozessbezogen, Kompetenzbereich;;;;0.9;nein;;schul:cue-kb-prozessbezogen
+DE-ST;Flexibel anwendbares Grundwissen;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0002178
+DE-ST;Gegenstandsfeld;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0002182
+DE-ST;Grundlegende Wissensbestände;cue;schul:Inhalt;Inhalt;;;;0.95;nein;;schul:cue-in-wissensbestaende
+DE-ST;Grundlegender Wissensbestand;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0002179
+DE-ST;Kommunikativer Inhalt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030090
+DE-ST;Soziokulturelles Orientierungswissen;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030086
+DE-ST;Textsorte;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030200
+DE-ST;Verbindliches Schülerexperiment;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030089
+DE-ST;Bereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030087
+DE-ST;Inhaltsbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030096
+DE-ST;Kompetenzschwerpunkt;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.9;nein;"Klingt nach Kompetenzbereich, ist aber inhaltlich gegliedert; Kompetenzbereiche erscheinen darunter als Zeilenköpfe, Inhalte als „Grundlegende Wissensbestände“.";schul:cue-ib-kompetenzschwerpunkt
+DE-ST;Sprachliches Mittel;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030085
+DE-ST;Themenbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030078
+DE-ST;Kompetenzbereich;cue;schul:Kompetenzbereich;Kompetenzbereich;;;;0.6;nein;;schul:fwu-LP_0002175
+DE-ST;Inhaltsbezogene Kompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030082
+DE-ST;Interkulturelle Kompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030184
+DE-ST;Kommunikative Kompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030081
+DE-ST;Kompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0002177
+DE-ST;Prozessbezogene Kompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030083
+DE-ST;Sprachlernkompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030185
+DE-ST;Text- und Medienkompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030186
+DE-ST;Fachübergreifendes Thema;cue;schul:Querschnittsbereich;Querschnittsbereich;;;;0.6;nein;;schul:fwu-LP_0030330
+DE-ST;Schlüsselkompetenz;cue;schul:Querschnittsbereich;Querschnittsbereich;;;;0.6;nein;;schul:fwu-LP_0030318
+DE-ST;übergreifende Bildungsbereiche;cue;schul:Querschnittsbereich;Querschnittsbereich;;;;0.85;nein;;schul:cue-qs-uebergreifendebereiche
+DE-ST;Lehrplanfragment;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0002174
+DE-ST;Schuljahrgänge;alt;schul:Stufenabschnitt;Stufenabschnitt;;;;0.85;nein;;schul:cue-sa-schuljahrgaenge
+DE-ST;Verweis auf allgemeine mathematische Kompetenzen;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030198
+DE-ST;Verweis auf Bezüge zu fächerübergreifenden Themen;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030088
+DE-ST;Verweis auf Möglichkeit zur Abstimmung;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030017
+DE-ST;Fachlehrplan;alt;schul:dt-Lehrplan;Lehrplan;;;;0.9;nein;;schul:cue-dt-fachlehrplan
+DE-ST;Grundsatzband;cue;schul:dt-Rahmendokument;Rahmendokument/Allgemeiner Teil;;;;0.9;nein;;schul:cue-dt-grundsatzband

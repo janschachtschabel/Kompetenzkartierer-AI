@@ -1,0 +1,583 @@
+@prefix schul: <https://w3id.org/wlo/curriculum/profile/school#> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix lvl:   <https://w3id.org/wlo/curriculum/level/> .
+@prefix qz:    <https://w3id.org/wlo/curriculum/crosscutting/> .
+@prefix kd:    <https://w3id.org/wlo/curriculum/dimension/> .
+@prefix land:  <https://w3id.org/wlo/curriculum/region/> .
+@prefix ctx:   <https://w3id.org/wlo/curriculum/context/> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix lp:    <https://w3id.org/lehrplan/ontology/> .
+@prefix kimsa: <https://w3id.org/kim/schularten/> .
+
+# =============================================================================
+# Profil Schule (schul:) – allgemeinbildende Schulen der 16 Länder und KMK-
+# Bildungsstandards. Erweitert den Kern nur um Dokumenttypen, Knotentypen,
+# Aussage-Unterarten, schulische Geltungsangaben und das Lexikon.
+#
+# Länderbegriffe sind Erkennungshinweise mit Geltung (cur:scopeRegion), keine
+# Klassen. Das aktive Terminologieprofil eines Dokuments ist der Filter
+# „Bereich Schule + Land(er) + Dokumenttyp“ über alle Hinweise; nur dieser
+# Ausschnitt geht in den Prompt. Ein generierter Startbestand aus den 539
+# FWU-Länderklassen steht in schule-lexikon-fwu.ttl (geringere Stärke,
+# nicht am Dokument geprüft).
+#
+# Quellen: SCO v2 (92 Hinweise, Länder-Matrix), FWU/MEM-Lehrplan-Ontologie,
+# Konzept-Lexikon (Andock-Entwurf), wissen/-Vorarbeiten, App-Profile
+# schule/schule-kompetenz. Mehrdeutigkeiten (Lernbereich, Standard,
+# Anforderung, Themenfeld, Niveau) sind als Homonyme mit Regel geführt.
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/profile/school> a owl:Ontology ;
+    dct:title "Curriculum-Profil Schule"@de , "curriculum profile school"@en ;
+    owl:imports <https://w3id.org/wlo/curriculum/core> , <https://w3id.org/wlo/curriculum/vocab> ,
+        <https://w3id.org/wlo/curriculum/level> , <https://w3id.org/wlo/curriculum/crosscutting> ,
+        <https://w3id.org/wlo/curriculum/dimension> , <https://w3id.org/wlo/curriculum/region> ,
+        <https://w3id.org/wlo/curriculum/field> , <https://w3id.org/wlo/curriculum/context> ;
+    owl:versionInfo "1.0-entwurf" ;
+    dct:created "2026-10-19"^^xsd:date .
+
+# =============================================================================
+# 1. Profil-Eigenschaften (Geltung)
+# =============================================================================
+schul:schoolType a owl:ObjectProperty ; rdfs:subPropertyOf cur:institutionType ;
+    rdfs:label "Schulart"@de , "school type"@en ;
+    skos:definition "KIM-Schulart (https://w3id.org/kim/schularten/sNN) oder landesspezifische Schulart aus schul:SchoolTypes."@de .
+schul:specialNeedsFocus a owl:ObjectProperty ;
+    rdfs:label "sonderpädagogischer Förderschwerpunkt"@de , "special educational needs focus"@en .
+schul:learningGoalRegime a owl:ObjectProperty ;
+    rdfs:label "Lernzielregime"@de , "learning goal regime"@en ;
+    skos:definition "zielgleich oder zieldifferent (Förderschwerpunkt Lernen, geistige Entwicklung)."@de .
+schul:subjectStatus a owl:ObjectProperty ;
+    rdfs:label "Stellung des Fachs"@de , "subject status"@en .
+
+# =============================================================================
+# 2. Dokumenttypen
+# =============================================================================
+schul:DocumentTypes a skos:ConceptScheme ; skos:prefLabel "Dokumenttypen Schule"@de .
+
+schul:dt-Lehrplan a cur:DocumentType ; skos:inScheme schul:DocumentTypes ; skos:broader cv:dk_curriculum ;
+    skos:prefLabel "Lehrplan"@de ; skos:altLabel "Fachlehrplan"@de ;
+    skos:closeMatch lp:LP_0000438 ;
+    skos:scopeNote "Landesbezeichnungen über Hinweise: Bildungsplan (BW, HB, HH), Kerncurriculum (HE, NI), Kernlehrplan (NW), Lehrplan (RP, SL, SN, TH), Fachlehrplan (ST, BY), LehrplanPLUS (BY), Rahmenlehrplan (BE/BB), Rahmenplan (MV, HH), Fachanforderungen (SH)."@de .
+schul:dt-Bildungsstandards a cur:DocumentType ; skos:inScheme schul:DocumentTypes ; skos:broader cv:dk_framework ;
+    skos:prefLabel "KMK-Bildungsstandards"@de ;
+    skos:scopeNote "Stellt einen cur:CompetencyFramework dar; Landeslehrpläne konkretisieren ihn (rel_concretizes). Wird einmal importiert (IQB-SKOS), nicht aus jedem Plan neu extrahiert."@de .
+schul:dt-Rahmendokument a cur:DocumentType ; skos:inScheme schul:DocumentTypes ; skos:broader cv:dk_curriculum ;
+    skos:prefLabel "Rahmendokument/Allgemeiner Teil"@de ;
+    skos:altLabel "Grundsatzband"@de , "Allgemeiner Teil"@de , "Teil A"@de , "Teil B"@de ;
+    skos:scopeNote "Gilt für viele Fachpläne; seine Gliederungseinheiten (Funktion frame/crossCutting) hängen am Dokument und verweisen per cur:appliesTo auf die Curricula."@de .
+schul:dt-Querschnittsrahmen a cur:DocumentType ; skos:inScheme schul:DocumentTypes ; skos:broader cv:dk_framework ;
+    skos:prefLabel "Querschnittsrahmen"@de ; skos:altLabel "Medienkompetenzrahmen"@de , "Basiscurriculum"@de , "Orientierungsrahmen"@de .
+schul:dt-Pruefungsvorgabe a cur:DocumentType ; skos:inScheme schul:DocumentTypes ; skos:broader cv:dk_assessment ;
+    skos:prefLabel "Prüfungsvorgabe"@de ; skos:altLabel "Abiturvorgaben"@de , "Zentralabitur-Schwerpunkte"@de , "Operatorenliste"@de .
+schul:dt-Sonderpaedagogisch a cur:DocumentType ; skos:inScheme schul:DocumentTypes ; skos:broader cv:dk_curriculum ;
+    skos:prefLabel "Lehrplan für sonderpädagogische Förderung"@de ; skos:altLabel "Lehrplan Förderschule"@de .
+schul:dt-Schulintern a cur:DocumentType ; skos:inScheme schul:DocumentTypes ; skos:broader cv:dk_institutional ;
+    skos:prefLabel "Schulinternes Curriculum"@de ; skos:altLabel "Schulcurriculum"@de , "schuleigener Arbeitsplan"@de ;
+    skos:scopeNote "Konkretisiert einen Landeslehrplan; Rechtsform institutionalDocument, nie amtlich."@de .
+schul:dt-Handreichung a cur:DocumentType ; skos:inScheme schul:DocumentTypes ; skos:broader cv:dk_guidance ;
+    skos:prefLabel "Handreichung/Umsetzungshilfe"@de ; skos:altLabel "Begleitdokument"@de .
+
+# =============================================================================
+# 3. Knotentypen (Gliederungseinheiten)
+# =============================================================================
+schul:NodeTypes a skos:ConceptScheme ; skos:prefLabel "Knotentypen Schule"@de .
+
+schul:Stufenabschnitt a cur:NodeType ; skos:inScheme schul:NodeTypes ; skos:broader cv:fn_grouping ;
+    skos:prefLabel "Stufenabschnitt"@de ;
+    skos:definition "Gliederung nach Jahrgang, Doppeljahrgang, Schuljahrgängen oder Phase (Klassen 5/6, Doppeljahrgangsstufe 7/8, Einführungsphase). Setzt den Zeitkontext für alles darunter."@de ;
+    cur:impliesTimeKind cv:time_gradeLevel ; cur:extractionDepth cv:depth_full ;
+    cur:delimitation "Nicht für Niveaustufen A–H (BE/BB): die sind Niveau, nicht Zeit."@de ;
+    cur:positiveExample "„Standards für inhaltsbezogene Kompetenzen Klassen 5/6“ (BW)"@de , "„Jahrgangsstufe 7“ (BY)"@de .
+schul:Kompetenzbereich a cur:NodeType ; skos:inScheme schul:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Kompetenzbereich"@de ;
+    skos:definition "Prozess- oder Kompetenzdimension des Fachs (Sachkompetenz, Erkenntnisgewinnung, prozessbezogene Kompetenzen)."@de ;
+    cur:extractionDepth cv:depth_full ;
+    skos:closeMatch lp:LP_0000349 ;
+    skos:scopeNote "In Matrixlayouts (NW: Kompetenzbereich × Inhaltsfeld) wird der Kompetenzbereich als cur:AreaConcept dedupliziert und Erwartungen erhalten cur:inArea, statt den Baum zu verdoppeln."@de .
+schul:Inhaltsbereich a cur:NodeType ; skos:inScheme schul:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Inhaltsbereich"@de ;
+    skos:definition "Thematische Ordnungseinheit ohne eigenen Zeitumfang: Inhaltsfeld, Themenfeld, Themenbereich, Leitidee, Kompetenzschwerpunkt, Gegenstandsbereich, Rahmenthema."@de ;
+    cur:extractionDepth cv:depth_full ; cur:typicalParent schul:Stufenabschnitt , schul:Kompetenzbereich ;
+    skos:closeMatch lp:LP_0000349 .
+schul:IntegrierterBereich a cur:NodeType ; skos:inScheme schul:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Integrierter Bereich"@de ;
+    skos:definition "Bereich, der Kompetenz und Inhalt verbindet (BY LehrplanPLUS Grundschule Deutsch: Lernbereiche = Kompetenzstrukturmodell)."@de ;
+    cur:extractionDepth cv:depth_full .
+schul:Unterrichtseinheit a cur:NodeType ; skos:inScheme schul:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "Unterrichtseinheit"@de ;
+    skos:definition "Abgeschlossene Einheit mit Zeitumfang oder fester Lage: Lernbereich mit Zeitrichtwert (SN), Modul (BY Mittelschule), Unterrichtsvorhaben (schulintern), Halbjahresthema, Wahl(pflicht)bereich (SN)."@de ;
+    cur:extractionDepth cv:depth_full ;
+    cur:positiveExample "„Lernbereich 1: Leben in einer Gemeinschaft 26 Ustd.“ (SN)"@de .
+schul:Teilbereich a cur:NodeType ; skos:inScheme schul:NodeTypes ; skos:broader cv:fn_subunit ;
+    skos:prefLabel "Teilbereich"@de ;
+    skos:definition "Untergliederung eines Bereichs oder einer Einheit: inhaltlicher Schwerpunkt (NW), Teilbereich (BY), Schwerpunkt (TH)."@de ;
+    cur:extractionDepth cv:depth_full .
+schul:Querschnittsbereich a cur:NodeType ; skos:inScheme schul:NodeTypes ; skos:broader cv:fn_crossCutting ;
+    skos:prefLabel "Querschnittsbereich"@de ;
+    skos:definition "Abschnitt mit überfachlichen Zielen: Leitperspektiven, überfachliche Kompetenzen, Basiscurricula, übergreifende Themen, Aufgabengebiete."@de ;
+    cur:extractionDepth cv:depth_full ;
+    skos:closeMatch lp:LP_0030325 .
+schul:Entwicklungsbereich a cur:NodeType ; skos:inScheme schul:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Entwicklungsbereich"@de ;
+    skos:definition "Entwicklungsbezogene Kompetenzen in sonderpädagogischen Lehrplänen (BY Förderschule)."@de ;
+    cur:extractionDepth cv:depth_full .
+schul:Rahmenteil a cur:NodeType ; skos:inScheme schul:NodeTypes ; skos:broader cv:fn_frame ;
+    skos:prefLabel "Rahmenteil"@de ;
+    skos:definition "Fachprofil, Leitgedanken, Bildungsbeitrag, Bildungs- und Erziehungsauftrag, Kompetenzmodell, Operatorenliste, Leistungsbewertung."@de ;
+    cur:extractionDepth cv:depth_typed ;
+    skos:closeMatch lp:LP_0001015 ;
+    skos:scopeNote "Wird in X3 einmal gelesen: Kompetenzmodell, Querschnittslegende und Operatorenliste werden Auswahllisten für X4."@de .
+schul:Verzeichnis a cur:NodeType ; skos:inScheme schul:NodeTypes ; skos:broader cv:fn_nonCurricular ;
+    skos:prefLabel "Verzeichnis/Vorwort"@de ; cur:extractionDepth cv:depth_skip .
+
+# =============================================================================
+# 4. Aussage-Unterarten
+# =============================================================================
+schul:StatementSubkinds a skos:ConceptScheme ; skos:prefLabel "Aussage-Unterarten Schule"@de .
+
+schul:Kompetenzerwartung a cur:StatementSubkind ; skos:inScheme schul:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "Kompetenzerwartung"@de ;
+    skos:definition "Ergebnisorientierte, überprüfbare Erwartung an Schülerinnen und Schüler zu einem Zeitpunkt oder Niveau."@de ;
+    cur:segmentation cv:seg_bullet ; cur:defaultAddressee cv:addr_learner ;
+    cur:wordingRule "Wortlaut wörtlich ohne den gemeinsamen Einleitungssatz („Die Schülerinnen und Schüler …“), der in cur:leadIn steht. Ein Spiegelstrich = eine Aussage; nicht aufspalten (das macht N1)."@de ;
+    cur:positiveExample "„beschreiben den Zusammenhang von Spannung, Stromstärke und Widerstand“"@de ;
+    cur:negativeExample "„Elektrische Stromkreise“ (Inhalt ohne Operator)"@de ;
+    skos:closeMatch lp:LP_0000263 .
+schul:UebergeordneteKompetenzerwartung a cur:StatementSubkind ; skos:inScheme schul:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "übergeordnete Kompetenzerwartung"@de ;
+    skos:definition "Erwartung auf Ebene des Kompetenzbereichs, für mehrere Inhaltsfelder geltend (NW)."@de ;
+    cur:segmentation cv:seg_bullet .
+schul:KonkretisierteKompetenzerwartung a cur:StatementSubkind ; skos:inScheme schul:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "konkretisierte Kompetenzerwartung"@de ;
+    skos:definition "Erwartung je Inhaltsfeld bzw. Inhaltsbereich (NW, HE)."@de ;
+    cur:segmentation cv:seg_bullet .
+schul:Zusammenfassung a cur:StatementSubkind ; skos:inScheme schul:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "zusammenfassende Kompetenzerwartung"@de ;
+    skos:definition "Zusammenfassung im Jahrgangsstufenprofil („Grundlegende Kompetenzen“, BY); keine neue Erwartung, verweist per cur:summarizes auf die Fachlehrplan-Erwartungen und wird nicht mit ihnen dedupliziert."@de .
+schul:NiveaugebundeneErwartung a cur:StatementSubkind ; skos:inScheme schul:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "niveaugebundene Erwartung"@de ;
+    skos:definition "Zelle einer Niveautabelle (BE/BB „Standards“ nach Niveaustufen A–H, BW G/M/E, HH Mindest-/erhöhte Anforderungen). Gleicher Wortlaut über mehrere Niveaus = ein Element mit mehreren Niveauzuordnungen."@de ;
+    cur:segmentation cv:seg_tableCell .
+schul:Regelstandard a cur:StatementSubkind ; skos:inScheme schul:StatementSubkinds ; skos:broader cv:kind_standard ;
+    skos:prefLabel "Regelstandard (KMK-Bildungsstandard)"@de ;
+    skos:definition "Standard am Ende eines Bildungsabschnitts in den KMK-Bildungsstandards; Item eines Kompetenzrahmens, an den Landeslehrpläne andocken."@de ;
+    cur:segmentation cv:seg_bullet .
+schul:Inhalt a cur:StatementSubkind ; skos:inScheme schul:StatementSubkinds ; skos:broader cv:kind_content ;
+    skos:prefLabel "Inhalt"@de ;
+    skos:definition "Gegenstand, Begriff oder Wissensbestand ohne Operator."@de ;
+    cur:segmentation cv:seg_bullet ;
+    cur:wordingRule "„Mögliche Inhalte“, „z. B.“ = Verbindlichkeit exemplary; „verbindliche Inhalte“ = binding."@de ;
+    skos:closeMatch lp:LP_0000332 .
+schul:Fachbegriff a cur:StatementSubkind ; skos:inScheme schul:StatementSubkinds ; skos:broader cv:kind_content ;
+    skos:prefLabel "Fachbegriff/Basisbegriff"@de ;
+    skos:definition "Liste verbindlicher Fachbegriffe („Fachbegriffe:“, Basisbegriffe SL, verbindliches Fachwissen SL)."@de ;
+    cur:segmentation cv:seg_bullet .
+schul:Experiment a cur:StatementSubkind ; skos:inScheme schul:StatementSubkinds ; skos:broader cv:kind_content ;
+    skos:prefLabel "Experiment/Versuch"@de ;
+    skos:definition "Genannter Versuch oder Schülerexperiment als Inhaltsvorgabe."@de .
+schul:Hinweis a cur:StatementSubkind ; skos:inScheme schul:StatementSubkinds ; skos:broader cv:kind_guidance ;
+    skos:prefLabel "Hinweis/Anregung"@de ;
+    skos:definition "Bemerkungen, Hinweise und Anregungen, Umsetzungshilfen, Denkanstöße, Unterrichtsanregungen."@de ;
+    cur:delimitation "Nie als Erwartung klassifizieren, auch wenn ein Operator vorkommt („bietet sich an“, „z. B. durch …“)."@de ;
+    skos:closeMatch lp:LP_0000852 .
+schul:Verweis a cur:StatementSubkind ; skos:inScheme schul:StatementSubkinds ; skos:broader cv:kind_reference ;
+    skos:prefLabel "Verweis"@de ;
+    skos:definition "Verweis auf andere Fächer, Klassenstufen, Lernbereiche, Basiskonzepte oder Leitperspektiven (BW P/I/F/L, SN „➔“)."@de ;
+    skos:closeMatch lp:LP_0030065 .
+schul:Bildungsbeitrag a cur:StatementSubkind ; skos:inScheme schul:StatementSubkinds ; skos:broader cv:kind_developmentGoal ;
+    skos:prefLabel "Bildungsbeitrag/Leitgedanke"@de ;
+    skos:definition "Normative Ziele des Fachs im Fachprofil oder in den Leitgedanken ohne Prüfanspruch."@de .
+schul:Unterrichtsauftrag a cur:StatementSubkind ; skos:inScheme schul:StatementSubkinds ; skos:broader cv:kind_mandate ;
+    skos:prefLabel "Auftrag an Schule/Unterricht"@de ;
+    skos:definition "„Der Unterricht ermöglicht …“, „Die Lehrkräfte berücksichtigen …“ – Adressat Lehrende oder Einrichtung."@de ;
+    cur:defaultAddressee cv:addr_educator .
+
+# =============================================================================
+# 5. Schulische Wertelisten
+# =============================================================================
+schul:SpecialNeedsFoci a skos:ConceptScheme ; skos:prefLabel "Sonderpädagogische Förderschwerpunkte"@de .
+schul:sn-lernen a skos:Concept ; skos:inScheme schul:SpecialNeedsFoci ; skos:topConceptOf schul:SpecialNeedsFoci ; skos:prefLabel "Lernen"@de .
+schul:sn-sprache a skos:Concept ; skos:inScheme schul:SpecialNeedsFoci ; skos:topConceptOf schul:SpecialNeedsFoci ; skos:prefLabel "Sprache"@de .
+schul:sn-emsoz a skos:Concept ; skos:inScheme schul:SpecialNeedsFoci ; skos:topConceptOf schul:SpecialNeedsFoci ; skos:prefLabel "emotionale und soziale Entwicklung"@de .
+schul:sn-geistig a skos:Concept ; skos:inScheme schul:SpecialNeedsFoci ; skos:topConceptOf schul:SpecialNeedsFoci ; skos:prefLabel "geistige Entwicklung"@de .
+schul:sn-koerper a skos:Concept ; skos:inScheme schul:SpecialNeedsFoci ; skos:topConceptOf schul:SpecialNeedsFoci ; skos:prefLabel "körperliche und motorische Entwicklung"@de .
+schul:sn-hoeren a skos:Concept ; skos:inScheme schul:SpecialNeedsFoci ; skos:topConceptOf schul:SpecialNeedsFoci ; skos:prefLabel "Hören"@de ; skos:altLabel "Hören und Kommunikation"@de .
+schul:sn-sehen a skos:Concept ; skos:inScheme schul:SpecialNeedsFoci ; skos:topConceptOf schul:SpecialNeedsFoci ; skos:prefLabel "Sehen"@de .
+
+schul:LearningGoalRegimes a skos:ConceptScheme ; skos:prefLabel "Lernzielregime"@de .
+schul:lgr-same a skos:Concept ; skos:inScheme schul:LearningGoalRegimes ; skos:topConceptOf schul:LearningGoalRegimes ; skos:prefLabel "zielgleich"@de .
+schul:lgr-different a skos:Concept ; skos:inScheme schul:LearningGoalRegimes ; skos:topConceptOf schul:LearningGoalRegimes ; skos:prefLabel "zieldifferent"@de .
+
+schul:Phases a skos:ConceptScheme ; skos:prefLabel "Schulphasen"@de ;
+    skos:scopeNote "Werte für cur:phase (cur:timeKind cv:time_phase)."@de .
+schul:ph-eingang a skos:Concept ; skos:inScheme schul:Phases ; skos:topConceptOf schul:Phases ; skos:prefLabel "Schuleingangsphase"@de .
+schul:ph-orientierung a skos:Concept ; skos:inScheme schul:Phases ; skos:topConceptOf schul:Phases ; skos:prefLabel "Orientierungsstufe"@de .
+schul:ph-einfuehrung a skos:Concept ; skos:inScheme schul:Phases ; skos:topConceptOf schul:Phases ; skos:prefLabel "Einführungsphase"@de ; skos:altLabel "E-Phase"@de .
+schul:ph-qualifikation a skos:Concept ; skos:inScheme schul:Phases ; skos:topConceptOf schul:Phases ; skos:prefLabel "Qualifikationsphase"@de ; skos:altLabel "Q-Phase"@de .
+schul:ph-kursstufe a skos:Concept ; skos:inScheme schul:Phases ; skos:topConceptOf schul:Phases ; skos:prefLabel "Kursstufe"@de ; skos:scopeNote "BW"@de .
+schul:ph-studienstufe a skos:Concept ; skos:inScheme schul:Phases ; skos:topConceptOf schul:Phases ; skos:prefLabel "Studienstufe"@de ; skos:scopeNote "HH"@de .
+
+schul:SubjectStatuses a skos:ConceptScheme ; skos:prefLabel "Stellung des Fachs"@de .
+schul:ss-pflicht a skos:Concept ; skos:inScheme schul:SubjectStatuses ; skos:topConceptOf schul:SubjectStatuses ; skos:prefLabel "Pflichtfach"@de .
+schul:ss-wahlpflicht a skos:Concept ; skos:inScheme schul:SubjectStatuses ; skos:topConceptOf schul:SubjectStatuses ; skos:prefLabel "Wahlpflichtfach"@de .
+schul:ss-wahl a skos:Concept ; skos:inScheme schul:SubjectStatuses ; skos:topConceptOf schul:SubjectStatuses ; skos:prefLabel "Wahlfach"@de .
+schul:ss-fs1 a skos:Concept ; skos:inScheme schul:SubjectStatuses ; skos:topConceptOf schul:SubjectStatuses ; skos:prefLabel "erste Fremdsprache"@de .
+schul:ss-fs2 a skos:Concept ; skos:inScheme schul:SubjectStatuses ; skos:topConceptOf schul:SubjectStatuses ; skos:prefLabel "zweite Fremdsprache"@de .
+schul:ss-fs3 a skos:Concept ; skos:inScheme schul:SubjectStatuses ; skos:topConceptOf schul:SubjectStatuses ; skos:prefLabel "dritte Fremdsprache"@de .
+
+schul:SchoolTypes a skos:ConceptScheme ; skos:prefLabel "Landesspezifische Schularten"@de ;
+    skos:scopeNote "Kernschularten sind die KIM-Schularten kimsa:s02–s16 (https). Hier nur Landesbezeichnungen ohne eigenes KIM-Konzept; broadMatch ist ein Vorschlag (FWU-Schulart-Ontologie für die verbindliche Zuordnung je Land heranziehen)."@de .
+schul:st-mittelschule a skos:Concept ; skos:inScheme schul:SchoolTypes ; skos:topConceptOf schul:SchoolTypes ; skos:prefLabel "Mittelschule (BY)"@de ; skos:exactMatch kimsa:s03 .
+schul:st-werkrealschule a skos:Concept ; skos:inScheme schul:SchoolTypes ; skos:topConceptOf schul:SchoolTypes ; skos:prefLabel "Werkrealschule (BW)"@de ; skos:broadMatch kimsa:s03 .
+schul:st-stadtteilschule a skos:Concept ; skos:inScheme schul:SchoolTypes ; skos:topConceptOf schul:SchoolTypes ; skos:prefLabel "Stadtteilschule (HH)"@de ; skos:broadMatch kimsa:s05 .
+schul:st-iss a skos:Concept ; skos:inScheme schul:SchoolTypes ; skos:topConceptOf schul:SchoolTypes ; skos:prefLabel "Integrierte Sekundarschule (BE)"@de ; skos:broadMatch kimsa:s05 .
+schul:st-regionaleschule a skos:Concept ; skos:inScheme schul:SchoolTypes ; skos:topConceptOf schul:SchoolTypes ; skos:prefLabel "Regionale Schule (MV)"@de ; skos:broadMatch kimsa:s10 .
+schul:st-realschuleplus a skos:Concept ; skos:inScheme schul:SchoolTypes ; skos:topConceptOf schul:SchoolTypes ; skos:prefLabel "Realschule plus (RP)"@de ; skos:broadMatch kimsa:s10 .
+schul:st-regelschule a skos:Concept ; skos:inScheme schul:SchoolTypes ; skos:topConceptOf schul:SchoolTypes ; skos:prefLabel "Regelschule (TH)"@de ; skos:broadMatch kimsa:s10 .
+schul:st-oberschule a skos:Concept ; skos:inScheme schul:SchoolTypes ; skos:topConceptOf schul:SchoolTypes ; skos:prefLabel "Oberschule (HB, NI, SN, BB)"@de ; skos:exactMatch kimsa:s07 .
+schul:st-gemeinschaftsschule a skos:Concept ; skos:inScheme schul:SchoolTypes ; skos:topConceptOf schul:SchoolTypes ; skos:prefLabel "Gemeinschaftsschule"@de ; skos:exactMatch kimsa:s09 .
+
+# =============================================================================
+# 6. Terminologieprofil und Erkennungshinweise
+#    Aktives Profil = alle Hinweise mit passender cur:scopeRegion (oder ohne).
+# =============================================================================
+schul:Terminology a cur:TerminologyProfile ;
+    rdfs:label "Terminologie Schule (alle Länder und KMK)"@de ;
+    cur:profileScope cv:sec_school ;
+    cur:hasCue
+        schul:cue-dt-bildungsplan , schul:cue-dt-kerncurriculum , schul:cue-dt-kernlehrplan , schul:cue-dt-lehrplan ,
+        schul:cue-dt-fachlehrplan , schul:cue-dt-lehrplanplus , schul:cue-dt-rahmenlehrplan , schul:cue-dt-rahmenplan ,
+        schul:cue-dt-fachanforderungen , schul:cue-dt-bildungsstandards , schul:cue-dt-grundsatzband , schul:cue-dt-allgemeinerteil ,
+        schul:cue-dt-teilA , schul:cue-dt-teilB , schul:cue-dt-teilC , schul:cue-dt-anhoerung ,
+        schul:cue-sa-jahrgangsstufe , schul:cue-sa-doppeljahrgang , schul:cue-sa-klassen , schul:cue-sa-schuljahrgaenge ,
+        schul:cue-sa-einfuehrungsphase , schul:cue-sa-qualifikationsphase , schul:cue-sa-kursstufe , schul:cue-sa-studienstufe ,
+        schul:cue-kb-kompetenzbereich , schul:cue-kb-prozessbezogen , schul:cue-kb-sach , schul:cue-kb-methode , schul:cue-kb-urteil ,
+        schul:cue-kb-handlung , schul:cue-kb-selbstsozial , schul:cue-kb-kompetenzentwicklung ,
+        schul:cue-ib-inhaltsfeld , schul:cue-ib-themenfeld , schul:cue-ib-themenbereich , schul:cue-ib-leitidee ,
+        schul:cue-ib-kompetenzschwerpunkt , schul:cue-ib-gegenstandsbereich , schul:cue-ib-rahmenthema , schul:cue-ib-lernbereich ,
+        schul:cue-ib-lernbereich-sn , schul:cue-ib-lernbereich-faecherverbund , schul:cue-ib-wahlbereich , schul:cue-ib-wahlpflichtbereich ,
+        schul:cue-ib-modul-by , schul:cue-ib-unterrichtsvorhaben ,
+        schul:cue-tb-inhaltlicherschwerpunkt , schul:cue-tb-teilbereich , schul:cue-tb-schwerpunkt ,
+        schul:cue-eb-entwicklungsbezogen ,
+        schul:cue-rt-fachprofil , schul:cue-rt-leitgedanken , schul:cue-rt-bildungsauftrag , schul:cue-rt-operatoren ,
+        schul:cue-ke-kompetenzerwartung , schul:cue-ke-standard , schul:cue-ke-teilkompetenz , schul:cue-ke-erwartete ,
+        schul:cue-ke-lernzeitbezogen , schul:cue-ke-mindest , schul:cue-ke-erhoeht , schul:cue-ke-lernziel ,
+        schul:cue-ke-zielekompetenzerwerb , schul:cue-ke-grundlegende , schul:cue-ke-anforderung-hb , schul:cue-ke-satzstamm ,
+        schul:cue-ke-sn-zielbegriff , schul:cue-ke-regelstandard ,
+        schul:cue-in-inhaltezukompetenzen , schul:cue-in-lerninhalte , schul:cue-in-moegliche , schul:cue-in-themeninhalte ,
+        schul:cue-in-verbindliche , schul:cue-in-wissensbestaende , schul:cue-in-kerninhalt , schul:cue-in-basisbegriff ,
+        schul:cue-in-fachbegriffe , schul:cue-in-gegenstand ,
+        schul:cue-hw-bemerkungen , schul:cue-hw-denkanstoesse , schul:cue-hw-hinweiseanregungen , schul:cue-hw-umsetzungshilfen ,
+        schul:cue-hw-bietetsichan ,
+        schul:cue-qs-leitperspektive , schul:cue-qs-basiscurriculum , schul:cue-qs-uebergreifendethemen , schul:cue-qs-aufgabengebiete ,
+        schul:cue-qs-querschnittsthema , schul:cue-qs-medienkompetenzrahmen , schul:cue-qs-ueberfachlich , schul:cue-qs-uebergreifendebereiche ,
+        schul:cue-qs-uebergreifendeziele ,
+        schul:cue-qk-bw-bne , schul:cue-qk-bw-bo , schul:cue-qk-bw-btv , schul:cue-qk-bw-mb , schul:cue-qk-bw-pg , schul:cue-qk-bw-vb ,
+        schul:cue-qk-mv , schul:cue-qk-mv-md , schul:cue-qk-sn-pfeil ,
+        schul:cue-vw-bw-pifl , schul:cue-vw-sn-pfeil ,
+        schul:cue-nv-niveaustufe , schul:cue-nv-gme , schul:cue-nv-gekurs , schul:cue-nv-ni-fett , schul:cue-nv-esa-msa ,
+        schul:cue-nv-ea , schul:cue-nv-ga , schul:cue-nv-afb , schul:cue-nv-niveau-homonym .
+
+# --- Dokumenttypen --------------------------------------------------------
+schul:cue-dt-bildungsplan a cur:LexicalCue ; cur:surfaceForm "Bildungsplan" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:dt-Lehrplan ; cur:scopeRegion land:DE-BW , land:DE-HB , land:DE-HH ; cur:occursIn cv:occ_titlePage ; cur:strength 0.9 ;
+    cur:negativeHint "In Kita-Dokumenten (Bildungsplan BB, SN) gehört das Wort zum Profil elem:."@de .
+schul:cue-dt-kerncurriculum a cur:LexicalCue ; cur:surfaceForm "Kerncurriculum" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:dt-Lehrplan ; cur:scopeRegion land:DE-HE , land:DE-NI ; cur:occursIn cv:occ_titlePage ; cur:strength 0.9 .
+schul:cue-dt-kernlehrplan a cur:LexicalCue ; cur:surfaceForm "Kernlehrplan" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:dt-Lehrplan ; cur:scopeRegion land:DE-NW ; cur:occursIn cv:occ_titlePage ; cur:strength 0.95 .
+schul:cue-dt-lehrplan a cur:LexicalCue ; cur:surfaceForm "Lehrplan" ; cur:cueRole cv:role_pref ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:dt-Lehrplan ; cur:scopeRegion land:DE-RP , land:DE-SL , land:DE-SN , land:DE-TH ; cur:occursIn cv:occ_titlePage ; cur:strength 0.8 .
+schul:cue-dt-fachlehrplan a cur:LexicalCue ; cur:surfaceForm "Fachlehrplan" ; cur:cueRole cv:role_alt ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:dt-Lehrplan ; cur:scopeRegion land:DE-BY , land:DE-ST ; cur:strength 0.9 .
+schul:cue-dt-lehrplanplus a cur:LexicalCue ; cur:surfaceForm "LehrplanPLUS" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:dt-Lehrplan ; cur:scopeRegion land:DE-BY ; cur:planGeneration "LehrplanPLUS" ; cur:strength 0.95 .
+schul:cue-dt-rahmenlehrplan a cur:LexicalCue ; cur:surfaceForm "Rahmenlehrplan" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:dt-Lehrplan ; cur:scopeRegion land:DE-BE , land:DE-BB ; cur:strength 0.9 ;
+    cur:recognitionHint "BE/BB: ländergemeinsamer Rahmenlehrplan 1–10 mit Teil A, B, C."@de ;
+    cur:negativeHint "„Rahmenlehrplan für den Ausbildungsberuf …“ (KMK) gehört ins Profil beruf:."@de .
+schul:cue-dt-rahmenplan a cur:LexicalCue ; cur:surfaceForm "Rahmenplan" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:dt-Lehrplan ; cur:scopeRegion land:DE-HH , land:DE-MV ; cur:strength 0.9 .
+schul:cue-dt-fachanforderungen a cur:LexicalCue ; cur:surfaceForm "Fachanforderungen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:dt-Lehrplan ; cur:scopeRegion land:DE-SH ; cur:strength 0.95 .
+schul:cue-dt-bildungsstandards a cur:LexicalCue ; cur:surfaceForm "Bildungsstandards" ; cur:cueRole cv:role_pref ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:dt-Bildungsstandards ; cur:scopeRegion land:DE ; cur:strength 0.9 ;
+    cur:recognitionHint "Herausgeber Kultusministerkonferenz; Standards für das Ende eines Bildungsabschnitts (Primarbereich, ESA, MSA, AHR)."@de .
+schul:cue-dt-grundsatzband a cur:LexicalCue ; cur:surfaceForm "Grundsatzband" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:dt-Rahmendokument ; cur:scopeRegion land:DE-ST ; cur:strength 0.9 .
+schul:cue-dt-allgemeinerteil a cur:LexicalCue ; cur:surfaceForm "Allgemeiner Teil" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:dt-Rahmendokument , schul:Rahmenteil ; cur:scopeRegion land:DE-SH ; cur:strength 0.9 .
+schul:cue-dt-teilA a cur:LexicalCue ; cur:surfaceForm "Teil A" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Teil\\s+A\\b" ; cur:mapsTo schul:Rahmenteil ; cur:scopeRegion land:DE-BE , land:DE-BB ; cur:strength 0.85 ;
+    cur:recognitionHint "Teil A Bildung und Erziehung in der Grundschule und Sekundarstufe I – gilt für alle Fächer (cur:appliesTo)."@de .
+schul:cue-dt-teilB a cur:LexicalCue ; cur:surfaceForm "Teil B" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Teil\\s+B\\b" ; cur:mapsTo schul:Querschnittsbereich ; cur:scopeRegion land:DE-BE , land:DE-BB ; cur:strength 0.85 ;
+    cur:recognitionHint "Fachübergreifende Kompetenzentwicklung: Basiscurricula Sprach- und Medienbildung, übergreifende Themen (qz:BEBB-TeilB)."@de .
+schul:cue-dt-teilC a cur:LexicalCue ; cur:surfaceForm "Teil C" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Teil\\s+C\\b" ; cur:mapsTo cur:Curriculum ; cur:scopeRegion land:DE-BE , land:DE-BB ; cur:strength 0.85 ;
+    cur:recognitionHint "Fachteil = eigenes Curriculum: C1 Kompetenzentwicklung, C2 Kompetenzen und Standards (Niveaustufen A–H), C3 Themen und Inhalte."@de .
+schul:cue-dt-anhoerung a cur:LexicalCue ; cur:surfaceForm "Anhörungsfassung" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo cv:life_consultation ; cur:occursIn cv:occ_titlePage ; cur:strength 0.95 ;
+    cur:recognitionHint "Setzt den Lebenszyklus; das Dokument ist nicht in Kraft (ST 2026, NI 2024)."@de .
+
+# --- Stufenabschnitte -----------------------------------------------------
+schul:cue-sa-jahrgangsstufe a cur:LexicalCue ; cur:surfaceForm "Jahrgangsstufe" ; cur:cueRole cv:role_pref ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Jahrgangsstufen?\\s+\\d+" ; cur:mapsTo schul:Stufenabschnitt ; cur:strength 0.8 .
+schul:cue-sa-doppeljahrgang a cur:LexicalCue ; cur:surfaceForm "Doppeljahrgangsstufe" ; cur:cueRole cv:role_alt ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Stufenabschnitt ; cur:scopeRegion land:DE-HH , land:DE-NW ; cur:strength 0.85 .
+schul:cue-sa-klassen a cur:LexicalCue ; cur:surfaceForm "Klassen 5/6" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^(\\d+(\\.\\d+)*\\s+)?Klassen\\s+\\d+\\s*/\\s*\\d+" ; cur:mapsTo schul:Stufenabschnitt ; cur:scopeRegion land:DE-BW ;
+    cur:planGeneration "BP2016" ; cur:strength 0.8 .
+schul:cue-sa-schuljahrgaenge a cur:LexicalCue ; cur:surfaceForm "Schuljahrgänge" ; cur:cueRole cv:role_alt ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Schuljahrg(ang|änge)\\s+\\d+" ; cur:mapsTo schul:Stufenabschnitt ; cur:scopeRegion land:DE-NI , land:DE-ST ; cur:strength 0.85 .
+schul:cue-sa-einfuehrungsphase a cur:LexicalCue ; cur:surfaceForm "Einführungsphase" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Stufenabschnitt , schul:ph-einfuehrung ; cur:strength 0.85 .
+schul:cue-sa-qualifikationsphase a cur:LexicalCue ; cur:surfaceForm "Qualifikationsphase" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Stufenabschnitt , schul:ph-qualifikation ; cur:strength 0.85 .
+schul:cue-sa-kursstufe a cur:LexicalCue ; cur:surfaceForm "Kursstufe" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Stufenabschnitt , schul:ph-kursstufe ; cur:scopeRegion land:DE-BW ; cur:strength 0.85 .
+schul:cue-sa-studienstufe a cur:LexicalCue ; cur:surfaceForm "Studienstufe" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Stufenabschnitt , schul:ph-studienstufe ; cur:scopeRegion land:DE-HH ; cur:strength 0.85 .
+
+# --- Kompetenzbereiche ----------------------------------------------------
+schul:cue-kb-kompetenzbereich a cur:LexicalCue ; cur:surfaceForm "Kompetenzbereich" ; cur:cueRole cv:role_pref ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Kompetenzbereich ; cur:scopeRegion land:DE , land:DE-HB , land:DE-HE , land:DE-NI , land:DE-BE , land:DE-HH , land:DE-RP , land:DE-SN , land:DE-NW ; cur:strength 0.8 .
+schul:cue-kb-prozessbezogen a cur:LexicalCue ; cur:surfaceForm "prozessbezogene Kompetenzen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Kompetenzbereich , kd:sk-process ; cur:scopeRegion land:DE-BW , land:DE-BY , land:DE-NI , land:DE-SL , land:DE-ST , land:DE-SH ; cur:strength 0.9 .
+schul:cue-kb-sach a cur:LexicalCue ; cur:surfaceForm "Sachkompetenz" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Kompetenzbereich , kd:gw-subject ; cur:scopeRegion land:DE-NW , land:DE-TH ; cur:strength 0.85 .
+schul:cue-kb-methode a cur:LexicalCue ; cur:surfaceForm "Methodenkompetenz" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Kompetenzbereich , kd:gw-method ; cur:scopeRegion land:DE-NW , land:DE-TH ; cur:strength 0.85 .
+schul:cue-kb-urteil a cur:LexicalCue ; cur:surfaceForm "Urteilskompetenz" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Kompetenzbereich , kd:gw-judgement ; cur:scopeRegion land:DE-NW ; cur:strength 0.85 ;
+    cur:recognitionHint "NW: wird je Inhaltsfeld konkretisiert – als Bereichskonzept deduplizieren (cur:inArea), nicht als neuen Knoten je Inhaltsfeld."@de .
+schul:cue-kb-handlung a cur:LexicalCue ; cur:surfaceForm "Handlungskompetenz" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Kompetenzbereich , kd:gw-action ; cur:scopeRegion land:DE-NW ; cur:strength 0.85 .
+schul:cue-kb-selbstsozial a cur:LexicalCue ; cur:surfaceForm "Selbst- und Sozialkompetenz" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Kompetenzbereich , kd:sk-cross ; cur:scopeRegion land:DE-TH ; cur:strength 0.85 .
+schul:cue-kb-kompetenzentwicklung a cur:LexicalCue ; cur:surfaceForm "Kompetenzentwicklung" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^C?1\\.?\\s+Kompetenzentwicklung" ; cur:mapsTo schul:Rahmenteil ; cur:scopeRegion land:DE-BE , land:DE-BB ; cur:strength 0.8 ;
+    cur:recognitionHint "BE/BB C1: Kompetenzmodell des Fachs – in X3 als Kompetenzmodell lesen."@de .
+
+# --- Inhaltsbereiche und Einheiten ----------------------------------------
+schul:cue-ib-inhaltsfeld a cur:LexicalCue ; cur:surfaceForm "Inhaltsfeld" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Inhaltsfeld\\s+\\d+\\s*[:.]" ; cur:mapsTo schul:Inhaltsbereich ; cur:scopeRegion land:DE-HE , land:DE-NW ; cur:strength 0.95 ;
+    cur:recognitionHint "NW: darunter „Inhaltliche Schwerpunkte“ und konkretisierte Kompetenzerwartungen nach Sach- und Urteilskompetenz."@de .
+schul:cue-ib-themenfeld a cur:LexicalCue ; cur:surfaceForm "Themenfeld" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^(\\d+(\\.\\d+)*\\s+)?Themenfeld" ; cur:mapsTo schul:Inhaltsbereich ; cur:alsoMapsTo schul:Unterrichtseinheit ;
+    cur:scopeRegion land:DE-BW , land:DE-BE , land:DE-BB , land:DE-RP , land:DE-SL , land:DE-HE ; cur:strength 0.75 ;
+    cur:recognitionHint "Einheit, wenn das Themenfeld einen Zeitumfang, einen festen Jahrgang oder eine Verbindlichkeit (verbindlich/wahlobligatorisch) trägt (BE/BB C3, HE Oberstufe); sonst Inhaltsbereich."@de .
+schul:cue-ib-themenbereich a cur:LexicalCue ; cur:surfaceForm "Themenbereich" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Inhaltsbereich ; cur:scopeRegion land:DE-HB , land:DE-MV , land:DE-NI , land:DE-SH ; cur:strength 0.75 .
+schul:cue-ib-leitidee a cur:LexicalCue ; cur:surfaceForm "Leitidee" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Inhaltsbereich ; cur:scopeSubject <https://w3id.org/wlo/curriculum/field/0541> ; cur:strength 0.8 ;
+    cur:recognitionHint "Mathematik (KMK-Bildungsstandards und Landespläne): Leitideen wie „Zahl und Operation“, „Raum und Form“."@de .
+schul:cue-ib-kompetenzschwerpunkt a cur:LexicalCue ; cur:surfaceForm "Kompetenzschwerpunkt" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Inhaltsbereich ; cur:scopeRegion land:DE-ST ; cur:strength 0.9 ;
+    cur:negativeHint "Klingt nach Kompetenzbereich, ist aber inhaltlich gegliedert; Kompetenzbereiche erscheinen darunter als Zeilenköpfe, Inhalte als „Grundlegende Wissensbestände“."@de .
+schul:cue-ib-gegenstandsbereich a cur:LexicalCue ; cur:surfaceForm "Gegenstandsbereich" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Inhaltsbereich ; cur:scopeRegion land:DE-BY ; cur:strength 0.8 .
+schul:cue-ib-rahmenthema a cur:LexicalCue ; cur:surfaceForm "Rahmenthema" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Inhaltsbereich ; cur:scopeRegion land:DE-NI ; cur:strength 0.8 .
+schul:cue-ib-lernbereich a cur:LexicalCue ; cur:surfaceForm "Lernbereich" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Lernbereich\\s+\\d+\\s*[:.]" ; cur:mapsTo schul:Inhaltsbereich ; cur:alsoMapsTo schul:IntegrierterBereich ;
+    cur:scopeRegion land:DE-BY , land:DE-TH ; cur:strength 0.7 ;
+    cur:recognitionHint "BY Grundschule Deutsch: Lernbereich = Bereich des Kompetenzstrukturmodells (integriert)."@de .
+schul:cue-ib-lernbereich-sn a cur:LexicalCue ; cur:surfaceForm "Lernbereich" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Lernbereich\\s+\\d+\\s*:.*\\d+\\s*Ustd" ; cur:mapsTo schul:Unterrichtseinheit ; cur:scopeRegion land:DE-SN ; cur:strength 0.9 ;
+    cur:recognitionHint "SN: Lernbereich mit Zeitrichtwert („26 Ustd.“) = Einheit; Zeitrichtwert als cur:workload (Unterrichtsstunden, Zeitrichtwert)."@de .
+schul:cue-ib-lernbereich-faecherverbund a cur:LexicalCue ; cur:surfaceForm "Lernbereich Naturwissenschaften" ; cur:cueRole cv:role_negative ; cur:cueKind cv:ck_term ;
+    cur:mapsTo cur:Curriculum ; cur:scopeRegion land:DE-NW ; cur:strength 0.85 ;
+    cur:recognitionHint "NRW-Gesamtschule: „Lernbereich Naturwissenschaften“/„Lernbereich Gesellschaftslehre“ ist ein Fächerverbund (eigenes Curriculum mit mehreren Fächern), kein Knoten."@de .
+schul:cue-ib-wahlbereich a cur:LexicalCue ; cur:surfaceForm "Wahlbereich" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Wahlbereich\\s+\\d+\\s*:" ; cur:mapsTo schul:Unterrichtseinheit , cv:obl_elective ; cur:scopeRegion land:DE-SN ; cur:strength 0.9 .
+schul:cue-ib-wahlpflichtbereich a cur:LexicalCue ; cur:surfaceForm "Wahlpflichtbereich" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Unterrichtseinheit , cv:obl_electiveRequired ; cur:scopeRegion land:DE-SN ; cur:strength 0.9 .
+schul:cue-ib-modul-by a cur:LexicalCue ; cur:surfaceForm "Modul" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Unterrichtseinheit ; cur:scopeRegion land:DE-BY ; cur:strength 0.6 ; cur:verified false ;
+    cur:recognitionHint "BY Mittelschule/LehrplanPLUS: Module als Unterrichtseinheiten; am Plan prüfen."@de .
+schul:cue-ib-unterrichtsvorhaben a cur:LexicalCue ; cur:surfaceForm "Unterrichtsvorhaben" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Unterrichtseinheit ; cur:scopeDocumentType schul:dt-Schulintern ; cur:strength 0.85 .
+
+schul:cue-tb-inhaltlicherschwerpunkt a cur:LexicalCue ; cur:surfaceForm "Inhaltliche Schwerpunkte" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Teilbereich ; cur:scopeRegion land:DE-NW , land:DE-HE ; cur:strength 0.85 ;
+    cur:recognitionHint "NW: Stichwortliste unter dem Inhaltsfeld; die Stichworte selbst sind Inhaltsaussagen."@de .
+schul:cue-tb-teilbereich a cur:LexicalCue ; cur:surfaceForm "Teilbereich" ; cur:cueRole cv:role_pref ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Teilbereich ; cur:scopeRegion land:DE-BY ; cur:strength 0.8 .
+schul:cue-tb-schwerpunkt a cur:LexicalCue ; cur:surfaceForm "Schwerpunkt" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Teilbereich ; cur:scopeRegion land:DE-TH ; cur:strength 0.6 .
+schul:cue-eb-entwicklungsbezogen a cur:LexicalCue ; cur:surfaceForm "entwicklungsbezogene Kompetenzen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Entwicklungsbereich , kd:sk-development ; cur:scopeRegion land:DE-BY ; cur:scopeDocumentType schul:dt-Sonderpaedagogisch ; cur:strength 0.85 .
+
+# --- Rahmenteile ------------------------------------------------------------
+schul:cue-rt-fachprofil a cur:LexicalCue ; cur:surfaceForm "Fachprofil" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Rahmenteil ; cur:scopeRegion land:DE-BY ; cur:strength 0.9 ;
+    cur:recognitionHint "Enthält das Kompetenzstrukturmodell (kein Niveaumodell) – in X3 als Kompetenzmodell lesen."@de .
+schul:cue-rt-leitgedanken a cur:LexicalCue ; cur:surfaceForm "Leitgedanken zum Kompetenzerwerb" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Rahmenteil ; cur:scopeRegion land:DE-BW ; cur:planGeneration "BP2016" ; cur:strength 0.85 .
+schul:cue-rt-bildungsauftrag a cur:LexicalCue ; cur:surfaceForm "Aufgaben und Ziele des Faches" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Rahmenteil ; cur:strength 0.75 ;
+    cur:recognitionHint "Auch „Bildungsbeitrag des Faches“, „Bildungs- und Erziehungsauftrag“; Aussagen darin sind meist Bildungsbeiträge (developmentGoal)."@de .
+schul:cue-rt-operatoren a cur:LexicalCue ; cur:surfaceForm "Operatoren" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^(Liste der )?Operatoren" ; cur:mapsTo schul:Rahmenteil ; cur:strength 0.85 ;
+    cur:recognitionHint "Operatorenliste des Plans: in X3 als cur:OperatorList mit Geltung des Plans übernehmen (Lemma, Definition, AFB laut Liste)."@de .
+
+# --- Lernergebnisse ---------------------------------------------------------
+schul:cue-ke-kompetenzerwartung a cur:LexicalCue ; cur:surfaceForm "Kompetenzerwartung" ; cur:cueRole cv:role_pref ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Kompetenzerwartung ; cur:scopeRegion land:DE-BY , land:DE-NW , land:DE-SL ; cur:strength 0.95 ;
+    cur:recognitionHint "NW: übergeordnete und konkretisierte Kompetenzerwartungen unterscheiden."@de .
+schul:cue-ke-standard a cur:LexicalCue ; cur:surfaceForm "Standard" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:NiveaugebundeneErwartung ; cur:alsoMapsTo schul:Regelstandard ;
+    cur:scopeRegion land:DE-BE , land:DE-BB , land:DE-HB , land:DE-MV ; cur:strength 0.7 ;
+    cur:recognitionHint "Im Landeslehrplan ist ein „Standard“ eine Kompetenzerwartung (learningOutcome; BE/BB: Tabelle mit Niveaustufen A–H). Nur im Dokumenttyp KMK-Bildungsstandards ist er ein Regelstandard (standard)."@de .
+schul:cue-ke-teilkompetenz a cur:LexicalCue ; cur:surfaceForm "Teilkompetenz" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ;
+    cur:pattern "^\\(\\d+\\)\\s" ; cur:mapsTo schul:Kompetenzerwartung ; cur:scopeRegion land:DE-BW ; cur:planGeneration "BP2016" ; cur:strength 0.9 ;
+    cur:recognitionHint "Nummeriert (1), (2) …; daneben Verweisspalte P, I, F, L."@de .
+schul:cue-ke-erwartete a cur:LexicalCue ; cur:surfaceForm "erwartete Kompetenzen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Kompetenzerwartung ; cur:scopeRegion land:DE-NI ; cur:strength 0.9 .
+schul:cue-ke-lernzeitbezogen a cur:LexicalCue ; cur:surfaceForm "lernzeitbezogene Kompetenzerwartungen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Kompetenzerwartung ; cur:scopeRegion land:DE-HE ; cur:strength 0.9 .
+schul:cue-ke-mindest a cur:LexicalCue ; cur:surfaceForm "Mindestanforderungen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ;
+    cur:pattern "Mindestanforderungen" ; cur:mapsTo schul:NiveaugebundeneErwartung , lvl:att-minimum ; cur:scopeRegion land:DE-HH ; cur:strength 0.85 .
+schul:cue-ke-erhoeht a cur:LexicalCue ; cur:surfaceForm "erhöhte Anforderungen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ;
+    cur:pattern "[Ee]rhöhte Anforderungen" ; cur:mapsTo schul:NiveaugebundeneErwartung , lvl:att-increased ; cur:scopeRegion land:DE-HH ; cur:strength 0.85 ;
+    cur:negativeHint "Nicht mit „erhöhtes Anforderungsniveau“ (Kursniveau Sek II) verwechseln."@de .
+schul:cue-ke-lernziel a cur:LexicalCue ; cur:surfaceForm "Lernziele" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ;
+    cur:pattern "Lernziele und Lerninhalte" ; cur:mapsTo schul:Kompetenzerwartung ; cur:scopeRegion land:DE-RP , land:DE-SN ; cur:strength 0.85 .
+schul:cue-ke-zielekompetenzerwerb a cur:LexicalCue ; cur:surfaceForm "Ziele des Kompetenzerwerbs" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Kompetenzerwartung ; cur:scopeRegion land:DE-TH ; cur:strength 0.9 .
+schul:cue-ke-grundlegende a cur:LexicalCue ; cur:surfaceForm "Grundlegende Kompetenzen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Zusammenfassung ; cur:scopeRegion land:DE-BY ; cur:strength 0.8 ;
+    cur:negativeHint "Zusammenfassung im Jahrgangsstufenprofil, keine neue Erwartung; nicht mit Fachlehrplan-Erwartungen deduplizieren."@de .
+schul:cue-ke-anforderung-hb a cur:LexicalCue ; cur:surfaceForm "Anforderung" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Kompetenzerwartung ; cur:alsoMapsTo lvl:AFB ; cur:scopeRegion land:DE-HB , land:DE-HH ; cur:strength 0.6 ; cur:verified false ;
+    cur:recognitionHint "„Anforderungsbereich I–III“ → Aufgabenanforderung (nur an Aufgaben); sonst Erwartung bzw. Erwartungsniveau."@de .
+schul:cue-ke-satzstamm a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "^(Die )?(Schülerinnen und Schüler|Lernenden|SuS)\\b" ; cur:mapsTo schul:Kompetenzerwartung ; cur:strength 0.8 ;
+    cur:recognitionHint "Satzstamm als cur:leadIn speichern; Operator meist am Satzende."@de .
+schul:cue-ke-sn-zielbegriff a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "^(Kennen|Anwenden|Beurteilen|Sich positionieren|Einblick gewinnen|Gestalten|Übertragen)\\b" ;
+    cur:mapsTo schul:Kompetenzerwartung ; cur:scopeRegion land:DE-SN ; cur:strength 0.85 ;
+    cur:recognitionHint "SN: Zielbegriff vorn („Kennen wesentlicher Aspekte …“); der Zielbegriff ist der Operator."@de .
+schul:cue-ke-regelstandard a cur:LexicalCue ; cur:surfaceForm "Regelstandard" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Regelstandard ; cur:scopeDocumentType schul:dt-Bildungsstandards ; cur:strength 0.9 .
+
+# --- Inhalte ----------------------------------------------------------------
+schul:cue-in-inhaltezukompetenzen a cur:LexicalCue ; cur:surfaceForm "Inhalte zu den Kompetenzen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ;
+    cur:pattern "Inhalte zu den Kompetenzen" ; cur:mapsTo schul:Inhalt ; cur:scopeRegion land:DE-BY ; cur:strength 0.95 ;
+    cur:recognitionHint "Zweite Spalte neben den Kompetenzerwartungen; Zeilenpaare → cur:targetsContent."@de .
+schul:cue-in-lerninhalte a cur:LexicalCue ; cur:surfaceForm "Lerninhalte" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Inhalt ; cur:scopeRegion land:DE-SN ; cur:strength 0.85 .
+schul:cue-in-moegliche a cur:LexicalCue ; cur:surfaceForm "Mögliche Inhalte" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Inhalt , cv:obl_exemplary ; cur:scopeRegion land:DE-NI ; cur:strength 0.9 .
+schul:cue-in-themeninhalte a cur:LexicalCue ; cur:surfaceForm "Themen und Inhalte" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Inhalt ; cur:scopeRegion land:DE-BE , land:DE-BB , land:DE-SH ; cur:strength 0.8 ;
+    cur:recognitionHint "BE/BB C3: verbindliche und wahlobligatorische Themen unterscheiden (cur:obligation)."@de .
+schul:cue-in-verbindliche a cur:LexicalCue ; cur:surfaceForm "Verbindliche Inhalte" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Inhalt , cv:obl_binding ; cur:scopeRegion land:DE-HB , land:DE-MV , land:DE-SH ; cur:strength 0.9 .
+schul:cue-in-wissensbestaende a cur:LexicalCue ; cur:surfaceForm "Grundlegende Wissensbestände" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Inhalt ; cur:scopeRegion land:DE-ST ; cur:strength 0.95 .
+schul:cue-in-kerninhalt a cur:LexicalCue ; cur:surfaceForm "Kerninhalte" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Inhalt ; cur:scopeRegion land:DE-NI ; cur:strength 0.7 ; cur:verified false .
+schul:cue-in-basisbegriff a cur:LexicalCue ; cur:surfaceForm "Basisbegriffe" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Fachbegriff ; cur:scopeRegion land:DE-SL ; cur:strength 0.7 ; cur:verified false ;
+    cur:recognitionHint "SL auch „Verbindliches Fachwissen“."@de .
+schul:cue-in-fachbegriffe a cur:LexicalCue ; cur:surfaceForm "Fachbegriffe:" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Fachbegriff ; cur:strength 0.8 .
+schul:cue-in-gegenstand a cur:LexicalCue ; cur:surfaceForm "Gegenstand" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Inhalt ; cur:scopeRegion land:DE-BE , land:DE-BB ; cur:strength 0.6 ; cur:verified false .
+
+# --- Hinweise ---------------------------------------------------------------
+schul:cue-hw-bemerkungen a cur:LexicalCue ; cur:surfaceForm "Bemerkungen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ;
+    cur:pattern "^Bemerkungen$" ; cur:mapsTo schul:Hinweis ; cur:scopeRegion land:DE-SN ; cur:strength 0.9 .
+schul:cue-hw-denkanstoesse a cur:LexicalCue ; cur:surfaceForm "Denkanstöße" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Hinweis ; cur:scopeRegion land:DE-BW ; cur:planGeneration "BP2016" ; cur:strength 0.85 .
+schul:cue-hw-hinweiseanregungen a cur:LexicalCue ; cur:surfaceForm "Hinweise und Anregungen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Hinweis ; cur:scopeRegion land:DE-MV ; cur:strength 0.9 .
+schul:cue-hw-umsetzungshilfen a cur:LexicalCue ; cur:surfaceForm "Umsetzungshilfen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ;
+    cur:pattern "Umsetzungshilfen" ; cur:mapsTo schul:Hinweis ; cur:scopeRegion land:DE-HH ; cur:strength 0.9 .
+schul:cue-hw-bietetsichan a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "(bietet sich an|bieten sich an|z\\. ?B\\. durch|eignet sich)" ; cur:mapsTo schul:Hinweis ; cur:strength 0.75 .
+
+# --- Querschnitt -------------------------------------------------------------
+schul:cue-qs-leitperspektive a cur:LexicalCue ; cur:surfaceForm "Leitperspektive" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Querschnittsbereich ; cur:scopeRegion land:DE-BW , land:DE-HH ; cur:strength 0.9 ;
+    cur:recognitionHint "BW BP2016: BNE, BTV, PG, BO, MB, VB (qz:BW-BP2016); HH: W, BNE, D (qz:HH-2022)."@de .
+schul:cue-qs-basiscurriculum a cur:LexicalCue ; cur:surfaceForm "Basiscurriculum" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Querschnittsbereich ; cur:scopeRegion land:DE-BE , land:DE-BB ; cur:strength 0.85 .
+schul:cue-qs-uebergreifendethemen a cur:LexicalCue ; cur:surfaceForm "übergreifende Themen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Querschnittsbereich ; cur:scopeRegion land:DE-BE , land:DE-BB ; cur:strength 0.85 .
+schul:cue-qs-aufgabengebiete a cur:LexicalCue ; cur:surfaceForm "Aufgabengebiete" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Querschnittsbereich ; cur:scopeRegion land:DE-HH ; cur:strength 0.85 .
+schul:cue-qs-querschnittsthema a cur:LexicalCue ; cur:surfaceForm "Querschnittsthema" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Querschnittsbereich ; cur:scopeRegion land:DE-MV ; cur:strength 0.85 ;
+    cur:recognitionHint "Kürzel in eckigen Klammern am Element ([BNE], [MD3]) als cur:crossCuttingMarker; Legende aus X3."@de .
+schul:cue-qs-medienkompetenzrahmen a cur:LexicalCue ; cur:surfaceForm "Medienkompetenzrahmen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo qz:MKR-NW ; cur:scopeRegion land:DE-NW ; cur:strength 0.9 .
+schul:cue-qs-ueberfachlich a cur:LexicalCue ; cur:surfaceForm "überfachliche Kompetenzen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Querschnittsbereich , kd:sk-cross ; cur:scopeRegion land:DE-HH , land:DE-HE , land:DE-SH ; cur:strength 0.9 .
+schul:cue-qs-uebergreifendebereiche a cur:LexicalCue ; cur:surfaceForm "übergreifende Bildungsbereiche" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Querschnittsbereich ; cur:scopeRegion land:DE-ST ; cur:strength 0.85 .
+schul:cue-qs-uebergreifendeziele a cur:LexicalCue ; cur:surfaceForm "übergreifende Bildungs- und Erziehungsziele" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo schul:Querschnittsbereich ; cur:scopeRegion land:DE-BY ; cur:strength 0.85 .
+schul:cue-qk-bw-bne a cur:LexicalCue ; cur:surfaceForm "L BNE" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ; cur:layoutSignal cv:mark_marginSymbol ;
+    cur:mapsTo qz:bw-BNE ; cur:scopeRegion land:DE-BW ; cur:planGeneration "BP2016" ; cur:strength 0.95 .
+schul:cue-qk-bw-bo a cur:LexicalCue ; cur:surfaceForm "L BO" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ; cur:layoutSignal cv:mark_marginSymbol ;
+    cur:mapsTo qz:bw-BO ; cur:scopeRegion land:DE-BW ; cur:planGeneration "BP2016" ; cur:strength 0.95 .
+schul:cue-qk-bw-btv a cur:LexicalCue ; cur:surfaceForm "L BTV" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ; cur:layoutSignal cv:mark_marginSymbol ;
+    cur:mapsTo qz:bw-BTV ; cur:scopeRegion land:DE-BW ; cur:planGeneration "BP2016" ; cur:strength 0.95 .
+schul:cue-qk-bw-mb a cur:LexicalCue ; cur:surfaceForm "L MB" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ; cur:layoutSignal cv:mark_marginSymbol ;
+    cur:mapsTo qz:bw-MB ; cur:scopeRegion land:DE-BW ; cur:planGeneration "BP2016" ; cur:strength 0.95 .
+schul:cue-qk-bw-pg a cur:LexicalCue ; cur:surfaceForm "L PG" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ; cur:layoutSignal cv:mark_marginSymbol ;
+    cur:mapsTo qz:bw-PG ; cur:scopeRegion land:DE-BW ; cur:planGeneration "BP2016" ; cur:strength 0.95 .
+schul:cue-qk-bw-vb a cur:LexicalCue ; cur:surfaceForm "L VB" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ; cur:layoutSignal cv:mark_marginSymbol ;
+    cur:mapsTo qz:bw-VB ; cur:scopeRegion land:DE-BW ; cur:planGeneration "BP2016" ; cur:strength 0.95 .
+schul:cue-qk-mv a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ; cur:layoutSignal cv:mark_marginSymbol ;
+    cur:pattern "\\[(BNE|BO|BTV|PG)\\]" ; cur:mapsTo qz:BNE , qz:CareerOrientation , qz:Diversity , qz:Health ; cur:scopeRegion land:DE-MV ; cur:strength 0.85 ;
+    cur:recognitionHint "Kürzel → Querschnittsziel: [BNE] qz:BNE, [BO] qz:CareerOrientation, [BTV] qz:Diversity, [PG] qz:Health. [DRF] ist ohne Legende im Material – am Plan auflösen, bis dahin nur als Rohmarker."@de .
+schul:cue-qk-mv-md a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ; cur:layoutSignal cv:mark_marginSymbol ;
+    cur:pattern "\\[MD([1-6])\\]" ; cur:mapsTo qz:KMKDigital ; cur:scopeRegion land:DE-MV ; cur:strength 0.8 ; cur:verified false ;
+    cur:recognitionHint "Ziffer 1–6 vermutlich KMK-Kompetenzbereich qz:kmkdig-1 … -6; am Plan prüfen."@de .
+schul:cue-qk-sn-pfeil a cur:LexicalCue ; cur:surfaceForm "⇒" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ; cur:layoutSignal cv:mark_marginSymbol ;
+    cur:pattern "⇒\\s*([A-ZÄÖÜ][\\wäöüß ]+)" ; cur:mapsTo qz:Hub ; cur:scopeRegion land:DE-SN ; cur:strength 0.8 ;
+    cur:recognitionHint "Doppelpfeil vor einem Querschnittsziel („⇒ Medienbildung“, „⇒ Bildung für nachhaltige Entwicklung“): Rohmarker, Auflösung über Label im qz:Hub."@de .
+
+# --- Verweise ---------------------------------------------------------------
+schul:cue-vw-bw-pifl a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ; cur:layoutSignal cv:mark_marginSymbol ;
+    cur:pattern "^(P|I|F|L)\\s+[\\w.]+" ; cur:mapsTo schul:Verweis ; cur:scopeRegion land:DE-BW ; cur:planGeneration "BP2016" ; cur:strength 0.85 ;
+    cur:recognitionHint "Verweisspalte: P = prozessbezogene Kompetenz, I = inhaltsbezogene Kompetenz (beide im selben Plan), F = anderes Fach, L = Leitperspektive (→ cur:contributesTo)."@de .
+schul:cue-vw-sn-pfeil a cur:LexicalCue ; cur:surfaceForm "➔" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ; cur:layoutSignal cv:mark_marginSymbol ;
+    cur:pattern "(➔|→)\\s*([A-Z]{2,4},\\s*)?Kl\\.\\s*\\d+" ; cur:mapsTo schul:Verweis ; cur:scopeRegion land:DE-SN ; cur:strength 0.85 ;
+    cur:recognitionHint "„➔ GE, Kl. 8/9, LB 2“ = Verweis auf Fach, Klasse, Lernbereich; ohne LLM auflösen."@de .
+
+# --- Niveau ------------------------------------------------------------------
+schul:cue-nv-niveaustufe a cur:LexicalCue ; cur:surfaceForm "Niveaustufe" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ;
+    cur:pattern "^[A-H]$" ; cur:mapsTo lvl:BEBB ; cur:scopeRegion land:DE-BE , land:DE-BB ; cur:strength 0.9 ;
+    cur:recognitionHint "Spaltenköpfe oder Randmarken A bis H; eine leere Zelle setzt die Spanne der Nachbarzelle fort."@de .
+schul:cue-nv-gme a cur:LexicalCue ; cur:surfaceForm "Niveau G / M / E" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ;
+    cur:pattern "^(G|M|E)$" ; cur:mapsTo lvl:BWLevels ; cur:scopeRegion land:DE-BW ; cur:strength 0.85 .
+schul:cue-nv-gekurs a cur:LexicalCue ; cur:surfaceForm "G-Kurs / E-Kurs" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo lvl:CourseLevelsLowerSecondary ; cur:scopeRegion land:DE-HB , land:DE-NI , land:DE-SL ; cur:strength 0.85 .
+schul:cue-nv-ni-fett a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_layout ; cur:layoutSignal cv:mark_bold ;
+    cur:mapsTo lvl:course-E ; cur:scopeRegion land:DE-NI ; cur:strength 0.85 ;
+    cur:recognitionHint "NI-Kerncurricula: fett gedruckte Erwartungen gelten zusätzlich für den E-Kurs."@de .
+schul:cue-nv-esa-msa a cur:LexicalCue ; cur:surfaceForm "ESA / MSA" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ;
+    cur:mapsTo lvl:AttainmentTracks ; cur:scopeRegion land:DE-SH ; cur:strength 0.85 ;
+    cur:recognitionHint "SH: drei Anforderungsebenen ESA, MSA, Übergang in die Oberstufe an den Aussagen (Erwartungsniveau, kein Abschluss; lvl:track-*)."@de .
+schul:cue-nv-ea a cur:LexicalCue ; cur:surfaceForm "erhöhtes Anforderungsniveau" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo lvl:course-advanced ; cur:strength 0.85 ;
+    cur:negativeHint "Nicht mit HH „erhöhte Anforderungen“ (Erwartungsniveau Sek I) verwechseln."@de .
+schul:cue-nv-ga a cur:LexicalCue ; cur:surfaceForm "grundlegendes Anforderungsniveau" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo lvl:course-basic ; cur:strength 0.85 .
+schul:cue-nv-afb a cur:LexicalCue ; cur:surfaceForm "Anforderungsbereich" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo lvl:AFB ; cur:strength 0.9 ;
+    cur:negativeHint "Nur an Aufgaben und Prüfungsvorgaben; an Kompetenzerwartungen nie als Anforderungsbereich erfassen."@de .
+schul:cue-nv-niveau-homonym a cur:LexicalCue ; cur:surfaceForm "Niveau" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_term ;
+    cur:mapsTo lvl:BEBB ; cur:alsoMapsTo lvl:CourseLevelsUpperSecondary ; cur:strength 0.6 ;
+    cur:recognitionHint "Buchstaben A–H → Kompetenzstufe (BE/BB); „grundlegend/erhöht“ → Kursniveau Sek II; G/M/E → BW-Niveau."@de .

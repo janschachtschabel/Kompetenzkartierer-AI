@@ -1,0 +1,686 @@
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix shs:   <https://w3id.org/wlo/curriculum/shapes#> .
+@prefix sh:    <http://www.w3.org/ns/shacl#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+
+# =============================================================================
+# SHACL für den Curriculum-Kern – zwei Schichten
+#
+#   sh:Violation  Struktur: was jede Extraktion erfüllen muss (Pflichtfelder,
+#                 Wertelisten, Kardinalitäten, Baum, Herkunftsregeln).
+#   sh:Warning    Vollständigkeit/Plausibilität: Befunde über die Quelle oder
+#                 Hinweise auf wahrscheinliche Fehlklassifikation – kein Fehler
+#                 der Extraktion (ein Dokument, das kein Fach nennt, ist kein
+#                 fehlerhafter Datensatz).
+#   sh:Info       Arbeitsstand (z. B. Lernergebnis noch nicht zerlegt).
+#
+# Aufruf OHNE RDFS-Inferenz: Datengraph = Daten + cur-kern + cur-vokabular +
+# benutzte Vokabulare und Profile (die Prüfungen lesen skos:inScheme,
+# skos:broader und rdfs:subClassOf aus dem Datengraph). Inferenz würde über
+# rdfs:range genau die geprüften Typen erzeugen und Fehler verdecken.
+# Beispiel: pruefung/pruefe.py
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/shapes> a owl:Ontology ;
+    dct:title "Curriculum-Kern: SHACL-Shapes"@de ;
+    owl:versionInfo "1.0-entwurf" ;
+    sh:declare
+        [ sh:prefix "cur" ; sh:namespace "https://w3id.org/wlo/curriculum/core#"^^xsd:anyURI ] ,
+        [ sh:prefix "cv" ; sh:namespace "https://w3id.org/wlo/curriculum/vocab#"^^xsd:anyURI ] ,
+        [ sh:prefix "skos" ; sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ] ,
+        [ sh:prefix "rdf" ; sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ] ,
+        [ sh:prefix "rdfs" ; sh:namespace "http://www.w3.org/2000/01/rdf-schema#"^^xsd:anyURI ] ,
+        [ sh:prefix "prov" ; sh:namespace "http://www.w3.org/ns/prov#"^^xsd:anyURI ] ,
+        [ sh:prefix "xsd" ; sh:namespace "http://www.w3.org/2001/XMLSchema#"^^xsd:anyURI ] .
+
+# -----------------------------------------------------------------------------
+# Hilfsformen: Wert aus einem bestimmten Konzeptschema
+# -----------------------------------------------------------------------------
+shs:InNodeFunctions     a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:NodeFunctions ] .
+shs:InStatementKinds    a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:StatementKinds ] .
+shs:InAddressees        a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:Addressees ] .
+shs:InObligations       a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:Obligations ] .
+shs:InDocumentBindings  a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:DocumentBindings ] .
+shs:InLegalForms        a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:LegalForms ] .
+shs:InLifecycles        a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:Lifecycles ] .
+shs:InEducationSectors  a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:EducationSectors ] .
+shs:InScopeShares       a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:ScopeShares ] .
+shs:InVariantKinds      a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:VariantKinds ] .
+shs:InRequirementKinds  a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:RequirementKinds ] .
+shs:InLevelDimensions   a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:LevelDimensions ] .
+shs:InLevelRelations    a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:LevelRelations ] .
+shs:InLevelOrderings    a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:LevelOrderings ] .
+shs:InTimeKinds         a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:TimeKinds ] .
+shs:InTimeRelations     a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:TimeRelations ] .
+shs:InWorkloadUnits     a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:WorkloadUnits ] .
+shs:InWorkloadKinds     a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:WorkloadKinds ] .
+shs:InOrigins           a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:Origins ] .
+shs:InReviewStatuses    a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:ReviewStatuses ] .
+shs:InMethods           a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:Methods ] .
+shs:InMatchKinds        a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:MatchKinds ] .
+shs:InRelations         a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:AlignmentRelations ] .
+shs:InLayoutMarkers     a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:LayoutMarkers ] .
+shs:InSegmentations     a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:Segmentations ] .
+shs:InCueRoles          a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:CueRoles ] .
+shs:InCueKinds          a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:CueKinds ] .
+shs:InDockingPoints     a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:DockingPoints ] .
+shs:InExtractionDepths  a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:ExtractionDepths ] .
+shs:InAssessmentKinds   a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:AssessmentKinds ] .
+shs:InResolution        a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:ResolutionStatuses ] .
+shs:InObjectiveTypes    a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:ObjectiveTypes ] .
+shs:InContextTypes      a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:ContextTypes ] .
+shs:InFormalities       a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:Formalities ] .
+shs:InStages            a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:Stages ] .
+shs:InContentGranularities a sh:NodeShape ; sh:property [ sh:path skos:inScheme ; sh:hasValue cv:ContentGranularities ] .
+
+shs:DateLike a sh:NodeShape ;
+    sh:or ( [ sh:datatype xsd:date ] [ sh:datatype xsd:gYearMonth ] [ sh:datatype xsd:gYear ] ) .
+
+# -----------------------------------------------------------------------------
+# Quelle
+# -----------------------------------------------------------------------------
+shs:DocumentShape a sh:NodeShape ;
+    sh:targetClass cur:Document ;
+    sh:property [ sh:path dct:title ; sh:minCount 1 ; sh:message "Dokument ohne Titel."@de ] ;
+    sh:property [ sh:path cur:documentType ; sh:minCount 1 ; sh:maxCount 1 ; sh:class cur:DocumentType ;
+                  sh:message "Dokument braucht genau einen Dokumenttyp aus einem Profil."@de ] ;
+    sh:property [ sh:path cur:educationSector ; sh:minCount 1 ; sh:node shs:InEducationSectors ] ;
+    sh:property [ sh:path cur:represents ; sh:minCount 1 ; sh:class cur:Specification ;
+                  sh:message "Dokument stellt keine Spezifikation dar (Geltungseinheiten zuerst listen)."@de ] ;
+    sh:property [ sh:path cur:legalForm ; sh:maxCount 1 ; sh:node shs:InLegalForms ] ;
+    sh:property [ sh:path cur:documentBinding ; sh:maxCount 1 ; sh:node shs:InDocumentBindings ] ;
+    sh:property [ sh:path cur:lifecycle ; sh:maxCount 1 ; sh:node shs:InLifecycles ] ;
+    sh:property [ sh:path cur:validFrom ; sh:maxCount 1 ; sh:node shs:DateLike ] ;
+    sh:property [ sh:path cur:validUntil ; sh:maxCount 1 ; sh:node shs:DateLike ] ;
+    sh:property [ sh:path cur:issued ; sh:maxCount 1 ; sh:node shs:DateLike ] ;
+    sh:property [ sh:path cur:versionOf ; sh:maxCount 1 ; sh:class cur:Work ] ;
+    sh:property [ sh:path dct:publisher ; sh:minCount 1 ; sh:severity sh:Warning ;
+                  sh:message "Herausgeber nicht angegeben."@de ] ;
+    sh:property [ sh:path cur:legalForm ; sh:minCount 1 ; sh:severity sh:Warning ;
+                  sh:message "Rechtsform fehlt (unknown setzen, wenn das Dokument sie nicht nennt)."@de ] .
+
+shs:SourceFileShape a sh:NodeShape ;
+    sh:targetClass cur:SourceFile ;
+    sh:property [ sh:path cur:checksum ; sh:minCount 1 ; sh:maxCount 1 ; sh:pattern "^[0-9a-f]{64}$" ] ;
+    sh:property [ sh:path cur:containsDocument ; sh:minCount 1 ; sh:class cur:Document ] .
+
+shs:SourceAnchorShape a sh:NodeShape ;
+    sh:targetClass cur:SourceAnchor ;
+    sh:or ( [ sh:path cur:pageStart ; sh:minCount 1 ] [ sh:path cur:printedPage ; sh:minCount 1 ] ) ;
+    sh:message "Fundstelle braucht eine PDF- oder gedruckte Seite."@de ;
+    sh:property [ sh:path cur:pageStart ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ;
+                  sh:lessThanOrEquals cur:pageEnd ] ;
+    sh:property [ sh:path cur:pageEnd ; sh:maxCount 1 ; sh:datatype xsd:integer ] ;
+    sh:property [ sh:path cur:blockId ; sh:pattern "^p[0-9]+-b[0-9]+$" ;
+                  sh:message "Block-ID im Muster p<Seite>-b<Block>."@de ] ;
+    sh:property [ sh:path cur:quote ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path cur:matchKind ; sh:maxCount 1 ; sh:node shs:InMatchKinds ] ;
+    sh:property [ sh:path cur:matchScore ; sh:maxCount 1 ; sh:minInclusive 0 ; sh:maxInclusive 1 ] ;
+    sh:property [ sh:path cur:inDocument ; sh:maxCount 1 ; sh:class cur:Document ] .
+
+shs:ExtractionRunShape a sh:NodeShape ;
+    sh:targetClass cur:ExtractionRun ;
+    sh:property [ sh:path cur:stage ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InStages ] ;
+    sh:property [ sh:path cur:model ; sh:maxCount 1 ] ;
+    sh:property [ sh:path prov:startedAtTime ; sh:maxCount 1 ; sh:datatype xsd:dateTime ] .
+
+shs:ExtractionAssertionShape a sh:NodeShape ;
+    sh:targetClass cur:ExtractionAssertion ;
+    sh:property [ sh:path cur:assertsAbout ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path cur:assertedProperty ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path cur:anchor ; sh:minCount 1 ; sh:maxCount 1 ; sh:class cur:SourceAnchor ] ;
+    sh:xone ( [ sh:path cur:assertedValue ; sh:minCount 1 ] [ sh:path cur:assertedObject ; sh:minCount 1 ] ) .
+
+# -----------------------------------------------------------------------------
+# Geltung
+# -----------------------------------------------------------------------------
+shs:SpecificationShape a sh:NodeShape ;
+    sh:targetClass cur:Specification ;
+    sh:xone ( [ sh:class cur:Curriculum ] [ sh:class cur:CompetencyFramework ]
+              [ sh:class cur:QualificationSpecification ] [ sh:class cur:AssessmentSpecification ] ) ;
+    sh:message "Spezifikation braucht genau einen der vier Untertypen."@de ;
+    sh:property [ sh:path dct:title ; sh:minCount 1 ] ;
+    sh:property [ sh:path [ sh:inversePath cur:represents ] ; sh:minCount 1 ; sh:class cur:Document ;
+                  sh:message "Spezifikation ist in keinem Dokument dargestellt."@de ] ;
+    sh:property [ sh:path cur:applicability ; sh:class cur:ApplicabilityContext ] ;
+    sh:property [ sh:path cur:competencyModel ; sh:class cur:CompetencyModel ] ;
+    sh:property [ sh:path cur:checkedAbsent ; sh:node shs:InDockingPoints ] .
+
+shs:SpecificationFieldShape a sh:NodeShape ;
+    sh:targetClass cur:Curriculum ;
+    sh:severity sh:Warning ;
+    sh:or ( [ sh:path cur:field ; sh:minCount 1 ] [ sh:path cur:fieldText ; sh:minCount 1 ]
+            [ sh:path cur:occupation ; sh:minCount 1 ] [ sh:path cur:checkedAbsent ; sh:hasValue cv:dock_field ] ) ;
+    sh:message "Curriculum ohne Fach/Feld (oder ausdrücklich als nicht im Dokument markieren)."@de .
+
+shs:ApplicabilityContextShape a sh:NodeShape ;
+    sh:targetClass cur:ApplicabilityContext ;
+    sh:property [ sh:path cur:educationSector ; sh:node shs:InEducationSectors ] ;
+    sh:property [ sh:path cur:formality ; sh:maxCount 1 ; sh:node shs:InFormalities ] ;
+    sh:property [ sh:path cur:timeSpan ; sh:class cur:TimeSpan ] ;
+    sh:property [ sh:path cur:levelAssignment ; sh:class cur:LevelAssignment ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Ein ODER-Kontext (mit alternativeContext) trägt selbst keine Angaben."@de ;
+        sh:select """
+            SELECT $this ?p WHERE {
+                $this cur:alternativeContext ?alt .
+                $this ?p ?o .
+                FILTER(?p NOT IN (rdf:type, cur:alternativeContext, rdfs:label, rdfs:comment))
+            }""" ] .
+
+shs:VariantShape a sh:NodeShape ;
+    sh:targetClass cur:Variant ;
+    sh:property [ sh:path cur:variantKind ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InVariantKinds ] ;
+    sh:property [ sh:path cur:variantOf ; sh:minCount 1 ] ;
+    sh:property [ sh:path skos:prefLabel ; sh:minCount 1 ] .
+
+shs:QualificationShape a sh:NodeShape ;
+    sh:targetClass cur:Qualification ;
+    sh:property [ sh:path skos:prefLabel ; sh:minCount 1 ] ;
+    sh:property [ sh:path cur:levelAssignment ; sh:class cur:LevelAssignment ] .
+
+shs:RuleShape a sh:NodeShape ;
+    sh:targetClass cur:Rule ;
+    sh:property [ sh:path cur:verbatim ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype rdf:langString ;
+                  sh:message "Regel ohne Wortlaut."@de ] ;
+    sh:property [ sh:path cur:anchor ; sh:minCount 1 ; sh:class cur:SourceAnchor ] ;
+    sh:property [ sh:path cur:ruleAppliesTo ; sh:minCount 1 ; sh:severity sh:Warning ;
+                  sh:message "Regel ohne Geltungsobjekt."@de ] .
+
+shs:SelectionRuleShape a sh:NodeShape ;
+    sh:targetClass cur:SelectionRule ;
+    sh:property [ sh:path cur:option ; sh:minCount 2 ; sh:message "Auswahlregel braucht mindestens zwei Optionen."@de ] ;
+    sh:property [ sh:path cur:minCount ; sh:maxCount 1 ; sh:lessThanOrEquals cur:maxCount ] ;
+    sh:property [ sh:path cur:minAmount ; sh:maxCount 1 ; sh:lessThanOrEquals cur:maxAmount ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "maxCount größer als die Zahl der Optionen."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:maxCount ?max .
+                { SELECT $this (COUNT(DISTINCT ?o) AS ?n) WHERE { $this cur:option ?o } GROUP BY $this }
+                FILTER(?max > ?n)
+            }""" ] .
+
+shs:PrerequisiteRuleShape a sh:NodeShape ;
+    sh:targetClass cur:PrerequisiteRule ;
+    sh:property [ sh:path cur:requirementKind ; sh:maxCount 1 ; sh:node shs:InRequirementKinds ] .
+
+shs:RecognitionRuleShape a sh:NodeShape ;
+    sh:targetClass cur:RecognitionRule ;
+    sh:property [ sh:path cur:maxShare ; sh:maxCount 1 ; sh:minInclusive 0 ; sh:maxInclusive 1 ] ;
+    sh:property [ sh:path cur:maxShare ; sh:maxInclusive 0.5 ; sh:severity sh:Warning ;
+                  sh:message "Anrechnung über 50 % (KMK 2002/2008; Ausnahmen NI, NW)."@de ] .
+
+# -----------------------------------------------------------------------------
+# Struktur
+# -----------------------------------------------------------------------------
+shs:CurriculumNodeShape a sh:NodeShape ;
+    sh:targetClass cur:CurriculumNode ;
+    sh:property [ sh:path cur:partOf ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:or ( [ sh:class cur:Specification ] [ sh:class cur:Document ] [ sh:class cur:CurriculumNode ] ) ;
+                  sh:message "Gliederungseinheit braucht genau einen Eigentümer (Spezifikation, Dokument oder Gliederungseinheit)."@de ] ;
+    sh:property [ sh:path cur:nodeFunction ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InNodeFunctions ] ;
+    sh:property [ sh:path cur:nodeType ; sh:maxCount 1 ; sh:class cur:NodeType ] ;
+    sh:property [ sh:path cur:originalTitle ; sh:maxCount 1 ; sh:datatype rdf:langString ] ;
+    sh:property [ sh:path cur:position ; sh:maxCount 1 ; sh:datatype xsd:integer ] ;
+    sh:property [ sh:path cur:obligation ; sh:maxCount 1 ; sh:node shs:InObligations ] ;
+    sh:property [ sh:path cur:scopeShare ; sh:maxCount 1 ; sh:node shs:InScopeShares ] ;
+    sh:property [ sh:path cur:extractionDepth ; sh:maxCount 1 ; sh:node shs:InExtractionDepths ] ;
+    sh:property [ sh:path cur:appliesTo ; sh:or ( [ sh:class cur:Specification ] [ sh:class cur:Variant ] ) ] ;
+    sh:property [ sh:path cur:workload ; sh:class cur:Workload ] ;
+    sh:property [ sh:path cur:timeSpan ; sh:class cur:TimeSpan ] ;
+    sh:property [ sh:path cur:context ; sh:class cur:ContextConcept ] ;
+    sh:property [ sh:path cur:contributesTo ; sh:class cur:CrossCuttingObjective ] ;
+    sh:property [ sh:path cur:anchor ; sh:minCount 1 ; sh:severity sh:Warning ;
+                  sh:message "Gliederungseinheit ohne Fundstelle (Seitenbereich)."@de ] ;
+    sh:property [ sh:path cur:nodeType ; sh:minCount 1 ; sh:severity sh:Warning ;
+                  sh:message "Gliederungseinheit ohne Knotentyp – Lexikon ergänzen."@de ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Funktion widerspricht dem Knotentyp (skos:broader des Knotentyps)."@de ;
+        sh:select """
+            SELECT $this ?fn ?typeFn WHERE {
+                $this cur:nodeFunction ?fn ; cur:nodeType ?t .
+                ?t skos:broader ?typeFn . ?typeFn skos:inScheme cv:NodeFunctions .
+                FILTER(?fn != ?typeFn)
+            }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Zyklus in cur:partOf."@de ;
+        sh:select """SELECT $this WHERE { $this cur:partOf+ $this . }""" ] .
+
+shs:PlacementShape a sh:NodeShape ;
+    sh:targetClass cur:Placement ;
+    sh:property [ sh:path cur:placedUnit ; sh:minCount 1 ; sh:maxCount 1 ; sh:class cur:CurriculumNode ] ;
+    sh:or ( [ sh:path cur:inSpecification ; sh:minCount 1 ] [ sh:path cur:forVariant ; sh:minCount 1 ] ) ;
+    sh:message "Verwendung braucht Spezifikation oder Variante."@de ;
+    sh:property [ sh:path cur:inSpecification ; sh:maxCount 1 ; sh:class cur:Specification ] ;
+    sh:property [ sh:path cur:inNode ; sh:maxCount 1 ; sh:class cur:CurriculumNode ] ;
+    sh:property [ sh:path cur:obligation ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InObligations ] ;
+    sh:property [ sh:path cur:workload ; sh:class cur:Workload ] ;
+    sh:property [ sh:path cur:timeSpan ; sh:class cur:TimeSpan ] .
+
+shs:WorkloadShape a sh:NodeShape ;
+    sh:targetClass cur:Workload ;
+    sh:property [ sh:path cur:amount ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minInclusive 0 ;
+                  sh:lessThanOrEquals cur:amountTo ] ;
+    sh:property [ sh:path cur:amountTo ; sh:maxCount 1 ; sh:datatype xsd:decimal ] ;
+    sh:property [ sh:path cur:unit ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InWorkloadUnits ;
+                  sh:message "Umfang ohne Einheit (UE sind keine Stunden, ECTS keine Stunden)."@de ] ;
+    sh:property [ sh:path cur:workloadKind ; sh:maxCount 1 ; sh:node shs:InWorkloadKinds ] ;
+    sh:property [ sh:path cur:inPeriod ; sh:class cur:TimeSpan ] .
+
+shs:TimeSpanShape a sh:NodeShape ;
+    sh:targetClass cur:TimeSpan ;
+    sh:property [ sh:path cur:timeKind ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InTimeKinds ] ;
+    sh:property [ sh:path cur:from ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minInclusive 0 ;
+                  sh:lessThanOrEquals cur:to ] ;
+    sh:property [ sh:path cur:to ; sh:maxCount 1 ; sh:datatype xsd:decimal ] ;
+    sh:property [ sh:path cur:timeRelation ; sh:maxCount 1 ; sh:node shs:InTimeRelations ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Zeitart phase braucht cur:phase."@de ;
+        sh:select """SELECT $this WHERE { $this cur:timeKind cv:time_phase . FILTER NOT EXISTS { $this cur:phase ?p } }""" ] .
+
+shs:LevelAssignmentShape a sh:NodeShape ;
+    sh:targetClass cur:LevelAssignment ;
+    sh:property [ sh:path cur:level ; sh:minCount 1 ; sh:maxCount 1 ; sh:class cur:LevelConcept ;
+                  sh:message "Niveauzuordnung ohne Stufe aus einem Niveausystem (Freitext gehört in cur:levelText)."@de ] ;
+    sh:property [ sh:path cur:levelTo ; sh:maxCount 1 ; sh:class cur:LevelConcept ] ;
+    sh:property [ sh:path cur:levelRelation ; sh:maxCount 1 ; sh:node shs:InLevelRelations ] ;
+    sh:property [ sh:path cur:levelDimension ; sh:maxCount 1 ; sh:node shs:InLevelDimensions ] ;
+    sh:property [ sh:path cur:competenceDimension ; sh:class cur:CompetenceDimension ;
+                  sh:message "Kompetenzbereich eines Niveaus ist keine Dimension eines Kompetenzmodells."@de ] ;
+    sh:property [ sh:path cur:origin ; sh:maxCount 1 ; sh:node shs:InOrigins ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Bereichsende aus einem anderen Niveausystem als der Anfang."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:level ?a ; cur:levelTo ?b .
+                ?a skos:inScheme ?sa . ?b skos:inScheme ?sb .
+                FILTER(?sa != ?sb)
+            }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Qualifikationsniveau (DQR/EQR, Abschluss) an einer Aussage oder Zerlegung – gehört an Qualifikation oder Spezifikation."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                ?holder cur:levelAssignment $this .
+                { ?holder rdf:type/rdfs:subClassOf* cur:Statement } UNION { ?holder rdf:type/rdfs:subClassOf* cur:Decomposition }
+                $this cur:level ?l . ?l skos:inScheme ?s .
+                OPTIONAL { $this cur:levelDimension ?d1 }
+                OPTIONAL { ?s cur:levelDimension ?d2 }
+                # a dimension at the assignment must not switch off the scheme's own rule
+                FILTER((BOUND(?d1) && ?d1 = cv:dim_qualification) || (BOUND(?d2) && ?d2 = cv:dim_qualification))
+            }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Heuristische Stufe (kognitiv, affektiv, psychomotorisch) braucht Herkunft rule, model oder human."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:level ?l . ?l skos:inScheme ?s .
+                OPTIONAL { $this cur:levelDimension ?d1 }
+                OPTIONAL { ?s cur:levelDimension ?d2 }
+                FILTER((BOUND(?d1) && ?d1 IN (cv:dim_cognitive, cv:dim_affective, cv:dim_psychomotor))
+                    || (BOUND(?d2) && ?d2 IN (cv:dim_cognitive, cv:dim_affective, cv:dim_psychomotor)))
+                FILTER NOT EXISTS { $this cur:origin ?o . FILTER(?o IN (cv:orig_rule, cv:orig_model, cv:orig_human)) }
+            }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Bewertungs- oder Verhaltensstufe außerhalb von Prüfung, Prüfungsspezifikation, Regel oder Standard."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                ?holder cur:levelAssignment $this .
+                $this cur:level ?l . ?l skos:inScheme ?s .
+                OPTIONAL { $this cur:levelDimension ?d1 }
+                OPTIONAL { ?s cur:levelDimension ?d2 }
+                FILTER((BOUND(?d1) && ?d1 IN (cv:dim_grading, cv:dim_conduct))
+                    || (BOUND(?d2) && ?d2 IN (cv:dim_grading, cv:dim_conduct)))
+                FILTER NOT EXISTS {
+                    ?holder rdf:type/rdfs:subClassOf* ?allowed .
+                    FILTER(?allowed IN (cur:Assessment, cur:AssessmentSpecification, cur:Rule, cur:Standard)) }
+                FILTER NOT EXISTS { ?holder cur:statementKind cv:kind_standard }
+            }""" ] .
+
+shs:LevelAssignmentTaskDemandShape a sh:NodeShape ;
+    sh:targetClass cur:LevelAssignment ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Anforderungsbereich an einer Aussage ohne Herkunft source: AFB bezieht sich auf Aufgaben; aus dem Operator nur als kognitive Heuristik."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                ?holder cur:levelAssignment $this . ?holder rdf:type/rdfs:subClassOf* cur:Statement .
+                $this cur:level ?l . ?l skos:inScheme ?s .
+                OPTIONAL { $this cur:levelDimension ?d1 }
+                OPTIONAL { ?s cur:levelDimension ?d2 }
+                FILTER(COALESCE(?d1, ?d2) = cv:dim_taskDemand)
+                FILTER NOT EXISTS { $this cur:origin cv:orig_source }
+            }""" ] .
+
+shs:LevelConceptShape a sh:NodeShape ;
+    sh:targetClass cur:LevelConcept ;
+    sh:property [ sh:path skos:inScheme ; sh:minCount 1 ; sh:class cur:LevelScheme ] ;
+    sh:property [ sh:path cur:rank ; sh:maxCount 1 ; sh:datatype xsd:integer ] .
+
+shs:LevelSchemeShape a sh:NodeShape ;
+    sh:targetClass cur:LevelScheme ;
+    sh:property [ sh:path cur:levelDimension ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InLevelDimensions ] ;
+    sh:property [ sh:path cur:levelOrdering ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InLevelOrderings ] .
+
+shs:AssessmentShape a sh:NodeShape ;
+    sh:targetClass cur:Assessment ;
+    sh:property [ sh:path cur:assessmentKind ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InAssessmentKinds ] ;
+    sh:property [ sh:path cur:partOf ; sh:maxCount 1 ;
+                  sh:or ( [ sh:class cur:Assessment ] [ sh:class cur:Specification ] [ sh:class cur:CurriculumNode ] ) ] ;
+    sh:property [ sh:path cur:durationMinutes ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] ;
+    sh:property [ sh:path cur:weightPercent ; sh:maxCount 1 ; sh:minInclusive 0 ; sh:maxInclusive 100 ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Gewichte der direkten Teile über 100 %."@de ;
+        sh:select """
+            SELECT $this (SUM(?w) AS ?sum) WHERE {
+                ?part cur:partOf $this ; cur:weightPercent ?w . ?part a cur:Assessment .
+            } GROUP BY $this HAVING (SUM(?w) > 100)""" ] .
+
+# -----------------------------------------------------------------------------
+# Aussage
+# -----------------------------------------------------------------------------
+shs:StatementShape a sh:NodeShape ;
+    sh:targetClass cur:Statement ;
+    sh:property [ sh:path cur:verbatim ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype rdf:langString ;
+                  sh:message "Aussage braucht genau einen Wortlaut mit Sprachangabe."@de ] ;
+    sh:property [ sh:path cur:statementKind ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InStatementKinds ] ;
+    sh:property [ sh:path cur:statementSubkind ; sh:maxCount 1 ; sh:class cur:StatementSubkind ] ;
+    sh:property [ sh:path cur:addressee ; sh:minCount 1 ; sh:node shs:InAddressees ;
+                  sh:message "Aussage ohne Adressat."@de ] ;
+    sh:property [ sh:path cur:partOf ; sh:minCount 1 ; sh:maxCount 1 ; sh:class cur:CurriculumNode ;
+                  sh:message "Aussage hängt an genau einer Gliederungseinheit."@de ] ;
+    sh:property [ sh:path [ sh:inversePath cur:partOf ] ; sh:maxCount 0 ;
+                  sh:message "Aussagen sind Blätter: nichts darf cur:partOf einer Aussage sein (Inhalte als Geschwister + cur:targetsContent)."@de ] ;
+    sh:property [ sh:path cur:anchor ; sh:minCount 1 ; sh:class cur:SourceAnchor ;
+                  sh:message "Aussage ohne Fundstelle."@de ] ;
+    sh:property [ sh:path cur:obligation ; sh:maxCount 1 ; sh:node shs:InObligations ] ;
+    sh:property [ sh:path cur:origin ; sh:maxCount 1 ; sh:node shs:InOrigins ] ;
+    sh:property [ sh:path cur:layoutMarker ; sh:node shs:InLayoutMarkers ] ;
+    sh:property [ sh:path cur:levelAssignment ; sh:class cur:LevelAssignment ] ;
+    sh:property [ sh:path cur:timeSpan ; sh:class cur:TimeSpan ] ;
+    sh:property [ sh:path cur:context ; sh:class cur:ContextConcept ] ;
+    sh:property [ sh:path cur:contributesTo ; sh:class cur:CrossCuttingObjective ] ;
+    sh:property [ sh:path cur:checkedAbsent ; sh:node shs:InDockingPoints ] ;
+    sh:property [ sh:path cur:targetsContent ; sh:class cur:Statement ] ;
+    sh:property [ sh:path cur:resolutionStatus ; sh:maxCount 1 ; sh:node shs:InResolution ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Aussage-Unterart gehört zu einer anderen Kernart als cur:statementKind."@de ;
+        sh:select """
+            SELECT $this ?kind ?subKind WHERE {
+                $this cur:statementKind ?kind ; cur:statementSubkind ?sub .
+                ?sub skos:broader ?subKind . ?subKind skos:inScheme cv:StatementKinds .
+                FILTER(?kind != ?subKind)
+            }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "cur:targetsContent muss auf eine Inhaltsaussage derselben Gliederungseinheit zeigen."@de ;
+        sh:select """
+            SELECT $this ?c WHERE {
+                $this cur:targetsContent ?c .
+                FILTER NOT EXISTS { ?c cur:statementKind cv:kind_content }
+            }""" ] .
+
+shs:StatementPlausibilityShape a sh:NodeShape ;
+    sh:targetClass cur:Statement ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Lernergebnis mit Adressat Lehrende/Fachkräfte – wahrscheinlich ein Auftrag (mandate)."@de ;
+        sh:select """SELECT $this WHERE { $this cur:statementKind cv:kind_learningOutcome ; cur:addressee cv:addr_educator . }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Fundstelle unscharf gefunden – kein Wortlautbeleg."@de ;
+        sh:select """SELECT $this WHERE { $this cur:anchor ?a . ?a cur:matchKind cv:match_fuzzy . }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Aussageart unklar – zur Prüfung."@de ;
+        sh:select """SELECT $this WHERE { $this cur:statementKind cv:kind_unclassified . }""" ] .
+
+shs:LearningOutcomeProgressShape a sh:NodeShape ;
+    sh:targetClass cur:Statement ;
+    sh:severity sh:Info ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Lernergebnis noch nicht zerlegt (N1 ausstehend)."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:statementKind cv:kind_learningOutcome .
+                FILTER NOT EXISTS { ?d cur:decomposes $this }
+            }""" ] .
+
+shs:DecompositionShape a sh:NodeShape ;
+    sh:targetClass cur:Decomposition ;
+    sh:property [ sh:path cur:decomposes ; sh:minCount 1 ; sh:maxCount 1 ; sh:class cur:Statement ] ;
+    sh:property [ sh:path cur:actionText ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:message "Eine Zerlegung enthält genau eine Handlung; mehrere Operatoren = mehrere Zerlegungen."@de ] ;
+    sh:property [ sh:path cur:action ; sh:maxCount 1 ; sh:class cur:OperatorLemma ] ;
+    sh:property [ sh:path cur:objectText ; sh:minCount 1 ; sh:severity sh:Warning ] ;
+    sh:property [ sh:path cur:origin ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InOrigins ] ;
+    sh:property [ sh:path cur:expresses ; sh:class cur:CompetencyConcept ] ;
+    sh:property [ sh:path cur:mentions ; sh:class cur:ContentConcept ] ;
+    sh:property [ sh:path cur:confidence ; sh:maxCount 1 ; sh:minInclusive 0 ; sh:maxInclusive 1 ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Kompetenzkonzepte nur für Aussagen mit Adressat Lernende."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:decomposes ?s ; cur:expresses ?k .
+                FILTER NOT EXISTS { ?s cur:addressee cv:addr_learner }
+            }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Zerlegt wird nur ein Lernergebnis, Bildungsziel oder Standard."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:decomposes ?s . ?s cur:statementKind ?k .
+                FILTER(?k NOT IN (cv:kind_learningOutcome, cv:kind_developmentGoal, cv:kind_standard))
+            }""" ] .
+
+shs:DecompositionBackcheckShape a sh:NodeShape ;
+    sh:targetClass cur:Decomposition ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Rückprobe: Gegenstand steht nicht im Wortlaut der Aussage."@de ;
+        sh:select """
+            SELECT $this ?o WHERE {
+                $this cur:decomposes ?s ; cur:objectText ?o . ?s cur:verbatim ?w .
+                FILTER(!CONTAINS(LCASE(STR(?w)), LCASE(STR(?o))))
+            }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Rückprobe: erster Teil der Handlung steht nicht im Wortlaut (trennbare Verben als „wählen … aus“ schreiben)."@de ;
+        sh:select """
+            SELECT $this ?a WHERE {
+                $this cur:decomposes ?s ; cur:actionText ?a . ?s cur:verbatim ?w .
+                BIND(STRBEFORE(CONCAT(STR(?a), " "), " ") AS ?first)
+                FILTER(!CONTAINS(LCASE(STR(?w)), LCASE(?first)))
+            }""" ] .
+
+# -----------------------------------------------------------------------------
+# Konzepte und Lexikon
+# -----------------------------------------------------------------------------
+shs:ConceptLabelShape a sh:NodeShape ;
+    sh:targetClass cur:ContentConcept , cur:CompetencyConcept , cur:CrossCuttingObjective , cur:ContextConcept ,
+                   cur:NodeType , cur:StatementSubkind , cur:DocumentType , cur:LevelConcept , cur:CompetenceDimension ;
+    sh:property [ sh:path skos:prefLabel ; sh:minCount 1 ; sh:uniqueLang true ;
+                  sh:message "Konzept ohne prefLabel oder mit zwei prefLabels gleicher Sprache."@de ] ;
+    sh:property [ sh:path skos:inScheme ; sh:minCount 1 ; sh:severity sh:Warning ] .
+
+shs:NodeTypeShape a sh:NodeShape ;
+    sh:targetClass cur:NodeType ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Knotentyp braucht genau eine Kernfunktion als skos:broader."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                { SELECT $this (COUNT(DISTINCT ?f) AS ?n) WHERE {
+                    $this a cur:NodeType .
+                    OPTIONAL { $this skos:broader ?f . ?f skos:inScheme cv:NodeFunctions } } GROUP BY $this }
+                FILTER(?n != 1)
+            }""" ] ;
+    sh:property [ sh:path cur:segmentation ; sh:maxCount 1 ; sh:node shs:InSegmentations ] ;
+    sh:property [ sh:path cur:extractionDepth ; sh:maxCount 1 ; sh:node shs:InExtractionDepths ] ;
+    sh:property [ sh:path cur:typicalParent ; sh:class cur:NodeType ] ;
+    sh:property [ sh:path cur:impliesContext ; sh:class cur:ContextConcept ] .
+
+shs:StatementSubkindShape a sh:NodeShape ;
+    sh:targetClass cur:StatementSubkind ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Aussage-Unterart braucht genau eine Kernart als skos:broader."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                { SELECT $this (COUNT(DISTINCT ?k) AS ?n) WHERE {
+                    $this a cur:StatementSubkind .
+                    OPTIONAL { $this skos:broader ?k . ?k skos:inScheme cv:StatementKinds } } GROUP BY $this }
+                FILTER(?n != 1)
+            }""" ] ;
+    sh:property [ sh:path cur:defaultAddressee ; sh:node shs:InAddressees ] ;
+    sh:property [ sh:path cur:segmentation ; sh:maxCount 1 ; sh:node shs:InSegmentations ] .
+
+shs:DocumentTypeShape a sh:NodeShape ;
+    sh:targetClass cur:DocumentType ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Dokumenttyp braucht genau eine Kern-Dokumentart als skos:broader."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                { SELECT $this (COUNT(DISTINCT ?k) AS ?n) WHERE {
+                    $this a cur:DocumentType .
+                    OPTIONAL { $this skos:broader ?k . ?k skos:inScheme cv:DocumentKinds } } GROUP BY $this }
+                FILTER(?n != 1)
+            }""" ] .
+
+shs:ContentConceptShape a sh:NodeShape ;
+    sh:targetClass cur:ContentConcept ;
+    sh:property [ sh:path cur:granularity ; sh:maxCount 1 ; sh:node shs:InContentGranularities ] .
+
+shs:CrossCuttingShape a sh:NodeShape ;
+    sh:targetClass cur:CrossCuttingObjective ;
+    sh:property [ sh:path cur:objectiveType ; sh:maxCount 1 ; sh:node shs:InObjectiveTypes ] .
+
+shs:ContextConceptShape a sh:NodeShape ;
+    sh:targetClass cur:ContextConcept ;
+    sh:property [ sh:path cur:contextType ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InContextTypes ] .
+
+shs:LexicalCueShape a sh:NodeShape ;
+    sh:targetClass cur:LexicalCue ;
+    sh:or ( [ sh:path cur:surfaceForm ; sh:minCount 1 ] [ sh:path cur:pattern ; sh:minCount 1 ]
+            [ sh:path cur:layoutSignal ; sh:minCount 1 ] ) ;
+    sh:message "Erkennungshinweis braucht Oberflächenform, Muster oder Layoutsignal."@de ;
+    sh:property [ sh:path cur:cueRole ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InCueRoles ] ;
+    sh:property [ sh:path cur:cueKind ; sh:maxCount 1 ; sh:node shs:InCueKinds ] ;
+    sh:property [ sh:path cur:mapsTo ; sh:minCount 1 ] ;
+    sh:property [ sh:path cur:strength ; sh:maxCount 1 ; sh:minInclusive 0 ; sh:maxInclusive 1 ] ;
+    sh:property [ sh:path cur:layoutSignal ; sh:node shs:InLayoutMarkers ] ;
+    sh:property [ sh:path cur:validFrom ; sh:maxCount 1 ; sh:node shs:DateLike ] ;
+    sh:property [ sh:path cur:validUntil ; sh:maxCount 1 ; sh:node shs:DateLike ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:severity sh:Warning ;
+        sh:message "Homonym ohne Alternativziel oder Regeltext."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:cueRole cv:role_homonym .
+                FILTER NOT EXISTS { $this cur:alsoMapsTo ?x }
+                FILTER NOT EXISTS { $this cur:recognitionHint ?h }
+            }""" ] .
+
+shs:TerminologyProfileShape a sh:NodeShape ;
+    sh:targetClass cur:TerminologyProfile ;
+    sh:property [ sh:path cur:hasCue ; sh:minCount 1 ; sh:class cur:LexicalCue ] ;
+    sh:property [ sh:path cur:profileScope ; sh:minCount 1 ] .
+
+# -----------------------------------------------------------------------------
+# Zuordnung
+# -----------------------------------------------------------------------------
+shs:AlignmentShape a sh:NodeShape ;
+    sh:targetClass cur:Alignment ;
+    sh:property [ sh:path cur:source ; sh:minCount 1 ;
+                  sh:message "Zuordnung ohne Quelle. Mehrere Quellen bedeuten: gemeinsam (UND)."@de ] ;
+    sh:property [ sh:path cur:target ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path cur:relation ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InRelations ] ;
+    sh:property [ sh:path cur:origin ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InOrigins ] ;
+    sh:property [ sh:path cur:reviewStatus ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InReviewStatuses ] ;
+    sh:property [ sh:path cur:method ; sh:minCount 1 ; sh:maxCount 1 ; sh:node shs:InMethods ] ;
+    sh:property [ sh:path cur:confidence ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minInclusive 0 ; sh:maxInclusive 1 ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Maschinelle Zuordnung (Herkunft model) braucht eine berechnete Konfidenz."@de ;
+        sh:select """SELECT $this WHERE { $this cur:origin cv:orig_model . FILTER NOT EXISTS { $this cur:confidence ?c } }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Amtliche Zuordnung braucht eine Fundstelle in der amtlichen Quelle."@de ;
+        sh:select """SELECT $this WHERE { $this cur:origin cv:orig_official . FILTER NOT EXISTS { $this cur:anchor ?a } }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Anrechnung und Berechtigung nur mit Herkunft official."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:relation ?r . FILTER(?r IN (cv:rel_recognizedFor, cv:rel_qualifiesFor))
+                FILTER NOT EXISTS { $this cur:origin cv:orig_official }
+            }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Herkunft model darf nicht mit Methode officialList oder verbatim kombiniert werden."@de ;
+        sh:select """SELECT $this WHERE { $this cur:origin cv:orig_model ; cur:method ?m . FILTER(?m IN (cv:meth_officialList, cv:meth_verbatim)) }""" ] .
+
+shs:AlignmentPlausibilityShape a sh:NodeShape ;
+    sh:targetClass cur:Alignment ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "exactMatch von einer Aussage oder Zerlegung auf ESCO – ein Lehrplansatz ist kein Skill-Konzept (close/broad/related verwenden)."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:relation cv:rel_exactMatch ; cur:target ?t ; cur:source ?s .
+                FILTER(STRSTARTS(STR(?t), "http://data.europa.eu/esco/"))
+                { ?s a cur:Statement } UNION { ?s a cur:Decomposition }
+            }""" ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "steigert-Kante zwischen Elementen ohne gemeinsames Inhaltskonzept."@de ;
+        sh:select """
+            SELECT $this WHERE {
+                $this cur:relation cv:rel_buildsOn ; cur:source ?a ; cur:target ?b .
+                FILTER NOT EXISTS {
+                    { ?a cur:mentions ?c } UNION { ?da cur:decomposes ?a ; cur:mentions ?c }
+                    { ?b cur:mentions ?c } UNION { ?db cur:decomposes ?b ; cur:mentions ?c }
+                }
+            }""" ] .
+
+shs:ShortcutBackingShape a sh:NodeShape ;
+    sh:targetClass cur:Statement , cur:Decomposition , cur:CompetencyConcept , cur:ContentConcept , cur:CurriculumNode , cur:Qualification ;
+    sh:severity sh:Warning ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Kurzform-Kante ohne bestätigte oder amtliche Zuordnung dahinter."@de ;
+        sh:select """
+            SELECT $this ?p ?o WHERE {
+                ?rel cur:shortcut ?p . $this ?p ?o .
+                FILTER(STRSTARTS(STR(?p), "https://w3id.org/wlo/curriculum/core#"))
+                FILTER(?p NOT IN (cur:contributesTo, cur:variantOf))
+                FILTER NOT EXISTS {
+                    ?al a cur:Alignment ; cur:source $this ; cur:target ?o ; cur:relation ?rel .
+                    { ?al cur:reviewStatus cv:rev_confirmed } UNION { ?al cur:origin cv:orig_official }
+                }
+            }""" ] .

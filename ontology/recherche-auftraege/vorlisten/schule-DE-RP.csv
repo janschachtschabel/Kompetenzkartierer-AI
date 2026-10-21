@@ -1,0 +1,37 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-RP;Differenzierungsmöglichkeit;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030113
+DE-RP;Erschließung des Themenfeldes durch Kontextorientierung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030112
+DE-RP;Hinweis und Vernetzung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0002198
+DE-RP;Hinweis zur unterrichtlichen Umsetzung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030099
+DE-RP;Hinweis zur Unterrichtsgestaltung und Methodenkompetenz;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0002201
+DE-RP;Kontext;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030110
+DE-RP;Anwendungsfähiges Wissen;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030103
+DE-RP;Beitrag zur Entwicklung der Basiskonzepte;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030111
+DE-RP;Entwicklung des Konzepts;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030109
+DE-RP;Fachbegriff;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030108
+DE-RP;Inhalt und Zusammenhang;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030100
+DE-RP;Inhalt zum Erwerb der Kompetenzen;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0002195
+DE-RP;Erfahrungbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030027
+DE-RP;Kernbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0002202
+DE-RP;Lehrplanbaustein;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030098
+DE-RP;Lernbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030035
+DE-RP;Teilerfahrungsberich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030107
+DE-RP;Teilkompetenzbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030101
+DE-RP;Teilleitgedanke;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030104
+DE-RP;Teillernbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030105
+DE-RP;Teilteilkompetenzbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030102
+DE-RP;Teilteillernbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030106
+DE-RP;Teilthema;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0000345
+DE-RP;Thema;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0000328
+DE-RP;Thematischer Leitgedanke;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030034
+DE-RP;Themenfeld;homonym;schul:Inhaltsbereich;Inhaltsbereich;;;;0.75;nein;"Einheit, wenn das Themenfeld einen Zeitumfang, einen festen Jahrgang oder eine Verbindlichkeit (verbindlich/wahlobligatorisch) trägt (BE/BB C3, HE Oberstufe); sonst Inhaltsbereich.";schul:cue-ib-themenfeld
+DE-RP;Unterteilthema;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0000352
+DE-RP;Kompetenzbereich;pref;schul:Kompetenzbereich;Kompetenzbereich;;;;0.8;nein;;schul:cue-kb-kompetenzbereich
+DE-RP;Fähigkeit;homonym;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;Spalte mit Lernzielen und Inhalten: Sätze mit Operator → Kompetenzerwartung, Stichworte → Inhalt.;schul:fwu-LP_0030036
+DE-RP;Inhalt;homonym;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;Spalte mit Lernzielen und Inhalten: Sätze mit Operator → Kompetenzerwartung, Stichworte → Inhalt.;schul:fwu-LP_0002197
+DE-RP;Kompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0000432
+DE-RP;Lernziel;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0000350
+DE-RP;Lernziele;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.85;nein;;schul:cue-ke-lernziel
+DE-RP;Ziel / Inhalt (Sach- und Methodenkompetenz);cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0002200
+DE-RP;Lehrplanfragment;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0000353
+DE-RP;Lehrplan;pref;schul:dt-Lehrplan;Lehrplan;titlePage;;;0.8;nein;;schul:cue-dt-lehrplan

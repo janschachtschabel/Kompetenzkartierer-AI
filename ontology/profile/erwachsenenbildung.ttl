@@ -1,0 +1,402 @@
+@prefix eb:    <https://w3id.org/wlo/curriculum/profile/adult-education#> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix lvl:   <https://w3id.org/wlo/curriculum/level/> .
+@prefix qz:    <https://w3id.org/wlo/curriculum/crosscutting/> .
+@prefix kd:    <https://w3id.org/wlo/curriculum/dimension/> .
+@prefix land:  <https://w3id.org/wlo/curriculum/region/> .
+@prefix ctx:   <https://w3id.org/wlo/curriculum/context/> .
+@prefix fld:   <https://w3id.org/wlo/curriculum/field/> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+
+# =============================================================================
+# Profil Erwachsenen- und Weiterbildung (eb:) – Rahmencurricula Grundbildung
+# (DVV, lea.), Integrations- und Berufssprachkurse (BAMF), Kurskonzepte,
+# Orientierungskurs, Prüfungs- und Testhandbücher, Referenzrahmen (GER),
+# Zertifikatslehrgänge, Programmankündigungen, EB-Personal (GRETA).
+#
+# Besonderheiten: Niveau ist hier oft die Gliederung selbst (Alpha-Level,
+# GER-Stufen) und zugleich Attribut je Tabellenzeile; die Zuordnungsart
+# (zugewiesen, Mindestniveau) wird einmal je Dokument bestimmt. Kann-
+# Beschreibungen sind Lernergebnisse; Sensibilisierungsziele sind
+# Bildungsziele. Dokument-Adressat (Kursplanende) ≠ Zielgruppe (Lernende).
+# Lebensbereiche und Rollen sind Kontext (ctx:), nicht Fach. Externe Raster
+# (GER-Begleitband, lea., DigComp, GRETA) werden einmal importiert.
+# Fortbildungsordnungen (D8) gehören zum Profil beruf:.
+#
+# Quellen: EB-CO v0.2 (cc-core, cc-eb-vocab, cc-levels, cc-eb-terminologie
+# mit 24 Regeln, cc-shapes, Beispiele DVV RC Schreiben und BAMF RC
+# Integrationskurs), Deep-Research-Bericht Erwachsenenbildung.
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/profile/adult-education> a owl:Ontology ;
+    dct:title "Curriculum-Profil Erwachsenen- und Weiterbildung"@de , "curriculum profile adult education"@en ;
+    owl:imports <https://w3id.org/wlo/curriculum/core> , <https://w3id.org/wlo/curriculum/vocab> ,
+        <https://w3id.org/wlo/curriculum/level> , <https://w3id.org/wlo/curriculum/crosscutting> ,
+        <https://w3id.org/wlo/curriculum/context> , <https://w3id.org/wlo/curriculum/field> ;
+    owl:versionInfo "1.0-entwurf" ;
+    dct:created "2026-10-19"^^xsd:date .
+
+# =============================================================================
+# 1. Profil-Eigenschaften
+# =============================================================================
+eb:programArea a owl:ObjectProperty ; rdfs:subPropertyOf cur:field ;
+    rdfs:label "Programmbereich"@de , "programme area"@en ;
+    skos:definition "Programmbereich der VHS-Statistik als Feld; feinere Felder über fld: (ISCED-F 0021 Literalität und Numeralität, 0231 Spracherwerb …)."@de .
+eb:providerType a owl:ObjectProperty ; rdfs:subPropertyOf cur:institutionType ;
+    rdfs:label "Trägerart"@de , "provider type"@en .
+eb:courseFormat a owl:ObjectProperty ;
+    rdfs:label "Kursformat"@de , "course format"@en ;
+    skos:definition "Kursart eines Kurskonzepts (allgemeiner Integrationskurs, Jugendintegrationskurs …); bestimmt Umfang und Zielgruppe, nicht die Lernziele."@de .
+eb:recognitionCategory a owl:ObjectProperty ;
+    rdfs:label "Anerkennungskategorie"@de , "recognition category"@en ;
+    skos:definition "Anerkennung nach Landesrecht (Bildungsfreistellung); Land nur übernehmen, wenn genannt."@de .
+eb:languageContentType a owl:ObjectProperty ;
+    rdfs:label "sprachbezogener Inhaltstyp"@de , "language content type"@en ;
+    skos:definition "Art eines Sprachinventars (Textsorte, Wortschatz, Grammatik, Register, Orthografie)."@de .
+eb:minutesPerTeachingUnit a owl:DatatypeProperty ; rdfs:subPropertyOf cur:minutesPerUnit ; rdfs:range xsd:integer ;
+    rdfs:label "Minuten je UE"@de , "minutes per teaching unit"@en ;
+    skos:definition "Nur aus dem Dokument (45 oder 60); nie annehmen."@de .
+
+# =============================================================================
+# 2. Dokumenttypen (EB-CO D1–D13; D8 → beruf:, D14 nur Routing)
+# =============================================================================
+eb:DocumentTypes a skos:ConceptScheme ; skos:prefLabel "Dokumenttypen Erwachsenen- und Weiterbildung"@de .
+
+eb:dt-D1 a cur:DocumentType ; skos:inScheme eb:DocumentTypes ; skos:broader cv:dk_curriculum ; skos:notation "D1" ;
+    skos:prefLabel "Rahmencurriculum Grundbildung/Alphabetisierung"@de ;
+    skos:example "DVV-Rahmencurricula Lesen, Schreiben, Rechnen (2014)" ;
+    skos:scopeNote "Grundlagentext → Alpha-Level 1–4 → Kompetenzgruppe → Kompetenz (K) → lea.-Kann-Beschreibung + Erläuterung + Spiralverweis. Verbindlichkeit empfohlen; Niveau zugewiesen."@de .
+eb:dt-D2 a cur:DocumentType ; skos:inScheme eb:DocumentTypes ; skos:broader cv:dk_curriculum ; skos:notation "D2" ;
+    skos:prefLabel "Rahmencurriculum Zweitsprache"@de ;
+    skos:example "Rahmencurriculum für Integrationskurse Deutsch als Zweitsprache (BAMF 2017)" ;
+    skos:scopeNote "Übergreifende Kommunikationsbereiche A–E + 12 Handlungsfelder → Teilbereich → sprachliche Handlung → Tabelle Lernziele/Aktivitäten/Niveau/Handlungsziele/Fokus. „Kein Lehrplan“: Lernziele sind Auswahlpool (cv:obl_selectionPool), Niveau Mindestniveau (cv:lrel_minimum)."@de .
+eb:dt-D3 a cur:DocumentType ; skos:inScheme eb:DocumentTypes ; skos:broader cv:dk_curriculum ; skos:notation "D3" ;
+    skos:prefLabel "Kurskonzept (Rahmenvorgabe)"@de ;
+    skos:scopeNote "Kursarten → Umfang (UE, Kursabschnitte) → Ziele → Teilnehmende → Test. Ergänzt ein Rahmencurriculum um Zeit (cur:supplements)."@de .
+eb:dt-D4 a cur:DocumentType ; skos:inScheme eb:DocumentTypes ; skos:broader cv:dk_curriculum ; skos:notation "D4" ;
+    skos:prefLabel "Curriculum Werte-/Orientierungskurs"@de .
+eb:dt-D5 a cur:DocumentType ; skos:inScheme eb:DocumentTypes ; skos:broader cv:dk_curriculum ; skos:notation "D5" ;
+    skos:prefLabel "Berufsbezogenes Sprachkurskonzept/Lernzielkatalog"@de .
+eb:dt-D6 a cur:DocumentType ; skos:inScheme eb:DocumentTypes ; skos:broader cv:dk_assessment ; skos:notation "D6" ;
+    skos:prefLabel "Prüfungsordnung/Testhandbuch/Prüfungsziele"@de .
+eb:dt-D7 a cur:DocumentType ; skos:inScheme eb:DocumentTypes ; skos:broader cv:dk_framework ; skos:notation "D7" ;
+    skos:prefLabel "Referenzrahmen"@de ; skos:example "GER mit Begleitband 2020" ;
+    skos:scopeNote "Als cur:CompetencyFramework mit Deskriptoren (cv:kind_standard) und Niveauschema importieren."@de .
+eb:dt-D9 a cur:DocumentType ; skos:inScheme eb:DocumentTypes ; skos:broader cv:dk_curriculum ; skos:notation "D9" ;
+    skos:prefLabel "AZAV-Maßnahmebeschreibung"@de .
+eb:dt-D10 a cur:DocumentType ; skos:inScheme eb:DocumentTypes ; skos:broader cv:dk_curriculum ; skos:notation "D10" ;
+    skos:prefLabel "Zertifikatslehrgang (Verband/Träger)"@de .
+eb:dt-D11 a cur:DocumentType ; skos:inScheme eb:DocumentTypes ; skos:broader cv:dk_catalogue ; skos:notation "D11" ;
+    skos:prefLabel "Programm-/Kursankündigung"@de ;
+    skos:scopeNote "Überwiegend Metadaten; 0..n Curricula je Dokument; Lernziele oft implizit (nicht erfinden)."@de .
+eb:dt-D12 a cur:DocumentType ; skos:inScheme eb:DocumentTypes ; skos:broader cv:dk_regulation ; skos:notation "D12" ;
+    skos:prefLabel "Weiterbildungsgesetz/Anerkennungsrichtlinie"@de ;
+    skos:scopeNote "Nur Metadaten und Anerkennungskategorie."@de .
+eb:dt-D13 a cur:DocumentType ; skos:inScheme eb:DocumentTypes ; skos:broader cv:dk_framework ; skos:notation "D13" ;
+    skos:prefLabel "Kompetenzmodell für EB-Personal"@de ; skos:example "GRETA 2.0" .
+
+# =============================================================================
+# 3. Knotentypen (EB-CO-Einheitentypen; Funktion nach Kerndefinition)
+# =============================================================================
+eb:NodeTypes a skos:ConceptScheme ; skos:prefLabel "Knotentypen Erwachsenen- und Weiterbildung"@de .
+
+eb:Teil a cur:NodeType ; skos:inScheme eb:NodeTypes ; skos:broader cv:fn_grouping ;
+    skos:prefLabel "Teil (curricularer Hauptabschnitt)"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Oberste curriculare Gliederung (Lesen und Schreiben in einem Heft), sofern kein eigenes Curriculum."@de .
+eb:Kapitel a cur:NodeType ; skos:inScheme eb:NodeTypes ; skos:broader cv:fn_frame ;
+    skos:prefLabel "Grundlagenkapitel"@de ; cur:extractionDepth cv:depth_typed ;
+    skos:definition "Präambel, Grundlagen, Umgang mit dem Curriculum; Inhalte sind Hinweise und Bildungsziele."@de .
+eb:Niveaustufe a cur:NodeType ; skos:inScheme eb:NodeTypes ; skos:broader cv:fn_grouping ;
+    skos:prefLabel "Niveaustufe (als Gliederung)"@de ; skos:altLabel "Alpha-Level"@de , "Level"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Kapitel, das einem Niveau entspricht; setzt immer zusätzlich cur:levelAssignment (zugewiesen), das alle Aussagen darunter erben."@de .
+eb:Handlungsfeld a cur:NodeType ; skos:inScheme eb:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Handlungsfeld"@de ; skos:altLabel "Lebensbereich"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Lebens- oder Arbeitsbereich, in dem sprachlich gehandelt wird (Integrationskurs: Ämter und Behörden, Arbeit, Wohnen …). Setzt cur:context auf einen ctx:lifeDomains-Wert."@de ;
+    cur:impliesContext ctx:lifeDomains ;
+    cur:delimitation "„Lernfeld“ in EB-Dokumenten ist ein Fremdbegriff der Berufsbildung: Quellbezeichnung erhalten (cur:originalTerm), Knotentyp Handlungsfeld."@de .
+eb:UebergreifenderBereich a cur:NodeType ; skos:inScheme eb:NodeTypes ; skos:broader cv:fn_crossCutting ;
+    skos:prefLabel "Handlungsfeld übergreifender Kommunikation"@de ; skos:altLabel "Kommunikationsbereich"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Übergreifende Kommunikationsbereiche A–E des Integrationskurses (Umgang mit der Migrationssituation … Umgang mit dem eigenen Sprachenlernen). Bereich mit Lernzielen und zugleich Querschnitt; kein Lebensbereich-Kontext."@de ;
+    cur:impliesContext ctx:ik-transversal .
+eb:Teilbereich a cur:NodeType ; skos:inScheme eb:NodeTypes ; skos:broader cv:fn_subunit ;
+    skos:prefLabel "Teilbereich"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Untergliederung eines Handlungsfelds nach Rolle oder Gesprächskonstellation (sich einen Überblick verschaffen; offizielle Stellen; Vorgesetzte; Gleichgestellte). Rolle als cur:context nur, wenn sie im Titel steht."@de ;
+    cur:typicalParent eb:Handlungsfeld , eb:UebergreifenderBereich .
+eb:SprachlicheHandlung a cur:NodeType ; skos:inScheme eb:NodeTypes ; skos:broader cv:fn_subunit ;
+    skos:prefLabel "Sprachliche Handlung"@de ; skos:altLabel "Sprachhandlung"@de , "kommunikative Handlung"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Typisierte kommunikative Handlung (AUSKUNFT GEBEN, FORMULARE AUSFÜLLEN), unter der Lernziele als Tabelle stehen; Überschrift in Versalien mit Nummer."@de ;
+    cur:typicalParent eb:Teilbereich , eb:Handlungsfeld .
+eb:Modul a cur:NodeType ; skos:inScheme eb:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "Modul/Kursabschnitt"@de ; skos:altLabel "Baustein"@de , "Lerneinheit"@de , "Kursmodul"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Zeitlich oder inhaltlich abgeschlossene Lehreinheit, meist mit UE-Umfang."@de .
+eb:Sachgebiet a cur:NodeType ; skos:inScheme eb:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Sachgebiet"@de ; skos:altLabel "Themenbereich"@de , "Schlüsselthema"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Fachlich-thematische Gliederung ohne Situationsbezug (Orientierungskurs-Module, Schlüsselthemen)."@de .
+eb:Kompetenzbereich a cur:NodeType ; skos:inScheme eb:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Kompetenzbereich/Kompetenzgruppe"@de ; skos:altLabel "Kompetenzgruppe"@de , "Kompetenzaspekt"@de , "Förderbereich"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Bündel von Kompetenzen ohne Situationsbezug (DVV „K3–K7 Grundlegende Fähigkeiten 3“, GRETA-Kompetenzaspekte)."@de .
+eb:Kompetenzeinheit a cur:NodeType ; skos:inScheme eb:NodeTypes ; skos:broader cv:fn_subunit ;
+    skos:prefLabel "Kompetenzeinheit"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Benannte, nummerierte Kompetenz („K1 Grundlegende Fähigkeiten 1“), die Kann-Beschreibungen, Erläuterungen und Spiralverweise trägt."@de ;
+    cur:delimitation "Die Überschrift „K1 …“ ist kein Lernergebnis; nur die Kann-Sätze darunter sind Aussagen."@de ;
+    cur:typicalParent eb:Kompetenzbereich , eb:Niveaustufe .
+eb:Pruefungsteil a cur:NodeType ; skos:inScheme eb:NodeTypes ; skos:broader cv:fn_grouping ;
+    skos:prefLabel "Prüfungsteil"@de ; skos:altLabel "Subtest"@de , "Teilprüfung"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Gliederung eines Testhandbuchs (Hören, Lesen, Schreiben, Sprechen); zugleich cur:Assessment."@de .
+eb:Rubrik a cur:NodeType ; skos:inScheme eb:NodeTypes ; skos:broader cv:fn_crossCutting ;
+    skos:prefLabel "Rubrik/Fokusteil"@de ; skos:altLabel "Fokus"@de , "Exkurs"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Querliegender Blickwinkel innerhalb einer Einheit (Fokus Landeskunde, Fokus Diversität und Interkulturalität). Als Abschnitt am Anfang eines Handlungsfelds Knoten mit cur:contributesTo; als Tabellenspalte Aussagen mit cur:contributesTo."@de .
+eb:Verzeichnis a cur:NodeType ; skos:inScheme eb:NodeTypes ; skos:broader cv:fn_nonCurricular ;
+    skos:prefLabel "Verzeichnis/Anhang"@de ; cur:extractionDepth cv:depth_skip .
+
+# =============================================================================
+# 4. Aussage-Unterarten (EB-CO-Aussageformen)
+# =============================================================================
+eb:StatementSubkinds a skos:ConceptScheme ; skos:prefLabel "Aussage-Unterarten Erwachsenen- und Weiterbildung"@de .
+
+eb:KannBeschreibung a cur:StatementSubkind ; skos:inScheme eb:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "Kann-Beschreibung"@de ;
+    skos:definition "„Kann …“ – Lernergebnis; ein „z. B.“-Teil kommt in cur:exampleText. Bei lea.-Bezug Nummer als cur:citedCode und Kante cv:rel_derivedFrom zum importierten lea.-Item."@de ;
+    cur:segmentation cv:seg_tableRow ; cur:defaultAddressee cv:addr_learner .
+eb:Lernziel a cur:StatementSubkind ; skos:inScheme eb:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "Lernziel"@de ; skos:altLabel "Teilziel"@de , "Feinziel"@de , "Grobziel"@de ;
+    cur:defaultAddressee cv:addr_learner .
+eb:Wissensaussage a cur:StatementSubkind ; skos:inScheme eb:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "Wissensaussage"@de ;
+    skos:definition "„Weiß, dass …“, „Kennt …“ – Lernergebnis der Wissensdimension (in N1 cur:knowledgeType cv:kt_factual oder kt_conceptual)."@de ;
+    cur:defaultAddressee cv:addr_learner .
+eb:Uebersichtsziel a cur:StatementSubkind ; skos:inScheme eb:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "Übersichts-Lernergebnis"@de ;
+    skos:definition "„Die Kursteilnehmer/-innen können … (K1)“ – fasst Kompetenzeinheiten zusammen (cur:summarizes); nicht mit ihnen deduplizieren."@de .
+eb:Sensibilisierung a cur:StatementSubkind ; skos:inScheme eb:StatementSubkinds ; skos:broader cv:kind_developmentGoal ;
+    skos:prefLabel "Sensibilisierungs-/Haltungsziel"@de ;
+    skos:definition "„Ist sensibilisiert für …“, „Ist sich bewusst, dass …“ – Bildungsziel ohne Operatorpflicht; nicht umformulieren, auch mit angehängtem „und kann …“ (dann zweite Aussage)."@de ;
+    cur:defaultAddressee cv:addr_learner .
+eb:Deskriptor a cur:StatementSubkind ; skos:inScheme eb:StatementSubkinds ; skos:broader cv:kind_standard ;
+    skos:prefLabel "Niveaudeskriptor"@de ;
+    skos:definition "Deskriptor eines Referenzrahmens (GER-Begleitband, lea.-Raster, DigComp) – Rasterzelle mit Niveauzuordnung."@de .
+eb:Pruefungsziel a cur:StatementSubkind ; skos:inScheme eb:StatementSubkinds ; skos:broader cv:kind_standard ;
+    skos:prefLabel "Prüfungsziel"@de .
+eb:Bewertungskriterium a cur:StatementSubkind ; skos:inScheme eb:StatementSubkinds ; skos:broader cv:kind_standard ;
+    skos:prefLabel "Bewertungskriterium"@de .
+eb:Sprachinventar a cur:StatementSubkind ; skos:inScheme eb:StatementSubkinds ; skos:broader cv:kind_content ;
+    skos:prefLabel "Sprachinventar"@de ; skos:altLabel "Redemittel"@de , "Wortschatz"@de , "Grammatik"@de ;
+    skos:definition "Inhaltsliste der Sprachmittel; Art in eb:languageContentType."@de .
+eb:Inhalt a cur:StatementSubkind ; skos:inScheme eb:StatementSubkinds ; skos:broader cv:kind_content ;
+    skos:prefLabel "Inhalt"@de .
+eb:Vermittlungshinweis a cur:StatementSubkind ; skos:inScheme eb:StatementSubkinds ; skos:broader cv:kind_guidance ;
+    skos:prefLabel "Hinweis zur Vermittlung"@de ; skos:altLabel "Erläuterung"@de , "didaktischer Hinweis"@de , "Unterrichtstipp"@de ;
+    cur:defaultAddressee cv:addr_educator .
+eb:Spiralverweis a cur:StatementSubkind ; skos:inScheme eb:StatementSubkinds ; skos:broader cv:kind_reference ;
+    skos:prefLabel "Spiralverweis"@de ;
+    skos:definition "„Spiralcurriculum: L2/K3–K5“ – Verweis auf dieselbe Kompetenz auf einem anderen Alpha-Level; deterministisch auflösen zu cv:rel_revisits (Richtung vom späteren zum früheren Element)."@de .
+
+# =============================================================================
+# 5. Wertelisten
+# =============================================================================
+eb:ProgramAreas a skos:ConceptScheme ; skos:prefLabel "Programmbereiche (VHS-Statistik)"@de ;
+    skos:editorialNote "Neuere Berichte trennen Grundbildung und Schulabschlüsse – an der aktuellen Statistik prüfen; fld:-Abbildungen sind Vorschläge."@de .
+eb:pa-politik a skos:Concept ; skos:inScheme eb:ProgramAreas ; skos:topConceptOf eb:ProgramAreas ; skos:prefLabel "Politik – Gesellschaft – Umwelt"@de ; skos:relatedMatch fld:0312 .
+eb:pa-kultur a skos:Concept ; skos:inScheme eb:ProgramAreas ; skos:topConceptOf eb:ProgramAreas ; skos:prefLabel "Kultur – Gestalten"@de ; skos:relatedMatch fld:021 .
+eb:pa-gesundheit a skos:Concept ; skos:inScheme eb:ProgramAreas ; skos:topConceptOf eb:ProgramAreas ; skos:prefLabel "Gesundheit"@de ; skos:relatedMatch fld:091 .
+eb:pa-sprachen a skos:Concept ; skos:inScheme eb:ProgramAreas ; skos:topConceptOf eb:ProgramAreas ; skos:prefLabel "Sprachen"@de ; skos:closeMatch fld:023 .
+eb:pa-beruf a skos:Concept ; skos:inScheme eb:ProgramAreas ; skos:topConceptOf eb:ProgramAreas ; skos:prefLabel "Arbeit – Beruf"@de ; skos:relatedMatch fld:041 .
+eb:pa-grundbildung a skos:Concept ; skos:inScheme eb:ProgramAreas ; skos:topConceptOf eb:ProgramAreas ; skos:prefLabel "Grundbildung – Schulabschlüsse"@de ; skos:closeMatch fld:0021 .
+
+eb:ProviderTypes a skos:ConceptScheme ; skos:prefLabel "Trägerarten"@de ;
+    skos:editorialNote "Nicht aus dem EB-CO-Material, sondern Modellwissen; vor Nutzung an der Trägerstatistik prüfen."@de .
+eb:pt-vhs a skos:Concept ; skos:inScheme eb:ProviderTypes ; skos:topConceptOf eb:ProviderTypes ; skos:prefLabel "Volkshochschule (kommunal)"@de .
+eb:pt-konfessionell a skos:Concept ; skos:inScheme eb:ProviderTypes ; skos:topConceptOf eb:ProviderTypes ; skos:prefLabel "konfessioneller Träger"@de .
+eb:pt-gewerkschaftlich a skos:Concept ; skos:inScheme eb:ProviderTypes ; skos:topConceptOf eb:ProviderTypes ; skos:prefLabel "gewerkschaftlicher Träger/Arbeit und Leben"@de .
+eb:pt-kammer a skos:Concept ; skos:inScheme eb:ProviderTypes ; skos:topConceptOf eb:ProviderTypes ; skos:prefLabel "Kammer"@de .
+eb:pt-privat a skos:Concept ; skos:inScheme eb:ProviderTypes ; skos:topConceptOf eb:ProviderTypes ; skos:prefLabel "privat-gewerblicher Träger"@de .
+eb:pt-betrieb a skos:Concept ; skos:inScheme eb:ProviderTypes ; skos:topConceptOf eb:ProviderTypes ; skos:prefLabel "betriebliche Weiterbildung"@de .
+eb:pt-hochschule a skos:Concept ; skos:inScheme eb:ProviderTypes ; skos:topConceptOf eb:ProviderTypes ; skos:prefLabel "Hochschule (Weiterbildung)"@de .
+eb:pt-verein a skos:Concept ; skos:inScheme eb:ProviderTypes ; skos:topConceptOf eb:ProviderTypes ; skos:prefLabel "Verein/Stiftung"@de .
+
+eb:CourseFormats a skos:ConceptScheme ; skos:prefLabel "Kursformate Integration und Sprache"@de ;
+    skos:editorialNote "Modellwissen; an der Integrationskursverordnung und dem Konzept für einen bundesweiten Integrationskurs prüfen."@de .
+eb:cf-allgemein a skos:Concept ; skos:inScheme eb:CourseFormats ; skos:topConceptOf eb:CourseFormats ; skos:prefLabel "allgemeiner Integrationskurs"@de .
+eb:cf-jugend a skos:Concept ; skos:inScheme eb:CourseFormats ; skos:topConceptOf eb:CourseFormats ; skos:prefLabel "Jugendintegrationskurs"@de .
+eb:cf-eltern a skos:Concept ; skos:inScheme eb:CourseFormats ; skos:topConceptOf eb:CourseFormats ; skos:prefLabel "Eltern- bzw. Frauenintegrationskurs"@de .
+eb:cf-alpha a skos:Concept ; skos:inScheme eb:CourseFormats ; skos:topConceptOf eb:CourseFormats ; skos:prefLabel "Integrationskurs mit Alphabetisierung"@de .
+eb:cf-zweitschrift a skos:Concept ; skos:inScheme eb:CourseFormats ; skos:topConceptOf eb:CourseFormats ; skos:prefLabel "Zweitschriftlernerkurs"@de .
+eb:cf-intensiv a skos:Concept ; skos:inScheme eb:CourseFormats ; skos:topConceptOf eb:CourseFormats ; skos:prefLabel "Intensivkurs"@de .
+eb:cf-orientierung a skos:Concept ; skos:inScheme eb:CourseFormats ; skos:topConceptOf eb:CourseFormats ; skos:prefLabel "Orientierungskurs"@de .
+eb:cf-berufssprache a skos:Concept ; skos:inScheme eb:CourseFormats ; skos:topConceptOf eb:CourseFormats ; skos:prefLabel "Berufssprachkurs"@de ; skos:scopeNote "Basis- und Spezialmodule."@de .
+
+eb:RecognitionCategories a skos:ConceptScheme ; skos:prefLabel "Anerkennungskategorien"@de .
+eb:rc-bildungsfreistellung a skos:Concept ; skos:inScheme eb:RecognitionCategories ; skos:topConceptOf eb:RecognitionCategories ;
+    skos:prefLabel "Anerkannte Bildungsfreistellung"@de ;
+    skos:definition "Veranstaltung ist nach Landesrecht für die bezahlte Freistellung von Beschäftigten anerkannt."@de ;
+    skos:editorialNote "Länderbezeichnungen stehen als Hinweise im Lexikon; BY und SN ohne entsprechendes Gesetz (prüfen)."@de .
+
+eb:LanguageContentTypes a skos:ConceptScheme ; skos:prefLabel "Sprachbezogene Inhaltstypen"@de .
+eb:lct-textsorte a skos:Concept ; skos:inScheme eb:LanguageContentTypes ; skos:topConceptOf eb:LanguageContentTypes ; skos:prefLabel "Textsorte"@de .
+eb:lct-wortschatz a skos:Concept ; skos:inScheme eb:LanguageContentTypes ; skos:topConceptOf eb:LanguageContentTypes ; skos:prefLabel "Lexik/Wortschatz"@de ; skos:altLabel "Redemittel"@de , "Wortliste"@de .
+eb:lct-grammatik a skos:Concept ; skos:inScheme eb:LanguageContentTypes ; skos:topConceptOf eb:LanguageContentTypes ; skos:prefLabel "Grammatik/Strukturen"@de .
+eb:lct-register a skos:Concept ; skos:inScheme eb:LanguageContentTypes ; skos:topConceptOf eb:LanguageContentTypes ; skos:prefLabel "Register"@de .
+eb:lct-orthografie a skos:Concept ; skos:inScheme eb:LanguageContentTypes ; skos:topConceptOf eb:LanguageContentTypes ; skos:prefLabel "Orthografie"@de .
+
+# Sprachliche Aktivitäten nach GER als Kompetenzmodell: Aussagen tragen sie
+# per cur:competenceDimension (Tabellenspalte „Aktivitäten“, mehrere je Zelle).
+eb:CEFRActivities a cur:CompetencyModel ;
+    skos:prefLabel "Sprachliche Aktivitäten (GER-Begleitband 2020)"@de , "CEFR communicative activities"@en ;
+    dct:source "Europarat: GER-Begleitband (2020)" ;
+    skos:hasTopConcept eb:act-lesen , eb:act-hoeren , eb:act-schreiben , eb:act-sprechen , eb:act-interaktion ,
+        eb:act-schriftliche-interaktion , eb:act-online-interaktion , eb:act-mediation .
+eb:act-lesen a cur:CompetenceDimension ; skos:inScheme eb:CEFRActivities ; skos:topConceptOf eb:CEFRActivities ; skos:prefLabel "Leseverstehen"@de ; skos:altLabel "lesen"@de , "schriftliche Rezeption"@de .
+eb:act-hoeren a cur:CompetenceDimension ; skos:inScheme eb:CEFRActivities ; skos:topConceptOf eb:CEFRActivities ; skos:prefLabel "Hörverstehen"@de ; skos:altLabel "hören"@de , "mündliche Rezeption"@de .
+eb:act-schreiben a cur:CompetenceDimension ; skos:inScheme eb:CEFRActivities ; skos:topConceptOf eb:CEFRActivities ; skos:prefLabel "Schreiben"@de ; skos:altLabel "schriftliche Produktion"@de .
+eb:act-sprechen a cur:CompetenceDimension ; skos:inScheme eb:CEFRActivities ; skos:topConceptOf eb:CEFRActivities ; skos:prefLabel "zusammenhängendes Sprechen"@de ; skos:altLabel "mündliche Produktion"@de .
+eb:act-interaktion a cur:CompetenceDimension ; skos:inScheme eb:CEFRActivities ; skos:topConceptOf eb:CEFRActivities ; skos:prefLabel "an Gesprächen teilnehmen"@de ; skos:altLabel "mündliche Interaktion"@de .
+eb:act-schriftliche-interaktion a cur:CompetenceDimension ; skos:inScheme eb:CEFRActivities ; skos:topConceptOf eb:CEFRActivities ; skos:prefLabel "schriftliche Interaktion"@de .
+eb:act-online-interaktion a cur:CompetenceDimension ; skos:inScheme eb:CEFRActivities ; skos:topConceptOf eb:CEFRActivities ; skos:prefLabel "Online-Interaktion"@de ;
+    skos:scopeNote "Neu im Begleitband 2020."@de .
+eb:act-mediation a cur:CompetenceDimension ; skos:inScheme eb:CEFRActivities ; skos:topConceptOf eb:CEFRActivities ; skos:prefLabel "Sprachmittlung"@de ; skos:altLabel "Mediation"@de .
+
+# =============================================================================
+# 6. Terminologieprofil: EB-CO-Regeln r01–r24 (r03, r04, r18, r20 korrigiert)
+#    und ergänzte Hinweise. Musterhinweise tragen Positiv-/Negativbeispiele.
+# =============================================================================
+eb:Terminology a cur:TerminologyProfile ;
+    rdfs:label "Terminologie Erwachsenen- und Weiterbildung"@de ;
+    cur:profileScope cv:sec_adult ;
+    cur:hasCue eb:r01 , eb:r01-muster , eb:r02 , eb:r03 , eb:r04 , eb:r05 , eb:r06 , eb:r07 , eb:r08 , eb:r09-landeskunde , eb:r09-diversitaet ,
+        eb:r10 , eb:r11 , eb:r12 , eb:r13 , eb:r14 , eb:r16 , eb:r17 , eb:r18 , eb:r19 , eb:r20 , eb:r21 , eb:r22 , eb:r22-kurz ,
+        eb:r23 , eb:r24-bw , eb:r24-hh , eb:r24-nw , eb:r24-rp , eb:r24-sn , eb:r24-sl , eb:c-mindestniveau , eb:c-kein-lehrplan , eb:c-handlungsziel-muster ,
+        eb:c-greta , eb:c-fortbildung .
+
+eb:r01 a cur:LexicalCue ; cur:surfaceForm "Handlungsfeld" ; cur:cueRole cv:role_pref ; cur:cueKind cv:ck_term ; cur:occursIn cv:occ_heading ;
+    cur:mapsTo eb:Handlungsfeld ; cur:strength 0.9 ;
+    cur:negativeHint "In der Berufsbildung (BFS NRW) bedeutet Handlungsfeld eine berufliche Gliederung (Profil beruf:)."@de .
+eb:r01-muster a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^\\d{1,2}\\s+[A-ZÄÖÜ][A-ZÄÖÜß0-9 ,/-]+$" ; cur:mapsTo eb:Handlungsfeld ; cur:scopeIssuer "BAMF" ; cur:strength 0.85 ;
+    cur:positiveExample "1 ÄMTER UND BEHÖRDEN" , "12 WOHNEN" ; cur:negativeExample "1.2 KOMMUNIKATION" , "A 1 ÜBERBLICK" , "1 Einleitung" ;
+    skos:editorialNote "Neu: EB-CO hatte kein Muster für Handlungsfeld-Überschriften (F5)."@de .
+eb:r02 a cur:LexicalCue ; cur:surfaceForm "Handlungsfelder übergreifender Kommunikation" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_heading ; cur:mapsTo eb:UebergreifenderBereich ; cur:scopeIssuer "BAMF" ; cur:strength 0.9 ;
+    cur:recognitionHint "Auch „übergreifender Kommunikationsbereich“; Buchstaben A–E; kein Lebensbereich-Kontext."@de .
+eb:r03 a cur:LexicalCue ; cur:surfaceForm "Teilbereich" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^([A-E]\\s?\\d{1,2}|\\d{1,2}\\.\\d{1,2})\\s+[A-ZÄÖÜ][A-ZÄÖÜß0-9 ,/.-]+$" ; cur:mapsTo eb:Teilbereich ; cur:alsoMapsTo eb:SprachlicheHandlung ;
+    cur:strength 0.75 ;
+    cur:positiveExample "1.2 KOMMUNIKATION MIT VORGESETZTEN" , "A 1 ÜBERBLICK VERSCHAFFEN" ;
+    cur:negativeExample "1 ÄMTER UND BEHÖRDEN" , "A 1.1 AUSKUNFT GEBEN" , "1.2.2 FORMULARE AUSFÜLLEN" ;
+    cur:recognitionHint "Zweite Nummernebene. Hat das Handlungsfeld keine Teilbereiche, ist die zweite Ebene schon die sprachliche Handlung („3.4 E-MAILS SCHREIBEN“): Ebene relativ zum Elternknoten bestimmen."@de ;
+    skos:editorialNote "Korrigiert (F5): Zeichenklasse um Ziffer, Bindestrich, Punkt und ß erweitert; Überlappung mit r04 durch feste Nummerntiefe beseitigt."@de .
+eb:r04 a cur:LexicalCue ; cur:surfaceForm "sprachliche Handlung" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^([A-E]\\s?\\d{1,2}\\.\\d{1,2}|\\d{1,2}\\.\\d{1,2}\\.\\d{1,2})\\s+[A-ZÄÖÜ][A-ZÄÖÜß0-9 ,/.-]+$" ; cur:mapsTo eb:SprachlicheHandlung ;
+    cur:scopeIssuer "BAMF" ; cur:strength 0.85 ;
+    cur:positiveExample "A 1.1 AUSKUNFT GEBEN" , "1.2.2 FORMULARE AUSFÜLLEN" , "E 2.3 LERNSTRATEGIEN NUTZEN" ;
+    cur:negativeExample "1.2 KOMMUNIKATION" , "1 ÄMTER UND BEHÖRDEN" , "1.2.2 Formulare" ;
+    skos:editorialNote "Korrigiert (F5)."@de .
+eb:r05 a cur:LexicalCue ; cur:surfaceForm "Alpha-Level" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "Alpha-Level\\s*([1-4])" ; cur:mapsTo eb:Niveaustufe , lvl:AlphaLevel ; cur:scopeIssuer "DVV" ; cur:strength 0.9 ;
+    cur:positiveExample "Alpha-Level 2" ; cur:negativeExample "Alpha-Level 5" , "Alpha-Levels" ;
+    cur:recognitionHint "Knoten Niveaustufe + cur:levelAssignment (cv:lrel_assigned); in Kopfzeilen nur Hinweis, kein Knoten."@de .
+eb:r06 a cur:LexicalCue ; cur:surfaceForm "Kompetenz" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^K\\s?(\\d+)\\s+(.+)$" ; cur:mapsTo eb:Kompetenzeinheit ; cur:alsoMapsTo eb:KannBeschreibung ; cur:scopeIssuer "DVV" ; cur:strength 0.85 ;
+    cur:positiveExample "K1 Grundlegende Fähigkeiten 1" , "K 12 Wörter schreiben" ; cur:negativeExample "Kann ein Datum schreiben" , "K3-K7 Grundlegende Fähigkeiten" ;
+    cur:recognitionHint "„K1 …“ ist eine Einheit, kein Lernergebnis; nur Sätze mit Verb darunter sind Aussagen."@de .
+eb:r07 a cur:LexicalCue ; cur:surfaceForm "Kompetenzgruppe" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^K\\s?\\d+\\s?[-–]\\s?K\\s?\\d+\\s+(.+)$" ; cur:mapsTo eb:Kompetenzbereich ; cur:scopeIssuer "DVV" ; cur:strength 0.85 ;
+    cur:positiveExample "K3-K7 Grundlegende Fähigkeiten 3" , "K 3 – K 7 Schreiben" ; cur:negativeExample "K1 Grundlegende Fähigkeiten" .
+eb:r08 a cur:LexicalCue ; cur:surfaceForm "Kursabschnitt" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:occursIn cv:occ_heading ;
+    cur:mapsTo eb:Modul ; cur:strength 0.8 ;
+    cur:recognitionHint "Auch Modul, Baustein, Lerneinheit; UE- oder Stundenangabe als cur:workload."@de .
+eb:r09-landeskunde a cur:LexicalCue ; cur:surfaceForm "Fokus Landeskunde" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_heading , cv:occ_tableHeader ; cur:mapsTo eb:Rubrik , qz:eb-landeskunde ; cur:scopeIssuer "BAMF" ; cur:strength 0.9 ;
+    cur:recognitionHint "Am Anfang eines Handlungsfelds Knoten; als Spalte Wissensaussagen mit cur:contributesTo qz:eb-landeskunde."@de .
+eb:r09-diversitaet a cur:LexicalCue ; cur:surfaceForm "Fokus Diversität und Interkulturalität" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_heading , cv:occ_tableHeader ; cur:mapsTo eb:Rubrik , qz:eb-diversity ; cur:scopeIssuer "BAMF" ; cur:strength 0.9 .
+eb:r10 a cur:LexicalCue ; cur:surfaceForm "Lernfeld" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_term ;
+    cur:mapsTo eb:Handlungsfeld ; cur:alsoMapsTo cv:sec_vocational ; cur:strength 0.5 ;
+    cur:recognitionHint "Fremdbegriff aus der Berufsbildung: Quellbezeichnung in cur:originalTerm erhalten; Kante zu Lernfeldern nur in G1."@de .
+eb:r11 a cur:LexicalCue ; cur:surfaceForm "Aktivitäten" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ; cur:occursIn cv:occ_tableHeader ;
+    cur:mapsTo eb:CEFRActivities ; cur:strength 0.85 ;
+    cur:recognitionHint "Zellwerte auf eb:CEFRActivities abbilden (mehrere je Zelle) und als cur:competenceDimension an die Aussagen der Zeile setzen."@de .
+eb:r12 a cur:LexicalCue ; cur:surfaceForm "Fertigkeiten" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_tableHeader , cv:occ_heading ; cur:mapsTo eb:CEFRActivities ; cur:alsoMapsTo eb:Kompetenzbereich ; cur:strength 0.6 ;
+    cur:recognitionHint "Werte Lesen/Schreiben/Hören/Sprechen → Aktivität; sonst Kompetenzbereich."@de .
+eb:r13 a cur:LexicalCue ; cur:surfaceForm "Niveau" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ; cur:occursIn cv:occ_tableHeader ;
+    cur:pattern "^(GER-)?Niveau(stufe)?$" ; cur:mapsTo lvl:CEFR ; cur:strength 0.85 ;
+    cur:positiveExample "Niveau" , "GER-Niveau" , "Niveaustufe" ; cur:negativeExample "Niveaustufen A–H" ;
+    cur:recognitionHint "Zellwerte A1–C2 → lvl:CEFR; Zuordnungsart einmal je Dokument aus der Dokumenterklärung (BAMF: niedrigste mögliche Stufe → cv:lrel_minimum)."@de .
+eb:r14 a cur:LexicalCue ; cur:surfaceForm "Handlungsziele" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ; cur:occursIn cv:occ_tableHeader ;
+    cur:mapsTo cur:purpose ; cur:scopeIssuer "BAMF" ; cur:strength 0.85 ;
+    cur:recognitionHint "„Möchte …“ als Wortlaut in cur:purpose der Aussage der Zeile, kein eigenes Lernergebnis; leere Zelle erbt nicht."@de .
+eb:r16 a cur:LexicalCue ; cur:surfaceForm "Hinweise zur Vermittlung" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_tableHeader , cv:occ_heading ; cur:mapsTo eb:Vermittlungshinweis ; cur:strength 0.85 ;
+    cur:recognitionHint "Auch Erläuterungen, didaktische Hinweise, Unterrichtstipps; Bezug per cur:refersTo, nie Lernziel."@de .
+eb:r17 a cur:LexicalCue ; cur:surfaceForm "Kann-Beschreibung" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "^Kann\\s" ; cur:mapsTo eb:KannBeschreibung ; cur:strength 0.95 ;
+    cur:positiveExample "Kann ein Datum schreiben" ; cur:negativeExample "Kannst du" , "kann" .
+eb:r18 a cur:LexicalCue ; cur:surfaceForm "lea.-Bezug" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ;
+    cur:pattern "(\\d\\.\\d\\.\\d{2}):?\\s*(Kann\\b[^;)]*)" ; cur:mapsTo eb:KannBeschreibung , cv:rel_derivedFrom ; cur:scopeIssuer "DVV" ; cur:strength 0.9 ;
+    cur:positiveExample "lea.-Bezüge: 2.1.05: Kann Zahlen bis 20 schreiben; 2.1.10: Kann ein Datum schreiben" ; cur:negativeExample "2.1.05 Zahlen" ;
+    cur:recognitionHint "Alle Treffer je Zeile auswerten (finditer), nicht nur den ersten; Nummer = cur:citedCode des lea.-Items."@de ;
+    skos:editorialNote "Korrigiert (F6): das alte Muster verlangte das Präfix „lea.-Bezug:“ und fand nur das erste Item."@de .
+eb:r19 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "^(Die )?(Kursteilnehmer(/-innen|innen und Kursteilnehmer)?|Teilnehmenden|KT)\\b.*\\bkönnen\\b" ; cur:mapsTo eb:Uebersichtsziel ; cur:strength 0.8 ;
+    cur:positiveExample "Die Kursteilnehmer/-innen können sich vorstellen" , "Die Teilnehmenden können Formulare ausfüllen" ; cur:negativeExample "Die Teilnehmenden erhalten" ;
+    cur:recognitionHint "Satzstamm in cur:leadIn; Klammerverweis „(K1)“ → cur:summarizes."@de .
+eb:r20 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "^(Weiß|Kennt|Kennen)\\b" ; cur:mapsTo eb:Wissensaussage ; cur:strength 0.85 ;
+    cur:positiveExample "Weiß, dass Formulare Pflichtfelder haben" , "Kennt die Öffnungszeiten" ; cur:negativeExample "Weißt du" , "Kenntnis" ;
+    skos:editorialNote "Korrigiert (F4): „Weiß, dass“ traf nicht."@de .
+eb:r21 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "^Ist (sensibilisiert|sich (dessen )?bewusst)" ; cur:mapsTo eb:Sensibilisierung ; cur:strength 0.9 ;
+    cur:positiveExample "Ist sensibilisiert für Datenschutz" , "Ist sich dessen bewusst, dass" ; cur:negativeExample "Ist bereit" .
+eb:r22 a cur:LexicalCue ; cur:surfaceForm "Spiralcurriculum" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ;
+    cur:pattern "Spiralcurriculum:\\s*(.+)" ; cur:mapsTo eb:Spiralverweis , cv:rel_revisits ; cur:scopeIssuer "DVV" ; cur:strength 0.9 ;
+    cur:positiveExample "Spiralcurriculum: L2/K3-K5" ; cur:negativeExample "Spiralcurriculum" .
+eb:r22-kurz a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ;
+    cur:pattern "\\b[LK]\\d+(/K\\d+(\\s?[-–]\\s?K?\\d+)?)?\\b" ; cur:mapsTo cv:rel_revisits ; cur:scopeIssuer "DVV" ; cur:strength 0.7 ;
+    cur:positiveExample "L2/K3-K5" , "L1/K4-K7" , "K1/11" ; cur:negativeExample "Lesen" ;
+    cur:recognitionHint "„L2/K3-K5“ = Alpha-Level 2, Kompetenzen 3 bis 5 (expandieren); „K1/11“ = gleiche Ebene; „alle weiteren Kompetenzen“ und „- -“ nicht auflösen."@de .
+eb:r23 a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "\\b(\\d+)\\s*(UE|Unterrichtseinheiten)\\b" ; cur:mapsTo cv:unit_teachingUnit ; cur:strength 0.9 ;
+    cur:positiveExample "100 UE" , "600 Unterrichtseinheiten" ; cur:negativeExample "UE-Anzahl" , "Übung" ;
+    cur:recognitionHint "cur:workload mit cv:unit_teachingUnit; „Stundenempfehlung“/„Richtwert“ → cur:isRecommendation true; Minuten je UE nur aus dem Dokument."@de .
+eb:r24-bw a cur:LexicalCue ; cur:surfaceForm "Bildungszeit" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo eb:rc-bildungsfreistellung ;
+    cur:scopeRegion land:DE-BW , land:DE-BE , land:DE-HB , land:DE-RP , land:DE-BB , land:DE-NI ; cur:strength 0.6 ; cur:verified false ;
+    skos:editorialNote "RP: Landesbildungszeitgesetz vom 11.02.2026, gilt ab 01.03.2026. BB: Erwachsenenbildungsgesetz vom 20.12.2023. Beide am Original geprüft. NI: Bildungszeitgesetz ab 01.01.2027, nur über Auszug belegt (Recherche 05 A, 2026-10-20)."@de .
+eb:r24-hh a cur:LexicalCue ; cur:surfaceForm "Bildungsurlaub" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo eb:rc-bildungsfreistellung ; cur:scopeRegion land:DE-HH , land:DE-HE , land:DE-NI , land:DE-NW ; cur:strength 0.6 ; cur:verified false ;
+    skos:editorialNote "NW: Gesetz heißt Arbeitnehmerweiterbildungsgesetz, Kursausschreibungen sagen „Bildungsurlaub“. NI: bis 31.12.2026."@de .
+eb:r24-nw a cur:LexicalCue ; cur:surfaceForm "Arbeitnehmerweiterbildung" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo eb:rc-bildungsfreistellung ; cur:scopeRegion land:DE-NW ; cur:strength 0.6 ; cur:verified false .
+eb:r24-rp a cur:LexicalCue ; cur:surfaceForm "Bildungsfreistellung" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo eb:rc-bildungsfreistellung ;
+    cur:scopeRegion land:DE-SL , land:DE-MV , land:DE-TH , land:DE-SH , land:DE-ST ; cur:strength 0.6 ; cur:verified false ;
+    skos:editorialNote "Kennung historisch: RP und BB sagen inzwischen „Bildungszeit“ (eb:r24-bw); in BB steht „Bildungsfreistellung“ nur noch im Titel der Verordnung von 2005."@de .
+eb:r24-sn a cur:LexicalCue ; cur:surfaceForm "Qualifizierungszeit" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo eb:rc-bildungsfreistellung ; cur:scopeRegion land:DE-SN ; cur:strength 0.6 ; cur:verified false ;
+    cur:validFrom "2027"^^xsd:gYear ;
+    skos:editorialNote "Sächsisches Qualifizierungszeitgesetz, 3 Arbeitstage ab 2027; Landtagsbeschluss vom 04.02.2026 laut Presse, Verkündung nicht gelesen."@de .
+eb:r24-sl a cur:LexicalCue ; cur:surfaceForm "freistellungsfähig" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo eb:rc-bildungsfreistellung ; cur:scopeRegion land:DE-SL ; cur:strength 0.6 ; cur:verified false ;
+    skos:editorialNote "SL: Veranstaltungen werden „freistellungsfähig festgestellt“, nicht „anerkannt“."@de .
+eb:c-mindestniveau a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "(jeweils )?der niedrigsten (möglichen )?(Niveau)?[Ss]tufe zugeordnet|niedrigste[ns]? mögliche[ns]? (Niveau|Stufe)" ; cur:mapsTo cv:lrel_minimum ; cur:strength 0.9 ;
+    cur:positiveExample "Die Lernziele sind jeweils der niedrigsten Stufe zugeordnet" , "die niedrigste mögliche Stufe" ; cur:negativeExample "höchste Stufe" ;
+    cur:recognitionHint "Dokumenterklärung zur Niveauzuordnung: einmal in X1/X3 lesen und als cur:defaultLevelRelation im Dokumentprofil setzen."@de ;
+    skos:editorialNote "Wortlaut nach BAMF-RC S. 24 sinngemäß; am Primärtext prüfen."@de .
+eb:c-kein-lehrplan a cur:LexicalCue ; cur:surfaceForm "kein Lehrplan" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo cv:obl_selectionPool ; cur:scopeIssuer "BAMF" ; cur:strength 0.8 ;
+    cur:recognitionHint "Das Rahmencurriculum ist ein Auswahlpool für Kurskonzepte und Lehrwerke: cur:obligation cv:obl_selectionPool vererbt an alle Lernziele."@de .
+eb:c-handlungsziel-muster a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "^Möchte\\s" ; cur:mapsTo cur:purpose ; cur:strength 0.8 ;
+    cur:positiveExample "Möchte eine Wohnung finden" ; cur:negativeExample "Kann eine Wohnung finden" .
+eb:c-greta a cur:LexicalCue ; cur:surfaceForm "GRETA" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo eb:dt-D13 ; cur:strength 0.8 ;
+    cur:recognitionHint "Kompetenzmodell für Lehrende in der EB: Adressat der Kompetenzen sind Lehrende (cur:targetGroup), die Aussagen sind trotzdem Lernergebnisse der Lehrenden als Lernende."@de .
+eb:c-fortbildung a cur:LexicalCue ; cur:surfaceForm "Prüfung zum anerkannten Fortbildungsabschluss" ; cur:cueRole cv:role_negative ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_titlePage ; cur:mapsTo cv:sec_vocational ; cur:strength 0.95 ;
+    cur:recognitionHint "Fortbildungsordnungen und DIHK-Rahmenpläne (EB-CO D8) gehören ins Profil beruf:."@de .

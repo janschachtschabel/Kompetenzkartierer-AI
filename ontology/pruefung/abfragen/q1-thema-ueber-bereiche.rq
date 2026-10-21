@@ -1,0 +1,27 @@
+# Anwendungsfall „Themensuche“: Was lernt man zu einem Thema in welchem
+# Bildungsbereich? Einstieg ist ein Thema (cur:granularity cv:gran_topic);
+# gefunden werden Einheiten, deren Titel das Thema trägt, und Aussagen, deren
+# Gegenstand ein Begriff unter dem Thema ist (skos:broader*).
+# Weg: Thema ← Begriff ← Zerlegung/Inhaltsaussage ← Aussage → Gliederung →
+# Spezifikation → Dokument (Bildungsbereich). Erwartet: Treffer in Schule,
+# Beruf und Hochschule (Beispiel ohm-kette.ttl).
+PREFIX cur:  <https://w3id.org/wlo/curriculum/core#>
+PREFIX cv:   <https://w3id.org/wlo/curriculum/vocab#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX ex:   <https://w3id.org/wlo/curriculum/example/>
+
+SELECT DISTINCT ?sector ?spec ?element ?text WHERE {
+  VALUES ?topic { ex:ic-elektrizitaet }
+  ?concept skos:broader* ?topic .
+  {
+    ?element a cur:CurriculumNode ; cur:mentions ?concept ; cur:originalTitle ?text .
+  } UNION {
+    { ?d cur:decomposes ?element ; cur:mentions ?concept . } UNION { ?element a cur:Statement ; cur:mentions ?concept . }
+    ?element cur:verbatim ?text ; cur:addressee cv:addr_learner .
+  }
+  ?element cur:partOf* ?n . ?n cur:partOf ?spec .
+  ?spec a ?specClass . ?specClass rdfs:subClassOf* cur:Specification .
+  ?doc cur:represents ?spec ; cur:educationSector ?sector .
+}
+ORDER BY ?sector ?spec

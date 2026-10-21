@@ -1,0 +1,29 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-TH;Methodenkompetenz;cue;kd:gw-method, schul:Kompetenzbereich;Methodenkompetenz, Kompetenzbereich;;;;0.85;nein;;schul:cue-kb-methode
+DE-TH;Sachkompetenz;cue;kd:gw-subject, schul:Kompetenzbereich;Sachkompetenz, Kompetenzbereich;;;;0.85;nein;;schul:cue-kb-sach
+DE-TH;Selbst- und Sozialkompetenz;cue;kd:sk-cross, schul:Kompetenzbereich;überfachlich, Kompetenzbereich;;;;0.85;nein;;schul:cue-kb-selbstsozial
+DE-TH;Mögliches sprachliche Mittel zur Realisierung der Redeabsichten;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030288
+DE-TH;Projektvorschlag;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030296
+DE-TH;Inhalt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030031
+DE-TH;Möglicher inhaltlicher Aspekt;homonym;schul:Inhalt;Inhalt;;;;0.6;nein;FWU führt den Begriff als Inhalt und Hinweis: verbindliche Stichworte → Inhalt, „z. B.“/Anregungen → Hinweis.;schul:fwu-LP_0030284
+DE-TH;Schülerexperiment;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030295
+DE-TH;Sprachfunktion/Redeabsicht;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030287
+DE-TH;Wesentlicher inhaltlicher Aspekt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030291
+DE-TH;Wesentlicher inhaltlicher Schwerpunkt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030290
+DE-TH;Einblick in andere Kulturen;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030286
+DE-TH;Inhaltsbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030298
+DE-TH;Lernbereich;homonym;schul:Inhaltsbereich;Inhaltsbereich;;;;0.7;nein;BY Grundschule Deutsch: Lernbereich = Bereich des Kompetenzstrukturmodells (integriert).;schul:cue-ib-lernbereich
+DE-TH;Sprachliches Mittel;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030292
+DE-TH;Structure;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030293
+DE-TH;Thema;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030029
+DE-TH;Thema und Kommunikationsbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030285
+DE-TH;Thema und Situation;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030289
+DE-TH;Themenbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030297
+DE-TH;Themenkomplex;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030294
+DE-TH;Kompetenzbereich;cue;schul:Kompetenzbereich;Kompetenzbereich;;;;0.6;nein;;schul:fwu-LP_0030025
+DE-TH;Kompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030026
+DE-TH;Ziel;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030097
+DE-TH;Ziele des Kompetenzerwerbs;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.9;nein;;schul:cue-ke-zielekompetenzerwerb
+DE-TH;Lehrplanfragment;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0030028
+DE-TH;Schwerpunkt;cue;schul:Teilbereich;Teilbereich;;;;0.6;nein;;schul:cue-tb-schwerpunkt
+DE-TH;Lehrplan;pref;schul:dt-Lehrplan;Lehrplan;titlePage;;;0.8;nein;;schul:cue-dt-lehrplan

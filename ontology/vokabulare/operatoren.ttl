@@ -1,0 +1,177 @@
+@prefix op:    <https://w3id.org/wlo/curriculum/operator/> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix lvl:   <https://w3id.org/wlo/curriculum/level/> .
+@prefix fld:   <https://w3id.org/wlo/curriculum/field/> .
+@prefix land:  <https://w3id.org/wlo/curriculum/region/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+# =============================================================================
+# Operatoren: Lemmata (bereichsneutral, ohne Stufe) und Operatorenlisten mit
+# Quelle und Geltung. Die Taxonomiestufe einer Zerlegung kommt NUR aus einer
+# Liste, die für Land, Fach und Stufe des Curriculums gilt (Methode lookup,
+# Herkunft rule, Dimension cognitive); gibt es keine passende Liste, bleibt
+# sie leer. Belege: „beschreiben“ ist in BW Physik AFB II, in der SCO-
+# Heuristik AFB I; drei Physikpläne nutzen 112 Verben, die Listen decken
+# 51–82 % ab. Eine globale Tabelle wäre falsch.
+# Lemma-Regeln: Infinitiv; trennbare Verben zusammengezogen („wählen … aus“ →
+# auswählen); „sich“ entfällt; bei „besitzen/verfügen über die Kompetenz …“,
+# „haben“, „kennen“ zählt das folgende Handlungsverb.
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/operator> a owl:Ontology ;
+    dct:title "Operatoren und Operatorenlisten"@de , "operators and operator lists"@en ;
+    owl:versionInfo "1.0-entwurf" ;
+    dct:created "2026-10-19"^^xsd:date .
+
+op:Lemmas a skos:ConceptScheme ;
+    skos:prefLabel "Operator-Lemmata"@de , "operator lemmas"@en ;
+    skos:scopeNote "Offene Menge: neue Lemmata entstehen in N1 (Herkunft model) und werden redaktionell bestätigt."@de .
+
+op:ableiten a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "ableiten"@de .
+op:abschaetzen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "abschätzen"@de .
+op:analysieren a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "analysieren"@de .
+op:angeben a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "angeben"@de .
+op:anwenden a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "anwenden"@de .
+op:aufstellen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "aufstellen"@de .
+op:aufzeichnen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "aufzeichnen"@de .
+op:auswaehlen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "auswählen"@de ; skos:hiddenLabel "wählen … aus" .
+op:auswerten a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "auswerten"@de ; skos:hiddenLabel "werten … aus" .
+op:begruenden a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "begründen"@de .
+op:benennen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "benennen"@de .
+op:berechnen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "berechnen"@de .
+op:beschreiben a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "beschreiben"@de .
+op:bestimmen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "bestimmen"@de .
+op:beurteilen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "beurteilen"@de .
+op:beweisen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "beweisen"@de .
+op:bewerten a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "bewerten"@de .
+op:darstellen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "darstellen"@de ; skos:hiddenLabel "stellen … dar" .
+op:deuten a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "deuten"@de .
+op:diskutieren a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "diskutieren"@de .
+op:dokumentieren a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "dokumentieren"@de .
+op:durchfuehren a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "durchführen"@de ; skos:hiddenLabel "führen … durch" .
+op:einordnen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "einordnen"@de ; skos:hiddenLabel "ordnen … ein" .
+op:entwickeln a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "entwickeln"@de .
+op:erkennen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "erkennen"@de .
+op:erklaeren a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "erklären"@de .
+op:erlaeutern a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "erläutern"@de .
+op:ermitteln a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "ermitteln"@de .
+op:eroertern a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "erörtern"@de .
+op:erstellen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "erstellen"@de .
+op:experimentieren a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "experimentieren"@de .
+op:formulieren a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "formulieren"@de .
+op:gestalten a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "gestalten"@de .
+op:herleiten a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "herleiten"@de .
+op:interpretieren a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "interpretieren"@de .
+op:kennen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "kennen"@de ;
+    skos:scopeNote "Nur, wenn kein Handlungsverb folgt („kennen“ als einziges Verb)."@de .
+op:klassifizieren a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "klassifizieren"@de .
+op:loesen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "lösen"@de .
+op:messen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "messen"@de .
+op:nennen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "nennen"@de .
+op:ordnen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "ordnen"@de .
+op:planen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "planen"@de .
+op:praesentieren a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "präsentieren"@de .
+op:pruefen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "prüfen"@de ; skos:altLabel "überprüfen"@de .
+op:reflektieren a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "reflektieren"@de .
+op:skizzieren a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "skizzieren"@de .
+op:untersuchen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "untersuchen"@de .
+op:vergleichen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "vergleichen"@de .
+op:wiedergeben a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "wiedergeben"@de ; skos:hiddenLabel "geben … wieder" .
+op:zeichnen a cur:OperatorLemma ; skos:inScheme op:Lemmas ; skos:prefLabel "zeichnen"@de .
+
+# -----------------------------------------------------------------------------
+# Liste 1: Bildungsplan 2016 Baden-Württemberg, Sekundarstufe I (Naturwissenschaften)
+# -----------------------------------------------------------------------------
+op:list-bw2016-nawi a cur:OperatorList ;
+    skos:prefLabel "Operatorenliste Bildungsplan 2016 BW, Sek I (inhaltsbezogene Standards)"@de ;
+    cur:scopeRegion land:DE-BW ;
+    cur:scopeSubject fld:0533 , fld:0531 , fld:0511 , fld:071 ;
+    dct:source "data/sources/schulbildung-ontologie/sb-operatoren.ttl (übernommen aus dem BW-Bildungsplan 2016; nur Verben, Listenzeilen und AFB)" ;
+    skos:scopeNote "Gilt für die Standards für inhaltsbezogene Kompetenzen in Alltagskultur, Ernährung, Soziales, Biologie, Chemie, Technik, Naturwissenschaft und Technik, Physik und im Fächerverbund Biologie, Naturphänomene und Technik. Für prozessbezogene Kompetenzen deckt sie nur 19 von 55 Verwendungen ab."@de .
+op:bw16-ableiten a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:ableiten ; cur:taskDemand lvl:afb-II ; skos:prefLabel "ableiten"@de .
+op:bw16-anwenden a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:anwenden ; cur:taskDemand lvl:afb-II ; skos:prefLabel "anwenden"@de .
+op:bw16-aufzeichnen a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:aufzeichnen ; cur:taskDemand lvl:afb-I ; skos:prefLabel "aufzeichnen"@de ; skos:altLabel "experimentell aufzeichnen"@de .
+op:bw16-benennen a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:benennen ; cur:taskDemand lvl:afb-I ; skos:prefLabel "benennen"@de .
+op:bw16-berechnen a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:berechnen ; cur:taskDemand lvl:afb-II ; skos:prefLabel "berechnen"@de .
+op:bw16-beschreiben a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:beschreiben ; cur:taskDemand lvl:afb-II ; skos:prefLabel "beschreiben"@de .
+op:bw16-bewerten a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:bewerten ; cur:taskDemand lvl:afb-III ; skos:prefLabel "bewerten"@de .
+op:bw16-darstellen a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:darstellen ; cur:taskDemand lvl:afb-II ; skos:prefLabel "darstellen"@de .
+op:bw16-durchfuehren a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:durchfuehren ; cur:taskDemand lvl:afb-I ; skos:prefLabel "durchführen"@de .
+op:bw16-erkennen a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:erkennen ; cur:taskDemand lvl:afb-I ; skos:prefLabel "erkennen"@de .
+op:bw16-erklaeren a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:erklaeren ; cur:taskDemand lvl:afb-II ; skos:prefLabel "erklären"@de .
+op:bw16-erlaeutern a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:erlaeutern ; cur:taskDemand lvl:afb-II ; skos:prefLabel "erläutern"@de .
+op:bw16-ermitteln a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:ermitteln ; cur:taskDemand lvl:afb-II ; skos:prefLabel "ermitteln"@de .
+op:bw16-erstellen a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:erstellen ; cur:taskDemand lvl:afb-I ; skos:prefLabel "erstellen"@de ; skos:altLabel "erstellen (Diagramme)"@de .
+op:bw16-interpretieren a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:interpretieren ; cur:taskDemand lvl:afb-III ; skos:prefLabel "interpretieren"@de .
+op:bw16-klassifizieren a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:klassifizieren ; cur:taskDemand lvl:afb-II ; skos:prefLabel "klassifizieren"@de ; skos:altLabel "klassifizieren, ordnen"@de .
+op:bw16-loesen a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:loesen ; cur:taskDemand lvl:afb-II ; skos:prefLabel "lösen"@de .
+op:bw16-messen a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:messen ; cur:taskDemand lvl:afb-II ; skos:prefLabel "messen"@de .
+op:bw16-nennen a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:nennen ; cur:taskDemand lvl:afb-I ; skos:prefLabel "nennen"@de .
+op:bw16-ordnen a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:ordnen ; cur:taskDemand lvl:afb-II ; skos:prefLabel "ordnen"@de ; skos:altLabel "klassifizieren, ordnen"@de .
+op:bw16-untersuchen a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:untersuchen ; cur:taskDemand lvl:afb-II ; skos:prefLabel "untersuchen"@de .
+op:bw16-vergleichen a cur:OperatorEntry ; skos:inScheme op:list-bw2016-nawi ; cur:lemma op:vergleichen ; cur:taskDemand lvl:afb-II ; skos:prefLabel "vergleichen"@de .
+
+# -----------------------------------------------------------------------------
+# Liste 2: IQB-Grundstock für die Abituraufgabenpools Naturwissenschaften (2022)
+# -----------------------------------------------------------------------------
+op:list-iqb-nawi-2022 a cur:OperatorList ;
+    skos:prefLabel "IQB-Operatoren für die Abituraufgabenpools Biologie, Chemie, Physik (Stand 31.03.2022)"@de ;
+    cur:scopeRegion land:DE ;
+    cur:scopeSubject fld:0511 , fld:0531 , fld:0533 ;
+    dct:source "data/sources/schulbildung-ontologie/sb-operatoren.ttl (IQB-Grundstock)" ;
+    skos:scopeNote "Nennt keinen Anforderungsbereich und erlaubt weitere Operatoren; liefert daher nur Lemmata, keine Stufe."@de .
+op:iqb22-ableiten a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:ableiten ; skos:prefLabel "ableiten"@de .
+op:iqb22-abschaetzen a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:abschaetzen ; skos:prefLabel "abschätzen"@de .
+op:iqb22-analysieren a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:analysieren ; skos:prefLabel "analysieren"@de .
+op:iqb22-angeben a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:angeben ; skos:prefLabel "angeben"@de ; skos:altLabel "angeben, nennen"@de .
+op:iqb22-aufstellen a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:aufstellen ; skos:prefLabel "aufstellen"@de ; skos:altLabel "Hypothesen aufstellen"@de , "aufstellen, formulieren"@de .
+op:iqb22-auswerten a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:auswerten ; skos:prefLabel "auswerten"@de .
+op:iqb22-begruenden a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:begruenden ; skos:prefLabel "begründen"@de .
+op:iqb22-berechnen a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:berechnen ; skos:prefLabel "berechnen"@de .
+op:iqb22-beschreiben a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:beschreiben ; skos:prefLabel "beschreiben"@de .
+op:iqb22-beurteilen a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:beurteilen ; skos:prefLabel "beurteilen"@de .
+op:iqb22-bewerten a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:bewerten ; skos:prefLabel "bewerten"@de .
+op:iqb22-darstellen a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:darstellen ; skos:prefLabel "darstellen"@de .
+op:iqb22-deuten a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:deuten ; skos:prefLabel "deuten"@de ; skos:altLabel "interpretieren, deuten"@de .
+op:iqb22-diskutieren a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:diskutieren ; skos:prefLabel "diskutieren"@de .
+op:iqb22-erklaeren a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:erklaeren ; skos:prefLabel "erklären"@de .
+op:iqb22-erlaeutern a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:erlaeutern ; skos:prefLabel "erläutern"@de .
+op:iqb22-ermitteln a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:ermitteln ; skos:prefLabel "ermitteln"@de .
+op:iqb22-formulieren a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:formulieren ; skos:prefLabel "formulieren"@de ; skos:altLabel "aufstellen, formulieren"@de .
+op:iqb22-herleiten a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:herleiten ; skos:prefLabel "herleiten"@de .
+op:iqb22-interpretieren a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:interpretieren ; skos:prefLabel "interpretieren"@de ; skos:altLabel "interpretieren, deuten"@de .
+op:iqb22-nennen a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:nennen ; skos:prefLabel "nennen"@de ; skos:altLabel "angeben, nennen"@de .
+op:iqb22-ordnen a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:ordnen ; skos:prefLabel "ordnen"@de .
+op:iqb22-planen a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:planen ; skos:prefLabel "planen"@de .
+op:iqb22-skizzieren a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:skizzieren ; skos:prefLabel "skizzieren"@de .
+op:iqb22-untersuchen a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:untersuchen ; skos:prefLabel "untersuchen"@de .
+op:iqb22-vergleichen a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:vergleichen ; skos:prefLabel "vergleichen"@de .
+op:iqb22-zeichnen a cur:OperatorEntry ; skos:inScheme op:list-iqb-nawi-2022 ; cur:lemma op:zeichnen ; skos:prefLabel "zeichnen"@de .
+
+# -----------------------------------------------------------------------------
+# Liste 3: heuristische Startliste (Entwurf SCO v2) – AFB und Bloom, NICHT amtlich
+# -----------------------------------------------------------------------------
+op:list-heuristic a cur:OperatorList ;
+    skos:prefLabel "Heuristische Operatorenliste (Startbestand, nicht amtlich)"@de ;
+    dct:source "Entwurf SchulCurriculum-Ontologie (SCO) v2, scov:Operator" ;
+    skos:scopeNote "Nur als letzte Rückfallebene, wenn keine Liste für Land und Fach gilt; Ergebnis immer Herkunft rule mit Konfidenz ≤ 0,5. Nie für steigert-Kanten verwenden."@de .
+op:heu-analysieren a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:analysieren ; cur:taskDemand lvl:afb-II ; cur:cognitiveLevel lvl:bloom-analyze ; skos:prefLabel "analysieren"@de .
+op:heu-anwenden a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:anwenden ; cur:taskDemand lvl:afb-II ; cur:cognitiveLevel lvl:bloom-apply ; skos:prefLabel "anwenden"@de .
+op:heu-beschreiben a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:beschreiben ; cur:taskDemand lvl:afb-I ; cur:cognitiveLevel lvl:bloom-understand ; skos:prefLabel "beschreiben"@de .
+op:heu-beurteilen a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:beurteilen ; cur:taskDemand lvl:afb-III ; cur:cognitiveLevel lvl:bloom-evaluate ; skos:prefLabel "beurteilen"@de .
+op:heu-bewerten a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:bewerten ; cur:taskDemand lvl:afb-III ; cur:cognitiveLevel lvl:bloom-evaluate ; skos:prefLabel "bewerten"@de .
+op:heu-darstellen a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:darstellen ; cur:taskDemand lvl:afb-I ; cur:cognitiveLevel lvl:bloom-understand ; skos:prefLabel "darstellen"@de .
+op:heu-einordnen a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:einordnen ; cur:taskDemand lvl:afb-II ; cur:cognitiveLevel lvl:bloom-analyze ; skos:prefLabel "einordnen"@de .
+op:heu-entwickeln a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:entwickeln ; cur:taskDemand lvl:afb-III ; cur:cognitiveLevel lvl:bloom-create ; skos:prefLabel "entwickeln"@de .
+op:heu-erklaeren a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:erklaeren ; cur:taskDemand lvl:afb-II ; cur:cognitiveLevel lvl:bloom-understand ; skos:prefLabel "erklären"@de .
+op:heu-erlaeutern a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:erlaeutern ; cur:taskDemand lvl:afb-II ; cur:cognitiveLevel lvl:bloom-understand ; skos:prefLabel "erläutern"@de .
+op:heu-eroertern a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:eroertern ; cur:taskDemand lvl:afb-III ; cur:cognitiveLevel lvl:bloom-evaluate ; skos:prefLabel "erörtern"@de .
+op:heu-gestalten a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:gestalten ; cur:taskDemand lvl:afb-III ; cur:cognitiveLevel lvl:bloom-create ; skos:prefLabel "gestalten"@de .
+op:heu-kennen a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:kennen ; cur:taskDemand lvl:afb-I ; cur:cognitiveLevel lvl:bloom-remember ; skos:prefLabel "kennen"@de .
+op:heu-nennen a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:nennen ; cur:taskDemand lvl:afb-I ; cur:cognitiveLevel lvl:bloom-remember ; skos:prefLabel "nennen"@de .
+op:heu-untersuchen a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:untersuchen ; cur:taskDemand lvl:afb-II ; cur:cognitiveLevel lvl:bloom-analyze ; skos:prefLabel "untersuchen"@de .
+op:heu-vergleichen a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:vergleichen ; cur:taskDemand lvl:afb-II ; cur:cognitiveLevel lvl:bloom-analyze ; skos:prefLabel "vergleichen"@de .
+op:heu-wiedergeben a cur:OperatorEntry ; skos:inScheme op:list-heuristic ; cur:lemma op:wiedergeben ; cur:taskDemand lvl:afb-I ; cur:cognitiveLevel lvl:bloom-remember ; skos:prefLabel "wiedergeben"@de .

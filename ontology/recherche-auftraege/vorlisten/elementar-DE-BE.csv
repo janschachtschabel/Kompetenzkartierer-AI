@@ -1,0 +1,17 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-BE;Qualitätsanspruch;pref;elem:Bildungsziel, elem:Qualitaetsanspruch;Bildungs- und Entwicklungsziel, Qualitätsanspruch;body, box;;;0.95;ja;Nummeriert QA1, QA2 … – Adressat meist Fachkraft.;elem:lex-19cf6442b7d0-BE
+DE-BE;Pädagogische Aufgabenbereiche;cue;elem:Handlungsfeld;Handlungsfeld der Fachkräfte;heading;;;0.90;ja;;elem:lex-074c15ea6e27-BE
+DE-BE;Praxisbeispiele;cue;elem:Praxisbeispiel;Praxisbeispiel;;;;0.85;nein;;elem:cue-praxisbeispiele
+DE-BE;^QA\s?\d+\b;cue;elem:Qualitaetsanspruch;Qualitätsanspruch;;;;0.9;nein;"Berliner Bildungsprogramm: nummerierte Qualitätsansprüche, Adressat Fachkraft; Nummer als cur:code.";elem:cue-qa
+DE-BE;Berliner Bildungsprogramm für Kitas und Kindertagespflege;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.98;ja;Kurzform BBP. Neufassung mit 7 Bildungsbereichen und nummerierten Qualitätsansprüchen (QA).;elem:lex-302b90fdf59a-BE
+DE-BE;Bildungsprogramm;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.9;nein;;elem:cue-gen-bildungsprogramm
+DE-BE;Ästhetisch-künstlerische Bildung;cue;elem:f-aesthetik, elem:f-bildnerisch;Ästhetische Bildung, Bildnerisches Gestalten;heading;;;0.95;ja;;elem:lex-1e8252a7abf7-BE
+DE-BE;Gesundheit und Bewegung;cue;elem:f-bewegung, elem:f-gesundheit-ernaehrung, elem:f-koerper;Bewegung, Gesundheit, Ernährung und Hygiene, Körper, Bewegung, Gesundheit und Prävention;heading;;;0.90;ja;;elem:lex-1803549739ca-BE
+DE-BE;Sozial-emotionale Bildung;cue;elem:f-emotionen, elem:f-personal-sozial, elem:f-soziale-beziehungen;Emotionen, Personale und sozial-emotionale Entwicklung, Werte, Religion und Kultur, Soziale Beziehungen, Kooperation und Konflikte;heading;;;0.90;ja;;elem:lex-bccc20e34ace-BE
+DE-BE;Mathematik;pref;elem:f-mathematik;Mathematik;heading;;;0.80;ja;;elem:lex-9dba6833e71a-BE
+DE-BE;Medienbildung;cue;elem:f-medien;Medien und digitale Bildung;heading;;;0.95;ja;;elem:lex-e1bec2041a0a-BE
+DE-BE;Natur, Umwelt, Technik;cue;elem:f-natur-oekologie, elem:f-naturwissenschaft, elem:f-technik;Naturerfahrung und Ökologie, Naturwissenschaftliche Phänomene, Technik;heading;;;0.90;ja;;elem:lex-db90ecd60536-BE
+DE-BE;Sprache und Kommunikation;cue;elem:f-sprache;Sprache, Kommunikation und Literacy;heading;;;0.95;ja;;elem:lex-1b906f37fd4b-BE
+DE-BE;Lernmethodische Kompetenz;pref;kd:ec-learning;Lernmethodische Kompetenz;body, heading;;;0.95;ja;;elem:lex-55571cc3f904-BE
+DE-BE;Ich-Kompetenzen;cue;kd:ec-personal;Personale Kompetenzen;body, heading;;;0.95;ja;;elem:lex-343c7bec4b04-BE
+DE-BE;Sachkompetenzen;pref;kd:ec-subject;Sachkompetenzen;body, heading;;;0.90;ja;;elem:lex-b130fa11f77d-BE

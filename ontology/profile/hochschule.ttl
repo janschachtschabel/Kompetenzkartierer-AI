@@ -1,0 +1,453 @@
+@prefix hs:    <https://w3id.org/wlo/curriculum/profile/higher-education#> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix lvl:   <https://w3id.org/wlo/curriculum/level/> .
+@prefix qz:    <https://w3id.org/wlo/curriculum/crosscutting/> .
+@prefix kd:    <https://w3id.org/wlo/curriculum/dimension/> .
+@prefix land:  <https://w3id.org/wlo/curriculum/region/> .
+@prefix ctx:   <https://w3id.org/wlo/curriculum/context/> .
+@prefix fld:   <https://w3id.org/wlo/curriculum/field/> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix kimsa: <https://w3id.org/kim/schularten/> .
+@prefix kimsf: <http://w3id.org/kim/schulfaecher/> .
+
+# =============================================================================
+# Profil Hochschule (hs:) – Studien- und Prüfungsordnungen (Rahmen-PO +
+# fachspezifische Bestimmungen), Modulhandbücher, Studienverlaufspläne,
+# Diploma Supplement, Zertifikats- und Promotionsordnungen.
+#
+# Ein Modul wird einmal beschrieben (cur:CurriculumNode im Modulhandbuch) und
+# über cur:Placement in jedem Studiengang mit eigenen Werten verwendet
+# (Verbindlichkeit, Fachsemester, LP im Kontext, Notengewicht, Fundstelle).
+# Ein Studiengang hat mehrere Dokumente; Konflikte löst cur:ConflictResolution
+# (Kohorte → Verbindlichkeit → Spezifität → Aktualität → Mensch). Die Felder
+# des Modulsteckbriefs sind die stärksten Segmentierungssignale: das
+# Feldlexikon (hochschule-lexikon.ttl) bildet Überschriften auf
+# Kern-Eigenschaften ab und ersetzt den LLM für die Feldzuordnung.
+#
+# Quellen: HCO v1.0 (cc-core, hco, hco-vocab 39 Schemata, hco-lexicon 396
+# Einträge, hco-shapes, Modulhandbuch-Beispiel), Deep-Research-Bericht
+# Hochschule, App-Profil hochschule (Studienrichtung als Bereich).
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/profile/higher-education> a owl:Ontology ;
+    dct:title "Curriculum-Profil Hochschule"@de , "curriculum profile higher education"@en ;
+    owl:imports <https://w3id.org/wlo/curriculum/core> , <https://w3id.org/wlo/curriculum/vocab> ,
+        <https://w3id.org/wlo/curriculum/level> , <https://w3id.org/wlo/curriculum/dimension> ,
+        <https://w3id.org/wlo/curriculum/crosscutting> , <https://w3id.org/wlo/curriculum/field> ;
+    owl:versionInfo "1.0-entwurf" ;
+    dct:created "2026-10-19"^^xsd:date .
+
+# =============================================================================
+# 1. Profil-Eigenschaften
+# =============================================================================
+hs:annexOf a owl:ObjectProperty ; rdfs:subPropertyOf dct:isPartOf ; rdfs:domain cur:Document ; rdfs:range cur:Document ;
+    rdfs:label "Anlage zu"@de , "annex of"@en ;
+    skos:definition "Das Dokument ist Anlage einer Ordnung („Das Modulhandbuch ist Anlage der Prüfungsordnung“) und teilt dann deren Verbindlichkeit (cv:bind_binding); sonst ist ein Modulhandbuch cv:bind_informative."@de .
+hs:mrvoVersion a owl:ObjectProperty ; rdfs:domain cur:Document ;
+    rdfs:label "MRVO-Fassung"@de , "MRVO version"@en ;
+    skos:definition "Fassung der Musterrechtsverordnung, nach der Modulbeschreibungen gegliedert sind; bestimmt die Pflichtfelder (Profilregeln)."@de .
+hs:academicDegree a owl:ObjectProperty ; rdfs:domain cur:Qualification ;
+    rdfs:label "akademischer Grad"@de , "academic degree"@en .
+hs:studyMode a owl:ObjectProperty ;
+    rdfs:label "Studienform"@de , "study mode"@en ;
+    skos:definition "Vollzeit, Teilzeit, dual (ausbildungs-, praxis-, berufsintegrierend), berufsbegleitend, Fernstudium. „dual“ nur bei beschriebener Verzahnung der Lernorte (WR 2013) – dann Brücke zu beruf:."@de .
+hs:programmeType a owl:ObjectProperty ; rdfs:label "Studiengangstyp"@de , "programme type"@en .
+hs:programmeProfile a owl:ObjectProperty ; rdfs:label "Studiengangsprofil"@de , "programme profile"@en .
+hs:teacherTrainingType a owl:ObjectProperty ; rdfs:label "Lehramtstyp"@de , "teacher training type"@en .
+hs:partialProgrammeRole a owl:ObjectProperty ; rdfs:domain cur:Curriculum ;
+    rdfs:label "Rolle im Kombinationsstudium"@de , "partial programme role"@en ;
+    skos:definition "Rolle eines Teilstudiengangs (Kernfach, Nebenfach, Erstfach, Unterrichtsfach, Bildungswissenschaften). Jedes Fach ist ein eigenes cur:Curriculum mit eigenem Fach-Andockpunkt, verbunden über cur:partOf mit dem Gesamtstudiengang (cur:Programme)."@de .
+hs:teachingSubject a owl:ObjectProperty ;
+    rdfs:label "Unterrichtsfach"@de , "teaching subject"@en ;
+    skos:definition "Schulfach, für das ein Lehramts-Teilstudiengang ausbildet (KIM-Schulfächer). Direkter Andockpunkt zum Profil schul:."@de .
+hs:sws a owl:DatatypeProperty ; rdfs:range xsd:decimal ;
+    rdfs:label "Semesterwochenstunden"@de , "semester weekly hours"@en ;
+    skos:definition "Präsenzumfang einer Lehrveranstaltung; keine Arbeitsstunden und nie in LP umrechnen."@de .
+hs:durationSemesters a owl:DatatypeProperty ; rdfs:range xsd:integer ;
+    rdfs:label "Dauer in Semestern"@de , "duration in semesters"@en .
+hs:standardDurationSemesters a owl:DatatypeProperty ; rdfs:range xsd:integer ;
+    rdfs:label "Regelstudienzeit"@de , "standard period of study"@en .
+hs:offerFrequency a owl:ObjectProperty ; rdfs:label "Angebotsturnus"@de , "offer frequency"@en .
+hs:teachingFormat a owl:ObjectProperty ; rdfs:label "Lehrform"@de , "teaching format"@en .
+hs:instructionLanguage a owl:DatatypeProperty ; rdfs:range xsd:language ;
+    rdfs:label "Lehrsprache"@de , "language of instruction"@en ;
+    skos:definition "BCP-47-Sprachcode (de, en); mehrere Werte bei wahlweiser Sprache."@de .
+hs:componentType a owl:ObjectProperty ;
+    rdfs:label "Modultyp (lokal)"@de , "component type"@en ;
+    skos:definition "Nur setzen, wenn das Dokument den Typ nennt (Basis-, Aufbau-, Vertiefungsmodul …)."@de .
+hs:creditAwardCondition a owl:DatatypeProperty ; rdfs:range rdf:langString ;
+    rdfs:label "Voraussetzungen für die Vergabe von Leistungspunkten (Wortlaut)"@de , "credit award condition"@en .
+hs:gradingText a owl:DatatypeProperty ; rdfs:range rdf:langString ;
+    rdfs:label "Benotung (Wortlaut)"@de , "grading text"@en ;
+    skos:definition "Wortlaut; cur:graded (boolean) und cur:gradeWeight (an cur:Placement) sind die Normwerte."@de .
+hs:usabilityText a owl:DatatypeProperty ; rdfs:range rdf:langString ;
+    rdfs:label "Verwendbarkeit (Wortlaut)"@de , "usability text"@en ;
+    skos:definition "Liefert nur Kandidaten für cur:Placement; bestätigt erst, wenn eine Modulübersicht oder ein Verlaufsplan das Modul ebenfalls nennt."@de .
+hs:recognitionProcedure a owl:ObjectProperty ; rdfs:domain cur:RecognitionRule ;
+    rdfs:label "Anrechnungsverfahren"@de , "recognition procedure"@en .
+hs:scopeQualification a owl:ObjectProperty ;
+    rdfs:label "Geltung Abschlussart"@de , "scope qualification type"@en ;
+    skos:definition "Lexikongeltung nach Abschlussart (Staatsexamen, Diplom/Magister), z. B. „Grundstudium“."@de .
+
+# =============================================================================
+# 2. Dokumenttypen (HCO, 21; der Typ bestimmt nie die Verbindlichkeit)
+# =============================================================================
+hs:DocumentTypes a skos:ConceptScheme ; skos:prefLabel "Dokumenttypen Hochschule"@de .
+
+hs:dt-Ordnung a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Ordnung/Satzung"@de .
+hs:dt-RahmenPO a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Rahmen-/Allgemeine Prüfungsordnung"@de ;
+    skos:altLabel "Allgemeine Prüfungsordnung"@de , "Rahmenprüfungsordnung"@de , "Allgemeine Studien- und Prüfungsordnung"@de , "Allgemeine Bestimmungen"@de ;
+    skos:scopeNote "Fachspezifische Bestimmungen erben davon (cur:inheritsFrom); das lokale Dokument überschreibt den Rahmen."@de .
+hs:dt-Studienordnung a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Studienordnung"@de ; skos:altLabel "Studiengangsordnung"@de .
+hs:dt-Pruefungsordnung a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "(Fach-)Prüfungsordnung"@de ; skos:altLabel "Fachprüfungsordnung"@de , "Fachspezifische Bestimmungen"@de , "Besonderer Teil"@de .
+hs:dt-SPO a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Studien- und Prüfungsordnung"@de ; skos:altLabel "Prüfungs- und Studienordnung"@de , "Fachprüfungs- und Studienordnung"@de .
+hs:dt-Zugangsordnung a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Zugangs-/Zulassungsordnung"@de ; skos:altLabel "Zulassungssatzung"@de , "Auswahlsatzung"@de .
+hs:dt-Praxisordnung a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Praktikums-/Praxisphasenordnung"@de ; skos:altLabel "Praktikumsordnung"@de , "Praxissemesterordnung"@de .
+hs:dt-Anrechnungsordnung a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Anrechnungs-/Anerkennungsordnung"@de ; skos:altLabel "Äquivalenzliste"@de .
+hs:dt-Aenderungssatzung a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Änderungssatzung/-ordnung"@de ;
+    skos:scopeNote "Ändert eine Ordnung (cur:amends), ersetzt sie nicht; erst die konsolidierte neue Fassung ersetzt die alte (cur:supersedes) ab Inkrafttreten, oft mit Kohortenregel."@de .
+hs:dt-Weiterbildungsordnung a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Ordnung für weiterbildende Studienangebote"@de ; skos:altLabel "Zertifikatsordnung"@de .
+hs:dt-Promotionsordnung a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Promotionsordnung"@de .
+hs:dt-Modulhandbuch a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_catalogue ;
+    skos:prefLabel "Modulhandbuch"@de ; skos:altLabel "Modulkatalog"@de , "Modulbeschreibungen"@de , "Modulverzeichnis"@de ;
+    skos:scopeNote "Verbindlich nur als Anlage einer Ordnung (hs:annexOf)."@de .
+hs:dt-Studienverlaufsplan a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_curriculum ;
+    skos:prefLabel "Studienverlaufsplan"@de ; skos:altLabel "Studienplan"@de , "Musterstudienplan"@de , "Regelstudienplan"@de ;
+    skos:scopeNote "Liefert Fachsemester an cur:Placement (cv:time_semester, meist empfohlen)."@de .
+hs:dt-Studiengangsprofil a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_other ;
+    skos:prefLabel "Studiengangsbeschreibung/-profil"@de ; skos:altLabel "Qualifikationsprofil"@de , "Studiengangsflyer"@de .
+hs:dt-DiplomaSupplement a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_other ;
+    skos:prefLabel "Diploma Supplement"@de ;
+    skos:scopeNote "Programm-Lernergebnisse in Abschnitt 4.2."@de .
+hs:dt-Akkreditierung a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_other ;
+    skos:prefLabel "Akkreditierungsunterlage"@de ; skos:altLabel "Selbstbericht"@de , "Akkreditierungsbericht"@de .
+hs:dt-Vorlesungsverzeichnis a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_catalogue ;
+    skos:prefLabel "Vorlesungsverzeichnis"@de ;
+    skos:scopeNote "Semesterbezogen; liefert Lehrveranstaltungen, selten Lernergebnisse."@de .
+hs:dt-MicroCredential a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_curriculum ;
+    skos:prefLabel "Micro-Credential-Beschreibung"@de .
+hs:dt-Externe a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Staatliche/fachrechtliche Vorgabe"@de .
+hs:dt-Lehramt a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Lehramtsrechtliche Vorgabe"@de ; skos:altLabel "Lehramtsprüfungsordnung"@de , "Lehramtszugangsverordnung"@de , "Lehrerbildungsgesetz"@de .
+hs:dt-Staatsexamen a cur:DocumentType ; skos:inScheme hs:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Approbations-/Ausbildungsordnung (Staatsexamen)"@de ; skos:altLabel "Approbationsordnung"@de , "Juristenausbildungsgesetz"@de .
+
+# =============================================================================
+# 3. Knotentypen
+# =============================================================================
+hs:NodeTypes a skos:ConceptScheme ; skos:prefLabel "Knotentypen Hochschule"@de .
+
+hs:Ordnungsteil a cur:NodeType ; skos:inScheme hs:NodeTypes ; skos:broader cv:fn_frame ;
+    skos:prefLabel "Paragraf/Ordnungsteil"@de ; cur:extractionDepth cv:depth_typed ;
+    skos:definition "§§ einer Ordnung (Geltungsbereich, Regelstudienzeit, Prüfungen, Anrechnung, Wiederholung). Liefert cur:Rule, cur:Assessment und Werte des Studiengangs; keine Lernergebnisse."@de .
+hs:Studiengangsprofil a cur:NodeType ; skos:inScheme hs:NodeTypes ; skos:broader cv:fn_frame ;
+    skos:prefLabel "Qualifikationsziele des Studiengangs"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Abschnitt mit Programm-Lernergebnissen (Ziele des Studiums, Kompetenzprofil, Diploma Supplement 4.2)."@de .
+hs:Studienabschnitt a cur:NodeType ; skos:inScheme hs:NodeTypes ; skos:broader cv:fn_grouping ;
+    skos:prefLabel "Studienabschnitt"@de ; skos:altLabel "Studienphase"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Grund-/Hauptstudium, Orientierungsphase, Vorklinik/Klinik, Studienjahr (DHBW)."@de ;
+    cur:impliesTimeKind cv:time_semester .
+hs:Studienbereich a cur:NodeType ; skos:inScheme hs:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Studienbereich"@de ; skos:altLabel "Modulbereich"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Bereich mit zugeordneten Modulen und gefordertem Umfang (Pflichtbereich, Wahlpflichtbereich, Schlüsselqualifikationen, Studium generale)."@de ;
+    cur:delimitation "Nur als Knoten werten, wenn Module oder LP zugeordnet sind; „Studienbereich“ ist auch eine Ebene der Destatis-Fächersystematik."@de .
+hs:Schwerpunkt a cur:NodeType ; skos:inScheme hs:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Schwerpunkt/Studienrichtung"@de ; skos:altLabel "Vertiefungsrichtung"@de , "Profillinie"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Bereich mit gefordertem Umfang, von dem genau einer zu wählen ist; zugleich cur:Variant (cv:var_specialisation) für die Geltung. Ein eigenes Curriculum nur, wenn das Dokument die Richtungen als eigene Studiengänge mit eigenem Abschluss führt."@de .
+hs:Wahlpflichtkatalog a cur:NodeType ; skos:inScheme hs:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Wahlpflichtkatalog"@de ; skos:altLabel "Modulgruppe"@de , "Wahlkatalog"@de , "Modulpool"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Liste wählbarer Module mit cur:SelectionRule („mindestens 20 LP aus …“, „zwei aus fünf“); die Module sind Placements mit cv:obl_selectionPool."@de .
+hs:Modul a cur:NodeType ; skos:inScheme hs:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "Modul"@de ; skos:altLabel "Moduleinheit"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Modulbeschreibung im Modulhandbuch (Code, Titel, LP, Workload, Dauer, Turnus, Lernergebnisse, Inhalte, Prüfung). Einmal beschrieben, über cur:Placement mehrfach verwendet."@de ;
+    cur:typicalParent hs:Studienbereich , hs:Wahlpflichtkatalog , hs:Schwerpunkt ;
+    cur:positiveExample "„INF-B-110 Grundlagen der Programmierung (8 LP)“"@de ;
+    cur:negativeExample "„Modulhandbuch Informatik“ (Dokumenttitel)"@de , "„Modulprüfung“ (Feld)"@de .
+hs:Praxisphase a cur:NodeType ; skos:inScheme hs:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "Praxisphase"@de ; skos:altLabel "Praxissemester"@de , "Pflichtpraktikum"@de , "Praxismodul"@de ; cur:extractionDepth cv:depth_full ;
+    cur:impliesContext ctx:practice-placement .
+hs:Abschlussarbeit a cur:NodeType ; skos:inScheme hs:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "Abschlussarbeit"@de ; skos:altLabel "Bachelorarbeit"@de , "Masterarbeit"@de , "Abschlussmodul"@de ; cur:extractionDepth cv:depth_full .
+hs:Projektmodul a cur:NodeType ; skos:inScheme hs:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "Projekt"@de ; skos:altLabel "Projektmodul"@de , "Studienprojekt"@de , "Teamprojekt"@de ; cur:extractionDepth cv:depth_full .
+hs:KuenstlerischesHauptfach a cur:NodeType ; skos:inScheme hs:NodeTypes ; skos:broader cv:fn_unit ;
+    skos:prefLabel "Künstlerisches Hauptfach"@de ; skos:altLabel "Künstlerisches Kernfach"@de ; cur:extractionDepth cv:depth_full ;
+    skos:scopeNote "Darf mehr als zwei Semester dauern."@de .
+hs:Lehrveranstaltung a cur:NodeType ; skos:inScheme hs:NodeTypes ; skos:broader cv:fn_subunit ;
+    skos:prefLabel "Lehrveranstaltung"@de ; skos:altLabel "Teilmodul"@de , "Modulteil"@de , "Modulelement"@de ; cur:extractionDepth cv:depth_full ;
+    cur:typicalParent hs:Modul ;
+    cur:delimitation "Liegt unter dem Modul; nie als Modul klassifizieren."@de .
+hs:Verzeichnis a cur:NodeType ; skos:inScheme hs:NodeTypes ; skos:broader cv:fn_nonCurricular ;
+    skos:prefLabel "Verzeichnis/Impressum"@de ; cur:extractionDepth cv:depth_skip .
+
+# =============================================================================
+# 4. Aussage-Unterarten
+# =============================================================================
+hs:StatementSubkinds a skos:ConceptScheme ; skos:prefLabel "Aussage-Unterarten Hochschule"@de .
+
+hs:Studiengangsziel a cur:StatementSubkind ; skos:inScheme hs:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "Lernergebnis des Studiengangs"@de ; skos:altLabel "Programm-Lernergebnis"@de ;
+    skos:definition "„Absolventinnen und Absolventen verfügen über …“, „Das Studium befähigt …“, Diploma Supplement 4.2."@de ;
+    cur:segmentation cv:seg_bullet ; cur:defaultAddressee cv:addr_learner .
+hs:Modulziel a cur:StatementSubkind ; skos:inScheme hs:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "Lernergebnis des Moduls"@de ; skos:altLabel "Qualifikationsziel"@de , "angestrebtes Lernergebnis"@de ;
+    skos:definition "Lernergebnis im Feld „Qualifikationsziele“ (MRVO 2017) bzw. „angestrebte Lernergebnisse und Studieninhalte“ (MRVO 2024). Der Feldname schwankt stark; die DHBW teilt das Feld in vier Unterfelder (kd:DHBW)."@de ;
+    cur:segmentation cv:seg_bullet ; cur:defaultAddressee cv:addr_learner ;
+    cur:wordingRule "Einleitungssatz („Nach erfolgreichem Abschluss des Moduls können die Studierenden …“) in cur:leadIn; jeder Spiegelstrich bzw. Satz eine Aussage."@de .
+hs:Vermittlungsziel a cur:StatementSubkind ; skos:inScheme hs:StatementSubkinds ; skos:broader cv:kind_content ;
+    skos:prefLabel "Lehrziel (Lehrendenperspektive)"@de ;
+    skos:definition "„Ziel der Veranstaltung ist es, … zu vermitteln“ – Lehrendenperspektive, gilt als Inhalt, nicht als Lernergebnis."@de ;
+    cur:defaultAddressee cv:addr_educator .
+hs:Inhalt a cur:StatementSubkind ; skos:inScheme hs:StatementSubkinds ; skos:broader cv:kind_content ;
+    skos:prefLabel "Modulinhalt"@de ;
+    cur:wordingRule "Die Sammelfelder „Inhalte und Qualifikationsziele des Moduls“ (MRVO 2017) und „angestrebte Lernergebnisse und Studieninhalte“ (MRVO 2024) in Lernergebnis- und Inhaltsaussagen auftrennen."@de .
+hs:Verweis a cur:StatementSubkind ; skos:inScheme hs:StatementSubkinds ; skos:broader cv:kind_reference ;
+    skos:prefLabel "Verweis/Importmodul"@de ;
+    skos:definition "„siehe Modulbeschreibung“, „gemäß Modulhandbuch des Studiengangs“, „aus dem Angebot der Fakultät“; zitierte Kennung in cur:citedCode, nie auflösen raten (cur:resolutionStatus)."@de .
+hs:Hinweis a cur:StatementSubkind ; skos:inScheme hs:StatementSubkinds ; skos:broader cv:kind_guidance ;
+    skos:prefLabel "Hinweis/Literatur"@de .
+
+# =============================================================================
+# 5. Wertelisten (aus HCO, bereinigt)
+# =============================================================================
+hs:MRVOVersions a skos:ConceptScheme ; skos:prefLabel "MRVO-Fassungen"@de .
+hs:mrvo-2017 a skos:Concept ; skos:inScheme hs:MRVOVersions ; skos:topConceptOf hs:MRVOVersions ; skos:prefLabel "MRVO 2017"@de ;
+    skos:scopeNote "KMK-Beschluss 07.12.2017; Pflichtangaben einschließlich Verwendbarkeit."@de .
+hs:mrvo-2024 a skos:Concept ; skos:inScheme hs:MRVOVersions ; skos:topConceptOf hs:MRVOVersions ; skos:prefLabel "MRVO 2024"@de ;
+    skos:scopeNote "KMK-Beschluss 21.11.2024; in allen Ländern umgesetzt, meist ab 01.08.2025 (BB 01.09.2025). § 7 Abs. 2 nennt acht Pflichtangaben: 1. angestrebte Lernergebnisse und Studieninhalte, 2. Lehr- und Lernformen, 3. Voraussetzungen für die Teilnahme, 4. Voraussetzungen für die Vergabe von ECTS-Leistungspunkten, 5. ECTS-Leistungspunkte und Benotung, 6. Häufigkeit des Angebots, 7. Arbeitsaufwand, 8. Dauer. Die Verwendbarkeit ist keine Pflichtangabe mehr (HB: weiter für Lehramtsmodule). § 12: Module sollen mindestens 5 ECTS-Leistungspunkte umfassen."@de ;
+    skos:editorialNote "Landesverordnungen nur für BY und TH im Verordnungsblatt gelesen, sonst über die Synopsen des Akkreditierungsrats (Recherche 04 A, 2026-10-20)."@de .
+
+hs:InstitutionTypes a skos:ConceptScheme ; skos:prefLabel "Hochschularten"@de .
+hs:it-uni a skos:Concept ; skos:inScheme hs:InstitutionTypes ; skos:topConceptOf hs:InstitutionTypes ; skos:prefLabel "Universität"@de ; skos:altLabel "Technische Universität"@de .
+hs:it-haw a skos:Concept ; skos:inScheme hs:InstitutionTypes ; skos:topConceptOf hs:InstitutionTypes ; skos:prefLabel "Hochschule für angewandte Wissenschaften"@de ;
+    skos:altLabel "HAW"@de , "Fachhochschule"@de , "FH"@de ;
+    skos:scopeNote "„Technische Hochschule“ ist ein Homonym (HAW oder Universität) und steht im Lexikon."@de .
+hs:it-kunst a skos:Concept ; skos:inScheme hs:InstitutionTypes ; skos:topConceptOf hs:InstitutionTypes ; skos:prefLabel "Kunst- und Musikhochschule"@de ; skos:altLabel "Kunsthochschule"@de , "Musikhochschule"@de .
+hs:it-dual a skos:Concept ; skos:inScheme hs:InstitutionTypes ; skos:topConceptOf hs:InstitutionTypes ; skos:prefLabel "Duale Hochschule/Berufsakademie"@de ; skos:altLabel "DHBW"@de , "Berufsakademie"@de ;
+    skos:scopeNote "Kürzel „BA“ kollidiert mit B.A. und steht als Homonym im Lexikon."@de .
+hs:it-ph a skos:Concept ; skos:inScheme hs:InstitutionTypes ; skos:topConceptOf hs:InstitutionTypes ; skos:prefLabel "Pädagogische Hochschule"@de ; skos:altLabel "PH"@de .
+hs:it-theol a skos:Concept ; skos:inScheme hs:InstitutionTypes ; skos:topConceptOf hs:InstitutionTypes ; skos:prefLabel "Theologische/kirchliche Hochschule"@de .
+hs:it-verwaltung a skos:Concept ; skos:inScheme hs:InstitutionTypes ; skos:topConceptOf hs:InstitutionTypes ; skos:prefLabel "Verwaltungshochschule"@de ; skos:altLabel "Hochschule für öffentliche Verwaltung"@de .
+
+hs:QualificationTypes a skos:ConceptScheme ; skos:prefLabel "Abschlussarten Hochschule"@de ;
+    skos:scopeNote "Ergänzt lvl:HigherEducationDegrees um Abschlussarten ohne eigene Stufe. DQR-Niveau nur über die Qualifikation (cur:levelAssignment am cur:Qualification)."@de .
+hs:qt-kurzzyklus a skos:Concept ; skos:inScheme hs:QualificationTypes ; skos:topConceptOf hs:QualificationTypes ; skos:prefLabel "Kurzzyklus (QF-EHEA)"@de ; skos:closeMatch lvl:DQR-5 .
+hs:qt-bachelor a skos:Concept ; skos:inScheme hs:QualificationTypes ; skos:topConceptOf hs:QualificationTypes ; skos:prefLabel "Bachelor"@de ; skos:exactMatch lvl:he-bachelor .
+hs:qt-master a skos:Concept ; skos:inScheme hs:QualificationTypes ; skos:topConceptOf hs:QualificationTypes ; skos:prefLabel "Master"@de ; skos:exactMatch lvl:he-master .
+hs:qt-promotion a skos:Concept ; skos:inScheme hs:QualificationTypes ; skos:topConceptOf hs:QualificationTypes ; skos:prefLabel "Promotion"@de ; skos:exactMatch lvl:he-doctorate .
+hs:qt-staatsexamen a skos:Concept ; skos:inScheme hs:QualificationTypes ; skos:topConceptOf hs:QualificationTypes ; skos:prefLabel "Staatsexamen"@de ;
+    skos:editorialNote "DQR-Niveau je Studiengang offen (Lehramt, Medizin, Jura, Pharmazie); keine pauschale Zuordnung."@de .
+hs:qt-diplom a skos:Concept ; skos:inScheme hs:QualificationTypes ; skos:topConceptOf hs:QualificationTypes ; skos:prefLabel "Diplom/Magister (Altabschluss)"@de ;
+    skos:editorialNote "Diplom (Universität) ≈ Master, Diplom (FH) ≈ Bachelor – nur als Hinweis, keine Kante."@de .
+hs:qt-zertifikat a skos:Concept ; skos:inScheme hs:QualificationTypes ; skos:topConceptOf hs:QualificationTypes ; skos:prefLabel "Hochschulzertifikat (weiterbildend)"@de ; skos:altLabel "CAS"@de , "DAS"@de .
+hs:qt-microcredential a skos:Concept ; skos:inScheme hs:QualificationTypes ; skos:topConceptOf hs:QualificationTypes ; skos:prefLabel "Micro-Credential"@de .
+
+hs:Degrees a skos:ConceptScheme ; skos:prefLabel "Akademische Grade"@de .
+hs:deg-BA a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "B.A." ; skos:prefLabel "Bachelor of Arts"@de ; skos:broadMatch hs:qt-bachelor .
+hs:deg-BSc a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "B.Sc." ; skos:prefLabel "Bachelor of Science"@de ; skos:broadMatch hs:qt-bachelor .
+hs:deg-BEng a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "B.Eng." ; skos:prefLabel "Bachelor of Engineering"@de ; skos:broadMatch hs:qt-bachelor .
+hs:deg-LLB a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "LL.B." ; skos:prefLabel "Bachelor of Laws"@de ; skos:broadMatch hs:qt-bachelor .
+hs:deg-BEd a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "B.Ed." ; skos:prefLabel "Bachelor of Education"@de ; skos:broadMatch hs:qt-bachelor .
+hs:deg-BMus a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "B.Mus." ; skos:prefLabel "Bachelor of Music"@de ; skos:broadMatch hs:qt-bachelor .
+hs:deg-BFA a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "B.F.A." ; skos:prefLabel "Bachelor of Fine Arts"@de ; skos:broadMatch hs:qt-bachelor .
+hs:deg-MA a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "M.A." ; skos:prefLabel "Master of Arts"@de ; skos:broadMatch hs:qt-master .
+hs:deg-MSc a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "M.Sc." ; skos:prefLabel "Master of Science"@de ; skos:broadMatch hs:qt-master .
+hs:deg-MEng a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "M.Eng." ; skos:prefLabel "Master of Engineering"@de ; skos:broadMatch hs:qt-master .
+hs:deg-LLM a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "LL.M." ; skos:prefLabel "Master of Laws"@de ; skos:broadMatch hs:qt-master .
+hs:deg-MEd a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "M.Ed." ; skos:prefLabel "Master of Education"@de ; skos:broadMatch hs:qt-master .
+hs:deg-MMus a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "M.Mus." ; skos:prefLabel "Master of Music"@de ; skos:broadMatch hs:qt-master .
+hs:deg-MFA a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "M.F.A." ; skos:prefLabel "Master of Fine Arts"@de ; skos:broadMatch hs:qt-master .
+hs:deg-MBA a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "MBA" ; skos:prefLabel "Master of Business Administration"@de ; skos:broadMatch hs:qt-master .
+hs:deg-StEx a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:prefLabel "Staatsexamen"@de ; skos:altLabel "Erste Staatsprüfung"@de ; skos:broadMatch hs:qt-staatsexamen .
+hs:deg-Diplom a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "Dipl." ; skos:prefLabel "Diplom"@de ; skos:broadMatch hs:qt-diplom .
+hs:deg-Magister a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:prefLabel "Magister"@de ; skos:broadMatch hs:qt-diplom .
+hs:deg-Dr a skos:Concept ; skos:inScheme hs:Degrees ; skos:topConceptOf hs:Degrees ; skos:notation "Dr." ; skos:prefLabel "Doktorgrad"@de ; skos:altLabel "Ph.D."@de ; skos:broadMatch hs:qt-promotion .
+
+hs:StudyModes a skos:ConceptScheme ; skos:prefLabel "Studienformen"@de ; dct:source "Wissenschaftsrat 2013, Drs. 3479-13" .
+hs:sm-vollzeit a skos:Concept ; skos:inScheme hs:StudyModes ; skos:topConceptOf hs:StudyModes ; skos:prefLabel "Vollzeit"@de .
+hs:sm-teilzeit a skos:Concept ; skos:inScheme hs:StudyModes ; skos:topConceptOf hs:StudyModes ; skos:prefLabel "Teilzeit"@de .
+hs:sm-dual-ausbildung a skos:Concept ; skos:inScheme hs:StudyModes ; skos:topConceptOf hs:StudyModes ; skos:prefLabel "dual, ausbildungsintegrierend"@de ;
+    skos:definition "Studium mit integrierter Berufsausbildung (zwei Abschlüsse); Brücke zu beruf: über cur:RecognitionRule und rel_recognizedFor."@de .
+hs:sm-dual-praxis a skos:Concept ; skos:inScheme hs:StudyModes ; skos:topConceptOf hs:StudyModes ; skos:prefLabel "dual, praxisintegrierend"@de .
+hs:sm-dual-beruf a skos:Concept ; skos:inScheme hs:StudyModes ; skos:topConceptOf hs:StudyModes ; skos:prefLabel "dual, berufsintegrierend"@de .
+hs:sm-berufsbegleitend a skos:Concept ; skos:inScheme hs:StudyModes ; skos:topConceptOf hs:StudyModes ; skos:prefLabel "berufsbegleitend"@de ;
+    skos:scopeNote "Ohne curriculare Verzahnung nicht „dual“ nennen."@de .
+hs:sm-fern a skos:Concept ; skos:inScheme hs:StudyModes ; skos:topConceptOf hs:StudyModes ; skos:prefLabel "Fernstudium"@de .
+
+hs:ProgrammeTypes a skos:ConceptScheme ; skos:prefLabel "Studiengangstypen"@de .
+hs:pt-grundstaendig a skos:Concept ; skos:inScheme hs:ProgrammeTypes ; skos:topConceptOf hs:ProgrammeTypes ; skos:prefLabel "grundständig"@de .
+hs:pt-konsekutiv a skos:Concept ; skos:inScheme hs:ProgrammeTypes ; skos:topConceptOf hs:ProgrammeTypes ; skos:prefLabel "konsekutiv"@de ;
+    skos:editorialNote "Ob die MRVO 2024 die Typisierung beibehält, ist ungeprüft; nur übernehmen, wenn genannt."@de .
+hs:pt-weiterbildend a skos:Concept ; skos:inScheme hs:ProgrammeTypes ; skos:topConceptOf hs:ProgrammeTypes ; skos:prefLabel "weiterbildend"@de .
+hs:pt-promotion a skos:Concept ; skos:inScheme hs:ProgrammeTypes ; skos:topConceptOf hs:ProgrammeTypes ; skos:prefLabel "Promotionsstudium"@de .
+
+hs:ProgrammeProfiles a skos:ConceptScheme ; skos:prefLabel "Studiengangsprofile"@de .
+hs:pp-forschung a skos:Concept ; skos:inScheme hs:ProgrammeProfiles ; skos:topConceptOf hs:ProgrammeProfiles ; skos:prefLabel "forschungsorientiert"@de .
+hs:pp-anwendung a skos:Concept ; skos:inScheme hs:ProgrammeProfiles ; skos:topConceptOf hs:ProgrammeProfiles ; skos:prefLabel "anwendungsorientiert"@de .
+hs:pp-kuenstlerisch a skos:Concept ; skos:inScheme hs:ProgrammeProfiles ; skos:topConceptOf hs:ProgrammeProfiles ; skos:prefLabel "künstlerisch"@de .
+hs:pp-lehramt a skos:Concept ; skos:inScheme hs:ProgrammeProfiles ; skos:topConceptOf hs:ProgrammeProfiles ; skos:prefLabel "lehramtsbezogen"@de .
+
+hs:TeacherTrainingTypes a skos:ConceptScheme ; skos:prefLabel "Lehramtstypen (KMK)"@de ;
+    skos:editorialNote "Typen 1–6 an der KMK-Quelle zu verifizieren; Schulart-Brücken sind relatedMatch."@de .
+hs:lt-1 a skos:Concept ; skos:inScheme hs:TeacherTrainingTypes ; skos:topConceptOf hs:TeacherTrainingTypes ; skos:notation "LA-Typ 1" ; skos:prefLabel "Lehramt Grundschule/Primarstufe"@de ; skos:relatedMatch kimsa:s02 .
+hs:lt-2 a skos:Concept ; skos:inScheme hs:TeacherTrainingTypes ; skos:topConceptOf hs:TeacherTrainingTypes ; skos:notation "LA-Typ 2" ; skos:prefLabel "Übergreifendes Lehramt Primarstufe und Sekundarstufe I"@de .
+hs:lt-3 a skos:Concept ; skos:inScheme hs:TeacherTrainingTypes ; skos:topConceptOf hs:TeacherTrainingTypes ; skos:notation "LA-Typ 3" ; skos:prefLabel "Lehramt Sekundarstufe I"@de .
+hs:lt-4 a skos:Concept ; skos:inScheme hs:TeacherTrainingTypes ; skos:topConceptOf hs:TeacherTrainingTypes ; skos:notation "LA-Typ 4" ; skos:prefLabel "Lehramt Sekundarstufe II (allgemeinbildend)/Gymnasium"@de ; skos:relatedMatch kimsa:s08 .
+hs:lt-5 a skos:Concept ; skos:inScheme hs:TeacherTrainingTypes ; skos:topConceptOf hs:TeacherTrainingTypes ; skos:notation "LA-Typ 5" ; skos:prefLabel "Lehramt berufliche Schulen"@de ; skos:relatedMatch kimsa:s12 .
+hs:lt-6 a skos:Concept ; skos:inScheme hs:TeacherTrainingTypes ; skos:topConceptOf hs:TeacherTrainingTypes ; skos:notation "LA-Typ 6" ; skos:prefLabel "Sonderpädagogisches Lehramt"@de ; skos:relatedMatch kimsa:s06 .
+
+hs:PartialProgrammeRoles a skos:ConceptScheme ; skos:prefLabel "Rollen im Kombinationsstudium"@de .
+hs:pr-kernfach a skos:Concept ; skos:inScheme hs:PartialProgrammeRoles ; skos:topConceptOf hs:PartialProgrammeRoles ; skos:prefLabel "Kern-/Hauptfach"@de ; skos:altLabel "Major"@de .
+hs:pr-nebenfach a skos:Concept ; skos:inScheme hs:PartialProgrammeRoles ; skos:topConceptOf hs:PartialProgrammeRoles ; skos:prefLabel "Nebenfach"@de ; skos:altLabel "Minor"@de , "Beifach"@de .
+hs:pr-erstfach a skos:Concept ; skos:inScheme hs:PartialProgrammeRoles ; skos:topConceptOf hs:PartialProgrammeRoles ; skos:prefLabel "Erstfach"@de .
+hs:pr-zweitfach a skos:Concept ; skos:inScheme hs:PartialProgrammeRoles ; skos:topConceptOf hs:PartialProgrammeRoles ; skos:prefLabel "Zweitfach"@de .
+hs:pr-unterrichtsfach a skos:Concept ; skos:inScheme hs:PartialProgrammeRoles ; skos:topConceptOf hs:PartialProgrammeRoles ; skos:prefLabel "Unterrichtsfach"@de .
+hs:pr-bildungswissenschaften a skos:Concept ; skos:inScheme hs:PartialProgrammeRoles ; skos:topConceptOf hs:PartialProgrammeRoles ; skos:prefLabel "Bildungswissenschaften"@de .
+hs:pr-ergaenzung a skos:Concept ; skos:inScheme hs:PartialProgrammeRoles ; skos:topConceptOf hs:PartialProgrammeRoles ; skos:prefLabel "Ergänzungs-/Komplementärfach"@de .
+
+hs:OfferFrequencies a skos:ConceptScheme ; skos:prefLabel "Angebotsturnus"@de .
+hs:of-semester a skos:Concept ; skos:inScheme hs:OfferFrequencies ; skos:topConceptOf hs:OfferFrequencies ; skos:prefLabel "jedes Semester"@de ; skos:altLabel "semesterweise"@de .
+hs:of-ws a skos:Concept ; skos:inScheme hs:OfferFrequencies ; skos:topConceptOf hs:OfferFrequencies ; skos:prefLabel "jährlich im Wintersemester"@de ; skos:altLabel "jedes WiSe"@de .
+hs:of-ss a skos:Concept ; skos:inScheme hs:OfferFrequencies ; skos:topConceptOf hs:OfferFrequencies ; skos:prefLabel "jährlich im Sommersemester"@de ; skos:altLabel "jedes SoSe"@de .
+hs:of-jaehrlich a skos:Concept ; skos:inScheme hs:OfferFrequencies ; skos:topConceptOf hs:OfferFrequencies ; skos:prefLabel "jährlich"@de .
+hs:of-zweijaehrlich a skos:Concept ; skos:inScheme hs:OfferFrequencies ; skos:topConceptOf hs:OfferFrequencies ; skos:prefLabel "alle zwei Jahre"@de .
+hs:of-unregelmaessig a skos:Concept ; skos:inScheme hs:OfferFrequencies ; skos:topConceptOf hs:OfferFrequencies ; skos:prefLabel "unregelmäßig/nach Bedarf"@de .
+
+hs:TeachingFormats a skos:ConceptScheme ; skos:prefLabel "Lehrformen"@de .
+hs:tf-vorlesung a skos:Concept ; skos:inScheme hs:TeachingFormats ; skos:topConceptOf hs:TeachingFormats ; skos:notation "V" ; skos:prefLabel "Vorlesung"@de ; skos:altLabel "VL"@de .
+hs:tf-uebung a skos:Concept ; skos:inScheme hs:TeachingFormats ; skos:topConceptOf hs:TeachingFormats ; skos:notation "Ü" ; skos:prefLabel "Übung"@de ;
+    skos:scopeNote "„UE“ ist ein Homonym (Übung oder Unterrichtseinheit in der Erwachsenenbildung) und steht im Lexikon."@de .
+hs:tf-seminar a skos:Concept ; skos:inScheme hs:TeachingFormats ; skos:topConceptOf hs:TeachingFormats ; skos:notation "S" ; skos:prefLabel "Seminar"@de ; skos:altLabel "Proseminar"@de , "Hauptseminar"@de .
+hs:tf-su a skos:Concept ; skos:inScheme hs:TeachingFormats ; skos:topConceptOf hs:TeachingFormats ; skos:notation "SU" ; skos:prefLabel "Seminaristischer Unterricht"@de .
+hs:tf-labor a skos:Concept ; skos:inScheme hs:TeachingFormats ; skos:topConceptOf hs:TeachingFormats ; skos:prefLabel "Praktikum/Labor"@de ; skos:altLabel "Laborpraktikum"@de ;
+    skos:scopeNote "„Praktikum“ kann auch Praxisphase meinen (Homonym im Lexikon)."@de .
+hs:tf-projekt a skos:Concept ; skos:inScheme hs:TeachingFormats ; skos:topConceptOf hs:TeachingFormats ; skos:prefLabel "Projekt"@de .
+hs:tf-tutorium a skos:Concept ; skos:inScheme hs:TeachingFormats ; skos:topConceptOf hs:TeachingFormats ; skos:prefLabel "Tutorium"@de .
+hs:tf-exkursion a skos:Concept ; skos:inScheme hs:TeachingFormats ; skos:topConceptOf hs:TeachingFormats ; skos:prefLabel "Exkursion"@de .
+hs:tf-kolloquium a skos:Concept ; skos:inScheme hs:TeachingFormats ; skos:topConceptOf hs:TeachingFormats ; skos:prefLabel "Kolloquium"@de .
+hs:tf-einzel a skos:Concept ; skos:inScheme hs:TeachingFormats ; skos:topConceptOf hs:TeachingFormats ; skos:prefLabel "Einzelunterricht"@de .
+hs:tf-gruppe a skos:Concept ; skos:inScheme hs:TeachingFormats ; skos:topConceptOf hs:TeachingFormats ; skos:prefLabel "Gruppenunterricht"@de .
+hs:tf-selbst a skos:Concept ; skos:inScheme hs:TeachingFormats ; skos:topConceptOf hs:TeachingFormats ; skos:prefLabel "Selbststudium"@de .
+hs:tf-elearning a skos:Concept ; skos:inScheme hs:TeachingFormats ; skos:topConceptOf hs:TeachingFormats ; skos:prefLabel "E-Learning/Blended Learning"@de .
+hs:tf-praxis a skos:Concept ; skos:inScheme hs:TeachingFormats ; skos:topConceptOf hs:TeachingFormats ; skos:prefLabel "Praxisphase/Praxisbegleitung"@de .
+hs:tf-krankenbett a skos:Concept ; skos:inScheme hs:TeachingFormats ; skos:topConceptOf hs:TeachingFormats ; skos:prefLabel "Unterricht am Krankenbett"@de ; skos:altLabel "UaK"@de .
+
+hs:AssessmentForms a skos:ConceptScheme ; skos:prefLabel "Prüfungsformen Hochschule"@de .
+hs:af-klausur a skos:Concept ; skos:inScheme hs:AssessmentForms ; skos:topConceptOf hs:AssessmentForms ; skos:prefLabel "Klausur"@de ; skos:altLabel "schriftliche Prüfung"@de .
+hs:af-muendlich a skos:Concept ; skos:inScheme hs:AssessmentForms ; skos:topConceptOf hs:AssessmentForms ; skos:prefLabel "mündliche Prüfung"@de .
+hs:af-hausarbeit a skos:Concept ; skos:inScheme hs:AssessmentForms ; skos:topConceptOf hs:AssessmentForms ; skos:prefLabel "Hausarbeit"@de ; skos:altLabel "Seminararbeit"@de .
+hs:af-referat a skos:Concept ; skos:inScheme hs:AssessmentForms ; skos:topConceptOf hs:AssessmentForms ; skos:prefLabel "Referat/Präsentation"@de .
+hs:af-portfolio a skos:Concept ; skos:inScheme hs:AssessmentForms ; skos:topConceptOf hs:AssessmentForms ; skos:prefLabel "Portfolio"@de .
+hs:af-projekt a skos:Concept ; skos:inScheme hs:AssessmentForms ; skos:topConceptOf hs:AssessmentForms ; skos:prefLabel "Projektarbeit"@de .
+hs:af-bericht a skos:Concept ; skos:inScheme hs:AssessmentForms ; skos:topConceptOf hs:AssessmentForms ; skos:prefLabel "Bericht"@de ; skos:altLabel "Praktikumsbericht"@de , "Protokoll"@de .
+hs:af-labor a skos:Concept ; skos:inScheme hs:AssessmentForms ; skos:topConceptOf hs:AssessmentForms ; skos:prefLabel "Laborarbeit/Testat"@de .
+hs:af-thesis a skos:Concept ; skos:inScheme hs:AssessmentForms ; skos:topConceptOf hs:AssessmentForms ; skos:prefLabel "Abschlussarbeit"@de .
+hs:af-verteidigung a skos:Concept ; skos:inScheme hs:AssessmentForms ; skos:topConceptOf hs:AssessmentForms ; skos:prefLabel "Kolloquium/Verteidigung"@de ; skos:altLabel "Disputation"@de .
+hs:af-kuenstlerisch a skos:Concept ; skos:inScheme hs:AssessmentForms ; skos:topConceptOf hs:AssessmentForms ; skos:prefLabel "künstlerische Prüfung"@de .
+hs:af-praktisch a skos:Concept ; skos:inScheme hs:AssessmentForms ; skos:topConceptOf hs:AssessmentForms ; skos:prefLabel "praktische Prüfung"@de ; skos:altLabel "OSCE"@de .
+hs:af-mc a skos:Concept ; skos:inScheme hs:AssessmentForms ; skos:topConceptOf hs:AssessmentForms ; skos:prefLabel "Antwort-Wahl-Verfahren"@de ; skos:altLabel "Multiple Choice"@de .
+hs:af-kombiniert a skos:Concept ; skos:inScheme hs:AssessmentForms ; skos:topConceptOf hs:AssessmentForms ; skos:prefLabel "kombinierte Prüfung"@de .
+hs:af-sonstige a skos:Concept ; skos:inScheme hs:AssessmentForms ; skos:topConceptOf hs:AssessmentForms ; skos:prefLabel "sonstige/wahlweise"@de .
+
+hs:RequirementKinds a skos:ConceptScheme ; skos:prefLabel "Voraussetzungsarten Hochschule"@de ;
+    skos:scopeNote "Verfeinert cv:RequirementKinds; formal/empfohlen stehen im Kern."@de .
+hs:rk-zugang a skos:Concept ; skos:inScheme hs:RequirementKinds ; skos:topConceptOf hs:RequirementKinds ; skos:prefLabel "Studienzugang"@de ; skos:broadMatch cv:req_formal .
+hs:rk-sprache a skos:Concept ; skos:inScheme hs:RequirementKinds ; skos:topConceptOf hs:RequirementKinds ; skos:prefLabel "Sprachnachweis"@de ; skos:broadMatch cv:req_formal .
+
+hs:ComponentTypes a skos:ConceptScheme ; skos:prefLabel "Modultypen"@de .
+hs:ct-basis a skos:Concept ; skos:inScheme hs:ComponentTypes ; skos:topConceptOf hs:ComponentTypes ; skos:prefLabel "Basismodul"@de ; skos:altLabel "Grundlagenmodul"@de , "Einführungsmodul"@de .
+hs:ct-aufbau a skos:Concept ; skos:inScheme hs:ComponentTypes ; skos:topConceptOf hs:ComponentTypes ; skos:prefLabel "Aufbaumodul"@de .
+hs:ct-vertiefung a skos:Concept ; skos:inScheme hs:ComponentTypes ; skos:topConceptOf hs:ComponentTypes ; skos:prefLabel "Vertiefungsmodul"@de .
+hs:ct-ergaenzung a skos:Concept ; skos:inScheme hs:ComponentTypes ; skos:topConceptOf hs:ComponentTypes ; skos:prefLabel "Ergänzungsmodul"@de .
+hs:ct-sq a skos:Concept ; skos:inScheme hs:ComponentTypes ; skos:topConceptOf hs:ComponentTypes ; skos:prefLabel "Schlüsselqualifikationsmodul"@de ; skos:altLabel "SQ-Modul"@de .
+hs:ct-interdisziplinaer a skos:Concept ; skos:inScheme hs:ComponentTypes ; skos:topConceptOf hs:ComponentTypes ; skos:prefLabel "Interdisziplinäres Modul"@de .
+
+hs:RecognitionProcedures a skos:ConceptScheme ; skos:prefLabel "Anrechnungsverfahren"@de .
+hs:rp-pauschal a skos:Concept ; skos:inScheme hs:RecognitionProcedures ; skos:topConceptOf hs:RecognitionProcedures ; skos:prefLabel "pauschal"@de .
+hs:rp-individuell a skos:Concept ; skos:inScheme hs:RecognitionProcedures ; skos:topConceptOf hs:RecognitionProcedures ; skos:prefLabel "individuell"@de .
+hs:rp-kombiniert a skos:Concept ; skos:inScheme hs:RecognitionProcedures ; skos:topConceptOf hs:RecognitionProcedures ; skos:prefLabel "kombiniert"@de .
+
+hs:IgnoredFields a skos:ConceptScheme ; skos:prefLabel "Nicht zu extrahierende Felder"@de .
+hs:if-person a skos:Concept ; skos:inScheme hs:IgnoredFields ; skos:topConceptOf hs:IgnoredFields ; skos:prefLabel "Personenangaben"@de ;
+    skos:definition "Modulverantwortliche, Lehrende, Kontaktdaten: Personendaten, werden nicht gespeichert. Die Überschrift dient nur als Feldgrenze."@de .
+hs:if-literatur a skos:Concept ; skos:inScheme hs:IgnoredFields ; skos:topConceptOf hs:IgnoredFields ; skos:prefLabel "Literatur"@de ;
+    skos:definition "Literaturlisten; als Feldgrenze erkennen, Inhalt nicht als Aussagen extrahieren."@de .
+
+# =============================================================================
+# 6. Von Hand ergänzte Hinweise (Homonyme aus HCO-Vokabularen, Formmuster,
+#    überfachliche Kompetenzbereiche); das portierte Feldlexikon steht in
+#    hochschule-lexikon.ttl.
+# =============================================================================
+hs:Terminology a cur:TerminologyProfile ;
+    rdfs:label "Terminologie Hochschule"@de ;
+    cur:profileScope cv:sec_higher ;
+    cur:hasCue hs:cue-th , hs:cue-ba , hs:cue-ue , hs:cue-modulcode , hs:cue-modulkopf , hs:cue-lp , hs:cue-sws , hs:cue-semester ,
+        hs:cue-uek-dig , hs:cue-uek-bne , hs:cue-uek-ent , hs:cue-uek-ink , hs:cue-uek-int , hs:cue-uek-eth , hs:cue-uek-res ,
+        hs:cue-qz-wb , hs:cue-qz-ew , hs:cue-qz-pe , hs:cue-qz-ge , hs:cue-literatur , hs:cue-dualkurz .
+
+hs:cue-th a cur:LexicalCue ; cur:surfaceForm "Technische Hochschule" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_term ;
+    cur:mapsTo hs:it-haw ; cur:alsoMapsTo hs:it-uni ; cur:strength 0.5 ;
+    cur:recognitionHint "In BY und NW meist HAW; einige Technische Hochschulen sind Universitäten (RWTH, KIT-Vorläufer). Hochschultyp aus Grundordnung oder Landesgesetz, nicht aus dem Namen."@de .
+hs:cue-ba a cur:LexicalCue ; cur:surfaceForm "BA" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_term ;
+    cur:mapsTo hs:it-dual ; cur:alsoMapsTo hs:deg-BA ; cur:strength 0.4 ;
+    cur:recognitionHint "„Berufsakademie“ nur als Herausgeber; „B.A.“ oder „Bachelor of Arts“ hinter dem Studiengang ist der Grad."@de .
+hs:cue-ue a cur:LexicalCue ; cur:surfaceForm "UE" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_term ;
+    cur:mapsTo hs:tf-uebung ; cur:alsoMapsTo cv:unit_teachingUnit ; cur:strength 0.4 ;
+    cur:recognitionHint "In Lehrformangaben (2 V + 2 UE) Übung; mit Zahl als Umfang (40 UE) Unterrichtseinheit."@de .
+hs:cue-modulcode a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ;
+    cur:pattern "^[A-Z]{2,6}[-_ ]?[A-Z]{0,3}[-_ ]?\\d{2,4}[a-z]?\\b" ; cur:mapsTo hs:Modul , cur:code ; cur:strength 0.7 ;
+    cur:positiveExample "INF-B-110 Grundlagen der Programmierung" , "MA 1001 Analysis I" , "BWL202 Kostenrechnung" ;
+    cur:negativeExample "Modulhandbuch Informatik" , "Modulprüfung" , "Modulverantwortliche:r" , "2024 Fassung" ;
+    cur:recognitionHint "Codes beginnen mit Buchstabenkürzel und Nummer; Code + Hochschule ist der Zusammenführungsschlüssel über Dokumente."@de .
+hs:cue-modulkopf a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^Modul\\s+([A-Z0-9][\\w.-]*\\s*)?[:–-]\\s*\\S" ; cur:mapsTo hs:Modul ; cur:strength 0.75 ;
+    cur:positiveExample "Modul 3: Datenbanken" , "Modul INF-110 – Programmierung" ;
+    cur:negativeExample "Modulhandbuch Informatik" , "Modulprüfung" , "Modulverantwortliche:r" , "Modul" ;
+    skos:editorialNote "Ersetzt das HCO-Muster ^Modul, das Modulhandbuch, Modulprüfung und Modulverantwortliche:r traf."@de .
+hs:cue-lp a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "\\b(\\d+(,\\d+)?)\\s*(LP|CP|ECTS|ECTS-Punkte|Leistungspunkte|Credits)\\b" ; cur:mapsTo cv:unit_ectsCredit ; cur:strength 0.9 ;
+    cur:positiveExample "8 LP" , "7,5 ECTS" , "30 Leistungspunkte" ; cur:negativeExample "LP-Vergabe" , "ECTS-Grade" ;
+    cur:recognitionHint "cur:workload mit cv:unit_ectsCredit und cv:wl_credits; am Modul Regelwert, an der Verwendung im Kontext, am Bereich gefordert (cur:minAmount)."@de .
+hs:cue-sws a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "\\b(\\d+)\\s*SWS\\b" ; cur:mapsTo hs:sws ; cur:strength 0.9 ;
+    cur:positiveExample "4 SWS" , "2 SWS V + 2 SWS Ü" ; cur:negativeExample "SWS-Angabe" ;
+    cur:negativeHint "SWS sind keine Arbeitsstunden und keine LP."@de .
+hs:cue-semester a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ;
+    cur:pattern "^(\\d)\\.\\s*(FS|Sem\\.?|Semester|Fachsemester)$" ; cur:mapsTo cv:time_semester ; cur:strength 0.85 ;
+    cur:positiveExample "3. Semester" , "1. FS" , "5. Fachsemester" ; cur:negativeExample "Semesterwochenstunden" , "jedes Semester" ;
+    cur:recognitionHint "Spalte im Verlaufsplan = empfohlenes Fachsemester an cur:Placement (cur:isRecommendation true)."@de .
+hs:cue-uek-dig a cur:LexicalCue ; cur:surfaceForm "Digitalkompetenz" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:mapsTo qz:DigitalWorld ; cur:strength 0.7 ;
+    cur:recognitionHint "Auch „Data Literacy“, „KI-Kompetenz“."@de .
+hs:cue-uek-bne a cur:LexicalCue ; cur:surfaceForm "Nachhaltigkeit" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:mapsTo qz:BNE ; cur:strength 0.6 .
+hs:cue-uek-ent a cur:LexicalCue ; cur:surfaceForm "Entrepreneurship" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:mapsTo qz:Entrepreneurship ; cur:strength 0.7 .
+hs:cue-uek-ink a cur:LexicalCue ; cur:surfaceForm "Umgang mit Heterogenität" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:mapsTo qz:Diversity ; cur:strength 0.7 .
+hs:cue-uek-int a cur:LexicalCue ; cur:surfaceForm "Internationalisierung" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:mapsTo qz:Intercultural ; cur:strength 0.6 .
+hs:cue-uek-eth a cur:LexicalCue ; cur:surfaceForm "Gute wissenschaftliche Praxis" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:mapsTo qz:Ethics ; cur:strength 0.7 .
+hs:cue-uek-res a cur:LexicalCue ; cur:surfaceForm "Forschendes Lernen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:mapsTo qz:Research ; cur:strength 0.7 .
+hs:cue-qz-wb a cur:LexicalCue ; cur:surfaceForm "wissenschaftliche Befähigung" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:mapsTo qz:mrvo-WB ; cur:strength 0.8 .
+hs:cue-qz-ew a cur:LexicalCue ; cur:surfaceForm "Befähigung zu einer qualifizierten Erwerbstätigkeit" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:mapsTo qz:mrvo-EW ; cur:strength 0.9 .
+hs:cue-qz-pe a cur:LexicalCue ; cur:surfaceForm "Persönlichkeitsentwicklung" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:mapsTo qz:mrvo-PE ; cur:strength 0.8 .
+hs:cue-qz-ge a cur:LexicalCue ; cur:surfaceForm "gesellschaftliches Engagement" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:mapsTo qz:mrvo-GE ; cur:strength 0.8 .
+hs:cue-literatur a cur:LexicalCue ; cur:surfaceForm "Literatur" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:occursIn cv:occ_heading ;
+    cur:mapsTo hs:if-literatur ; cur:strength 0.85 ; cur:recognitionHint "Feldgrenze im Modulsteckbrief; Literaturangaben nicht als Aussagen."@de .
+hs:cue-dualkurz a cur:LexicalCue ; cur:surfaceForm "dual" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_term ;
+    cur:mapsTo hs:sm-dual-praxis ; cur:alsoMapsTo hs:sm-berufsbegleitend ; cur:strength 0.4 ;
+    cur:recognitionHint "Nur als dual klassifizieren, wenn curriculare und organisatorische Verzahnung der Lernorte beschrieben ist (WR 2013); ausbildungsintegrierend nur mit Berufsabschluss."@de .

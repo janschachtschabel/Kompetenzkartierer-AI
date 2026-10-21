@@ -1,0 +1,15 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-NI;Lernbereiche und Erfahrungsfelder;cue;elem:Bildungsbereich;Bildungsbereich;heading, toc;;;0.95;ja;In Schul-Lehrplänen bezeichnet 'Lernbereich' einen Fächerverbund.;elem:lex-7c2bb94f5e6c-NI
+DE-NI;Bildungsziele;cue;elem:Bildungsziel;Bildungs- und Entwicklungsziel;heading;;;0.90;ja;;elem:lex-ae77070244be-NI
+DE-NI;Arbeit in der Tageseinrichtung;cue;elem:Handlungsfeld;Handlungsfeld der Fachkräfte;;;;0.8;nein;;elem:cue-hf-teil3-ni
+DE-NI;Orientierungsplan;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.9;nein;;elem:cue-gen-orientierungsplan
+DE-NI;Orientierungsplan für Bildung und Erziehung im Elementarbereich;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.95;ja;Gesamt-PDF kann Handlungsempfehlungen U3 und Sprachbildung enthalten – mehrere Curricula anlegen.;elem:lex-bd8311cf9323-NI
+DE-NI;Ästhetische Bildung;pref;elem:f-aesthetik;Ästhetische Bildung;heading;;;0.95;ja;Bereich 5 des Gemeinsamen Rahmens. Sachsen: Leitbegriff Wahrnehmung.;elem:lex-f9f210ff4865-NI
+DE-NI;Emotionale Entwicklung und soziales Lernen;cue;elem:f-emotionen, elem:f-soziale-beziehungen;Emotionen, Soziale Beziehungen, Kooperation und Konflikte;heading;;;0.95;ja;;elem:lex-1ba7e6b2a375-NI
+DE-NI;Körper – Bewegung – Gesundheit;cue;elem:f-koerper;Körper, Bewegung, Gesundheit und Prävention;heading;;;0.95;ja;;elem:lex-4bb49d10ac5a-NI
+DE-NI;Lebenspraktische Kompetenzen;cue;elem:f-lebenspraxis;Lebenspraxis und Selbstständigkeit;heading;;;0.95;ja;;elem:lex-a9fae623dece-NI
+DE-NI;Mathematisches Grundverständnis;cue;elem:f-mathematik;Mathematik;heading;;;0.95;ja;;elem:lex-c04f9a3b64d0-NI
+DE-NI;Natur und Lebenswelt;cue;elem:f-natur-oekologie, elem:f-naturwissenschaft;Naturerfahrung und Ökologie, Naturwissenschaftliche Phänomene;heading;;;0.95;ja;;elem:lex-4c7267394a93-NI
+DE-NI;Ethische und religiöse Fragen, Grunderfahrungen menschlicher Existenz;cue;elem:f-religion-weltanschauung, elem:f-werte-ethik-philosophie;Religion und Weltanschauung, Werte, Ethik und Philosophieren;heading;;;0.95;ja;;elem:lex-53c7abbd640a-NI
+DE-NI;Sprache und Sprechen;cue;elem:f-sprache;Sprache, Kommunikation und Literacy;heading;;;0.95;ja;;elem:lex-3ce0e5b0e5fb-NI
+DE-NI;Entwicklung kognitiver Fähigkeiten und der Freude am Lernen;cue;kd:ec-cognition, kd:ec-learning, elem:Bildungsbereich;Kognitive Kompetenzen, Lernmethodische Kompetenz, Bildungsbereich;heading;;;0.95;ja;Lernbereich ohne eigenen Weltausschnitt – siehe BW 'Wahrnehmen und Denken'.;elem:lex-b27c5868b3ce-NI

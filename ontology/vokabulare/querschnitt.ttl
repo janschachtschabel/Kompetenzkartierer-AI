@@ -1,0 +1,289 @@
+@prefix qz:    <https://w3id.org/wlo/curriculum/crosscutting/> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix lp:    <https://w3id.org/lehrplan/ontology/> .
+
+# =============================================================================
+# Querschnittsziele: EIN Hub-Schema für alle Bildungsbereiche (qz:Hub) und
+# Quellschemata der Länder, der KMK, des BIBB, der EU und der MRVO, die per
+# SKOS-Mapping am Hub hängen. Ein Querschnittsziel existiert genau einmal im
+# Hub; ob es in einem Land Bildungsbereich, Leitperspektive, Prinzip oder
+# Standardberufsbildposition ist, steht am Knoten bzw. am Quellschema.
+# Querschnittsfragen über Bereiche („Wo wird BNE konkret verankert?“) laufen
+# über den Hub. Quellschemata, deren Wortlaut nicht am Primärdokument geprüft
+# ist, tragen eine editorialNote.
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/crosscutting> a owl:Ontology ;
+    dct:title "Querschnittsziele"@de , "cross-cutting objectives"@en ;
+    owl:versionInfo "1.0-entwurf" ;
+    dct:created "2026-10-19"^^xsd:date .
+
+# -----------------------------------------------------------------------------
+# Hub
+# -----------------------------------------------------------------------------
+qz:Hub a skos:ConceptScheme ;
+    skos:prefLabel "Querschnittsziele – Hub"@de , "cross-cutting objectives – hub"@en .
+
+qz:BNE a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Bildung für nachhaltige Entwicklung"@de , "education for sustainable development"@en ;
+    skos:altLabel "BNE"@de , "Nachhaltigkeit"@de , "Umweltbildung"@de , "Globales Lernen"@de , "BBNE"@de .
+qz:DigitalWorld a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Medienbildung und Bildung in der digitalen Welt"@de , "media and digital education"@en ;
+    skos:altLabel "Medienbildung"@de , "Medienkompetenz"@de , "Digitale Bildung"@de , "Digitalkompetenz"@de , "Digitalität"@de , "Leben und Lernen in einer digitalisierten Welt"@de .
+qz:Democracy a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Demokratiebildung und politische Bildung"@de , "democracy education"@en ;
+    skos:altLabel "Demokratieerziehung"@de , "politische Bildung"@de , "Bürgerkompetenz"@de .
+qz:Values a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Wertebildung und Werteorientierung"@de , "values education"@en ;
+    skos:altLabel "Werteorientierung"@de , "Wertevermittlung"@de .
+qz:Diversity a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Akzeptanz von Vielfalt und Inklusion"@de , "diversity and inclusion"@en ;
+    skos:altLabel "Bildung für Toleranz und Akzeptanz von Vielfalt"@de , "BTV"@de , "Inklusion"@de , "Diversität"@de , "Umgang mit Heterogenität"@de , "vorurteilsbewusste Bildung"@de .
+qz:Intercultural a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Interkulturelle Bildung"@de , "intercultural education"@en ;
+    skos:altLabel "Interkulturalität"@de , "interkulturelle Kompetenz"@de .
+qz:Cultural a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Kulturelle Bildung"@de , "cultural education"@en ;
+    skos:altLabel "Kulturbewusstsein und kulturelle Ausdrucksfähigkeit"@de .
+qz:Health a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Gesundheitsförderung und Prävention"@de , "health promotion and prevention"@en ;
+    skos:altLabel "Prävention und Gesundheitsförderung"@de , "PG"@de , "Gesundheitsbildung"@de , "Sicherheit und Gesundheit bei der Arbeit"@de .
+qz:CareerOrientation a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Berufliche Orientierung"@de , "career orientation"@en ;
+    skos:altLabel "Berufs- und Studienorientierung"@de , "BO"@de , "Arbeitsweltbezug"@de .
+qz:ConsumerEducation a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Verbraucherbildung"@de , "consumer education"@en ; skos:altLabel "VB"@de .
+qz:LanguageEducation a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Sprachbildung"@de , "language education across the curriculum"@en ;
+    skos:altLabel "durchgängige Sprachbildung"@de , "sprachsensibler Fachunterricht"@de , "alltagsintegrierte Sprachbildung"@de .
+qz:Literacy a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_keyCompetence ;
+    skos:prefLabel "Literalität und Numeralität (Grundbildung)"@de , "literacy and numeracy"@en ;
+    skos:altLabel "Grundbildung"@de , "Lese- und Schreibkompetenz"@de .
+qz:Plurilingual a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_keyCompetence ;
+    skos:prefLabel "Mehrsprachigkeit und Fremdsprachenkompetenz"@de , "plurilingual competence"@en ;
+    skos:altLabel "Fremdsprachenkompetenz"@de , "Mehrsprachenkompetenz"@de .
+qz:STEM a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_keyCompetence ;
+    skos:prefLabel "MINT-Bildung"@de , "STEM education"@en .
+qz:LearningToLearn a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_crossCompetence ;
+    skos:prefLabel "Lernkompetenz und eigenverantwortliches Lernen"@de , "learning to learn"@en ;
+    skos:altLabel "Lernen lernen"@de , "lernmethodische Kompetenz"@de , "Lernstrategien"@de , "Umgang mit dem eigenen Sprachenlernen"@de .
+qz:SocialEmotional a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_crossCompetence ;
+    skos:prefLabel "Personale und sozial-emotionale Kompetenz"@de , "personal and social-emotional competence"@en ;
+    skos:altLabel "sozial-emotionales Lernen"@de , "Sozialkompetenz"@de , "Selbstkompetenz"@de , "Kooperation"@de , "Resilienz"@de .
+qz:Entrepreneurship a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_keyCompetence ;
+    skos:prefLabel "Unternehmerisches Denken und Handeln"@de , "entrepreneurship"@en ;
+    skos:altLabel "unternehmerische Kompetenz"@de .
+qz:GenderEquality a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Gleichstellung der Geschlechter"@de , "gender equality"@en ;
+    skos:altLabel "Gender Mainstreaming"@de , "geschlechtersensible Pädagogik"@de .
+qz:SexualEducation a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Sexualbildung"@de , "sexuality education"@en ;
+    skos:altLabel "Sexualerziehung"@de , "Bildung für sexuelle Selbstbestimmung"@de .
+qz:ViolencePrevention a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Gewaltprävention"@de , "violence prevention"@en .
+qz:Mobility a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Mobilitätsbildung und Verkehrserziehung"@de , "mobility and road safety education"@en .
+qz:Europe a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Europabildung"@de , "European education"@en .
+qz:ChildrensRights a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Kinderrechte und Partizipation"@de , "children's rights and participation"@en ;
+    skos:altLabel "Partizipation"@de , "Kinderrechte"@de , "demokratische Mitbestimmung"@de .
+qz:ChildProtection a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Kinderschutz"@de , "child protection"@en .
+qz:Transitions a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Übergänge und Bildungskontinuität"@de , "transitions"@en ;
+    skos:altLabel "Übergänge"@de , "Eingewöhnung"@de , "Übergang in die Schule"@de .
+qz:FamilyPartnership a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Bildungs- und Erziehungspartnerschaft mit Familien"@de , "partnership with families"@en ;
+    skos:altLabel "Zusammenarbeit mit Familien"@de , "Elternarbeit"@de .
+qz:DataProtection a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:broader qz:DigitalWorld ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Datenschutz und Informationssicherheit"@de , "data protection and information security"@en .
+qz:WorkOrganisation a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_standardPosition ;
+    skos:prefLabel "Organisation, Berufsbildung, Arbeits- und Tarifrecht"@de , "work organisation and labour law"@en .
+qz:CountryKnowledge a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_perspective ;
+    skos:prefLabel "Landeskundliches Orientierungswissen"@de , "civic orientation knowledge"@en ;
+    skos:altLabel "Landeskunde"@de .
+qz:Research a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_qualificationGoal ;
+    skos:prefLabel "Wissenschaftliche Befähigung und Forschungskompetenz"@de , "academic and research competence"@en ;
+    skos:altLabel "Forschendes Lernen"@de , "gute wissenschaftliche Praxis"@de .
+qz:Employability a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_qualificationGoal ;
+    skos:prefLabel "Befähigung zu qualifizierter Erwerbstätigkeit"@de , "employability"@en ;
+    skos:altLabel "Berufsbefähigung"@de , "Employability"@de , "berufliche Handlungsfähigkeit"@de .
+qz:PersonalDevelopment a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_qualificationGoal ;
+    skos:prefLabel "Persönlichkeitsentwicklung und gesellschaftliches Engagement"@de , "personal development and civic engagement"@en ;
+    skos:altLabel "Persönlichkeitsbildung"@de .
+qz:Ethics a cur:CrossCuttingObjective ; skos:inScheme qz:Hub ; skos:topConceptOf qz:Hub ; cur:objectiveType cv:obj_crossCompetence ;
+    skos:prefLabel "Ethik und Verantwortung"@de , "ethics and responsibility"@en ;
+    skos:altLabel "Berufsethos"@de .
+
+# -----------------------------------------------------------------------------
+# KMK „Bildung in der digitalen Welt“ (2016) – sechs Kompetenzbereiche
+# -----------------------------------------------------------------------------
+qz:KMKDigital a skos:ConceptScheme ;
+    skos:prefLabel "KMK-Strategie Bildung in der digitalen Welt – Kompetenzbereiche"@de ;
+    dct:source "KMK 2016 (ergänzt 2021); maschinenlesbarer KIM-Entwurf: http://w3id.org/kim/kmk-vocabs/digitalisierungsbezogene-kompetenzen/" ;
+    skos:editorialNote "Die 22 Einzelkompetenzen werden aus dem KIM-Entwurf importiert, wenn er stabil ist."@de .
+qz:kmkdig-1 a cur:CrossCuttingObjective ; skos:inScheme qz:KMKDigital ; skos:topConceptOf qz:KMKDigital ; skos:notation "1" ;
+    skos:prefLabel "Suchen, Verarbeiten und Aufbewahren"@de ; skos:broadMatch qz:DigitalWorld .
+qz:kmkdig-2 a cur:CrossCuttingObjective ; skos:inScheme qz:KMKDigital ; skos:topConceptOf qz:KMKDigital ; skos:notation "2" ;
+    skos:prefLabel "Kommunizieren und Kooperieren"@de ; skos:broadMatch qz:DigitalWorld .
+qz:kmkdig-3 a cur:CrossCuttingObjective ; skos:inScheme qz:KMKDigital ; skos:topConceptOf qz:KMKDigital ; skos:notation "3" ;
+    skos:prefLabel "Produzieren und Präsentieren"@de ; skos:broadMatch qz:DigitalWorld .
+qz:kmkdig-4 a cur:CrossCuttingObjective ; skos:inScheme qz:KMKDigital ; skos:topConceptOf qz:KMKDigital ; skos:notation "4" ;
+    skos:prefLabel "Schützen und sicher Agieren"@de ; skos:broadMatch qz:DigitalWorld .
+qz:kmkdig-5 a cur:CrossCuttingObjective ; skos:inScheme qz:KMKDigital ; skos:topConceptOf qz:KMKDigital ; skos:notation "5" ;
+    skos:prefLabel "Problemlösen und Handeln"@de ; skos:broadMatch qz:DigitalWorld .
+qz:kmkdig-6 a cur:CrossCuttingObjective ; skos:inScheme qz:KMKDigital ; skos:topConceptOf qz:KMKDigital ; skos:notation "6" ;
+    skos:prefLabel "Analysieren und Reflektieren"@de ; skos:broadMatch qz:DigitalWorld .
+
+# -----------------------------------------------------------------------------
+# Medienkompetenzrahmen NRW – sechs Kompetenzbereiche
+# -----------------------------------------------------------------------------
+qz:MKR-NW a skos:ConceptScheme ;
+    skos:prefLabel "Medienkompetenzrahmen NRW"@de ;
+    skos:editorialNote "Bereichsnamen vor Freigabe am aktuellen Medienkompetenzrahmen prüfen."@de .
+qz:mkr-1 a cur:CrossCuttingObjective ; skos:inScheme qz:MKR-NW ; skos:topConceptOf qz:MKR-NW ; skos:notation "1" ; skos:prefLabel "Bedienen und Anwenden"@de ; skos:broadMatch qz:DigitalWorld .
+qz:mkr-2 a cur:CrossCuttingObjective ; skos:inScheme qz:MKR-NW ; skos:topConceptOf qz:MKR-NW ; skos:notation "2" ; skos:prefLabel "Informieren und Recherchieren"@de ; skos:broadMatch qz:DigitalWorld ; skos:closeMatch qz:kmkdig-1 .
+qz:mkr-3 a cur:CrossCuttingObjective ; skos:inScheme qz:MKR-NW ; skos:topConceptOf qz:MKR-NW ; skos:notation "3" ; skos:prefLabel "Kommunizieren und Kooperieren"@de ; skos:broadMatch qz:DigitalWorld ; skos:closeMatch qz:kmkdig-2 .
+qz:mkr-4 a cur:CrossCuttingObjective ; skos:inScheme qz:MKR-NW ; skos:topConceptOf qz:MKR-NW ; skos:notation "4" ; skos:prefLabel "Produzieren und Präsentieren"@de ; skos:broadMatch qz:DigitalWorld ; skos:closeMatch qz:kmkdig-3 .
+qz:mkr-5 a cur:CrossCuttingObjective ; skos:inScheme qz:MKR-NW ; skos:topConceptOf qz:MKR-NW ; skos:notation "5" ; skos:prefLabel "Analysieren und Reflektieren"@de ; skos:broadMatch qz:DigitalWorld ; skos:closeMatch qz:kmkdig-6 .
+qz:mkr-6 a cur:CrossCuttingObjective ; skos:inScheme qz:MKR-NW ; skos:topConceptOf qz:MKR-NW ; skos:notation "6" ; skos:prefLabel "Problemlösen und Modellieren"@de ; skos:broadMatch qz:DigitalWorld .
+
+# -----------------------------------------------------------------------------
+# Leitperspektiven Bildungsplan 2016 Baden-Württemberg
+# -----------------------------------------------------------------------------
+qz:BW-BP2016 a skos:ConceptScheme ;
+    skos:prefLabel "Leitperspektiven Bildungsplan 2016 (BW)"@de ;
+    skos:editorialNote "Plangeneration BP2016. Laut Feedback wurde „Medienbildung“ mit der Reform 2026 zu „Leben und Lernen in einer digitalisierten Welt“ weiterentwickelt – nicht unabhängig geprüft. FWU führt Leitperspektiven als Klasse CE-Leitperspektive (lp:LP_0030325)."@de .
+qz:bw-BNE a cur:CrossCuttingObjective ; skos:inScheme qz:BW-BP2016 ; skos:topConceptOf qz:BW-BP2016 ; skos:notation "BNE" ;
+    skos:prefLabel "Bildung für nachhaltige Entwicklung"@de ; skos:exactMatch qz:BNE .
+qz:bw-BTV a cur:CrossCuttingObjective ; skos:inScheme qz:BW-BP2016 ; skos:topConceptOf qz:BW-BP2016 ; skos:notation "BTV" ;
+    skos:prefLabel "Bildung für Toleranz und Akzeptanz von Vielfalt"@de ; skos:exactMatch qz:Diversity .
+qz:bw-PG a cur:CrossCuttingObjective ; skos:inScheme qz:BW-BP2016 ; skos:topConceptOf qz:BW-BP2016 ; skos:notation "PG" ;
+    skos:prefLabel "Prävention und Gesundheitsförderung"@de ; skos:exactMatch qz:Health .
+qz:bw-BO a cur:CrossCuttingObjective ; skos:inScheme qz:BW-BP2016 ; skos:topConceptOf qz:BW-BP2016 ; skos:notation "BO" ;
+    skos:prefLabel "Berufliche Orientierung"@de ; skos:exactMatch qz:CareerOrientation .
+qz:bw-MB a cur:CrossCuttingObjective ; skos:inScheme qz:BW-BP2016 ; skos:topConceptOf qz:BW-BP2016 ; skos:notation "MB" ;
+    skos:prefLabel "Medienbildung"@de ; skos:exactMatch qz:DigitalWorld .
+qz:bw-VB a cur:CrossCuttingObjective ; skos:inScheme qz:BW-BP2016 ; skos:topConceptOf qz:BW-BP2016 ; skos:notation "VB" ;
+    skos:prefLabel "Verbraucherbildung"@de ; skos:exactMatch qz:ConsumerEducation .
+
+# -----------------------------------------------------------------------------
+# Leitperspektiven Hamburg (Bildungspläne 2022)
+# -----------------------------------------------------------------------------
+qz:HH-2022 a skos:ConceptScheme ;
+    skos:prefLabel "Leitperspektiven der Hamburger Bildungspläne"@de ;
+    skos:editorialNote "Kürzel W, BNE, D laut Recherche; am Bildungsplan prüfen."@de .
+qz:hh-W a cur:CrossCuttingObjective ; skos:inScheme qz:HH-2022 ; skos:topConceptOf qz:HH-2022 ; skos:notation "W" ;
+    skos:prefLabel "Wertebildung/Werteorientierung"@de ; skos:exactMatch qz:Values .
+qz:hh-BNE a cur:CrossCuttingObjective ; skos:inScheme qz:HH-2022 ; skos:topConceptOf qz:HH-2022 ; skos:notation "BNE" ;
+    skos:prefLabel "Bildung für nachhaltige Entwicklung"@de ; skos:exactMatch qz:BNE .
+qz:hh-D a cur:CrossCuttingObjective ; skos:inScheme qz:HH-2022 ; skos:topConceptOf qz:HH-2022 ; skos:notation "D" ;
+    skos:prefLabel "Leben und Lernen in einer digital geprägten Welt"@de ; skos:exactMatch qz:DigitalWorld .
+
+# -----------------------------------------------------------------------------
+# Rahmenlehrplan 1–10 Berlin/Brandenburg, Teil B
+# -----------------------------------------------------------------------------
+qz:BEBB-TeilB a skos:ConceptScheme ;
+    skos:prefLabel "Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen"@de ;
+    skos:editorialNote "Liste aus Modellwissen und Recherche; vor Freigabe an Teil B (2015) prüfen."@de .
+qz:bebb-sprachbildung a cur:CrossCuttingObjective ; skos:inScheme qz:BEBB-TeilB ; skos:topConceptOf qz:BEBB-TeilB ; cur:objectiveType cv:obj_mission ;
+    skos:prefLabel "Basiscurriculum Sprachbildung"@de ; skos:exactMatch qz:LanguageEducation .
+qz:bebb-medienbildung a cur:CrossCuttingObjective ; skos:inScheme qz:BEBB-TeilB ; skos:topConceptOf qz:BEBB-TeilB ; cur:objectiveType cv:obj_mission ;
+    skos:prefLabel "Basiscurriculum Medienbildung"@de ; skos:exactMatch qz:DigitalWorld .
+qz:bebb-bso a cur:CrossCuttingObjective ; skos:inScheme qz:BEBB-TeilB ; skos:topConceptOf qz:BEBB-TeilB ; skos:prefLabel "Berufs- und Studienorientierung"@de ; skos:exactMatch qz:CareerOrientation .
+qz:bebb-vielfalt a cur:CrossCuttingObjective ; skos:inScheme qz:BEBB-TeilB ; skos:topConceptOf qz:BEBB-TeilB ; skos:prefLabel "Bildung zur Akzeptanz von Vielfalt (Diversity)"@de ; skos:exactMatch qz:Diversity .
+qz:bebb-demokratie a cur:CrossCuttingObjective ; skos:inScheme qz:BEBB-TeilB ; skos:topConceptOf qz:BEBB-TeilB ; skos:prefLabel "Demokratiebildung"@de ; skos:exactMatch qz:Democracy .
+qz:bebb-europa a cur:CrossCuttingObjective ; skos:inScheme qz:BEBB-TeilB ; skos:topConceptOf qz:BEBB-TeilB ; skos:prefLabel "Europabildung in der Schule"@de ; skos:exactMatch qz:Europe .
+qz:bebb-gesundheit a cur:CrossCuttingObjective ; skos:inScheme qz:BEBB-TeilB ; skos:topConceptOf qz:BEBB-TeilB ; skos:prefLabel "Gesundheitsförderung"@de ; skos:exactMatch qz:Health .
+qz:bebb-gewalt a cur:CrossCuttingObjective ; skos:inScheme qz:BEBB-TeilB ; skos:topConceptOf qz:BEBB-TeilB ; skos:prefLabel "Gewaltprävention"@de ; skos:exactMatch qz:ViolencePrevention .
+qz:bebb-gender a cur:CrossCuttingObjective ; skos:inScheme qz:BEBB-TeilB ; skos:topConceptOf qz:BEBB-TeilB ; skos:prefLabel "Gleichstellung und Gleichberechtigung der Geschlechter (Gender Mainstreaming)"@de ; skos:exactMatch qz:GenderEquality .
+qz:bebb-interkulturell a cur:CrossCuttingObjective ; skos:inScheme qz:BEBB-TeilB ; skos:topConceptOf qz:BEBB-TeilB ; skos:prefLabel "Interkulturelle Bildung und Erziehung"@de ; skos:exactMatch qz:Intercultural .
+qz:bebb-kultur a cur:CrossCuttingObjective ; skos:inScheme qz:BEBB-TeilB ; skos:topConceptOf qz:BEBB-TeilB ; skos:prefLabel "Kulturelle Bildung"@de ; skos:exactMatch qz:Cultural .
+qz:bebb-mobilitaet a cur:CrossCuttingObjective ; skos:inScheme qz:BEBB-TeilB ; skos:topConceptOf qz:BEBB-TeilB ; skos:prefLabel "Mobilitätsbildung und Verkehrserziehung"@de ; skos:exactMatch qz:Mobility .
+qz:bebb-nachhaltigkeit a cur:CrossCuttingObjective ; skos:inScheme qz:BEBB-TeilB ; skos:topConceptOf qz:BEBB-TeilB ; skos:prefLabel "Nachhaltige Entwicklung/Lernen in globalen Zusammenhängen"@de ; skos:exactMatch qz:BNE .
+qz:bebb-sexualitaet a cur:CrossCuttingObjective ; skos:inScheme qz:BEBB-TeilB ; skos:topConceptOf qz:BEBB-TeilB ; skos:prefLabel "Sexualerziehung/Bildung für sexuelle Selbstbestimmung"@de ; skos:exactMatch qz:SexualEducation .
+qz:bebb-verbraucher a cur:CrossCuttingObjective ; skos:inScheme qz:BEBB-TeilB ; skos:topConceptOf qz:BEBB-TeilB ; skos:prefLabel "Verbraucherbildung"@de ; skos:exactMatch qz:ConsumerEducation .
+
+# -----------------------------------------------------------------------------
+# Standardberufsbildpositionen (verbindlich für Ausbildungsordnungen ab 1.8.2021)
+# -----------------------------------------------------------------------------
+qz:SBBP2021 a skos:ConceptScheme ;
+    skos:prefLabel "Modernisierte Standardberufsbildpositionen (BIBB-HA-Empfehlung Nr. 172)"@de ;
+    dct:source "BIBB-Hauptausschuss, Empfehlung Nr. 172 vom 17.11.2020" ;
+    skos:scopeNote "Zugleich Struktureinheit (Knotentyp beruf:Standardberufsbildposition) und Querschnittsziel. Alte Bezeichnungen als altLabel, damit alte und neue Ordnungen vergleichbar bleiben."@de .
+qz:sbbp-org a cur:CrossCuttingObjective ; skos:inScheme qz:SBBP2021 ; skos:topConceptOf qz:SBBP2021 ; cur:objectiveType cv:obj_standardPosition ;
+    skos:prefLabel "Organisation des Ausbildungsbetriebes, Berufsbildung sowie Arbeits- und Tarifrecht"@de ;
+    skos:altLabel "Berufsbildung, Arbeits- und Tarifrecht"@de , "Aufbau und Organisation des Ausbildungsbetriebes"@de ;
+    skos:exactMatch qz:WorkOrganisation .
+qz:sbbp-safety a cur:CrossCuttingObjective ; skos:inScheme qz:SBBP2021 ; skos:topConceptOf qz:SBBP2021 ; cur:objectiveType cv:obj_standardPosition ;
+    skos:prefLabel "Sicherheit und Gesundheit bei der Arbeit"@de ;
+    skos:altLabel "Sicherheit und Gesundheitsschutz bei der Arbeit"@de ;
+    skos:broadMatch qz:Health .
+qz:sbbp-sustainability a cur:CrossCuttingObjective ; skos:inScheme qz:SBBP2021 ; skos:topConceptOf qz:SBBP2021 ; cur:objectiveType cv:obj_standardPosition ;
+    skos:prefLabel "Umweltschutz und Nachhaltigkeit"@de ; skos:altLabel "Umweltschutz"@de ;
+    skos:broadMatch qz:BNE .
+qz:sbbp-digital a cur:CrossCuttingObjective ; skos:inScheme qz:SBBP2021 ; skos:topConceptOf qz:SBBP2021 ; cur:objectiveType cv:obj_standardPosition ;
+    skos:prefLabel "Digitalisierte Arbeitswelt"@de ;
+    skos:broadMatch qz:DigitalWorld .
+
+# -----------------------------------------------------------------------------
+# EU-Schlüsselkompetenzen für lebenslanges Lernen (2018)
+# -----------------------------------------------------------------------------
+qz:EUKeyCompetences a skos:ConceptScheme ;
+    skos:prefLabel "EU-Schlüsselkompetenzen für lebenslanges Lernen (2018)"@de , "EU key competences 2018"@en ;
+    dct:source "Empfehlung des Rates vom 22. Mai 2018 (2018/C 189/01)" ;
+    skos:editorialNote "Keine offiziellen Konzept-URIs gefunden (Prüfung 2026-10-19)."@de .
+qz:eukc-literacy a cur:CrossCuttingObjective ; skos:inScheme qz:EUKeyCompetences ; skos:topConceptOf qz:EUKeyCompetences ; cur:objectiveType cv:obj_keyCompetence ;
+    skos:notation "1" ; skos:prefLabel "Lese- und Schreibkompetenz"@de , "literacy competence"@en ; skos:closeMatch qz:Literacy .
+qz:eukc-multilingual a cur:CrossCuttingObjective ; skos:inScheme qz:EUKeyCompetences ; skos:topConceptOf qz:EUKeyCompetences ; cur:objectiveType cv:obj_keyCompetence ;
+    skos:notation "2" ; skos:prefLabel "Mehrsprachenkompetenz"@de , "multilingual competence"@en ; skos:closeMatch qz:Plurilingual .
+qz:eukc-stem a cur:CrossCuttingObjective ; skos:inScheme qz:EUKeyCompetences ; skos:topConceptOf qz:EUKeyCompetences ; cur:objectiveType cv:obj_keyCompetence ;
+    skos:notation "3" ; skos:prefLabel "Mathematische Kompetenz und Kompetenz in Naturwissenschaften, Informatik und Technik"@de , "mathematical competence and competence in science, technology and engineering"@en ;
+    skos:closeMatch qz:STEM .
+qz:eukc-digital a cur:CrossCuttingObjective ; skos:inScheme qz:EUKeyCompetences ; skos:topConceptOf qz:EUKeyCompetences ; cur:objectiveType cv:obj_keyCompetence ;
+    skos:notation "4" ; skos:prefLabel "Digitale Kompetenz"@de , "digital competence"@en ; skos:closeMatch qz:DigitalWorld .
+qz:eukc-personal a cur:CrossCuttingObjective ; skos:inScheme qz:EUKeyCompetences ; skos:topConceptOf qz:EUKeyCompetences ; cur:objectiveType cv:obj_keyCompetence ;
+    skos:notation "5" ; skos:prefLabel "Persönliche, soziale und Lernkompetenz"@de , "personal, social and learning to learn competence"@en ;
+    skos:relatedMatch qz:SocialEmotional , qz:LearningToLearn .
+qz:eukc-citizenship a cur:CrossCuttingObjective ; skos:inScheme qz:EUKeyCompetences ; skos:topConceptOf qz:EUKeyCompetences ; cur:objectiveType cv:obj_keyCompetence ;
+    skos:notation "6" ; skos:prefLabel "Bürgerkompetenz"@de , "citizenship competence"@en ; skos:closeMatch qz:Democracy .
+qz:eukc-entrepreneurship a cur:CrossCuttingObjective ; skos:inScheme qz:EUKeyCompetences ; skos:topConceptOf qz:EUKeyCompetences ; cur:objectiveType cv:obj_keyCompetence ;
+    skos:notation "7" ; skos:prefLabel "Unternehmerische Kompetenz"@de , "entrepreneurship competence"@en ; skos:closeMatch qz:Entrepreneurship .
+qz:eukc-cultural a cur:CrossCuttingObjective ; skos:inScheme qz:EUKeyCompetences ; skos:topConceptOf qz:EUKeyCompetences ; cur:objectiveType cv:obj_keyCompetence ;
+    skos:notation "8" ; skos:prefLabel "Kulturbewusstsein und kulturelle Ausdrucksfähigkeit"@de , "cultural awareness and expression competence"@en ; skos:closeMatch qz:Cultural .
+
+# -----------------------------------------------------------------------------
+# Qualifikationszielkategorien § 11 MRVO (Hochschule)
+# -----------------------------------------------------------------------------
+qz:MRVO11 a skos:ConceptScheme ;
+    skos:prefLabel "Qualifikationsziele nach § 11 MRVO"@de ;
+    dct:source "§ 11 MRVO i. V. m. Art. 2 Abs. 3 Nr. 1 Studienakkreditierungsstaatsvertrag" .
+qz:mrvo-WB a cur:CrossCuttingObjective ; skos:inScheme qz:MRVO11 ; skos:topConceptOf qz:MRVO11 ; cur:objectiveType cv:obj_qualificationGoal ;
+    skos:notation "QZ-WB" ; skos:prefLabel "Wissenschaftliche oder künstlerische Befähigung"@de ; skos:exactMatch qz:Research .
+qz:mrvo-EW a cur:CrossCuttingObjective ; skos:inScheme qz:MRVO11 ; skos:topConceptOf qz:MRVO11 ; cur:objectiveType cv:obj_qualificationGoal ;
+    skos:notation "QZ-EW" ; skos:prefLabel "Befähigung zu einer qualifizierten Erwerbstätigkeit"@de ; skos:exactMatch qz:Employability .
+qz:mrvo-PE a cur:CrossCuttingObjective ; skos:inScheme qz:MRVO11 ; skos:topConceptOf qz:MRVO11 ; cur:objectiveType cv:obj_qualificationGoal ;
+    skos:notation "QZ-PE" ; skos:prefLabel "Persönlichkeitsentwicklung"@de ; skos:exactMatch qz:PersonalDevelopment ;
+    skos:scopeNote "Umfasst laut MRVO-Begründung das gesellschaftliche Engagement."@de .
+qz:mrvo-GE a cur:CrossCuttingObjective ; skos:inScheme qz:MRVO11 ; skos:broader qz:mrvo-PE ; cur:objectiveType cv:obj_qualificationGoal ;
+    skos:notation "QZ-GE" ; skos:prefLabel "Gesellschaftliches Engagement"@de ; skos:altLabel "zivilgesellschaftliches Engagement"@de ;
+    skos:closeMatch qz:Democracy .
+
+# -----------------------------------------------------------------------------
+# Erwachsenenbildung: Querschnittsdimensionen (EB-CO v0.2)
+# -----------------------------------------------------------------------------
+qz:EB a skos:ConceptScheme ;
+    skos:prefLabel "Querschnittsdimensionen der Erwachsenen- und Weiterbildung"@de ;
+    skos:scopeNote "Querschnittlichkeit ist ein Geltungsbereich, keine Kompetenzart (Muster GRETA 2.0: Tag in Facetten statt Parallelbaum)."@de .
+qz:eb-strategic a cur:CrossCuttingObjective ; skos:inScheme qz:EB ; skos:topConceptOf qz:EB ; cur:objectiveType cv:obj_crossCompetence ;
+    skos:prefLabel "Strategische Kompetenz"@de ; skos:altLabel "Kommunikationsstrategien"@de ; skos:broadMatch qz:LearningToLearn .
+qz:eb-landeskunde a cur:CrossCuttingObjective ; skos:inScheme qz:EB ; skos:topConceptOf qz:EB ;
+    skos:prefLabel "Fokus Landeskunde"@de ; skos:exactMatch qz:CountryKnowledge .
+qz:eb-diversity a cur:CrossCuttingObjective ; skos:inScheme qz:EB ; skos:topConceptOf qz:EB ;
+    skos:prefLabel "Fokus Diversität und Interkulturalität"@de ; skos:closeMatch qz:Intercultural ; skos:relatedMatch qz:Diversity .

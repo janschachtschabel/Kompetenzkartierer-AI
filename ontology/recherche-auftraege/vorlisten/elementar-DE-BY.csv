@@ -1,0 +1,30 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-BY;Basiskompetenzen;pref;elem:Basiskompetenzen;Basiskompetenzen;heading, toc;;;0.95;ja;Kompetenzmodell nach Fthenakis.;elem:lex-543b5f00abe9-BY
+DE-BY;themenbezogener Bildungs- und Erziehungsbereich;cue;elem:Bildungsbereich;Bildungsbereich;heading, toc;;;0.95;ja;Kapitel 7 des BayBEP, unter Leitbildern gebündelt.;elem:lex-d0f5e9a642ed-BY
+DE-BY;Schlüsselprozesse für Bildungs- und Erziehungsqualität;cue;elem:Handlungsfeld;Handlungsfeld der Fachkräfte;heading, toc;;;0.98;ja;Kapitel 8 des BayBEP.;elem:lex-0374cb61e54c-BY
+DE-BY;^([A-ZÄÖÜ][a-zäöüß-]+(,| und| oder)? )+Kinder$;cue;elem:Leitbild;Leitbild/Vision;;;;0.85;nein;"Nicht als Bildungsbereich instanziieren; die Unterkapitel sind die Bereiche.";elem:cue-leitbild-muster
+DE-BY;Fragende und forschende Kinder;cue;elem:Leitbild;Leitbild/Vision;heading;;;0.8;nein;;elem:cue-by-fragend
+DE-BY;Sprach- und medienkompetente Kinder;cue;elem:Leitbild;Leitbild/Vision;heading;;;0.8;nein;;elem:cue-by-sprachmedien
+DE-BY;Praxisbeispiele;cue;elem:Praxisbeispiel;Praxisbeispiel;;;;0.85;nein;;elem:cue-praxisbeispiele
+DE-BY;themenübergreifende Bildungs- und Erziehungsperspektiven;cue;elem:Querschnitt;Querschnitt/Leitprinzip;heading, toc;;;0.95;ja;Kapitel 6 des BayBEP.;elem:lex-60fdecfbd358-BY
+DE-BY;Bayerischer Bildungs- und Erziehungsplan;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.98;ja;Kurzform BayBEP oder BEP. Konkretisiert die Bildungs- und Erziehungsziele der AVBayKiBiG.;elem:lex-cc2b1d8f16a3-BY
+DE-BY;Bayerische Leitlinien für die Bildung und Erziehung von Kindern bis zum Ende der Grundschulzeit;cue;elem:dt-Bildungsplan-0-10;Altersübergreifender Bildungsplan;titlePage;;;0.95;nein;Kurzform BayBL. Bildungsorte bis Ende der Grundschule.;elem:lex-aac763b5a114-BY
+DE-BY;AVBayKiBiG;cue;elem:dt-Rechtsnorm;Ausführungsverordnung/Kita-Gesetz;body, titlePage;;;0.95;ja;Ausführungsverordnung zum BayKiBiG mit verbindlichen Bildungs- und Erziehungszielen.;elem:lex-388e9f3ea4eb-BY
+DE-BY;Ästhetik, Kunst und Kultur;cue;elem:f-aesthetik, elem:f-bildnerisch;Ästhetische Bildung, Bildnerisches Gestalten;heading;;;0.95;ja;;elem:lex-2e92e77e7579-BY
+DE-BY;Bewegung, Rhythmik, Tanz und Sport;cue;elem:f-bewegung, elem:f-musik, elem:f-tanz-darstellendes-spiel;Bewegung, Musik und Rhythmik, Tanz und darstellendes Spiel;heading;;;0.95;ja;;elem:lex-dd56a4451bd7-BY
+DE-BY;Digitale Medien und Technologien;cue;elem:f-digitale-technologien, elem:f-medien;Digitale Geräte und Technologien, Medien und digitale Bildung;heading;;;0.95;ja;Aktuelle Bezeichnung von BayBEP Kapitel 7.4.;elem:lex-6745fe8a167a-BY
+DE-BY;Emotionalität, soziale Beziehungen und Konflikte;cue;elem:f-emotionen, elem:f-soziale-beziehungen;Emotionen, Soziale Beziehungen, Kooperation und Konflikte;heading;;;0.95;ja;;elem:lex-952756eb0ee1-BY
+DE-BY;Gesundheit;cue;elem:f-gesundheit-ernaehrung;Gesundheit, Ernährung und Hygiene;heading;;;0.80;ja;;elem:lex-4e67a1f94e45-BY
+DE-BY;Umgang mit individuellen Unterschieden und soziokultureller Vielfalt;cue;elem:f-kulturelle-vielfalt, elem:p-diversitaet, elem:p-inklusion;Kulturelle Vielfalt und interkulturelles Lernen, Diversität und vorurteilsbewusste Bildung, Inklusion;heading;;;0.90;nein;Themenübergreifende Perspektive im BayBEP.;elem:lex-ab9d991a43f7-BY
+DE-BY;Sprache und Literacy;cue;elem:f-literacy, elem:f-sprache;Literacy, Erzähl- und Schriftkultur, Sprache, Kommunikation und Literacy;heading;;;0.95;ja;;elem:lex-141db382e7fb-BY
+DE-BY;Mathematik;pref;elem:f-mathematik;Mathematik;heading;;;0.80;ja;;elem:lex-9dba6833e71a-BY
+DE-BY;Informations- und Kommunikationstechnik, Medien;cue;elem:f-medien;Medien und digitale Bildung;heading;;;0.90;ja;Ältere Bezeichnung von BayBEP Kapitel 7.4.;elem:lex-5e00e1fb7570-BY
+DE-BY;Musik;cue;elem:f-musik;Musik und Rhythmik;heading;;;0.80;ja;;elem:lex-904034c9aaf3-BY
+DE-BY;Umwelt;cue;elem:f-natur-oekologie;Naturerfahrung und Ökologie;heading;;;0.80;ja;;elem:lex-348a40c457fa-BY
+DE-BY;Naturwissenschaften und Technik;cue;elem:f-naturwissenschaft, elem:f-technik;Naturwissenschaftliche Phänomene, Technik;heading;;;0.95;ja;;elem:lex-c3e3f0215ffb-BY
+DE-BY;Werteorientierung und Religiosität;cue;elem:f-religion-weltanschauung, elem:f-werte-ethik-philosophie;Religion und Weltanschauung, Werte, Ethik und Philosophieren;heading;;;0.95;ja;;elem:lex-b79587bbc6bd-BY
+DE-BY;Übergänge des Kindes und Konsistenz im Bildungsverlauf;cue;elem:p-uebergaenge;Übergänge gestalten;heading;;;0.90;nein;Themenübergreifende Perspektive im BayBEP.;elem:lex-4f90f1a655d8-BY
+DE-BY;Lernmethodische Kompetenz;pref;kd:ec-learning;Lernmethodische Kompetenz;body, heading;;;0.95;ja;;elem:lex-55571cc3f904-BY
+DE-BY;Personale Kompetenzen;pref;kd:ec-personal;Personale Kompetenzen;heading;;;0.90;ja;;elem:lex-7cc79407232b-BY
+DE-BY;Widerstandsfähigkeit (Resilienz);cue;kd:ec-resilience;Resilienz;heading;;;0.95;ja;;elem:lex-57480152ad17-BY
+DE-BY;Kompetenzen zum Handeln im sozialen Kontext;cue;kd:ec-social;Soziale Kompetenzen;heading;;;0.95;ja;;elem:lex-2c0b1256d617-BY

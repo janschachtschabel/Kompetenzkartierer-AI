@@ -1,0 +1,1085 @@
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix vann:  <http://purl.org/vocab/vann/> .
+
+# =============================================================================
+# Curriculum-Kern (cur:) – bereichsneutrale Kernontologie, Version 1.0-entwurf
+#
+# Gilt für Elementar-, Schul-, Berufs-, Hochschul- und Erwachsenenbildung.
+# Bereichsprofile (elem:, schul:, beruf:, hs:, eb:) erweitern den Kern um
+# Knotentypen, Aussage-Unterarten, Dokumenttypen, Lexikon, Vokabulare und
+# Shapes. Sie legen KEINE neuen Klassen für Ebenen und KEINE neuen
+# Andockpunkte an; braucht ein Bereich einen neuen Andockpunkt, wird der Kern
+# versioniert.
+#
+# Vier Schichten mit getrennter Herkunft:
+#   1 Quelle     – Datei, Dokument (Fassung), Werk, Fundstelle, Lauf
+#   2 Geltung    – Spezifikation (4 Untertypen), Programm, Qualifikation,
+#                  Variante, Geltungskontext, Regel
+#   3 Struktur   – Gliederungseinheit (rekursiv, Funktion + Knotentyp),
+#                  Verwendung, Umfang, Zeitraum, Niveauzuordnung, Prüfung
+#   4 Aussage    – wörtliche Aussage (Art + Adressat), Zerlegung
+# dazu Konzepte (Hubs), Zuordnungen (Kanten) und das Lexikon.
+#
+# Das LLM schreibt nur Dokument, Spezifikation, Gliederungseinheit, Aussage
+# (und in Ordnungen Regel, Verwendung, Prüfung). Alles andere entsteht
+# deterministisch, dokumentübergreifend im Batch oder ist Vokabular.
+#
+# Namensräume sind Platzhalter (w3id.org/wlo/ ist nicht registriert).
+# IRIs englisch, Labels deutsch und englisch, Definitionen deutsch.
+# Kardinalitäten und Pflichtangaben prüft SHACL (cur-shapes.ttl), nicht OWL;
+# Eigenschaften mit mehreren möglichen Subjekten haben bewusst kein
+# rdfs:domain, damit kein Reasoner falsche Typen ableitet.
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/core> a owl:Ontology ;
+    dct:title "Curriculum-Kern"@de , "Curriculum Core"@en ;
+    dct:description "Bereichsneutrale Kernontologie für die sparsame Top-down-Extraktion von Curricula aller Bildungsbereiche aus PDF/DOCX, mit einheitlichen Andockpunkten für Kanten zwischen Curricula, Kompetenzrahmen, Normdaten und Lernressourcen."@de ;
+    dct:created "2026-10-19"^^xsd:date ;
+    owl:versionInfo "1.0-entwurf" ;
+    vann:preferredNamespacePrefix "cur" ;
+    vann:preferredNamespaceUri "https://w3id.org/wlo/curriculum/core#" ;
+    rdfs:seeAlso <https://w3id.org/wlo/curriculum/vocab> ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    rdfs:comment "Lizenzangabe ist ein Vorschlag und vor Veröffentlichung festzulegen."@de .
+
+# =============================================================================
+# 0. Annotationen für Extraktion und Andocken
+# =============================================================================
+
+cur:dockingPoint a owl:AnnotationProperty ;
+    rdfs:label "Andockpunkt"@de , "docking point"@en ;
+    skos:definition "Ordnet eine Eigenschaft einem der acht Andockpunkte (cv:DockingPoints) zu."@de .
+
+cur:llmEnum a owl:AnnotationProperty ;
+    rdfs:label "LLM-Auswahlliste"@de , "LLM enum"@en ;
+    skos:definition "true: die Konzepte dieses Schemas erscheinen als Enum in den JSON-Schemas der Extraktion (höchstens zehn Werte)."@de .
+
+cur:filledInStage a owl:AnnotationProperty ;
+    rdfs:label "gefüllt in Stufe"@de , "filled in stage"@en ;
+    skos:definition "Pipeline-Stufe, in der eine Eigenschaft gefüllt wird (cv:Stages)."@de .
+
+# =============================================================================
+# 1. Quelle
+# =============================================================================
+
+cur:SourceFile a owl:Class ;
+    rdfs:label "Quelldatei"@de , "source file"@en ;
+    skos:definition "Konkrete Datei (PDF, DOCX, HTML) mit Prüfsumme. Eine Datei kann mehrere logische Dokumente enthalten (Rahmenordnung + fachspezifische Bestimmungen, Sammel-PDF)."@de .
+
+cur:Work a owl:Class ;
+    rdfs:label "Werk"@de , "work"@en ;
+    skos:definition "Identität eines Plans oder einer Ordnung über alle Fassungen hinweg (z. B. „Kernlehrplan Physik Gymnasium NRW“). Wird ausdrücklich gesetzt, nicht aus Kopfdaten berechnet."@de ;
+    skos:note "App-Erfahrung: ein aus Land, Fach und Schulart berechneter Werkschlüssel änderte sich mit jeder Kopfkorrektur."@de .
+
+cur:Document a owl:Class ;
+    rdfs:label "Dokument"@de , "document"@en ;
+    skos:definition "Logische Veröffentlichung in genau einer Fassung: Lehrplan, Bildungsplan, Ausbildungsordnung, Rahmenlehrplan, Studien- und Prüfungsordnung, Modulhandbuch, Rahmencurriculum, Kompetenzrahmen. Stellt eine oder mehrere Spezifikationen dar."@de .
+
+cur:Collection a owl:Class ;
+    rdfs:label "Verbund"@de , "collection"@en ;
+    skos:definition "Zusammengehörige Dokumente und Spezifikationen, z. B. alle Fachpläne einer Stufe samt Allgemeinem Teil oder BayBEP + BayBL + U3-Handreichung."@de .
+
+cur:SourceAnchor a owl:Class ;
+    rdfs:label "Fundstelle"@de , "source anchor"@en ;
+    skos:definition "Textstelle im Dokument: Seite (PDF und gedruckt), Block-IDs aus Stufe X0, Dokumentwortlaut am Anker, Fundart, optional Tabellenzelle und Zeichenspanne."@de ;
+    skos:closeMatch <http://www.w3.org/ns/oa#SpecificResource> .
+
+cur:ExtractionRun a owl:Class ;
+    rdfs:subClassOf prov:Activity ;
+    rdfs:label "Extraktionslauf"@de , "extraction run"@en ;
+    skos:definition "Ein Lauf einer Pipeline-Stufe mit Modell, Prompt-, Profil- und Lexikonversion. Rohantworten werden gespeichert, damit Normalisierungs- und Andockregeln ohne neue Abfrage nachgespielt werden können."@de .
+
+cur:ExtractionAssertion a owl:Class ;
+    rdfs:label "Behauptung"@de , "extraction assertion"@en ;
+    skos:definition "Einzelne Angabe zu einem konfliktträchtigen Feld (Umfang, Verbindlichkeit, Semester, Prüfungsform, Dauer), wenn mehrere Quellen dasselbe Feld verschieden belegen. Unterlegene Behauptungen bleiben erhalten."@de .
+
+cur:ConflictResolution a owl:Class ;
+    rdfs:label "Konfliktauflösung"@de , "conflict resolution"@en ;
+    skos:definition "Entscheidung zwischen widersprechenden Behauptungen nach Kriterien in fester Reihenfolge (cv:ConflictCriteria)."@de .
+
+# =============================================================================
+# 2. Geltung
+# =============================================================================
+
+cur:Specification a owl:Class ;
+    rdfs:label "Spezifikation"@de , "specification"@en ;
+    skos:definition "Geltungseinheit: alles, was für genau ein Fach, einen Beruf, einen Studiengang, ein Programm oder einen Kompetenzrahmen in einem Geltungsraum gilt. Abstrakt; jede Instanz hat genau einen der vier Untertypen. Steht n:m zu Dokumenten."@de .
+
+cur:Curriculum a owl:Class ;
+    rdfs:subClassOf cur:Specification ;
+    rdfs:label "Curriculum"@de , "curriculum"@en ;
+    skos:definition "Lehr- oder Bildungsplan im engeren Sinn: Lehrplan eines Fachs, Bildungsplan, Rahmenlehrplan eines Berufs, Ausbildungsrahmenplan, Studiengangscurriculum, Kurscurriculum."@de .
+
+cur:CompetencyFramework a owl:Class ;
+    rdfs:subClassOf cur:Specification ;
+    rdfs:label "Kompetenzrahmen"@de , "competency framework"@en ;
+    skos:definition "Referenzrahmen, an den Curricula andocken: KMK-Bildungsstandards, GER, DigComp, KMK „Bildung in der digitalen Welt“, Kompetenzraster, Medienkompetenzrahmen. Wird einmal importiert, nicht aus jedem Plan neu extrahiert; seine Items sind Aussagen der Art standard."@de .
+
+cur:QualificationSpecification a owl:Class ;
+    rdfs:subClassOf cur:Specification ;
+    rdfs:label "Qualifikationsspezifikation"@de , "qualification specification"@en ;
+    skos:definition "Beschreibt, was zu einem Abschluss gehört (Fortbildungsordnung, Zertifikatsordnung, Abschlussprofil), ohne Lehrplan im engeren Sinn zu sein."@de .
+
+cur:AssessmentSpecification a owl:Class ;
+    rdfs:subClassOf cur:Specification ;
+    rdfs:label "Prüfungsspezifikation"@de , "assessment specification"@en ;
+    skos:definition "Prüfungsordnung, Prüfungsanforderungen, Testhandbuch, Abiturvorgaben: was wie geprüft wird."@de .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( cur:Curriculum cur:CompetencyFramework cur:QualificationSpecification cur:AssessmentSpecification ) .
+
+cur:Programme a owl:Class ;
+    rdfs:label "Bildungsprogramm"@de , "programme"@en ;
+    skos:definition "Bildungsgang, Ausbildungsberuf (als Ausbildung), Studiengang oder Kursprogramm als Identität über Fassungen; verbindet Spezifikationen verschiedener Dokumente (AO + RLP, SPO + Modulhandbuch)."@de .
+
+cur:Qualification a owl:Class ;
+    rdfs:label "Qualifikation"@de , "qualification"@en ;
+    skos:definition "Abschluss (Schulabschluss, Berufsabschluss, akademischer Grad, Zertifikat). DQR/EQR-Niveaus hängen nur hier, nie an einzelnen Aussagen."@de .
+
+cur:Occupation a owl:Class ;
+    rdfs:label "Beruf"@de , "occupation"@en ;
+    skos:definition "Ausbildungs-, Fortbildungs- oder Zielberuf; Anker zu ESCO Occupation, KldB 2010 und BIBB-Berufesuche."@de .
+
+cur:Variant a owl:Class ;
+    rdfs:label "Variante"@de , "variant"@en ;
+    skos:definition "Teil eines Programms oder einer Spezifikation mit eigener Geltung: Fachrichtung, Schwerpunkt, Wahl- oder Zusatzqualifikation, Studienrichtung, Kurszug (G/E), Teilcurriculum (Krippe, Hort), Zielgruppenvariante."@de .
+
+cur:ApplicabilityContext a owl:Class ;
+    rdfs:label "Geltungskontext"@de , "applicability context"@en ;
+    skos:definition "Deklarierter Geltungsraum (Land, Bildungsbereich, Einrichtungs- oder Schulart, Bildungsgang, Fach, Zeitraum, Niveau, Lernort, Zielgruppe). Am Kind nur als Abweichung vom Elternteil (Delta); der effektive Kontext wird deterministisch berechnet und nicht gespeichert."@de .
+
+cur:Rule a owl:Class ;
+    rdfs:label "Regel"@de , "rule"@en ;
+    skos:definition "Organisatorische oder rechtliche Vorgabe mit Wortlaut und geparsten Werten. Unterklassen: Auswahl, Voraussetzung, Abschluss, Anrechnung, Fortschritt."@de .
+
+cur:SelectionRule a owl:Class ; rdfs:subClassOf cur:Rule ;
+    rdfs:label "Auswahlregel"@de , "selection rule"@en ;
+    skos:definition "„2 aus 10 Wahlqualifikationen“, „Wahlpflichtmodule im Umfang von mindestens 15 LP“, nicht kombinierbare Optionen."@de .
+cur:PrerequisiteRule a owl:Class ; rdfs:subClassOf cur:Rule ;
+    rdfs:label "Voraussetzungsregel"@de , "prerequisite rule"@en ;
+    skos:definition "Zugangs- oder Teilnahmevoraussetzung, formal oder empfohlen; auf Programmebene = Zugang."@de .
+cur:CompletionRule a owl:Class ; rdfs:subClassOf cur:Rule ;
+    rdfs:label "Abschlussregel"@de , "completion rule"@en ;
+    skos:definition "Was zum Bestehen oder Abschluss nötig ist (Gesamtleistungspunkte, bestandene Bereiche, Mindestnoten)."@de .
+cur:RecognitionRule a owl:Class ; rdfs:subClassOf cur:Rule ;
+    rdfs:label "Anrechnungsregel"@de , "recognition rule"@en ;
+    skos:definition "Anrechnung außerhalb erworbener Kompetenzen oder Abschlüsse, mit Höchstanteil und Verfahren."@de .
+cur:ProgressionRule a owl:Class ; rdfs:subClassOf cur:Rule ;
+    rdfs:label "Fortschrittsregel"@de , "progression rule"@en ;
+    skos:definition "Studien- oder Ausbildungsverlauf: Fristen, Reihenfolgepflichten, Übergang in die Qualifikationsphase."@de .
+
+# =============================================================================
+# 3. Struktur
+# =============================================================================
+
+cur:CurriculumNode a owl:Class ;
+    rdfs:label "Gliederungseinheit"@de , "curriculum node"@en ;
+    skos:definition "Rekursive Strukturebene zwischen Spezifikation und Aussage. Ihre Rolle bestimmt cur:nodeFunction (Kern, 7 Werte), ihren Namen cur:nodeType (Profil-Lexikon). Lernfeld, Modul, Inhaltsfeld, Bildungsbereich, Handlungsfeld sind Namen für dieselben Funktionen. Rahmenteile ohne eigenes Curriculum (Allgemeiner Teil, Grundsatzband) sind Gliederungseinheiten mit Funktion frame am Dokument."@de ;
+    skos:note "Aussagen sind Blätter; Kinder haben nur Gliederungseinheiten. Das hält die LLM-Aufrufe planbar (App: Kosten folgen der Zahl der Knoten, unter denen Kinder stehen dürfen)."@de .
+
+cur:Placement a owl:Class ;
+    rdfs:label "Verwendung"@de , "placement"@en ;
+    skos:definition "Einbindung einer Einheit (Modul, Lernfeld, Kursbaustein) in genau eine Spezifikation oder Variante an genau einer Stelle, mit Verbindlichkeit, Zeitraum und Umfang in diesem Kontext. Trennt Definition und Einbindung: ein Modul, mehrere Verwendungen."@de ;
+    skos:editorialNote "Verallgemeinert HCO ComponentUse und BBO Geltungsaussage."@de .
+
+cur:Workload a owl:Class ;
+    rdfs:label "Umfang"@de , "workload"@en ;
+    skos:definition "Zeitumfang mit Wert (oder Spanne), Einheit (Stunden, UE, Wochen, ECTS …), Art (Zeitrichtwert, Kontaktzeit, Selbststudium, Gesamtaufwand, Dauer) und Wortlaut."@de .
+
+cur:TimeSpan a owl:Class ;
+    rdfs:label "Zeitraum"@de , "time span"@en ;
+    skos:definition "Lage im Bildungsverlauf: Alter, Jahrgangsstufe, Ausbildungsjahr oder -monat, Semester, Kursabschnitt, benannte Phase; von/bis und Bezug (während, Ende, bis spätestens)."@de .
+
+cur:LevelAssignment a owl:Class ;
+    rdfs:label "Niveauzuordnung"@de , "level assignment"@en ;
+    skos:definition "n-äre Zuordnung eines Niveaus: Stufe aus einem Niveauschema, optional Obergrenze, Dimension, Kompetenzbereich (cur:competenceDimension, wenn das Niveau nur für einen Bereich gilt, z. B. GER je Fertigkeit, IQB-Stufen je Kompetenzbereich), Art der Zuordnung (zugewiesen, Mindest-, Ziel-, Eingangsniveau, Bereich), Wortlaut, Herkunft. Systeme werden nie umgerechnet."@de .
+
+cur:Assessment a owl:Class ;
+    rdfs:label "Prüfung"@de , "assessment"@en ;
+    skos:definition "Prüfung, Prüfungsteil, Prüfungsbereich, Modulprüfung, Studienleistung, Prüfungsvorleistung, Einstufungstest; rekursiv über cur:partOf. Trägt Form, Dauer, Gewichtung und prüft Einheiten, Aussagen oder Konzepte."@de .
+
+# =============================================================================
+# 4. Aussage
+# =============================================================================
+
+cur:Statement a owl:Class ;
+    rdfs:label "Curriculare Aussage"@de , "curricular statement"@en ;
+    skos:definition "Kleinste zitierbare Aussage, immer im Wortlaut und mit Fundstelle. Art (cur:statementKind) und Adressat (cur:addressee) sind Pflicht. Normalisiert wird nie hier, sondern in der Zerlegung."@de .
+
+cur:LearningOutcome a owl:Class ;
+    rdfs:subClassOf cur:Statement ;
+    owl:equivalentClass [ a owl:Class ; owl:intersectionOf ( cur:Statement [ a owl:Restriction ; owl:onProperty cur:statementKind ; owl:hasValue cv:kind_learningOutcome ] ) ] ;
+    rdfs:label "Lernergebnis"@de , "learning outcome"@en ;
+    skos:definition "Was Lernende nach dem Lernen wissen, verstehen und tun können sollen (vgl. EQR-Empfehlung 2017): Kompetenzerwartung, Standard (BE/BB), Teilkompetenz, Kann-Beschreibung, Zielformulierung, Fertigkeiten/Kenntnisse/Fähigkeiten, Qualifikationsziel, Learning Outcome."@de .
+
+cur:DevelopmentGoal a owl:Class ;
+    rdfs:subClassOf cur:Statement ;
+    owl:equivalentClass [ a owl:Class ; owl:intersectionOf ( cur:Statement [ a owl:Restriction ; owl:onProperty cur:statementKind ; owl:hasValue cv:kind_developmentGoal ] ) ] ;
+    rdfs:label "Bildungs- oder Entwicklungsziel"@de , "development goal"@en ;
+    skos:definition "Normatives Ziel ohne Prüfanspruch: Haltung, Wert, Disposition, Erfahrung, Bildungsanspruch („Kinder erfahren …“, „ist sensibilisiert für …“). Wird nie in ein Lernergebnis umformuliert."@de .
+
+cur:ContentStatement a owl:Class ;
+    rdfs:subClassOf cur:Statement ;
+    owl:equivalentClass [ a owl:Class ; owl:intersectionOf ( cur:Statement [ a owl:Restriction ; owl:onProperty cur:statementKind ; owl:hasValue cv:kind_content ] ) ] ;
+    rdfs:label "Inhaltsaussage"@de , "content statement"@en ;
+    skos:definition "Gegenstand ohne Handlungsanforderung: Inhalt, Kerninhalt, Basisbegriff, verbindliches Fachwissen, Lerninhalt, Modulinhalt, Redemittel."@de .
+
+cur:Standard a owl:Class ;
+    rdfs:subClassOf cur:Statement ;
+    owl:equivalentClass [ a owl:Class ; owl:intersectionOf ( cur:Statement [ a owl:Restriction ; owl:onProperty cur:statementKind ; owl:hasValue cv:kind_standard ] ) ] ;
+    rdfs:label "Standard"@de , "standard"@en ;
+    skos:definition "Maßstab, an dem Erreichtes oder Handeln gemessen wird: Regelstandard der KMK, Deskriptor eines Kompetenzrasters, Bewertungs- oder Prüfungskriterium, Qualitätsanspruch an Fachkräfte."@de .
+
+cur:Mandate a owl:Class ;
+    rdfs:subClassOf cur:Statement ;
+    owl:equivalentClass [ a owl:Class ; owl:intersectionOf ( cur:Statement [ a owl:Restriction ; owl:onProperty cur:statementKind ; owl:hasValue cv:kind_mandate ] ) ] ;
+    rdfs:label "Auftrag"@de , "mandate"@en ;
+    skos:definition "Normative Aufgabe für Lehrende, Fachkräfte, Einrichtung oder Träger („Die pädagogischen Fachkräfte gestalten …“, „Die Schule ermöglicht …“). Kein Lernergebnis der Lernenden."@de .
+
+cur:Guidance a owl:Class ;
+    rdfs:subClassOf cur:Statement ;
+    owl:equivalentClass [ a owl:Class ; owl:intersectionOf ( cur:Statement [ a owl:Restriction ; owl:onProperty cur:statementKind ; owl:hasValue cv:kind_guidance ] ) ] ;
+    rdfs:label "Hinweis"@de , "guidance"@en ;
+    skos:definition "Nicht normativ: didaktischer Hinweis, Unterrichtsanregung, Impuls, Reflexionsfrage, Praxisbeispiel, Lehrform, Literatur. Ausgangspunkt für Unterrichtsszenarien."@de .
+
+cur:Reference a owl:Class ;
+    rdfs:subClassOf cur:Statement ;
+    owl:equivalentClass [ a owl:Class ; owl:intersectionOf ( cur:Statement [ a owl:Restriction ; owl:onProperty cur:statementKind ; owl:hasValue cv:kind_reference ] ) ] ;
+    rdfs:label "Verweis"@de , "reference"@en ;
+    skos:definition "Aussage, die auf eine andere Stelle, ein anderes Fach, Dokument oder Modul verweist; wird nach dem Lauf ohne LLM aufgelöst (cur:resolutionStatus)."@de .
+
+cur:Decomposition a owl:Class ;
+    rdfs:label "Zerlegung"@de , "decomposition"@en ;
+    skos:definition "Genau eine prüfbare Anforderung aus einer Aussage: eine Handlung (Operator) an einem oder mehreren Gegenständen unter einer Bedingung, optional mit Qualitätskriterium und Selbstständigkeitsgrad. Entsteht im Aussagen-Pass (N1), ist neu ausführbar und ändert den Wortlaut nie."@de ;
+    skos:note "Jedes Element (Handlung, Gegenstand) muss im Wortlaut der Aussage vorkommen (Rückprobe)."@de .
+
+# =============================================================================
+# 5. Konzepte (Hubs) – SKOS-basiert, dokumentübergreifend
+# =============================================================================
+
+cur:ContentConcept a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Inhaltskonzept"@de , "content concept"@en ;
+    skos:definition "Normalisiertes Thema oder normalisierter Gegenstand, vom groben Thema („Elektrizität“) bis zum Begriff oder zur Entität („Ohmsches Gesetz“, „Wasser“, „Martin Luther“). SKOS-hierarchisch (Begriff skos:broader Thema), abgeglichen mit Wikidata und GND. Hub für den Andockpunkt Inhalt und Thema; die Körnung steht in cur:granularity."@de .
+cur:granularity a owl:ObjectProperty ; rdfs:domain cur:ContentConcept ;
+    rdfs:label "Körnung"@de , "granularity"@en ;
+    skos:definition "Thema, Begriff oder Entität (cv:ContentGranularities). Steuert, was die Themensuche als Einstieg zeigt; die Hierarchie selbst steht in skos:broader."@de .
+
+cur:CompetencyConcept a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Kompetenzkonzept"@de , "competency concept"@en ;
+    skos:definition "Länderneutrale, kontextarme Fähigkeit, benannt als Handlung + Gegenstand im Infinitiv („Widerstände berechnen“). Entsteht bottom-up per Clustering; nur hier werden ESCO, DigComp, GER oder KMK-Standards angebunden – einmal je Konzept, nicht je Aussage."@de .
+
+cur:AreaConcept a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Bereichskonzept"@de , "area concept"@en ;
+    skos:definition "Wiederkehrender Bereich, der mehrfach im Baum auftaucht (z. B. „Urteilskompetenz“ unter jedem Inhaltsfeld, Kompetenzbereiche in Matrixlayouts)."@de .
+
+cur:CompetencyModel a owl:Class ;
+    rdfs:subClassOf skos:ConceptScheme ;
+    rdfs:label "Kompetenzmodell"@de , "competency model"@en ;
+    skos:definition "Im Dokument verwendetes oder externes Modell von Kompetenzdimensionen oder -bereichen. Wird einmal je Curriculum extrahiert (X3) und dann als Auswahlliste mitgegeben."@de .
+
+cur:CompetenceDimension a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Kompetenzdimension"@de , "competence dimension"@en ;
+    skos:definition "Art einer Kompetenz (Wissen, Fertigkeiten, Sozialkompetenz, Selbstständigkeit; KMK-Handlungskompetenz; HQR; Basiskompetenzen). Profilmodelle hängen per closeMatch am Brückenschema, nie per Gleichsetzung."@de .
+
+cur:CrossCuttingObjective a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Querschnittsziel"@de , "cross-cutting objective"@en ;
+    skos:definition "Überfachliches Ziel: Leitperspektive, übergreifendes Thema, Basiscurriculum, Standardberufsbildposition, pädagogisches Prinzip, Schlüsselkompetenz, überfachliches Qualifikationsziel."@de .
+
+cur:ContextConcept a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Kontextkonzept"@de , "context concept"@en ;
+    skos:definition "Situation, Lebens- oder Handlungsbereich, Lernort, Rolle oder Berufsfeld, in dem gelernt oder angewendet wird. Anker für Lernszenarien."@de .
+
+cur:LevelScheme a owl:Class ;
+    rdfs:subClassOf skos:ConceptScheme ;
+    rdfs:label "Niveausystem"@de , "level scheme"@en ;
+    skos:definition "Ein Niveausystem (DQR, EQR, ISCED 2011, GER, Alpha-Level, Niveaustufen A–H, AFB, Taxonomie …) mit Standarddimension und Ordnungsart."@de .
+
+cur:LevelConcept a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Niveaustufe"@de , "level"@en ;
+    skos:definition "Stufe in genau einem Niveausystem; cur:rank ordnet innerhalb des Systems."@de .
+
+cur:OperatorLemma a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Operator (Lemma)"@de , "operator lemma"@en ;
+    skos:definition "Normalisierte Handlung im Infinitiv („berechnen“, „auswählen“). Bewusst ohne Taxonomiestufe: dieselbe Handlung wird je Fach und Land verschieden eingestuft."@de .
+
+cur:OperatorList a owl:Class ;
+    rdfs:subClassOf skos:ConceptScheme ;
+    rdfs:label "Operatorenliste"@de , "operator list"@en ;
+    skos:definition "Veröffentlichte Operatorenliste mit Quelle und Geltung (Land, Fach, Stufe), z. B. KMK-EPA Physik, BW-Bildungsplan Mathematik."@de .
+
+cur:OperatorEntry a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Operatoreintrag"@de , "operator entry"@en ;
+    skos:definition "Eintrag einer Operatorenliste: Lemma, Definition laut Liste, Anforderungsbereich und/oder Taxonomiestufe laut Liste."@de .
+
+# =============================================================================
+# 6. Zuordnung (Kanten)
+# =============================================================================
+
+cur:Alignment a owl:Class ;
+    rdfs:label "Zuordnung"@de , "alignment"@en ;
+    skos:definition "Jede Verknüpfung, die falsch sein kann: zwischen Aussagen, Zerlegungen, Konzepten oder Einheiten verschiedener Curricula, zu Normdaten (Wikidata, GND), zu Kompetenzrahmen (ESCO, DigComp, GER) und zu Querschnittszielen, wenn nicht ausdrücklich im Text. Trägt Relation, Herkunft, Prüfstatus, Methode, Konfidenz, Begründung und Lauf (Muster CASE CFAssociation). Geprüfte oder amtliche Zuordnungen werden zusätzlich als Kurzform-Tripel materialisiert."@de ;
+    skos:editorialNote "Muster wie CASE CFAssociation (CASE 1.1 hat keine RDF-Terme; Export über cur-alignments.ttl)."@de .
+
+# =============================================================================
+# 7. Lexikon (Erkennungswissen für die Extraktion)
+# =============================================================================
+
+cur:NodeType a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Knotentyp"@de , "node type"@en ;
+    skos:definition "Bereichsspezifischer Name einer Strukturebene (Lernfeld, Modul, Inhaltsfeld, Bildungsbereich …). skos:broader zeigt auf genau eine Kernfunktion (cv:NodeFunctions)."@de .
+
+cur:StatementSubkind a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Aussage-Unterart"@de , "statement subkind"@en ;
+    skos:definition "Bereichsspezifische Aussageart (Kompetenzerwartung, Kernkompetenz, Kann-Beschreibung, Qualitätsanspruch …). skos:broader zeigt auf genau eine Kernart (cv:StatementKinds)."@de .
+
+cur:DocumentType a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Dokumenttyp"@de , "document type"@en ;
+    skos:definition "Bereichsspezifischer Dokumenttyp (Kernlehrplan, Ausbildungsordnung, Modulhandbuch …). skos:broader zeigt auf eine Kern-Dokumentart (cv:DocumentKinds)."@de .
+
+cur:TerminologyProfile a owl:Class ;
+    rdfs:label "Terminologieprofil"@de , "terminology profile"@en ;
+    skos:definition "Sammlung von Erkennungshinweisen für einen Geltungsraum (Land, Träger, Bereich, Dokumenttyp). In den Prompt geht nur das aktive Profil."@de .
+
+cur:LexicalCue a owl:Class ;
+    rdfs:label "Erkennungshinweis"@de , "lexical cue"@en ;
+    skos:definition "Oberflächenform oder Muster, das in einem Geltungsraum meist einen bestimmten Knotentyp, eine Aussage-Unterart, einen Dokumenttyp oder einen Vokabularwert anzeigt. Routing-Hinweis, keine Gleichsetzung. Rolle: Präferenz, Synonym, Hinweis, Abgrenzung, Homonym."@de ;
+    skos:note "altLabel behauptet Gleichheit; wo nur Ähnlichkeit besteht, steht ein Erkennungshinweis mit Rolle cue oder homonym."@de .
+
+cur:DocumentProfile a owl:Class ;
+    rdfs:label "Dokumentprofil"@de , "document profile"@en ;
+    skos:definition "Ergebnis von X1 je Dokument: dokumentspezifische Termzuordnung, Tabellenschemata, Niveauregel, Markerlegende, neue Bezeichnungen. Geht in alle Folgeaufrufe ein, statt Layoutmuster seitenweise neu zu erschließen."@de .
+
+cur:TableSchema a owl:Class ;
+    rdfs:label "Tabellenschema"@de , "table schema"@en ;
+    skos:definition "Bedeutung der Spalten einer wiederkehrenden Tabelle (z. B. „Lernziele · Aktivitäten · Niveau · Handlungsziele“). Erkannte Tabellen werden ohne LLM gelesen."@de .
+
+cur:ColumnMapping a owl:Class ;
+    rdfs:label "Spaltenzuordnung"@de , "column mapping"@en ;
+    skos:definition "Spaltenkopf → Ziel (Aussage-Unterart, Eigenschaft oder Niveauschema)."@de .
+
+cur:TermMapping a owl:Class ;
+    rdfs:label "Termzuordnung"@de , "term mapping"@en ;
+    skos:definition "Dokumentspezifische Zuordnung eines Wortes zu einem Lexikonziel."@de .
+
+# =============================================================================
+# 8. Externe Andockobjekte (hier nur benannt, nicht modelliert)
+# =============================================================================
+
+cur:LearningResource a owl:Class ;
+    rdfs:label "Lernressource"@de , "learning resource"@en ;
+    skos:definition "Externes Bildungsmaterial (WLO/edu-sharing, OER). Dockt über AMB/LRMI teaches, assesses, about an Kompetenz- und Inhaltskonzepte oder an Aussagen mit Adressat Lernende."@de ;
+    skos:closeMatch <https://schema.org/LearningResource> .
+
+cur:LearningScenario a owl:Class ;
+    rdfs:label "Lernszenario"@de , "learning scenario"@en ;
+    skos:definition "Unterrichtsszenario, Lernsituation, Kursplanung. Bleibt außerhalb des Curriculums und konkretisiert Einheiten, Aussagen und Kontexte."@de .
+
+# =============================================================================
+# 9. Eigenschaften – Quelle
+# =============================================================================
+
+cur:checksum a owl:DatatypeProperty ; rdfs:domain cur:SourceFile ; rdfs:range xsd:string ;
+    rdfs:label "Prüfsumme (SHA-256)"@de , "checksum"@en .
+cur:pageCount a owl:DatatypeProperty ; rdfs:domain cur:SourceFile ; rdfs:range xsd:integer ;
+    rdfs:label "Seitenzahl"@de , "page count"@en .
+cur:sourceUrl a owl:DatatypeProperty ; rdfs:range xsd:anyURI ;
+    rdfs:label "Quell-URL"@de , "source URL"@en .
+cur:retrievedAt a owl:DatatypeProperty ; rdfs:range xsd:dateTime ;
+    rdfs:label "abgerufen am"@de , "retrieved at"@en .
+cur:containsDocument a owl:ObjectProperty ; rdfs:domain cur:SourceFile ; rdfs:range cur:Document ;
+    rdfs:label "enthält Dokument"@de , "contains document"@en .
+cur:sourceFile a owl:ObjectProperty ; owl:inverseOf cur:containsDocument ;
+    rdfs:label "in Datei"@de , "in source file"@en .
+
+cur:versionOf a owl:ObjectProperty ;
+    rdfs:label "Fassung von"@de , "version of"@en ;
+    skos:definition "Dokument → Werk; Spezifikation → Programm."@de .
+cur:documentType a owl:ObjectProperty ; rdfs:domain cur:Document ; rdfs:range cur:DocumentType ;
+    rdfs:label "Dokumenttyp"@de , "document type"@en .
+cur:legalForm a owl:ObjectProperty ; rdfs:domain cur:Document ;
+    rdfs:label "Rechtsform"@de , "legal form"@en ;
+    skos:definition "Gesetz, Verordnung, Verwaltungsvorschrift, Beschluss, Satzung, Empfehlung, Träger- oder Einrichtungsdokument (cv:LegalForms). Aus der Quelle extrahiert, nie aus dem Typ geraten."@de .
+cur:documentBinding a owl:ObjectProperty ; rdfs:domain cur:Document ;
+    rdfs:label "rechtliche Bindung des Dokuments"@de , "document binding"@en ;
+    skos:definition "Bindungswirkung des Dokuments als Ganzes (verbindlich, teilweise, orientierend, empfehlend). Getrennt von der Verbindlichkeit einzelner Aussagen (cur:obligation)."@de .
+cur:lifecycle a owl:ObjectProperty ; rdfs:domain cur:Document ;
+    rdfs:label "Lebenszyklus"@de , "lifecycle"@en .
+cur:educationSector a owl:ObjectProperty ;
+    rdfs:label "Bildungsbereich"@de , "education sector"@en .
+cur:region a owl:ObjectProperty ;
+    rdfs:label "Land/Region"@de , "region"@en ;
+    skos:definition "Land (ISO 3166-2) oder DE für länderübergreifend; mehrfach für ländergemeinsame Dokumente (BE/BB)."@de .
+cur:issuer a owl:ObjectProperty ;
+    rdfs:label "Herausgeber (IRI)"@de , "issuer"@en ;
+    skos:definition "Herausgebende Stelle als IRI (GND, Wikidata, ROR); der Wortlaut steht in dct:publisher."@de .
+cur:edition a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Fassung (Wortlaut)"@de , "edition"@en .
+cur:planGeneration a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Plangeneration"@de , "plan generation"@en ;
+    skos:example "BP2016" , "LehrplanPLUS" , "MRVO 2017" .
+cur:validFrom a owl:DatatypeProperty ;
+    rdfs:label "gültig ab"@de , "valid from"@en ;
+    skos:definition "xsd:date, xsd:gYearMonth oder xsd:gYear – nie einen Tag erfinden, wenn nur das Jahr genannt ist."@de .
+cur:validUntil a owl:DatatypeProperty ;
+    rdfs:label "gültig bis"@de , "valid until"@en ;
+    skos:definition "Wie cur:validFrom. Nicht mit dem Datum der abgelösten Fassung verwechseln."@de .
+cur:issued a owl:DatatypeProperty ; rdfs:subPropertyOf dct:issued ;
+    rdfs:label "veröffentlicht/beschlossen am"@de , "issued"@en ;
+    skos:definition "xsd:date, xsd:gYearMonth oder xsd:gYear."@de .
+cur:appliesToCohort a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "gilt für Kohorte"@de , "applies to cohort"@en ;
+    skos:example "Studienbeginn ab WS 2025/26" , "Ausbildungsbeginn ab 1.8.2025" .
+cur:supersedes a owl:ObjectProperty ;
+    rdfs:label "ersetzt"@de , "supersedes"@en ;
+    rdfs:subPropertyOf dct:replaces ;
+    skos:definition "Neue Fassung ersetzt alte (Dokument, Spezifikation)."@de .
+cur:amends a owl:ObjectProperty ; rdfs:domain cur:Document ; rdfs:range cur:Document ;
+    rdfs:label "ändert"@de , "amends"@en .
+cur:inheritsFrom a owl:ObjectProperty ; rdfs:domain cur:Document ; rdfs:range cur:Document ;
+    rdfs:label "erbt von"@de , "inherits from"@en ;
+    skos:definition "Fachspezifische Bestimmungen erben von einer Rahmenordnung; lokal überschreibt Rahmen."@de .
+cur:represents a owl:ObjectProperty ; rdfs:domain cur:Document ; rdfs:range cur:Specification ;
+    rdfs:label "stellt dar"@de , "represents"@en .
+cur:representedIn a owl:ObjectProperty ; owl:inverseOf cur:represents ;
+    rdfs:label "dargestellt in"@de , "represented in"@en .
+cur:member a owl:ObjectProperty ; rdfs:domain cur:Collection ;
+    rdfs:label "Mitglied"@de , "member"@en .
+
+cur:anchor a owl:ObjectProperty ; rdfs:range cur:SourceAnchor ;
+    rdfs:label "Fundstelle"@de , "anchor"@en ;
+    rdfs:subPropertyOf prov:wasDerivedFrom .
+cur:inDocument a owl:ObjectProperty ; rdfs:domain cur:SourceAnchor ; rdfs:range cur:Document ;
+    rdfs:label "im Dokument"@de , "in document"@en .
+cur:pageStart a owl:DatatypeProperty ; rdfs:domain cur:SourceAnchor ; rdfs:range xsd:integer ;
+    rdfs:label "PDF-Seite von"@de , "page start"@en .
+cur:pageEnd a owl:DatatypeProperty ; rdfs:domain cur:SourceAnchor ; rdfs:range xsd:integer ;
+    rdfs:label "PDF-Seite bis"@de , "page end"@en .
+cur:printedPage a owl:DatatypeProperty ; rdfs:domain cur:SourceAnchor ; rdfs:range xsd:string ;
+    rdfs:label "gedruckte Seite"@de , "printed page"@en .
+cur:blockId a owl:DatatypeProperty ; rdfs:domain cur:SourceAnchor ; rdfs:range xsd:string ;
+    rdfs:label "Block-ID"@de , "block ID"@en ;
+    skos:definition "Stabile ID eines Textblocks aus X0 im Muster p<Seite>-b<Block>. Das LLM gibt Block-IDs zurück statt Seiten zu erfinden."@de .
+cur:quote a owl:DatatypeProperty ; rdfs:domain cur:SourceAnchor ; rdfs:range xsd:string ;
+    rdfs:label "Dokumentwortlaut am Anker"@de , "quote"@en ;
+    skos:definition "Text, wie er im Dokument am Anker steht (nicht die Modellantwort). Exporte zitieren nur diesen Wortlaut."@de .
+cur:matchKind a owl:ObjectProperty ; rdfs:domain cur:SourceAnchor ;
+    rdfs:label "Fundart"@de , "match kind"@en ;
+    skos:definition "exakt, Leerraum, Auslassung, normalisiert, unscharf, nicht gefunden (cv:MatchKinds). Unscharf gefundene Zitate sind kein Wortlautbeleg."@de .
+cur:matchScore a owl:DatatypeProperty ; rdfs:domain cur:SourceAnchor ; rdfs:range xsd:decimal ;
+    rdfs:label "Übereinstimmung"@de , "match score"@en .
+cur:sectionPath a owl:DatatypeProperty ; rdfs:domain cur:SourceAnchor ; rdfs:range xsd:string ;
+    rdfs:label "Gliederungspfad"@de , "section path"@en ;
+    skos:example "Teil V › Lernfeld 3 › Ziele" .
+cur:tableCell a owl:DatatypeProperty ; rdfs:domain cur:SourceAnchor ; rdfs:range xsd:string ;
+    rdfs:label "Tabellenzelle"@de , "table cell"@en ;
+    skos:example "T4:r3c2" .
+cur:charStart a owl:DatatypeProperty ; rdfs:domain cur:SourceAnchor ; rdfs:range xsd:integer ;
+    rdfs:label "Zeichen von"@de , "char start"@en .
+cur:charEnd a owl:DatatypeProperty ; rdfs:domain cur:SourceAnchor ; rdfs:range xsd:integer ;
+    rdfs:label "Zeichen bis"@de , "char end"@en .
+cur:textHash a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Text-Hash"@de , "text hash"@en ;
+    skos:definition "SHA-256 des normalisierten Wortlauts (Kleinschreibung, Leerraum, Trennstriche, führende Nummer entfernt); dient Dublettenerkennung und Wiederfinden in neuen Fassungen."@de .
+
+cur:stage a owl:ObjectProperty ; rdfs:domain cur:ExtractionRun ;
+    rdfs:label "Stufe"@de , "stage"@en .
+cur:model a owl:DatatypeProperty ; rdfs:domain cur:ExtractionRun ; rdfs:range xsd:string ;
+    rdfs:label "Modell"@de , "model"@en .
+cur:promptVersion a owl:DatatypeProperty ; rdfs:domain cur:ExtractionRun ; rdfs:range xsd:string ;
+    rdfs:label "Prompt-Version"@de , "prompt version"@en .
+cur:profileVersion a owl:DatatypeProperty ; rdfs:domain cur:ExtractionRun ; rdfs:range xsd:string ;
+    rdfs:label "Profilversion"@de , "profile version"@en .
+cur:rawResponse a owl:DatatypeProperty ; rdfs:domain cur:ExtractionRun ; rdfs:range xsd:anyURI ;
+    rdfs:label "Rohantwort"@de , "raw response"@en .
+
+cur:assertsAbout a owl:ObjectProperty ; rdfs:domain cur:ExtractionAssertion ;
+    rdfs:label "betrifft"@de , "asserts about"@en .
+cur:assertedProperty a owl:ObjectProperty ; rdfs:domain cur:ExtractionAssertion ;
+    rdfs:label "Eigenschaft"@de , "asserted property"@en .
+cur:assertedValue a owl:DatatypeProperty ; rdfs:domain cur:ExtractionAssertion ;
+    rdfs:label "Wert"@de , "asserted value"@en .
+cur:assertedObject a owl:ObjectProperty ; rdfs:domain cur:ExtractionAssertion ;
+    rdfs:label "Objekt"@de , "asserted object"@en .
+cur:preferred a owl:ObjectProperty ; rdfs:domain cur:ConflictResolution ; rdfs:range cur:ExtractionAssertion ;
+    rdfs:label "bevorzugt"@de , "preferred"@en .
+cur:overruled a owl:ObjectProperty ; rdfs:domain cur:ConflictResolution ; rdfs:range cur:ExtractionAssertion ;
+    rdfs:label "unterlegen"@de , "overruled"@en .
+cur:criterion a owl:ObjectProperty ; rdfs:domain cur:ConflictResolution ;
+    rdfs:label "Kriterium"@de , "criterion"@en .
+
+# =============================================================================
+# 10. Eigenschaften – Geltung
+# =============================================================================
+
+cur:applicability a owl:ObjectProperty ; rdfs:range cur:ApplicabilityContext ;
+    rdfs:label "Geltungskontext"@de , "applicability"@en .
+cur:programme a owl:ObjectProperty ; rdfs:range cur:Programme ;
+    rdfs:label "Bildungsprogramm"@de , "programme"@en .
+cur:leadsTo a owl:ObjectProperty ; rdfs:range cur:Qualification ;
+    rdfs:label "führt zu"@de , "leads to"@en .
+cur:preparesFor a owl:ObjectProperty ; rdfs:range cur:Occupation ;
+    rdfs:label "bereitet vor auf"@de , "prepares for"@en .
+cur:variantOf a owl:ObjectProperty ;
+    rdfs:label "Variante von"@de , "variant of"@en ;
+    skos:definition "Variante → Programm/Spezifikation; Parallelfassung einer Einheit (Lernfeld 13 GH/AH) → andere Fassung; Zielgruppenvariante eines Curriculums."@de .
+cur:variantKind a owl:ObjectProperty ; rdfs:domain cur:Variant ;
+    rdfs:label "Variantenart"@de , "variant kind"@en .
+cur:specialisationOf a owl:ObjectProperty ;
+    rdfs:label "Spezialisierung von"@de , "specialisation of"@en ;
+    skos:definition "Fachrichtungscurriculum spezialisiert einen gemeinsamen Kern (z. B. DIHK-Basisqualifikationen)."@de .
+cur:supplements a owl:ObjectProperty ;
+    rdfs:label "ergänzt"@de , "supplements"@en .
+cur:isAbstract a owl:DatatypeProperty ; rdfs:range xsd:boolean ;
+    rdfs:label "abstrakt"@de , "is abstract"@en ;
+    skos:definition "Spezifikation gilt nur über Spezialisierungen (gemeinsamer Kern)."@de .
+cur:competencyModel a owl:ObjectProperty ; rdfs:range cur:CompetencyModel ;
+    rdfs:label "Kompetenzmodell"@de , "competency model"@en .
+cur:usesCrossCutting a owl:ObjectProperty ; rdfs:range cur:CrossCuttingObjective ;
+    rdfs:label "verwendet Querschnittsziel"@de , "uses cross-cutting objective"@en ;
+    skos:definition "Am Curriculum oder Dokument deklarierte Querschnittsziele samt Legende der Marker (X3); Auswahlliste für X4."@de .
+cur:institutionType a owl:ObjectProperty ;
+    rdfs:label "Einrichtungsart"@de , "institution type"@en ;
+    skos:definition "Schulart, Einrichtungsart (Krippe, Kita, Hort), Hochschultyp, Lernort-Typ; Werte aus Profilvokabularen."@de .
+cur:educationTrack a owl:ObjectProperty ;
+    rdfs:label "Bildungsgang"@de , "education track"@en .
+cur:targetGroup a owl:ObjectProperty ;
+    rdfs:label "Zielgruppe"@de , "target group"@en ;
+    skos:definition "Zielgruppe der Lernenden (≠ Adressat des Dokuments); Wert aus ctx: (Rolle) oder Profilvokabular."@de .
+cur:documentAudience a owl:ObjectProperty ; rdfs:domain cur:Document ;
+    rdfs:label "Adressaten des Dokuments"@de , "document audience"@en ;
+    skos:definition "An wen sich das Dokument richtet (Kursplanende, Lehrkräfte, Träger) – nicht die Zielgruppe der Kurse."@de .
+cur:appliesToVariant a owl:ObjectProperty ; rdfs:domain cur:ApplicabilityContext ; rdfs:range cur:Variant ;
+    rdfs:label "gilt für Variante"@de , "applies to variant"@en .
+cur:alternativeContext a owl:ObjectProperty ; rdfs:domain cur:ApplicabilityContext ; rdfs:range cur:ApplicabilityContext ;
+    rdfs:label "alternativer Kontext"@de , "alternative context"@en ;
+    skos:definition "Ein Geltungskontext ist eine UND-Verknüpfung seiner Angaben. Gilt etwas für A ODER B, trägt der Kontext keine eigenen Angaben, sondern verweist auf zwei alternative Kontexte. Keine Kreuzprodukte bilden."@de .
+cur:formality a owl:ObjectProperty ;
+    rdfs:label "Formalität"@de , "formality"@en ;
+    skos:definition "formal, non-formal, informell (cv:Formalities); vor allem Erwachsenen- und Weiterbildung."@de .
+
+cur:ruleAppliesTo a owl:ObjectProperty ; rdfs:domain cur:Rule ;
+    rdfs:label "Regel gilt für"@de , "rule applies to"@en .
+cur:option a owl:ObjectProperty ; rdfs:domain cur:SelectionRule ;
+    rdfs:label "Option"@de , "option"@en .
+cur:incompatibleWith a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:label "nicht kombinierbar mit"@de , "incompatible with"@en .
+cur:minCount a owl:DatatypeProperty ; rdfs:range xsd:nonNegativeInteger ;
+    rdfs:label "mindestens Anzahl"@de , "minimum count"@en .
+cur:maxCount a owl:DatatypeProperty ; rdfs:range xsd:nonNegativeInteger ;
+    rdfs:label "höchstens Anzahl"@de , "maximum count"@en .
+cur:minAmount a owl:DatatypeProperty ; rdfs:range xsd:decimal ;
+    rdfs:label "mindestens Umfang"@de , "minimum amount"@en .
+cur:maxAmount a owl:DatatypeProperty ; rdfs:range xsd:decimal ;
+    rdfs:label "höchstens Umfang"@de , "maximum amount"@en .
+cur:amountUnit a owl:ObjectProperty ;
+    rdfs:label "Einheit des Umfangs (Regel)"@de , "amount unit"@en .
+cur:requirementKind a owl:ObjectProperty ; rdfs:domain cur:PrerequisiteRule ;
+    rdfs:label "Art der Voraussetzung"@de , "requirement kind"@en ;
+    skos:definition "formal (zwingend) oder empfohlen (cv:RequirementKinds)."@de .
+cur:requiresItem a owl:ObjectProperty ; rdfs:domain cur:PrerequisiteRule ;
+    rdfs:label "verlangt"@de , "requires item"@en ;
+    skos:definition "Geforderte Einheit, Aussage, Qualifikation oder Prüfung; ausdrücklich genannte Voraussetzungen werden zusätzlich als Zuordnung rel_requires mit Herkunft source materialisiert."@de .
+cur:maxShare a owl:DatatypeProperty ; rdfs:domain cur:RecognitionRule ; rdfs:range xsd:decimal ;
+    rdfs:label "Höchstanteil"@de , "maximum share"@en .
+cur:parsedExpression a owl:DatatypeProperty ; rdfs:domain cur:Rule ; rdfs:range xsd:string ;
+    rdfs:label "geparster Ausdruck"@de , "parsed expression"@en .
+
+# =============================================================================
+# 11. Eigenschaften – Struktur
+# =============================================================================
+
+cur:partOf a owl:ObjectProperty ;
+    rdfs:label "Teil von"@de , "part of"@en ;
+    skos:definition "Die einzige Baumkante. Gliederungseinheit → Spezifikation, Dokument (Rahmenteil) oder Gliederungseinheit; Aussage → Gliederungseinheit; Prüfung → Prüfung, Spezifikation oder Gliederungseinheit. Genau ein Eigentümer; azyklisch. Geteilte Einheiten werden über cur:appliesTo oder cur:includes referenziert, nie kopiert."@de ;
+    skos:editorialNote "CASE-Assoziationstoken isChildOf; CTDL-ASN ceasn:isChildOf."@de .
+cur:nodeFunction a owl:ObjectProperty ; rdfs:domain cur:CurriculumNode ;
+    rdfs:label "Funktion"@de , "node function"@en ;
+    skos:definition "Kernfunktion (cv:NodeFunctions); wird aus dem Knotentyp abgeleitet, wenn dieser bekannt ist."@de .
+cur:nodeType a owl:ObjectProperty ; rdfs:domain cur:CurriculumNode ; rdfs:range cur:NodeType ;
+    rdfs:label "Knotentyp"@de , "node type"@en .
+cur:originalTitle a owl:DatatypeProperty ; rdfs:range rdf:langString ;
+    rdfs:label "Originaltitel"@de , "original title"@en ;
+    skos:definition "Überschrift wörtlich, ohne Umformulierung."@de .
+cur:originalTerm a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Ebenenbegriff im Dokument"@de , "original term"@en ;
+    skos:example "Inhaltsfeld" , "Lernfeld" , "Handlungsfeld" .
+cur:code a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Code"@de , "code"@en ;
+    skos:definition "Nummer oder Kennung wie im Dokument („LF 3“, „3.2.1“, „M-ET-04“, „QA2“); fehlt sie, vergibt die Pipeline deterministisch aus der Position (cur:codeAssigned true)."@de ;
+    skos:editorialNote "CASE-Feld CFItem.humanCodingScheme; CTDL-ASN ceasn:codedNotation."@de .
+cur:codeAssigned a owl:DatatypeProperty ; rdfs:range xsd:boolean ;
+    rdfs:label "Code maschinell vergeben"@de , "code assigned"@en .
+cur:position a owl:DatatypeProperty ; rdfs:range xsd:integer ;
+    rdfs:label "Position"@de , "position"@en ;
+    skos:definition "Reihenfolge unter Geschwistern im Dokument. Daraus wird nie eine didaktische Reihenfolge oder Voraussetzung abgeleitet."@de .
+cur:appliesTo a owl:ObjectProperty ;
+    rdfs:label "gilt für"@de , "applies to"@en ;
+    skos:definition "Geteilte Einheit oder Aussage gilt für mehrere Spezifikationen oder Varianten; vererbt, darf am Kind nur eingeschränkt werden. Nie duplizieren."@de .
+cur:scopeShare a owl:ObjectProperty ;
+    rdfs:label "Geltungsumfang"@de , "scope share"@en ;
+    skos:definition "gemeinsam, spezifisch, ergänzend, alternativ (cv:ScopeShares)."@de .
+cur:integrative a owl:DatatypeProperty ; rdfs:range xsd:boolean ;
+    rdfs:label "integrativ zu vermitteln"@de , "integrative"@en .
+cur:extractionDepth a owl:ObjectProperty ;
+    rdfs:label "Extraktionstiefe"@de , "extraction depth"@en .
+cur:inArea a owl:ObjectProperty ; rdfs:range cur:AreaConcept ;
+    rdfs:label "in Bereich"@de , "in area"@en .
+cur:includes a owl:ObjectProperty ;
+    rdfs:label "bindet ein"@de , "includes"@en ;
+    skos:definition "Referenz auf eine Einheit, die anderswo definiert ist (Wiederverwendung über Dokumente, gemeinsamer Kern); keine Kopie."@de .
+
+cur:placedUnit a owl:ObjectProperty ; rdfs:domain cur:Placement ; rdfs:range cur:CurriculumNode ;
+    rdfs:label "verwendete Einheit"@de , "placed unit"@en .
+cur:inSpecification a owl:ObjectProperty ; rdfs:domain cur:Placement ; rdfs:range cur:Specification ;
+    rdfs:label "in Spezifikation"@de , "in specification"@en .
+cur:inNode a owl:ObjectProperty ; rdfs:domain cur:Placement ; rdfs:range cur:CurriculumNode ;
+    rdfs:label "an Stelle"@de , "in node"@en .
+cur:forVariant a owl:ObjectProperty ; rdfs:domain cur:Placement ; rdfs:range cur:Variant ;
+    rdfs:label "für Variante"@de , "for variant"@en .
+cur:gradeWeight a owl:DatatypeProperty ; rdfs:range xsd:decimal ;
+    rdfs:label "Notengewicht"@de , "grade weight"@en .
+
+cur:workload a owl:ObjectProperty ; rdfs:range cur:Workload ;
+    rdfs:label "Umfang"@de , "workload"@en .
+cur:totalWorkload a owl:ObjectProperty ; rdfs:subPropertyOf cur:workload ;
+    rdfs:label "Gesamtumfang"@de , "total workload"@en .
+cur:amount a owl:DatatypeProperty ; rdfs:domain cur:Workload ; rdfs:range xsd:decimal ;
+    rdfs:label "Wert"@de , "amount"@en .
+cur:amountTo a owl:DatatypeProperty ; rdfs:domain cur:Workload ; rdfs:range xsd:decimal ;
+    rdfs:label "Wert bis"@de , "amount to"@en ;
+    skos:example "„40–50 UStd.“ → amount 40, amountTo 50" .
+cur:unit a owl:ObjectProperty ; rdfs:domain cur:Workload ;
+    rdfs:label "Einheit"@de , "unit"@en .
+cur:workloadKind a owl:ObjectProperty ; rdfs:domain cur:Workload ;
+    rdfs:label "Art des Umfangs"@de , "workload kind"@en .
+cur:isRecommendation a owl:DatatypeProperty ; rdfs:domain cur:Workload ; rdfs:range xsd:boolean ;
+    rdfs:label "Empfehlung"@de , "is recommendation"@en .
+cur:minutesPerUnit a owl:DatatypeProperty ; rdfs:range xsd:integer ;
+    rdfs:label "Minuten je Einheit"@de , "minutes per unit"@en ;
+    skos:definition "Nur aus dem Dokument (z. B. „1 UE = 45 Minuten“), steht meist einmal je Dokument im Kopf."@de .
+cur:inPeriod a owl:ObjectProperty ; rdfs:range cur:TimeSpan ;
+    rdfs:label "im Zeitraum"@de , "in period"@en ;
+    skos:example "Zeitrichtwert 10 Wochen im „1. bis 15. Monat“" .
+
+cur:timeSpan a owl:ObjectProperty ; rdfs:range cur:TimeSpan ;
+    rdfs:label "Zeitraum"@de , "time span"@en .
+cur:timeKind a owl:ObjectProperty ; rdfs:domain cur:TimeSpan ;
+    rdfs:label "Art des Zeitraums"@de , "time kind"@en .
+cur:from a owl:DatatypeProperty ; rdfs:domain cur:TimeSpan ; rdfs:range xsd:decimal ;
+    rdfs:label "von"@de , "from"@en .
+cur:to a owl:DatatypeProperty ; rdfs:domain cur:TimeSpan ; rdfs:range xsd:decimal ;
+    rdfs:label "bis"@de , "to"@en .
+cur:timeRelation a owl:ObjectProperty ; rdfs:domain cur:TimeSpan ;
+    rdfs:label "Zeitbezug"@de , "time relation"@en ;
+    skos:definition "während, Ende von (Bezugszeitpunkt), bis spätestens, ab (cv:TimeRelations)."@de .
+cur:phase a owl:ObjectProperty ; rdfs:domain cur:TimeSpan ;
+    rdfs:label "Phase"@de , "phase"@en ;
+    skos:definition "Benannte Phase aus einem Profilvokabular (Einführungsphase, Qualifikationsphase, Studieneingangsphase, Ausbildungsdrittel)."@de .
+
+cur:levelAssignment a owl:ObjectProperty ; rdfs:range cur:LevelAssignment ;
+    rdfs:label "Niveauzuordnung"@de , "level assignment"@en .
+cur:level a owl:ObjectProperty ; rdfs:domain cur:LevelAssignment ; rdfs:range cur:LevelConcept ;
+    rdfs:label "Stufe"@de , "level"@en .
+cur:levelTo a owl:ObjectProperty ; rdfs:domain cur:LevelAssignment ; rdfs:range cur:LevelConcept ;
+    rdfs:label "Stufe bis"@de , "level to"@en .
+cur:levelDimension a owl:ObjectProperty ;
+    rdfs:label "Niveaudimension"@de , "level dimension"@en ;
+    skos:definition "Bildungsstufe, Qualifikation, Kompetenzstufe, Erwartungsniveau, Kursniveau, Aufgabenanforderung, Entwicklungsstufe, Bewertungs- und Verhaltensstufe, kognitive, affektive und psychomotorische Heuristik (cv:LevelDimensions). Am Niveausystem als Standard, an der Zuordnung, wenn abweichend."@de .
+cur:levelRelation a owl:ObjectProperty ; rdfs:domain cur:LevelAssignment ;
+    rdfs:label "Art der Zuordnung"@de , "level relation"@en ;
+    skos:definition "zugewiesen, Mindestniveau, Zielniveau, Eingangsniveau, Bereich (cv:LevelRelations). Wird einmal je Dokument aus der Dokumenterklärung bestimmt (X1) und dann gesetzt."@de .
+cur:levelOrdering a owl:ObjectProperty ; rdfs:domain cur:LevelScheme ;
+    rdfs:label "Ordnungsart"@de , "level ordering"@en ;
+    skos:definition "kumulativ (A–H, GER), parallele Züge (G/M/E in BW), nominal (cv:LevelOrderings). steigert-Kanten nur bei kumulativen Systemen."@de .
+cur:rank a owl:DatatypeProperty ; rdfs:domain cur:LevelConcept ; rdfs:range xsd:integer ;
+    rdfs:label "Rang"@de , "rank"@en .
+
+cur:assessmentKind a owl:ObjectProperty ; rdfs:domain cur:Assessment ;
+    rdfs:label "Prüfungsart"@de , "assessment kind"@en .
+cur:assessmentForm a owl:ObjectProperty ; rdfs:domain cur:Assessment ;
+    rdfs:label "Prüfungsform"@de , "assessment form"@en ;
+    skos:definition "Form aus einem Profilvokabular (schriftlich, mündlich, praktisch, Projektarbeit, Portfolio, Fachgespräch …)."@de .
+cur:durationMinutes a owl:DatatypeProperty ; rdfs:domain cur:Assessment ; rdfs:range xsd:integer ;
+    rdfs:label "Dauer in Minuten"@de , "duration in minutes"@en .
+cur:weightPercent a owl:DatatypeProperty ; rdfs:domain cur:Assessment ; rdfs:range xsd:decimal ;
+    rdfs:label "Gewichtung in Prozent"@de , "weight in percent"@en .
+cur:graded a owl:DatatypeProperty ; rdfs:domain cur:Assessment ; rdfs:range xsd:boolean ;
+    rdfs:label "benotet"@de , "graded"@en .
+cur:assesses a owl:ObjectProperty ; rdfs:domain cur:Assessment ;
+    rdfs:label "prüft"@de , "assesses"@en .
+
+# =============================================================================
+# 12. Eigenschaften – Aussage
+# =============================================================================
+
+cur:statementKind a owl:ObjectProperty ; rdfs:domain cur:Statement ;
+    rdfs:label "Aussageart"@de , "statement kind"@en ;
+    skos:definition "Kernart (cv:StatementKinds); das LLM schreibt die Art, die Klasse (cur:LearningOutcome …) leitet der Reasoner ab."@de .
+cur:statementSubkind a owl:ObjectProperty ; rdfs:domain cur:Statement ; rdfs:range cur:StatementSubkind ;
+    rdfs:label "Aussage-Unterart"@de , "statement subkind"@en .
+cur:addressee a owl:ObjectProperty ;
+    rdfs:label "Adressat"@de , "addressee"@en ;
+    cur:dockingPoint cv:dock_addressee ;
+    skos:definition "Wer soll das tun oder können: Lernende, Lehrende/Fachkräfte, Einrichtung/Träger, Familie, Kooperationspartner (cv:Addressees). Nur Aussagen mit Adressat Lernende docken an Kompetenzkonzepte und an AMB teaches."@de .
+cur:verbatim a owl:DatatypeProperty ; rdfs:range rdf:langString ;
+    rdfs:label "Wortlaut"@de , "verbatim text"@en ;
+    skos:definition "Text der Aussage wörtlich (ohne gemeinsamen Einleitungssatz). Normalisierung ergänzt, ersetzt nie."@de ;
+    skos:editorialNote "CASE-Feld CFItem.fullStatement; CTDL-ASN ceasn:competencyText."@de .
+cur:leadIn a owl:DatatypeProperty ; rdfs:range rdf:langString ;
+    rdfs:label "Einleitungssatz"@de , "lead-in"@en ;
+    skos:example "„Die Schülerinnen und Schüler …“ vor einer Spiegelstrichliste" .
+cur:obligation a owl:ObjectProperty ;
+    rdfs:label "Verbindlichkeit"@de , "obligation"@en ;
+    cur:dockingPoint cv:dock_time ;
+    skos:definition "Verbindlichkeit je Einheit, Aussage oder Verwendung (cv:Obligations): verbindlich, Wahlpflicht, Wahl, Auswahlpool, exemplarisch, empfohlen, informativ. Fehlt sie, gilt die geerbte."@de .
+cur:origin a owl:ObjectProperty ;
+    rdfs:label "Herkunft"@de , "origin"@en ;
+    skos:definition "Woher eine Angabe stammt: Quelle (steht im Dokument), vererbt, Regel, Modell, Mensch, amtlich (cv:Origins). Getrennt vom Prüfstatus."@de .
+cur:layoutMarker a owl:ObjectProperty ;
+    rdfs:label "Layoutsignal"@de , "layout marker"@en ;
+    skos:definition "Formatierung mit Bedeutung (fett, kursiv, Klammer, Spalte, Kasten, Randsymbol; cv:LayoutMarkers), wörtlich aus X0 übernommen."@de .
+cur:refersTo a owl:ObjectProperty ;
+    rdfs:label "verweist auf"@de , "refers to"@en .
+cur:referenceMarker a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Verweis roh"@de , "reference marker"@en ;
+    skos:example "P 2.1" , "➔ GE, Kl. 8/9, LB 2" , "vgl. LF 3" .
+cur:citedCode a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "zitierter Fremdcode"@de , "cited code"@en ;
+    skos:definition "Code eines fremden Rahmens, den die Aussage nennt (IQB-Standard „S1“, Kompetenzbereich „K4“, lea.-Item „2.1.05“). Wird zuerst deterministisch aufgelöst (App: KMK per Code 351/351, per Text 32)."@de .
+cur:resolutionStatus a owl:ObjectProperty ;
+    rdfs:label "Auflösungsstatus"@de , "resolution status"@en .
+cur:targetsContent a owl:ObjectProperty ;
+    rdfs:label "bezieht sich auf Inhalt"@de , "targets content"@en ;
+    skos:definition "Lernergebnis → Inhaltsaussage derselben Einheit (n:m, Spalten- oder Zeilenpaarung). Beide bleiben Geschwister."@de .
+cur:summarizes a owl:ObjectProperty ;
+    rdfs:label "fasst zusammen"@de , "summarizes"@en ;
+    skos:definition "Übersichtsaussage (Jahrgangsstufenprofil, Level-Übersicht) → Einheiten oder Aussagen, die sie zusammenfasst; wird nicht mit ihnen dedupliziert."@de .
+cur:purpose a owl:DatatypeProperty ; rdfs:range rdf:langString ;
+    rdfs:label "Handlungsziel"@de , "purpose"@en ;
+    skos:example "„Möchte über seine/ihre Herkunft sprechen.“ (Spalte Handlungsziele)" .
+cur:exampleText a owl:DatatypeProperty ; rdfs:range rdf:langString ;
+    rdfs:label "Beispiel im Wortlaut"@de , "example text"@en ;
+    skos:example "„z. B. über die Familie, den Fluchtgrund“" .
+cur:checkedAbsent a owl:ObjectProperty ;
+    rdfs:label "geprüft, nicht im Dokument"@de , "checked absent"@en ;
+    skos:definition "Andockpunkt (cv:DockingPoints), der für dieses Element untersucht und im Dokument nicht gefunden wurde. Getrennt von „nicht untersucht“ (kein Tripel). Nie raten."@de .
+
+# =============================================================================
+# 13. Eigenschaften – Zerlegung und Konzepte
+# =============================================================================
+
+cur:decomposes a owl:ObjectProperty ; rdfs:domain cur:Decomposition ; rdfs:range cur:Statement ;
+    rdfs:label "zerlegt"@de , "decomposes"@en .
+cur:actionText a owl:DatatypeProperty ; rdfs:domain cur:Decomposition ; rdfs:range xsd:string ;
+    rdfs:label "Handlung im Wortlaut"@de , "action text"@en ;
+    cur:dockingPoint cv:dock_competency ;
+    skos:example "wählen … aus" , "berechnen" .
+cur:action a owl:ObjectProperty ; rdfs:range cur:OperatorLemma ;
+    rdfs:label "Handlung (Lemma)"@de , "action"@en ;
+    cur:dockingPoint cv:dock_competency .
+cur:objectText a owl:DatatypeProperty ; rdfs:domain cur:Decomposition ; rdfs:range xsd:string ;
+    rdfs:label "Gegenstand im Wortlaut"@de , "object text"@en ;
+    cur:dockingPoint cv:dock_content .
+cur:conditionText a owl:DatatypeProperty ; rdfs:domain cur:Decomposition ; rdfs:range xsd:string ;
+    rdfs:label "Bedingung/Kontext im Wortlaut"@de , "condition text"@en ;
+    cur:dockingPoint cv:dock_context ;
+    skos:example "bei der Planung von Energieversorgungsanlagen" , "anhand von Karten" .
+cur:qualityCriterion a owl:DatatypeProperty ; rdfs:domain cur:Decomposition ; rdfs:range xsd:string ;
+    rdfs:label "Qualitätskriterium"@de , "quality criterion"@en ;
+    skos:example "sachgerecht" , "adressatengerecht" .
+cur:autonomy a owl:ObjectProperty ; rdfs:domain cur:Decomposition ;
+    rdfs:label "Selbstständigkeitsgrad"@de , "autonomy"@en .
+cur:knowledgeType a owl:ObjectProperty ; rdfs:domain cur:Decomposition ;
+    rdfs:label "Wissensart"@de , "knowledge type"@en ;
+    skos:definition "Faktisch, konzeptuell, prozedural, metakognitiv (Anderson/Krathwohl); optional, nur mit Konfidenz."@de .
+cur:expresses a owl:ObjectProperty ; rdfs:range cur:CompetencyConcept ;
+    rdfs:label "drückt aus"@de , "expresses"@en ;
+    cur:dockingPoint cv:dock_competency ;
+    skos:definition "Zerlegung → Kompetenzkonzept (Hub)."@de .
+cur:mentions a owl:ObjectProperty ; rdfs:range cur:ContentConcept ;
+    rdfs:label "behandelt"@de , "mentions"@en ;
+    cur:dockingPoint cv:dock_content ;
+    skos:definition "Gliederungseinheit (Thema aus dem Titel), Zerlegung oder Inhaltsaussage → Inhaltskonzept (Hub)."@de .
+cur:competenceDimension a owl:ObjectProperty ; rdfs:range cur:CompetenceDimension ;
+    rdfs:label "Kompetenzdimension"@de , "competence dimension"@en ;
+    skos:definition "Dimension eines Kompetenzmodells an Aussage, Knoten oder Niveauzuordnung; an der Niveauzuordnung heißt sie: Das Niveau gilt nur für diesen Bereich."@de ;
+    cur:dockingPoint cv:dock_competency .
+cur:dimensionText a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Kompetenzdimension im Wortlaut"@de , "dimension text"@en ;
+    cur:dockingPoint cv:dock_competency ;
+    skos:definition "Ausdrücklich genannte Dimension oder Kürzel („Erkenntnisgewinnung“, „K2“), wie im Dokument."@de .
+cur:content a owl:ObjectProperty ; rdfs:domain cur:CompetencyConcept ; rdfs:range cur:ContentConcept ;
+    rdfs:label "Gegenstand"@de , "content"@en .
+
+cur:ambiguousLabel a owl:AnnotationProperty ; rdfs:subPropertyOf skos:hiddenLabel ;
+    rdfs:label "kontextabhängige Bezeichnung"@de , "ambiguous label"@en ;
+    skos:definition "Bezeichnung, die nur zusammen mit einem Kontextbegriff als Treffer zählt (App-Themenabgleich: Präzision 0,86 dank Label-Rollen)."@de .
+cur:contextTerm a owl:AnnotationProperty ;
+    rdfs:label "Kontextbegriff"@de , "context term"@en .
+cur:counterTerm a owl:AnnotationProperty ;
+    rdfs:label "Gegenbegriff"@de , "counter term"@en ;
+    skos:definition "Kommt dieser Begriff vor, ist der Treffer falsch (falscher Freund: „Widerstand“ in Psychologie)."@de .
+cur:objectiveType a owl:ObjectProperty ; rdfs:domain cur:CrossCuttingObjective ;
+    rdfs:label "Art des Querschnittsziels"@de , "objective type"@en .
+cur:contextType a owl:ObjectProperty ; rdfs:domain cur:ContextConcept ;
+    rdfs:label "Kontextart"@de , "context type"@en .
+cur:lemma a owl:ObjectProperty ; rdfs:domain cur:OperatorEntry ; rdfs:range cur:OperatorLemma ;
+    rdfs:label "Lemma"@de , "lemma"@en .
+cur:taskDemand a owl:ObjectProperty ; rdfs:domain cur:OperatorEntry ; rdfs:range cur:LevelConcept ;
+    rdfs:label "Anforderungsbereich laut Liste"@de , "task demand"@en .
+cur:cognitiveLevel a owl:ObjectProperty ; rdfs:domain cur:OperatorEntry ; rdfs:range cur:LevelConcept ;
+    rdfs:label "Taxonomiestufe laut Liste"@de , "cognitive level"@en .
+cur:scopeSubject a owl:ObjectProperty ;
+    rdfs:label "Geltung Fach"@de , "scope subject"@en .
+
+# =============================================================================
+# 14. Eigenschaften – Andockpunkte, die nicht schon oben stehen
+# =============================================================================
+
+cur:field a owl:ObjectProperty ;
+    rdfs:label "Fach/Feld"@de , "field"@en ;
+    cur:dockingPoint cv:dock_field ;
+    skos:definition "Fach, Studienfeld, Berufsfeld oder Bildungsbereich als Konzept: Fach-Hub fld: (ISCED-F 2013), KIM-Schulfächer, Elementar-Bildungsbereiche, EB-Programmbereiche. In der Regel einmal je Spezifikation und vererbt; an Einheiten, wenn diese das Feld bestimmen (Bildungsbereich im Kita-Plan, Fach im Fächerverbund, Bündelungsfach)."@de .
+cur:fieldText a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Fach im Wortlaut"@de , "field text"@en ;
+    cur:dockingPoint cv:dock_field .
+cur:occupation a owl:ObjectProperty ; rdfs:range cur:Occupation ;
+    rdfs:label "Beruf"@de , "occupation"@en ;
+    cur:dockingPoint cv:dock_field .
+cur:levelText a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Niveau im Wortlaut"@de , "level text"@en ;
+    cur:dockingPoint cv:dock_level ;
+    skos:example "Niveaustufe D" , "erhöhtes Anforderungsniveau" , "A2" , "fett gedruckt (E-Kurs)" .
+cur:timeText a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Zeit im Wortlaut"@de , "time text"@en ;
+    cur:dockingPoint cv:dock_time ;
+    skos:example "Ende Jahrgangsstufe 6" , "1. Ausbildungsjahr, 80 Stunden" , "U3" .
+cur:contributesTo a owl:ObjectProperty ; rdfs:range cur:CrossCuttingObjective ;
+    rdfs:label "trägt bei zu"@de , "contributes to"@en ;
+    cur:dockingPoint cv:dock_crossCutting ;
+    skos:definition "Ausdrücklicher Querschnittsbezug (Symbol, Kürzel, Randspalte), aufgelöst über die Legende aus X3. Implizite Bezüge nur als Zuordnung mit Herkunft model."@de .
+cur:crossCuttingMarker a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Querschnittsmarker roh"@de , "cross-cutting marker"@en ;
+    cur:dockingPoint cv:dock_crossCutting ;
+    skos:example "L BNE" , "[MD3]" , "⇒ Medienbildung" .
+cur:context a owl:ObjectProperty ; rdfs:range cur:ContextConcept ;
+    rdfs:label "Kontext"@de , "context"@en ;
+    cur:dockingPoint cv:dock_context ;
+    skos:definition "Situation, Lebensbereich, Lernort, Rolle oder Berufsfeld. Am Knoten deklariert (Knotentyp mit Kontextsemantik) und vererbt; an der Aussage nur, wenn ausdrücklich."@de .
+cur:contextText a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Kontext im Wortlaut"@de , "context text"@en ;
+    cur:dockingPoint cv:dock_context .
+
+cur:workload cur:dockingPoint cv:dock_time .
+cur:timeSpan cur:dockingPoint cv:dock_time .
+cur:region cur:dockingPoint cv:dock_time .
+cur:levelAssignment cur:dockingPoint cv:dock_level .
+cur:mentions cur:filledInStage cv:stage_N1 .
+cur:expresses cur:filledInStage cv:stage_N1 .
+
+# Angaben zum Andockpunkt selbst (an den Konzepten in cv:DockingPoints)
+cur:verbatimProperty a owl:AnnotationProperty ;
+    rdfs:label "Wortlaut-Eigenschaft"@de , "verbatim property"@en .
+cur:normProperty a owl:AnnotationProperty ;
+    rdfs:label "Norm-Eigenschaft"@de , "normalised property"@en .
+cur:hubClass a owl:AnnotationProperty ;
+    rdfs:label "Hub-Klasse"@de , "hub class"@en .
+cur:inheritedVia a owl:AnnotationProperty ;
+    rdfs:label "vererbt über"@de , "inherited via"@en .
+cur:targetVocabulary a owl:AnnotationProperty ;
+    rdfs:label "Zielvokabular"@de , "target vocabulary"@en .
+cur:question a owl:AnnotationProperty ;
+    rdfs:label "Leitfrage"@de , "guiding question"@en .
+
+# =============================================================================
+# 15. Eigenschaften – Zuordnung
+# =============================================================================
+
+cur:source a owl:ObjectProperty ; rdfs:domain cur:Alignment ;
+    rdfs:label "Quelle"@de , "source"@en .
+cur:target a owl:ObjectProperty ; rdfs:domain cur:Alignment ;
+    rdfs:label "Ziel"@de , "target"@en .
+cur:relation a owl:ObjectProperty ; rdfs:domain cur:Alignment ;
+    rdfs:label "Relation"@de , "relation"@en .
+cur:reviewStatus a owl:ObjectProperty ;
+    rdfs:label "Prüfstatus"@de , "review status"@en .
+cur:method a owl:ObjectProperty ;
+    rdfs:label "Methode"@de , "method"@en .
+cur:confidence a owl:DatatypeProperty ; rdfs:range xsd:decimal ;
+    rdfs:label "Konfidenz"@de , "confidence"@en ;
+    skos:definition "0–1, von der Pipeline berechnet (Retrieval-Abstand × Rerank, Zitatabgleich, Lexikontreffer). Keine Selbstauskunft des Modells."@de .
+cur:rationale a owl:DatatypeProperty ; rdfs:range rdf:langString ;
+    rdfs:label "Begründung"@de , "rationale"@en .
+cur:targetSystem a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Zielsystem"@de , "target system"@en ;
+    skos:example "ESCO" , "GND" , "Wikidata" , "DigComp" .
+cur:targetVersion a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Zielversion"@de , "target version"@en ;
+    skos:example "ESCO v1.2.1" .
+cur:reviewedBy a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "geprüft durch (Rolle)"@de , "reviewed by"@en ;
+    skos:definition "Rolle, kein Personenname (Datenschutz)."@de .
+cur:shortcut a owl:AnnotationProperty ;
+    rdfs:label "Kurzform-Eigenschaft"@de , "shortcut property"@en ;
+    skos:definition "An einer Relation in cv:AlignmentRelations: Eigenschaft, mit der geprüfte oder amtliche Zuordnungen als einfaches Tripel materialisiert werden."@de .
+
+# Kurzform-Eigenschaften (nur aus geprüften/amtlichen Zuordnungen materialisiert)
+cur:requires a owl:ObjectProperty ;
+    rdfs:label "setzt voraus"@de , "requires"@en ;
+    skos:definition "B braucht A. Richtung: Quelle setzt Ziel voraus."@de .
+cur:buildsOn a owl:ObjectProperty ;
+    rdfs:label "steigert"@de , "builds on"@en ;
+    skos:definition "Quelle behandelt dasselbe Inhaltskonzept wie das Ziel auf höherer Stufe desselben kumulativen Niveausystems oder mit höherer Taxonomiestufe derselben Liste. Keine Umrechnung zwischen Systemen."@de .
+cur:precedes a owl:ObjectProperty ;
+    rdfs:label "geht didaktisch voraus"@de , "precedes"@en ;
+    skos:definition "Nur wenn das Dokument eine Lernreihenfolge ausdrücklich vorgibt; nie aus cur:position abgeleitet."@de .
+cur:revisits a owl:ObjectProperty ;
+    rdfs:label "greift wieder auf"@de , "revisits"@en ;
+    skos:definition "Spiralverweis: Quelle nimmt das Ziel auf späterer Stufe wieder auf."@de .
+cur:supports a owl:ObjectProperty ;
+    rdfs:label "stützt"@de , "supports"@en ;
+    skos:definition "Begleitwissen zu einem Lernergebnis; schwächer als setzt voraus."@de .
+cur:concretizes a owl:ObjectProperty ;
+    rdfs:label "konkretisiert"@de , "concretizes"@en ;
+    skos:definition "Landeslehrplan → KMK-Bildungsstandard, Landeslehrplan Berufsschule → KMK-Rahmenlehrplan, Lernsituation → Lernfeld."@de .
+cur:correspondsTo a owl:ObjectProperty ;
+    rdfs:label "entspricht"@de , "corresponds to"@en ;
+    skos:definition "Lernortübergreifende Entsprechung (Berufsbildposition ↔ Lernfeld laut Entsprechungsliste)."@de .
+cur:derivedFrom a owl:ObjectProperty ; rdfs:subPropertyOf prov:wasDerivedFrom ;
+    rdfs:label "übernommen aus"@de , "derived from"@en ;
+    skos:definition "Im Wortlaut oder sinngemäß aus einem anderen Rahmen übernommen (PflAPrV → CE, lea. → DVV, Lernfelder 1–4 identisch mit …)."@de .
+cur:replaces a owl:ObjectProperty ;
+    rdfs:label "ersetzt (Element)"@de , "replaces"@en ;
+    skos:definition "Element einer neuen Fassung ersetzt das Element der alten (Versionsvergleich)."@de .
+cur:crossSubject a owl:ObjectProperty ;
+    rdfs:label "fachübergreifend zu"@de , "cross-subject reference"@en .
+cur:majorOverlap a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:label "überlappt stark"@de , "major overlap"@en .
+cur:minorOverlap a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:label "überlappt schwach"@de , "minor overlap"@en .
+cur:recognizedFor a owl:ObjectProperty ;
+    rdfs:label "anrechenbar auf"@de , "recognized for"@en ;
+    skos:definition "Formale Anrechnung laut amtlicher Regel (Herkunft official), z. B. Fortbildungsabschluss → Hochschulmodul mit ECTS."@de .
+cur:qualifiesFor a owl:ObjectProperty ;
+    rdfs:label "berechtigt zu"@de , "qualifies for"@en ;
+    skos:definition "Qualifikation → Zugang zu einem Programm (amtlich)."@de .
+cur:contributesToGoal a owl:ObjectProperty ;
+    rdfs:label "trägt bei zu Ziel"@de , "contributes to goal"@en ;
+    skos:definition "Modul-Lernergebnis → Programm-Qualifikationsziel (Ziele-Module-Matrix explizit, sonst Herkunft model)."@de .
+
+# =============================================================================
+# 16. Eigenschaften – Lexikon
+# =============================================================================
+
+cur:typicalParent a owl:ObjectProperty ;
+    rdfs:label "typischer Elternknotentyp"@de , "typical parent"@en ;
+    skos:definition "Hinweis zur Nachbarschaft im Baum, keine Platzierungsregel (Platzierung bestimmt das deterministische Skelett)."@de .
+cur:typicalChild a owl:ObjectProperty ;
+    rdfs:label "typischer Kindknotentyp"@de , "typical child"@en .
+cur:segmentation a owl:ObjectProperty ;
+    rdfs:label "Segmentierungsregel"@de , "segmentation"@en ;
+    skos:definition "Was ein Element ist: Satz, Aufzählungspunkt, Tabellenzeile, Tabellenzelle, Absatz, ganze Einheit (cv:Segmentations)."@de .
+cur:delimitation a owl:AnnotationProperty ;
+    rdfs:label "Abgrenzung"@de , "delimitation"@en ;
+    skos:definition "Was NICHT dazugehört (Nicht-Fälle), eigener Prompttext."@de .
+cur:wordingRule a owl:AnnotationProperty ;
+    rdfs:label "Wortlautregel"@de , "wording rule"@en .
+cur:positiveExample a owl:AnnotationProperty ;
+    rdfs:label "Beispiel (nicht abschließend)"@de , "positive example"@en ;
+    skos:definition "Beispiel als eigenes Feld; nie als Klammer im Regeltext (App: Beispielklammern werden als abschließende Liste gelesen)."@de .
+cur:negativeExample a owl:AnnotationProperty ;
+    rdfs:label "Gegenbeispiel"@de , "negative example"@en .
+cur:defaultObligation a owl:ObjectProperty ;
+    rdfs:label "Standardverbindlichkeit"@de , "default obligation"@en .
+cur:defaultAddressee a owl:ObjectProperty ;
+    rdfs:label "Standardadressat"@de , "default addressee"@en .
+cur:impliesContext a owl:ObjectProperty ; rdfs:range cur:ContextConcept ;
+    rdfs:label "setzt Kontext"@de , "implies context"@en ;
+    skos:definition "Knotentyp mit Kontextsemantik (Handlungsfeld, Alltagssituation): alle Aussagen darunter erhalten den Kontext ohne LLM-Aufruf (Herkunft inherited)."@de .
+cur:impliesTimeKind a owl:ObjectProperty ;
+    rdfs:label "setzt Zeitart"@de , "implies time kind"@en .
+
+cur:hasCue a owl:ObjectProperty ; rdfs:domain cur:TerminologyProfile ; rdfs:range cur:LexicalCue ;
+    rdfs:label "hat Hinweis"@de , "has cue"@en .
+cur:profileScope a owl:ObjectProperty ; rdfs:domain cur:TerminologyProfile ;
+    rdfs:label "Profilgeltung"@de , "profile scope"@en .
+cur:surfaceForm a owl:DatatypeProperty ; rdfs:domain cur:LexicalCue ; rdfs:range xsd:string ;
+    rdfs:label "Oberflächenform"@de , "surface form"@en .
+cur:cueRole a owl:ObjectProperty ; rdfs:domain cur:LexicalCue ;
+    rdfs:label "Hinweisrolle"@de , "cue role"@en .
+cur:cueKind a owl:ObjectProperty ; rdfs:domain cur:LexicalCue ;
+    rdfs:label "Hinweisart"@de , "cue kind"@en .
+cur:mapsTo a owl:ObjectProperty ;
+    rdfs:label "zeigt auf"@de , "maps to"@en .
+cur:alsoMapsTo a owl:ObjectProperty ; rdfs:domain cur:LexicalCue ;
+    rdfs:label "zeigt sonst auf"@de , "otherwise maps to"@en ;
+    skos:definition "Alternativziel eines Homonyms; die Regel steht in cur:recognitionHint."@de .
+cur:pattern a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Erkennungsmuster (Regex)"@de , "pattern"@en ;
+    skos:definition "Regulärer Ausdruck in Python-re-Syntax, auf Überschriften, Tabellenköpfe oder Sätze angewendet; Muster nach Form (Nummerierung, Seitenzahlen) statt nach Wörtern bevorzugen."@de .
+cur:patternFlags a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Musterschalter"@de , "pattern flags"@en ;
+    skos:example "i" .
+cur:layoutSignal a owl:ObjectProperty ; rdfs:domain cur:LexicalCue ;
+    rdfs:label "Layoutsignal"@de , "layout signal"@en .
+cur:occursIn a owl:ObjectProperty ; rdfs:domain cur:LexicalCue ;
+    rdfs:label "kommt vor in"@de , "occurs in"@en .
+cur:scopeRegion a owl:ObjectProperty ;
+    rdfs:label "Geltung Land"@de , "scope region"@en .
+cur:scopeDocumentType a owl:ObjectProperty ;
+    rdfs:label "Geltung Dokumenttyp"@de , "scope document type"@en .
+cur:scopeSector a owl:ObjectProperty ;
+    rdfs:label "Geltung Bildungsbereich"@de , "scope sector"@en .
+cur:scopeInstitutionType a owl:ObjectProperty ;
+    rdfs:label "Geltung Einrichtungsart"@de , "scope institution type"@en .
+cur:scopeIssuer a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:label "Geltung Herausgeber/Träger"@de , "scope issuer"@en .
+cur:strength a owl:DatatypeProperty ; rdfs:range xsd:decimal ;
+    rdfs:label "Stärke"@de , "strength"@en ;
+    skos:definition "0–1; ab 0,9 klassifiziert X2 deterministisch ohne LLM, ab 0,8 markiert der Prompt ein starkes Signal."@de .
+cur:verified a owl:DatatypeProperty ; rdfs:range xsd:boolean ;
+    rdfs:label "am Original geprüft"@de , "verified"@en .
+cur:recognitionHint a owl:AnnotationProperty ;
+    rdfs:label "Erkennungshinweis für das LLM"@de , "recognition hint"@en .
+cur:negativeHint a owl:AnnotationProperty ;
+    rdfs:label "Warnhinweis (falscher Freund)"@de , "negative hint"@en .
+
+cur:profileOf a owl:ObjectProperty ; rdfs:domain cur:DocumentProfile ; rdfs:range cur:Document ;
+    rdfs:label "Profil von"@de , "profile of"@en .
+cur:termMapping a owl:ObjectProperty ; rdfs:domain cur:DocumentProfile ; rdfs:range cur:TermMapping ;
+    rdfs:label "Termzuordnung"@de , "term mapping"@en .
+cur:tableSchema a owl:ObjectProperty ; rdfs:domain cur:DocumentProfile ; rdfs:range cur:TableSchema ;
+    rdfs:label "Tabellenschema"@de , "table schema"@en .
+cur:column a owl:ObjectProperty ; rdfs:domain cur:TableSchema ; rdfs:range cur:ColumnMapping ;
+    rdfs:label "Spalte"@de , "column"@en .
+cur:columnHeader a owl:DatatypeProperty ; rdfs:domain cur:ColumnMapping ; rdfs:range xsd:string ;
+    rdfs:label "Spaltenkopf"@de , "column header"@en .
+cur:mapsToProperty a owl:AnnotationProperty ;
+    rdfs:label "zeigt auf Eigenschaft"@de , "maps to property"@en .
+cur:defaultLevelScheme a owl:ObjectProperty ; rdfs:range cur:LevelScheme ;
+    rdfs:label "Standard-Niveausystem"@de , "default level scheme"@en .
+cur:defaultLevelRelation a owl:ObjectProperty ;
+    rdfs:label "Standard-Zuordnungsart"@de , "default level relation"@en .
+cur:newTerm a owl:DatatypeProperty ; rdfs:domain cur:DocumentProfile ; rdfs:range xsd:string ;
+    rdfs:label "neue Bezeichnung"@de , "new term"@en ;
+    skos:definition "Vom LLM gemeldete Bezeichnung ohne Lexikoneintrag; landet als Review-Liste vor dem Lexikon."@de .

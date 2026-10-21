@@ -1,0 +1,209 @@
+@prefix ex:    <https://w3id.org/wlo/curriculum/example/> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix shs:   <https://w3id.org/wlo/curriculum/shapes#> .
+@prefix lvl:   <https://w3id.org/wlo/curriculum/level/> .
+@prefix schul: <https://w3id.org/wlo/curriculum/profile/school#> .
+@prefix elem:  <https://w3id.org/wlo/curriculum/profile/early-childhood#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+# =============================================================================
+# Negativbeispiele: jeder Fall verletzt genau eine Kernregel. pruefe.py
+# erwartet für jeden Fall eine Violation der genannten Shape am genannten
+# Fokusknoten und keine anderen Violations an diesen Knoten.
+# Der Rahmen (Dokument, Spezifikation, Knoten, Fundstelle) ist korrekt.
+# =============================================================================
+
+ex:neg-doc a cur:Document ; dct:title "Negativbeispiel (fiktiv)"@de ; dct:publisher "fiktiv" ;
+    cur:documentType schul:dt-Lehrplan ; cur:educationSector cv:sec_school ; cur:legalForm cv:lf_unknown ;
+    cur:represents ex:neg-spec .
+ex:neg-spec a cur:Curriculum ; dct:title "Negativbeispiel"@de ; cur:checkedAbsent cv:dock_field .
+ex:neg-node a cur:CurriculumNode ; cur:partOf ex:neg-spec ; cur:nodeFunction cv:fn_area ; cur:nodeType schul:Inhaltsbereich ;
+    cur:anchor ex:neg-anc .
+ex:neg-anc a cur:SourceAnchor ; cur:inDocument ex:neg-doc ; cur:pageStart 1 ; cur:pageEnd 1 ; cur:blockId "p1-b1" ; cur:matchKind cv:match_exact .
+
+# F1: Aussage ohne Wortlaut-Sprachangabe (Wortlaut ist Pflicht, mit Sprache)
+ex:f1 ex:expectsViolationOf shs:StatementShape ; ex:focus ex:f1-st ;
+    skos:note "Wortlaut ohne Sprachangabe."@de .
+ex:f1-st a cur:Statement ; cur:partOf ex:neg-node ; cur:verbatim "beschreiben Stromkreise" ;
+    cur:statementKind cv:kind_learningOutcome ; cur:addressee cv:addr_learner ; cur:anchor ex:neg-anc .
+
+# F2: Aussage mit Kind (Aussagen sind Blätter)
+ex:f2 ex:expectsViolationOf shs:StatementShape ; ex:focus ex:f2-st ;
+    skos:note "Etwas hängt per cur:partOf an einer Aussage."@de .
+ex:f2-st a cur:Statement ; cur:partOf ex:neg-node ; cur:verbatim "Elektrizität"@de ;
+    cur:statementKind cv:kind_content ; cur:addressee cv:addr_learner ; cur:anchor ex:neg-anc .
+ex:f2-kind a cur:Statement ; cur:partOf ex:f2-st ; cur:verbatim "Stromkreis"@de ;
+    cur:statementKind cv:kind_content ; cur:addressee cv:addr_learner ; cur:anchor ex:neg-anc .
+ex:f2b ex:expectsViolationOf shs:StatementShape ; ex:focus ex:f2-kind ;
+    skos:note "Die Kind-Aussage hängt nicht an einer Gliederungseinheit."@de .
+
+# F3: Unterart passt nicht zur Kernart
+ex:f3 ex:expectsViolationOf shs:StatementShape ; ex:focus ex:f3-st ;
+    skos:note "Kompetenzerwartung (learningOutcome) als Hinweis klassifiziert."@de .
+ex:f3-st a cur:Statement ; cur:partOf ex:neg-node ; cur:verbatim "erklären den Treibhauseffekt"@de ;
+    cur:statementKind cv:kind_guidance ; cur:statementSubkind schul:Kompetenzerwartung ;
+    cur:addressee cv:addr_learner ; cur:anchor ex:neg-anc .
+
+# F4: Funktion widerspricht dem Knotentyp
+ex:f4 ex:expectsViolationOf shs:CurriculumNodeShape ; ex:focus ex:f4-node ;
+    skos:note "Inhaltsbereich (area) als Einheit (unit) geführt."@de .
+ex:f4-node a cur:CurriculumNode ; cur:partOf ex:neg-spec ; cur:nodeFunction cv:fn_unit ; cur:nodeType schul:Inhaltsbereich ;
+    cur:anchor ex:neg-anc .
+
+# F5: Kompetenzkonzept an einer Fachkraft-Aussage
+ex:f5 ex:expectsViolationOf shs:DecompositionShape ; ex:focus ex:f5-dec ;
+    skos:note "Nur Aussagen mit Adressat Lernende docken an Kompetenzkonzepte."@de .
+ex:f5-st a cur:Statement ; cur:partOf ex:neg-node ;
+    cur:verbatim "Die Fachkräfte unterstützen die Kinder beim Zählen."@de ;
+    cur:statementKind cv:kind_mandate ; cur:addressee cv:addr_educator ; cur:anchor ex:neg-anc .
+ex:f5-kk a cur:CompetencyConcept ; skos:prefLabel "Zählen"@de ; skos:inScheme ex:NegHub .
+ex:NegHub a skos:ConceptScheme ; skos:prefLabel "Negativ-Hub"@de .
+ex:f5-dec a cur:Decomposition ; cur:decomposes ex:f5-st ; cur:actionText "unterstützen" ; cur:objectText "die Kinder" ;
+    cur:origin cv:orig_model ; cur:confidence 0.7 ; cur:expresses ex:f5-kk .
+
+# F6: Zerlegung eines Hinweises
+ex:f6 ex:expectsViolationOf shs:DecompositionShape ; ex:focus ex:f6-dec ;
+    skos:note "Hinweise werden nicht zerlegt."@de .
+ex:f6-st a cur:Statement ; cur:partOf ex:neg-node ; cur:verbatim "Ein Schülerexperiment bietet sich an."@de ;
+    cur:statementKind cv:kind_guidance ; cur:addressee cv:addr_educator ; cur:anchor ex:neg-anc .
+ex:f6-dec a cur:Decomposition ; cur:decomposes ex:f6-st ; cur:actionText "bietet" ; cur:objectText "Schülerexperiment" ;
+    cur:origin cv:orig_model ; cur:confidence 0.5 .
+
+# F7: DQR-Niveau an einer Aussage
+ex:f7 ex:expectsViolationOf shs:LevelAssignmentShape ; ex:focus ex:f7-la ;
+    skos:note "Qualifikationsniveaus hängen nur an Qualifikation oder Spezifikation."@de .
+ex:f7-st a cur:Statement ; cur:partOf ex:neg-node ; cur:verbatim "planen Installationen"@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:addressee cv:addr_learner ; cur:anchor ex:neg-anc ;
+    cur:levelAssignment ex:f7-la .
+ex:f7-la a cur:LevelAssignment ; cur:level lvl:DQR-4 ; cur:origin cv:orig_model .
+
+# F8: Bloom-Stufe aus dem Modell ohne Herkunft
+ex:f8 ex:expectsViolationOf shs:LevelAssignmentShape ; ex:focus ex:f8-la ;
+    skos:note "Kognitive Heuristik braucht Herkunft rule/model/human."@de .
+ex:f8-st a cur:Statement ; cur:partOf ex:neg-node ; cur:verbatim "bewerten Energieträger"@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:addressee cv:addr_learner ; cur:anchor ex:neg-anc ;
+    cur:levelAssignment ex:f8-la .
+ex:f8-la a cur:LevelAssignment ; cur:level lvl:bloom-evaluate .
+
+# F9: maschinelle Zuordnung ohne Konfidenz
+ex:f9 ex:expectsViolationOf shs:AlignmentShape ; ex:focus ex:f9-al ;
+    skos:note "Herkunft model braucht berechnete Konfidenz."@de .
+ex:f9-al a cur:Alignment ; cur:source ex:f8-st ; cur:target ex:f7-st ; cur:relation cv:rel_relatedMatch ;
+    cur:origin cv:orig_model ; cur:reviewStatus cv:rev_proposed ; cur:method cv:meth_embedding .
+
+# F10: Anrechnung ohne amtliche Herkunft
+ex:f10 ex:expectsViolationOf shs:AlignmentShape ; ex:focus ex:f10-al ;
+    skos:note "recognizedFor und qualifiesFor nur amtlich."@de .
+ex:f10-al a cur:Alignment ; cur:source ex:f7-st ; cur:target ex:neg-node ; cur:relation cv:rel_recognizedFor ;
+    cur:origin cv:orig_model ; cur:reviewStatus cv:rev_confirmed ; cur:method cv:meth_llmJudgement ; cur:confidence 0.9 .
+
+# F11: amtliche Zuordnung ohne Fundstelle
+ex:f11 ex:expectsViolationOf shs:AlignmentShape ; ex:focus ex:f11-al ;
+    skos:note "Amtlich heißt: belegt in der amtlichen Quelle."@de .
+ex:f11-al a cur:Alignment ; cur:source ex:f7-st ; cur:target ex:f8-st ; cur:relation cv:rel_correspondsTo ;
+    cur:origin cv:orig_official ; cur:reviewStatus cv:rev_confirmed ; cur:method cv:meth_officialList .
+
+# F12: Modellherkunft mit Methode „Wortlaut“
+ex:f12 ex:expectsViolationOf shs:AlignmentShape ; ex:focus ex:f12-al ;
+    skos:note "Ein Modellvorschlag ist nie wörtlich belegt."@de .
+ex:f12-al a cur:Alignment ; cur:source ex:f8-st ; cur:target ex:f2-st ; cur:relation cv:rel_relatedMatch ;
+    cur:origin cv:orig_model ; cur:reviewStatus cv:rev_proposed ; cur:method cv:meth_verbatim ; cur:confidence 0.6 .
+
+# F13: Umfang ohne Einheit
+ex:f13 ex:expectsViolationOf shs:WorkloadShape ; ex:focus ex:f13-wl ;
+    skos:note "UE sind keine Stunden; ohne Einheit ist ein Umfang wertlos."@de .
+ex:f13-node a cur:CurriculumNode ; cur:partOf ex:neg-spec ; cur:nodeFunction cv:fn_unit ; cur:nodeType schul:Unterrichtseinheit ;
+    cur:anchor ex:neg-anc ; cur:workload ex:f13-wl .
+ex:f13-wl a cur:Workload ; cur:amount 26.0 .
+
+# F14: Auswahlregel mit nur einer Option
+ex:f14 ex:expectsViolationOf shs:SelectionRuleShape ; ex:focus ex:f14-rule ;
+    skos:note "Eine Wahl braucht mindestens zwei Optionen."@de .
+ex:f14-rule a cur:SelectionRule ; cur:verbatim "Ein Wahlbereich ist zu wählen."@de ; cur:anchor ex:neg-anc ;
+    cur:ruleAppliesTo ex:neg-spec ; cur:option ex:f13-node ; cur:minCount 1 ; cur:maxCount 1 .
+
+# F15: Block-ID im falschen Format
+ex:f15 ex:expectsViolationOf shs:SourceAnchorShape ; ex:focus ex:f15-anc ;
+    skos:note "Block-IDs kommen aus X0 im Muster p<Seite>-b<Block>."@de .
+ex:f15-anc a cur:SourceAnchor ; cur:inDocument ex:neg-doc ; cur:pageStart 3 ; cur:blockId "Seite 3, Absatz 2" .
+
+# F16: Zyklus im Baum
+ex:f16 ex:expectsViolationOf shs:CurriculumNodeShape ; ex:focus ex:f16-a ;
+    skos:note "cur:partOf darf keinen Zyklus bilden."@de .
+ex:f16-a a cur:CurriculumNode ; cur:partOf ex:f16-b ; cur:nodeFunction cv:fn_subunit ; cur:nodeType schul:Teilbereich ; cur:anchor ex:neg-anc .
+ex:f16-b a cur:CurriculumNode ; cur:partOf ex:f16-a ; cur:nodeFunction cv:fn_subunit ; cur:nodeType schul:Teilbereich ; cur:anchor ex:neg-anc .
+ex:f16b ex:expectsViolationOf shs:CurriculumNodeShape ; ex:focus ex:f16-b ;
+    skos:note "Beide Knoten des Zyklus werden gemeldet."@de .
+
+# F17: Kompetenzbereich eines Niveaus ist keine Kompetenzdimension
+ex:f17 ex:expectsViolationOf shs:LevelAssignmentShape ; ex:focus ex:f17-la ;
+    skos:note "cur:competenceDimension an einer Niveauzuordnung zeigt auf eine Dimension eines Kompetenzmodells."@de .
+ex:f17-st a cur:Statement ; cur:partOf ex:neg-node ; cur:verbatim "verstehen Durchsagen am Bahnhof"@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:addressee cv:addr_learner ; cur:anchor ex:neg-anc ;
+    cur:levelAssignment ex:f17-la .
+ex:f17-la a cur:LevelAssignment ; cur:level lvl:cefr-B1 ; cur:competenceDimension cv:dim_proficiency ; cur:origin cv:orig_source .
+
+# F18: affektive Stufe ohne Herkunft
+ex:f18 ex:expectsViolationOf shs:LevelAssignmentShape ; ex:focus ex:f18-la ;
+    skos:note "Affektive Taxonomie ist wie Bloom nur Heuristik mit Herkunft rule/model/human."@de .
+ex:f18-st a cur:Statement ; cur:partOf ex:neg-node ; cur:verbatim "achten die Meinung anderer"@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:addressee cv:addr_learner ; cur:anchor ex:neg-anc ;
+    cur:levelAssignment ex:f18-la .
+ex:f18-la a cur:LevelAssignment ; cur:level lvl:affective-valuing .
+
+# F19: Notenstufe an einem Lernergebnis
+ex:f19 ex:expectsViolationOf shs:LevelAssignmentShape ; ex:focus ex:f19-la ;
+    skos:note "Bewertungsstufen hängen an Prüfung, Prüfungsspezifikation oder Standard, nicht an Lernergebnissen."@de .
+ex:f19-st a cur:Statement ; cur:partOf ex:neg-node ; cur:verbatim "berechnen Widerstände in Reihenschaltungen"@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:addressee cv:addr_learner ; cur:anchor ex:neg-anc ;
+    cur:levelAssignment ex:f19-la .
+ex:f19-la a cur:LevelAssignment ; cur:level lvl:grade-2 ; cur:origin cv:orig_source .
+
+# F20: Notenpunkte an einer Zerlegung
+ex:f20 ex:expectsViolationOf shs:LevelAssignmentShape ; ex:focus ex:f20-la ;
+    skos:note "Bewertungsstufen hängen nicht an Zerlegungen."@de .
+ex:f20-dec a cur:Decomposition ; cur:decomposes ex:f19-st ; cur:actionText "berechnen" ; cur:objectText "Widerstände" ;
+    cur:origin cv:orig_model ; cur:confidence 0.7 ; cur:levelAssignment ex:f20-la .
+ex:f20-la a cur:LevelAssignment ; cur:level lvl:points-12 ; cur:origin cv:orig_model .
+
+# F21: psychomotorische Stufe ohne Herkunft
+ex:f21 ex:expectsViolationOf shs:LevelAssignmentShape ; ex:focus ex:f21-la ;
+    skos:note "Psychomotorische Taxonomie ist nur Heuristik mit Herkunft rule/model/human."@de .
+ex:f21-st a cur:Statement ; cur:partOf ex:neg-node ; cur:verbatim "löten Bauteile auf eine Platine"@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:addressee cv:addr_learner ; cur:anchor ex:neg-anc ;
+    cur:levelAssignment ex:f21-la .
+ex:f21-la a cur:LevelAssignment ; cur:level lvl:psy-precision .
+
+# F22: Notenstufe, deren Dimension an der Zuordnung umgedeutet wird
+ex:f22 ex:expectsViolationOf shs:LevelAssignmentShape ; ex:focus ex:f22-la ;
+    skos:note "Eine abweichende Dimension an der Zuordnung hebt die Regel des Notenschemas nicht auf."@de .
+ex:f22-st a cur:Statement ; cur:partOf ex:neg-node ; cur:verbatim "erläutern den Energieerhaltungssatz"@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:addressee cv:addr_learner ; cur:anchor ex:neg-anc ;
+    cur:levelAssignment ex:f22-la .
+ex:f22-la a cur:LevelAssignment ; cur:level lvl:grade-2 ; cur:levelDimension cv:dim_attainment ; cur:origin cv:orig_source .
+
+# F23: Notenstufe an einer Gliederungseinheit
+ex:f23 ex:expectsViolationOf shs:LevelAssignmentShape ; ex:focus ex:f23-la ;
+    skos:note "Eine Bestehensnote gehört an die Prüfung oder an eine Regel, nicht an den Knoten."@de .
+ex:f23-node a cur:CurriculumNode ; cur:partOf ex:neg-spec ; cur:nodeFunction cv:fn_area ; cur:nodeType schul:Inhaltsbereich ;
+    cur:anchor ex:neg-anc ; cur:levelAssignment ex:f23-la .
+ex:f23-la a cur:LevelAssignment ; cur:level lvl:grade-4 ; cur:origin cv:orig_source .
+
+# F24: DQR-Niveau an einer Aussage, die nur mit einer Unterklasse typisiert ist
+ex:f24 ex:expectsViolationOf shs:LevelAssignmentShape ; ex:focus ex:f24-la ;
+    skos:note "Die Regel greift auch, wenn die Aussage als cur:LearningOutcome statt als cur:Statement typisiert ist."@de .
+ex:f24-st a cur:LearningOutcome ; cur:partOf ex:neg-node ; cur:verbatim "warten Anlagen"@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:addressee cv:addr_learner ; cur:anchor ex:neg-anc ;
+    cur:levelAssignment ex:f24-la .
+ex:f24-la a cur:LevelAssignment ; cur:level lvl:DQR-3 ; cur:origin cv:orig_model .
+
+# F25: Schulabschluss an einer Aussage, umgedeutet zum Erwartungsniveau
+ex:f25 ex:expectsViolationOf shs:LevelAssignmentShape ; ex:focus ex:f25-la ;
+    skos:note "Anforderungsebenen (SH) stehen in lvl:AttainmentTracks, nicht als umgedeuteter Abschluss."@de .
+ex:f25-st a cur:Statement ; cur:partOf ex:neg-node ; cur:verbatim "lösen lineare Gleichungssysteme"@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:addressee cv:addr_learner ; cur:anchor ex:neg-anc ;
+    cur:levelAssignment ex:f25-la .
+ex:f25-la a cur:LevelAssignment ; cur:level lvl:school-MSA ; cur:levelDimension cv:dim_attainment ; cur:origin cv:orig_source .

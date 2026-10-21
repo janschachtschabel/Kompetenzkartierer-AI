@@ -1,0 +1,934 @@
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+
+# =============================================================================
+# Kern-Wertelisten (cv:) – geschlossene SKOS-Vokabulare des Curriculum-Kerns
+#
+# Benennung: cv:<kürzel>_<wert>; skos:notation ist der Wert, den das LLM im
+# JSON-Schema ausgibt. Schemata mit cur:llmEnum true haben höchstens zehn
+# Werte und erscheinen als Enum in den Extraktionsschemata. Profile hängen
+# feinere Werte per skos:broader unter einen Kernwert (z. B. elem:Impuls →
+# cv:kind_guidance), statt die Kernlisten zu erweitern.
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/vocab> a owl:Ontology ;
+    dct:title "Curriculum-Kern: Wertelisten"@de , "Curriculum Core: controlled vocabularies"@en ;
+    owl:imports <https://w3id.org/wlo/curriculum/core> ;
+    owl:versionInfo "1.0-entwurf" ;
+    dct:created "2026-10-19"^^xsd:date .
+
+# -----------------------------------------------------------------------------
+# Andockpunkte (8)
+# -----------------------------------------------------------------------------
+cv:DockingPoints a skos:ConceptScheme ;
+    skos:prefLabel "Andockpunkte"@de , "docking points"@en ;
+    skos:definition "Die acht Fragen, über die Curricula untereinander und mit Kompetenzrahmen, Normdaten und Lernressourcen verbunden werden. Jeder Andockpunkt hat eine Wortlaut- und eine Norm-Eigenschaft, einen Hub und eine Vererbungsregel. Fehlt eine Angabe im Dokument, wird sie mit cur:checkedAbsent markiert, nie geraten."@de .
+
+cv:dock_content a skos:Concept ; skos:inScheme cv:DockingPoints ; skos:topConceptOf cv:DockingPoints ;
+    skos:notation "content" ; skos:prefLabel "Inhalt und Thema"@de , "content and topic"@en ;
+    cur:question "Worum geht es – welches Thema, welcher Gegenstand?"@de ;
+    cur:verbatimProperty cur:objectText , cur:originalTitle ; cur:normProperty cur:mentions ; cur:hubClass cur:ContentConcept ;
+    cur:targetVocabulary "Wikidata, GND (über Reconciliation); WLO-/OEH-Themenbaum und Profil-Themenschemata als broadMatch"@de ;
+    skos:scopeNote "Ein Hub, zwei Andockstellen: das Thema einer Gliederungseinheit (aus dem Titel, z. B. Inhaltsfeld „Elektrizität“) und der Gegenstand einer Aussage oder Zerlegung („Ohmsches Gesetz“). Begriffe hängen per skos:broader an Themen (cur:granularity); die Themensuche läuft über skos:broader*."@de ;
+    cur:filledInStage cv:stage_N1 .
+cv:dock_competency a skos:Concept ; skos:inScheme cv:DockingPoints ; skos:topConceptOf cv:DockingPoints ;
+    skos:notation "competency" ; skos:prefLabel "Kompetenz"@de , "competency"@en ;
+    cur:question "Was soll jemand damit tun können?"@de ;
+    cur:verbatimProperty cur:actionText ; cur:normProperty cur:expresses ; cur:hubClass cur:CompetencyConcept ;
+    cur:targetVocabulary "ESCO (Beruf, Hochschule, Erwachsenenbildung), DigComp, GER, KMK-Bildungsstandards, Kompetenzraster; Dimension über das Brückenschema kd:Bridge"@de ;
+    cur:filledInStage cv:stage_N1 .
+cv:dock_level a skos:Concept ; skos:inScheme cv:DockingPoints ; skos:topConceptOf cv:DockingPoints ;
+    skos:notation "level" ; skos:prefLabel "Niveau"@de , "level"@en ;
+    cur:question "Wie anspruchsvoll, auf welcher Stufe?"@de ;
+    cur:verbatimProperty cur:levelText ; cur:normProperty cur:levelAssignment ; cur:hubClass cur:LevelConcept ;
+    cur:inheritedVia cur:partOf ;
+    cur:targetVocabulary "EQR/DQR, ISCED 2011 / KIM-Bildungsstufe, GER, Alpha-Level, Niveaustufen A–H, Erwartungs- und Kursniveaus, AFB (nur Aufgaben), Taxonomie (nur heuristisch)"@de ;
+    cur:filledInStage cv:stage_X1 , cv:stage_X4 , cv:stage_N1 .
+cv:dock_field a skos:Concept ; skos:inScheme cv:DockingPoints ; skos:topConceptOf cv:DockingPoints ;
+    skos:notation "field" ; skos:prefLabel "Fach/Feld"@de , "field"@en ;
+    cur:question "In welchem Fach, Beruf, Studien- oder Bildungsbereich?"@de ;
+    cur:verbatimProperty cur:fieldText ; cur:normProperty cur:field ; cur:hubClass skos:Concept ;
+    cur:inheritedVia cur:partOf ;
+    cur:targetVocabulary "Fach-Hub fld: (ISCED-F 2013), KIM-Schulfächer, Beruf (KldB/ESCO), Elementar-Bildungsbereiche, EB-Programmbereiche"@de ;
+    cur:filledInStage cv:stage_X1 .
+cv:dock_time a skos:Concept ; skos:inScheme cv:DockingPoints ; skos:topConceptOf cv:DockingPoints ;
+    skos:notation "time" ; skos:prefLabel "Zeit und Geltung"@de , "time and validity"@en ;
+    cur:question "Wann, wie lange, wo, wie verbindlich?"@de ;
+    cur:verbatimProperty cur:timeText ; cur:normProperty cur:timeSpan , cur:workload , cur:obligation , cur:region ;
+    cur:hubClass cur:TimeSpan ; cur:inheritedVia cur:partOf ;
+    cur:targetVocabulary "Alter, Jahrgangsstufe, Ausbildungsjahr, Semester; Stunden, UE, Wochen, ECTS; Verbindlichkeit; Land"@de ;
+    cur:filledInStage cv:stage_X1 , cv:stage_X4 .
+cv:dock_crossCutting a skos:Concept ; skos:inScheme cv:DockingPoints ; skos:topConceptOf cv:DockingPoints ;
+    skos:notation "crossCutting" ; skos:prefLabel "Querschnitt"@de , "cross-cutting"@en ;
+    cur:question "Welches überfachliche Ziel bedient das?"@de ;
+    cur:verbatimProperty cur:crossCuttingMarker ; cur:normProperty cur:contributesTo ; cur:hubClass cur:CrossCuttingObjective ;
+    cur:targetVocabulary "qz: (Leitperspektiven, KMK Digitale Welt, BNE, Standardberufsbildpositionen, EU-Schlüsselkompetenzen, Prinzipien)"@de ;
+    cur:filledInStage cv:stage_X4 , cv:stage_N1 .
+cv:dock_context a skos:Concept ; skos:inScheme cv:DockingPoints ; skos:topConceptOf cv:DockingPoints ;
+    skos:notation "context" ; skos:prefLabel "Kontext"@de , "context"@en ;
+    cur:question "In welcher Situation, an welchem Lernort, in welcher Rolle?"@de ;
+    cur:verbatimProperty cur:contextText ; cur:normProperty cur:context ; cur:hubClass cur:ContextConcept ;
+    cur:inheritedVia cur:partOf ;
+    cur:targetVocabulary "ctx: (Alltagssituationen, Lebens- und Handlungsbereiche, Lernorte, Rollen, Berufsfelder)"@de ;
+    cur:filledInStage cv:stage_X1 , cv:stage_X4 .
+cv:dock_addressee a skos:Concept ; skos:inScheme cv:DockingPoints ; skos:topConceptOf cv:DockingPoints ;
+    skos:notation "addressee" ; skos:prefLabel "Adressat"@de , "addressee"@en ;
+    cur:question "Wer soll das tun oder können?"@de ;
+    cur:normProperty cur:addressee ; cur:hubClass skos:Concept ;
+    cur:targetVocabulary "cv:Addressees; Filter: nur Lernende docken an Kompetenzkonzepte und an AMB teaches"@de ;
+    cur:filledInStage cv:stage_X4 .
+
+# -----------------------------------------------------------------------------
+# Funktionen von Gliederungseinheiten (7) – LLM-Enum
+# -----------------------------------------------------------------------------
+cv:NodeFunctions a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Funktionen von Gliederungseinheiten"@de , "node functions"@en .
+cv:fn_grouping a skos:Concept ; skos:inScheme cv:NodeFunctions ; skos:topConceptOf cv:NodeFunctions ;
+    skos:notation "grouping" ; skos:prefLabel "Gliederungsabschnitt"@de , "grouping"@en ;
+    skos:definition "Ordnet nach Organisation statt nach Gegenstand: Teil, Kapitel, Jahrgangs- oder Doppeljahrgangsstufe, Phase, Studienabschnitt, Abschnitt A/B des Ausbildungsrahmenplans. Trägt oft Kontext (Zeit, Niveau, Geltung), selten eigene Aussagen."@de .
+cv:fn_area a skos:Concept ; skos:inScheme cv:NodeFunctions ; skos:topConceptOf cv:NodeFunctions ;
+    skos:notation "area" ; skos:prefLabel "Bereich"@de , "area"@en ;
+    skos:definition "Thematischer oder Kompetenzbereich ohne eigenen Zeitumfang: Kompetenzbereich, Inhaltsfeld (NW, HE), Leitidee, Bildungsbereich (Kita), Modulgruppe, Handlungsfeld (Integrationskurs), Kompetenzschwerpunkt (ST)."@de .
+cv:fn_unit a skos:Concept ; skos:inScheme cv:NodeFunctions ; skos:topConceptOf cv:NodeFunctions ;
+    skos:notation "unit" ; skos:prefLabel "Einheit"@de , "unit"@en ;
+    skos:definition "Abgeschlossene Lerneinheit mit Zeit- und/oder Niveaubezug: Lernfeld, Berufsbildposition, Modul, curriculare Einheit (Pflege), Themenfeld (BE/BB), Lernbereich mit Stunden (SN), Kursabschnitt."@de .
+cv:fn_subunit a skos:Concept ; skos:inScheme cv:NodeFunctions ; skos:topConceptOf cv:NodeFunctions ;
+    skos:notation "subunit" ; skos:prefLabel "Teileinheit"@de , "subunit"@en ;
+    skos:definition "Unterteilung einer Einheit: Schwerpunkt, Teilmodul, Lehrveranstaltung, inhaltlicher Schwerpunkt (NW), Teilbereich, sprachliche Handlung."@de .
+cv:fn_crossCutting a skos:Concept ; skos:inScheme cv:NodeFunctions ; skos:topConceptOf cv:NodeFunctions ;
+    skos:notation "crossCutting" ; skos:prefLabel "Querschnittsteil"@de , "cross-cutting part"@en ;
+    skos:definition "Abschnitt, der überfachliche Ziele entfaltet: Leitperspektiven, Basiskompetenzen, übergreifende Themen, Basiscurricula, Leitprinzipien, Standardberufsbildpositionen als Block."@de .
+cv:fn_frame a skos:Concept ; skos:inScheme cv:NodeFunctions ; skos:topConceptOf cv:NodeFunctions ;
+    skos:notation "frame" ; skos:prefLabel "Rahmenteil"@de , "frame part"@en ;
+    skos:definition "Curricular relevanter Rahmen ohne Fachgliederung: Allgemeiner Teil, Grundsatzband, Bildungsauftrag, Bild vom Kind, didaktische Grundsätze, Kompetenzmodell, Operatorenliste, Prüfungs-§§. Liefert Bildungsziele, Aufträge, Regeln, Legenden. Hängt am Dokument, wenn er für mehrere Curricula gilt."@de .
+cv:fn_nonCurricular a skos:Concept ; skos:inScheme cv:NodeFunctions ; skos:topConceptOf cv:NodeFunctions ;
+    skos:notation "nonCurricular" ; skos:prefLabel "nicht curricular"@de , "non-curricular"@en ;
+    skos:definition "Vorwort, Inhaltsverzeichnis, Impressum, Glossar, Literatur, Anhang ohne Vorgaben. Wird nicht nach Aussagen gefragt."@de .
+
+# -----------------------------------------------------------------------------
+# Extraktionstiefe (3)
+# -----------------------------------------------------------------------------
+cv:ExtractionDepths a skos:ConceptScheme ;
+    skos:prefLabel "Extraktionstiefe"@de , "extraction depth"@en .
+cv:depth_full a skos:Concept ; skos:inScheme cv:ExtractionDepths ; skos:topConceptOf cv:ExtractionDepths ;
+    skos:notation "full" ; skos:prefLabel "vollständig"@de , "full"@en ;
+    skos:definition "Alle Aussagen im Wortlaut extrahieren."@de .
+cv:depth_typed a skos:Concept ; skos:inScheme cv:ExtractionDepths ; skos:topConceptOf cv:ExtractionDepths ;
+    skos:notation "typed" ; skos:prefLabel "nur typisiert"@de , "typed"@en ;
+    skos:definition "Nur Knoten mit Titel, Typ und Seitenbereich; Aussagen nur, wenn sie Ziele, Regeln oder Legenden sind."@de .
+cv:depth_skip a skos:Concept ; skos:inScheme cv:ExtractionDepths ; skos:topConceptOf cv:ExtractionDepths ;
+    skos:notation "skip" ; skos:prefLabel "überspringen"@de , "skip"@en .
+
+# -----------------------------------------------------------------------------
+# Aussagearten (7) – LLM-Enum
+# -----------------------------------------------------------------------------
+cv:StatementKinds a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Aussagearten"@de , "statement kinds"@en .
+cv:kind_learningOutcome a skos:Concept ; skos:inScheme cv:StatementKinds ; skos:topConceptOf cv:StatementKinds ;
+    skos:notation "learningOutcome" ; skos:prefLabel "Lernergebnis"@de , "learning outcome"@en ;
+    skos:definition "Was Lernende wissen, verstehen oder können sollen; prüf- oder beobachtbar (meist mit Operator)."@de .
+cv:kind_developmentGoal a skos:Concept ; skos:inScheme cv:StatementKinds ; skos:topConceptOf cv:StatementKinds ;
+    skos:notation "developmentGoal" ; skos:prefLabel "Bildungs-/Entwicklungsziel"@de , "development goal"@en ;
+    skos:definition "Haltung, Wert, Disposition, Erfahrung oder Bildungsanspruch ohne Prüfanspruch."@de .
+cv:kind_content a skos:Concept ; skos:inScheme cv:StatementKinds ; skos:topConceptOf cv:StatementKinds ;
+    skos:notation "content" ; skos:prefLabel "Inhalt"@de , "content"@en ;
+    skos:definition "Gegenstand ohne Handlungsanforderung."@de .
+cv:kind_standard a skos:Concept ; skos:inScheme cv:StatementKinds ; skos:topConceptOf cv:StatementKinds ;
+    skos:notation "standard" ; skos:prefLabel "Standard/Kriterium"@de , "standard"@en ;
+    skos:definition "Maßstab, an dem Erreichtes oder Handeln gemessen wird (Regelstandard, Raster-Deskriptor, Bewertungskriterium, Qualitätsanspruch)."@de ;
+    skos:scopeNote "Schulpläne nennen Lernergebnisse oft „Standard“ (BE/BB, HB, MV). Maßgeblich ist die Funktion, nicht das Wort: eine Kompetenzerwartung eines Landeslehrplans ist learningOutcome; ein KMK-Regelstandard oder eine Rasterzelle ist standard."@de .
+cv:kind_mandate a skos:Concept ; skos:inScheme cv:StatementKinds ; skos:topConceptOf cv:StatementKinds ;
+    skos:notation "mandate" ; skos:prefLabel "Auftrag"@de , "mandate"@en ;
+    skos:definition "Normative Aufgabe für Lehrende, Fachkräfte, Einrichtung oder Träger."@de .
+cv:kind_guidance a skos:Concept ; skos:inScheme cv:StatementKinds ; skos:topConceptOf cv:StatementKinds ;
+    skos:notation "guidance" ; skos:prefLabel "Hinweis"@de , "guidance"@en ;
+    skos:definition "Nicht normativ: Anregung, Impuls, Beispiel, Reflexionsfrage, didaktischer oder methodischer Hinweis."@de .
+cv:kind_reference a skos:Concept ; skos:inScheme cv:StatementKinds ; skos:topConceptOf cv:StatementKinds ;
+    skos:notation "reference" ; skos:prefLabel "Verweis"@de , "reference"@en ;
+    skos:definition "Verweis auf andere Stelle, anderes Fach, Dokument oder Modul."@de .
+cv:kind_unclassified a skos:Concept ; skos:inScheme cv:StatementKinds ; skos:topConceptOf cv:StatementKinds ;
+    skos:notation "unclassified" ; skos:prefLabel "unklar"@de , "unclassified"@en ;
+    skos:definition "Art nicht sicher bestimmbar (Grenzfall Lernergebnis/Bildungsziel, „Kinder lernen …“). Besser als eine erzwungene Art; geht in die Prüfliste."@de .
+
+# -----------------------------------------------------------------------------
+# Adressaten (6) – LLM-Enum
+# -----------------------------------------------------------------------------
+cv:Addressees a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Adressaten"@de , "addressees"@en .
+cv:addr_learner a skos:Concept ; skos:inScheme cv:Addressees ; skos:topConceptOf cv:Addressees ;
+    skos:notation "learner" ; skos:prefLabel "Lernende"@de , "learner"@en ;
+    skos:definition "Kinder, Schülerinnen und Schüler, Auszubildende, Studierende, Teilnehmende."@de .
+cv:addr_educator a skos:Concept ; skos:inScheme cv:Addressees ; skos:topConceptOf cv:Addressees ;
+    skos:notation "educator" ; skos:prefLabel "Lehrende/Fachkräfte"@de , "educator"@en ;
+    skos:definition "Pädagogische Fachkräfte, Lehrkräfte, Ausbildende, Lehrende, Kursleitende, Tagespflegepersonen."@de .
+cv:addr_institution a skos:Concept ; skos:inScheme cv:Addressees ; skos:topConceptOf cv:Addressees ;
+    skos:notation "institution" ; skos:prefLabel "Einrichtung/Träger"@de , "institution"@en ;
+    skos:definition "Einrichtung, Schule, Betrieb, Hochschule, Träger, Leitung als Organisation."@de .
+cv:addr_family a skos:Concept ; skos:inScheme cv:Addressees ; skos:topConceptOf cv:Addressees ;
+    skos:notation "family" ; skos:prefLabel "Familie"@de , "family"@en .
+cv:addr_partner a skos:Concept ; skos:inScheme cv:Addressees ; skos:topConceptOf cv:Addressees ;
+    skos:notation "partner" ; skos:prefLabel "Kooperationspartner"@de , "partner"@en ;
+    skos:definition "Andere Lernorte und Partner (Schule für die Kita, Betrieb für die Berufsschule, Praxispartner)."@de .
+cv:addr_other a skos:Concept ; skos:inScheme cv:Addressees ; skos:topConceptOf cv:Addressees ;
+    skos:notation "other" ; skos:prefLabel "andere"@de , "other"@en .
+
+# -----------------------------------------------------------------------------
+# Verbindlichkeit je Element (8) – LLM-Enum
+# -----------------------------------------------------------------------------
+cv:Obligations a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Verbindlichkeit"@de , "obligation"@en ;
+    skos:definition "Verbindlichkeit je Einheit, Aussage oder Verwendung. Getrennt von der rechtlichen Bindung des Dokuments (cv:DocumentBindings)."@de .
+cv:obl_binding a skos:Concept ; skos:inScheme cv:Obligations ; skos:topConceptOf cv:Obligations ;
+    skos:notation "binding" ; skos:prefLabel "verbindlich"@de , "binding"@en ;
+    skos:altLabel "Pflicht"@de .
+cv:obl_electiveRequired a skos:Concept ; skos:inScheme cv:Obligations ; skos:topConceptOf cv:Obligations ;
+    skos:notation "electiveRequired" ; skos:prefLabel "Wahlpflicht"@de , "elective required"@en ;
+    skos:altLabel "wahlobligatorisch"@de .
+cv:obl_elective a skos:Concept ; skos:inScheme cv:Obligations ; skos:topConceptOf cv:Obligations ;
+    skos:notation "elective" ; skos:prefLabel "Wahl"@de , "elective"@en ;
+    skos:altLabel "fakultativ"@de , "optional"@de .
+cv:obl_selectionPool a skos:Concept ; skos:inScheme cv:Obligations ; skos:topConceptOf cv:Obligations ;
+    skos:notation "selectionPool" ; skos:prefLabel "Auswahlpool"@de , "selection pool"@en ;
+    skos:definition "Höchstmenge möglicher Ziele, aus der ausgewählt wird; nicht jedes muss erreicht werden (z. B. Rahmencurriculum Integrationskurse)."@de .
+cv:obl_exemplary a skos:Concept ; skos:inScheme cv:Obligations ; skos:topConceptOf cv:Obligations ;
+    skos:notation "exemplary" ; skos:prefLabel "beispielhaft"@de , "exemplary"@en ;
+    skos:altLabel "exemplarisch"@de , "mögliche Inhalte"@de , "z. B."@de .
+cv:obl_recommended a skos:Concept ; skos:inScheme cv:Obligations ; skos:topConceptOf cv:Obligations ;
+    skos:notation "recommended" ; skos:prefLabel "empfohlen"@de , "recommended"@en .
+cv:obl_informative a skos:Concept ; skos:inScheme cv:Obligations ; skos:topConceptOf cv:Obligations ;
+    skos:notation "informative" ; skos:prefLabel "informativ/orientierend"@de , "informative"@en .
+cv:obl_unknown a skos:Concept ; skos:inScheme cv:Obligations ; skos:topConceptOf cv:Obligations ;
+    skos:notation "unknown" ; skos:prefLabel "unbestimmt"@de , "unknown"@en .
+
+# -----------------------------------------------------------------------------
+# Dokument: Bindung, Rechtsform, Lebenszyklus, Dokumentart, Bildungsbereich
+# -----------------------------------------------------------------------------
+cv:DocumentBindings a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "rechtliche Bindung des Dokuments"@de , "document binding"@en .
+cv:bind_binding a skos:Concept ; skos:inScheme cv:DocumentBindings ; skos:topConceptOf cv:DocumentBindings ;
+    skos:notation "binding" ; skos:prefLabel "verbindlich"@de , "binding"@en .
+cv:bind_partial a skos:Concept ; skos:inScheme cv:DocumentBindings ; skos:topConceptOf cv:DocumentBindings ;
+    skos:notation "partial" ; skos:prefLabel "teilweise verbindlich"@de , "partially binding"@en ;
+    skos:altLabel "hybrid"@de .
+cv:bind_orienting a skos:Concept ; skos:inScheme cv:DocumentBindings ; skos:topConceptOf cv:DocumentBindings ;
+    skos:notation "orienting" ; skos:prefLabel "orientierend"@de , "orienting"@en ;
+    skos:altLabel "Orientierungsrahmen"@de .
+cv:bind_recommending a skos:Concept ; skos:inScheme cv:DocumentBindings ; skos:topConceptOf cv:DocumentBindings ;
+    skos:notation "recommending" ; skos:prefLabel "empfehlend"@de , "recommending"@en .
+cv:bind_informative a skos:Concept ; skos:inScheme cv:DocumentBindings ; skos:topConceptOf cv:DocumentBindings ;
+    skos:notation "informative" ; skos:prefLabel "informativ (Begleit- oder Lesefassung)"@de , "informative"@en ;
+    skos:definition "Offizielles Begleitdokument oder nicht amtliche Lesefassung: Inhalt stammt aus verbindlichen Ordnungen, das Dokument selbst bindet nicht („Lesefassung“, „Es gilt die jeweils gültige Prüfungsordnung“)."@de .
+cv:bind_none a skos:Concept ; skos:inScheme cv:DocumentBindings ; skos:topConceptOf cv:DocumentBindings ;
+    skos:notation "none" ; skos:prefLabel "ohne Bindung (beschreibend, Nachweis)"@de , "none"@en ;
+    skos:example "Studiengangsflyer, Website, Diploma Supplement, Akkreditierungsbericht" .
+cv:bind_unknown a skos:Concept ; skos:inScheme cv:DocumentBindings ; skos:topConceptOf cv:DocumentBindings ;
+    skos:notation "unknown" ; skos:prefLabel "unbekannt"@de , "unknown"@en .
+
+cv:LegalForms a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Rechtsform"@de , "legal form"@en .
+cv:lf_law a skos:Concept ; skos:inScheme cv:LegalForms ; skos:topConceptOf cv:LegalForms ;
+    skos:notation "law" ; skos:prefLabel "Gesetz"@de , "law"@en .
+cv:lf_ordinance a skos:Concept ; skos:inScheme cv:LegalForms ; skos:topConceptOf cv:LegalForms ;
+    skos:notation "ordinance" ; skos:prefLabel "Verordnung"@de , "ordinance"@en ;
+    skos:example "Ausbildungsordnung (BGBl.), PflAPrV, AVBayKiBiG" .
+cv:lf_administrativeRegulation a skos:Concept ; skos:inScheme cv:LegalForms ; skos:topConceptOf cv:LegalForms ;
+    skos:notation "administrativeRegulation" ; skos:prefLabel "Verwaltungsvorschrift/Erlass"@de , "administrative regulation"@en ;
+    skos:example "Inkraftsetzung eines Lehrplans per Erlass" .
+cv:lf_resolution a skos:Concept ; skos:inScheme cv:LegalForms ; skos:topConceptOf cv:LegalForms ;
+    skos:notation "resolution" ; skos:prefLabel "Beschluss (KMK, JFMK)"@de , "resolution"@en ;
+    skos:example "KMK-Rahmenlehrplan, Bildungsstandards, Gemeinsamer Rahmen der Länder" .
+cv:lf_statute a skos:Concept ; skos:inScheme cv:LegalForms ; skos:topConceptOf cv:LegalForms ;
+    skos:notation "statute" ; skos:prefLabel "Satzung"@de , "statute"@en ;
+    skos:example "Studien- und Prüfungsordnung, Kammer-Fortbildungsprüfungsregelung" .
+cv:lf_officialRecommendation a skos:Concept ; skos:inScheme cv:LegalForms ; skos:topConceptOf cv:LegalForms ;
+    skos:notation "officialRecommendation" ; skos:prefLabel "amtliche Empfehlung/Handreichung"@de , "official recommendation"@en .
+cv:lf_providerDocument a skos:Concept ; skos:inScheme cv:LegalForms ; skos:topConceptOf cv:LegalForms ;
+    skos:notation "providerDocument" ; skos:prefLabel "Dokument eines Trägers oder Verbands"@de , "provider document"@en ;
+    skos:example "DVV-Rahmencurriculum, Kurskonzept" .
+cv:lf_institutionalDocument a skos:Concept ; skos:inScheme cv:LegalForms ; skos:topConceptOf cv:LegalForms ;
+    skos:notation "institutionalDocument" ; skos:prefLabel "einrichtungsinternes Dokument"@de , "institutional document"@en ;
+    skos:example "schulinternes Curriculum, Kita-Konzeption, Modulhandbuch ohne Satzungsrang" .
+cv:lf_unknown a skos:Concept ; skos:inScheme cv:LegalForms ; skos:topConceptOf cv:LegalForms ;
+    skos:notation "unknown" ; skos:prefLabel "unbekannt"@de , "unknown"@en .
+
+cv:Lifecycles a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Lebenszyklus"@de , "lifecycle"@en .
+cv:life_draft a skos:Concept ; skos:inScheme cv:Lifecycles ; skos:topConceptOf cv:Lifecycles ;
+    skos:notation "draft" ; skos:prefLabel "Entwurf"@de , "draft"@en .
+cv:life_consultation a skos:Concept ; skos:inScheme cv:Lifecycles ; skos:topConceptOf cv:Lifecycles ;
+    skos:notation "consultation" ; skos:prefLabel "Anhörungsfassung"@de , "consultation version"@en .
+cv:life_adopted a skos:Concept ; skos:inScheme cv:Lifecycles ; skos:topConceptOf cv:Lifecycles ;
+    skos:notation "adopted" ; skos:prefLabel "beschlossen"@de , "adopted"@en .
+cv:life_inForce a skos:Concept ; skos:inScheme cv:Lifecycles ; skos:topConceptOf cv:Lifecycles ;
+    skos:notation "inForce" ; skos:prefLabel "in Kraft"@de , "in force"@en .
+cv:life_futureInForce a skos:Concept ; skos:inScheme cv:Lifecycles ; skos:topConceptOf cv:Lifecycles ;
+    skos:notation "futureInForce" ; skos:prefLabel "künftig in Kraft"@de , "future in force"@en .
+cv:life_superseded a skos:Concept ; skos:inScheme cv:Lifecycles ; skos:topConceptOf cv:Lifecycles ;
+    skos:notation "superseded" ; skos:prefLabel "ersetzt/ausgelaufen"@de , "superseded"@en .
+cv:life_withdrawn a skos:Concept ; skos:inScheme cv:Lifecycles ; skos:topConceptOf cv:Lifecycles ;
+    skos:notation "withdrawn" ; skos:prefLabel "zurückgezogen"@de , "withdrawn"@en .
+cv:life_unknown a skos:Concept ; skos:inScheme cv:Lifecycles ; skos:topConceptOf cv:Lifecycles ;
+    skos:notation "unknown" ; skos:prefLabel "unbekannt"@de , "unknown"@en .
+
+cv:DocumentKinds a skos:ConceptScheme ;
+    skos:prefLabel "Dokumentarten (Kern)"@de , "document kinds"@en ;
+    skos:definition "Grobe Kernarten; die Profile hängen ihre Dokumenttypen per skos:broader darunter."@de .
+cv:dk_curriculum a skos:Concept ; skos:inScheme cv:DocumentKinds ; skos:topConceptOf cv:DocumentKinds ;
+    skos:notation "curriculum" ; skos:prefLabel "Lehr- oder Bildungsplan"@de , "curriculum document"@en .
+cv:dk_regulation a skos:Concept ; skos:inScheme cv:DocumentKinds ; skos:topConceptOf cv:DocumentKinds ;
+    skos:notation "regulation" ; skos:prefLabel "Ordnung"@de , "regulation"@en ;
+    skos:definition "Ausbildungs-, Fortbildungs-, Studien- und Prüfungsordnung, Prüfungsverordnung."@de .
+cv:dk_catalogue a skos:Concept ; skos:inScheme cv:DocumentKinds ; skos:topConceptOf cv:DocumentKinds ;
+    skos:notation "catalogue" ; skos:prefLabel "Katalog/Beschreibung"@de , "catalogue"@en ;
+    skos:definition "Modulhandbuch, Lernzielkatalog, Kurskonzept, Studienverlaufsplan, Programmbeschreibung."@de .
+cv:dk_framework a skos:Concept ; skos:inScheme cv:DocumentKinds ; skos:topConceptOf cv:DocumentKinds ;
+    skos:notation "framework" ; skos:prefLabel "Rahmen/Standard"@de , "framework"@en ;
+    skos:definition "Bildungsstandards, Kompetenzrahmen, Referenzrahmen, länderübergreifender Rahmen."@de .
+cv:dk_guidance a skos:Concept ; skos:inScheme cv:DocumentKinds ; skos:topConceptOf cv:DocumentKinds ;
+    skos:notation "guidance" ; skos:prefLabel "Handreichung/Umsetzungshilfe"@de , "guidance document"@en .
+cv:dk_correspondence a skos:Concept ; skos:inScheme cv:DocumentKinds ; skos:topConceptOf cv:DocumentKinds ;
+    skos:notation "correspondence" ; skos:prefLabel "Entsprechungs- oder Zuordnungsliste"@de , "correspondence list"@en ;
+    skos:definition "Amtliche Kantenquelle (Entsprechungsliste AO↔RLP, Kompetenzmatrix, Anrechnungs- oder Äquivalenzliste); wird regelbasiert gelesen."@de .
+cv:dk_assessment a skos:Concept ; skos:inScheme cv:DocumentKinds ; skos:topConceptOf cv:DocumentKinds ;
+    skos:notation "assessment" ; skos:prefLabel "Prüfungsvorgabe"@de , "assessment document"@en ;
+    skos:definition "Prüfungsanforderungen, Abiturvorgaben, Operatorenliste, Testhandbuch."@de .
+cv:dk_institutional a skos:Concept ; skos:inScheme cv:DocumentKinds ; skos:topConceptOf cv:DocumentKinds ;
+    skos:notation "institutional" ; skos:prefLabel "Einrichtungs- oder Trägerkonzept"@de , "institutional concept"@en ;
+    skos:definition "Schulinternes Curriculum, Kita-Konzeption, Lernsituationen; nie Status amtlich."@de .
+cv:dk_other a skos:Concept ; skos:inScheme cv:DocumentKinds ; skos:topConceptOf cv:DocumentKinds ;
+    skos:notation "other" ; skos:prefLabel "sonstiges"@de , "other"@en .
+
+cv:EducationSectors a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Bildungsbereiche"@de , "education sectors"@en .
+cv:sec_elementary a skos:Concept ; skos:inScheme cv:EducationSectors ; skos:topConceptOf cv:EducationSectors ;
+    skos:notation "elementary" ; skos:prefLabel "Elementarbildung"@de , "early childhood education"@en .
+cv:sec_school a skos:Concept ; skos:inScheme cv:EducationSectors ; skos:topConceptOf cv:EducationSectors ;
+    skos:notation "school" ; skos:prefLabel "Schulbildung"@de , "school education"@en .
+cv:sec_vocational a skos:Concept ; skos:inScheme cv:EducationSectors ; skos:topConceptOf cv:EducationSectors ;
+    skos:notation "vocational" ; skos:prefLabel "Berufsbildung"@de , "vocational education and training"@en .
+cv:sec_higher a skos:Concept ; skos:inScheme cv:EducationSectors ; skos:topConceptOf cv:EducationSectors ;
+    skos:notation "higher" ; skos:prefLabel "Hochschulbildung"@de , "higher education"@en .
+cv:sec_adult a skos:Concept ; skos:inScheme cv:EducationSectors ; skos:topConceptOf cv:EducationSectors ;
+    skos:notation "adult" ; skos:prefLabel "Erwachsenen- und Weiterbildung"@de , "adult and continuing education"@en .
+
+cv:Formalities a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Formalität"@de , "formality"@en .
+cv:form_formal a skos:Concept ; skos:inScheme cv:Formalities ; skos:topConceptOf cv:Formalities ;
+    skos:notation "formal" ; skos:prefLabel "formal"@de , "formal"@en ;
+    skos:definition "Führt zu einem anerkannten Abschluss im Bildungssystem."@de .
+cv:form_nonFormal a skos:Concept ; skos:inScheme cv:Formalities ; skos:topConceptOf cv:Formalities ;
+    skos:notation "nonFormal" ; skos:prefLabel "non-formal"@de , "non-formal"@en ;
+    skos:definition "Organisiertes Lernen ohne staatlich anerkannten Abschluss (Kurs, Zertifikatslehrgang)."@de .
+cv:form_informal a skos:Concept ; skos:inScheme cv:Formalities ; skos:topConceptOf cv:Formalities ;
+    skos:notation "informal" ; skos:prefLabel "informell"@de , "informal"@en .
+
+# -----------------------------------------------------------------------------
+# Geltung: Umfang, Variantenart, Voraussetzungsart
+# -----------------------------------------------------------------------------
+cv:ScopeShares a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Geltungsumfang"@de , "scope share"@en .
+cv:share_common a skos:Concept ; skos:inScheme cv:ScopeShares ; skos:topConceptOf cv:ScopeShares ;
+    skos:notation "common" ; skos:prefLabel "gemeinsam"@de , "common"@en ;
+    skos:definition "Gilt für alle Geltungsträger („fachrichtungsübergreifend“, „gemeinsame Kernqualifikationen“)."@de .
+cv:share_specific a skos:Concept ; skos:inScheme cv:ScopeShares ; skos:topConceptOf cv:ScopeShares ;
+    skos:notation "specific" ; skos:prefLabel "spezifisch"@de , "specific"@en .
+cv:share_supplementary a skos:Concept ; skos:inScheme cv:ScopeShares ; skos:topConceptOf cv:ScopeShares ;
+    skos:notation "supplementary" ; skos:prefLabel "ergänzend"@de , "supplementary"@en .
+cv:share_alternative a skos:Concept ; skos:inScheme cv:ScopeShares ; skos:topConceptOf cv:ScopeShares ;
+    skos:notation "alternative" ; skos:prefLabel "alternativ"@de , "alternative"@en ;
+    skos:definition "Parallelfassung derselben Einheit für verschiedene Geltungsträger (Lernfeld 13 GH/AH)."@de .
+
+cv:VariantKinds a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Variantenarten"@de , "variant kinds"@en .
+cv:var_specialisation a skos:Concept ; skos:inScheme cv:VariantKinds ; skos:topConceptOf cv:VariantKinds ;
+    skos:notation "specialisation" ; skos:prefLabel "Fachrichtung"@de , "specialisation"@en .
+cv:var_focus a skos:Concept ; skos:inScheme cv:VariantKinds ; skos:topConceptOf cv:VariantKinds ;
+    skos:notation "focus" ; skos:prefLabel "Schwerpunkt/Vertiefung/Studienrichtung"@de , "focus"@en .
+cv:var_electiveQualification a skos:Concept ; skos:inScheme cv:VariantKinds ; skos:topConceptOf cv:VariantKinds ;
+    skos:notation "electiveQualification" ; skos:prefLabel "Wahlqualifikation"@de , "elective qualification"@en .
+cv:var_additionalQualification a skos:Concept ; skos:inScheme cv:VariantKinds ; skos:topConceptOf cv:VariantKinds ;
+    skos:notation "additionalQualification" ; skos:prefLabel "Zusatzqualifikation"@de , "additional qualification"@en .
+cv:var_track a skos:Concept ; skos:inScheme cv:VariantKinds ; skos:topConceptOf cv:VariantKinds ;
+    skos:notation "track" ; skos:prefLabel "Zug/Kursniveau-Variante"@de , "track"@en ;
+    skos:example "G-/E-Kurs, Regel-/M-Klasse, Grund-/Leistungskurs" .
+cv:var_subCurriculum a skos:Concept ; skos:inScheme cv:VariantKinds ; skos:topConceptOf cv:VariantKinds ;
+    skos:notation "subCurriculum" ; skos:prefLabel "Teilcurriculum"@de , "sub-curriculum"@en ;
+    skos:example "Krippe, Kindergarten, Hort in einem Plan 0–10; Teilstudiengang im Kombi-Bachelor" .
+cv:var_targetGroup a skos:Concept ; skos:inScheme cv:VariantKinds ; skos:topConceptOf cv:VariantKinds ;
+    skos:notation "targetGroup" ; skos:prefLabel "Zielgruppenvariante"@de , "target group variant"@en ;
+    skos:example "Jugendintegrationskurs, Alphabetisierungskurs" .
+cv:var_placementArea a skos:Concept ; skos:inScheme cv:VariantKinds ; skos:topConceptOf cv:VariantKinds ;
+    skos:notation "placementArea" ; skos:prefLabel "Einsatzgebiet"@de , "placement area"@en .
+
+cv:RequirementKinds a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Art der Voraussetzung"@de , "requirement kinds"@en .
+cv:req_formal a skos:Concept ; skos:inScheme cv:RequirementKinds ; skos:topConceptOf cv:RequirementKinds ;
+    skos:notation "formal" ; skos:prefLabel "formal (zwingend)"@de , "formal"@en .
+cv:req_recommended a skos:Concept ; skos:inScheme cv:RequirementKinds ; skos:topConceptOf cv:RequirementKinds ;
+    skos:notation "recommended" ; skos:prefLabel "empfohlen"@de , "recommended"@en ;
+    skos:altLabel "empfohlene Vorkenntnisse"@de .
+cv:req_none a skos:Concept ; skos:inScheme cv:RequirementKinds ; skos:topConceptOf cv:RequirementKinds ;
+    skos:notation "none" ; skos:prefLabel "keine (ausdrücklich)"@de , "none"@en ;
+    skos:definition "Das Dokument sagt ausdrücklich „keine“ – als leere Menge speichern, nicht als fehlende Angabe."@de .
+
+# -----------------------------------------------------------------------------
+# Niveau: Dimension, Zuordnungsart, Ordnungsart
+# -----------------------------------------------------------------------------
+cv:LevelDimensions a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Niveaudimensionen"@de , "level dimensions"@en ;
+    skos:definition "Gleiche Wörter („Niveau“, „Standard“, „Anforderung“) meinen Verschiedenes; deshalb getrennte Dimensionen. Zeitliche Lage (Jahrgang, Alter, Semester) ist kein Niveau, sondern cur:TimeSpan."@de .
+cv:dim_stage a skos:Concept ; skos:inScheme cv:LevelDimensions ; skos:topConceptOf cv:LevelDimensions ;
+    skos:notation "stage" ; skos:prefLabel "Bildungsstufe"@de , "educational stage"@en ;
+    skos:definition "ISCED 2011, KIM-Bildungsstufe (Primarstufe, Sekundarstufe I …)."@de .
+cv:dim_qualification a skos:Concept ; skos:inScheme cv:LevelDimensions ; skos:topConceptOf cv:LevelDimensions ;
+    skos:notation "qualification" ; skos:prefLabel "Qualifikationsniveau/Abschlussbezug"@de , "qualification level"@en ;
+    skos:definition "DQR/EQR, Schulabschluss (ESA, MSA, AHR), Hochschulgrad. Nur an Qualifikation oder Spezifikation, nie an einzelnen Aussagen."@de .
+cv:dim_proficiency a skos:Concept ; skos:inScheme cv:LevelDimensions ; skos:topConceptOf cv:LevelDimensions ;
+    skos:notation "proficiency" ; skos:prefLabel "Kompetenzstufe"@de , "proficiency level"@en ;
+    skos:definition "Stufe eines expliziten Stufenmodells: GER A1–C2, Alpha-Level, Niveaustufen A–H (BE/BB), IQB-Kompetenzstufen, Raster-Stufen."@de .
+cv:dim_attainment a skos:Concept ; skos:inScheme cv:LevelDimensions ; skos:topConceptOf cv:LevelDimensions ;
+    skos:notation "attainment" ; skos:prefLabel "Erwartungsniveau"@de , "attainment level"@en ;
+    skos:definition "Erwarteter Erreichungsgrad: Mindest-, Regel-, erhöhte Anforderung; G/M/E (BW)."@de .
+cv:dim_course a skos:Concept ; skos:inScheme cv:LevelDimensions ; skos:topConceptOf cv:LevelDimensions ;
+    skos:notation "course" ; skos:prefLabel "Kursniveau"@de , "course level"@en ;
+    skos:definition "Grundlegendes/erhöhtes Anforderungsniveau (GK/LK, Basis-/Leistungsfach), G-/E-Kurs."@de .
+cv:dim_taskDemand a skos:Concept ; skos:inScheme cv:LevelDimensions ; skos:topConceptOf cv:LevelDimensions ;
+    skos:notation "taskDemand" ; skos:prefLabel "Aufgabenanforderung"@de , "task demand"@en ;
+    skos:definition "Anforderungsbereich I–III. Bezieht sich auf Aufgaben; an Lernergebnissen nur, wenn das Dokument ihn ausdrücklich nennt."@de .
+cv:dim_cognitive a skos:Concept ; skos:inScheme cv:LevelDimensions ; skos:topConceptOf cv:LevelDimensions ;
+    skos:notation "cognitive" ; skos:prefLabel "kognitive Stufe (Heuristik)"@de , "cognitive level (heuristic)"@en ;
+    skos:definition "Taxonomiestufe (Anderson/Krathwohl, SOLO) oder AFB-Heuristik aus dem Operator über eine Operatorenliste; nur Herkunft rule, model oder human, nie im Extraktionspass (X4)."@de .
+cv:dim_affective a skos:Concept ; skos:inScheme cv:LevelDimensions ; skos:topConceptOf cv:LevelDimensions ;
+    skos:notation "affective" ; skos:prefLabel "affektive Stufe (Heuristik)"@de , "affective level (heuristic)"@en ;
+    skos:definition "Stufe der affektiven Taxonomie (Krathwohl/Bloom/Masia 1964) für Werte und Haltungen; wie die kognitive Heuristik nur mit Herkunft rule/model/human. Dient der Planung, stuft keine Lernenden ein."@de .
+cv:dim_psychomotor a skos:Concept ; skos:inScheme cv:LevelDimensions ; skos:topConceptOf cv:LevelDimensions ;
+    skos:notation "psychomotor" ; skos:prefLabel "psychomotorische Stufe (Heuristik)"@de , "psychomotor level (heuristic)"@en ;
+    skos:definition "Stufe der psychomotorischen Taxonomie (Dave 1970) für praktisches Handeln; nur mit Herkunft rule/model/human."@de .
+cv:dim_development a skos:Concept ; skos:inScheme cv:LevelDimensions ; skos:topConceptOf cv:LevelDimensions ;
+    skos:notation "development" ; skos:prefLabel "Entwicklungsstufe"@de , "developmental stage"@en ;
+    skos:definition "Stufe eines Entwicklungsverlaufs, den das Dokument ausdrücklich ordnet, ohne Bindung an Alter oder Jahrgang. Signale wie „zunehmend“ bleiben Wortlaut (elem:developmentQualifier)."@de .
+cv:dim_grading a skos:Concept ; skos:inScheme cv:LevelDimensions ; skos:topConceptOf cv:LevelDimensions ;
+    skos:notation "grading" ; skos:prefLabel "Bewertungsstufe"@de , "grade"@en ;
+    skos:definition "Note oder Punktzahl einer Leistungsbewertung (Notenstufen 1–6, Notenpunkte 0–15). Nur an Prüfung, Prüfungsspezifikation, Regel (Bestehen, Zulassung, Anrechnung) oder Standard, nie an Lernergebnissen, Knoten oder Zerlegungen."@de .
+cv:dim_conduct a skos:Concept ; skos:inScheme cv:LevelDimensions ; skos:topConceptOf cv:LevelDimensions ;
+    skos:notation "conduct" ; skos:prefLabel "Verhaltensbewertung"@de , "conduct rating"@en ;
+    skos:altLabel "Kopfnote"@de , "Arbeits- und Sozialverhalten"@de ;
+    skos:definition "Stufe einer Bewertung von Arbeits- und Sozialverhalten nach Zeugnisrecht; Skalen je Land. Wie Bewertungsstufen nur an Prüfung, Prüfungsspezifikation, Regel oder Standard."@de .
+
+cv:LevelRelations a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Art der Niveauzuordnung"@de , "level relations"@en .
+cv:lrel_assigned a skos:Concept ; skos:inScheme cv:LevelRelations ; skos:topConceptOf cv:LevelRelations ;
+    skos:notation "assigned" ; skos:prefLabel "zugewiesen"@de , "assigned"@en .
+cv:lrel_minimum a skos:Concept ; skos:inScheme cv:LevelRelations ; skos:topConceptOf cv:LevelRelations ;
+    skos:notation "minimum" ; skos:prefLabel "Mindestniveau"@de , "minimum"@en ;
+    skos:example "Rahmencurriculum Integrationskurse: Lernziel der niedrigsten möglichen Stufe zugeordnet" .
+cv:lrel_target a skos:Concept ; skos:inScheme cv:LevelRelations ; skos:topConceptOf cv:LevelRelations ;
+    skos:notation "target" ; skos:prefLabel "Zielniveau"@de , "target"@en .
+cv:lrel_entry a skos:Concept ; skos:inScheme cv:LevelRelations ; skos:topConceptOf cv:LevelRelations ;
+    skos:notation "entry" ; skos:prefLabel "Eingangsniveau"@de , "entry"@en .
+cv:lrel_range a skos:Concept ; skos:inScheme cv:LevelRelations ; skos:topConceptOf cv:LevelRelations ;
+    skos:notation "range" ; skos:prefLabel "Bereich (von–bis)"@de , "range"@en .
+
+cv:LevelOrderings a skos:ConceptScheme ;
+    skos:prefLabel "Ordnungsart von Niveausystemen"@de , "level orderings"@en .
+cv:ord_cumulative a skos:Concept ; skos:inScheme cv:LevelOrderings ; skos:topConceptOf cv:LevelOrderings ;
+    skos:notation "cumulative" ; skos:prefLabel "kumulativ"@de , "cumulative"@en ;
+    skos:definition "Höhere Stufe schließt niedrigere ein (A–H, GER, DQR). Nur hier sind steigert-Kanten zulässig."@de .
+cv:ord_parallel a skos:Concept ; skos:inScheme cv:LevelOrderings ; skos:topConceptOf cv:LevelOrderings ;
+    skos:notation "parallel" ; skos:prefLabel "parallele Züge"@de , "parallel tracks"@en ;
+    skos:definition "Stufen sind parallele Anspruchsniveaus desselben Jahrgangs (G/M/E, G-/E-Kurs)."@de .
+cv:ord_nominal a skos:Concept ; skos:inScheme cv:LevelOrderings ; skos:topConceptOf cv:LevelOrderings ;
+    skos:notation "nominal" ; skos:prefLabel "ungeordnet"@de , "nominal"@en .
+cv:ord_ordinal a skos:Concept ; skos:inScheme cv:LevelOrderings ; skos:topConceptOf cv:LevelOrderings ;
+    skos:notation "ordinal" ; skos:prefLabel "geordnet ohne Einschluss"@de , "ordinal"@en ;
+    skos:definition "Stufen sind geordnet, eine höhere schließt die niedrigere aber nicht ein (Noten, Notenpunkte, Verhaltensstufen). Keine steigert-Kanten zwischen Kriterien verschiedener Stufen."@de .
+
+# -----------------------------------------------------------------------------
+# Zeit und Umfang
+# -----------------------------------------------------------------------------
+cv:TimeKinds a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Art des Zeitraums"@de , "time kinds"@en .
+cv:time_age a skos:Concept ; skos:inScheme cv:TimeKinds ; skos:topConceptOf cv:TimeKinds ;
+    skos:notation "age" ; skos:prefLabel "Alter (Jahre)"@de , "age (years)"@en ;
+    skos:definition "Lebensalter in Jahren, Dezimalwerte zulässig (U3 = 0–3; „ab 18 Monaten“ = 1,5)."@de .
+cv:time_gradeLevel a skos:Concept ; skos:inScheme cv:TimeKinds ; skos:topConceptOf cv:TimeKinds ;
+    skos:notation "gradeLevel" ; skos:prefLabel "Jahrgangsstufe"@de , "grade level"@en .
+cv:time_trainingYear a skos:Concept ; skos:inScheme cv:TimeKinds ; skos:topConceptOf cv:TimeKinds ;
+    skos:notation "trainingYear" ; skos:prefLabel "Ausbildungsjahr"@de , "training year"@en .
+cv:time_trainingMonth a skos:Concept ; skos:inScheme cv:TimeKinds ; skos:topConceptOf cv:TimeKinds ;
+    skos:notation "trainingMonth" ; skos:prefLabel "Ausbildungsmonat"@de , "training month"@en ;
+    skos:example "„1. bis 15. Monat“" .
+cv:time_semester a skos:Concept ; skos:inScheme cv:TimeKinds ; skos:topConceptOf cv:TimeKinds ;
+    skos:notation "semester" ; skos:prefLabel "Fachsemester"@de , "semester"@en .
+cv:time_studyYear a skos:Concept ; skos:inScheme cv:TimeKinds ; skos:topConceptOf cv:TimeKinds ;
+    skos:notation "studyYear" ; skos:prefLabel "Studienjahr"@de , "study year"@en .
+cv:time_courseSection a skos:Concept ; skos:inScheme cv:TimeKinds ; skos:topConceptOf cv:TimeKinds ;
+    skos:notation "courseSection" ; skos:prefLabel "Kursabschnitt"@de , "course section"@en .
+cv:time_phase a skos:Concept ; skos:inScheme cv:TimeKinds ; skos:topConceptOf cv:TimeKinds ;
+    skos:notation "phase" ; skos:prefLabel "benannte Phase"@de , "named phase"@en ;
+    skos:definition "Einführungs-/Qualifikationsphase, Ausbildungsdrittel, Studieneingangsphase, Eingewöhnung; Wert in cur:phase."@de .
+
+cv:TimeRelations a skos:ConceptScheme ;
+    skos:prefLabel "Zeitbezug"@de , "time relations"@en .
+cv:trel_during a skos:Concept ; skos:inScheme cv:TimeRelations ; skos:topConceptOf cv:TimeRelations ;
+    skos:notation "during" ; skos:prefLabel "während"@de , "during"@en .
+cv:trel_endOf a skos:Concept ; skos:inScheme cv:TimeRelations ; skos:topConceptOf cv:TimeRelations ;
+    skos:notation "endOf" ; skos:prefLabel "am Ende von (Bezugszeitpunkt)"@de , "end of"@en ;
+    skos:example "„am Ende der Jahrgangsstufe 6“" .
+cv:trel_until a skos:Concept ; skos:inScheme cv:TimeRelations ; skos:topConceptOf cv:TimeRelations ;
+    skos:notation "until" ; skos:prefLabel "bis spätestens"@de , "until"@en .
+cv:trel_from a skos:Concept ; skos:inScheme cv:TimeRelations ; skos:topConceptOf cv:TimeRelations ;
+    skos:notation "from" ; skos:prefLabel "ab"@de , "from"@en .
+
+cv:WorkloadUnits a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Umfangseinheiten"@de , "workload units"@en .
+cv:unit_lesson a skos:Concept ; skos:inScheme cv:WorkloadUnits ; skos:topConceptOf cv:WorkloadUnits ;
+    skos:notation "lesson" ; skos:prefLabel "Unterrichtsstunde"@de , "lesson"@en ;
+    skos:altLabel "Ustd."@de , "UStd."@de .
+cv:unit_teachingUnit a skos:Concept ; skos:inScheme cv:WorkloadUnits ; skos:topConceptOf cv:WorkloadUnits ;
+    skos:notation "teachingUnit" ; skos:prefLabel "Unterrichtseinheit (UE)"@de , "teaching unit"@en .
+cv:unit_hour a skos:Concept ; skos:inScheme cv:WorkloadUnits ; skos:topConceptOf cv:WorkloadUnits ;
+    skos:notation "hour" ; skos:prefLabel "Zeitstunde"@de , "hour"@en .
+cv:unit_weeklyLesson a skos:Concept ; skos:inScheme cv:WorkloadUnits ; skos:topConceptOf cv:WorkloadUnits ;
+    skos:notation "weeklyLesson" ; skos:prefLabel "Wochenstunde/SWS"@de , "weekly lesson"@en ;
+    skos:definition "Wochenstunden einer Stundentafel oder Semesterwochenstunden; ≠ Zeitstunden."@de .
+cv:unit_ectsCredit a skos:Concept ; skos:inScheme cv:WorkloadUnits ; skos:topConceptOf cv:WorkloadUnits ;
+    skos:notation "ectsCredit" ; skos:prefLabel "ECTS-Leistungspunkt"@de , "ECTS credit"@en ;
+    skos:altLabel "LP"@de , "CP"@de , "KP"@de .
+cv:unit_day a skos:Concept ; skos:inScheme cv:WorkloadUnits ; skos:topConceptOf cv:WorkloadUnits ;
+    skos:notation "day" ; skos:prefLabel "Tag"@de , "day"@en .
+cv:unit_week a skos:Concept ; skos:inScheme cv:WorkloadUnits ; skos:topConceptOf cv:WorkloadUnits ;
+    skos:notation "week" ; skos:prefLabel "Woche"@de , "week"@en .
+cv:unit_month a skos:Concept ; skos:inScheme cv:WorkloadUnits ; skos:topConceptOf cv:WorkloadUnits ;
+    skos:notation "month" ; skos:prefLabel "Monat"@de , "month"@en .
+cv:unit_semester a skos:Concept ; skos:inScheme cv:WorkloadUnits ; skos:topConceptOf cv:WorkloadUnits ;
+    skos:notation "semester" ; skos:prefLabel "Semester"@de , "semester"@en .
+cv:unit_year a skos:Concept ; skos:inScheme cv:WorkloadUnits ; skos:topConceptOf cv:WorkloadUnits ;
+    skos:notation "year" ; skos:prefLabel "Jahr"@de , "year"@en .
+
+cv:WorkloadKinds a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Art des Umfangs"@de , "workload kinds"@en .
+cv:wl_guidanceValue a skos:Concept ; skos:inScheme cv:WorkloadKinds ; skos:topConceptOf cv:WorkloadKinds ;
+    skos:notation "guidanceValue" ; skos:prefLabel "Zeitrichtwert"@de , "guidance value"@en .
+cv:wl_teachingTime a skos:Concept ; skos:inScheme cv:WorkloadKinds ; skos:topConceptOf cv:WorkloadKinds ;
+    skos:notation "teachingTime" ; skos:prefLabel "Unterrichtszeit"@de , "teaching time"@en .
+cv:wl_contactTime a skos:Concept ; skos:inScheme cv:WorkloadKinds ; skos:topConceptOf cv:WorkloadKinds ;
+    skos:notation "contactTime" ; skos:prefLabel "Kontakt-/Präsenzzeit"@de , "contact time"@en .
+cv:wl_selfStudy a skos:Concept ; skos:inScheme cv:WorkloadKinds ; skos:topConceptOf cv:WorkloadKinds ;
+    skos:notation "selfStudy" ; skos:prefLabel "Selbststudium"@de , "self-study"@en .
+cv:wl_totalWorkload a skos:Concept ; skos:inScheme cv:WorkloadKinds ; skos:topConceptOf cv:WorkloadKinds ;
+    skos:notation "totalWorkload" ; skos:prefLabel "Gesamtaufwand"@de , "total workload"@en ;
+    skos:altLabel "Workload"@de , "Arbeitsaufwand"@de .
+cv:wl_credits a skos:Concept ; skos:inScheme cv:WorkloadKinds ; skos:topConceptOf cv:WorkloadKinds ;
+    skos:notation "credits" ; skos:prefLabel "Leistungspunkte"@de , "credits"@en .
+cv:wl_duration a skos:Concept ; skos:inScheme cv:WorkloadKinds ; skos:topConceptOf cv:WorkloadKinds ;
+    skos:notation "duration" ; skos:prefLabel "Dauer"@de , "duration"@en ;
+    skos:example "Ausbildungsdauer 36 Monate, Regelstudienzeit 6 Semester, Lehrgang 1 Woche" .
+
+# -----------------------------------------------------------------------------
+# Herkunft, Prüfstatus, Methode, Fundart
+# -----------------------------------------------------------------------------
+cv:Origins a skos:ConceptScheme ;
+    skos:prefLabel "Herkunft"@de , "origins"@en ;
+    skos:definition "Woher eine Angabe kommt. Zusammen mit dem Prüfstatus ersetzt sie die lineare Kette extrahiert → vorgeschlagen → geprüft → amtlich."@de .
+cv:orig_source a skos:Concept ; skos:inScheme cv:Origins ; skos:topConceptOf cv:Origins ;
+    skos:notation "source" ; skos:prefLabel "Quelle (steht im Dokument)"@de , "source"@en .
+cv:orig_inherited a skos:Concept ; skos:inScheme cv:Origins ; skos:topConceptOf cv:Origins ;
+    skos:notation "inherited" ; skos:prefLabel "vererbt"@de , "inherited"@en .
+cv:orig_rule a skos:Concept ; skos:inScheme cv:Origins ; skos:topConceptOf cv:Origins ;
+    skos:notation "rule" ; skos:prefLabel "Regel (deterministisch)"@de , "rule"@en .
+cv:orig_model a skos:Concept ; skos:inScheme cv:Origins ; skos:topConceptOf cv:Origins ;
+    skos:notation "model" ; skos:prefLabel "Modell (LLM/Embedding)"@de , "model"@en .
+cv:orig_human a skos:Concept ; skos:inScheme cv:Origins ; skos:topConceptOf cv:Origins ;
+    skos:notation "human" ; skos:prefLabel "redaktionell"@de , "human"@en .
+cv:orig_official a skos:Concept ; skos:inScheme cv:Origins ; skos:topConceptOf cv:Origins ;
+    skos:notation "official" ; skos:prefLabel "amtlich"@de , "official"@en ;
+    skos:definition "Amtliche Quelle für die Angabe (Entsprechungsliste, Anrechnungsordnung, Kompetenzmatrix); überstimmt maschinelle Vorschläge; braucht eine Fundstelle."@de .
+
+cv:ReviewStatuses a skos:ConceptScheme ;
+    skos:prefLabel "Prüfstatus"@de , "review statuses"@en .
+cv:rev_proposed a skos:Concept ; skos:inScheme cv:ReviewStatuses ; skos:topConceptOf cv:ReviewStatuses ;
+    skos:notation "proposed" ; skos:prefLabel "vorgeschlagen/ungeprüft"@de , "proposed"@en .
+cv:rev_confirmed a skos:Concept ; skos:inScheme cv:ReviewStatuses ; skos:topConceptOf cv:ReviewStatuses ;
+    skos:notation "confirmed" ; skos:prefLabel "bestätigt"@de , "confirmed"@en .
+cv:rev_rejected a skos:Concept ; skos:inScheme cv:ReviewStatuses ; skos:topConceptOf cv:ReviewStatuses ;
+    skos:notation "rejected" ; skos:prefLabel "verworfen"@de , "rejected"@en ;
+    skos:definition "Bleibt gespeichert, damit derselbe Vorschlag nicht erneut erzeugt wird."@de .
+
+cv:Methods a skos:ConceptScheme ;
+    skos:prefLabel "Methoden"@de , "methods"@en .
+cv:meth_verbatim a skos:Concept ; skos:inScheme cv:Methods ; skos:topConceptOf cv:Methods ;
+    skos:notation "verbatim" ; skos:prefLabel "Wortlaut/Marker im Text"@de , "verbatim"@en .
+cv:meth_pattern a skos:Concept ; skos:inScheme cv:Methods ; skos:topConceptOf cv:Methods ;
+    skos:notation "pattern" ; skos:prefLabel "Muster/Lexikon"@de , "pattern"@en .
+cv:meth_table a skos:Concept ; skos:inScheme cv:Methods ; skos:topConceptOf cv:Methods ;
+    skos:notation "table" ; skos:prefLabel "Tabellenlesung"@de , "table reading"@en .
+cv:meth_lookup a skos:Concept ; skos:inScheme cv:Methods ; skos:topConceptOf cv:Methods ;
+    skos:notation "lookup" ; skos:prefLabel "Nachschlagen in Liste"@de , "lookup"@en ;
+    skos:example "Operatorenliste, Berufe-/Qualifikationsliste, Code-Abgleich" .
+cv:meth_inheritance a skos:Concept ; skos:inScheme cv:Methods ; skos:topConceptOf cv:Methods ;
+    skos:notation "inheritance" ; skos:prefLabel "Vererbung"@de , "inheritance"@en .
+cv:meth_reconciliation a skos:Concept ; skos:inScheme cv:Methods ; skos:topConceptOf cv:Methods ;
+    skos:notation "reconciliation" ; skos:prefLabel "Reconciliation-Dienst"@de , "reconciliation"@en ;
+    skos:example "Wikidata, lobid-gnd" .
+cv:meth_embedding a skos:Concept ; skos:inScheme cv:Methods ; skos:topConceptOf cv:Methods ;
+    skos:notation "embedding" ; skos:prefLabel "Embedding-Ähnlichkeit"@de , "embedding"@en .
+cv:meth_llmChoice a skos:Concept ; skos:inScheme cv:Methods ; skos:topConceptOf cv:Methods ;
+    skos:notation "llmChoice" ; skos:prefLabel "LLM-Auswahl aus nummerierten Kandidaten"@de , "LLM choice"@en ;
+    skos:definition "Das LLM wählt unter höchstens etwa 40 nummerierten Kandidaten und antwortet nur mit Nummern."@de .
+cv:meth_llmJudgement a skos:Concept ; skos:inScheme cv:Methods ; skos:topConceptOf cv:Methods ;
+    skos:notation "llmJudgement" ; skos:prefLabel "LLM-Urteil über Relation"@de , "LLM judgement"@en .
+cv:meth_manual a skos:Concept ; skos:inScheme cv:Methods ; skos:topConceptOf cv:Methods ;
+    skos:notation "manual" ; skos:prefLabel "manuell"@de , "manual"@en .
+cv:meth_officialList a skos:Concept ; skos:inScheme cv:Methods ; skos:topConceptOf cv:Methods ;
+    skos:notation "officialList" ; skos:prefLabel "amtliche Liste"@de , "official list"@en .
+
+cv:MatchKinds a skos:ConceptScheme ;
+    skos:prefLabel "Fundart"@de , "match kinds"@en .
+cv:match_exact a skos:Concept ; skos:inScheme cv:MatchKinds ; skos:topConceptOf cv:MatchKinds ;
+    skos:notation "exact" ; skos:prefLabel "exakt"@de , "exact"@en .
+cv:match_whitespace a skos:Concept ; skos:inScheme cv:MatchKinds ; skos:topConceptOf cv:MatchKinds ;
+    skos:notation "whitespace" ; skos:prefLabel "bis auf Leerraum"@de , "whitespace"@en .
+cv:match_elided a skos:Concept ; skos:inScheme cv:MatchKinds ; skos:topConceptOf cv:MatchKinds ;
+    skos:notation "elided" ; skos:prefLabel "mit Auslassung"@de , "elided"@en .
+cv:match_normalized a skos:Concept ; skos:inScheme cv:MatchKinds ; skos:topConceptOf cv:MatchKinds ;
+    skos:notation "normalized" ; skos:prefLabel "normalisiert (Trennstriche, Anführungszeichen)"@de , "normalized"@en .
+cv:match_fuzzy a skos:Concept ; skos:inScheme cv:MatchKinds ; skos:topConceptOf cv:MatchKinds ;
+    skos:notation "fuzzy" ; skos:prefLabel "unscharf (kein Wortlautbeleg)"@de , "fuzzy"@en .
+cv:match_notFound a skos:Concept ; skos:inScheme cv:MatchKinds ; skos:topConceptOf cv:MatchKinds ;
+    skos:notation "notFound" ; skos:prefLabel "nicht gefunden"@de , "not found"@en .
+
+cv:ResolutionStatuses a skos:ConceptScheme ;
+    skos:prefLabel "Auflösungsstatus von Verweisen"@de , "resolution statuses"@en .
+cv:res_open a skos:Concept ; skos:inScheme cv:ResolutionStatuses ; skos:topConceptOf cv:ResolutionStatuses ;
+    skos:notation "open" ; skos:prefLabel "offen"@de , "open"@en .
+cv:res_resolved a skos:Concept ; skos:inScheme cv:ResolutionStatuses ; skos:topConceptOf cv:ResolutionStatuses ;
+    skos:notation "resolved" ; skos:prefLabel "aufgelöst"@de , "resolved"@en .
+cv:res_ambiguous a skos:Concept ; skos:inScheme cv:ResolutionStatuses ; skos:topConceptOf cv:ResolutionStatuses ;
+    skos:notation "ambiguous" ; skos:prefLabel "mehrdeutig"@de , "ambiguous"@en .
+cv:res_notFound a skos:Concept ; skos:inScheme cv:ResolutionStatuses ; skos:topConceptOf cv:ResolutionStatuses ;
+    skos:notation "notFound" ; skos:prefLabel "Ziel nicht gefunden"@de , "not found"@en .
+
+cv:ConflictCriteria a skos:ConceptScheme ;
+    skos:prefLabel "Kriterien der Konfliktauflösung (in dieser Reihenfolge)"@de , "conflict criteria"@en .
+cv:cc_cohort a skos:Concept ; skos:inScheme cv:ConflictCriteria ; skos:topConceptOf cv:ConflictCriteria ;
+    skos:notation "cohort" ; skos:prefLabel "Gültigkeit für die Kohorte"@de , "cohort validity"@en .
+cv:cc_binding a skos:Concept ; skos:inScheme cv:ConflictCriteria ; skos:topConceptOf cv:ConflictCriteria ;
+    skos:notation "binding" ; skos:prefLabel "Verbindlichkeit der Quelle"@de , "bindingness"@en .
+cv:cc_specificity a skos:Concept ; skos:inScheme cv:ConflictCriteria ; skos:topConceptOf cv:ConflictCriteria ;
+    skos:notation "specificity" ; skos:prefLabel "Spezifität (fachspezifisch vor Rahmen)"@de , "specificity"@en .
+cv:cc_recency a skos:Concept ; skos:inScheme cv:ConflictCriteria ; skos:topConceptOf cv:ConflictCriteria ;
+    skos:notation "recency" ; skos:prefLabel "Aktualität"@de , "recency"@en .
+cv:cc_human a skos:Concept ; skos:inScheme cv:ConflictCriteria ; skos:topConceptOf cv:ConflictCriteria ;
+    skos:notation "human" ; skos:prefLabel "redaktionelle Entscheidung"@de , "human decision"@en .
+
+# -----------------------------------------------------------------------------
+# Zuordnungsrelationen (Kantenvokabular) – nur im Kantenpass G1 und in N2
+# -----------------------------------------------------------------------------
+cv:AlignmentRelations a skos:ConceptScheme ;
+    skos:prefLabel "Zuordnungsrelationen"@de , "alignment relations"@en ;
+    skos:definition "Ein Relationsvokabular für alle Zuordnungen. Richtung immer Quelle → Ziel. SKOS-Relationen behalten die SKOS-Richtung (Quelle broadMatch Ziel = Ziel ist breiter). Entsprechungen zu CTDL-ASN und CASE stehen in cur-alignments.ttl."@de .
+cv:rel_exactMatch a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "exactMatch" ; skos:prefLabel "gleichwertig"@de , "exact match"@en ;
+    cur:shortcut skos:exactMatch ;
+    skos:definition "Gleiche Anforderung bzw. gleicher Begriff."@de .
+cv:rel_closeMatch a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "closeMatch" ; skos:prefLabel "nahezu gleichwertig"@de , "close match"@en ;
+    cur:shortcut skos:closeMatch .
+cv:rel_broadMatch a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "broadMatch" ; skos:prefLabel "Ziel ist breiter"@de , "broad match"@en ;
+    cur:shortcut skos:broadMatch ;
+    skos:definition "Das Ziel umfasst die Quelle und mehr."@de .
+cv:rel_narrowMatch a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "narrowMatch" ; skos:prefLabel "Ziel ist enger"@de , "narrow match"@en ;
+    cur:shortcut skos:narrowMatch ;
+    skos:definition "Die Quelle umfasst das Ziel und mehr."@de .
+cv:rel_relatedMatch a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "relatedMatch" ; skos:prefLabel "verwandt"@de , "related match"@en ;
+    cur:shortcut skos:relatedMatch ;
+    skos:definition "Gemeinsame Grundlage ohne Hierarchie oder Kette."@de .
+cv:rel_majorOverlap a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "majorOverlap" ; skos:prefLabel "überlappt stark"@de , "major overlap"@en ;
+    cur:shortcut cur:majorOverlap .
+cv:rel_minorOverlap a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "minorOverlap" ; skos:prefLabel "überlappt schwach"@de , "minor overlap"@en ;
+    cur:shortcut cur:minorOverlap .
+cv:rel_requires a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "requires" ; skos:prefLabel "setzt voraus"@de , "requires"@en ;
+    cur:shortcut cur:requires .
+cv:rel_buildsOn a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "buildsOn" ; skos:prefLabel "steigert"@de , "builds on"@en ;
+    cur:shortcut cur:buildsOn ;
+    skos:definition "Quelle: gleiches Inhaltskonzept wie Ziel auf höherer Stufe desselben kumulativen Systems oder höherer Taxonomiestufe derselben Liste."@de .
+cv:rel_precedes a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "precedes" ; skos:prefLabel "geht didaktisch voraus"@de , "precedes"@en ;
+    cur:shortcut cur:precedes .
+cv:rel_revisits a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "revisits" ; skos:prefLabel "greift wieder auf"@de , "revisits"@en ;
+    cur:shortcut cur:revisits .
+cv:rel_supports a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "supports" ; skos:prefLabel "stützt"@de , "supports"@en ;
+    cur:shortcut cur:supports .
+cv:rel_concretizes a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "concretizes" ; skos:prefLabel "konkretisiert"@de , "concretizes"@en ;
+    cur:shortcut cur:concretizes .
+cv:rel_correspondsTo a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "correspondsTo" ; skos:prefLabel "entspricht (lernortübergreifend)"@de , "corresponds to"@en ;
+    cur:shortcut cur:correspondsTo .
+cv:rel_noCorrespondence a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "noCorrespondence" ; skos:prefLabel "ohne Entsprechung (amtlich festgestellt)"@de , "no correspondence"@en ;
+    skos:definition "Die amtliche Liste stellt ausdrücklich fest, dass es keine Entsprechung gibt; verhindert falsche Vorschläge."@de .
+cv:rel_derivedFrom a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "derivedFrom" ; skos:prefLabel "übernommen aus"@de , "derived from"@en ;
+    cur:shortcut cur:derivedFrom .
+cv:rel_replaces a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "replaces" ; skos:prefLabel "ersetzt (Fassungswechsel)"@de , "replaces"@en ;
+    cur:shortcut cur:replaces .
+cv:rel_variantOf a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "variantOf" ; skos:prefLabel "Variante von"@de , "variant of"@en ;
+    cur:shortcut cur:variantOf .
+cv:rel_crossSubject a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "crossSubject" ; skos:prefLabel "fachübergreifend"@de , "cross-subject"@en ;
+    cur:shortcut cur:crossSubject .
+cv:rel_contributesTo a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "contributesTo" ; skos:prefLabel "trägt bei zu"@de , "contributes to"@en ;
+    cur:shortcut cur:contributesTo ;
+    skos:definition "Aussage oder Einheit → Querschnittsziel oder Programmziel, wenn nicht ausdrücklich markiert."@de .
+cv:rel_recognizedFor a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "recognizedFor" ; skos:prefLabel "anrechenbar auf"@de , "recognized for"@en ;
+    cur:shortcut cur:recognizedFor ;
+    skos:definition "Nur Herkunft official."@de .
+cv:rel_qualifiesFor a skos:Concept ; skos:inScheme cv:AlignmentRelations ; skos:topConceptOf cv:AlignmentRelations ;
+    skos:notation "qualifiesFor" ; skos:prefLabel "berechtigt zu"@de , "qualifies for"@en ;
+    cur:shortcut cur:qualifiesFor ;
+    skos:definition "Nur Herkunft official."@de .
+
+# -----------------------------------------------------------------------------
+# Layout, Segmentierung, Lexikon
+# -----------------------------------------------------------------------------
+cv:LayoutMarkers a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Layoutsignale"@de , "layout markers"@en .
+cv:mark_bold a skos:Concept ; skos:inScheme cv:LayoutMarkers ; skos:topConceptOf cv:LayoutMarkers ;
+    skos:notation "bold" ; skos:prefLabel "fett"@de , "bold"@en ;
+    skos:example "Kernkompetenz im KMK-Rahmenlehrplan; E-Kurs im NI-Kerncurriculum" .
+cv:mark_italic a skos:Concept ; skos:inScheme cv:LayoutMarkers ; skos:topConceptOf cv:LayoutMarkers ;
+    skos:notation "italic" ; skos:prefLabel "kursiv"@de , "italic"@en ;
+    skos:example "Inhalte im KMK-Rahmenlehrplan; verbindliche Begriffe (BW)" .
+cv:mark_parenthesis a skos:Concept ; skos:inScheme cv:LayoutMarkers ; skos:topConceptOf cv:LayoutMarkers ;
+    skos:notation "parenthesis" ; skos:prefLabel "Klammer"@de , "parenthesis"@en .
+cv:mark_bullet a skos:Concept ; skos:inScheme cv:LayoutMarkers ; skos:topConceptOf cv:LayoutMarkers ;
+    skos:notation "bullet" ; skos:prefLabel "Aufzählungspunkt"@de , "bullet"@en .
+cv:mark_numbered a skos:Concept ; skos:inScheme cv:LayoutMarkers ; skos:topConceptOf cv:LayoutMarkers ;
+    skos:notation "numbered" ; skos:prefLabel "nummeriert"@de , "numbered"@en .
+cv:mark_tableCell a skos:Concept ; skos:inScheme cv:LayoutMarkers ; skos:topConceptOf cv:LayoutMarkers ;
+    skos:notation "tableCell" ; skos:prefLabel "Tabellenzelle"@de , "table cell"@en .
+cv:mark_box a skos:Concept ; skos:inScheme cv:LayoutMarkers ; skos:topConceptOf cv:LayoutMarkers ;
+    skos:notation "box" ; skos:prefLabel "Kasten"@de , "box"@en .
+cv:mark_marginSymbol a skos:Concept ; skos:inScheme cv:LayoutMarkers ; skos:topConceptOf cv:LayoutMarkers ;
+    skos:notation "marginSymbol" ; skos:prefLabel "Symbol/Kürzel am Rand"@de , "margin symbol"@en ;
+    skos:example "⇒, ➔ (SN), [BNE] (MV), P/I/F/L (BW)" .
+cv:mark_plain a skos:Concept ; skos:inScheme cv:LayoutMarkers ; skos:topConceptOf cv:LayoutMarkers ;
+    skos:notation "plain" ; skos:prefLabel "Fließtext"@de , "plain text"@en .
+
+cv:Segmentations a skos:ConceptScheme ;
+    skos:prefLabel "Segmentierungsregeln"@de , "segmentation rules"@en ;
+    skos:definition "Was ein Element ist. Gemessen in der App: „jeder Satz ein Element“ hob Qualifikationsziele 5 → 19, „nummerierte Tabellenzeile = Einheit“ 1 → 50–71, „jede Niveauzelle“ 59/74 → 91/85 %."@de .
+cv:seg_sentence a skos:Concept ; skos:inScheme cv:Segmentations ; skos:topConceptOf cv:Segmentations ;
+    skos:notation "sentence" ; skos:prefLabel "Satz"@de , "sentence"@en .
+cv:seg_bullet a skos:Concept ; skos:inScheme cv:Segmentations ; skos:topConceptOf cv:Segmentations ;
+    skos:notation "bullet" ; skos:prefLabel "Aufzählungspunkt/Spiegelstrich"@de , "bullet"@en .
+cv:seg_tableRow a skos:Concept ; skos:inScheme cv:Segmentations ; skos:topConceptOf cv:Segmentations ;
+    skos:notation "tableRow" ; skos:prefLabel "Tabellenzeile"@de , "table row"@en .
+cv:seg_tableCell a skos:Concept ; skos:inScheme cv:Segmentations ; skos:topConceptOf cv:Segmentations ;
+    skos:notation "tableCell" ; skos:prefLabel "Tabellenzelle (gleicher Wortlaut über Niveaus = ein Element)"@de , "table cell"@en .
+cv:seg_paragraph a skos:Concept ; skos:inScheme cv:Segmentations ; skos:topConceptOf cv:Segmentations ;
+    skos:notation "paragraph" ; skos:prefLabel "Absatz"@de , "paragraph"@en .
+cv:seg_wholeUnit a skos:Concept ; skos:inScheme cv:Segmentations ; skos:topConceptOf cv:Segmentations ;
+    skos:notation "wholeUnit" ; skos:prefLabel "ganze Einheit"@de , "whole unit"@en .
+
+cv:CueRoles a skos:ConceptScheme ;
+    skos:prefLabel "Rollen von Erkennungshinweisen"@de , "cue roles"@en .
+cv:role_pref a skos:Concept ; skos:inScheme cv:CueRoles ; skos:topConceptOf cv:CueRoles ;
+    skos:notation "pref" ; skos:prefLabel "Präferenzbezeichnung"@de , "preferred"@en .
+cv:role_alt a skos:Concept ; skos:inScheme cv:CueRoles ; skos:topConceptOf cv:CueRoles ;
+    skos:notation "alt" ; skos:prefLabel "echtes Synonym"@de , "synonym"@en .
+cv:role_cue a skos:Concept ; skos:inScheme cv:CueRoles ; skos:topConceptOf cv:CueRoles ;
+    skos:notation "cue" ; skos:prefLabel "Hinweis (kein Synonym)"@de , "cue"@en .
+cv:role_negative a skos:Concept ; skos:inScheme cv:CueRoles ; skos:topConceptOf cv:CueRoles ;
+    skos:notation "negative" ; skos:prefLabel "Abgrenzung"@de , "negative"@en .
+cv:role_homonym a skos:Concept ; skos:inScheme cv:CueRoles ; skos:topConceptOf cv:CueRoles ;
+    skos:notation "homonym" ; skos:prefLabel "Homonym mit Regel"@de , "homonym"@en .
+
+cv:CueKinds a skos:ConceptScheme ;
+    skos:prefLabel "Arten von Erkennungshinweisen"@de , "cue kinds"@en .
+cv:ck_term a skos:Concept ; skos:inScheme cv:CueKinds ; skos:topConceptOf cv:CueKinds ;
+    skos:notation "term" ; skos:prefLabel "Wort"@de , "term"@en .
+cv:ck_headingPattern a skos:Concept ; skos:inScheme cv:CueKinds ; skos:topConceptOf cv:CueKinds ;
+    skos:notation "headingPattern" ; skos:prefLabel "Überschriftenmuster"@de , "heading pattern"@en .
+cv:ck_tablePattern a skos:Concept ; skos:inScheme cv:CueKinds ; skos:topConceptOf cv:CueKinds ;
+    skos:notation "tablePattern" ; skos:prefLabel "Tabellenkopfmuster"@de , "table pattern"@en .
+cv:ck_sentencePattern a skos:Concept ; skos:inScheme cv:CueKinds ; skos:topConceptOf cv:CueKinds ;
+    skos:notation "sentencePattern" ; skos:prefLabel "Satzmuster"@de , "sentence pattern"@en ;
+    skos:example "„Die pädagogische Fachkraft …“ → Auftrag; „Kann …“ → Kann-Beschreibung" .
+cv:ck_codePattern a skos:Concept ; skos:inScheme cv:CueKinds ; skos:topConceptOf cv:CueKinds ;
+    skos:notation "codePattern" ; skos:prefLabel "Nummern-/Codemuster"@de , "code pattern"@en .
+cv:ck_layout a skos:Concept ; skos:inScheme cv:CueKinds ; skos:topConceptOf cv:CueKinds ;
+    skos:notation "layout" ; skos:prefLabel "Layoutsignal"@de , "layout"@en .
+
+cv:Occurrences a skos:ConceptScheme ;
+    skos:prefLabel "Fundorte im Dokument"@de , "occurrences"@en .
+cv:occ_titlePage a skos:Concept ; skos:inScheme cv:Occurrences ; skos:topConceptOf cv:Occurrences ;
+    skos:notation "titlePage" ; skos:prefLabel "Titelei/Impressum"@de , "title page"@en .
+cv:occ_toc a skos:Concept ; skos:inScheme cv:Occurrences ; skos:topConceptOf cv:Occurrences ;
+    skos:notation "toc" ; skos:prefLabel "Inhaltsverzeichnis"@de , "table of contents"@en .
+cv:occ_heading a skos:Concept ; skos:inScheme cv:Occurrences ; skos:topConceptOf cv:Occurrences ;
+    skos:notation "heading" ; skos:prefLabel "Überschrift"@de , "heading"@en .
+cv:occ_body a skos:Concept ; skos:inScheme cv:Occurrences ; skos:topConceptOf cv:Occurrences ;
+    skos:notation "body" ; skos:prefLabel "Fließtext"@de , "body text"@en .
+cv:occ_tableHeader a skos:Concept ; skos:inScheme cv:Occurrences ; skos:topConceptOf cv:Occurrences ;
+    skos:notation "tableHeader" ; skos:prefLabel "Tabellenkopf"@de , "table header"@en .
+cv:occ_box a skos:Concept ; skos:inScheme cv:Occurrences ; skos:topConceptOf cv:Occurrences ;
+    skos:notation "box" ; skos:prefLabel "Kasten/Randspalte"@de , "box"@en .
+cv:occ_headerFooter a skos:Concept ; skos:inScheme cv:Occurrences ; skos:topConceptOf cv:Occurrences ;
+    skos:notation "headerFooter" ; skos:prefLabel "Kopf-/Fußzeile"@de , "header/footer"@en .
+
+# -----------------------------------------------------------------------------
+# Konzepte: Querschnitts- und Kontextarten
+# -----------------------------------------------------------------------------
+cv:ObjectiveTypes a skos:ConceptScheme ;
+    skos:prefLabel "Arten von Querschnittszielen"@de , "objective types"@en .
+cv:obj_perspective a skos:Concept ; skos:inScheme cv:ObjectiveTypes ; skos:topConceptOf cv:ObjectiveTypes ;
+    skos:notation "perspective" ; skos:prefLabel "Leitperspektive/übergreifendes Thema"@de , "guiding perspective"@en .
+cv:obj_crossCompetence a skos:Concept ; skos:inScheme cv:ObjectiveTypes ; skos:topConceptOf cv:ObjectiveTypes ;
+    skos:notation "crossCompetence" ; skos:prefLabel "überfachliche Kompetenz"@de , "cross-curricular competence"@en .
+cv:obj_principle a skos:Concept ; skos:inScheme cv:ObjectiveTypes ; skos:topConceptOf cv:ObjectiveTypes ;
+    skos:notation "principle" ; skos:prefLabel "pädagogisches Prinzip"@de , "pedagogical principle"@en ;
+    skos:example "Partizipation, Inklusion, Kinderrechte" .
+cv:obj_mission a skos:Concept ; skos:inScheme cv:ObjectiveTypes ; skos:topConceptOf cv:ObjectiveTypes ;
+    skos:notation "mission" ; skos:prefLabel "Bildungsauftrag/Aufgabengebiet"@de , "educational mission"@en .
+cv:obj_standardPosition a skos:Concept ; skos:inScheme cv:ObjectiveTypes ; skos:topConceptOf cv:ObjectiveTypes ;
+    skos:notation "standardPosition" ; skos:prefLabel "Standardberufsbildposition"@de , "standard occupational position"@en .
+cv:obj_keyCompetence a skos:Concept ; skos:inScheme cv:ObjectiveTypes ; skos:topConceptOf cv:ObjectiveTypes ;
+    skos:notation "keyCompetence" ; skos:prefLabel "Schlüsselkompetenz/-qualifikation"@de , "key competence"@en .
+cv:obj_qualificationGoal a skos:Concept ; skos:inScheme cv:ObjectiveTypes ; skos:topConceptOf cv:ObjectiveTypes ;
+    skos:notation "qualificationGoal" ; skos:prefLabel "übergreifendes Qualifikationsziel"@de , "qualification goal"@en ;
+    skos:example "§ 11 MRVO: wissenschaftliche Befähigung, Erwerbstätigkeit, Persönlichkeitsentwicklung" .
+
+cv:ContextTypes a skos:ConceptScheme ;
+    skos:prefLabel "Kontextarten"@de , "context types"@en .
+cv:ctxt_situation a skos:Concept ; skos:inScheme cv:ContextTypes ; skos:topConceptOf cv:ContextTypes ;
+    skos:notation "situation" ; skos:prefLabel "Situation"@de , "situation"@en .
+cv:ctxt_lifeDomain a skos:Concept ; skos:inScheme cv:ContextTypes ; skos:topConceptOf cv:ContextTypes ;
+    skos:notation "lifeDomain" ; skos:prefLabel "Lebens-/Handlungsbereich"@de , "life domain"@en .
+cv:ctxt_setting a skos:Concept ; skos:inScheme cv:ContextTypes ; skos:topConceptOf cv:ContextTypes ;
+    skos:notation "setting" ; skos:prefLabel "Lernort/Setting"@de , "setting"@en .
+cv:ctxt_role a skos:Concept ; skos:inScheme cv:ContextTypes ; skos:topConceptOf cv:ContextTypes ;
+    skos:notation "role" ; skos:prefLabel "Rolle/Zielgruppe"@de , "role"@en .
+cv:ctxt_occupationalField a skos:Concept ; skos:inScheme cv:ContextTypes ; skos:topConceptOf cv:ContextTypes ;
+    skos:notation "occupationalField" ; skos:prefLabel "beruflicher Kontext"@de , "occupational field"@en .
+
+# -----------------------------------------------------------------------------
+# Zerlegung: Selbstständigkeit, Wissensart
+# -----------------------------------------------------------------------------
+cv:Autonomies a skos:ConceptScheme ;
+    skos:prefLabel "Selbstständigkeitsgrad"@de , "autonomy"@en .
+cv:aut_guided a skos:Concept ; skos:inScheme cv:Autonomies ; skos:topConceptOf cv:Autonomies ;
+    skos:notation "guided" ; skos:prefLabel "angeleitet"@de , "guided"@en .
+cv:aut_independent a skos:Concept ; skos:inScheme cv:Autonomies ; skos:topConceptOf cv:Autonomies ;
+    skos:notation "independent" ; skos:prefLabel "selbstständig"@de , "independent"@en .
+cv:aut_responsible a skos:Concept ; skos:inScheme cv:Autonomies ; skos:topConceptOf cv:Autonomies ;
+    skos:notation "responsible" ; skos:prefLabel "eigenverantwortlich"@de , "self-responsible"@en .
+
+cv:KnowledgeTypes a skos:ConceptScheme ;
+    skos:prefLabel "Wissensarten (Anderson/Krathwohl)"@de , "knowledge types"@en .
+cv:kt_factual a skos:Concept ; skos:inScheme cv:KnowledgeTypes ; skos:topConceptOf cv:KnowledgeTypes ;
+    skos:notation "factual" ; skos:prefLabel "Faktenwissen"@de , "factual"@en .
+cv:kt_conceptual a skos:Concept ; skos:inScheme cv:KnowledgeTypes ; skos:topConceptOf cv:KnowledgeTypes ;
+    skos:notation "conceptual" ; skos:prefLabel "konzeptuelles Wissen"@de , "conceptual"@en .
+cv:kt_procedural a skos:Concept ; skos:inScheme cv:KnowledgeTypes ; skos:topConceptOf cv:KnowledgeTypes ;
+    skos:notation "procedural" ; skos:prefLabel "prozedurales Wissen"@de , "procedural"@en .
+cv:kt_metacognitive a skos:Concept ; skos:inScheme cv:KnowledgeTypes ; skos:topConceptOf cv:KnowledgeTypes ;
+    skos:notation "metacognitive" ; skos:prefLabel "metakognitives Wissen"@de , "metacognitive"@en .
+
+# -----------------------------------------------------------------------------
+# Prüfungsarten (Kern) – Profile hängen feinere Arten darunter
+# -----------------------------------------------------------------------------
+cv:AssessmentKinds a skos:ConceptScheme ; cur:llmEnum true ;
+    skos:prefLabel "Prüfungsarten"@de , "assessment kinds"@en .
+cv:ak_exam a skos:Concept ; skos:inScheme cv:AssessmentKinds ; skos:topConceptOf cv:AssessmentKinds ;
+    skos:notation "exam" ; skos:prefLabel "Prüfung (gesamt)"@de , "examination"@en .
+cv:ak_examPart a skos:Concept ; skos:inScheme cv:AssessmentKinds ; skos:topConceptOf cv:AssessmentKinds ;
+    skos:notation "examPart" ; skos:prefLabel "Prüfungsteil"@de , "examination part"@en .
+cv:ak_examArea a skos:Concept ; skos:inScheme cv:AssessmentKinds ; skos:topConceptOf cv:AssessmentKinds ;
+    skos:notation "examArea" ; skos:prefLabel "Prüfungsbereich"@de , "examination area"@en .
+cv:ak_moduleExam a skos:Concept ; skos:inScheme cv:AssessmentKinds ; skos:topConceptOf cv:AssessmentKinds ;
+    skos:notation "moduleExam" ; skos:prefLabel "Modulprüfung/Prüfungsleistung"@de , "module examination"@en .
+cv:ak_coursework a skos:Concept ; skos:inScheme cv:AssessmentKinds ; skos:topConceptOf cv:AssessmentKinds ;
+    skos:notation "coursework" ; skos:prefLabel "Studienleistung"@de , "coursework"@en .
+cv:ak_prerequisite a skos:Concept ; skos:inScheme cv:AssessmentKinds ; skos:topConceptOf cv:AssessmentKinds ;
+    skos:notation "prerequisite" ; skos:prefLabel "Prüfungsvorleistung"@de , "prerequisite assessment"@en .
+cv:ak_placement a skos:Concept ; skos:inScheme cv:AssessmentKinds ; skos:topConceptOf cv:AssessmentKinds ;
+    skos:notation "placement" ; skos:prefLabel "Einstufung"@de , "placement test"@en .
+cv:ak_formative a skos:Concept ; skos:inScheme cv:AssessmentKinds ; skos:topConceptOf cv:AssessmentKinds ;
+    skos:notation "formative" ; skos:prefLabel "lernbegleitend"@de , "formative"@en .
+
+# -----------------------------------------------------------------------------
+# Pipeline-Stufen
+# -----------------------------------------------------------------------------
+cv:Stages a skos:ConceptScheme ;
+    skos:prefLabel "Pipeline-Stufen"@de , "pipeline stages"@en .
+cv:stage_X0 a skos:Concept ; skos:inScheme cv:Stages ; skos:topConceptOf cv:Stages ;
+    skos:notation "X0" ; skos:prefLabel "X0 Parsen (ohne LLM)"@de , "X0 parsing"@en .
+cv:stage_X1 a skos:Concept ; skos:inScheme cv:Stages ; skos:topConceptOf cv:Stages ;
+    skos:notation "X1" ; skos:prefLabel "X1 Dokumentprofil und Gerüst"@de , "X1 profile and skeleton"@en .
+cv:stage_X2 a skos:Concept ; skos:inScheme cv:Stages ; skos:topConceptOf cv:Stages ;
+    skos:notation "X2" ; skos:prefLabel "X2 Segmentieren (ohne LLM)"@de , "X2 segmentation"@en .
+cv:stage_X3 a skos:Concept ; skos:inScheme cv:Stages ; skos:topConceptOf cv:Stages ;
+    skos:notation "X3" ; skos:prefLabel "X3 Rahmenteile"@de , "X3 frame parts"@en .
+cv:stage_X4 a skos:Concept ; skos:inScheme cv:Stages ; skos:topConceptOf cv:Stages ;
+    skos:notation "X4" ; skos:prefLabel "X4 Aussagen je Einheit"@de , "X4 statements per unit"@en .
+cv:stage_X5 a skos:Concept ; skos:inScheme cv:Stages ; skos:topConceptOf cv:Stages ;
+    skos:notation "X5" ; skos:prefLabel "X5 Prüfen (ohne LLM)"@de , "X5 checks"@en .
+cv:stage_X6 a skos:Concept ; skos:inScheme cv:Stages ; skos:topConceptOf cv:Stages ;
+    skos:notation "X6" ; skos:prefLabel "X6 Reparatur"@de , "X6 repair"@en .
+cv:stage_N1 a skos:Concept ; skos:inScheme cv:Stages ; skos:topConceptOf cv:Stages ;
+    skos:notation "N1" ; skos:prefLabel "N1 Zerlegen und Normalisieren"@de , "N1 decomposition and normalisation"@en .
+cv:stage_N2 a skos:Concept ; skos:inScheme cv:Stages ; skos:topConceptOf cv:Stages ;
+    skos:notation "N2" ; skos:prefLabel "N2 Anbinden an Normdaten und Rahmen"@de , "N2 alignment"@en .
+cv:stage_G1 a skos:Concept ; skos:inScheme cv:Stages ; skos:topConceptOf cv:Stages ;
+    skos:notation "G1" ; skos:prefLabel "G1 Kanten zwischen Curricula"@de , "G1 edges"@en .
+
+# -----------------------------------------------------------------------------
+# Knotentypen für importierte Rahmen und Raster (bereichsneutral)
+# Rahmen (cur:CompetencyFramework) werden einmal importiert; ihre Zeilen sind
+# Kriterien, ihre Zellen niveaugebundene Standard-Aussagen.
+# -----------------------------------------------------------------------------
+cv:FrameworkNodeTypes a skos:ConceptScheme ;
+    skos:prefLabel "Knotentypen für Kompetenzrahmen"@de , "framework node types"@en .
+cv:nt_criterion a cur:NodeType ; skos:inScheme cv:FrameworkNodeTypes ; skos:topConceptOf cv:FrameworkNodeTypes ; skos:broader cv:fn_area ;
+    skos:notation "criterion" ; skos:prefLabel "Kriterium/Kompetenzbereich eines Rahmens"@de , "framework criterion"@en ;
+    skos:definition "Zeile eines Rasters oder Bereich eines Rahmens (GER-Skala, DigComp-Kompetenz, KMK-Kompetenzbereich); trägt die Zellen als Standard-Aussagen mit Niveauzuordnung."@de ;
+    cur:extractionDepth cv:depth_full .
+cv:nt_subcriterion a cur:NodeType ; skos:inScheme cv:FrameworkNodeTypes ; skos:topConceptOf cv:FrameworkNodeTypes ; skos:broader cv:fn_subunit ;
+    skos:notation "subcriterion" ; skos:prefLabel "Teilkriterium eines Rahmens"@de , "framework sub-criterion"@en ;
+    cur:typicalParent cv:nt_criterion ; cur:extractionDepth cv:depth_full .
+
+# -----------------------------------------------------------------------------
+# Körnung von Inhaltskonzepten (Andockpunkt Inhalt und Thema)
+# -----------------------------------------------------------------------------
+cv:ContentGranularities a skos:ConceptScheme ;
+    skos:prefLabel "Körnung von Inhaltskonzepten"@de , "content granularities"@en .
+cv:gran_topic a skos:Concept ; skos:inScheme cv:ContentGranularities ; skos:topConceptOf cv:ContentGranularities ;
+    skos:notation "topic" ; skos:prefLabel "Thema"@de , "topic"@en ;
+    skos:definition "Grober Weltausschnitt, wie er in Titeln von Bereichen und Einheiten steht („Elektrizität“, „Klimawandel“, „Ernährung“). Einstieg der Themensuche."@de .
+cv:gran_concept a skos:Concept ; skos:inScheme cv:ContentGranularities ; skos:topConceptOf cv:ContentGranularities ;
+    skos:notation "concept" ; skos:prefLabel "Begriff"@de , "concept"@en ;
+    skos:definition "Fachbegriff, Gesetz, Verfahren („Ohmsches Gesetz“, „Photosynthese“, „Dreisatz“)."@de .
+cv:gran_entity a skos:Concept ; skos:inScheme cv:ContentGranularities ; skos:topConceptOf cv:ContentGranularities ;
+    skos:notation "entity" ; skos:prefLabel "Entität"@de , "entity"@en ;
+    skos:definition "Einzelnes Ding, Person, Ort, Werk, Ereignis („Martin Luther“, „Rhein“, „Faust“)."@de .

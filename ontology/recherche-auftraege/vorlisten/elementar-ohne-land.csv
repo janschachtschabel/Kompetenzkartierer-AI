@@ -1,0 +1,43 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+ohne-land;Wickeln;cue;ctx:body-care;Körperpflege, Wickeln, Toilette;body;;;0.90;ja;;elem:lex-c2b0a1264f09
+ohne-land;Morgenkreis;cue;ctx:circle-time;Gesprächs- und Kinderkreis;body;;;0.90;ja;;elem:lex-ef0d78519bb0
+ohne-land;Freispiel;pref;ctx:free-play;Freispiel;body, heading;;;0.90;ja;;elem:lex-d0333755616f
+ohne-land;Mahlzeiten;pref;ctx:meals;Mahlzeiten;body, heading;;;0.90;ja;;elem:lex-6eb5dea46f51
+ohne-land;Projektarbeit;cue;ctx:project;Projekt;body, heading;;;0.85;ja;;elem:lex-a8e976fe2c22
+ohne-land;Eingewöhnung;cue;ctx:settling-in, elem:Uebergang, elem:p-uebergaenge;Eingewöhnungsphase, Übergänge, Übergänge gestalten;heading;;;0.90;ja;;elem:lex-c6840f54b314
+ohne-land;^\d+(\.\d+)*\s+.+\s+\d+$;cue;cv:occ_toc;Inhaltsverzeichnis;toc;;;0.9;nein;"Inhaltsverzeichniszeile mit Seitenzahl; liefert in X1 den Gliederungsbaum und die gedruckten Seiten.";elem:cue-toc
+ohne-land;Rahmenlehrplan;negative;cv:sec_vocational;Berufsbildung;titlePage;;;0.60;ja;Mit 'Fachschule Sozialpädagogik' gehört das Dokument zur Berufsbildung, nicht zum Elementarprofil.;elem:lex-cdc6a1d14e7e
+ohne-land;Rahmenlehrplan Fachschule Sozialpädagogik;negative;cv:sec_vocational;Berufsbildung;titlePage;;;0.95;nein;Ausbildung der Erzieherinnen und Erzieher – Profil beruf:, nicht Elementarbildung.;elem:cue-rahmenlehrplan-fachschule
+ohne-land;(von )?(\d+|Geburt) bis (\d+|zum (Schuleintritt|Ende der Grundschulzeit))( Jahren?)?;cue;cv:time_age;Alter (Jahre);;;;0.85;nein;"Altersband im Wortlaut in cur:timeText; Monate nur, wenn genannt (Jahre × 12 ist Normierung, Herkunft cv:orig_rule).";elem:cue-alter-bis
+ohne-land;Alltagssituation;cue;elem:Alltagssituation;Pädagogische Alltagssituation;heading;;;0.80;ja;;elem:lex-3a7a803560cc
+ohne-land;Kompetenzbereich;homonym;elem:Basiskompetenzen;Basiskompetenzen;;;;0.4;nein;"Kompetenz ohne Weltausschnitt (Ich-, Sozial-, lernmethodische Kompetenz) → Basiskompetenzen; sonst Bildungsbereich.";elem:cue-gen-kompetenzbereich
+ohne-land;Beobachtung und Dokumentation;pref;elem:BeobachtungDokumentation;Beobachtung und Dokumentation;heading;;;0.95;ja;;elem:lex-3e0ec8d0312c
+ohne-land;Bildungsbereich;pref;elem:Bildungsbereich;Bildungsbereich;heading, toc;;;0.90;ja;6 bis 11 parallel aufgebaute Kapitel zu Sprache, Mathematik, Körper usw.;elem:lex-e7162497c5d5
+ohne-land;Bildungsfeld;cue;elem:Bildungsbereich;Bildungsbereich;heading;;;0.80;ja;;elem:lex-5f971114a514
+ohne-land;Erfahrungsfeld;homonym;elem:Bildungsbereich;Bildungsbereich;heading;;;0.60;ja;;elem:lex-6f3357130282
+ohne-land;Erfahrungsfeld;cue;elem:Bildungsbereich;Bildungsbereich;;;;0.6;nein;;elem:cue-gen-erfahrungsfeld
+ohne-land;Kompetenzbereich;homonym;elem:Bildungsbereich;Bildungsbereich;heading;;;0.40;ja;Kann Strukturknoten oder Kompetenzklassifikation sein.;elem:lex-224fc83ade8d
+ohne-land;Lernbereich;homonym;elem:Bildungsbereich;Bildungsbereich;heading;;;0.50;ja;In Schul-Lehrplänen Fächerverbund.;elem:lex-3ccd4daeeb37
+ohne-land;Bildungs- und Erziehungsziele;cue;elem:Bildungsziel;Bildungs- und Entwicklungsziel;;;;0.8;nein;;elem:cue-ziele-bez
+ohne-land;Ziele;cue;elem:Bildungsziel;Bildungs- und Entwicklungsziel;heading;;;0.70;ja;Listen mit 'Das Kind …', 'Kinder …' oder 'Pädagogische Fachkräfte …' (dann Adressat Fachkraft).;elem:lex-75252073d4d7
+ohne-land;^(Das Kind|Die Kinder|Kinder)\b;cue;elem:Bildungsziel, cv:addr_learner;Bildungs- und Entwicklungsziel, Lernende;;;;0.75;nein;"„Kinder lernen …“ kann Ziel oder Beschreibung sein; bei Zweifel cv:kind_unclassified.";elem:cue-kind-satz
+ohne-land;^(Die )?(pädagogischen? Fachkr(a|ä)fte?|Fachkr(a|ä)fte?|Erzieherinnen und Erzieher|Tagespflegepersonen?)\b;cue;elem:FachkraftAufgabe, cv:addr_educator;Aufgabe der pädagogischen Fachkraft, Lehrende/Fachkräfte;;;;0.9;nein;;elem:cue-fachkraft
+ohne-land;Aufgaben der pädagogischen Fachkräfte;cue;elem:Handlungsfeld;Handlungsfeld der Fachkräfte;heading;;;0.85;ja;;elem:lex-b362d511e23e
+ohne-land;Handlungsfeld;homonym;elem:Handlungsfeld;Handlungsfeld der Fachkräfte;heading;;;0.40;ja;Kann Aufgabenbereich der Fachkraft oder Bildungsbereich bezeichnen.;elem:lex-90cca6a2d791
+ohne-land;Praxisbeispiel;pref;elem:Praxisbeispiel;Praxisbeispiel;box, heading;;;0.90;ja;;elem:lex-3d3496f057e5
+ohne-land;Leitperspektive;cue;elem:Querschnitt;Querschnitt/Leitprinzip;heading;;;0.70;ja;Schulischer Begriff, vereinzelt in 0–10-Plänen.;elem:lex-2acc4fd78cd2
+ohne-land;Querschnittsaufgabe;cue;elem:Querschnitt;Querschnitt/Leitprinzip;heading;;;0.90;ja;;elem:lex-4eeaf3cb040f
+ohne-land;Querschnittsthema;cue;elem:Querschnitt;Querschnitt/Leitprinzip;heading;;;0.90;ja;;elem:lex-e98f5ba417fe
+ohne-land;\?\s*$;cue;elem:Reflexionsfrage;Reflexionsfrage;;;;0.85;nein;Fragesätze sind nie Ziele, auch wenn sie ein Ziel umschreiben.;elem:cue-reflexionsfrage
+ohne-land;Reflexionsfragen;cue;elem:Reflexionsfrage;Reflexionsfrage;box, heading;;;0.90;ja;Fragesätze an Fachkräfte.;elem:lex-c41971aa1aaf
+ohne-land;Schwerpunkt;homonym;elem:Teilbereich;Teilbereich;body, heading;;;0.40;ja;Kann Teilbereich, Inhalt oder pädagogische Priorität sein.;elem:lex-f551d51384fe
+ohne-land;Schwerpunkt;homonym;elem:Teilbereich;Teilbereich;;;;0.4;nein;"Überschrift mit eigenen Zielen darunter → Teilbereich; Stichwort in einer Liste → Inhalt. Nicht als Synonym behandeln.";elem:cue-gen-schwerpunkt
+ohne-land;Teilbereich;pref;elem:Teilbereich;Teilbereich;heading;;;0.80;ja;;elem:lex-3c8b85d6a1db
+ohne-land;Übergänge;pref;elem:Uebergang, elem:p-uebergaenge;Übergänge, Übergänge gestalten;heading;;;0.90;ja;;elem:lex-01b253826824
+ohne-land;Bildungs- und Erziehungspartnerschaft;cue;elem:Zusammenarbeit, elem:p-zusammenarbeit-familie;Zusammenarbeit, Zusammenarbeit mit Familien;heading;;;0.90;ja;;elem:lex-c6b7135302e4
+ohne-land;Zusammenarbeit mit Familien;cue;elem:Zusammenarbeit, elem:p-zusammenarbeit-familie;Zusammenarbeit, Zusammenarbeit mit Familien;heading;;;0.90;ja;;elem:lex-778db8cfac97
+ohne-land;\b(zunehmend|allmählich|erste[nrs]?|mit Unterstützung|selbstständig|immer mehr)\b;cue;elem:developmentQualifier;Entwicklungsqualifikator;;;;0.7;nein;"In N1 wörtlich als elem:developmentQualifier speichern; keine Niveaustufe daraus machen.";elem:cue-entwicklungsqualifikator
+ohne-land;Konzeption;homonym;elem:dt-Einrichtungskonzeption;Einrichtungskonzeption;titlePage;;;0.50;ja;Mit Kita- oder Trägername im Titel.;elem:lex-d9db336b37dd
+ohne-land;Konzeption;cue;elem:dt-Einrichtungskonzeption;Einrichtungskonzeption;titlePage;;;0.7;nein;"Nur mit Kita- oder Trägername auf der Titelseite; Landesministerium als Herausgeber spricht für einen Bildungsplan.";elem:cue-konzeption-kita
+ohne-land;U3;cue;elem:set-krippe, cv:time_age;Krippe, Alter (Jahre);;;;0.85;nein;"Altersband 0–36 Monate (cur:from 0, cur:to 36, Einheit Monate); oft ergänzendes Teilcurriculum.";elem:cue-u3
+ohne-land;Soziale Kompetenzen;homonym;kd:ec-social;Soziale Kompetenzen;body, heading;;;0.60;ja;Kann Kompetenzdimension oder Bereichsthema sein.;elem:lex-a909cebb56af

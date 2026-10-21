@@ -1,0 +1,5 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-BY;LPO I;cue;hs:dt-Lehramt;Lehramtsrechtliche Vorgabe;;;;0.7;nein;;hs:lex-dt_TeacherTrainingRegulation-cue-lpo-i
+DE-BY;FPO;cue;hs:dt-Pruefungsordnung;(Fach-)Prüfungsordnung;;;;0.7;nein;;hs:lex-dt_ExaminationRegulation-cue-fpo
+DE-BY;FPSO;cue;hs:dt-SPO;Studien- und Prüfungsordnung;;;;0.7;nein;Fachprüfungs- und Studienordnung (u. a. TU München).;hs:lex-dt_CombinedStudyExaminationRegulation-cue-fpso
+DE-BY;Eignungsfeststellungsordnung;alt;hs:dt-Zugangsordnung;Zugangs-/Zulassungsordnung;;;;0.8;nein;;hs:lex-dt_AdmissionRegulation-alt-eignungsfeststellungsordnung

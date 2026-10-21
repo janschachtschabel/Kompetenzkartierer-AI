@@ -1,0 +1,3119 @@
+# =============================================================================
+# GENERIERT von werkzeuge/portiere_elementar_lexikon.py aus
+# elementarbildung/extraktionshinweise-laender.ttl (ELEM V2, 201 Hinweise).
+# Nicht von Hand ändern: Quelle oder Skript anpassen und neu erzeugen.
+# Je Land ein Hinweis; Korrekturen laut ELEM-Bericht H.6 Nr. 2–6 angewandt.
+# =============================================================================
+@prefix ctx: <https://w3id.org/wlo/curriculum/context/> .
+@prefix cur: <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv: <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix elem: <https://w3id.org/wlo/curriculum/profile/early-childhood#> .
+@prefix kd: <https://w3id.org/wlo/curriculum/dimension/> .
+@prefix land: <https://w3id.org/wlo/curriculum/region/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+elem:Terminology cur:hasCue elem:lex-01b253826824,
+        elem:lex-024cb35df5ad-SL,
+        elem:lex-0374cb61e54c-BY,
+        elem:lex-04cac81a5d6e-RP,
+        elem:lex-04cac81a5d6e-TH,
+        elem:lex-04d19a10ef3a-BW,
+        elem:lex-0542d8578512-TH,
+        elem:lex-074c15ea6e27-BE,
+        elem:lex-0caa81a08540-BB,
+        elem:lex-0fff4d927f80-RP,
+        elem:lex-141db382e7fb-BY,
+        elem:lex-14ac6df656f1-NW,
+        elem:lex-1803549739ca-BE,
+        elem:lex-1859c6d670d0-MV,
+        elem:lex-18a3dd4fa837-BW,
+        elem:lex-18a3dd4fa837-HH,
+        elem:lex-18a3dd4fa837-SH,
+        elem:lex-18f264006c02-RP,
+        elem:lex-19cf6442b7d0-BE,
+        elem:lex-1b906f37fd4b-BB,
+        elem:lex-1b906f37fd4b-BE,
+        elem:lex-1b906f37fd4b-BW,
+        elem:lex-1b906f37fd4b-NW,
+        elem:lex-1b906f37fd4b-ST,
+        elem:lex-1ba7e6b2a375-NI,
+        elem:lex-1d002a5aa4b7-SH,
+        elem:lex-1e360e4ef6f4-BB,
+        elem:lex-1e8252a7abf7-BE,
+        elem:lex-1ed6a29b0d3c-NW,
+        elem:lex-1ff256fa1262-TH,
+        elem:lex-20061e0f7c57-SN,
+        elem:lex-20061e0f7c57-TH,
+        elem:lex-201764ac3dbc-BB,
+        elem:lex-203fcaeb4339-SH,
+        elem:lex-2194c3d58e15-BW,
+        elem:lex-224fc83ade8d,
+        elem:lex-29b9b539253b-TH,
+        elem:lex-2aa4f1fa2762-HH,
+        elem:lex-2acc4fd78cd2,
+        elem:lex-2c0b1256d617-BY,
+        elem:lex-2c0b1256d617-HE,
+        elem:lex-2d9d57ce21d7-BW,
+        elem:lex-2e92e77e7579-BY,
+        elem:lex-302b90fdf59a-BE,
+        elem:lex-30c7f133c636-DE,
+        elem:lex-343c7bec4b04-BE,
+        elem:lex-348a40c457fa-BY,
+        elem:lex-376cd2c7a7c9-HH,
+        elem:lex-388e9f3ea4eb-BY,
+        elem:lex-3a68e61d6dd0-HE,
+        elem:lex-3a7a803560cc,
+        elem:lex-3b6b2b7e34e7-HB,
+        elem:lex-3c8b85d6a1db,
+        elem:lex-3ccd4daeeb37,
+        elem:lex-3ce0e5b0e5fb-NI,
+        elem:lex-3d3496f057e5,
+        elem:lex-3e0ec8d0312c,
+        elem:lex-3e53709be652-RP,
+        elem:lex-3e7d90260b4e-MV,
+        elem:lex-4301b6def029-BB,
+        elem:lex-43fe7cb04dd7-TH,
+        elem:lex-468e01df2934-SN,
+        elem:lex-482d50c896c7-SN,
+        elem:lex-48c6e33c78bd-HH,
+        elem:lex-4bb49d10ac5a-NI,
+        elem:lex-4c3e2d9c45f0-BW,
+        elem:lex-4c7267394a93-NI,
+        elem:lex-4e67a1f94e45-BY,
+        elem:lex-4eeaf3cb040f,
+        elem:lex-4f250f75b224-TH,
+        elem:lex-4f90f1a655d8-BY,
+        elem:lex-53b803df67ae-BW,
+        elem:lex-53c7abbd640a-NI,
+        elem:lex-543b5f00abe9-BY,
+        elem:lex-543b5f00abe9-HE,
+        elem:lex-545c81ba3161-HB,
+        elem:lex-55571cc3f904-BE,
+        elem:lex-55571cc3f904-BY,
+        elem:lex-55571cc3f904-HE,
+        elem:lex-55571cc3f904-RP,
+        elem:lex-5561806e60fd-BB,
+        elem:lex-55948a9ea44b-DE,
+        elem:lex-57480152ad17-BY,
+        elem:lex-57480152ad17-HE,
+        elem:lex-599088f67e35-MV,
+        elem:lex-5b2ed4e6ad72-MV,
+        elem:lex-5e00e1fb7570-BY,
+        elem:lex-5f971114a514,
+        elem:lex-5fd77f8bddea-MV,
+        elem:lex-6019c314c9b3-HH,
+        elem:lex-60c972917bf3-BB,
+        elem:lex-60fdecfbd358-BY,
+        elem:lex-61e6b09c4251-SH,
+        elem:lex-6745fe8a167a-BY,
+        elem:lex-67d3bd6271dc-DE,
+        elem:lex-6a2e14ff84de-BW,
+        elem:lex-6ab93a1a4165-DE,
+        elem:lex-6d0d27eeec39-RP,
+        elem:lex-6d9a73bb42cf-TH,
+        elem:lex-6eb5dea46f51,
+        elem:lex-6f3357130282,
+        elem:lex-749f588fdbd7-SL,
+        elem:lex-75252073d4d7,
+        elem:lex-753184d3b03d-ST,
+        elem:lex-75cf93afdef1-TH,
+        elem:lex-7739a3ba5685-HB,
+        elem:lex-778db8cfac97,
+        elem:lex-7c2bb94f5e6c-NI,
+        elem:lex-7cc79407232b-BY,
+        elem:lex-7cc79407232b-HE,
+        elem:lex-80122321ca4d-NW,
+        elem:lex-80122321ca4d-RP,
+        elem:lex-819cc4b809eb-BB,
+        elem:lex-8206e53b8789-NW,
+        elem:lex-8433d5a790aa-BB,
+        elem:lex-8519e6698cc0-SH,
+        elem:lex-867d82f0769a-RP,
+        elem:lex-8d6f0a76c05e-MV,
+        elem:lex-8d6f0a76c05e-RP,
+        elem:lex-8e358ed6e2ad-SH,
+        elem:lex-9005d6d928ec-ST,
+        elem:lex-904034c9aaf3-BY,
+        elem:lex-904034c9aaf3-SL,
+        elem:lex-90cca6a2d791,
+        elem:lex-91da8e00d3ca-SH,
+        elem:lex-92afbfd1cacf-TH,
+        elem:lex-93764b7938b9-BB,
+        elem:lex-952756eb0ee1-BY,
+        elem:lex-96c9613429f0-SH,
+        elem:lex-9c28a41449ab-NW,
+        elem:lex-9ca061157229-SL,
+        elem:lex-9d1804f11d81-BB,
+        elem:lex-9dba6833e71a-BB,
+        elem:lex-9dba6833e71a-BE,
+        elem:lex-9dba6833e71a-BY,
+        elem:lex-a10feda9b13c-SL,
+        elem:lex-a503acdb0f69-RP,
+        elem:lex-a67149eb49aa-HB,
+        elem:lex-a69228968b70-BB,
+        elem:lex-a7d71ea98cd2-NW,
+        elem:lex-a8e976fe2c22,
+        elem:lex-a8f42e151dcd-TH,
+        elem:lex-a909cebb56af,
+        elem:lex-a9fae623dece-NI,
+        elem:lex-aac763b5a114-BY,
+        elem:lex-aafe0393288d-NW,
+        elem:lex-ab9d991a43f7-BY,
+        elem:lex-abb1a65ac887-BW,
+        elem:lex-abb1a65ac887-HH,
+        elem:lex-abb1a65ac887-ST,
+        elem:lex-ae77070244be-NI,
+        elem:lex-ae7ad1da4203-NW,
+        elem:lex-ae7ad1da4203-RP,
+        elem:lex-b048dba75b91-SH,
+        elem:lex-b130fa11f77d-BE,
+        elem:lex-b27c5868b3ce-NI,
+        elem:lex-b362d511e23e,
+        elem:lex-b3cbef8c6693-BB,
+        elem:lex-b51cd53a21e3-SN,
+        elem:lex-b79587bbc6bd-BY,
+        elem:lex-b8336389834d-HH,
+        elem:lex-b8ffc650198b-SN,
+        elem:lex-b959c4760ad6-DE,
+        elem:lex-b959c4760ad6-MV,
+        elem:lex-b959c4760ad6-ST,
+        elem:lex-bccc20e34ace-BE,
+        elem:lex-bd8311cf9323-NI,
+        elem:lex-bda64918ae14-BB,
+        elem:lex-bde9c6a566a2-TH,
+        elem:lex-beef05cd95f6-SH,
+        elem:lex-c04f9a3b64d0-NI,
+        elem:lex-c1d10a2e0523-RP,
+        elem:lex-c2b0a1264f09,
+        elem:lex-c2f956ef0981-DE,
+        elem:lex-c2f956ef0981-MV,
+        elem:lex-c2f956ef0981-ST,
+        elem:lex-c3cbdea6f093-DE,
+        elem:lex-c3cbdea6f093-MV,
+        elem:lex-c3e3f0215ffb-BY,
+        elem:lex-c41971aa1aaf,
+        elem:lex-c6401438d00f-ST,
+        elem:lex-c6840f54b314,
+        elem:lex-c6b7135302e4,
+        elem:lex-cb126465c2d6-BW,
+        elem:lex-cc2b1d8f16a3-BY,
+        elem:lex-cdc6a1d14e7e,
+        elem:lex-cfa2bdd1a5c8-HB,
+        elem:lex-cfc402c1ecbc-NW,
+        elem:lex-d0333755616f,
+        elem:lex-d09a7b3e78ea-TH,
+        elem:lex-d0f5e9a642ed-BY,
+        elem:lex-d0f9960520c8-BW,
+        elem:lex-d3f636d97215-NW,
+        elem:lex-d3f636d97215-SN,
+        elem:lex-d3f636d97215-TH,
+        elem:lex-d62346b371f2-BB,
+        elem:lex-d63b0be95c2c-BW,
+        elem:lex-d92658d5ddf9-NW,
+        elem:lex-d92658d5ddf9-SH,
+        elem:lex-d9db336b37dd,
+        elem:lex-db90ecd60536-BE,
+        elem:lex-dd56a4451bd7-BY,
+        elem:lex-dd91015e3314-SH,
+        elem:lex-dda49ff507e8-SL,
+        elem:lex-e0b34d56629d-TH,
+        elem:lex-e149fa5ee341-HB,
+        elem:lex-e1bec2041a0a-BE,
+        elem:lex-e1bec2041a0a-BW,
+        elem:lex-e1bec2041a0a-TH,
+        elem:lex-e1daaaaa5575-DE,
+        elem:lex-e276f03e57ad-BB,
+        elem:lex-e32c4a1172f0-HH,
+        elem:lex-e452262da5ef-HB,
+        elem:lex-e7162497c5d5,
+        elem:lex-e8cad8d63522-RP,
+        elem:lex-e9054a60e197-RP,
+        elem:lex-e98f5ba417fe,
+        elem:lex-ea335334d618-HB,
+        elem:lex-ed502a997692-SL,
+        elem:lex-ee70752b06dd-RP,
+        elem:lex-eef258b97182-BB,
+        elem:lex-ef0d78519bb0,
+        elem:lex-f01fc5cbb326-BW,
+        elem:lex-f22bc5636e68-RP,
+        elem:lex-f44805552b39-RP,
+        elem:lex-f47d7c4e2cc1-BB,
+        elem:lex-f551d51384fe,
+        elem:lex-f56d91682573-BW,
+        elem:lex-f56d91682573-NW,
+        elem:lex-f8bba26e16e5-HH,
+        elem:lex-f9f210ff4865-BW,
+        elem:lex-f9f210ff4865-DE,
+        elem:lex-f9f210ff4865-NI,
+        elem:lex-f9f210ff4865-SN,
+        elem:lex-f9f210ff4865-ST,
+        elem:lex-fa5c6c1351a8-RP,
+        elem:lex-fadf6f6441df-HB,
+        elem:lex-fe37b9abc298-BB,
+        elem:lex-ff3e263ac916-MV .
+
+elem:lex-01b253826824 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-01b253826824> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:Uebergang,
+        elem:p-uebergaenge ;
+    cur:occursIn cv:occ_heading ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Übergänge" ;
+    cur:verified true .
+
+elem:lex-024cb35df5ad-SL a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-024cb35df5ad> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-personal-sozial,
+        elem:f-religion-weltanschauung,
+        elem:f-werte-ethik-philosophie ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Soziale und kulturelle Umwelt, Werteerziehung und religiöse Bildung" ;
+    cur:verified false .
+
+elem:lex-0374cb61e54c-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-0374cb61e54c> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Handlungsfeld ;
+    cur:occursIn cv:occ_heading,
+        cv:occ_toc ;
+    cur:recognitionHint "Kapitel 8 des BayBEP."@de ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Schlüsselprozesse für Bildungs- und Erziehungsqualität" ;
+    cur:verified true .
+
+elem:lex-04cac81a5d6e-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-04cac81a5d6e> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-religion-weltanschauung ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Religiöse Bildung" ;
+    cur:verified true .
+
+elem:lex-04cac81a5d6e-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-04cac81a5d6e> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-religion-weltanschauung ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Religiöse Bildung" ;
+    cur:verified true .
+
+elem:lex-04d19a10ef3a-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-04d19a10ef3a> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-koerper,
+        elem:f-lebenspraxis ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Körper und Lebensweise" ;
+    cur:verified true .
+
+elem:lex-0542d8578512-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-0542d8578512> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-musik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Musikalische Bildung" ;
+    cur:verified true .
+
+elem:lex-074c15ea6e27-BE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-074c15ea6e27> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Handlungsfeld ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Pädagogische Aufgabenbereiche" ;
+    cur:verified true .
+
+elem:lex-0caa81a08540-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-0caa81a08540> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Altersübergreifend für Krippe, Kita, Hort und Kindertagespflege. Gliedert nach Alltagssituationen und 10 Bildungsbereichen."@de ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Bildungsplan – Erweiterte Grundsätze elementarer Bildung" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-0fff4d927f80-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-0fff4d927f80> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:BeobachtungDokumentation ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Bildungs- und Lerndokumentation" ;
+    cur:verified true .
+
+elem:lex-141db382e7fb-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-141db382e7fb> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-literacy,
+        elem:f-sprache ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Sprache und Literacy" ;
+    cur:verified true .
+
+elem:lex-14ac6df656f1-NW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-14ac6df656f1> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-gesundheit-ernaehrung,
+        elem:f-koerperwahrnehmung-sexualitaet ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Körper, Gesundheit und Ernährung" ;
+    cur:verified true .
+
+elem:lex-1803549739ca-BE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-1803549739ca> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-bewegung,
+        elem:f-gesundheit-ernaehrung,
+        elem:f-koerper ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Gesundheit und Bewegung" ;
+    cur:verified true .
+
+elem:lex-1859c6d670d0-MV a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-1859c6d670d0> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-aesthetik,
+        elem:f-bildnerisch,
+        elem:f-musik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Musik, ästhetische Bildung und bildnerisches Gestalten" ;
+    cur:verified false .
+
+elem:lex-18a3dd4fa837-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-18a3dd4fa837> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:p-inklusion ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Inklusion" ;
+    cur:verified true .
+
+elem:lex-18a3dd4fa837-HH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-18a3dd4fa837> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:p-inklusion ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Inklusion" ;
+    cur:verified true .
+
+elem:lex-18a3dd4fa837-SH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-18a3dd4fa837> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:p-inklusion ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Inklusion" ;
+    cur:verified true .
+
+elem:lex-18f264006c02-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-18f264006c02> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-sinneswahrnehmung ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Wahrnehmung" ;
+    cur:verified true .
+
+elem:lex-19cf6442b7d0-BE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-19cf6442b7d0> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:Bildungsziel,
+        elem:Qualitaetsanspruch ;
+    cur:occursIn cv:occ_body,
+        cv:occ_box ;
+    cur:recognitionHint "Nummeriert QA1, QA2 … – Adressat meist Fachkraft."@de ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Qualitätsanspruch" ;
+    cur:verified true .
+
+elem:lex-1b906f37fd4b-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-1b906f37fd4b> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-sprache ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Sprache und Kommunikation" ;
+    cur:verified true .
+
+elem:lex-1b906f37fd4b-BE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-1b906f37fd4b> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-sprache ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Sprache und Kommunikation" ;
+    cur:verified true .
+
+elem:lex-1b906f37fd4b-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-1b906f37fd4b> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-sprache ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Sprache und Kommunikation" ;
+    cur:verified true .
+
+elem:lex-1b906f37fd4b-NW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-1b906f37fd4b> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-sprache ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Sprache und Kommunikation" ;
+    cur:verified true .
+
+elem:lex-1b906f37fd4b-ST a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-1b906f37fd4b> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-sprache ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Sprache und Kommunikation" ;
+    cur:verified true .
+
+elem:lex-1ba7e6b2a375-NI a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-1ba7e6b2a375> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-emotionen,
+        elem:f-soziale-beziehungen ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Emotionale Entwicklung und soziales Lernen" ;
+    cur:verified true .
+
+elem:lex-1d002a5aa4b7-SH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-1d002a5aa4b7> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-demokratie-gesellschaft,
+        elem:p-partizipation ;
+    cur:occursIn cv:occ_body,
+        cv:occ_heading ;
+    cur:recognitionHint "Handlungsprinzip der Neufassung 2026 (prüfen)."@de ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "demokratische Mitbestimmung" ;
+    cur:verified false .
+
+elem:lex-1e360e4ef6f4-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-1e360e4ef6f4> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo ctx:meals ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Alltagssituation."@de ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Essen" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified false .
+
+elem:lex-1e8252a7abf7-BE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-1e8252a7abf7> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-aesthetik,
+        elem:f-bildnerisch ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Ästhetisch-künstlerische Bildung" ;
+    cur:verified true .
+
+elem:lex-1ed6a29b0d3c-NW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-1ed6a29b0d3c> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-naturwissenschaft,
+        elem:f-technik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Naturwissenschaftlich-technische Bildung" ;
+    cur:verified true .
+
+elem:lex-1ff256fa1262-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-1ff256fa1262> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo kd:EarlyChildhood ;
+    cur:occursIn cv:occ_body,
+        cv:occ_heading ;
+    cur:recognitionHint "In Thüringen Dimension je Bildungsbereich (Matrix) – an Aussagen als cur:kompetenzdimension erfassen, keinen eigenen Teilbaum bilden."@de ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Bildungsdimension" ;
+    cur:verified true .
+
+elem:lex-20061e0f7c57-SN a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-20061e0f7c57> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-naturwissenschaft ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Sachsen: Leitbegriff Entdecken."@de ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Naturwissenschaftliche Bildung" ;
+    cur:verified true .
+
+elem:lex-20061e0f7c57-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-20061e0f7c57> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-naturwissenschaft ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Sachsen: Leitbegriff Entdecken."@de ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Naturwissenschaftliche Bildung" ;
+    cur:verified true .
+
+elem:lex-201764ac3dbc-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-201764ac3dbc> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo ctx:rest-sleep ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Alltagssituation."@de ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Ausruhen und Schlafen" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified false .
+
+elem:lex-203fcaeb4339-SH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-203fcaeb4339> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-koerper ;
+    cur:occursIn cv:occ_heading ;
+    cur:planGeneration "SH-Leitlinien vor der Neufassung 2026" ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Körper, Gesundheit und Bewegung" ;
+    cur:verified false .
+
+elem:lex-2194c3d58e15-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-2194c3d58e15> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo kd:ec-cognition,
+        elem:Bildungsbereich,
+        elem:f-sinneswahrnehmung ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bildungs- und Entwicklungsfeld ohne eigenen Weltausschnitt – Knoten erhält Rolle Bildungsbereich und Kompetenzdimension Kognition."@de ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Wahrnehmen und Denken" ;
+    cur:verified true .
+
+elem:lex-224fc83ade8d a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-224fc83ade8d> ;
+    cur:alsoMapsTo elem:Basiskompetenzen ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo elem:Bildungsbereich ;
+    cur:negativeHint "Kein Hinweis auf eine einzelne Kompetenz."@de ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Kann Strukturknoten oder Kompetenzklassifikation sein."@de ;
+    cur:strength 0.40 ;
+    cur:surfaceForm "Kompetenzbereich" ;
+    cur:verified true .
+
+elem:lex-29b9b539253b-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-29b9b539253b> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-werte-ethik-philosophie ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Philosophisch-weltanschauliche Bildung" ;
+    cur:verified true .
+
+elem:lex-2aa4f1fa2762-HH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-2aa4f1fa2762> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Querschnitt ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Kinderrechte, Inklusion, BNE, Umgang mit Veränderungen und Herausforderungen."@de ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Leitmotiv" ;
+    cur:verified true .
+
+elem:lex-2acc4fd78cd2 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-2acc4fd78cd2> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Querschnitt ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Schulischer Begriff, vereinzelt in 0–10-Plänen."@de ;
+    cur:strength 0.70 ;
+    cur:surfaceForm "Leitperspektive" ;
+    cur:verified true .
+
+elem:lex-2c0b1256d617-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-2c0b1256d617> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo kd:ec-social ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Kompetenzen zum Handeln im sozialen Kontext" ;
+    cur:verified true .
+
+elem:lex-2c0b1256d617-HE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-2c0b1256d617> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo kd:ec-social ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-HE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Kompetenzen zum Handeln im sozialen Kontext" ;
+    cur:verified true .
+
+elem:lex-2d9d57ce21d7-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-2d9d57ce21d7> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:p-kinderrechte,
+        elem:p-kinderschutz ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Leitprinzip."@de ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Kinderschutz und Kinderrechte" ;
+    cur:verified true .
+
+elem:lex-2e92e77e7579-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-2e92e77e7579> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-aesthetik,
+        elem:f-bildnerisch ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Ästhetik, Kunst und Kultur" ;
+    cur:verified true .
+
+elem:lex-302b90fdf59a-BE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-302b90fdf59a> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Kurzform BBP. Neufassung mit 7 Bildungsbereichen und nummerierten Qualitätsansprüchen (QA)."@de ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Berliner Bildungsprogramm für Kitas und Kindertagespflege" ;
+    cur:verified true .
+
+elem:lex-30c7f133c636-DE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-30c7f133c636> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Querschnitt ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Gemeinsamer Rahmen, Abschnitt Gestaltung der pädagogischen Arbeit."@de ;
+    cur:scopeRegion land:DE ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Pädagogische Grundprinzipien" ;
+    cur:verified true .
+
+elem:lex-343c7bec4b04-BE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-343c7bec4b04> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo kd:ec-personal ;
+    cur:occursIn cv:occ_body,
+        cv:occ_heading ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Ich-Kompetenzen" ;
+    cur:verified true .
+
+elem:lex-348a40c457fa-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-348a40c457fa> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-natur-oekologie ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Umwelt" ;
+    cur:verified true .
+
+elem:lex-376cd2c7a7c9-HH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-376cd2c7a7c9> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:p-umgang-mit-veraenderung ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Leitmotiv."@de ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Umgang mit Veränderungen und Herausforderungen" ;
+    cur:validFrom "2024-09-28"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-388e9f3ea4eb-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-388e9f3ea4eb> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Rechtsnorm ;
+    cur:occursIn cv:occ_body,
+        cv:occ_titlePage ;
+    cur:recognitionHint "Ausführungsverordnung zum BayKiBiG mit verbindlichen Bildungs- und Erziehungszielen."@de ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "AVBayKiBiG" ;
+    cur:verified true .
+
+elem:lex-3a68e61d6dd0-HE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-3a68e61d6dd0> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan-0-10 ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Kurzform BEP. Ein Plan für Kita und Grundschule – mindestens zwei Curricula anlegen."@de ;
+    cur:scopeRegion land:DE-HE ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Bildungs- und Erziehungsplan für Kinder von 0 bis 10 Jahren" ;
+    cur:verified true .
+
+elem:lex-3a7a803560cc a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-3a7a803560cc> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Alltagssituation ;
+    cur:occursIn cv:occ_heading ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Alltagssituation" ;
+    cur:verified true .
+
+elem:lex-3b6b2b7e34e7-HB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-3b6b2b7e34e7> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Ergänzend erscheinen 'Konkretisierungen' als eigenes Dokument."@de ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Rahmenplan für Bildung und Erziehung im Elementarbereich" ;
+    cur:verified true .
+
+elem:lex-3c8b85d6a1db a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-3c8b85d6a1db> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:Teilbereich ;
+    cur:occursIn cv:occ_heading ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Teilbereich" ;
+    cur:verified true .
+
+elem:lex-3ccd4daeeb37 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-3ccd4daeeb37> ;
+    cur:alsoMapsTo elem:Teilbereich ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo elem:Bildungsbereich ;
+    cur:negativeHint "In Schul-Lehrplänen Fächerverbund."@de ;
+    cur:occursIn cv:occ_heading ;
+    cur:strength 0.50 ;
+    cur:surfaceForm "Lernbereich" ;
+    cur:verified true .
+
+elem:lex-3ce0e5b0e5fb-NI a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-3ce0e5b0e5fb> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-sprache ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Sprache und Sprechen" ;
+    cur:verified true .
+
+elem:lex-3d3496f057e5 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-3d3496f057e5> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:Praxisbeispiel ;
+    cur:occursIn cv:occ_box,
+        cv:occ_heading ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Praxisbeispiel" ;
+    cur:verified true .
+
+elem:lex-3e0ec8d0312c a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-3e0ec8d0312c> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:BeobachtungDokumentation ;
+    cur:occursIn cv:occ_heading ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Beobachtung und Dokumentation" ;
+    cur:verified true .
+
+elem:lex-3e53709be652-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-3e53709be652> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-sprache ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Sprache" ;
+    cur:verified true .
+
+elem:lex-3e7d90260b4e-MV a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-3e7d90260b4e> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Bildungsziel,
+        elem:Kompetenzbeschreibung ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Wissen, Können, Kompetenzen" ;
+    cur:verified false .
+
+elem:lex-4301b6def029-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-4301b6def029> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo ctx:tidying ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Alltagssituation."@de ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Aufräumen" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified false .
+
+elem:lex-43fe7cb04dd7-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-43fe7cb04dd7> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan-0-10 ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Kurzform TBP-18. Alle Bildungsorte von 0 bis 18 Jahren."@de ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Thüringer Bildungsplan bis 18 Jahre" ;
+    cur:verified true .
+
+elem:lex-468e01df2934-SN a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-468e01df2934> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-soziale-beziehungen ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Leitbegriff Beteiligung."@de ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Soziale Bildung" ;
+    cur:verified true .
+
+elem:lex-482d50c896c7-SN a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-482d50c896c7> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-sprache ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Leitbegriff Dialog."@de ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Kommunikative Bildung" ;
+    cur:verified true .
+
+elem:lex-48c6e33c78bd-HH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-48c6e33c78bd> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-demokratie-gesellschaft,
+        elem:f-kulturelle-vielfalt ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Soziokulturelles Leben" ;
+    cur:validFrom "2024-09-28"^^xsd:date ;
+    cur:verified false .
+
+elem:lex-4bb49d10ac5a-NI a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-4bb49d10ac5a> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-koerper ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Körper – Bewegung – Gesundheit" ;
+    cur:verified true .
+
+elem:lex-4c3e2d9c45f0-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-4c3e2d9c45f0> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:p-partizipation ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Partizipation" ;
+    cur:verified true .
+
+elem:lex-4c7267394a93-NI a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-4c7267394a93> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-natur-oekologie,
+        elem:f-naturwissenschaft ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Natur und Lebenswelt" ;
+    cur:verified true .
+
+elem:lex-4e67a1f94e45-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-4e67a1f94e45> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-gesundheit-ernaehrung ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Gesundheit" ;
+    cur:verified true .
+
+elem:lex-4eeaf3cb040f a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-4eeaf3cb040f> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Querschnitt ;
+    cur:occursIn cv:occ_heading ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Querschnittsaufgabe" ;
+    cur:verified true .
+
+elem:lex-4f250f75b224-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-4f250f75b224> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-aesthetik,
+        elem:f-bildnerisch ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Künstlerisch-ästhetische Bildung" ;
+    cur:verified true .
+
+elem:lex-4f90f1a655d8-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-4f90f1a655d8> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:p-uebergaenge ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Themenübergreifende Perspektive im BayBEP."@de ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Übergänge des Kindes und Konsistenz im Bildungsverlauf" ;
+    cur:verified false .
+
+elem:lex-53b803df67ae-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-53b803df67ae> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Bildungsbereich ;
+    cur:occursIn cv:occ_heading,
+        cv:occ_toc ;
+    cur:recognitionHint "8 Felder in der Fassung 2025, Teil einer Bildungs- und Erziehungsmatrix."@de ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Bildungs- und Entwicklungsfeld" ;
+    cur:verified true .
+
+elem:lex-53c7abbd640a-NI a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-53c7abbd640a> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-religion-weltanschauung,
+        elem:f-werte-ethik-philosophie ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Ethische und religiöse Fragen, Grunderfahrungen menschlicher Existenz" ;
+    cur:verified true .
+
+elem:lex-543b5f00abe9-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-543b5f00abe9> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:Basiskompetenzen ;
+    cur:occursIn cv:occ_heading,
+        cv:occ_toc ;
+    cur:recognitionHint "Kompetenzmodell nach Fthenakis."@de ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Basiskompetenzen" ;
+    cur:verified true .
+
+elem:lex-543b5f00abe9-HE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-543b5f00abe9> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:Basiskompetenzen ;
+    cur:occursIn cv:occ_heading,
+        cv:occ_toc ;
+    cur:recognitionHint "Kompetenzmodell nach Fthenakis."@de ;
+    cur:scopeRegion land:DE-HE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Basiskompetenzen" ;
+    cur:verified true .
+
+elem:lex-545c81ba3161-HB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-545c81ba3161> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-natur-oekologie,
+        elem:f-naturwissenschaft,
+        elem:f-technik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Natur, Umwelt und Technik" ;
+    cur:verified false .
+
+elem:lex-55571cc3f904-BE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-55571cc3f904> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo kd:ec-learning ;
+    cur:occursIn cv:occ_body,
+        cv:occ_heading ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Lernmethodische Kompetenz" ;
+    cur:verified true .
+
+elem:lex-55571cc3f904-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-55571cc3f904> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo kd:ec-learning ;
+    cur:occursIn cv:occ_body,
+        cv:occ_heading ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Lernmethodische Kompetenz" ;
+    cur:verified true .
+
+elem:lex-55571cc3f904-HE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-55571cc3f904> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo kd:ec-learning ;
+    cur:occursIn cv:occ_body,
+        cv:occ_heading ;
+    cur:scopeRegion land:DE-HE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Lernmethodische Kompetenz" ;
+    cur:verified true .
+
+elem:lex-55571cc3f904-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-55571cc3f904> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo kd:ec-learning ;
+    cur:occursIn cv:occ_body,
+        cv:occ_heading ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Lernmethodische Kompetenz" ;
+    cur:verified true .
+
+elem:lex-5561806e60fd-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-5561806e60fd> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-demokratie-gesellschaft,
+        elem:p-kinderrechte ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "In Brandenburg Bildungsbereich, nicht Leitprinzip."@de ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Kinderrechte, Menschenrechte und Demokratie" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-55948a9ea44b-DE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-55948a9ea44b> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-sprache,
+        elem:p-alltagsintegration ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 1 des Gemeinsamen Rahmens."@de ;
+    cur:scopeRegion land:DE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Alltagsintegrierte sprachliche Bildung und Kommunikation" ;
+    cur:verified true .
+
+elem:lex-57480152ad17-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-57480152ad17> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo kd:ec-resilience ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Widerstandsfähigkeit (Resilienz)" ;
+    cur:verified true .
+
+elem:lex-57480152ad17-HE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-57480152ad17> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo kd:ec-resilience ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-HE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Widerstandsfähigkeit (Resilienz)" ;
+    cur:verified true .
+
+elem:lex-599088f67e35-MV a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-599088f67e35> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-sprache,
+        elem:p-alltagsintegration ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Alltagsintegrierte Sprachbildung und Kommunikation" ;
+    cur:verified false .
+
+elem:lex-5b2ed4e6ad72-MV a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-5b2ed4e6ad72> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-personal-sozial ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Personale und sozial-emotionale Entwicklung, Werteorientierung und Religiosität, kultursensitive Kompetenzen" ;
+    cur:verified false .
+
+elem:lex-5e00e1fb7570-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-5e00e1fb7570> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-medien ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Ältere Bezeichnung von BayBEP Kapitel 7.4."@de ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Informations- und Kommunikationstechnik, Medien" ;
+    cur:verified true .
+
+elem:lex-5f971114a514 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-5f971114a514> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Bildungsbereich ;
+    cur:occursIn cv:occ_heading ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Bildungsfeld" ;
+    cur:verified true .
+
+elem:lex-5fd77f8bddea-MV a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-5fd77f8bddea> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-mint ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Titel sinngemäß, am Dokument prüfen."@de ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Elementares mathematisches Denken, Welterkundung sowie technische und naturwissenschaftliche Grunderfahrungen" ;
+    cur:verified false .
+
+elem:lex-6019c314c9b3-HH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-6019c314c9b3> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Reflexionsfrage ;
+    cur:occursIn cv:occ_box,
+        cv:occ_heading ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Erkundungsfragen" ;
+    cur:verified false .
+
+elem:lex-60c972917bf3-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-60c972917bf3> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Alltagssituation ;
+    cur:negativeHint "Nicht als Bildungsbereich instanziieren."@de ;
+    cur:occursIn cv:occ_heading,
+        cv:occ_toc ;
+    cur:recognitionHint "Situationen in 4 Gruppen, systematisch mit Bildungsbereichen verknüpft."@de ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Pädagogische Alltagssituationen" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-60fdecfbd358-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-60fdecfbd358> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Querschnitt ;
+    cur:occursIn cv:occ_heading,
+        cv:occ_toc ;
+    cur:recognitionHint "Kapitel 6 des BayBEP."@de ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "themenübergreifende Bildungs- und Erziehungsperspektiven" ;
+    cur:verified true .
+
+elem:lex-61e6b09c4251-SH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-61e6b09c4251> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Bildungsbereich ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bezeichnung der Neufassung 2026 (prüfen)."@de ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Bildungs- und Erziehungsthema" ;
+    cur:verified false .
+
+elem:lex-6745fe8a167a-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-6745fe8a167a> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-digitale-technologien,
+        elem:f-medien ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Aktuelle Bezeichnung von BayBEP Kapitel 7.4."@de ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Digitale Medien und Technologien" ;
+    cur:verified true .
+
+elem:lex-67d3bd6271dc-DE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-67d3bd6271dc> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-GemeinsamerRahmen ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "JMK/KMK 2004, aktualisiert JFMK 2021 und KMK 2022. Gilt von Geburt bis Ende der Grundschulzeit."@de ;
+    cur:scopeRegion land:DE ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Gemeinsamer Rahmen der Länder für die frühe Bildung in Kindertageseinrichtungen" ;
+    cur:verified true .
+
+elem:lex-6a2e14ff84de-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-6a2e14ff84de> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan ;
+    cur:negativeHint "Auch Niedersachsen nutzt 'Orientierungsplan' – Land über Herausgeber prüfen."@de ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Weiterentwickelte Fassung 2025 mit 8 Bildungs- und Entwicklungsfeldern und 4 Leitprinzipien."@de ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Orientierungsplan für Bildung und Erziehung" ;
+    cur:verified true .
+
+elem:lex-6ab93a1a4165-DE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-6ab93a1a4165> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-personal-sozial ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 2 des Gemeinsamen Rahmens, mit Werteorientierung, Religiosität und kultursensitiven Kompetenzen."@de ;
+    cur:scopeRegion land:DE ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Personale und sozial-emotionale Entwicklung" ;
+    cur:verified true .
+
+elem:lex-6d0d27eeec39-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-6d0d27eeec39> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-aesthetik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Künstlerische Ausdrucksformen" ;
+    cur:verified true .
+
+elem:lex-6d9a73bb42cf-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-6d9a73bb42cf> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Bildungsanspruch,
+        elem:Bildungsziel ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Bildungsansprüche" ;
+    cur:verified false .
+
+elem:lex-6eb5dea46f51 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-6eb5dea46f51> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo ctx:meals ;
+    cur:occursIn cv:occ_body,
+        cv:occ_heading ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Mahlzeiten" ;
+    cur:verified true .
+
+elem:lex-6f3357130282 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-6f3357130282> ;
+    cur:alsoMapsTo elem:Teilbereich ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo elem:Bildungsbereich ;
+    cur:occursIn cv:occ_heading ;
+    cur:strength 0.60 ;
+    cur:surfaceForm "Erfahrungsfeld" ;
+    cur:verified true .
+
+elem:lex-749f588fdbd7-SL a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-749f588fdbd7> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-naturwissenschaft,
+        elem:f-technik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Naturwissenschaftliche und technische Grunderfahrungen" ;
+    cur:verified false .
+
+elem:lex-75252073d4d7 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-75252073d4d7> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Bildungsziel ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Listen mit 'Das Kind …', 'Kinder …' oder 'Pädagogische Fachkräfte …' (dann Adressat Fachkraft)."@de ;
+    cur:strength 0.70 ;
+    cur:surfaceForm "Ziele" ;
+    cur:verified true .
+
+elem:lex-753184d3b03d-ST a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-753184d3b03d> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-demokratie-gesellschaft,
+        elem:f-werte-ethik-philosophie ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Grundthemen des Lebens" ;
+    cur:validFrom "2025-08-01"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-75cf93afdef1-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-75cf93afdef1> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo kd:ec-social ;
+    cur:occursIn cv:occ_body,
+        cv:occ_tableHeader ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "soziale Dimension" ;
+    cur:verified true .
+
+elem:lex-7739a3ba5685-HB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-7739a3ba5685> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:p-spiel ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Spiel und Phantasie" ;
+    cur:verified false .
+
+elem:lex-778db8cfac97 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-778db8cfac97> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Zusammenarbeit,
+        elem:p-zusammenarbeit-familie ;
+    cur:occursIn cv:occ_heading ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Zusammenarbeit mit Familien" ;
+    cur:verified true .
+
+elem:lex-7c2bb94f5e6c-NI a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-7c2bb94f5e6c> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Bildungsbereich ;
+    cur:negativeHint "In Schul-Lehrplänen bezeichnet 'Lernbereich' einen Fächerverbund."@de ;
+    cur:occursIn cv:occ_heading,
+        cv:occ_toc ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Lernbereiche und Erfahrungsfelder" ;
+    cur:verified true .
+
+elem:lex-7cc79407232b-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-7cc79407232b> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo kd:ec-personal ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Personale Kompetenzen" ;
+    cur:verified true .
+
+elem:lex-7cc79407232b-HE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-7cc79407232b> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo kd:ec-personal ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-HE ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Personale Kompetenzen" ;
+    cur:verified true .
+
+elem:lex-80122321ca4d-NW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-80122321ca4d> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-bewegung ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Bewegung" ;
+    cur:verified true .
+
+elem:lex-80122321ca4d-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-80122321ca4d> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-bewegung ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Bewegung" ;
+    cur:verified true .
+
+elem:lex-819cc4b809eb-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-819cc4b809eb> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo ctx:free-play,
+        ctx:play ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Alltagssituation."@de ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.70 ;
+    cur:surfaceForm "Spielen" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified false .
+
+elem:lex-8206e53b8789-NW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-8206e53b8789> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-bne,
+        elem:f-natur-oekologie ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Ökologische Bildung" ;
+    cur:verified true .
+
+elem:lex-8433d5a790aa-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-8433d5a790aa> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Fassung 2004, durch den Bildungsplan 2024 ersetzt."@de ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Grundsätze elementarer Bildung" ;
+    cur:validUntil "2024-07-29"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-8519e6698cc0-SH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-8519e6698cc0> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Leitlinien für Bildung und Erziehung in Kitas und Kindertagespflege, Neufassung 2026."@de ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Erfolgreich starten" ;
+    cur:verified false .
+
+elem:lex-867d82f0769a-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-867d82f0769a> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo elem:dt-Qualitaetsempfehlung ;
+    cur:occursIn cv:occ_heading,
+        cv:occ_titlePage ;
+    cur:recognitionHint "Zweiter Teil der rheinland-pfälzischen Empfehlungen."@de ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.70 ;
+    cur:surfaceForm "Qualitätsempfehlungen" ;
+    cur:verified false .
+
+elem:lex-8d6f0a76c05e-MV a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-8d6f0a76c05e> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Bildungsbereich ;
+    cur:occursIn cv:occ_heading,
+        cv:occ_toc ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Bildungs- und Erziehungsbereich" ;
+    cur:verified true .
+
+elem:lex-8d6f0a76c05e-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-8d6f0a76c05e> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Bildungsbereich ;
+    cur:occursIn cv:occ_heading,
+        cv:occ_toc ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Bildungs- und Erziehungsbereich" ;
+    cur:verified true .
+
+elem:lex-8e358ed6e2ad-SH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-8e358ed6e2ad> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Querschnitt ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Neufassung 2026: Kinderschutz, Inklusion, Nachhaltigkeit, demokratische Mitbestimmung (prüfen)."@de ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Handlungsprinzip" ;
+    cur:verified false .
+
+elem:lex-9005d6d928ec-ST a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-9005d6d928ec> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-mint ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Mathematik, Informatik, Naturwissenschaft und Technik" ;
+    cur:validFrom "2025-08-01"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-904034c9aaf3-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-904034c9aaf3> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-musik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Musik" ;
+    cur:verified true .
+
+elem:lex-904034c9aaf3-SL a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-904034c9aaf3> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-musik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Musik" ;
+    cur:verified true .
+
+elem:lex-90cca6a2d791 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-90cca6a2d791> ;
+    cur:alsoMapsTo elem:Bildungsbereich ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo elem:Handlungsfeld ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Kann Aufgabenbereich der Fachkraft oder Bildungsbereich bezeichnen."@de ;
+    cur:strength 0.40 ;
+    cur:surfaceForm "Handlungsfeld" ;
+    cur:verified true .
+
+elem:lex-91da8e00d3ca-SH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-91da8e00d3ca> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-religion-weltanschauung,
+        elem:f-werte-ethik-philosophie ;
+    cur:occursIn cv:occ_heading ;
+    cur:planGeneration "SH-Leitlinien vor der Neufassung 2026" ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Ethik, Religion und Philosophie" ;
+    cur:verified false .
+
+elem:lex-92afbfd1cacf-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-92afbfd1cacf> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo kd:ec-personal ;
+    cur:occursIn cv:occ_body,
+        cv:occ_tableHeader ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "personale Dimension" ;
+    cur:verified true .
+
+elem:lex-93764b7938b9-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-93764b7938b9> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-natur-oekologie,
+        elem:f-naturwissenschaft,
+        elem:f-technik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Natur und Technik" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-952756eb0ee1-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-952756eb0ee1> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-emotionen,
+        elem:f-soziale-beziehungen ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Emotionalität, soziale Beziehungen und Konflikte" ;
+    cur:verified true .
+
+elem:lex-96c9613429f0-SH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-96c9613429f0> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-digitale-technologien,
+        elem:f-medien ;
+    cur:occursIn cv:occ_heading ;
+    cur:planGeneration "SH-Leitlinien vor der Neufassung 2026" ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Medien und Digitalisierung" ;
+    cur:verified false .
+
+elem:lex-9c28a41449ab-NW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-9c28a41449ab> ;
+    cur:alsoMapsTo elem:Inhalt ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo elem:Impuls ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.60 ;
+    cur:surfaceForm "Bildungsmöglichkeiten" ;
+    cur:verified false .
+
+elem:lex-9ca061157229-SL a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-9ca061157229> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Programm und Handreichungen in einem Dokument (Fassung 2018)."@de ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Bildungsprogramm für saarländische Krippen und Kindergärten" ;
+    cur:verified false .
+
+elem:lex-9d1804f11d81-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-9d1804f11d81> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-bne ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "In Brandenburg Bildungsbereich."@de ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Nachhaltige Entwicklung" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-9dba6833e71a-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-9dba6833e71a> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-mathematik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Mathematik" ;
+    cur:verified true .
+
+elem:lex-9dba6833e71a-BE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-9dba6833e71a> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-mathematik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Mathematik" ;
+    cur:verified true .
+
+elem:lex-9dba6833e71a-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-9dba6833e71a> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-mathematik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Mathematik" ;
+    cur:verified true .
+
+elem:lex-a10feda9b13c-SL a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-a10feda9b13c> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-koerper ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Körper, Bewegung und Gesundheit" ;
+    cur:verified false .
+
+elem:lex-a503acdb0f69-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-a503acdb0f69> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-kulturelle-vielfalt,
+        elem:f-religion-weltanschauung ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Interkulturelles und interreligiöses Lernen" ;
+    cur:verified true .
+
+elem:lex-a67149eb49aa-HB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-a67149eb49aa> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-musik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Rhythmik und Musik" ;
+    cur:verified false .
+
+elem:lex-a69228968b70-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-a69228968b70> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-digitale-technologien,
+        elem:f-medien ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Digitale Medien" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-a7d71ea98cd2-NW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-a7d71ea98cd2> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan-0-10 ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Kita und Primarbereich, einheitlicher Aufbau je Bildungsbereich."@de ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Bildungsgrundsätze für Kinder von 0 bis 10 Jahren" ;
+    cur:verified true .
+
+elem:lex-a8e976fe2c22 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-a8e976fe2c22> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo ctx:project ;
+    cur:occursIn cv:occ_body,
+        cv:occ_heading ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Projektarbeit" ;
+    cur:verified true .
+
+elem:lex-a8f42e151dcd-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-a8f42e151dcd> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo kd:ec-subject ;
+    cur:occursIn cv:occ_body,
+        cv:occ_tableHeader ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "sachliche Dimension" ;
+    cur:verified true .
+
+elem:lex-a909cebb56af a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-a909cebb56af> ;
+    cur:alsoMapsTo elem:f-soziale-beziehungen ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo kd:ec-social ;
+    cur:occursIn cv:occ_body,
+        cv:occ_heading ;
+    cur:recognitionHint "Kann Kompetenzdimension oder Bereichsthema sein."@de ;
+    cur:strength 0.60 ;
+    cur:surfaceForm "Soziale Kompetenzen" ;
+    cur:verified true .
+
+elem:lex-a9fae623dece-NI a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-a9fae623dece> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-lebenspraxis ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Lebenspraktische Kompetenzen" ;
+    cur:verified true .
+
+elem:lex-aac763b5a114-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-aac763b5a114> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan-0-10 ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Kurzform BayBL. Bildungsorte bis Ende der Grundschule."@de ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Bayerische Leitlinien für die Bildung und Erziehung von Kindern bis zum Ende der Grundschulzeit" ;
+    cur:verified false .
+
+elem:lex-aafe0393288d-NW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-aafe0393288d> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-kulturelle-vielfalt,
+        elem:f-soziale-beziehungen ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Soziale und (inter-)kulturelle Bildung" ;
+    cur:verified true .
+
+elem:lex-ab9d991a43f7-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-ab9d991a43f7> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-kulturelle-vielfalt,
+        elem:p-diversitaet,
+        elem:p-inklusion ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Themenübergreifende Perspektive im BayBEP."@de ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Umgang mit individuellen Unterschieden und soziokultureller Vielfalt" ;
+    cur:verified false .
+
+elem:lex-abb1a65ac887-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-abb1a65ac887> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-bne ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "BW und HH als Leitprinzip bzw. Leitmotiv, ST als Bildungsbereich – Rolle am Knoten aus dem Kontext bestimmen."@de ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Bildung für nachhaltige Entwicklung" ;
+    cur:verified true .
+
+elem:lex-abb1a65ac887-HH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-abb1a65ac887> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-bne ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "BW und HH als Leitprinzip bzw. Leitmotiv, ST als Bildungsbereich – Rolle am Knoten aus dem Kontext bestimmen."@de ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Bildung für nachhaltige Entwicklung" ;
+    cur:verified true .
+
+elem:lex-abb1a65ac887-ST a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-abb1a65ac887> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-bne ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "BW und HH als Leitprinzip bzw. Leitmotiv, ST als Bildungsbereich – Rolle am Knoten aus dem Kontext bestimmen."@de ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Bildung für nachhaltige Entwicklung" ;
+    cur:verified true .
+
+elem:lex-ae77070244be-NI a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-ae77070244be> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Bildungsziel ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Bildungsziele" ;
+    cur:verified true .
+
+elem:lex-ae7ad1da4203-NW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-ae7ad1da4203> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-medien ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Medien" ;
+    cur:verified true .
+
+elem:lex-ae7ad1da4203-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-ae7ad1da4203> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-medien ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Medien" ;
+    cur:verified true .
+
+elem:lex-b048dba75b91-SH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-b048dba75b91> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-mint ;
+    cur:occursIn cv:occ_heading ;
+    cur:planGeneration "SH-Leitlinien vor der Neufassung 2026" ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Mathematik, Naturwissenschaft und Technik" ;
+    cur:verified false .
+
+elem:lex-b130fa11f77d-BE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-b130fa11f77d> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo kd:ec-subject ;
+    cur:occursIn cv:occ_body,
+        cv:occ_heading ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Sachkompetenzen" ;
+    cur:verified true .
+
+elem:lex-b27c5868b3ce-NI a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-b27c5868b3ce> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo kd:ec-cognition,
+        kd:ec-learning,
+        elem:Bildungsbereich ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Lernbereich ohne eigenen Weltausschnitt – siehe BW 'Wahrnehmen und Denken'."@de ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Entwicklung kognitiver Fähigkeiten und der Freude am Lernen" ;
+    cur:verified true .
+
+elem:lex-b362d511e23e a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-b362d511e23e> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Handlungsfeld ;
+    cur:occursIn cv:occ_heading ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Aufgaben der pädagogischen Fachkräfte" ;
+    cur:verified true .
+
+elem:lex-b3cbef8c6693-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-b3cbef8c6693> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-aesthetik,
+        elem:f-musik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Ästhetik und Musik" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-b51cd53a21e3-SN a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-b51cd53a21e3> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Leitfaden für Krippen, Kindergärten, Horte und Kindertagespflege."@de ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Der Sächsische Bildungsplan" ;
+    cur:verified true .
+
+elem:lex-b79587bbc6bd-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-b79587bbc6bd> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-religion-weltanschauung,
+        elem:f-werte-ethik-philosophie ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Werteorientierung und Religiosität" ;
+    cur:verified true .
+
+elem:lex-b8336389834d-HH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-b8336389834d> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Fassungen 2005 und 2012, durch 'Perspektive Kind' ersetzt."@de ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Hamburger Bildungsempfehlungen" ;
+    cur:validUntil "2024-09-28"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-b8ffc650198b-SN a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-b8ffc650198b> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-koerper ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Leitbegriff Wohlbefinden."@de ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Somatische Bildung" ;
+    cur:verified true .
+
+elem:lex-b959c4760ad6-DE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-b959c4760ad6> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-medien ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 4 des Gemeinsamen Rahmens."@de ;
+    cur:scopeRegion land:DE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Medien und digitale Bildung" ;
+    cur:verified true .
+
+elem:lex-b959c4760ad6-MV a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-b959c4760ad6> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-medien ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 4 des Gemeinsamen Rahmens."@de ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Medien und digitale Bildung" ;
+    cur:verified true .
+
+elem:lex-b959c4760ad6-ST a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-b959c4760ad6> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-medien ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 4 des Gemeinsamen Rahmens."@de ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Medien und digitale Bildung" ;
+    cur:verified true .
+
+elem:lex-bccc20e34ace-BE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-bccc20e34ace> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-emotionen,
+        elem:f-personal-sozial,
+        elem:f-soziale-beziehungen ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Sozial-emotionale Bildung" ;
+    cur:verified true .
+
+elem:lex-bd8311cf9323-NI a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-bd8311cf9323> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Gesamt-PDF kann Handlungsempfehlungen U3 und Sprachbildung enthalten – mehrere Curricula anlegen."@de ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Orientierungsplan für Bildung und Erziehung im Elementarbereich" ;
+    cur:verified true .
+
+elem:lex-bda64918ae14-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-bda64918ae14> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo ctx:circle-time ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Alltagssituation."@de ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Kinderkreise" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified false .
+
+elem:lex-bde9c6a566a2-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-bde9c6a566a2> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-emotionen,
+        elem:f-gesundheit-ernaehrung ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Physische und psychische Gesundheitsbildung" ;
+    cur:verified true .
+
+elem:lex-beef05cd95f6-SH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-beef05cd95f6> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-demokratie-gesellschaft,
+        elem:f-kulturelle-vielfalt,
+        elem:p-diversitaet ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bezeichnung der Neufassung 2026 (prüfen)."@de ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Kultur, Gesellschaft, Demokratie und Antidiskriminierung" ;
+    cur:verified false .
+
+elem:lex-c04f9a3b64d0-NI a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-c04f9a3b64d0> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-mathematik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Mathematisches Grundverständnis" ;
+    cur:verified true .
+
+elem:lex-c1d10a2e0523-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-c1d10a2e0523> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-natur-oekologie ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Naturerfahrung – Ökologie" ;
+    cur:verified true .
+
+elem:lex-c2b0a1264f09 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-c2b0a1264f09> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo ctx:body-care ;
+    cur:occursIn cv:occ_body ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Wickeln" ;
+    cur:verified true .
+
+elem:lex-c2f956ef0981-DE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-c2f956ef0981> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-koerper ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 6 des Gemeinsamen Rahmens."@de ;
+    cur:scopeRegion land:DE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Körper, Bewegung, Gesundheit und Prävention" ;
+    cur:verified true .
+
+elem:lex-c2f956ef0981-MV a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-c2f956ef0981> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-koerper ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 6 des Gemeinsamen Rahmens."@de ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Körper, Bewegung, Gesundheit und Prävention" ;
+    cur:verified true .
+
+elem:lex-c2f956ef0981-ST a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-c2f956ef0981> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-koerper ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 6 des Gemeinsamen Rahmens."@de ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Körper, Bewegung, Gesundheit und Prävention" ;
+    cur:verified true .
+
+elem:lex-c3cbdea6f093-DE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-c3cbdea6f093> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-umwelt-bne ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 7 des Gemeinsamen Rahmens."@de ;
+    cur:scopeRegion land:DE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Umweltbildung und Bildung für nachhaltige Entwicklung" ;
+    cur:verified true .
+
+elem:lex-c3cbdea6f093-MV a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-c3cbdea6f093> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-umwelt-bne ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 7 des Gemeinsamen Rahmens."@de ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Umweltbildung und Bildung für nachhaltige Entwicklung" ;
+    cur:verified true .
+
+elem:lex-c3e3f0215ffb-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-c3e3f0215ffb> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-naturwissenschaft,
+        elem:f-technik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Naturwissenschaften und Technik" ;
+    cur:verified true .
+
+elem:lex-c41971aa1aaf a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-c41971aa1aaf> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Reflexionsfrage ;
+    cur:negativeHint "Fragen sind keine Ziele."@de ;
+    cur:occursIn cv:occ_box,
+        cv:occ_heading ;
+    cur:recognitionHint "Fragesätze an Fachkräfte."@de ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Reflexionsfragen" ;
+    cur:verified true .
+
+elem:lex-c6401438d00f-ST a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-c6401438d00f> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Fortschreibung 2025 mit 7 Bildungsbereichen."@de ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Bildung: elementar – Bildung von Anfang an" ;
+    cur:validFrom "2025-08-01"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-c6840f54b314 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-c6840f54b314> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo ctx:settling-in,
+        elem:Uebergang,
+        elem:p-uebergaenge ;
+    cur:occursIn cv:occ_heading ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Eingewöhnung" ;
+    cur:verified true .
+
+elem:lex-c6b7135302e4 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-c6b7135302e4> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Zusammenarbeit,
+        elem:p-zusammenarbeit-familie ;
+    cur:occursIn cv:occ_heading ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Bildungs- und Erziehungspartnerschaft" ;
+    cur:verified true .
+
+elem:lex-cb126465c2d6-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-cb126465c2d6> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-kulturelle-vielfalt,
+        elem:f-religion-weltanschauung,
+        elem:f-werte-ethik-philosophie ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Kultur, Werte und Religion" ;
+    cur:verified true .
+
+elem:lex-cc2b1d8f16a3-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-cc2b1d8f16a3> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan ;
+    cur:negativeHint "Hessen nutzt ebenfalls die Kurzform BEP."@de ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Kurzform BayBEP oder BEP. Konkretisiert die Bildungs- und Erziehungsziele der AVBayKiBiG."@de ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Bayerischer Bildungs- und Erziehungsplan" ;
+    cur:verified true .
+
+elem:lex-cdc6a1d14e7e a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-cdc6a1d14e7e> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_negative ;
+    cur:mapsTo cv:sec_vocational ;
+    cur:negativeHint "Mit 'Fachschule Sozialpädagogik' gehört das Dokument zur Berufsbildung, nicht zum Elementarprofil."@de ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:strength 0.60 ;
+    cur:surfaceForm "Rahmenlehrplan" ;
+    cur:verified true .
+
+elem:lex-cfa2bdd1a5c8-HB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-cfa2bdd1a5c8> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan-0-10 ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Bereichsweise erscheinende Pläne mit Kita-Teil und Grundschul-Fach."@de ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Bildungsplan 0 bis 10" ;
+    cur:verified false .
+
+elem:lex-cfc402c1ecbc-NW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-cfc402c1ecbc> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-religion-weltanschauung,
+        elem:f-werte-ethik-philosophie ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Religion und Ethik" ;
+    cur:verified true .
+
+elem:lex-d0333755616f a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-d0333755616f> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo ctx:free-play ;
+    cur:occursIn cv:occ_body,
+        cv:occ_heading ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Freispiel" ;
+    cur:verified true .
+
+elem:lex-d09a7b3e78ea-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-d09a7b3e78ea> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-demokratie-gesellschaft ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Zivilgesellschaftliche Bildung" ;
+    cur:verified true .
+
+elem:lex-d0f5e9a642ed-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-d0f5e9a642ed> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Bildungsbereich ;
+    cur:occursIn cv:occ_heading,
+        cv:occ_toc ;
+    cur:recognitionHint "Kapitel 7 des BayBEP, unter Leitbildern gebündelt."@de ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "themenbezogener Bildungs- und Erziehungsbereich" ;
+    cur:verified true .
+
+elem:lex-d0f9960520c8-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-d0f9960520c8> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Querschnitt ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Kinderschutz und Kinderrechte, Inklusion, Partizipation, BNE."@de ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Leitprinzip" ;
+    cur:verified true .
+
+elem:lex-d3f636d97215-NW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-d3f636d97215> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-mathematik ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Sachsen: Leitbegriff Ordnen."@de ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Mathematische Bildung" ;
+    cur:verified true .
+
+elem:lex-d3f636d97215-SN a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-d3f636d97215> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-mathematik ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Sachsen: Leitbegriff Ordnen."@de ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Mathematische Bildung" ;
+    cur:verified true .
+
+elem:lex-d3f636d97215-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-d3f636d97215> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-mathematik ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Sachsen: Leitbegriff Ordnen."@de ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Mathematische Bildung" ;
+    cur:verified true .
+
+elem:lex-d62346b371f2-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-d62346b371f2> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Impuls ;
+    cur:occursIn cv:occ_box,
+        cv:occ_heading ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Umsetzungsideen" ;
+    cur:verified false .
+
+elem:lex-d63b0be95c2c-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-d63b0be95c2c> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-soziale-beziehungen ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Soziale Entwicklung" ;
+    cur:verified true .
+
+elem:lex-d92658d5ddf9-NW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-d92658d5ddf9> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-aesthetik,
+        elem:f-musik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Musisch-ästhetische Bildung" ;
+    cur:verified true .
+
+elem:lex-d92658d5ddf9-SH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-d92658d5ddf9> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-aesthetik,
+        elem:f-musik ;
+    cur:occursIn cv:occ_heading ;
+    cur:planGeneration "SH-Leitlinien vor der Neufassung 2026" ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Musisch-ästhetische Bildung" ;
+    cur:verified false .
+
+elem:lex-d9db336b37dd a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-d9db336b37dd> ;
+    cur:alsoMapsTo elem:dt-Traegerkonzeption ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo elem:dt-Einrichtungskonzeption ;
+    cur:negativeHint "Allein kein sicherer Hinweis auf Einrichtungskonzeption."@de ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Mit Kita- oder Trägername im Titel."@de ;
+    cur:strength 0.50 ;
+    cur:surfaceForm "Konzeption" ;
+    cur:verified true .
+
+elem:lex-db90ecd60536-BE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-db90ecd60536> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-natur-oekologie,
+        elem:f-naturwissenschaft,
+        elem:f-technik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Natur, Umwelt, Technik" ;
+    cur:verified true .
+
+elem:lex-dd56a4451bd7-BY a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-dd56a4451bd7> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-bewegung,
+        elem:f-musik,
+        elem:f-tanz-darstellendes-spiel ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Bewegung, Rhythmik, Tanz und Sport" ;
+    cur:verified true .
+
+elem:lex-dd91015e3314-SH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-dd91015e3314> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-literacy,
+        elem:f-mehrsprachigkeit,
+        elem:f-sprache ;
+    cur:occursIn cv:occ_heading ;
+    cur:planGeneration "SH-Leitlinien vor der Neufassung 2026" ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Sprache(n), Zeichen/Schrift und Kommunikation" ;
+    cur:verified false .
+
+elem:lex-dda49ff507e8-SL a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-dda49ff507e8> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-bildnerisch ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Bildnerisches Gestalten" ;
+    cur:verified false .
+
+elem:lex-e0b34d56629d-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-e0b34d56629d> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-literacy,
+        elem:f-sprache ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Sprachliche und schriftsprachliche Bildung" ;
+    cur:verified true .
+
+elem:lex-e149fa5ee341-HB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-e149fa5ee341> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-bildnerisch,
+        elem:f-technik ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Bauen und Gestalten" ;
+    cur:verified false .
+
+elem:lex-e1bec2041a0a-BE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-e1bec2041a0a> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-medien ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Medienbildung" ;
+    cur:verified true .
+
+elem:lex-e1bec2041a0a-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-e1bec2041a0a> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-medien ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Medienbildung" ;
+    cur:verified true .
+
+elem:lex-e1bec2041a0a-TH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-e1bec2041a0a> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-medien ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Medienbildung" ;
+    cur:verified true .
+
+elem:lex-e1daaaaa5575-DE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-e1daaaaa5575> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-mint ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 3 des Gemeinsamen Rahmens (MINT)."@de ;
+    cur:scopeRegion land:DE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Mathematik, Informatik, Naturwissenschaften und Technik" ;
+    cur:verified true .
+
+elem:lex-e276f03e57ad-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-e276f03e57ad> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-gesundheit-ernaehrung,
+        elem:f-koerper ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Körper und Gesundheit" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-e32c4a1172f0-HH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-e32c4a1172f0> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Vier Leitmotive und sieben Bildungsbereiche."@de ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Perspektive Kind – Hamburger Bildungsleitlinien" ;
+    cur:validFrom "2024-09-28"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-e452262da5ef-HB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-e452262da5ef> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-bewegung,
+        elem:f-koerper ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Körper und Bewegung" ;
+    cur:verified false .
+
+elem:lex-e7162497c5d5 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-e7162497c5d5> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:Bildungsbereich ;
+    cur:occursIn cv:occ_heading,
+        cv:occ_toc ;
+    cur:recognitionHint "6 bis 11 parallel aufgebaute Kapitel zu Sprache, Mathematik, Körper usw."@de ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Bildungsbereich" ;
+    cur:verified true .
+
+elem:lex-e8cad8d63522-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-e8cad8d63522> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Kurzform BEE. Querschnittsthemen in Kapitel 2, Bereiche in Kapitel 3."@de ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Bildungs- und Erziehungsempfehlungen für Kindertagesstätten" ;
+    cur:verified true .
+
+elem:lex-e9054a60e197-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-e9054a60e197> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo kd:ec-resilience ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Querschnittsthema 2.1."@de ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Resilienz" ;
+    cur:verified true .
+
+elem:lex-e98f5ba417fe a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-e98f5ba417fe> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Querschnitt ;
+    cur:occursIn cv:occ_heading ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Querschnittsthema" ;
+    cur:verified true .
+
+elem:lex-ea335334d618-HB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-ea335334d618> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-nonverbale-kommunikation,
+        elem:f-sprache ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Sprachliche und nonverbale Kommunikation" ;
+    cur:verified false .
+
+elem:lex-ed502a997692-SL a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-ed502a997692> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-literacy,
+        elem:f-medien,
+        elem:f-sprache ;
+    cur:negativeHint "Bereichsname des Berliner Bildungsprogramms 2014; SL-Zuordnung am Bildungsprogramm für saarländische Krippen und Kindergärten (2018) prüfen."@de ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Kommunikation: Sprachen, Schriftkultur und Medien" ;
+    cur:verified false .
+
+elem:lex-ee70752b06dd-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-ee70752b06dd> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-gesundheit-ernaehrung,
+        elem:f-koerper,
+        elem:f-koerperwahrnehmung-sexualitaet ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Körper – Gesundheit – Sexualität" ;
+    cur:verified true .
+
+elem:lex-eef258b97182-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-eef258b97182> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-religion-weltanschauung,
+        elem:f-werte-ethik-philosophie ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Philosophie, Ethik und Religion" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-ef0d78519bb0 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-ef0d78519bb0> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo ctx:circle-time ;
+    cur:occursIn cv:occ_body ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Morgenkreis" ;
+    cur:verified true .
+
+elem:lex-f01fc5cbb326-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-f01fc5cbb326> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo kd:ec-motivation,
+        elem:f-emotionen ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Emotion und Motivation" ;
+    cur:verified true .
+
+elem:lex-f22bc5636e68-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-f22bc5636e68> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:p-geschlechtersensibel ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Querschnittsthema 2.3."@de ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Geschlechtssensible Pädagogik" ;
+    cur:verified true .
+
+elem:lex-f44805552b39-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-f44805552b39> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-mint ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Mathematik – Naturwissenschaft – Technik" ;
+    cur:verified true .
+
+elem:lex-f47d7c4e2cc1-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-f47d7c4e2cc1> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo ctx:body-care ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Alltagssituation."@de ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.80 ;
+    cur:surfaceForm "Hygiene" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified false .
+
+elem:lex-f551d51384fe a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-f551d51384fe> ;
+    cur:alsoMapsTo elem:Inhalt ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo elem:Teilbereich ;
+    cur:occursIn cv:occ_body,
+        cv:occ_heading ;
+    cur:recognitionHint "Kann Teilbereich, Inhalt oder pädagogische Priorität sein."@de ;
+    cur:strength 0.40 ;
+    cur:surfaceForm "Schwerpunkt" ;
+    cur:verified true .
+
+elem:lex-f56d91682573-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-f56d91682573> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Reflexionsfrage ;
+    cur:occursIn cv:occ_box,
+        cv:occ_heading ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Fragen zur Reflexion" ;
+    cur:verified true .
+
+elem:lex-f56d91682573-NW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-f56d91682573> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:Reflexionsfrage ;
+    cur:occursIn cv:occ_box,
+        cv:occ_heading ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Fragen zur Reflexion" ;
+    cur:verified true .
+
+elem:lex-f8bba26e16e5-HH a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-f8bba26e16e5> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:p-kinderrechte ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Leitmotiv."@de ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Kinderrechte" ;
+    cur:validFrom "2024-09-28"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-f9f210ff4865-BW a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-f9f210ff4865> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-aesthetik ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 5 des Gemeinsamen Rahmens. Sachsen: Leitbegriff Wahrnehmung."@de ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Ästhetische Bildung" ;
+    cur:verified true .
+
+elem:lex-f9f210ff4865-DE a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-f9f210ff4865> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-aesthetik ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 5 des Gemeinsamen Rahmens. Sachsen: Leitbegriff Wahrnehmung."@de ;
+    cur:scopeRegion land:DE ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Ästhetische Bildung" ;
+    cur:verified true .
+
+elem:lex-f9f210ff4865-NI a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-f9f210ff4865> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-aesthetik ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 5 des Gemeinsamen Rahmens. Sachsen: Leitbegriff Wahrnehmung."@de ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Ästhetische Bildung" ;
+    cur:verified true .
+
+elem:lex-f9f210ff4865-SN a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-f9f210ff4865> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-aesthetik ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 5 des Gemeinsamen Rahmens. Sachsen: Leitbegriff Wahrnehmung."@de ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Ästhetische Bildung" ;
+    cur:verified true .
+
+elem:lex-f9f210ff4865-ST a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-f9f210ff4865> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo elem:f-aesthetik ;
+    cur:occursIn cv:occ_heading ;
+    cur:recognitionHint "Bereich 5 des Gemeinsamen Rahmens. Sachsen: Leitbegriff Wahrnehmung."@de ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Ästhetische Bildung" ;
+    cur:verified true .
+
+elem:lex-fa5c6c1351a8-RP a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-fa5c6c1351a8> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-demokratie-gesellschaft,
+        elem:f-soziale-beziehungen ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.95 ;
+    cur:surfaceForm "Gestaltung von Gemeinschaft und Beziehungen" ;
+    cur:verified true .
+
+elem:lex-fadf6f6441df-HB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-fadf6f6441df> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-demokratie-gesellschaft,
+        elem:f-kulturelle-vielfalt,
+        elem:f-soziale-beziehungen ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.85 ;
+    cur:surfaceForm "Soziales Lernen, Kultur und Gesellschaft" ;
+    cur:verified false .
+
+elem:lex-fe37b9abc298-BB a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-fe37b9abc298> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:f-bewegung ;
+    cur:occursIn cv:occ_heading ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.90 ;
+    cur:surfaceForm "Bewegung und Sport" ;
+    cur:validFrom "2024-07-29"^^xsd:date ;
+    cur:verified true .
+
+elem:lex-ff3e263ac916-MV a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/curriculum-core/hinweis/h-ff3e263ac916> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo elem:dt-Bildungsplan-0-10 ;
+    cur:occursIn cv:occ_titlePage ;
+    cur:recognitionHint "Fassung 2025, Kita, Kindertagespflege und Grundschule."@de ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.98 ;
+    cur:surfaceForm "Bildungskonzeption für 0- bis 10-jährige Kinder" ;
+    cur:verified true .
+

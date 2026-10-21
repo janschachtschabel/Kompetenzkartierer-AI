@@ -1,0 +1,25 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-HB;G-Kurs / E-Kurs;cue;lvl:CourseLevelsLowerSecondary;Kursniveaus Sekundarstufe I (G-/E-/Z-Kurs);;;;0.85;nein;;schul:cue-nv-gekurs
+DE-HB;Erweiterungsbaustein (Zugangswege/Anwendungsbereiche/Vertiefungen);cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030243
+DE-HB;Kommentar;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0002134
+DE-HB;Inhalt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0002129
+DE-HB;Schwerpunktthema;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030001
+DE-HB;Verbindliche Inhalte;cue;schul:Inhalt, cv:obl_binding;Inhalt, verbindlich;;;;0.9;nein;;schul:cue-in-verbindliche
+DE-HB;Aufgabenbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0002126
+DE-HB;Basiskonzept;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030239
+DE-HB;Inhaltsbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030242
+DE-HB;Rahmenthema;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030238
+DE-HB;Sachgebiet;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0002193
+DE-HB;Themenbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.75;nein;;schul:cue-ib-themenbereich
+DE-HB;Themenfeld;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0002133
+DE-HB;Kompetenzbereich;pref;schul:Kompetenzbereich;Kompetenzbereich;;;;0.8;nein;;schul:cue-kb-kompetenzbereich
+DE-HB;Anforderung;homonym;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;"„Anforderungsbereich I–III“ → Aufgabenanforderung (nur an Aufgaben); sonst Erwartung bzw. Erwartungsniveau.";schul:cue-ke-anforderung-hb
+DE-HB;Inhaltsbezogene Anforderung;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030236
+DE-HB;Prozessbezogene Anforderung;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030235
+DE-HB;Standard;homonym;schul:NiveaugebundeneErwartung;niveaugebundene Erwartung;;;;0.7;nein;"Im Landeslehrplan ist ein „Standard“ eine Kompetenzerwartung (learningOutcome; BE/BB: Tabelle mit Niveaustufen A–H). Nur im Dokumenttyp KMK-Bildungsstandards ist er ein Regelstandard (standard).";schul:cue-ke-standard
+DE-HB;Orientierungsrahmen;cue;schul:Querschnittsbereich;Querschnittsbereich;;;;0.6;nein;;schul:fwu-LP_0030153
+DE-HB;Lehrplanfragment;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0002122
+DE-HB;Verweis auf Basiskonzept;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030011
+DE-HB;Verweis auf Kompetenz;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030013
+DE-HB;Verweis auf Orientierungsrahmen;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030012
+DE-HB;Bildungsplan;cue;schul:dt-Lehrplan;Lehrplan;titlePage;;;0.9;nein;In Kita-Dokumenten (Bildungsplan BB, SN) gehört das Wort zum Profil elem:.;schul:cue-dt-bildungsplan

@@ -1,0 +1,10 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-HB;Rahmenplan für Bildung und Erziehung im Elementarbereich;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.95;ja;Ergänzend erscheinen 'Konkretisierungen' als eigenes Dokument.;elem:lex-3b6b2b7e34e7-HB
+DE-HB;Bildungsplan 0 bis 10;cue;elem:dt-Bildungsplan-0-10;Altersübergreifender Bildungsplan;titlePage;;;0.85;nein;Bereichsweise erscheinende Pläne mit Kita-Teil und Grundschul-Fach.;elem:lex-cfa2bdd1a5c8-HB
+DE-HB;Körper und Bewegung;cue;elem:f-bewegung, elem:f-koerper;Bewegung, Körper, Bewegung, Gesundheit und Prävention;heading;;;0.85;nein;;elem:lex-e452262da5ef-HB
+DE-HB;Bauen und Gestalten;cue;elem:f-bildnerisch, elem:f-technik;Bildnerisches Gestalten, Technik;heading;;;0.80;nein;;elem:lex-e149fa5ee341-HB
+DE-HB;Soziales Lernen, Kultur und Gesellschaft;cue;elem:f-demokratie-gesellschaft, elem:f-kulturelle-vielfalt, elem:f-soziale-beziehungen;Demokratie und Gesellschaft, Kulturelle Vielfalt und interkulturelles Lernen, Soziale Beziehungen, Kooperation und Konflikte;heading;;;0.85;nein;;elem:lex-fadf6f6441df-HB
+DE-HB;Rhythmik und Musik;cue;elem:f-musik;Musik und Rhythmik;heading;;;0.85;nein;;elem:lex-a67149eb49aa-HB
+DE-HB;Natur, Umwelt und Technik;cue;elem:f-natur-oekologie, elem:f-naturwissenschaft, elem:f-technik;Naturerfahrung und Ökologie, Naturwissenschaftliche Phänomene, Technik;heading;;;0.85;nein;;elem:lex-545c81ba3161-HB
+DE-HB;Sprachliche und nonverbale Kommunikation;cue;elem:f-nonverbale-kommunikation, elem:f-sprache;Nonverbale Kommunikation, Sprache, Kommunikation und Literacy;heading;;;0.90;nein;;elem:lex-ea335334d618-HB
+DE-HB;Spiel und Phantasie;cue;elem:p-spiel;Spiel als Lernform;heading;;;0.85;nein;;elem:lex-7739a3ba5685-HB

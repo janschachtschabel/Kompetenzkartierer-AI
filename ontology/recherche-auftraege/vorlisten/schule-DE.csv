@@ -1,0 +1,9 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE;Basiskonzept;cue;schul:Inhaltsbereich;Inhaltsbereich;;schul:dt-Bildungsstandards;;0.6;nein;;schul:fwu-LP_0030268
+DE;Domänenspezifischer Kompetenzbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;schul:dt-Bildungsstandards;;0.6;nein;;schul:fwu-LP_0030264
+DE;Prozessbezogener Kompetenzbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;schul:dt-Bildungsstandards;;0.6;nein;;schul:fwu-LP_0030265
+DE;Verbindlicher inhaltlicher Aspekt;cue;schul:Inhaltsbereich;Inhaltsbereich;;schul:dt-Bildungsstandards;;0.6;nein;;schul:fwu-LP_0030269
+DE;Kompetenzbereich;pref;schul:Kompetenzbereich;Kompetenzbereich;;;;0.8;nein;;schul:cue-kb-kompetenzbereich
+DE;Standard;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;schul:dt-Bildungsstandards;;0.6;nein;;schul:fwu-LP_0030266
+DE;Weiteres Thema;cue;schul:Querschnittsbereich;Querschnittsbereich;;schul:dt-Bildungsstandards;;0.6;nein;;schul:fwu-LP_0030335
+DE;Bildungsstandards;pref;schul:dt-Bildungsstandards;KMK-Bildungsstandards;;;;0.9;nein;"Herausgeber Kultusministerkonferenz; Standards für das Ende eines Bildungsabschnitts (Primarbereich, ESA, MSA, AHR).";schul:cue-dt-bildungsstandards

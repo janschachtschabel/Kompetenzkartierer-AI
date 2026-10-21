@@ -1,0 +1,50 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-NI;prozessbezogene Kompetenzen;cue;kd:sk-process, schul:Kompetenzbereich;prozessbezogen, Kompetenzbereich;;;;0.9;nein;;schul:cue-kb-prozessbezogen
+DE-NI;G-Kurs / E-Kurs;cue;lvl:CourseLevelsLowerSecondary;Kursniveaus Sekundarstufe I (G-/E-/Z-Kurs);;;;0.85;nein;;schul:cue-nv-gekurs
+DE-NI;cv:mark_bold;cue;lvl:course-E;E-Kurs (erweitert);;;;0.85;nein;NI-Kerncurricula: fett gedruckte Erwartungen gelten zusätzlich für den E-Kurs.;schul:cue-nv-ni-fett
+DE-NI;Autor und Textgruppe;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030219
+DE-NI;Beispiel;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0002206
+DE-NI;Empfohlene Schreibform und Übung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030220
+DE-NI;Ergänzender Hinweis;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0001009
+DE-NI;Ergänzung zur Kompetenz;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030014
+DE-NI;Fakultative Erweiterung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030230
+DE-NI;Hinweis zum Einsatz digitaler Mathematikwerkzeuge;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030231
+DE-NI;Hinweis zum Einsatz digitaler Medien und Werkzeuge;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030228
+DE-NI;Online-Material;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030232
+DE-NI;Sprachbildung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030226
+DE-NI;Umsetzung im Unterricht;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0002207
+DE-NI;Unterrichtsidee zur Handlungsorientierung online;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030229
+DE-NI;Verweis auf Fachbezug;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030216
+DE-NI;Weiterführende Anforderung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030227
+DE-NI;Kerninhalt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0001007
+DE-NI;Kerninhalte;cue;schul:Inhalt;Inhalt;;;;0.7;nein;;schul:cue-in-kerninhalt
+DE-NI;Möglicher Unterrichtsaspekt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030225
+DE-NI;Verbindlicher Unterrichtsaspekt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030224
+DE-NI;Verbindlicher Unterrichtsinhalt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030218
+DE-NI;Mögliche Inhalte;cue;schul:Inhalt, cv:obl_exemplary;Inhalt, beispielhaft;;;;0.9;nein;;schul:cue-in-moegliche
+DE-NI;Fachliche Perspektive;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030209
+DE-NI;Inhaltsbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030217
+DE-NI;Lernbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0002208
+DE-NI;Pflichtmodul;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030222
+DE-NI;Rahmenthema;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.8;nein;;schul:cue-ib-rahmenthema
+DE-NI;Sprachliches Mittel;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030202
+DE-NI;Teilaspekt;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030208
+DE-NI;Thema;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0002209
+DE-NI;Themenbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.75;nein;;schul:cue-ib-themenbereich
+DE-NI;Themenfeld;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030207
+DE-NI;Wahlpflichtmodul;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030223
+DE-NI;Kernkompetenz;cue;schul:Kompetenzbereich;Kompetenzbereich;;;;0.6;nein;;schul:fwu-LP_0002205
+DE-NI;Kommunikative Teilkompetenz;cue;schul:Kompetenzbereich;Kompetenzbereich;;;;0.6;nein;;schul:fwu-LP_0030201
+DE-NI;Kompetenzbereich;pref;schul:Kompetenzbereich;Kompetenzbereich;;;;0.8;nein;;schul:cue-kb-kompetenzbereich
+DE-NI;Erwartete Kompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0001003
+DE-NI;erwartete Kompetenzen;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.9;nein;;schul:cue-ke-erwartete
+DE-NI;Inhaltsbezogene Kompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030215
+DE-NI;Lernstrategie und Arbeitstechnik;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030205
+DE-NI;Methodenkompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030204
+DE-NI;Prozessbezogene Kompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030213
+DE-NI;Lehrplanfragment;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0001006
+DE-NI;Schuljahrgänge;alt;schul:Stufenabschnitt;Stufenabschnitt;;;;0.85;nein;;schul:cue-sa-schuljahrgaenge
+DE-NI;Verweis auf Inhaltsbezogene Kompetenzbereiche;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030233
+DE-NI;Verweis auf Prozessbezogene Kompetenzbereiche;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030234
+DE-NI;Verweis auf Vernetzungsmöglichkeiten;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030212
+DE-NI;Kerncurriculum;cue;schul:dt-Lehrplan;Lehrplan;titlePage;;;0.9;nein;;schul:cue-dt-kerncurriculum

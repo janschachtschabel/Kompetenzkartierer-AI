@@ -1,0 +1,19 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-BW;Bildungs- und Entwicklungsfeld;cue;elem:Bildungsbereich;Bildungsbereich;heading, toc;;;0.98;ja;8 Felder in der Fassung 2025, Teil einer Bildungs- und Erziehungsmatrix.;elem:lex-53b803df67ae-BW
+DE-BW;Ziele der Bildungs- und Entwicklungsfelder;cue;elem:Bildungsziel, cv:obl_binding;Bildungs- und Entwicklungsziel, verbindlich;;;;0.85;nein;BW: Ziele der Felder sind verbindlich (cur:obligation cv:obl_binding), der übrige Plan orientierend.;elem:cue-ziele-felder
+DE-BW;Leitprinzip;cue;elem:Querschnitt;Querschnitt/Leitprinzip;heading;;;0.98;ja;Kinderschutz und Kinderrechte, Inklusion, Partizipation, BNE.;elem:lex-d0f9960520c8-BW
+DE-BW;Fragen zur Reflexion;cue;elem:Reflexionsfrage;Reflexionsfrage;box, heading;;;0.90;ja;;elem:lex-f56d91682573-BW
+DE-BW;Orientierungsplan;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.9;nein;;elem:cue-gen-orientierungsplan
+DE-BW;Orientierungsplan für Bildung und Erziehung;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.90;ja;Weiterentwickelte Fassung 2025 mit 8 Bildungs- und Entwicklungsfeldern und 4 Leitprinzipien.;elem:lex-6a2e14ff84de-BW
+DE-BW;Ästhetische Bildung;pref;elem:f-aesthetik;Ästhetische Bildung;heading;;;0.95;ja;Bereich 5 des Gemeinsamen Rahmens. Sachsen: Leitbegriff Wahrnehmung.;elem:lex-f9f210ff4865-BW
+DE-BW;Bildung für nachhaltige Entwicklung;pref;elem:f-bne;Bildung für nachhaltige Entwicklung;heading;;;0.95;ja;BW und HH als Leitprinzip bzw. Leitmotiv, ST als Bildungsbereich – Rolle am Knoten aus dem Kontext bestimmen.;elem:lex-abb1a65ac887-BW
+DE-BW;Körper und Lebensweise;cue;elem:f-koerper, elem:f-lebenspraxis;Körper, Bewegung, Gesundheit und Prävention, Lebenspraxis und Selbstständigkeit;heading;;;0.95;ja;;elem:lex-04d19a10ef3a-BW
+DE-BW;Kultur, Werte und Religion;cue;elem:f-kulturelle-vielfalt, elem:f-religion-weltanschauung, elem:f-werte-ethik-philosophie;Kulturelle Vielfalt und interkulturelles Lernen, Religion und Weltanschauung, Werte, Ethik und Philosophieren;heading;;;0.90;ja;;elem:lex-cb126465c2d6-BW
+DE-BW;Medienbildung;cue;elem:f-medien;Medien und digitale Bildung;heading;;;0.95;ja;;elem:lex-e1bec2041a0a-BW
+DE-BW;Soziale Entwicklung;cue;elem:f-soziale-beziehungen;Soziale Beziehungen, Kooperation und Konflikte;heading;;;0.90;ja;;elem:lex-d63b0be95c2c-BW
+DE-BW;Sprache und Kommunikation;cue;elem:f-sprache;Sprache, Kommunikation und Literacy;heading;;;0.95;ja;;elem:lex-1b906f37fd4b-BW
+DE-BW;Inklusion;pref;elem:p-inklusion;Inklusion;heading;;;0.85;ja;;elem:lex-18a3dd4fa837-BW
+DE-BW;Kinderschutz und Kinderrechte;cue;elem:p-kinderrechte, elem:p-kinderschutz;Kinderrechte, Kinderschutz;heading;;;0.95;ja;Leitprinzip.;elem:lex-2d9d57ce21d7-BW
+DE-BW;Partizipation;pref;elem:p-partizipation;Partizipation;heading;;;0.85;ja;;elem:lex-4c3e2d9c45f0-BW
+DE-BW;Wahrnehmen und Denken;cue;kd:ec-cognition, elem:Bildungsbereich, elem:f-sinneswahrnehmung;Kognitive Kompetenzen, Bildungsbereich, Sinneswahrnehmung;heading;;;0.95;ja;Bildungs- und Entwicklungsfeld ohne eigenen Weltausschnitt – Knoten erhält Rolle Bildungsbereich und Kompetenzdimension Kognition.;elem:lex-2194c3d58e15-BW
+DE-BW;Emotion und Motivation;cue;kd:ec-motivation, elem:f-emotionen;Motivationale Kompetenzen, Emotionen;heading;;;0.95;ja;;elem:lex-f01fc5cbb326-BW

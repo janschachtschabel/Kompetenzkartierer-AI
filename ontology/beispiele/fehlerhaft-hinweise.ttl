@@ -1,0 +1,82 @@
+@prefix ex:    <https://w3id.org/wlo/curriculum/example/> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix shs:   <https://w3id.org/wlo/curriculum/shapes#> .
+@prefix lvl:   <https://w3id.org/wlo/curriculum/level/> .
+@prefix schul: <https://w3id.org/wlo/curriculum/profile/school#> .
+@prefix elem:  <https://w3id.org/wlo/curriculum/profile/early-childhood#> .
+@prefix beruf: <https://w3id.org/wlo/curriculum/profile/vocational#> .
+@prefix hs:    <https://w3id.org/wlo/curriculum/profile/higher-education#> .
+@prefix eb:    <https://w3id.org/wlo/curriculum/profile/adult-education#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+
+# =============================================================================
+# Plausibilitätsfälle: strukturell korrekt (keine Violation), aber jeder Fall
+# löst die genannte Warnung aus (ex:expectsWarningOf). Belegt, dass die
+# Vollständigkeitsregeln der Profile und die Plausibilitätsregeln des Kerns
+# greifen.
+# =============================================================================
+
+ex:w-doc a cur:Document ; dct:title "Plausibilitätsbeispiel (fiktiv)"@de ; dct:publisher "fiktiv" ;
+    cur:documentType schul:dt-Lehrplan ; cur:educationSector cv:sec_school ; cur:legalForm cv:lf_unknown ;
+    cur:represents ex:w-spec .
+ex:w-spec a cur:Curriculum ; dct:title "Plausibilitätsbeispiel"@de ; cur:checkedAbsent cv:dock_field .
+ex:w-anc a cur:SourceAnchor ; cur:inDocument ex:w-doc ; cur:pageStart 2 ; cur:pageEnd 2 ; cur:blockId "p2-b1" ; cur:matchKind cv:match_exact .
+ex:w-node a cur:CurriculumNode ; cur:partOf ex:w-spec ; cur:nodeFunction cv:fn_area ; cur:nodeType schul:Inhaltsbereich ; cur:anchor ex:w-anc .
+
+# W1: Modul ohne LP und ohne Lernergebnisse (MRVO)
+ex:w1 ex:expectsWarningOf shs:HsModuleShape ; ex:focus ex:w1-mod .
+ex:w1-mod a cur:CurriculumNode ; cur:partOf ex:w-spec ; cur:nodeFunction cv:fn_unit ; cur:nodeType hs:Modul ;
+    cur:code "XY-200" ; cur:anchor ex:w-anc .
+
+# W2: Lernfeld ohne Zeitrichtwert und ohne Ausbildungsjahr
+ex:w2 ex:expectsWarningOf shs:BerufLernfeldShape ; ex:focus ex:w2-lf .
+ex:w2-lf a cur:CurriculumNode ; cur:partOf ex:w-spec ; cur:nodeFunction cv:fn_unit ; cur:nodeType beruf:Lernfeld ;
+    cur:code "7" ; cur:anchor ex:w-anc .
+
+# W3: Zeitrichtwert nicht durch 20 teilbar (Info)
+ex:w3 ex:expectsWarningOf shs:BerufZeitrichtwertShape ; ex:focus ex:w3-lf .
+ex:w3-lf a cur:CurriculumNode ; cur:partOf ex:w-spec ; cur:nodeFunction cv:fn_unit ; cur:nodeType beruf:Lernfeld ;
+    cur:code "8" ; cur:anchor ex:w-anc ; cur:workload ex:w3-wl ; cur:timeSpan ex:w3-ts .
+ex:w3-wl a cur:Workload ; cur:amount 70.0 ; cur:unit cv:unit_lesson ; cur:workloadKind cv:wl_guidanceValue .
+ex:w3-ts a cur:TimeSpan ; cur:timeKind cv:time_trainingYear ; cur:from 2.0 ; cur:to 2.0 .
+
+# W4: Zwischenprüfung mit Gewicht
+ex:w4 ex:expectsWarningOf shs:BerufZwischenpruefungShape ; ex:focus ex:w4-ex .
+ex:w4-ex a cur:Assessment ; cur:partOf ex:w-spec ; cur:assessmentKind cv:ak_exam ; beruf:examType beruf:ex-zwischen ; cur:weightPercent 20 .
+
+# W5: Regelstandard in einem Landeslehrplan
+ex:w5 ex:expectsWarningOf shs:SchulRegelstandardShape ; ex:focus ex:w5-st .
+ex:w5-st a cur:Statement ; cur:partOf ex:w-node ; cur:verbatim "nutzen Modelle zur Erklärung"@de ;
+    cur:statementKind cv:kind_standard ; cur:statementSubkind schul:Regelstandard ; cur:addressee cv:addr_learner ; cur:anchor ex:w-anc .
+
+# W6: Bildungsbereich ohne Feld
+ex:w6 ex:expectsWarningOf shs:ElemBereichShape ; ex:focus ex:w6-node .
+ex:w6-node a cur:CurriculumNode ; cur:partOf ex:w-spec ; cur:nodeFunction cv:fn_area ; cur:nodeType elem:Bildungsbereich ; cur:anchor ex:w-anc .
+
+# W7: Niveaustufe ohne Niveauzuordnung
+ex:w7 ex:expectsWarningOf shs:EbNiveaustufeShape ; ex:focus ex:w7-node .
+ex:w7-node a cur:CurriculumNode ; cur:partOf ex:w-spec ; cur:nodeFunction cv:fn_grouping ; cur:nodeType eb:Niveaustufe ; cur:anchor ex:w-anc .
+
+# W8: Anforderungsbereich an einer Kompetenzerwartung, aus dem Operator geschätzt
+ex:w8 ex:expectsWarningOf shs:LevelAssignmentTaskDemandShape ; ex:focus ex:w8-la .
+ex:w8-st a cur:Statement ; cur:partOf ex:w-node ; cur:verbatim "beurteilen Maßnahmen zum Klimaschutz"@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:addressee cv:addr_learner ; cur:anchor ex:w-anc ; cur:levelAssignment ex:w8-la .
+ex:w8-la a cur:LevelAssignment ; cur:level lvl:afb-III ; cur:origin cv:orig_rule .
+
+# W9: Lernergebnis mit Adressat Lehrkraft
+ex:w9 ex:expectsWarningOf shs:StatementPlausibilityShape ; ex:focus ex:w9-st .
+ex:w9-st a cur:Statement ; cur:partOf ex:w-node ; cur:verbatim "Die Lehrkraft erklärt den Stromkreis."@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:addressee cv:addr_educator ; cur:anchor ex:w-anc .
+
+# W10: Rückprobe – Gegenstand steht nicht im Wortlaut
+ex:w10 ex:expectsWarningOf shs:DecompositionBackcheckShape ; ex:focus ex:w10-dec .
+ex:w10-st a cur:Statement ; cur:partOf ex:w-node ; cur:verbatim "erläutern die Funktion von Stromkreisen"@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:addressee cv:addr_learner ; cur:anchor ex:w-anc .
+ex:w10-dec a cur:Decomposition ; cur:decomposes ex:w10-st ; cur:actionText "erläutern" ;
+    cur:objectText "persönliche Daten in Formularen" ; cur:origin cv:orig_model ; cur:confidence 0.4 .
+
+# W11: Kurzform-Kante ohne bestätigte Zuordnung
+ex:w11 ex:expectsWarningOf shs:ShortcutBackingShape ; ex:focus ex:w8-st .
+ex:w8-st cur:buildsOn ex:w10-st .

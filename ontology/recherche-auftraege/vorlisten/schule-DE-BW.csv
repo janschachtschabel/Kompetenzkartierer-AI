@@ -1,0 +1,31 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-BW;prozessbezogene Kompetenzen;cue;kd:sk-process, schul:Kompetenzbereich;prozessbezogen, Kompetenzbereich;;;;0.9;nein;;schul:cue-kb-prozessbezogen
+DE-BW;Niveau G / M / E;cue;lvl:BWLevels;Niveaus G/M/E (Bildungsplan BW, Sekundarstufe I);;;;0.85;nein;;schul:cue-nv-gme
+DE-BW;L BNE;cue;qz:bw-BNE;Bildung für nachhaltige Entwicklung;;;BP2016;0.95;nein;;schul:cue-qk-bw-bne
+DE-BW;L BO;cue;qz:bw-BO;Berufliche Orientierung;;;BP2016;0.95;nein;;schul:cue-qk-bw-bo
+DE-BW;L BTV;cue;qz:bw-BTV;Bildung für Toleranz und Akzeptanz von Vielfalt;;;BP2016;0.95;nein;;schul:cue-qk-bw-btv
+DE-BW;L MB;cue;qz:bw-MB;Medienbildung;;;BP2016;0.95;nein;;schul:cue-qk-bw-mb
+DE-BW;L PG;cue;qz:bw-PG;Prävention und Gesundheitsförderung;;;BP2016;0.95;nein;;schul:cue-qk-bw-pg
+DE-BW;L VB;cue;qz:bw-VB;Verbraucherbildung;;;BP2016;0.95;nein;;schul:cue-qk-bw-vb
+DE-BW;Denkanstöße;cue;schul:Hinweis;Hinweis/Anregung;;;BP2016;0.85;nein;;schul:cue-hw-denkanstoesse
+DE-BW;Denkanstoß;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0002060
+DE-BW;Experiment;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030114
+DE-BW;Inhaltsbezogene Kompetenz;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0002059
+DE-BW;Prozessbezogene Kompetenz;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0002057
+DE-BW;Thema;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030069
+DE-BW;Themenfeld;homonym;schul:Inhaltsbereich;Inhaltsbereich;;;;0.75;nein;"Einheit, wenn das Themenfeld einen Zeitumfang, einen festen Jahrgang oder eine Verbindlichkeit (verbindlich/wahlobligatorisch) trägt (BE/BB C3, HE Oberstufe); sonst Inhaltsbereich.";schul:cue-ib-themenfeld
+DE-BW;Kompetenzbereich;cue;schul:Kompetenzbereich;Kompetenzbereich;;;;0.6;nein;;schul:fwu-LP_0030174
+DE-BW;Standard;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030247
+DE-BW;Teilkompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;BP2016;0.9;nein;"Nummeriert (1), (2) …; daneben Verweisspalte P, I, F, L.";schul:cue-ke-teilkompetenz
+DE-BW;Leitperspektive;cue;schul:Querschnittsbereich;Querschnittsbereich;;;;0.9;nein;"BW BP2016: BNE, BTV, PG, BO, MB, VB (qz:BW-BP2016); HH: W, BNE, D (qz:HH-2022).";schul:cue-qs-leitperspektive
+DE-BW;Lehrplanfragment;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0002052
+DE-BW;Leitgedanken zum Kompetenzerwerb;cue;schul:Rahmenteil;Rahmenteil;;;BP2016;0.85;nein;;schul:cue-rt-leitgedanken
+DE-BW;Klassen 5/6;cue;schul:Stufenabschnitt;Stufenabschnitt;;;BP2016;0.8;nein;;schul:cue-sa-klassen
+DE-BW;Kursstufe;cue;schul:Stufenabschnitt, schul:ph-kursstufe;Stufenabschnitt, Kursstufe;;;;0.85;nein;;schul:cue-sa-kursstufe
+DE-BW;^(P|I|F|L)\s+[\w.]+;cue;schul:Verweis;Verweis;;;BP2016;0.85;nein;Verweisspalte: P = prozessbezogene Kompetenz, I = inhaltsbezogene Kompetenz (beide im selben Plan), F = anderes Fach, L = Leitperspektive (→ cur:contributesTo).;schul:cue-vw-bw-pifl
+DE-BW;Umsetzungshilfen;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030179
+DE-BW;Verweis auf andere Fächer;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030178
+DE-BW;Verweis auf andere Standards für inhaltsbezogene Kompetenzen desselben Fachs;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030176
+DE-BW;Verweis auf die prozessbezogenen Kompetenzen;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030175
+DE-BW;Verweis auf Leitperspektiven;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030177
+DE-BW;Bildungsplan;cue;schul:dt-Lehrplan;Lehrplan;titlePage;;;0.9;nein;In Kita-Dokumenten (Bildungsplan BB, SN) gehört das Wort zum Profil elem:.;schul:cue-dt-bildungsplan

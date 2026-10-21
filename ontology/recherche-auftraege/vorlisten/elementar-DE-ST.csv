@@ -1,0 +1,9 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-ST;Bildung: elementar – Bildung von Anfang an;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.98;ja;Fortschreibung 2025 mit 7 Bildungsbereichen.;elem:lex-c6401438d00f-ST
+DE-ST;Ästhetische Bildung;pref;elem:f-aesthetik;Ästhetische Bildung;heading;;;0.95;ja;Bereich 5 des Gemeinsamen Rahmens. Sachsen: Leitbegriff Wahrnehmung.;elem:lex-f9f210ff4865-ST
+DE-ST;Bildung für nachhaltige Entwicklung;pref;elem:f-bne;Bildung für nachhaltige Entwicklung;heading;;;0.95;ja;BW und HH als Leitprinzip bzw. Leitmotiv, ST als Bildungsbereich – Rolle am Knoten aus dem Kontext bestimmen.;elem:lex-abb1a65ac887-ST
+DE-ST;Grundthemen des Lebens;cue;elem:f-demokratie-gesellschaft, elem:f-werte-ethik-philosophie;Demokratie und Gesellschaft, Werte, Ethik und Philosophieren;heading;;;0.90;ja;;elem:lex-753184d3b03d-ST
+DE-ST;Körper, Bewegung, Gesundheit und Prävention;pref;elem:f-koerper;Körper, Bewegung, Gesundheit und Prävention;heading;;;0.95;ja;Bereich 6 des Gemeinsamen Rahmens.;elem:lex-c2f956ef0981-ST
+DE-ST;Medien und digitale Bildung;pref;elem:f-medien;Medien und digitale Bildung;heading;;;0.95;ja;Bereich 4 des Gemeinsamen Rahmens.;elem:lex-b959c4760ad6-ST
+DE-ST;Mathematik, Informatik, Naturwissenschaft und Technik;pref;elem:f-mint;Mathematik, Informatik, Naturwissenschaft und Technik;heading;;;0.95;ja;;elem:lex-9005d6d928ec-ST
+DE-ST;Sprache und Kommunikation;cue;elem:f-sprache;Sprache, Kommunikation und Literacy;heading;;;0.95;ja;;elem:lex-1b906f37fd4b-ST

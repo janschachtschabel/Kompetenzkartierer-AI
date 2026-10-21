@@ -1,0 +1,221 @@
+{
+  "type": "object",
+  "description": "Stufe X4: ein Aufruf je Einheit (Seitenbereich aus dem Skelett) – alle Aussagen im Wortlaut als Blätter. Die Wortlautprüfung (X5) gleicht verbatim gegen die Blöcke ab.",
+  "additionalProperties": false,
+  "required": [
+    "unitKey",
+    "statements",
+    "checkedAbsent"
+  ],
+  "properties": {
+    "unitKey": {
+      "type": "string",
+      "description": "Kennung der Einheit aus dem Skelett."
+    },
+    "statements": {
+      "type": "array",
+      "description": "Aussagen in Dokumentreihenfolge; ein Spiegelstrich, eine Tabellenzeile oder ein Satz je Aussage nach der Segmentierungsregel des Knotentyps.",
+      "items": {
+        "type": "object",
+        "description": "Aussage",
+        "additionalProperties": false,
+        "required": [
+          "blockIds",
+          "verbatim",
+          "leadIn",
+          "statementKind",
+          "statementSubkind",
+          "addressee",
+          "obligation",
+          "layoutMarkers",
+          "codeText",
+          "levelText",
+          "timeText",
+          "contextText",
+          "crossCuttingMarkers",
+          "referenceMarker",
+          "exampleText",
+          "purposeText",
+          "targetsContent"
+        ],
+        "properties": {
+          "blockIds": {
+            "type": "array",
+            "description": "Block-IDs aus Stufe X0 (Muster p<Seite>-b<Block>), in Lesereihenfolge. Nie Seitenzahlen erfinden.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "verbatim": {
+            "type": "string",
+            "description": "Wortlaut der Aussage, wörtlich und vollständig, ohne gemeinsamen Einleitungssatz."
+          },
+          "leadIn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Gemeinsamer Einleitungssatz („Die Schülerinnen und Schüler …“), sonst null."
+          },
+          "statementKind": {
+            "type": "string",
+            "enum": [
+              "content",
+              "developmentGoal",
+              "guidance",
+              "learningOutcome",
+              "mandate",
+              "reference",
+              "standard",
+              "unclassified"
+            ],
+            "description": "Aussageart nach Funktion, nicht nach Wort; im Zweifel unclassified.",
+            "x-cv-scheme": "StatementKinds"
+          },
+          "statementSubkind": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Aussage-Unterart-ID aus der Liste im Prompt oder null."
+          },
+          "addressee": {
+            "type": "string",
+            "enum": [
+              "educator",
+              "family",
+              "institution",
+              "learner",
+              "other",
+              "partner"
+            ],
+            "description": "An wen sich die Aussage richtet.",
+            "x-cv-scheme": "Addressees"
+          },
+          "obligation": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "binding",
+              "elective",
+              "electiveRequired",
+              "exemplary",
+              "informative",
+              "recommended",
+              "selectionPool",
+              "unknown",
+              null
+            ],
+            "description": "Verbindlichkeit nur, wenn sie an dieser Aussage steht; sonst null (wird vererbt).",
+            "x-cv-scheme": "Obligations"
+          },
+          "layoutMarkers": {
+            "type": "array",
+            "description": "Satz- und Layoutsignale am Wortlaut (fett, kursiv, Klammer …).",
+            "x-cv-scheme": "LayoutMarkers",
+            "items": {
+              "type": "string",
+              "enum": [
+                "bold",
+                "box",
+                "bullet",
+                "italic",
+                "marginSymbol",
+                "numbered",
+                "parenthesis",
+                "plain",
+                "tableCell"
+              ]
+            }
+          },
+          "codeText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Nummer oder Kennung wie im Dokument („(3)“, „a)“, „QA2“)."
+          },
+          "levelText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Niveauangabe im Wortlaut an dieser Aussage („G/M/E“, „A1“, „Niveau D“)."
+          },
+          "timeText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Zeitangabe im Wortlaut an dieser Aussage."
+          },
+          "contextText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Ausdrücklich genannte Situation, Lebensbereich oder Lernort."
+          },
+          "crossCuttingMarkers": {
+            "type": "array",
+            "description": "Querschnittsmarker roh („L BNE“, „[MD3]“, „⇒ Medienbildung“).",
+            "items": {
+              "type": "string"
+            }
+          },
+          "referenceMarker": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Verweis roh („P 2.1“, „➔ GE, Kl. 8/9, LB 2“)."
+          },
+          "exampleText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Beispielteil („z. B. …“) wörtlich."
+          },
+          "purposeText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Handlungsziel („Möchte …“) wörtlich."
+          },
+          "targetsContent": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "Indizes (0-basiert) der Inhaltsaussagen derselben Antwort, auf die diese Aussage zeigt."
+          }
+        }
+      }
+    },
+    "checkedAbsent": {
+      "type": "array",
+      "description": "Andockpunkte, die in dieser Einheit nachweislich fehlen.",
+      "x-cv-scheme": "DockingPoints",
+      "items": {
+        "type": "string",
+        "enum": [
+          "addressee",
+          "competency",
+          "content",
+          "context",
+          "crossCutting",
+          "field",
+          "level",
+          "time"
+        ]
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/wlo/curriculum/schema/x4-aussagen",
+  "title": "X4 Aussagen einer Einheit"
+}

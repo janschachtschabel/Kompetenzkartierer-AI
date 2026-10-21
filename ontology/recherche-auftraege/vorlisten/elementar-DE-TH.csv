@@ -1,0 +1,19 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-TH;Bildungsansprüche;cue;elem:Bildungsanspruch, elem:Bildungsziel;Bildungsanspruch, Bildungs- und Entwicklungsziel;heading;;;0.85;nein;;elem:lex-6d9a73bb42cf-TH
+DE-TH;Qualität, Professionalität und Qualitätsmanagement;cue;elem:Qualitaet;Qualität und Qualitätsentwicklung;;;;0.8;nein;;elem:cue-hf-qualitaet-th
+DE-TH;Thüringer Bildungsplan bis 18 Jahre;cue;elem:dt-Bildungsplan-0-10;Altersübergreifender Bildungsplan;titlePage;;;0.98;ja;Kurzform TBP-18. Alle Bildungsorte von 0 bis 18 Jahren.;elem:lex-43fe7cb04dd7-TH
+DE-TH;Künstlerisch-ästhetische Bildung;cue;elem:f-aesthetik, elem:f-bildnerisch;Ästhetische Bildung, Bildnerisches Gestalten;heading;;;0.95;ja;;elem:lex-4f250f75b224-TH
+DE-TH;Zivilgesellschaftliche Bildung;cue;elem:f-demokratie-gesellschaft;Demokratie und Gesellschaft;heading;;;0.95;ja;;elem:lex-d09a7b3e78ea-TH
+DE-TH;Physische und psychische Gesundheitsbildung;cue;elem:f-emotionen, elem:f-gesundheit-ernaehrung;Emotionen, Gesundheit, Ernährung und Hygiene;heading;;;0.95;ja;;elem:lex-bde9c6a566a2-TH
+DE-TH;Sprachliche und schriftsprachliche Bildung;cue;elem:f-literacy, elem:f-sprache;Literacy, Erzähl- und Schriftkultur, Sprache, Kommunikation und Literacy;heading;;;0.95;ja;;elem:lex-e0b34d56629d-TH
+DE-TH;Mathematische Bildung;cue;elem:f-mathematik;Mathematik;heading;;;0.95;ja;Sachsen: Leitbegriff Ordnen.;elem:lex-d3f636d97215-TH
+DE-TH;Medienbildung;cue;elem:f-medien;Medien und digitale Bildung;heading;;;0.95;ja;;elem:lex-e1bec2041a0a-TH
+DE-TH;Musikalische Bildung;cue;elem:f-musik;Musik und Rhythmik;heading;;;0.95;ja;;elem:lex-0542d8578512-TH
+DE-TH;Naturwissenschaftliche Bildung;cue;elem:f-naturwissenschaft;Naturwissenschaftliche Phänomene;heading;;;0.95;ja;Sachsen: Leitbegriff Entdecken.;elem:lex-20061e0f7c57-TH
+DE-TH;Religiöse Bildung;cue;elem:f-religion-weltanschauung;Religion und Weltanschauung;heading;;;0.95;ja;;elem:lex-04cac81a5d6e-TH
+DE-TH;Philosophisch-weltanschauliche Bildung;cue;elem:f-werte-ethik-philosophie;Werte, Ethik und Philosophieren;heading;;;0.95;ja;;elem:lex-29b9b539253b-TH
+DE-TH;Bildungsdimension;cue;kd:EarlyChildhood;Basiskompetenzen der Elementarbildung;body, heading;;;0.80;ja;In Thüringen Dimension je Bildungsbereich (Matrix) – an Aussagen als cur:kompetenzdimension erfassen, keinen eigenen Teilbaum bilden.;elem:lex-1ff256fa1262-TH
+DE-TH;personale Dimension;cue;kd:ec-personal;Personale Kompetenzen;body, tableHeader;;;0.90;ja;;elem:lex-92afbfd1cacf-TH
+DE-TH;^(personale|soziale|sachliche) (Bildungs)?[Dd]imension$;cue;kd:ec-personal, kd:ec-social, kd:ec-subject;Personale Kompetenzen, Soziale Kompetenzen, Sachkompetenzen;tableHeader;;;0.9;nein;"Spaltenkopf der Bereichstabellen; Wert per cur:competenceDimension an jede Aussage der Spalte, kein Teilbaum.";elem:cue-th-dimension
+DE-TH;soziale Dimension;cue;kd:ec-social;Soziale Kompetenzen;body, tableHeader;;;0.90;ja;;elem:lex-75cf93afdef1-TH
+DE-TH;sachliche Dimension;cue;kd:ec-subject;Sachkompetenzen;body, tableHeader;;;0.90;ja;;elem:lex-a8f42e151dcd-TH

@@ -1,0 +1,9 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-SL;Bildungsprogramm;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.9;nein;;elem:cue-gen-bildungsprogramm
+DE-SL;Bildungsprogramm für saarländische Krippen und Kindergärten;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.95;nein;Programm und Handreichungen in einem Dokument (Fassung 2018).;elem:lex-9ca061157229-SL
+DE-SL;Bildnerisches Gestalten;pref;elem:f-bildnerisch;Bildnerisches Gestalten;heading;;;0.85;nein;;elem:lex-dda49ff507e8-SL
+DE-SL;Körper, Bewegung und Gesundheit;cue;elem:f-koerper;Körper, Bewegung, Gesundheit und Prävention;heading;;;0.85;nein;;elem:lex-a10feda9b13c-SL
+DE-SL;Kommunikation: Sprachen, Schriftkultur und Medien;cue;elem:f-literacy, elem:f-medien, elem:f-sprache;Literacy, Erzähl- und Schriftkultur, Medien und digitale Bildung, Sprache, Kommunikation und Literacy;heading;;;0.5;nein;"Bereichsname des Berliner Bildungsprogramms 2014; SL-Zuordnung am Bildungsprogramm für saarländische Krippen und Kindergärten (2018) prüfen.";elem:lex-ed502a997692-SL
+DE-SL;Musik;cue;elem:f-musik;Musik und Rhythmik;heading;;;0.80;ja;;elem:lex-904034c9aaf3-SL
+DE-SL;Naturwissenschaftliche und technische Grunderfahrungen;cue;elem:f-naturwissenschaft, elem:f-technik;Naturwissenschaftliche Phänomene, Technik;heading;;;0.85;nein;;elem:lex-749f588fdbd7-SL
+DE-SL;Soziale und kulturelle Umwelt, Werteerziehung und religiöse Bildung;cue;elem:f-personal-sozial, elem:f-religion-weltanschauung, elem:f-werte-ethik-philosophie;Personale und sozial-emotionale Entwicklung, Werte, Religion und Kultur, Religion und Weltanschauung, Werte, Ethik und Philosophieren;heading;;;0.85;nein;;elem:lex-024cb35df5ad-SL

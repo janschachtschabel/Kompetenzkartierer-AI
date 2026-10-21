@@ -1,0 +1,14 @@
+# Anwendungsfall „Querschnitt“: Wo wird ein Querschnittsziel des Hubs
+# verankert – über alle Bereiche, auch wenn ein Plan ein eigenes Quellschema
+# nutzt (Leitprinzip, Leitperspektive, Fokus)? Die SKOS-Abbildung am Quellschema
+# führt zum Hub.
+PREFIX cur:  <https://w3id.org/wlo/curriculum/core#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX qz:   <https://w3id.org/wlo/curriculum/crosscutting/>
+
+SELECT DISTINCT ?hub ?element ?viaObjective WHERE {
+  ?element cur:contributesTo ?viaObjective .
+  ?viaObjective (skos:exactMatch|skos:closeMatch|skos:broadMatch)? ?hub .
+  ?hub skos:inScheme qz:Hub .
+}
+ORDER BY ?hub

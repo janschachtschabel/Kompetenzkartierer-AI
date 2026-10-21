@@ -1,0 +1,12 @@
+# Anwendungsfall „Lernpfad“: Welche Aussagen bauen (bestätigt oder amtlich)
+# aufeinander auf? Nur materialisierte Kurzform-Kanten werden verfolgt;
+# vorgeschlagene Zuordnungen bleiben außen vor. Die Dokumentreihenfolge
+# (cur:position) ist nie ein Lernpfad.
+PREFIX cur: <https://w3id.org/wlo/curriculum/core#>
+
+SELECT ?start ?step ?stepText WHERE {
+  ?start cur:buildsOn+ ?step .
+  ?step cur:verbatim ?stepText .
+  FILTER NOT EXISTS { ?later cur:buildsOn ?start }
+}
+ORDER BY ?start

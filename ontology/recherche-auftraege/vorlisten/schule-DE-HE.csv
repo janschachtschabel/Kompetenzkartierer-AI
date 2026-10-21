@@ -1,0 +1,15 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-HE;überfachliche Kompetenzen;cue;kd:sk-cross, schul:Querschnittsbereich;überfachlich, Querschnittsbereich;;;;0.9;nein;;schul:cue-qs-ueberfachlich
+DE-HE;Hinweis zu Bezüge zu Kompetenzbereichen / Standards;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030245
+DE-HE;Inhalt zu einem Inhaltsfeld;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030076
+DE-HE;Schwerpunktsetzung;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030037
+DE-HE;Inhaltsfeld;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.95;nein;NW: darunter „Inhaltliche Schwerpunkte“ und konkretisierte Kompetenzerwartungen nach Sach- und Urteilskompetenz.;schul:cue-ib-inhaltsfeld
+DE-HE;Themenfeld;homonym;schul:Inhaltsbereich;Inhaltsbereich;;;;0.75;nein;"Einheit, wenn das Themenfeld einen Zeitumfang, einen festen Jahrgang oder eine Verbindlichkeit (verbindlich/wahlobligatorisch) trägt (BE/BB C3, HE Oberstufe); sonst Inhaltsbereich.";schul:cue-ib-themenfeld
+DE-HE;Kompetenzbereich;pref;schul:Kompetenzbereich;Kompetenzbereich;;;;0.8;nein;;schul:cue-kb-kompetenzbereich
+DE-HE;Bildungsstandard;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0002169
+DE-HE;Lernzeitbezogene Kompetenzerwartung;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0002228
+DE-HE;lernzeitbezogene Kompetenzerwartungen;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.9;nein;;schul:cue-ke-lernzeitbezogen
+DE-HE;Lehrplanfragment;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0001001
+DE-HE;Inhaltliche Schwerpunkte;cue;schul:Teilbereich;Teilbereich;;;;0.85;nein;"NW: Stichwortliste unter dem Inhaltsfeld; die Stichworte selbst sind Inhaltsaussagen.";schul:cue-tb-inhaltlicherschwerpunkt
+DE-HE;Verweis auf Bezüge zu Kompetenzbereichen / Standards;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030192
+DE-HE;Kerncurriculum;cue;schul:dt-Lehrplan;Lehrplan;titlePage;;;0.9;nein;;schul:cue-dt-kerncurriculum

@@ -1,0 +1,4 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-BE;ABV;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;Allgemeine Berufsvorbereitung (u. a. FU Berlin).;hs:lex-ProgrammeArea-cue-abv
+DE-BE;Allgemeine Berufsvorbereitung;cue;hs:Studienbereich;Studienbereich;;;;0.7;nein;;hs:lex-ProgrammeArea-cue-allgemeine-berufsvorbereitung
+DE-BE;StuPO;cue;hs:dt-SPO;Studien- und Prüfungsordnung;;;;0.7;nein;;hs:lex-dt_CombinedStudyExaminationRegulation-cue-stupo

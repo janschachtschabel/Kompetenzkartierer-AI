@@ -1,0 +1,184 @@
+@prefix ctx:   <https://w3id.org/wlo/curriculum/context/> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+# =============================================================================
+# Kontexte (Andockpunkt 7): Situationen, Lebens- und Handlungsbereiche,
+# Lernorte, Rollen/Zielgruppen und Berufsfelder – der wichtigste Anker für
+# Lernszenarien und Lernsituationen. Knotentypen mit Kontextsemantik
+# (Handlungsfeld, Alltagssituation, Lernort) setzen den Kontext per
+# cur:impliesContext ohne LLM-Aufruf (Herkunft inherited).
+# Startbestand aus den Bereichsentwürfen; mit „zu prüfen“ markierte Listen
+# stammen aus Modellwissen und sind am Primärdokument zu verifizieren.
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/context> a owl:Ontology ;
+    dct:title "Kontexte"@de , "contexts"@en ;
+    owl:versionInfo "1.0-entwurf" ;
+    dct:created "2026-10-19"^^xsd:date .
+
+ctx:Contexts a skos:ConceptScheme ;
+    skos:prefLabel "Kontexte"@de , "contexts"@en ;
+    skos:hasTopConcept ctx:situations , ctx:lifeDomains , ctx:settings , ctx:roles , ctx:occupationalFields .
+
+ctx:situations a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:topConceptOf ctx:Contexts ; cur:contextType cv:ctxt_situation ;
+    skos:prefLabel "Situationen"@de , "situations"@en .
+ctx:lifeDomains a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:topConceptOf ctx:Contexts ; cur:contextType cv:ctxt_lifeDomain ;
+    skos:prefLabel "Lebens- und Handlungsbereiche"@de , "life domains"@en .
+ctx:settings a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:topConceptOf ctx:Contexts ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Lernorte"@de , "learning settings"@en .
+ctx:roles a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:topConceptOf ctx:Contexts ; cur:contextType cv:ctxt_role ;
+    skos:prefLabel "Rollen und Zielgruppen"@de , "roles and target groups"@en .
+ctx:occupationalFields a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:topConceptOf ctx:Contexts ; cur:contextType cv:ctxt_occupationalField ;
+    skos:prefLabel "Berufsfelder"@de , "occupational fields"@en .
+
+# -----------------------------------------------------------------------------
+# Situationen (Elementarbildung; pädagogische Alltagssituationen BB 2024 u. a.)
+# -----------------------------------------------------------------------------
+ctx:everyday a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:situations ; cur:contextType cv:ctxt_situation ;
+    skos:prefLabel "Alltagssituationen"@de .
+ctx:arrival-farewell a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:everyday ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Ankommen und Abschied"@de .
+ctx:meals a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:everyday ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Mahlzeiten"@de .
+ctx:body-care a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:everyday ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Körperpflege, Wickeln, Toilette"@de .
+ctx:rest-sleep a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:everyday ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Ruhen und Schlafen"@de .
+ctx:dressing a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:everyday ; cur:contextType cv:ctxt_situation ; skos:prefLabel "An- und Ausziehen"@de .
+ctx:tidying a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:everyday ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Aufräumen"@de .
+ctx:circle-time a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:everyday ; cur:contextType cv:ctxt_situation ;
+    skos:prefLabel "Gesprächs- und Kinderkreis"@de ; skos:altLabel "Morgenkreis"@de , "Kinderkonferenz"@de , "Kinderkreis"@de .
+ctx:transitions-in-day a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:everyday ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Wechsel im Tagesablauf"@de .
+ctx:play a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:situations ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Spielsituationen"@de .
+ctx:free-play a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:play ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Freispiel"@de .
+ctx:role-play a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:play ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Rollen- und Fantasiespiel"@de .
+ctx:construction-play a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:play ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Bauen und Konstruieren"@de .
+ctx:movement-play a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:play ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Bewegungsspiel"@de .
+ctx:offers-projects a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:situations ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Angebote und Projekte"@de .
+ctx:guided-activity a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:offers-projects ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Angeleitetes Angebot"@de .
+ctx:project a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:offers-projects ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Projekt"@de .
+ctx:experimenting a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:offers-projects ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Forschen und Experimentieren"@de .
+ctx:places a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:situations ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Orte und Lernumgebungen"@de .
+ctx:outdoors a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:places ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Draußen und in der Natur"@de .
+ctx:excursion a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:places ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Ausflug in den Sozialraum"@de .
+ctx:room-design a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:places ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Raum- und Materialgestaltung"@de .
+ctx:social-situations a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:situations ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Soziale Situationen"@de .
+ctx:conflict a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:social-situations ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Konfliktsituation"@de .
+ctx:group-decision a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:social-situations ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Gruppenentscheidung"@de .
+ctx:peer-interaction a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:social-situations ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Interaktion unter Kindern"@de .
+ctx:educator-dialogue a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:social-situations ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Dialog Fachkraft–Kind"@de .
+ctx:festivals-rituals a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:situations ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Feste und Rituale"@de .
+ctx:transition-situations a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:situations ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Übergangssituationen"@de .
+ctx:settling-in a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:transition-situations ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Eingewöhnungsphase"@de .
+ctx:school-preparation a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:transition-situations ; cur:contextType cv:ctxt_situation ; skos:prefLabel "Zeit vor dem Schuleintritt"@de .
+ctx:experiments-lab a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:situations ; cur:contextType cv:ctxt_situation ;
+    skos:prefLabel "Experiment und Messung"@de ; skos:scopeNote "Schule, Hochschule: Versuch, Labor, Messung als Lernsituation."@de .
+ctx:work-order a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:situations ; cur:contextType cv:ctxt_situation ;
+    skos:prefLabel "Kundenauftrag/betrieblicher Arbeitsauftrag"@de ; skos:scopeNote "Typische Handlungssituation in Lernfeldern und Prüfungsbereichen."@de .
+
+# -----------------------------------------------------------------------------
+# Lebens- und Handlungsbereiche (Erwachsenenbildung, Rahmencurriculum Integrationskurse)
+# -----------------------------------------------------------------------------
+ctx:ik-hf a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:lifeDomains ; cur:contextType cv:ctxt_lifeDomain ;
+    skos:prefLabel "Handlungsfelder des Rahmencurriculums für Integrationskurse"@de ;
+    skos:editorialNote "Zwölf Handlungsfelder aus Modellwissen (EB-Prüfer [A]); vor Freigabe am Rahmencurriculum (BAMF/Goethe 2016/2017) prüfen."@de .
+ctx:hf-authorities a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:ik-hf ; cur:contextType cv:ctxt_lifeDomain ; skos:prefLabel "Ämter und Behörden"@de .
+ctx:hf-work a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:ik-hf ; cur:contextType cv:ctxt_lifeDomain ; skos:prefLabel "Arbeit"@de .
+ctx:hf-jobsearch a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:ik-hf ; cur:contextType cv:ctxt_lifeDomain ; skos:prefLabel "Arbeitssuche"@de .
+ctx:hf-education a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:ik-hf ; cur:contextType cv:ctxt_lifeDomain ; skos:prefLabel "Aus- und Weiterbildung"@de .
+ctx:hf-banking a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:ik-hf ; cur:contextType cv:ctxt_lifeDomain ; skos:prefLabel "Banken und Versicherungen"@de .
+ctx:hf-children a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:ik-hf ; cur:contextType cv:ctxt_lifeDomain ; skos:prefLabel "Betreuung und Ausbildung der Kinder"@de .
+ctx:hf-shopping a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:ik-hf ; cur:contextType cv:ctxt_lifeDomain ; skos:prefLabel "Einkaufen"@de .
+ctx:hf-health a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:ik-hf ; cur:contextType cv:ctxt_lifeDomain ; skos:prefLabel "Gesundheit"@de .
+ctx:hf-media a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:ik-hf ; cur:contextType cv:ctxt_lifeDomain ; skos:prefLabel "Mediennutzung"@de .
+ctx:hf-mobility a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:ik-hf ; cur:contextType cv:ctxt_lifeDomain ; skos:prefLabel "Mobilität"@de .
+ctx:hf-classroom a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:ik-hf ; cur:contextType cv:ctxt_lifeDomain ; skos:prefLabel "Unterricht"@de .
+ctx:hf-housing a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:ik-hf ; cur:contextType cv:ctxt_lifeDomain ; skos:prefLabel "Wohnen"@de .
+ctx:ik-transversal a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:lifeDomains ; cur:contextType cv:ctxt_lifeDomain ;
+    skos:prefLabel "Handlungsfelder übergreifende Kommunikation"@de ;
+    skos:scopeNote "Situationsunabhängig; erzeugen keinen Lebensbereich-Kontext für die Aussagen darunter. Belegt: A Umgang mit der Migrationssituation, E Umgang mit dem eigenen Sprachenlernen; B–D am Rahmencurriculum ergänzen."@de .
+ctx:ik-migration a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:ik-transversal ; cur:contextType cv:ctxt_lifeDomain ;
+    skos:notation "A" ; skos:prefLabel "Umgang mit der Migrationssituation"@de .
+ctx:ik-own-learning a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:ik-transversal ; cur:contextType cv:ctxt_lifeDomain ;
+    skos:notation "E" ; skos:prefLabel "Umgang mit dem eigenen Sprachenlernen"@de .
+
+# -----------------------------------------------------------------------------
+# Lernorte
+# -----------------------------------------------------------------------------
+ctx:company a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Ausbildungsbetrieb/Praxispartner"@de ; skos:altLabel "Betrieb"@de , "Praxisstelle"@de .
+ctx:vocational-school a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Berufsschule"@de .
+ctx:intercompany a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Überbetriebliche Bildungsstätte"@de ; skos:altLabel "ÜBS"@de , "überbetriebliche Lehrlingsunterweisung (ÜLU)"@de .
+ctx:fulltime-vocational a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Berufliche Vollzeitschule"@de ; skos:altLabel "Berufsfachschule"@de , "Fachschule"@de .
+ctx:nursing-school a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Pflegeschule"@de .
+ctx:practice-placement a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Praxiseinsatz/Praxisphase"@de ; skos:altLabel "Praxissemester"@de , "Praktikum"@de .
+ctx:clinic a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Klinik/Lehrpraxis"@de .
+ctx:university a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Hochschule"@de ; skos:altLabel "Studienakademie"@de .
+ctx:practice-school a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Praktikumsschule"@de .
+ctx:school a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Schule"@de .
+ctx:ecec a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Kindertageseinrichtung"@de ; skos:altLabel "Kita"@de .
+ctx:childminding a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Kindertagespflege"@de .
+ctx:after-school a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Hort/Schulkindbetreuung"@de .
+ctx:family a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Familie"@de .
+ctx:course-provider a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Kurs- oder Lehrgangsträger"@de ; skos:altLabel "Volkshochschule"@de , "Bildungsträger"@de .
+ctx:abroad a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Ausland/Partnerhochschule"@de .
+ctx:online a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:settings ; cur:contextType cv:ctxt_setting ;
+    skos:prefLabel "Online/Fernlernen"@de ; skos:altLabel "Fernstudium"@de , "E-Learning"@de .
+
+# -----------------------------------------------------------------------------
+# Rollen und Zielgruppen
+# -----------------------------------------------------------------------------
+ctx:newly-arrived a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:roles ; cur:contextType cv:ctxt_role ;
+    skos:prefLabel "Neuzugewanderte"@de .
+ctx:long-term-resident a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:roles ; cur:contextType cv:ctxt_role ;
+    skos:prefLabel "Länger in Deutschland Lebende"@de ; skos:altLabel "nachholende Integration"@de .
+ctx:low-literate a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:roles ; cur:contextType cv:ctxt_role ;
+    skos:prefLabel "Gering literalisierte Erwachsene"@de ; skos:altLabel "funktionale Analphabeten"@de , "Zweitschriftlernende"@de .
+ctx:young-adults a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:roles ; cur:contextType cv:ctxt_role ;
+    skos:prefLabel "Junge Erwachsene"@de .
+ctx:parents a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:roles ; cur:contextType cv:ctxt_role ;
+    skos:prefLabel "Eltern"@de .
+ctx:employees a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:roles ; cur:contextType cv:ctxt_role ;
+    skos:prefLabel "Beschäftigte"@de .
+ctx:jobseekers a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:roles ; cur:contextType cv:ctxt_role ;
+    skos:prefLabel "Arbeitsuchende"@de .
+ctx:customers a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:roles ; cur:contextType cv:ctxt_role ;
+    skos:prefLabel "Kundinnen und Kunden"@de .
+ctx:special-needs a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:roles ; cur:contextType cv:ctxt_role ;
+    skos:prefLabel "Lernende mit sonderpädagogischem Förderbedarf"@de .
+ctx:daz-learners a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:roles ; cur:contextType cv:ctxt_role ;
+    skos:prefLabel "Lernende mit Deutsch als Zweitsprache"@de ; skos:altLabel "DaZ-Lernende"@de .
+
+# -----------------------------------------------------------------------------
+# Berufsfelder (KldB 2010, Berufsbereiche, einstellig)
+# -----------------------------------------------------------------------------
+ctx:kldb a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:occupationalFields ; cur:contextType cv:ctxt_occupationalField ;
+    skos:prefLabel "Berufsbereiche der KldB 2010"@de ;
+    dct:source "Bundesagentur für Arbeit, Klassifikation der Berufe 2010" ;
+    skos:editorialNote "KldB hat keine URIs (Wikidata P1021 nur als Kennung); Bezeichnungen vor Freigabe an der KldB 2010 (überarbeitete Fassung 2020) prüfen."@de .
+ctx:kldb-1 a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:kldb ; cur:contextType cv:ctxt_occupationalField ; skos:notation "1" ; skos:prefLabel "Land-, Forst- und Tierwirtschaft und Gartenbau"@de .
+ctx:kldb-2 a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:kldb ; cur:contextType cv:ctxt_occupationalField ; skos:notation "2" ; skos:prefLabel "Rohstoffgewinnung, Produktion und Fertigung"@de .
+ctx:kldb-3 a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:kldb ; cur:contextType cv:ctxt_occupationalField ; skos:notation "3" ; skos:prefLabel "Bau, Architektur, Vermessung und Gebäudetechnik"@de .
+ctx:kldb-4 a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:kldb ; cur:contextType cv:ctxt_occupationalField ; skos:notation "4" ; skos:prefLabel "Naturwissenschaft, Geografie und Informatik"@de .
+ctx:kldb-5 a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:kldb ; cur:contextType cv:ctxt_occupationalField ; skos:notation "5" ; skos:prefLabel "Verkehr, Logistik, Schutz und Sicherheit"@de .
+ctx:kldb-6 a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:kldb ; cur:contextType cv:ctxt_occupationalField ; skos:notation "6" ; skos:prefLabel "Kaufmännische Dienstleistungen, Warenhandel, Vertrieb, Hotel und Tourismus"@de .
+ctx:kldb-7 a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:kldb ; cur:contextType cv:ctxt_occupationalField ; skos:notation "7" ; skos:prefLabel "Unternehmensorganisation, Buchhaltung, Recht und Verwaltung"@de .
+ctx:kldb-8 a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:kldb ; cur:contextType cv:ctxt_occupationalField ; skos:notation "8" ; skos:prefLabel "Gesundheit, Soziales, Lehre und Erziehung"@de .
+ctx:kldb-9 a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:kldb ; cur:contextType cv:ctxt_occupationalField ; skos:notation "9" ; skos:prefLabel "Sprach-, Literatur-, Geistes-, Gesellschafts- und Wirtschaftswissenschaften, Medien, Kunst, Kultur und Gestaltung"@de .
+ctx:kldb-0 a cur:ContextConcept ; skos:inScheme ctx:Contexts ; skos:broader ctx:kldb ; cur:contextType cv:ctxt_occupationalField ; skos:notation "0" ; skos:prefLabel "Militär"@de .

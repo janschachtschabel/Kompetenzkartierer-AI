@@ -1,0 +1,13 @@
+# Anwendungsfall „Inhalte mit Lehrplänen verknüpfen“: Zu welchen
+# Lehrplan-Aussagen passt eine Lernressource, die nach AMB ein
+# Kompetenzkonzept lehrt (schema:teaches)? Nur Aussagen mit Adressat
+# Lernende; Weg über die Zerlegung, die das Konzept ausdrückt.
+PREFIX cur:    <https://w3id.org/wlo/curriculum/core#>
+PREFIX cv:     <https://w3id.org/wlo/curriculum/vocab#>
+PREFIX schema: <https://schema.org/>
+
+SELECT ?resource ?concept ?statement ?verbatim WHERE {
+  ?resource schema:teaches ?concept .
+  ?d cur:expresses ?concept ; cur:decomposes ?statement .
+  ?statement cur:addressee cv:addr_learner ; cur:verbatim ?verbatim .
+}

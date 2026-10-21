@@ -1,0 +1,206 @@
+@prefix kd:    <https://w3id.org/wlo/curriculum/dimension/> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+# =============================================================================
+# Kompetenzdimensionen: ein Brückenschema (DQR-Spalten) und die verbreiteten
+# Modelle der Bereiche. Profilmodelle hängen per closeMatch/relatedMatch am
+# Brückenschema – nie per Gleichsetzung, weil DQR, EQR, KMK, HQR und ESCO
+# „Kompetenz“ verschieden verwenden. Dokumentspezifische Modelle (Kompetenz-
+# bereiche eines Fachs) werden in X3 als cur:CompetencyModel extrahiert oder
+# mit dem Kompetenzrahmen (IQB-Bildungsstandards) importiert; die Modelle
+# unten sind Startbestand und Auswahlliste, kein abschließender Katalog.
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/dimension> a owl:Ontology ;
+    dct:title "Kompetenzdimensionen"@de , "competence dimensions"@en ;
+    owl:versionInfo "1.0-entwurf" ;
+    dct:created "2026-10-19"^^xsd:date .
+
+# -----------------------------------------------------------------------------
+# Brückenschema (DQR-Matrix, EQR-Spalten)
+# -----------------------------------------------------------------------------
+kd:Bridge a cur:CompetencyModel ;
+    skos:prefLabel "Brückenschema Kompetenzdimensionen (DQR/EQR)"@de , "bridge scheme competence dimensions"@en ;
+    dct:source "DQR-Handbuch (AK DQR 2013); EQR-Empfehlung 2017" ;
+    skos:hasTopConcept kd:professional , kd:personal , kd:methodological .
+kd:professional a cur:CompetenceDimension ; skos:inScheme kd:Bridge ; skos:topConceptOf kd:Bridge ;
+    skos:notation "professional" ; skos:prefLabel "Fachkompetenz"@de , "professional competence"@en .
+kd:knowledge a cur:CompetenceDimension ; skos:inScheme kd:Bridge ; skos:broader kd:professional ;
+    skos:notation "knowledge" ; skos:prefLabel "Wissen"@de , "knowledge"@en ;
+    skos:altLabel "Kenntnisse"@de ;
+    skos:definition "Tiefe und Breite des Wissens (DQR); EQR-Spalte Kenntnisse."@de .
+kd:skills a cur:CompetenceDimension ; skos:inScheme kd:Bridge ; skos:broader kd:professional ;
+    skos:notation "skills" ; skos:prefLabel "Fertigkeiten"@de , "skills"@en ;
+    skos:definition "Instrumentale und systemische Fertigkeiten, Beurteilungsfähigkeit (DQR); EQR-Spalte Fertigkeiten."@de .
+kd:personal a cur:CompetenceDimension ; skos:inScheme kd:Bridge ; skos:topConceptOf kd:Bridge ;
+    skos:notation "personal" ; skos:prefLabel "Personale Kompetenz"@de , "personal competence"@en .
+kd:social a cur:CompetenceDimension ; skos:inScheme kd:Bridge ; skos:broader kd:personal ;
+    skos:notation "social" ; skos:prefLabel "Sozialkompetenz"@de , "social competence"@en ;
+    skos:definition "Team- und Führungsfähigkeit, Mitgestaltung, Kommunikation (DQR). Im EQR Teil von Verantwortung und Selbstständigkeit."@de .
+kd:autonomy a cur:CompetenceDimension ; skos:inScheme kd:Bridge ; skos:broader kd:personal ;
+    skos:notation "autonomy" ; skos:prefLabel "Selbstständigkeit"@de , "autonomy"@en ;
+    skos:altLabel "Selbstkompetenz"@de , "Verantwortung und Selbstständigkeit"@de ;
+    skos:definition "Eigenständigkeit, Verantwortung, Reflexivität, Lernkompetenz (DQR); EQR-Spalte Verantwortung und Selbstständigkeit."@de .
+kd:methodological a cur:CompetenceDimension ; skos:inScheme kd:Bridge ; skos:topConceptOf kd:Bridge ;
+    skos:notation "methodological" ; skos:prefLabel "Methodenkompetenz"@de , "methodological competence"@en ;
+    skos:scopeNote "Im DQR Querschnittskompetenz ohne eigene Spalte; nur verwenden, wenn ein Dokument sie ausdrücklich führt."@de .
+
+# -----------------------------------------------------------------------------
+# KMK-Handlungskompetenz (Berufsschule, Handreichung Rahmenlehrpläne 2021)
+# -----------------------------------------------------------------------------
+kd:KMKActionCompetence a cur:CompetencyModel ;
+    skos:prefLabel "Handlungskompetenz nach KMK-Handreichung"@de , "KMK action competence"@en ;
+    dct:source "KMK: Handreichung für die Erarbeitung von Rahmenlehrplänen (2021); Primärtext vor Freigabe prüfen" ;
+    skos:hasTopConcept kd:kmk-subject , kd:kmk-self , kd:kmk-social .
+kd:kmk-subject a cur:CompetenceDimension ; skos:inScheme kd:KMKActionCompetence ; skos:topConceptOf kd:KMKActionCompetence ;
+    skos:notation "Fachkompetenz" ; skos:prefLabel "Fachkompetenz"@de ; skos:closeMatch kd:professional .
+kd:kmk-self a cur:CompetenceDimension ; skos:inScheme kd:KMKActionCompetence ; skos:topConceptOf kd:KMKActionCompetence ;
+    skos:notation "Selbstkompetenz" ; skos:prefLabel "Selbstkompetenz"@de ; skos:altLabel "Personalkompetenz"@de ; skos:closeMatch kd:autonomy .
+kd:kmk-social a cur:CompetenceDimension ; skos:inScheme kd:KMKActionCompetence ; skos:topConceptOf kd:KMKActionCompetence ;
+    skos:notation "Sozialkompetenz" ; skos:prefLabel "Sozialkompetenz"@de ; skos:closeMatch kd:social .
+kd:kmk-method a cur:CompetenceDimension ; skos:inScheme kd:KMKActionCompetence ;
+    skos:notation "Methodenkompetenz" ; skos:prefLabel "Methodenkompetenz"@de ; skos:relatedMatch kd:methodological ;
+    skos:scopeNote "Immanenter Bestandteil von Fach-, Selbst- und Sozialkompetenz, keine eigene Dimension."@de .
+kd:kmk-communication a cur:CompetenceDimension ; skos:inScheme kd:KMKActionCompetence ;
+    skos:notation "kommunikativeKompetenz" ; skos:prefLabel "Kommunikative Kompetenz"@de ;
+    skos:scopeNote "Immanenter Bestandteil, keine eigene Dimension."@de .
+kd:kmk-learning a cur:CompetenceDimension ; skos:inScheme kd:KMKActionCompetence ;
+    skos:notation "Lernkompetenz" ; skos:prefLabel "Lernkompetenz"@de ;
+    skos:scopeNote "Immanenter Bestandteil, keine eigene Dimension."@de .
+
+# -----------------------------------------------------------------------------
+# HQR 2017 (Hochschule)
+# -----------------------------------------------------------------------------
+kd:HQR a cur:CompetencyModel ;
+    skos:prefLabel "Dimensionen des Hochschulqualifikationsrahmens (HQR 2017)"@de , "HQR dimensions"@en ;
+    dct:source "KMK/HRK 2017; HRK 2021 (Theorie und Praxis)" ;
+    skos:hasTopConcept kd:hqr-WV , kd:hqr-EAE , kd:hqr-KK , kd:hqr-WSP .
+kd:hqr-WV a cur:CompetenceDimension ; skos:inScheme kd:HQR ; skos:topConceptOf kd:HQR ;
+    skos:notation "WV" ; skos:prefLabel "Wissen und Verstehen"@de ;
+    skos:scopeNote "Wissensverbreiterung, Wissensvertiefung, Wissensverständnis."@de ; skos:closeMatch kd:knowledge .
+kd:hqr-EAE a cur:CompetenceDimension ; skos:inScheme kd:HQR ; skos:topConceptOf kd:HQR ;
+    skos:notation "EAE" ; skos:prefLabel "Einsatz, Anwendung und Erzeugung von Wissen"@de ;
+    skos:scopeNote "Nutzung und Transfer; wissenschaftliche Innovation."@de ; skos:closeMatch kd:skills .
+kd:hqr-KK a cur:CompetenceDimension ; skos:inScheme kd:HQR ; skos:topConceptOf kd:HQR ;
+    skos:notation "KK" ; skos:prefLabel "Kommunikation und Kooperation"@de ; skos:closeMatch kd:social .
+kd:hqr-WSP a cur:CompetenceDimension ; skos:inScheme kd:HQR ; skos:topConceptOf kd:HQR ;
+    skos:notation "WSP" ; skos:prefLabel "Wissenschaftliches Selbstverständnis/Professionalität"@de ; skos:closeMatch kd:autonomy .
+
+# -----------------------------------------------------------------------------
+# DHBW-Modulbeschreibung: vier Unterfelder der Qualifikationsziele
+# -----------------------------------------------------------------------------
+kd:DHBW a cur:CompetencyModel ;
+    skos:prefLabel "Qualifikationsziele und Kompetenzen (DHBW-Modulhandbuch)"@de , "DHBW module competences"@en ;
+    dct:source "Modulhandbücher der DHBW (Stichprobe Informatik, Recherche 04 B, 2026-10-20)" ;
+    skos:hasTopConcept kd:dhbw-FK , kd:dhbw-MK , kd:dhbw-PSK , kd:dhbw-UHK .
+kd:dhbw-FK a cur:CompetenceDimension ; skos:inScheme kd:DHBW ; skos:topConceptOf kd:DHBW ;
+    skos:notation "FK" ; skos:prefLabel "Fachkompetenz"@de ; skos:closeMatch kd:professional .
+kd:dhbw-MK a cur:CompetenceDimension ; skos:inScheme kd:DHBW ; skos:topConceptOf kd:DHBW ;
+    skos:notation "MK" ; skos:prefLabel "Methodenkompetenz"@de ; skos:closeMatch kd:methodological .
+kd:dhbw-PSK a cur:CompetenceDimension ; skos:inScheme kd:DHBW ; skos:topConceptOf kd:DHBW ;
+    skos:notation "PSK" ; skos:prefLabel "Personale und soziale Kompetenz"@de ; skos:closeMatch kd:personal ;
+    skos:scopeNote "Ein Feld für Sozial- und Selbstkompetenz zusammen."@de .
+kd:dhbw-UHK a cur:CompetenceDimension ; skos:inScheme kd:DHBW ; skos:topConceptOf kd:DHBW ;
+    skos:notation "UHK" ; skos:prefLabel "Übergreifende Handlungskompetenz"@de ;
+    skos:scopeNote "Ohne Gegenstück im Brückenschema; kein Mapping."@de .
+
+# -----------------------------------------------------------------------------
+# Vier-Komponenten-Modell (verbreitet in Hochschule, TH-Lehrplänen, Modulhandbüchern)
+# -----------------------------------------------------------------------------
+kd:FourComponents a cur:CompetencyModel ;
+    skos:prefLabel "Fach-, Methoden-, Sozial-, Selbstkompetenz"@de , "four-component model"@en ;
+    skos:hasTopConcept kd:four-subject , kd:four-method , kd:four-social , kd:four-self .
+kd:four-subject a cur:CompetenceDimension ; skos:inScheme kd:FourComponents ; skos:topConceptOf kd:FourComponents ;
+    skos:notation "Fachkompetenz" ; skos:prefLabel "Fachkompetenz"@de ; skos:altLabel "Sachkompetenz"@de ; skos:closeMatch kd:professional .
+kd:four-method a cur:CompetenceDimension ; skos:inScheme kd:FourComponents ; skos:topConceptOf kd:FourComponents ;
+    skos:notation "Methodenkompetenz" ; skos:prefLabel "Methodenkompetenz"@de ; skos:closeMatch kd:methodological .
+kd:four-social a cur:CompetenceDimension ; skos:inScheme kd:FourComponents ; skos:topConceptOf kd:FourComponents ;
+    skos:notation "Sozialkompetenz" ; skos:prefLabel "Sozialkompetenz"@de ; skos:closeMatch kd:social .
+kd:four-self a cur:CompetenceDimension ; skos:inScheme kd:FourComponents ; skos:topConceptOf kd:FourComponents ;
+    skos:notation "Selbstkompetenz" ; skos:prefLabel "Selbstkompetenz"@de ; skos:altLabel "Personalkompetenz"@de ; skos:closeMatch kd:autonomy .
+
+# -----------------------------------------------------------------------------
+# Elementarbildung: Basiskompetenzen (BayBEP, HE-BEP, BE, TH, RP)
+# -----------------------------------------------------------------------------
+kd:EarlyChildhood a cur:CompetencyModel ;
+    skos:prefLabel "Basiskompetenzen der Elementarbildung"@de , "early childhood basic competences"@en ;
+    skos:scopeNote "Bündelt Basiskompetenzen (BY, HE), Ich-/Sozial-/Sach-/lernmethodische Kompetenzen (BE) und die Bildungsdimensionen personal/sozial/sachlich (TH). Länderbezeichnungen stehen im Lexikon des Profils elem:."@de ;
+    skos:hasTopConcept kd:ec-personal , kd:ec-social , kd:ec-subject , kd:ec-learning , kd:ec-resilience .
+kd:ec-personal a cur:CompetenceDimension ; skos:inScheme kd:EarlyChildhood ; skos:topConceptOf kd:EarlyChildhood ;
+    skos:notation "personal" ; skos:prefLabel "Personale Kompetenzen"@de ; skos:altLabel "Ich-Kompetenzen"@de , "personale Dimension"@de ;
+    skos:relatedMatch kd:autonomy .
+kd:ec-self-perception a cur:CompetenceDimension ; skos:inScheme kd:EarlyChildhood ; skos:broader kd:ec-personal ;
+    skos:notation "selbstwahrnehmung" ; skos:prefLabel "Selbstwahrnehmung"@de .
+kd:ec-self-regulation a cur:CompetenceDimension ; skos:inScheme kd:EarlyChildhood ; skos:broader kd:ec-personal ;
+    skos:notation "selbstregulation" ; skos:prefLabel "Selbstregulation"@de .
+kd:ec-motivation a cur:CompetenceDimension ; skos:inScheme kd:EarlyChildhood ; skos:broader kd:ec-personal ;
+    skos:notation "motivation" ; skos:prefLabel "Motivationale Kompetenzen"@de .
+kd:ec-cognition a cur:CompetenceDimension ; skos:inScheme kd:EarlyChildhood ; skos:broader kd:ec-personal ;
+    skos:notation "kognition" ; skos:prefLabel "Kognitive Kompetenzen"@de ;
+    skos:scopeNote "Für Länderbereiche ohne Weltausschnitt („Wahrnehmen und Denken“ BW, „Entwicklung kognitiver Fähigkeiten und der Freude am Lernen“ NI)."@de .
+kd:ec-physical a cur:CompetenceDimension ; skos:inScheme kd:EarlyChildhood ; skos:broader kd:ec-personal ;
+    skos:notation "physisch" ; skos:prefLabel "Physische Kompetenzen"@de .
+kd:ec-social a cur:CompetenceDimension ; skos:inScheme kd:EarlyChildhood ; skos:topConceptOf kd:EarlyChildhood ;
+    skos:notation "sozial" ; skos:prefLabel "Soziale Kompetenzen"@de ;
+    skos:altLabel "Kompetenzen zum Handeln im sozialen Kontext"@de , "soziale Dimension"@de ; skos:closeMatch kd:social .
+kd:ec-responsibility a cur:CompetenceDimension ; skos:inScheme kd:EarlyChildhood ; skos:broader kd:ec-social ;
+    skos:notation "verantwortung" ; skos:prefLabel "Verantwortungsübernahme"@de .
+kd:ec-participation a cur:CompetenceDimension ; skos:inScheme kd:EarlyChildhood ; skos:broader kd:ec-social ;
+    skos:notation "teilhabe" ; skos:prefLabel "Demokratische Teilhabe"@de .
+kd:ec-subject a cur:CompetenceDimension ; skos:inScheme kd:EarlyChildhood ; skos:topConceptOf kd:EarlyChildhood ;
+    skos:notation "sachlich" ; skos:prefLabel "Sachkompetenzen"@de ; skos:altLabel "sachliche Dimension"@de ; skos:closeMatch kd:professional .
+kd:ec-learning a cur:CompetenceDimension ; skos:inScheme kd:EarlyChildhood ; skos:topConceptOf kd:EarlyChildhood ;
+    skos:notation "lernmethodisch" ; skos:prefLabel "Lernmethodische Kompetenz"@de ; skos:altLabel "Lernen, wie man lernt"@de ;
+    skos:relatedMatch kd:methodological .
+kd:ec-resilience a cur:CompetenceDimension ; skos:inScheme kd:EarlyChildhood ; skos:topConceptOf kd:EarlyChildhood ;
+    skos:notation "resilienz" ; skos:prefLabel "Resilienz"@de ; skos:altLabel "Widerstandsfähigkeit"@de ;
+    skos:relatedMatch kd:autonomy .
+
+# -----------------------------------------------------------------------------
+# Schule: verbreitete fachbezogene Kompetenzbereichsmodelle (Startbestand)
+# -----------------------------------------------------------------------------
+kd:SchoolCompetenceKinds a cur:CompetencyModel ;
+    skos:prefLabel "Kompetenzarten schulischer Lernergebnisse"@de , "kinds of school competences"@en ;
+    skos:scopeNote "Stellung einer Erwartung im Kompetenzmodell (FWU-Bezugsfunktion). Eigene Achse neben der Brücke; nicht auf DQR abbilden."@de ;
+    skos:hasTopConcept kd:sk-process , kd:sk-content , kd:sk-integrated , kd:sk-cross , kd:sk-development .
+kd:sk-process a cur:CompetenceDimension ; skos:inScheme kd:SchoolCompetenceKinds ; skos:topConceptOf kd:SchoolCompetenceKinds ;
+    skos:notation "prozessbezogen" ; skos:prefLabel "prozessbezogen"@de ; skos:altLabel "allgemeine mathematische Kompetenzen"@de .
+kd:sk-content a cur:CompetenceDimension ; skos:inScheme kd:SchoolCompetenceKinds ; skos:topConceptOf kd:SchoolCompetenceKinds ;
+    skos:notation "inhaltsbezogen" ; skos:prefLabel "inhaltsbezogen"@de .
+kd:sk-integrated a cur:CompetenceDimension ; skos:inScheme kd:SchoolCompetenceKinds ; skos:topConceptOf kd:SchoolCompetenceKinds ;
+    skos:notation "integriert" ; skos:prefLabel "integriert"@de .
+kd:sk-cross a cur:CompetenceDimension ; skos:inScheme kd:SchoolCompetenceKinds ; skos:topConceptOf kd:SchoolCompetenceKinds ;
+    skos:notation "ueberfachlich" ; skos:prefLabel "überfachlich"@de .
+kd:sk-development a cur:CompetenceDimension ; skos:inScheme kd:SchoolCompetenceKinds ; skos:topConceptOf kd:SchoolCompetenceKinds ;
+    skos:notation "entwicklungsbezogen" ; skos:prefLabel "entwicklungsbezogen"@de ;
+    skos:scopeNote "Sonderpädagogische Lehrpläne (BY Förderschule)."@de .
+
+kd:NaturalSciences a cur:CompetencyModel ;
+    skos:prefLabel "Kompetenzbereiche der Bildungsstandards Naturwissenschaften"@de , "natural sciences competence areas"@en ;
+    skos:editorialNote "Bezeichnungen 2020/2024 mit den Bezeichnungen von 2004 als altLabel; maßgeblich ist der IQB-Import (data/sources/iqb-*)."@de ;
+    skos:hasTopConcept kd:nw-subject , kd:nw-inquiry , kd:nw-communication , kd:nw-evaluation .
+kd:nw-subject a cur:CompetenceDimension ; skos:inScheme kd:NaturalSciences ; skos:topConceptOf kd:NaturalSciences ;
+    skos:notation "S" ; skos:prefLabel "Sachkompetenz"@de ; skos:altLabel "Fachwissen"@de ; skos:closeMatch kd:knowledge .
+kd:nw-inquiry a cur:CompetenceDimension ; skos:inScheme kd:NaturalSciences ; skos:topConceptOf kd:NaturalSciences ;
+    skos:notation "E" ; skos:prefLabel "Erkenntnisgewinnungskompetenz"@de ; skos:altLabel "Erkenntnisgewinnung"@de ; skos:closeMatch kd:skills .
+kd:nw-communication a cur:CompetenceDimension ; skos:inScheme kd:NaturalSciences ; skos:topConceptOf kd:NaturalSciences ;
+    skos:notation "K" ; skos:prefLabel "Kommunikationskompetenz"@de ; skos:altLabel "Kommunikation"@de ; skos:relatedMatch kd:social .
+kd:nw-evaluation a cur:CompetenceDimension ; skos:inScheme kd:NaturalSciences ; skos:topConceptOf kd:NaturalSciences ;
+    skos:notation "B" ; skos:prefLabel "Bewertungskompetenz"@de ; skos:altLabel "Bewertung"@de ; skos:relatedMatch kd:autonomy .
+
+kd:SocialSciences a cur:CompetencyModel ;
+    skos:prefLabel "Kompetenzbereiche gesellschaftswissenschaftlicher Fächer"@de , "social sciences competence areas"@en ;
+    skos:scopeNote "Verbreitet in Kernlehrplänen (NRW) und weiteren Ländern: Sach-, Methoden-, Urteils-, Handlungskompetenz. Methoden- und Handlungskompetenz sind oft inhaltsfeldübergreifend angelegt."@de ;
+    skos:hasTopConcept kd:gw-subject , kd:gw-method , kd:gw-judgement , kd:gw-action .
+kd:gw-subject a cur:CompetenceDimension ; skos:inScheme kd:SocialSciences ; skos:topConceptOf kd:SocialSciences ;
+    skos:notation "SK" ; skos:prefLabel "Sachkompetenz"@de ; skos:closeMatch kd:knowledge .
+kd:gw-method a cur:CompetenceDimension ; skos:inScheme kd:SocialSciences ; skos:topConceptOf kd:SocialSciences ;
+    skos:notation "MK" ; skos:prefLabel "Methodenkompetenz"@de ; skos:closeMatch kd:methodological .
+kd:gw-judgement a cur:CompetenceDimension ; skos:inScheme kd:SocialSciences ; skos:topConceptOf kd:SocialSciences ;
+    skos:notation "UK" ; skos:prefLabel "Urteilskompetenz"@de ; skos:relatedMatch kd:skills .
+kd:gw-action a cur:CompetenceDimension ; skos:inScheme kd:SocialSciences ; skos:topConceptOf kd:SocialSciences ;
+    skos:notation "HK" ; skos:prefLabel "Handlungskompetenz"@de ; skos:relatedMatch kd:autonomy .

@@ -1,0 +1,12 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-MV;Bildungs- und Erziehungsbereich;cue;elem:Bildungsbereich;Bildungsbereich;heading, toc;;;0.95;ja;;elem:lex-8d6f0a76c05e-MV
+DE-MV;Wissen, Können, Kompetenzen;cue;elem:Bildungsziel, elem:Kompetenzbeschreibung;Bildungs- und Entwicklungsziel, Kompetenzbeschreibung;heading;;;0.85;nein;;elem:lex-3e7d90260b4e-MV
+DE-MV;\((\d+)\s*Monate?\);cue;elem:Entwicklungsindikator, cv:time_age;Entwicklungsindikator, Alter (Jahre);;;;0.8;nein;;elem:cue-monate
+DE-MV;Bildungskonzeption für 0- bis 10-jährige Kinder;cue;elem:dt-Bildungsplan-0-10;Altersübergreifender Bildungsplan;titlePage;;;0.98;ja;Fassung 2025, Kita, Kindertagespflege und Grundschule.;elem:lex-ff3e263ac916-MV
+DE-MV;Musik, ästhetische Bildung und bildnerisches Gestalten;cue;elem:f-aesthetik, elem:f-bildnerisch, elem:f-musik;Ästhetische Bildung, Bildnerisches Gestalten, Musik und Rhythmik;heading;;;0.95;nein;;elem:lex-1859c6d670d0-MV
+DE-MV;Körper, Bewegung, Gesundheit und Prävention;pref;elem:f-koerper;Körper, Bewegung, Gesundheit und Prävention;heading;;;0.95;ja;Bereich 6 des Gemeinsamen Rahmens.;elem:lex-c2f956ef0981-MV
+DE-MV;Medien und digitale Bildung;pref;elem:f-medien;Medien und digitale Bildung;heading;;;0.95;ja;Bereich 4 des Gemeinsamen Rahmens.;elem:lex-b959c4760ad6-MV
+DE-MV;Elementares mathematisches Denken, Welterkundung sowie technische und naturwissenschaftliche Grunderfahrungen;cue;elem:f-mint;Mathematik, Informatik, Naturwissenschaft und Technik;heading;;;0.85;nein;Titel sinngemäß, am Dokument prüfen.;elem:lex-5fd77f8bddea-MV
+DE-MV;Personale und sozial-emotionale Entwicklung, Werteorientierung und Religiosität, kultursensitive Kompetenzen;cue;elem:f-personal-sozial;Personale und sozial-emotionale Entwicklung, Werte, Religion und Kultur;heading;;;0.95;nein;;elem:lex-5b2ed4e6ad72-MV
+DE-MV;Alltagsintegrierte Sprachbildung und Kommunikation;cue;elem:f-sprache, elem:p-alltagsintegration;Sprache, Kommunikation und Literacy, Alltagsintegrierte Bildung;heading;;;0.95;nein;;elem:lex-599088f67e35-MV
+DE-MV;Umweltbildung und Bildung für nachhaltige Entwicklung;pref;elem:f-umwelt-bne;Umweltbildung und Bildung für nachhaltige Entwicklung;heading;;;0.95;ja;Bereich 7 des Gemeinsamen Rahmens.;elem:lex-c3cbdea6f093-MV

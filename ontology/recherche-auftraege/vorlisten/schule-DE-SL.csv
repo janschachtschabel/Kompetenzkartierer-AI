@@ -1,0 +1,71 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-SL;prozessbezogene Kompetenzen;cue;kd:sk-process, schul:Kompetenzbereich;prozessbezogen, Kompetenzbereich;;;;0.9;nein;;schul:cue-kb-prozessbezogen
+DE-SL;G-Kurs / E-Kurs;cue;lvl:CourseLevelsLowerSecondary;Kursniveaus Sekundarstufe I (G-/E-/Z-Kurs);;;;0.85;nein;;schul:cue-nv-gekurs
+DE-SL;Basisbegriffe;cue;schul:Fachbegriff;Fachbegriff/Basisbegriff;;;;0.7;nein;SL auch „Verbindliches Fachwissen“.;schul:cue-in-basisbegriff
+DE-SL;Anregung zur selbstständigen Schülerarbeit;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030164
+DE-SL;Aufgabenstellung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030058
+DE-SL;Außerschulischer Lernort und außerunterrichtliche Veranstaltung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030148
+DE-SL;Beispiel;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030128
+DE-SL;Berufsorientierender Aspekt;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030149
+DE-SL;Bildung für nachhaltige Entwicklung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030158
+DE-SL;Einsatz digitaler Mathematikwerkzeuge;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030163
+DE-SL;Fachübergreifender und fächerverbindender Bezug;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030154
+DE-SL;Fakultativer Inhalt;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030237
+DE-SL;Geeignete Methode / Anlass für das exemplarische Arbeiten;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030135
+DE-SL;Geeignetes (Schüler-)Experiment;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030155
+DE-SL;Hinweis für die Konzeption von Lernaufgaben mit IK-Schwerpunkt;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030136
+DE-SL;Hinweis zu Methoden und Arbeitstechniken;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030161
+DE-SL;Hinweis zum sprachsensiblen Fachunterricht;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030152
+DE-SL;Hinweis zur Unterrichtsgestaltung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030160
+DE-SL;Literatur und Film im Unterricht der Hauptphase;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030138
+DE-SL;Literaturhinweis;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030060
+DE-SL;Medienbildung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030159
+DE-SL;Methodik und Fachdidaktik;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030162
+DE-SL;Mögliche Sprecharrangements und Genres;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030137
+DE-SL;Möglicher Einstieg / Motivation / Kontext;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030146
+DE-SL;Projekt;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030156
+DE-SL;Redemittel;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030094
+DE-SL;Relevantes Genre;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030133
+DE-SL;Unterstützungsangebot;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030150
+DE-SL;Verbindliche Textsorte;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030140
+DE-SL;Verwendung von Lehrwerken;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030145
+DE-SL;Vorschlag und Hinweis;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0002239
+DE-SL;Zusammenarbeit mit anderen Fächern;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030147
+DE-SL;Basisbegriff;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0002240
+DE-SL;Hinweis zur Umsetzung;homonym;schul:Inhalt;Inhalt;;;;0.6;nein;FWU führt den Begriff als Inhalt und Hinweis: verbindliche Stichworte → Inhalt, „z. B.“/Anregungen → Hinweis.;schul:fwu-LP_0002233
+DE-SL;Inhalt und Thema;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030127
+DE-SL;Inhaltsbezogene Kompetenz;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030125
+DE-SL;Sprachanlass;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030093
+DE-SL;Verbindliche Form des Schreibens;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030121
+DE-SL;Verbindliche Form mündlicher Kommunikation;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030061
+DE-SL;Verbindlicher Lerngegenstand;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030063
+DE-SL;Verbindliches Fachwissen;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0002235
+DE-SL;Vorgabe zum Erwerb von Methodenkompetenz;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030141
+DE-SL;Vorschlag und Hinweis zu Inhalten und Methoden;homonym;schul:Inhalt;Inhalt;;;;0.6;nein;FWU führt den Begriff als Inhalt und Hinweis: verbindliche Stichworte → Inhalt, „z. B.“/Anregungen → Hinweis.;schul:fwu-LP_0030064
+DE-SL;Basiskonzept;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030142
+DE-SL;Lernbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0002241
+DE-SL;Themenbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030092
+DE-SL;Themenfeld;homonym;schul:Inhaltsbereich;Inhaltsbereich;;;;0.75;nein;"Einheit, wenn das Themenfeld einen Zeitumfang, einen festen Jahrgang oder eine Verbindlichkeit (verbindlich/wahlobligatorisch) trägt (BE/BB C3, HE Oberstufe); sonst Inhaltsbereich.";schul:cue-ib-themenfeld
+DE-SL;Themenkomplex;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030139
+DE-SL;Verfügung über sprachliche Mittel;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030126
+DE-SL;Kompetenzbereich;cue;schul:Kompetenzbereich;Kompetenzbereich;;;;0.6;nein;;schul:fwu-LP_0002243
+DE-SL;Aussprache und Prosodie;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030241
+DE-SL;Begegnungssituaton;homonym;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;FWU führt den Begriff als Kompetenzspezifikation und Hinweis: Sätze mit Operator → Erwartung, Anregungen → Hinweis.;schul:fwu-LP_0030131
+DE-SL;Dialogisches Sprechen – mündliche Interaktion;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030261
+DE-SL;Einstellung;homonym;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;FWU führt den Begriff als Kompetenzspezifikation und Hinweis: Sätze mit Operator → Erwartung, Anregungen → Hinweis.;schul:fwu-LP_0030132
+DE-SL;Grammatik;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030240
+DE-SL;Kompetenzerwartung;pref;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.95;nein;NW: übergeordnete und konkretisierte Kompetenzerwartungen unterscheiden.;schul:cue-ke-kompetenzerwartung
+DE-SL;Methodenkompetenz/Lern- und Kommunikationsstrategie;homonym;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;FWU führt den Begriff als Kompetenzspezifikation und Hinweis: Sätze mit Operator → Erwartung, Anregungen → Hinweis.;schul:fwu-LP_0030129
+DE-SL;Orientierungswissen;homonym;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;FWU führt den Begriff als Kompetenzspezifikation und Hinweis: Sätze mit Operator → Erwartung, Anregungen → Hinweis.;schul:fwu-LP_0030130
+DE-SL;Prozessbezogene Kompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030151
+DE-SL;Sach-, Erkenntnisgewinnungs-, Kommunikations- und Bewertungskompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030157
+DE-SL;Standard für den Kompetenzbereich Fachwissen;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030143
+DE-SL;Verbindliche fachspezifische Fertigkeit/Fähigkeit und fachspezifische Methode;homonym;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;Spalte mit Lernzielen und Inhalten: Sätze mit Operator → Kompetenzerwartung, Stichworte → Inhalt.;schul:fwu-LP_0030062
+DE-SL;Verbindlicher Kompetenzschwerpunkt;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0002238
+DE-SL;Verstehen und Handeln;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030244
+DE-SL;Wortschatz;homonym;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;FWU führt den Begriff als Kompetenzspezifikation und Hinweis: Sätze mit Operator → Erwartung, Anregungen → Hinweis.;schul:fwu-LP_0030134
+DE-SL;Zusammenhängendes monologisches Sprechen – mündliche Produktion;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030262
+DE-SL;Lehrplanfragment;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0002229
+DE-SL;Verweis auf Basiskonzept;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030015
+DE-SL;Verweis auf thematische Querverbindungen im Lehrplan;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030016
+DE-SL;Lehrplan;pref;schul:dt-Lehrplan;Lehrplan;titlePage;;;0.8;nein;;schul:cue-dt-lehrplan

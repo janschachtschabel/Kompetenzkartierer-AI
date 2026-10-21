@@ -1,0 +1,310 @@
+@prefix ex:    <https://w3id.org/wlo/curriculum/example/> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix lvl:   <https://w3id.org/wlo/curriculum/level/> .
+@prefix fld:   <https://w3id.org/wlo/curriculum/field/> .
+@prefix op:    <https://w3id.org/wlo/curriculum/operator/> .
+@prefix land:  <https://w3id.org/wlo/curriculum/region/> .
+@prefix ctx:   <https://w3id.org/wlo/curriculum/context/> .
+@prefix kd:    <https://w3id.org/wlo/curriculum/dimension/> .
+@prefix qz:    <https://w3id.org/wlo/curriculum/crosscutting/> .
+@prefix schul: <https://w3id.org/wlo/curriculum/profile/school#> .
+@prefix beruf: <https://w3id.org/wlo/curriculum/profile/vocational#> .
+@prefix hs:    <https://w3id.org/wlo/curriculum/profile/higher-education#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+# =============================================================================
+# Beispiel „Ohm-Kette“: dasselbe Thema in Schule, Berufsausbildung und Studium.
+# Alle Dokumente und Wortlaute sind FIKTIV (nach dem Muster echter Pläne
+# formuliert), Seiten und Block-IDs erfunden. Gezeigt werden:
+#   L1  Dokument, Spezifikation, Gliederung, Aussagen mit Fundstelle
+#   L2  Zerlegung, Inhalts- und Kompetenzkonzepte (Hubs), Niveau, Zeit
+#   L3  Zuordnungen: steigert (bestätigt → Kurzform), steigert (vorgeschlagen),
+#       Lernortkooperation (amtlich), Anrechnung (amtlich)
+# Erwartung: konform zu cur-shapes.ttl und profil-shapes.ttl.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Hubs (L2, bottom-up, hier von Hand)
+# -----------------------------------------------------------------------------
+ex:ContentHub a skos:ConceptScheme ; skos:prefLabel "Inhalts-Hub (Beispiel)"@de .
+ex:CompetencyHub a skos:ConceptScheme ; skos:prefLabel "Kompetenz-Hub (Beispiel)"@de .
+
+ex:ic-elektrizitaet a cur:ContentConcept ; skos:inScheme ex:ContentHub ; cur:granularity cv:gran_topic ;
+    skos:prefLabel "Elektrizität"@de , "electricity"@en .
+ex:ic-ohm a cur:ContentConcept ; skos:inScheme ex:ContentHub ; cur:granularity cv:gran_concept ; skos:broader ex:ic-elektrizitaet ;
+    skos:prefLabel "Ohmsches Gesetz"@de , "Ohm's law"@en ;
+    skos:editorialNote "Normdatenabgleich (Wikidata, GND) in N2 per Reconciliation; Ergebnis als cur:Alignment mit Methode reconciliation."@de .
+ex:ic-stromkreis a cur:ContentConcept ; skos:inScheme ex:ContentHub ; cur:granularity cv:gran_concept ; skos:broader ex:ic-elektrizitaet ;
+    skos:prefLabel "Elektrischer Stromkreis"@de .
+ex:ic-kirchhoff a cur:ContentConcept ; skos:inScheme ex:ContentHub ; cur:granularity cv:gran_concept ; skos:broader ex:ic-elektrizitaet ;
+    skos:prefLabel "Kirchhoffsche Regeln"@de ;
+    skos:related ex:ic-ohm .
+
+ex:kk-ohm-beschreiben a cur:CompetencyConcept ; skos:inScheme ex:CompetencyHub ;
+    skos:prefLabel "Zusammenhang von Spannung, Stromstärke und Widerstand beschreiben"@de .
+ex:kk-groessen-berechnen a cur:CompetencyConcept ; skos:inScheme ex:CompetencyHub ;
+    skos:prefLabel "Elektrische Größen in Stromkreisen berechnen"@de .
+ex:kk-netzwerke-analysieren a cur:CompetencyConcept ; skos:inScheme ex:CompetencyHub ;
+    skos:prefLabel "Gleichstromnetzwerke analysieren"@de .
+
+# =============================================================================
+# 1. Schule – fiktiver Kernlehrplan Physik Sekundarstufe I (NW-Muster)
+# =============================================================================
+ex:file-sch a cur:SourceFile ; cur:checksum "3f5b0c1d2e4a6b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e" ;
+    cur:containsDocument ex:doc-sch .
+
+ex:doc-sch a cur:Document ;
+    dct:title "Kernlehrplan Physik für die Sekundarstufe I (fiktives Beispiel)"@de ;
+    dct:publisher "Ministerium für Schule und Bildung (fiktiv)" ;
+    cur:documentType schul:dt-Lehrplan ; cur:educationSector cv:sec_school ; cur:region land:DE-NW ;
+    cur:legalForm cv:lf_administrativeRegulation ; cur:documentBinding cv:bind_binding ; cur:lifecycle cv:life_inForce ;
+    cur:validFrom "2022-08-01"^^xsd:date ;
+    cur:represents ex:sch-physik .
+
+ex:sch-physik a cur:Curriculum ;
+    dct:title "Physik Sekundarstufe I"@de ;
+    cur:field fld:0533 ; cur:fieldText "Physik" ;
+    cur:applicability ex:sch-physik-ctx ;
+    cur:competencyModel kd:NaturalSciences .
+ex:sch-physik-ctx a cur:ApplicabilityContext ;
+    cur:educationSector cv:sec_school ; cur:formality cv:form_formal ;
+    cur:levelAssignment ex:sch-physik-msa .
+ex:sch-physik-msa a cur:LevelAssignment ; cur:level lvl:school-MSA ; cur:levelRelation cv:lrel_target ; cur:origin cv:orig_source .
+
+ex:sch-n1 a cur:CurriculumNode ; cur:partOf ex:sch-physik ;
+    cur:nodeFunction cv:fn_grouping ; cur:nodeType schul:Stufenabschnitt ;
+    cur:originalTitle "Kompetenzerwartungen bis zum Ende der Sekundarstufe I"@de ; cur:position 1 ;
+    cur:timeSpan ex:sch-n1-zeit ; cur:anchor ex:anc-sch-n1 .
+ex:sch-n1-zeit a cur:TimeSpan ; cur:timeKind cv:time_gradeLevel ; cur:from 7.0 ; cur:to 10.0 ; cur:timeRelation cv:trel_endOf .
+
+ex:sch-n2 a cur:CurriculumNode ; cur:partOf ex:sch-n1 ;
+    cur:nodeFunction cv:fn_area ; cur:nodeType schul:Inhaltsbereich ; cur:code "IF 5" ;
+    cur:originalTitle "Inhaltsfeld 5: Elektrizität"@de ; cur:position 5 ; cur:anchor ex:anc-sch-n2 ;
+    cur:mentions ex:ic-elektrizitaet .
+
+ex:st-sch-1 a cur:Statement ; cur:partOf ex:sch-n2 ;
+    cur:verbatim "beschreiben den Zusammenhang von Spannung, Stromstärke und Widerstand in einfachen Stromkreisen"@de ;
+    cur:leadIn "Die Schülerinnen und Schüler …"@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:statementSubkind schul:KonkretisierteKompetenzerwartung ;
+    cur:addressee cv:addr_learner ; cur:obligation cv:obl_binding ; cur:origin cv:orig_source ;
+    cur:competenceDimension kd:nw-subject ;
+    cur:layoutMarker cv:mark_bullet ;
+    cur:checkedAbsent cv:dock_context ;
+    cur:anchor ex:anc-sch-1 ; prov:wasGeneratedBy ex:run-x4-sch .
+ex:st-sch-2 a cur:Statement ; cur:partOf ex:sch-n2 ;
+    cur:verbatim "Ohmsches Gesetz"@de ;
+    cur:statementKind cv:kind_content ; cur:statementSubkind schul:Inhalt ;
+    cur:addressee cv:addr_learner ; cur:origin cv:orig_source ; cur:mentions ex:ic-ohm ;
+    cur:anchor ex:anc-sch-2 ; prov:wasGeneratedBy ex:run-x4-sch .
+ex:st-sch-1 cur:targetsContent ex:st-sch-2 .
+
+ex:dec-sch-1 a cur:Decomposition ; cur:decomposes ex:st-sch-1 ;
+    cur:actionText "beschreiben" ; cur:action op:beschreiben ;
+    cur:objectText "den Zusammenhang von Spannung, Stromstärke und Widerstand" ;
+    cur:conditionText "in einfachen Stromkreisen" ;
+    cur:origin cv:orig_model ; cur:confidence 0.91 ;
+    cur:expresses ex:kk-ohm-beschreiben ; cur:mentions ex:ic-ohm , ex:ic-stromkreis ;
+    prov:wasGeneratedBy ex:run-n1 .
+
+ex:anc-sch-n1 a cur:SourceAnchor ; cur:inDocument ex:doc-sch ; cur:pageStart 24 ; cur:pageEnd 41 ; cur:blockId "p24-b1" ;
+    cur:quote "Kompetenzerwartungen bis zum Ende der Sekundarstufe I" ; cur:matchKind cv:match_exact .
+ex:anc-sch-n2 a cur:SourceAnchor ; cur:inDocument ex:doc-sch ; cur:pageStart 36 ; cur:pageEnd 37 ; cur:blockId "p36-b2" ;
+    cur:quote "Inhaltsfeld 5: Elektrizität" ; cur:matchKind cv:match_exact .
+ex:anc-sch-1 a cur:SourceAnchor ; cur:inDocument ex:doc-sch ; cur:pageStart 36 ; cur:pageEnd 36 ; cur:blockId "p36-b7" ;
+    cur:quote "beschreiben den Zusammenhang von Spannung, Stromstärke und Widerstand in einfachen Stromkreisen" ; cur:matchKind cv:match_exact .
+ex:anc-sch-2 a cur:SourceAnchor ; cur:inDocument ex:doc-sch ; cur:pageStart 36 ; cur:pageEnd 36 ; cur:blockId "p36-b4" ;
+    cur:quote "Ohmsches Gesetz" ; cur:matchKind cv:match_exact .
+
+# =============================================================================
+# 2. Beruf – fiktiver KMK-Rahmenlehrplan und Ausbildungsrahmenplan
+#    Elektroniker/-in (Lernortkooperation über die Entsprechungsliste)
+# =============================================================================
+ex:occ-elektroniker a cur:Occupation ; skos:prefLabel "Elektroniker/-in für Energie- und Gebäudetechnik (fiktiv)"@de ;
+    beruf:bibbId "BEISPIEL-0001" ; beruf:kldbCode "26212" ; cur:field fld:0713 .
+ex:qual-elektroniker a cur:Qualification ; skos:prefLabel "Abschluss Elektroniker/-in (fiktiv)"@de ;
+    cur:levelAssignment ex:qual-elektroniker-dqr .
+ex:qual-elektroniker-dqr a cur:LevelAssignment ; cur:level lvl:DQR-4 ; cur:levelRelation cv:lrel_assigned ; cur:origin cv:orig_official .
+
+ex:doc-rlp a cur:Document ;
+    dct:title "Rahmenlehrplan für den Ausbildungsberuf Elektroniker/-in (fiktives Beispiel)"@de ;
+    dct:publisher "Kultusministerkonferenz (fiktiv)" ;
+    cur:documentType beruf:dt-Rahmenlehrplan ; cur:educationSector cv:sec_vocational ; cur:region land:DE ;
+    cur:legalForm cv:lf_resolution ; cur:documentBinding cv:bind_partial ; cur:lifecycle cv:life_inForce ;
+    cur:represents ex:rlp-elektroniker .
+ex:rlp-elektroniker a cur:Curriculum ; dct:title "Rahmenlehrplan Elektroniker/-in – Berufsschule"@de ;
+    cur:occupation ex:occ-elektroniker ; beruf:learningPlace ctx:vocational-school .
+
+ex:rlp-lf1 a cur:CurriculumNode ; cur:partOf ex:rlp-elektroniker ;
+    cur:nodeFunction cv:fn_unit ; cur:nodeType beruf:Lernfeld ; cur:code "1" ;
+    cur:originalTitle "Elektrotechnische Systeme analysieren und Funktionen prüfen"@de ; cur:position 1 ;
+    cur:timeSpan ex:rlp-lf1-zeit ; cur:workload ex:rlp-lf1-umfang ; cur:anchor ex:anc-rlp-lf1 ;
+    cur:mentions ex:ic-elektrizitaet .
+ex:rlp-lf1-zeit a cur:TimeSpan ; cur:timeKind cv:time_trainingYear ; cur:from 1.0 ; cur:to 1.0 ; cur:timeRelation cv:trel_during .
+ex:rlp-lf1-umfang a cur:Workload ; cur:amount 80.0 ; cur:unit cv:unit_lesson ; cur:workloadKind cv:wl_guidanceValue ; cur:isRecommendation true .
+
+ex:st-rlp-1 a cur:Statement ; cur:partOf ex:rlp-lf1 ;
+    cur:verbatim "Die Schülerinnen und Schüler verfügen über die Kompetenz, elektrotechnische Systeme zu analysieren und ihre Funktionen zu prüfen."@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:statementSubkind beruf:Kernkompetenz ;
+    cur:addressee cv:addr_learner ; cur:origin cv:orig_source ; cur:layoutMarker cv:mark_bold ;
+    cur:summarizes ex:st-rlp-2 ;
+    cur:anchor ex:anc-rlp-1 ; prov:wasGeneratedBy ex:run-x4-rlp .
+ex:st-rlp-2 a cur:Statement ; cur:partOf ex:rlp-lf1 ;
+    cur:verbatim "Sie berechnen elektrische Größen in Grundstromkreisen mithilfe des ohmschen Gesetzes."@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:statementSubkind beruf:Zielformulierung ;
+    cur:addressee cv:addr_learner ; cur:origin cv:orig_source ; cur:layoutMarker cv:mark_plain ;
+    cur:anchor ex:anc-rlp-2 ; prov:wasGeneratedBy ex:run-x4-rlp .
+
+ex:dec-rlp-2 a cur:Decomposition ; cur:decomposes ex:st-rlp-2 ;
+    cur:actionText "berechnen" ; cur:action op:berechnen ;
+    cur:objectText "elektrische Größen" ;
+    cur:conditionText "in Grundstromkreisen mithilfe des ohmschen Gesetzes" ;
+    cur:origin cv:orig_model ; cur:confidence 0.88 ;
+    cur:expresses ex:kk-groessen-berechnen ; cur:mentions ex:ic-ohm , ex:ic-stromkreis ;
+    prov:wasGeneratedBy ex:run-n1 .
+
+ex:anc-rlp-lf1 a cur:SourceAnchor ; cur:inDocument ex:doc-rlp ; cur:pageStart 9 ; cur:pageEnd 9 ; cur:blockId "p9-b1" ;
+    cur:quote "Lernfeld 1: Elektrotechnische Systeme analysieren und Funktionen prüfen" ; cur:matchKind cv:match_exact .
+ex:anc-rlp-1 a cur:SourceAnchor ; cur:inDocument ex:doc-rlp ; cur:pageStart 9 ; cur:pageEnd 9 ; cur:blockId "p9-b3" ;
+    cur:quote "Die Schülerinnen und Schüler verfügen über die Kompetenz, elektrotechnische Systeme zu analysieren und ihre Funktionen zu prüfen." ;
+    cur:matchKind cv:match_exact .
+ex:anc-rlp-2 a cur:SourceAnchor ; cur:inDocument ex:doc-rlp ; cur:pageStart 9 ; cur:pageEnd 9 ; cur:blockId "p9-b5" ;
+    cur:quote "Sie berechnen elektrische Größen in Grundstromkreisen mithilfe des ohmschen Gesetzes." ; cur:matchKind cv:match_exact .
+
+# Ausbildungsrahmenplan (Lernort Betrieb) und Entsprechungsliste
+ex:doc-ao a cur:Document ;
+    dct:title "Verordnung über die Berufsausbildung zum Elektroniker und zur Elektronikerin (fiktives Beispiel)"@de ;
+    dct:publisher "Bundesministerium (fiktiv)" ;
+    cur:documentType beruf:dt-Ausbildungsordnung ; cur:educationSector cv:sec_vocational ; cur:region land:DE ;
+    cur:legalForm cv:lf_ordinance ; cur:documentBinding cv:bind_binding ; cur:lifecycle cv:life_inForce ;
+    cur:represents ex:arp-elektroniker , ex:ao-pruefung .
+ex:arp-elektroniker a cur:Curriculum ; dct:title "Ausbildungsrahmenplan Elektroniker/-in – Betrieb"@de ;
+    cur:occupation ex:occ-elektroniker ; beruf:learningPlace ctx:company .
+ex:ao-pruefung a cur:AssessmentSpecification ; dct:title "Gesellenprüfung Elektroniker/-in"@de .
+ex:arp-bbp5 a cur:CurriculumNode ; cur:partOf ex:arp-elektroniker ;
+    cur:nodeFunction cv:fn_unit ; cur:nodeType beruf:Berufsbildposition ; cur:code "5" ;
+    cur:originalTitle "Messen und Analysieren von elektrischen Systemen"@de ; cur:position 5 ; cur:anchor ex:anc-arp-bbp5 .
+ex:anc-arp-bbp5 a cur:SourceAnchor ; cur:inDocument ex:doc-ao ; cur:pageStart 14 ; cur:pageEnd 14 ; cur:blockId "p14-b6" ;
+    cur:quote "Messen und Analysieren von elektrischen Systemen" ; cur:matchKind cv:match_exact .
+
+ex:ap-teil1 a cur:Assessment ; cur:partOf ex:ao-pruefung ; cur:assessmentKind cv:ak_examPart ;
+    beruf:examType beruf:ex-ap1 ; cur:weightPercent 40 ; cur:durationMinutes 600 ; cur:assesses ex:arp-bbp5 , ex:rlp-lf1 .
+ex:ap-teil2 a cur:Assessment ; cur:partOf ex:ao-pruefung ; cur:assessmentKind cv:ak_examPart ;
+    beruf:examType beruf:ex-ap2 ; cur:weightPercent 60 ; cur:levelAssignment ex:ap-teil2-note .
+ex:ap-teil2-note a cur:LevelAssignment ; cur:level lvl:grade-4 ; cur:levelRelation cv:lrel_minimum ;
+    cur:levelText "mindestens ausreichende Leistungen" ; cur:origin cv:orig_source .
+
+ex:al-lernort a cur:Alignment ; cur:source ex:rlp-lf1 ; cur:target ex:arp-bbp5 ;
+    cur:relation cv:rel_correspondsTo ; cur:origin cv:orig_official ; cur:reviewStatus cv:rev_confirmed ;
+    cur:method cv:meth_officialList ; cur:anchor ex:anc-entspr ;
+    cur:rationale "Liste der Entsprechungen, Zeile Lernfeld 1 ↔ Position 5."@de .
+ex:anc-entspr a cur:SourceAnchor ; cur:inDocument ex:doc-rlp ; cur:pageStart 31 ; cur:pageEnd 31 ; cur:blockId "p31-b2" ;
+    cur:quote "Lernfeld 1 | 5 Messen und Analysieren von elektrischen Systemen" ; cur:matchKind cv:match_normalized .
+ex:rlp-lf1 cur:correspondsTo ex:arp-bbp5 .
+
+# =============================================================================
+# 3. Hochschule – fiktives Modulhandbuch B.Eng. Elektrotechnik
+# =============================================================================
+ex:doc-mhb a cur:Document ;
+    dct:title "Modulhandbuch Bachelor Elektrotechnik (fiktives Beispiel)"@de ;
+    dct:publisher "Hochschule für angewandte Wissenschaften (fiktiv)" ;
+    cur:documentType hs:dt-Modulhandbuch ; cur:educationSector cv:sec_higher ; cur:region land:DE-NW ;
+    cur:legalForm cv:lf_statute ; cur:documentBinding cv:bind_binding ; cur:lifecycle cv:life_inForce ;
+    hs:annexOf ex:doc-spo ; hs:mrvoVersion hs:mrvo-2017 ;
+    cur:represents ex:hs-et .
+ex:doc-spo a cur:Document ;
+    dct:title "Studien- und Prüfungsordnung Bachelor Elektrotechnik (fiktives Beispiel)"@de ;
+    dct:publisher "Hochschule für angewandte Wissenschaften (fiktiv)" ;
+    cur:documentType hs:dt-SPO ; cur:educationSector cv:sec_higher ; cur:region land:DE-NW ;
+    cur:legalForm cv:lf_statute ; cur:documentBinding cv:bind_binding ; cur:lifecycle cv:life_inForce ;
+    cur:represents ex:hs-et .
+
+ex:hs-et a cur:Curriculum ; dct:title "Elektrotechnik (B.Eng.)"@de ;
+    cur:field fld:0713 ; cur:applicability ex:hs-et-ctx ; cur:competencyModel kd:HQR .
+ex:hs-et-ctx a cur:ApplicabilityContext ; cur:educationSector cv:sec_higher ; cur:formality cv:form_formal ;
+    cur:levelAssignment ex:hs-et-ba .
+ex:hs-et-ba a cur:LevelAssignment ; cur:level lvl:he-bachelor ; cur:levelRelation cv:lrel_target ; cur:origin cv:orig_source .
+
+ex:hs-et101 a cur:CurriculumNode ; cur:partOf ex:hs-et ;
+    cur:nodeFunction cv:fn_unit ; cur:nodeType hs:Modul ; cur:code "ET-101" ;
+    cur:originalTitle "Grundlagen der Elektrotechnik I"@de ; cur:position 1 ;
+    cur:workload ex:hs-et101-lp , ex:hs-et101-h , ex:hs-et101-k , ex:hs-et101-s ;
+    hs:durationSemesters 1 ; hs:offerFrequency hs:of-ws ; hs:instructionLanguage "de"^^xsd:language ;
+    cur:anchor ex:anc-hs-et101 .
+ex:hs-et101-lp a cur:Workload ; cur:amount 6.0 ; cur:unit cv:unit_ectsCredit ; cur:workloadKind cv:wl_credits .
+ex:hs-et101-h a cur:Workload ; cur:amount 180.0 ; cur:unit cv:unit_hour ; cur:workloadKind cv:wl_totalWorkload .
+ex:hs-et101-k a cur:Workload ; cur:amount 75.0 ; cur:unit cv:unit_hour ; cur:workloadKind cv:wl_contactTime .
+ex:hs-et101-s a cur:Workload ; cur:amount 105.0 ; cur:unit cv:unit_hour ; cur:workloadKind cv:wl_selfStudy .
+
+ex:pl-et101 a cur:Placement ; cur:placedUnit ex:hs-et101 ; cur:inSpecification ex:hs-et ;
+    cur:obligation cv:obl_binding ; cur:timeSpan ex:pl-et101-sem ; cur:gradeWeight 1.0 .
+ex:pl-et101-sem a cur:TimeSpan ; cur:timeKind cv:time_semester ; cur:from 1.0 ; cur:to 1.0 .
+
+ex:st-hs-1 a cur:Statement ; cur:partOf ex:hs-et101 ;
+    cur:verbatim "lineare Gleichstromnetzwerke mit Maschen- und Knotenregeln analysieren und das ohmsche Gesetz auf verzweigte Stromkreise anwenden."@de ;
+    cur:leadIn "Nach erfolgreichem Abschluss des Moduls können die Studierenden …"@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:statementSubkind hs:Modulziel ;
+    cur:addressee cv:addr_learner ; cur:origin cv:orig_source ;
+    cur:anchor ex:anc-hs-1 ; prov:wasGeneratedBy ex:run-x4-mhb .
+
+# Zwei Operatoren → zwei Zerlegungen derselben Aussage.
+ex:dec-hs-1a a cur:Decomposition ; cur:decomposes ex:st-hs-1 ;
+    cur:actionText "analysieren" ; cur:action op:analysieren ;
+    cur:objectText "lineare Gleichstromnetzwerke" ; cur:conditionText "mit Maschen- und Knotenregeln" ;
+    cur:origin cv:orig_model ; cur:confidence 0.9 ;
+    cur:expresses ex:kk-netzwerke-analysieren ; cur:mentions ex:ic-kirchhoff ;
+    prov:wasGeneratedBy ex:run-n1 .
+ex:dec-hs-1b a cur:Decomposition ; cur:decomposes ex:st-hs-1 ;
+    cur:actionText "anwenden" ; cur:action op:anwenden ;
+    cur:objectText "das ohmsche Gesetz" ; cur:conditionText "auf verzweigte Stromkreise" ;
+    cur:origin cv:orig_model ; cur:confidence 0.86 ;
+    cur:mentions ex:ic-ohm , ex:ic-stromkreis ;
+    prov:wasGeneratedBy ex:run-n1 .
+
+ex:anc-hs-et101 a cur:SourceAnchor ; cur:inDocument ex:doc-mhb ; cur:pageStart 7 ; cur:pageEnd 8 ; cur:blockId "p7-b1" ;
+    cur:quote "ET-101 Grundlagen der Elektrotechnik I" ; cur:matchKind cv:match_exact .
+ex:anc-hs-1 a cur:SourceAnchor ; cur:inDocument ex:doc-mhb ; cur:pageStart 7 ; cur:pageEnd 7 ; cur:blockId "p7-b9" ;
+    cur:quote "lineare Gleichstromnetzwerke mit Maschen- und Knotenregeln analysieren und das ohmsche Gesetz auf verzweigte Stromkreise anwenden." ;
+    cur:matchKind cv:match_exact .
+
+# Anrechnung beruflicher Qualifikation (amtlich, aus der Ordnung)
+ex:rule-anrechnung a cur:RecognitionRule ;
+    cur:verbatim "Eine abgeschlossene Berufsausbildung als Elektronikerin oder Elektroniker wird auf das Modul ET-101 angerechnet."@de ;
+    cur:anchor ex:anc-hs-rule ; cur:ruleAppliesTo ex:hs-et101 ; cur:maxShare 0.05 ; hs:recognitionProcedure hs:rp-pauschal .
+ex:anc-hs-rule a cur:SourceAnchor ; cur:inDocument ex:doc-spo ; cur:pageStart 12 ; cur:pageEnd 12 ; cur:blockId "p12-b4" ;
+    cur:quote "Eine abgeschlossene Berufsausbildung als Elektronikerin oder Elektroniker wird auf das Modul ET-101 angerechnet." ;
+    cur:matchKind cv:match_exact .
+ex:al-anrechnung a cur:Alignment ; cur:source ex:qual-elektroniker ; cur:target ex:hs-et101 ;
+    cur:relation cv:rel_recognizedFor ; cur:origin cv:orig_official ; cur:reviewStatus cv:rev_confirmed ;
+    cur:method cv:meth_verbatim ; cur:anchor ex:anc-hs-rule .
+ex:qual-elektroniker cur:recognizedFor ex:hs-et101 .
+
+# =============================================================================
+# 4. Kanten über Bildungsbereiche (G1)
+# =============================================================================
+# Bestätigt: Berufsschule steigert Schule (gemeinsames Inhaltskonzept Ohmsches Gesetz).
+ex:al-steigert-1 a cur:Alignment ; cur:source ex:st-rlp-2 ; cur:target ex:st-sch-1 ;
+    cur:relation cv:rel_buildsOn ; cur:origin cv:orig_model ; cur:reviewStatus cv:rev_confirmed ;
+    cur:method cv:meth_llmChoice ; cur:confidence 0.78 ; cur:reviewedBy "Redaktion (Beispiel)" ;
+    cur:rationale "Schule: Zusammenhang beschreiben; Beruf: Größen damit berechnen."@de ;
+    prov:wasGeneratedBy ex:run-g1 .
+ex:st-rlp-2 cur:buildsOn ex:st-sch-1 .
+
+# Vorgeschlagen, noch nicht geprüft: keine Kurzform-Kante.
+ex:al-steigert-2 a cur:Alignment ; cur:source ex:st-hs-1 ; cur:target ex:st-rlp-2 ;
+    cur:relation cv:rel_buildsOn ; cur:origin cv:orig_model ; cur:reviewStatus cv:rev_proposed ;
+    cur:method cv:meth_embedding ; cur:confidence 0.64 ;
+    prov:wasGeneratedBy ex:run-g1 .
+
+# -----------------------------------------------------------------------------
+# Läufe
+# -----------------------------------------------------------------------------
+ex:run-x4-sch a cur:ExtractionRun ; cur:stage cv:stage_X4 ; cur:model "beispielmodell-1" ; cur:promptVersion "x4-2026-10" ;
+    prov:startedAtTime "2026-10-19T10:00:00Z"^^xsd:dateTime .
+ex:run-x4-rlp a cur:ExtractionRun ; cur:stage cv:stage_X4 ; cur:model "beispielmodell-1" ; cur:promptVersion "x4-2026-10" .
+ex:run-x4-mhb a cur:ExtractionRun ; cur:stage cv:stage_X4 ; cur:model "beispielmodell-1" ; cur:promptVersion "x4-2026-10" .
+ex:run-n1 a cur:ExtractionRun ; cur:stage cv:stage_N1 ; cur:model "beispielmodell-1" ; cur:promptVersion "n1-2026-10" .
+ex:run-g1 a cur:ExtractionRun ; cur:stage cv:stage_G1 ; cur:model "beispielmodell-1" ; cur:promptVersion "g1-2026-10" .

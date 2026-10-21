@@ -1,0 +1,21 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-SN;⇒;cue;qz:Hub;Querschnittsziele – Hub;;;;0.8;nein;Doppelpfeil vor einem Querschnittsziel („⇒ Medienbildung“, „⇒ Bildung für nachhaltige Entwicklung“): Rohmarker, Auflösung über Label im qz:Hub.;schul:cue-qk-sn-pfeil
+DE-SN;Bemerkung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0002116
+DE-SN;Bemerkungen;cue;schul:Hinweis;Hinweis/Anregung;;;;0.9;nein;;schul:cue-hw-bemerkungen
+DE-SN;Lerninhalte;cue;schul:Inhalt;Inhalt;;;;0.85;nein;;schul:cue-in-lerninhalte
+DE-SN;Allgemeines fachliches Ziel;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030050
+DE-SN;Kompetenzbereich;pref;schul:Kompetenzbereich;Kompetenzbereich;;;;0.8;nein;;schul:cue-kb-kompetenzbereich
+DE-SN;^(Kennen|Anwenden|Beurteilen|Sich positionieren|Einblick gewinnen|Gestalten|Übertragen)\b;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.85;nein;"SN: Zielbegriff vorn („Kennen wesentlicher Aspekte …“); der Zielbegriff ist der Operator.";schul:cue-ke-sn-zielbegriff
+DE-SN;Lernziel und Lerninhalt;homonym;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;Spalte mit Lernzielen und Inhalten: Sätze mit Operator → Kompetenzerwartung, Stichworte → Inhalt.;schul:fwu-LP_0002115
+DE-SN;Lernziele;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.85;nein;;schul:cue-ke-lernziel
+DE-SN;Bildungs- und Erziehungsziel;cue;schul:Querschnittsbereich;Querschnittsbereich;;;;0.6;nein;;schul:fwu-LP_0030329
+DE-SN;Lehrplanfragment;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0002110
+DE-SN;Lernbereich;cue;schul:Unterrichtseinheit;Unterrichtseinheit;;;;0.9;nein;"SN: Lernbereich mit Zeitrichtwert („26 Ustd.“) = Einheit; Zeitrichtwert als cur:workload (Unterrichtsstunden, Zeitrichtwert).";schul:cue-ib-lernbereich-sn
+DE-SN;Wahlbereich;cue;schul:Unterrichtseinheit, cv:obl_elective;Unterrichtseinheit, Wahl;;;;0.9;nein;;schul:cue-ib-wahlbereich
+DE-SN;Wahlpflichtbereich;cue;schul:Unterrichtseinheit, cv:obl_electiveRequired;Unterrichtseinheit, Wahlpflicht;;;;0.9;nein;;schul:cue-ib-wahlpflichtbereich
+DE-SN;Verweis auf ein überfachliches Bildungs- und Erziehungsziel;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030191
+DE-SN;Verweis auf Klassenstufe, Lernbereich eines anderen Faches;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030190
+DE-SN;Verweis auf Lernbereich des gleichen Faches der gleichen Klassenstufe;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030188
+DE-SN;Verweis auf Lernbereich des gleichen Faches einer anderen Klassenstufe;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030189
+DE-SN;➔;cue;schul:Verweis;Verweis;;;;0.85;nein;"„➔ GE, Kl. 8/9, LB 2“ = Verweis auf Fach, Klasse, Lernbereich; ohne LLM auflösen.";schul:cue-vw-sn-pfeil
+DE-SN;Lehrplan;pref;schul:dt-Lehrplan;Lehrplan;titlePage;;;0.8;nein;;schul:cue-dt-lehrplan

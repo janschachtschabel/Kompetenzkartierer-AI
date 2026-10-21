@@ -1,0 +1,363 @@
+@prefix lvl:   <https://w3id.org/wlo/curriculum/level/> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix eqf:   <http://data.europa.eu/snb/eqf/> .
+@prefix qdr:   <http://data.europa.eu/snb/qdr/> .
+@prefix kimel: <https://w3id.org/kim/educationalLevel/> .
+@prefix kimi11: <https://w3id.org/kim/isced-2011/> .
+@prefix wd:    <http://www.wikidata.org/entity/> .
+@prefix lp:    <https://w3id.org/lehrplan/ontology/> .
+
+# =============================================================================
+# Niveausysteme. Jedes System ist ein eigenes cur:LevelScheme mit Standard-
+# dimension und Ordnungsart; cur:rank ordnet nur innerhalb des Systems.
+# Systeme werden NIE umgerechnet. Mappings zwischen Systemen stehen nur dort,
+# wo eine amtliche Zuordnung besteht (DQR ↔ EQR, Fortbildungsstufen ↔ DQR,
+# Schulabschlüsse ↔ DQR, Notenpunkte → Notenstufen); sie dienen als
+# Vorfilter, nicht als Gleichwertigkeitsbeleg.
+# Externe IRIs: EQF und DQR (EU-Vokabular QDR), KIM, Wikidata (GER) und FWU
+# (AFB) am 2026-10-19 belegt.
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/level> a owl:Ontology ;
+    dct:title "Niveausysteme"@de , "level schemes"@en ;
+    owl:imports <https://w3id.org/wlo/curriculum/vocab> ;
+    owl:versionInfo "1.0-entwurf" ;
+    dct:created "2026-10-19"^^xsd:date .
+
+# -----------------------------------------------------------------------------
+# Qualifikationsniveaus
+# -----------------------------------------------------------------------------
+lvl:EQF a cur:LevelScheme ;
+    skos:prefLabel "Europäischer Qualifikationsrahmen (EQR)"@de , "European Qualifications Framework (EQF)"@en ;
+    cur:levelDimension cv:dim_qualification ; cur:levelOrdering cv:ord_cumulative ;
+    dct:source "Empfehlung des Rates vom 22. Mai 2017 (2017/C 189/03)" ;
+    skos:scopeNote "Nur an Qualifikation, Spezifikation oder Programm; nie an einzelnen Aussagen."@de .
+lvl:EQF-1 a cur:LevelConcept ; skos:inScheme lvl:EQF ; skos:topConceptOf lvl:EQF ; skos:notation "EQF-1" ; cur:rank 1 ; skos:prefLabel "EQR-Niveau 1"@de , "EQF level 1"@en ; skos:exactMatch eqf:1 .
+lvl:EQF-2 a cur:LevelConcept ; skos:inScheme lvl:EQF ; skos:topConceptOf lvl:EQF ; skos:notation "EQF-2" ; cur:rank 2 ; skos:prefLabel "EQR-Niveau 2"@de , "EQF level 2"@en ; skos:exactMatch eqf:2 .
+lvl:EQF-3 a cur:LevelConcept ; skos:inScheme lvl:EQF ; skos:topConceptOf lvl:EQF ; skos:notation "EQF-3" ; cur:rank 3 ; skos:prefLabel "EQR-Niveau 3"@de , "EQF level 3"@en ; skos:exactMatch eqf:3 .
+lvl:EQF-4 a cur:LevelConcept ; skos:inScheme lvl:EQF ; skos:topConceptOf lvl:EQF ; skos:notation "EQF-4" ; cur:rank 4 ; skos:prefLabel "EQR-Niveau 4"@de , "EQF level 4"@en ; skos:exactMatch eqf:4 .
+lvl:EQF-5 a cur:LevelConcept ; skos:inScheme lvl:EQF ; skos:topConceptOf lvl:EQF ; skos:notation "EQF-5" ; cur:rank 5 ; skos:prefLabel "EQR-Niveau 5"@de , "EQF level 5"@en ; skos:exactMatch eqf:5 .
+lvl:EQF-6 a cur:LevelConcept ; skos:inScheme lvl:EQF ; skos:topConceptOf lvl:EQF ; skos:notation "EQF-6" ; cur:rank 6 ; skos:prefLabel "EQR-Niveau 6"@de , "EQF level 6"@en ; skos:exactMatch eqf:6 .
+lvl:EQF-7 a cur:LevelConcept ; skos:inScheme lvl:EQF ; skos:topConceptOf lvl:EQF ; skos:notation "EQF-7" ; cur:rank 7 ; skos:prefLabel "EQR-Niveau 7"@de , "EQF level 7"@en ; skos:exactMatch eqf:7 .
+lvl:EQF-8 a cur:LevelConcept ; skos:inScheme lvl:EQF ; skos:topConceptOf lvl:EQF ; skos:notation "EQF-8" ; cur:rank 8 ; skos:prefLabel "EQR-Niveau 8"@de , "EQF level 8"@en ; skos:exactMatch eqf:8 .
+
+lvl:DQR a cur:LevelScheme ;
+    skos:prefLabel "Deutscher Qualifikationsrahmen (DQR)"@de , "German Qualifications Framework"@en ;
+    cur:levelDimension cv:dim_qualification ; cur:levelOrdering cv:ord_cumulative ;
+    skos:exactMatch qdr:c_ef113b94 ;
+    skos:scopeNote "Nur an Qualifikation, Spezifikation oder Programm. Gleiches Niveau heißt gleichwertig, nicht gleichartig (Bachelor und Meister); als Vorfilter nutzen, nie als Äquivalenzbeleg. Faustregel Beruf: zweijährige Ausbildung DQR 3, drei- und dreieinhalbjährige DQR 4 – als Regel mit Herkunft rule, amtlich ist die Liste der zugeordneten Qualifikationen."@de .
+lvl:DQR-1 a cur:LevelConcept ; skos:inScheme lvl:DQR ; skos:topConceptOf lvl:DQR ; skos:notation "DQR-1" ; cur:rank 1 ; skos:prefLabel "DQR-Niveau 1"@de ; skos:exactMatch qdr:c_f77c7095 ; skos:closeMatch lvl:EQF-1 .
+lvl:DQR-2 a cur:LevelConcept ; skos:inScheme lvl:DQR ; skos:topConceptOf lvl:DQR ; skos:notation "DQR-2" ; cur:rank 2 ; skos:prefLabel "DQR-Niveau 2"@de ; skos:exactMatch qdr:c_c71cce15 ; skos:closeMatch lvl:EQF-2 .
+lvl:DQR-3 a cur:LevelConcept ; skos:inScheme lvl:DQR ; skos:topConceptOf lvl:DQR ; skos:notation "DQR-3" ; cur:rank 3 ; skos:prefLabel "DQR-Niveau 3"@de ; skos:exactMatch qdr:c_c37d888a ; skos:closeMatch lvl:EQF-3 .
+lvl:DQR-4 a cur:LevelConcept ; skos:inScheme lvl:DQR ; skos:topConceptOf lvl:DQR ; skos:notation "DQR-4" ; cur:rank 4 ; skos:prefLabel "DQR-Niveau 4"@de ; skos:exactMatch qdr:c_12a84182 ; skos:closeMatch lvl:EQF-4 .
+lvl:DQR-5 a cur:LevelConcept ; skos:inScheme lvl:DQR ; skos:topConceptOf lvl:DQR ; skos:notation "DQR-5" ; cur:rank 5 ; skos:prefLabel "DQR-Niveau 5"@de ; skos:exactMatch qdr:c_bd9f8e42 ; skos:closeMatch lvl:EQF-5 .
+lvl:DQR-6 a cur:LevelConcept ; skos:inScheme lvl:DQR ; skos:topConceptOf lvl:DQR ; skos:notation "DQR-6" ; cur:rank 6 ; skos:prefLabel "DQR-Niveau 6"@de ; skos:exactMatch qdr:c_6919ed25 ; skos:closeMatch lvl:EQF-6 .
+lvl:DQR-7 a cur:LevelConcept ; skos:inScheme lvl:DQR ; skos:topConceptOf lvl:DQR ; skos:notation "DQR-7" ; cur:rank 7 ; skos:prefLabel "DQR-Niveau 7"@de ; skos:exactMatch qdr:c_184f7fed ; skos:closeMatch lvl:EQF-7 .
+lvl:DQR-8 a cur:LevelConcept ; skos:inScheme lvl:DQR ; skos:topConceptOf lvl:DQR ; skos:notation "DQR-8" ; cur:rank 8 ; skos:prefLabel "DQR-Niveau 8"@de ; skos:exactMatch qdr:c_341d539b ; skos:closeMatch lvl:EQF-8 .
+
+lvl:SchoolLeaving a cur:LevelScheme ;
+    skos:prefLabel "Allgemeinbildende Schulabschlüsse"@de , "school-leaving qualifications"@en ;
+    cur:levelDimension cv:dim_qualification ; cur:levelOrdering cv:ord_cumulative ;
+    skos:scopeNote "Abschluss an Qualifikation, Spezifikation oder Geltungskontext („führt zum MSA“). Anforderungsebenen an Aussagen („ESA“, „MSA“ in den SH-Fachanforderungen) stehen in lvl:AttainmentTracks. DQR-Zuordnung nach KMK-Beschluss 2017: ESA 2, MSA 3, FHR und AHR 4; EESA und der Übergang haben keine eigene Zuordnung. MV, RP, SL und SH haben keinen erweiterten ersten Abschluss."@de ;
+    skos:editorialNote "DQR-Zuordnung am 2026-10-20 bei Eurydice geprüft (Nationaler Qualifikationsrahmen Deutschland)."@de .
+lvl:school-ESA a cur:LevelConcept ; skos:inScheme lvl:SchoolLeaving ; skos:topConceptOf lvl:SchoolLeaving ; skos:notation "ESA" ; cur:rank 1 ;
+    skos:prefLabel "Erster Schulabschluss"@de ; skos:altLabel "ESA"@de , "Hauptschulabschluss"@de , "Berufsbildungsreife"@de , "BBR"@de ;
+    skos:closeMatch lvl:DQR-2 .
+lvl:school-EESA a cur:LevelConcept ; skos:inScheme lvl:SchoolLeaving ; skos:topConceptOf lvl:SchoolLeaving ; skos:notation "EESA" ; cur:rank 2 ;
+    skos:prefLabel "Erweiterter Erster Schulabschluss"@de ; skos:altLabel "EESA"@de , "erweiterte Berufsbildungsreife"@de , "EBBR"@de , "qualifizierender Hauptschulabschluss"@de .
+lvl:school-MSA a cur:LevelConcept ; skos:inScheme lvl:SchoolLeaving ; skos:topConceptOf lvl:SchoolLeaving ; skos:notation "MSA" ; cur:rank 3 ;
+    skos:prefLabel "Mittlerer Schulabschluss"@de ; skos:altLabel "MSA"@de , "Realschulabschluss"@de , "Fachoberschulreife"@de , "FOR"@de ;
+    skos:closeMatch lvl:DQR-3 .
+lvl:school-transition a cur:LevelConcept ; skos:inScheme lvl:SchoolLeaving ; skos:topConceptOf lvl:SchoolLeaving ; skos:notation "UEO" ; cur:rank 4 ;
+    skos:prefLabel "Übergang in die gymnasiale Oberstufe"@de ; skos:altLabel "FOR-Q"@de ;
+    skos:scopeNote "Berechtigung zum Besuch der gymnasialen Oberstufe (z. B. FOR-Q in NRW). Die gleichnamige Anforderungsebene der SH-Fachanforderungen ist lvl:track-transition."@de .
+lvl:school-FHR a cur:LevelConcept ; skos:inScheme lvl:SchoolLeaving ; skos:topConceptOf lvl:SchoolLeaving ; skos:notation "FHR" ; cur:rank 5 ;
+    skos:prefLabel "Fachhochschulreife"@de ; skos:closeMatch lvl:DQR-4 .
+lvl:school-AHR a cur:LevelConcept ; skos:inScheme lvl:SchoolLeaving ; skos:topConceptOf lvl:SchoolLeaving ; skos:notation "AHR" ; cur:rank 6 ;
+    skos:prefLabel "Allgemeine Hochschulreife"@de ; skos:altLabel "Abitur"@de ; skos:closeMatch lvl:DQR-4 .
+
+lvl:HigherEducationDegrees a cur:LevelScheme ;
+    skos:prefLabel "Hochschulabschlussstufen (HQR/QF-EHEA)"@de , "higher education cycles"@en ;
+    cur:levelDimension cv:dim_qualification ; cur:levelOrdering cv:ord_cumulative ;
+    skos:scopeNote "Stufen des Qualifikationsrahmens für deutsche Hochschulabschlüsse; die HQR-Dimensionen stehen in kd:HQR, nicht hier."@de .
+lvl:he-bachelor a cur:LevelConcept ; skos:inScheme lvl:HigherEducationDegrees ; skos:topConceptOf lvl:HigherEducationDegrees ; skos:notation "BA" ; cur:rank 1 ;
+    skos:prefLabel "Bachelor (1. Stufe)"@de , "first cycle"@en ; skos:closeMatch lvl:EQF-6 .
+lvl:he-master a cur:LevelConcept ; skos:inScheme lvl:HigherEducationDegrees ; skos:topConceptOf lvl:HigherEducationDegrees ; skos:notation "MA" ; cur:rank 2 ;
+    skos:prefLabel "Master (2. Stufe)"@de , "second cycle"@en ; skos:closeMatch lvl:EQF-7 .
+lvl:he-doctorate a cur:LevelConcept ; skos:inScheme lvl:HigherEducationDegrees ; skos:topConceptOf lvl:HigherEducationDegrees ; skos:notation "PhD" ; cur:rank 3 ;
+    skos:prefLabel "Promotion (3. Stufe)"@de , "third cycle"@en ; skos:closeMatch lvl:EQF-8 .
+
+lvl:AdvancedVocational a cur:LevelScheme ;
+    skos:prefLabel "Fortbildungsstufen der höherqualifizierenden Berufsbildung (§ 53a BBiG)"@de , "advanced vocational levels"@en ;
+    cur:levelDimension cv:dim_qualification ; cur:levelOrdering cv:ord_cumulative .
+lvl:avt-specialist a cur:LevelConcept ; skos:inScheme lvl:AdvancedVocational ; skos:topConceptOf lvl:AdvancedVocational ; skos:notation "BS" ; cur:rank 1 ;
+    skos:prefLabel "Geprüfte/r Berufsspezialist/in"@de ; skos:closeMatch lvl:DQR-5 .
+lvl:avt-bachelor a cur:LevelConcept ; skos:inScheme lvl:AdvancedVocational ; skos:topConceptOf lvl:AdvancedVocational ; skos:notation "BP" ; cur:rank 2 ;
+    skos:prefLabel "Bachelor Professional"@de ; skos:altLabel "Meister/in"@de , "Fachwirt/in"@de , "Techniker/in"@de ; skos:closeMatch lvl:DQR-6 .
+lvl:avt-master a cur:LevelConcept ; skos:inScheme lvl:AdvancedVocational ; skos:topConceptOf lvl:AdvancedVocational ; skos:notation "MP" ; cur:rank 3 ;
+    skos:prefLabel "Master Professional"@de ; skos:altLabel "Geprüfte/r Betriebswirt/in"@de ; skos:closeMatch lvl:DQR-7 .
+
+# -----------------------------------------------------------------------------
+# Bildungsstufe (ISCED 2011) – Brücke zu KIM-Bildungsstufe und OER-Metadaten
+# -----------------------------------------------------------------------------
+lvl:ISCED2011 a cur:LevelScheme ;
+    skos:prefLabel "ISCED 2011 – Bildungsstufen"@de , "ISCED 2011 levels"@en ;
+    cur:levelDimension cv:dim_stage ; cur:levelOrdering cv:ord_cumulative ;
+    skos:scopeNote "Am Curriculum oder Geltungskontext, abgeleitet per Regel aus Bildungsbereich, Schulart und Jahrgang (Herkunft rule), wenn das Dokument sie nicht nennt."@de .
+lvl:isced-0 a cur:LevelConcept ; skos:inScheme lvl:ISCED2011 ; skos:topConceptOf lvl:ISCED2011 ; skos:notation "0" ; cur:rank 0 ;
+    skos:prefLabel "Frühkindliche Bildung, Betreuung und Erziehung"@de , "early childhood education"@en ;
+    skos:exactMatch kimi11:level0 ; skos:closeMatch kimel:level_0 .
+lvl:isced-01 a cur:LevelConcept ; skos:inScheme lvl:ISCED2011 ; skos:broader lvl:isced-0 ; skos:notation "01" ; cur:rank 0 ;
+    skos:prefLabel "Frühkindliche Erziehung (unter 3 Jahren)"@de , "early childhood educational development"@en .
+lvl:isced-02 a cur:LevelConcept ; skos:inScheme lvl:ISCED2011 ; skos:broader lvl:isced-0 ; skos:notation "02" ; cur:rank 0 ;
+    skos:prefLabel "Elementarbereich (ab 3 Jahren bis Schuleintritt)"@de , "pre-primary education"@en .
+lvl:isced-1 a cur:LevelConcept ; skos:inScheme lvl:ISCED2011 ; skos:topConceptOf lvl:ISCED2011 ; skos:notation "1" ; cur:rank 1 ;
+    skos:prefLabel "Primarbereich"@de , "primary education"@en ; skos:exactMatch kimi11:level1 ; skos:closeMatch kimel:level_1 .
+lvl:isced-2 a cur:LevelConcept ; skos:inScheme lvl:ISCED2011 ; skos:topConceptOf lvl:ISCED2011 ; skos:notation "2" ; cur:rank 2 ;
+    skos:prefLabel "Sekundarbereich I"@de , "lower secondary education"@en ; skos:exactMatch kimi11:level2 ; skos:closeMatch kimel:level_2 .
+lvl:isced-3 a cur:LevelConcept ; skos:inScheme lvl:ISCED2011 ; skos:topConceptOf lvl:ISCED2011 ; skos:notation "3" ; cur:rank 3 ;
+    skos:prefLabel "Sekundarbereich II"@de , "upper secondary education"@en ; skos:exactMatch kimi11:level3 ; skos:closeMatch kimel:level_3 ;
+    skos:scopeNote "In Deutschland auch die duale Berufsausbildung."@de .
+lvl:isced-4 a cur:LevelConcept ; skos:inScheme lvl:ISCED2011 ; skos:topConceptOf lvl:ISCED2011 ; skos:notation "4" ; cur:rank 4 ;
+    skos:prefLabel "Postsekundärer nicht tertiärer Bereich"@de , "post-secondary non-tertiary education"@en ; skos:exactMatch kimi11:level4 ; skos:closeMatch kimel:level_4 .
+lvl:isced-5 a cur:LevelConcept ; skos:inScheme lvl:ISCED2011 ; skos:topConceptOf lvl:ISCED2011 ; skos:notation "5" ; cur:rank 5 ;
+    skos:prefLabel "Kurzer tertiärer Bildungsgang"@de , "short-cycle tertiary education"@en ; skos:exactMatch kimi11:level5 ; skos:closeMatch kimel:level_5 .
+lvl:isced-6 a cur:LevelConcept ; skos:inScheme lvl:ISCED2011 ; skos:topConceptOf lvl:ISCED2011 ; skos:notation "6" ; cur:rank 6 ;
+    skos:prefLabel "Bachelor- bzw. gleichwertiges Bildungsprogramm"@de , "bachelor's or equivalent"@en ; skos:exactMatch kimi11:level6 ; skos:closeMatch kimel:level_6 .
+lvl:isced-7 a cur:LevelConcept ; skos:inScheme lvl:ISCED2011 ; skos:topConceptOf lvl:ISCED2011 ; skos:notation "7" ; cur:rank 7 ;
+    skos:prefLabel "Master- bzw. gleichwertiges Bildungsprogramm"@de , "master's or equivalent"@en ; skos:exactMatch kimi11:level7 ; skos:closeMatch kimel:level_7 .
+lvl:isced-8 a cur:LevelConcept ; skos:inScheme lvl:ISCED2011 ; skos:topConceptOf lvl:ISCED2011 ; skos:notation "8" ; cur:rank 8 ;
+    skos:prefLabel "Promotion bzw. gleichwertiges Bildungsprogramm"@de , "doctoral or equivalent"@en ; skos:exactMatch kimi11:level8 ; skos:closeMatch kimel:level_8 .
+
+# -----------------------------------------------------------------------------
+# Kompetenzstufen
+# -----------------------------------------------------------------------------
+lvl:CEFR a cur:LevelScheme ;
+    skos:prefLabel "Gemeinsamer Europäischer Referenzrahmen für Sprachen (GER)"@de , "CEFR"@en ;
+    cur:levelDimension cv:dim_proficiency ; cur:levelOrdering cv:ord_cumulative ;
+    skos:exactMatch wd:Q221385 ;
+    skos:scopeNote "Deskriptoren des Begleitbands 2020 ersetzen die Skalen von 2001. GER ↔ DQR ist kein Äquivalent (Sprachniveau ≠ Qualifikationsniveau): kein Mapping."@de .
+lvl:cefr-PreA1 a cur:LevelConcept ; skos:inScheme lvl:CEFR ; skos:topConceptOf lvl:CEFR ; skos:notation "Pre-A1" ; cur:rank 0 ; skos:prefLabel "GER Pre-A1"@de , "CEFR Pre-A1"@en .
+lvl:cefr-A1 a cur:LevelConcept ; skos:inScheme lvl:CEFR ; skos:topConceptOf lvl:CEFR ; skos:notation "A1" ; cur:rank 1 ; skos:prefLabel "GER A1"@de , "CEFR A1"@en ; skos:exactMatch wd:Q104381878 .
+lvl:cefr-A2 a cur:LevelConcept ; skos:inScheme lvl:CEFR ; skos:topConceptOf lvl:CEFR ; skos:notation "A2" ; cur:rank 2 ; skos:prefLabel "GER A2"@de , "CEFR A2"@en ; skos:exactMatch wd:Q104381931 .
+lvl:cefr-B1 a cur:LevelConcept ; skos:inScheme lvl:CEFR ; skos:topConceptOf lvl:CEFR ; skos:notation "B1" ; cur:rank 3 ; skos:prefLabel "GER B1"@de , "CEFR B1"@en ; skos:exactMatch wd:Q104381935 .
+lvl:cefr-B2 a cur:LevelConcept ; skos:inScheme lvl:CEFR ; skos:topConceptOf lvl:CEFR ; skos:notation "B2" ; cur:rank 4 ; skos:prefLabel "GER B2"@de , "CEFR B2"@en ; skos:exactMatch wd:Q104381938 .
+lvl:cefr-C1 a cur:LevelConcept ; skos:inScheme lvl:CEFR ; skos:topConceptOf lvl:CEFR ; skos:notation "C1" ; cur:rank 5 ; skos:prefLabel "GER C1"@de , "CEFR C1"@en ; skos:exactMatch wd:Q104381941 .
+lvl:cefr-C2 a cur:LevelConcept ; skos:inScheme lvl:CEFR ; skos:topConceptOf lvl:CEFR ; skos:notation "C2" ; cur:rank 6 ; skos:prefLabel "GER C2"@de , "CEFR C2"@en ; skos:exactMatch wd:Q104381943 .
+
+lvl:AlphaLevel a cur:LevelScheme ;
+    skos:prefLabel "Alpha-Level (lea.)"@de , "alpha levels"@en ;
+    cur:levelDimension cv:dim_proficiency ; cur:levelOrdering cv:ord_cumulative ;
+    dct:source "lea. – Projekt der Universitäten Bremen und Hamburg; DVV-Rahmencurricula" ;
+    skos:scopeNote "Alpha-Level 1–3 entsprechen funktionalem Analphabetismus. Kann zugleich Gliederungseinheit (Kapitel je Level) und Niveau sein. Die DVV-Rahmencurricula nutzen Level 1–4, das lea.-Kompetenzmodell Lesen (2010) beschreibt Level 1–6."@de .
+lvl:alpha-1 a cur:LevelConcept ; skos:inScheme lvl:AlphaLevel ; skos:topConceptOf lvl:AlphaLevel ; skos:notation "AL1" ; cur:rank 1 ; skos:prefLabel "Alpha-Level 1"@de ; skos:hiddenLabel "L1" , "AL 1" .
+lvl:alpha-2 a cur:LevelConcept ; skos:inScheme lvl:AlphaLevel ; skos:topConceptOf lvl:AlphaLevel ; skos:notation "AL2" ; cur:rank 2 ; skos:prefLabel "Alpha-Level 2"@de ; skos:hiddenLabel "L2" , "AL 2" .
+lvl:alpha-3 a cur:LevelConcept ; skos:inScheme lvl:AlphaLevel ; skos:topConceptOf lvl:AlphaLevel ; skos:notation "AL3" ; cur:rank 3 ; skos:prefLabel "Alpha-Level 3"@de ; skos:hiddenLabel "L3" , "AL 3" .
+lvl:alpha-4 a cur:LevelConcept ; skos:inScheme lvl:AlphaLevel ; skos:topConceptOf lvl:AlphaLevel ; skos:notation "AL4" ; cur:rank 4 ; skos:prefLabel "Alpha-Level 4"@de ; skos:hiddenLabel "L4" , "AL 4" .
+lvl:alpha-5 a cur:LevelConcept ; skos:inScheme lvl:AlphaLevel ; skos:topConceptOf lvl:AlphaLevel ; skos:notation "AL5" ; cur:rank 5 ; skos:prefLabel "Alpha-Level 5"@de ; skos:hiddenLabel "L5" , "AL 5" ;
+    skos:scopeNote "lea. Lesen: Textebene 2, mittelschwere Texte mit Illustrationen."@de .
+lvl:alpha-6 a cur:LevelConcept ; skos:inScheme lvl:AlphaLevel ; skos:topConceptOf lvl:AlphaLevel ; skos:notation "AL6" ; cur:rank 6 ; skos:prefLabel "Alpha-Level 6"@de ; skos:hiddenLabel "L6" , "AL 6" ;
+    skos:scopeNote "lea. Lesen: Textebene 3, überwiegend lexikalisches Lesen."@de .
+
+lvl:BEBB a cur:LevelScheme ;
+    skos:prefLabel "Niveaustufen A–H (Rahmenlehrplan 1–10 Berlin/Brandenburg)"@de , "level stages A–H (Berlin-Brandenburg)"@en ;
+    cur:levelDimension cv:dim_proficiency ; cur:levelOrdering cv:ord_cumulative ;
+    skos:scopeNote "Stufenplan statt Klassenplan; Zuordnung zu Jahrgängen nur, wenn das Dokument sie nennt. Buchstaben A–H bedeuten in BW (G/M/E) etwas anderes."@de .
+lvl:bebb-A a cur:LevelConcept ; skos:inScheme lvl:BEBB ; skos:topConceptOf lvl:BEBB ; skos:notation "A" ; cur:rank 1 ; skos:prefLabel "Niveaustufe A"@de .
+lvl:bebb-B a cur:LevelConcept ; skos:inScheme lvl:BEBB ; skos:topConceptOf lvl:BEBB ; skos:notation "B" ; cur:rank 2 ; skos:prefLabel "Niveaustufe B"@de .
+lvl:bebb-C a cur:LevelConcept ; skos:inScheme lvl:BEBB ; skos:topConceptOf lvl:BEBB ; skos:notation "C" ; cur:rank 3 ; skos:prefLabel "Niveaustufe C"@de .
+lvl:bebb-D a cur:LevelConcept ; skos:inScheme lvl:BEBB ; skos:topConceptOf lvl:BEBB ; skos:notation "D" ; cur:rank 4 ; skos:prefLabel "Niveaustufe D"@de .
+lvl:bebb-E a cur:LevelConcept ; skos:inScheme lvl:BEBB ; skos:topConceptOf lvl:BEBB ; skos:notation "E" ; cur:rank 5 ; skos:prefLabel "Niveaustufe E"@de .
+lvl:bebb-F a cur:LevelConcept ; skos:inScheme lvl:BEBB ; skos:topConceptOf lvl:BEBB ; skos:notation "F" ; cur:rank 6 ; skos:prefLabel "Niveaustufe F"@de .
+lvl:bebb-G a cur:LevelConcept ; skos:inScheme lvl:BEBB ; skos:topConceptOf lvl:BEBB ; skos:notation "G" ; cur:rank 7 ; skos:prefLabel "Niveaustufe G"@de .
+lvl:bebb-H a cur:LevelConcept ; skos:inScheme lvl:BEBB ; skos:topConceptOf lvl:BEBB ; skos:notation "H" ; cur:rank 8 ; skos:prefLabel "Niveaustufe H"@de .
+
+lvl:IQBProficiency a cur:LevelScheme ;
+    skos:prefLabel "IQB-Kompetenzstufen (Bildungsstandards)"@de , "IQB proficiency levels"@en ;
+    cur:levelDimension cv:dim_proficiency ; cur:levelOrdering cv:ord_cumulative ;
+    skos:scopeNote "Allgemeines Muster der Kompetenzstufenmodelle zu den KMK-Bildungsstandards; die Deskriptoren sind fach- und stufenspezifisch und werden mit dem jeweiligen Kompetenzrahmen importiert."@de .
+lvl:iqb-I a cur:LevelConcept ; skos:inScheme lvl:IQBProficiency ; skos:topConceptOf lvl:IQBProficiency ; skos:notation "I" ; cur:rank 1 ; skos:prefLabel "Kompetenzstufe I (unter Mindeststandard)"@de .
+lvl:iqb-II a cur:LevelConcept ; skos:inScheme lvl:IQBProficiency ; skos:topConceptOf lvl:IQBProficiency ; skos:notation "II" ; cur:rank 2 ; skos:prefLabel "Kompetenzstufe II (Mindeststandard)"@de .
+lvl:iqb-III a cur:LevelConcept ; skos:inScheme lvl:IQBProficiency ; skos:topConceptOf lvl:IQBProficiency ; skos:notation "III" ; cur:rank 3 ; skos:prefLabel "Kompetenzstufe III (Regelstandard)"@de .
+lvl:iqb-IV a cur:LevelConcept ; skos:inScheme lvl:IQBProficiency ; skos:topConceptOf lvl:IQBProficiency ; skos:notation "IV" ; cur:rank 4 ; skos:prefLabel "Kompetenzstufe IV (Regelstandard plus)"@de .
+lvl:iqb-V a cur:LevelConcept ; skos:inScheme lvl:IQBProficiency ; skos:topConceptOf lvl:IQBProficiency ; skos:notation "V" ; cur:rank 5 ; skos:prefLabel "Kompetenzstufe V (Optimalstandard)"@de .
+
+lvl:DigComp3 a cur:LevelScheme ;
+    skos:prefLabel "DigComp 3.0 – Kompetenzniveaus"@de , "DigComp 3.0 proficiency levels"@en ;
+    cur:levelDimension cv:dim_proficiency ; cur:levelOrdering cv:ord_cumulative ;
+    dct:source "JRC 2025, DigComp 3.0 (CC BY 4.0)" ;
+    skos:editorialNote "Stufenbezeichnungen aus dem EB-CO-Entwurf; DigComp 3.0 hat keine dereferenzierbaren Term-URIs (nur relative @ids). Vor Nutzung an der JRC-Fassung prüfen."@de .
+lvl:digcomp-basic a cur:LevelConcept ; skos:inScheme lvl:DigComp3 ; skos:topConceptOf lvl:DigComp3 ; skos:notation "basic" ; cur:rank 1 ; skos:prefLabel "grundlegend"@de , "basic"@en .
+lvl:digcomp-intermediate a cur:LevelConcept ; skos:inScheme lvl:DigComp3 ; skos:topConceptOf lvl:DigComp3 ; skos:notation "intermediate" ; cur:rank 2 ; skos:prefLabel "mittel"@de , "intermediate"@en .
+lvl:digcomp-advanced a cur:LevelConcept ; skos:inScheme lvl:DigComp3 ; skos:topConceptOf lvl:DigComp3 ; skos:notation "advanced" ; cur:rank 3 ; skos:prefLabel "fortgeschritten"@de , "advanced"@en .
+lvl:digcomp-highlyAdvanced a cur:LevelConcept ; skos:inScheme lvl:DigComp3 ; skos:topConceptOf lvl:DigComp3 ; skos:notation "highlyAdvanced" ; cur:rank 4 ; skos:prefLabel "hoch fortgeschritten"@de , "highly advanced"@en .
+
+lvl:Dreyfus a cur:LevelScheme ;
+    skos:prefLabel "Stufen der Expertise (Dreyfus/Benner)"@de , "stages of skill acquisition (Dreyfus/Benner)"@en ;
+    cur:levelDimension cv:dim_proficiency ; cur:levelOrdering cv:ord_cumulative ;
+    dct:source "Dreyfus & Dreyfus 1986; Benner 1984 (Pflege)" ;
+    skos:scopeNote "Nur, wenn das Dokument die Stufen nennt (Pflege, Hochschuldidaktik); nicht aus dem Wortlaut ableiten."@de .
+lvl:dreyfus-novice a cur:LevelConcept ; skos:inScheme lvl:Dreyfus ; skos:topConceptOf lvl:Dreyfus ; skos:notation "novice" ; cur:rank 1 ; skos:prefLabel "Neuling"@de , "novice"@en .
+lvl:dreyfus-advancedBeginner a cur:LevelConcept ; skos:inScheme lvl:Dreyfus ; skos:topConceptOf lvl:Dreyfus ; skos:notation "advancedBeginner" ; cur:rank 2 ; skos:prefLabel "fortgeschrittene/r Anfänger/in"@de , "advanced beginner"@en .
+lvl:dreyfus-competent a cur:LevelConcept ; skos:inScheme lvl:Dreyfus ; skos:topConceptOf lvl:Dreyfus ; skos:notation "competent" ; cur:rank 3 ; skos:prefLabel "kompetent"@de , "competent"@en .
+lvl:dreyfus-proficient a cur:LevelConcept ; skos:inScheme lvl:Dreyfus ; skos:topConceptOf lvl:Dreyfus ; skos:notation "proficient" ; cur:rank 4 ; skos:prefLabel "erfahren"@de , "proficient"@en ; skos:altLabel "gewandt"@de .
+lvl:dreyfus-expert a cur:LevelConcept ; skos:inScheme lvl:Dreyfus ; skos:topConceptOf lvl:Dreyfus ; skos:notation "expert" ; cur:rank 5 ; skos:prefLabel "Expertin/Experte"@de , "expert"@en .
+
+# -----------------------------------------------------------------------------
+# Erwartungs- und Kursniveaus
+# -----------------------------------------------------------------------------
+lvl:Attainment a cur:LevelScheme ;
+    skos:prefLabel "Erwartungsniveaus (Standards)"@de , "attainment levels"@en ;
+    cur:levelDimension cv:dim_attainment ; cur:levelOrdering cv:ord_cumulative ;
+    skos:scopeNote "KMK: Mindest-, Regel-, Optimalstandard; HH: Mindestanforderungen und erhöhte Anforderungen. „Anforderung“ in HH ist ein Erwartungsniveau, nicht der Anforderungsbereich einer Aufgabe."@de .
+lvl:att-minimum a cur:LevelConcept ; skos:inScheme lvl:Attainment ; skos:topConceptOf lvl:Attainment ; skos:notation "minimum" ; cur:rank 1 ;
+    skos:prefLabel "Mindestanforderung/Mindeststandard"@de ; skos:altLabel "Mindestanforderungen"@de .
+lvl:att-regular a cur:LevelConcept ; skos:inScheme lvl:Attainment ; skos:topConceptOf lvl:Attainment ; skos:notation "regular" ; cur:rank 2 ;
+    skos:prefLabel "Regelanforderung/Regelstandard"@de .
+lvl:att-increased a cur:LevelConcept ; skos:inScheme lvl:Attainment ; skos:topConceptOf lvl:Attainment ; skos:notation "increased" ; cur:rank 3 ;
+    skos:prefLabel "erhöhte Anforderung"@de ; skos:altLabel "erhöhte Anforderungen"@de , "Regelstandard plus"@de .
+lvl:att-optimal a cur:LevelConcept ; skos:inScheme lvl:Attainment ; skos:topConceptOf lvl:Attainment ; skos:notation "optimal" ; cur:rank 4 ;
+    skos:prefLabel "Optimalstandard"@de .
+
+lvl:AttainmentTracks a cur:LevelScheme ;
+    skos:prefLabel "Anforderungsebenen nach Abschluss (Sekundarstufe I)"@de , "attainment tracks by school-leaving qualification"@en ;
+    cur:levelDimension cv:dim_attainment ; cur:levelOrdering cv:ord_cumulative ;
+    skos:scopeNote "SH-Fachanforderungen: Kompetenzen und Inhalte auf drei Anforderungsebenen. Erwartungsniveau einer Aussage, kein Abschluss; deshalb kein DQR-Bezug. Der Abschluss selbst steht in lvl:SchoolLeaving."@de .
+lvl:track-ESA a cur:LevelConcept ; skos:inScheme lvl:AttainmentTracks ; skos:topConceptOf lvl:AttainmentTracks ; skos:notation "ESA" ; cur:rank 1 ;
+    skos:prefLabel "Anforderungsebene Erster allgemeinbildender Schulabschluss"@de ; skos:altLabel "ESA"@de ; skos:relatedMatch lvl:school-ESA .
+lvl:track-MSA a cur:LevelConcept ; skos:inScheme lvl:AttainmentTracks ; skos:topConceptOf lvl:AttainmentTracks ; skos:notation "MSA" ; cur:rank 2 ;
+    skos:prefLabel "Anforderungsebene Mittlerer Schulabschluss"@de ; skos:altLabel "MSA"@de ; skos:relatedMatch lvl:school-MSA .
+lvl:track-transition a cur:LevelConcept ; skos:inScheme lvl:AttainmentTracks ; skos:topConceptOf lvl:AttainmentTracks ; skos:notation "UEO" ; cur:rank 3 ;
+    skos:prefLabel "Anforderungsebene Übergang in die Oberstufe"@de ; skos:relatedMatch lvl:school-transition .
+
+lvl:BWLevels a cur:LevelScheme ;
+    skos:prefLabel "Niveaus G/M/E (Bildungsplan BW, Sekundarstufe I)"@de , "BW levels G/M/E"@en ;
+    cur:levelDimension cv:dim_attainment ; cur:levelOrdering cv:ord_parallel ;
+    skos:scopeNote "Parallele Anspruchsniveaus desselben Jahrgangs. Gleicher Wortlaut über mehrere Niveaus = ein Element mit mehreren Niveaus."@de .
+lvl:bw-G a cur:LevelConcept ; skos:inScheme lvl:BWLevels ; skos:topConceptOf lvl:BWLevels ; skos:notation "G" ; cur:rank 1 ; skos:prefLabel "Niveau G (grundlegend)"@de .
+lvl:bw-M a cur:LevelConcept ; skos:inScheme lvl:BWLevels ; skos:topConceptOf lvl:BWLevels ; skos:notation "M" ; cur:rank 2 ; skos:prefLabel "Niveau M (mittel)"@de .
+lvl:bw-E a cur:LevelConcept ; skos:inScheme lvl:BWLevels ; skos:topConceptOf lvl:BWLevels ; skos:notation "E" ; cur:rank 3 ; skos:prefLabel "Niveau E (erweitert)"@de .
+
+lvl:CourseLevelsLowerSecondary a cur:LevelScheme ;
+    skos:prefLabel "Kursniveaus Sekundarstufe I (G-/E-/Z-Kurs)"@de , "course levels lower secondary"@en ;
+    cur:levelDimension cv:dim_course ; cur:levelOrdering cv:ord_parallel ;
+    skos:scopeNote "NI: Fettdruck kennzeichnet E-Kurs-Anforderungen; HB, SL: G- und E-Niveau; BE: GR-/ER-Niveau; NW: Grund- und Erweiterungskurse. Bei drei Ebenen ist „E“ in NI die mittlere; HE nennt drei Ebenen A/B/C (A oben). Die Kursbuchstaben nur im Landeskontext deuten."@de .
+lvl:course-G a cur:LevelConcept ; skos:inScheme lvl:CourseLevelsLowerSecondary ; skos:topConceptOf lvl:CourseLevelsLowerSecondary ; skos:notation "G" ; cur:rank 1 ;
+    skos:prefLabel "G-Kurs (grundlegend)"@de ; skos:altLabel "Grundkurs Sek I"@de , "GR-Niveau"@de , "GR-Kurs"@de .
+lvl:course-E a cur:LevelConcept ; skos:inScheme lvl:CourseLevelsLowerSecondary ; skos:topConceptOf lvl:CourseLevelsLowerSecondary ; skos:notation "E" ; cur:rank 2 ;
+    skos:prefLabel "E-Kurs (erweitert)"@de ; skos:altLabel "Erweiterungskurs"@de , "ER-Niveau"@de , "ER-Kurs"@de .
+lvl:course-Z a cur:LevelConcept ; skos:inScheme lvl:CourseLevelsLowerSecondary ; skos:topConceptOf lvl:CourseLevelsLowerSecondary ; skos:notation "Z" ; cur:rank 3 ;
+    skos:prefLabel "Z-Kurs (zusätzliche Anforderungsebene)"@de ; skos:altLabel "zusätzliche Anforderungsebene"@de ;
+    skos:scopeNote "NI Oberschule: dritte Ebene nach den Kerncurricula des Gymnasiums (RdErl. „Die Arbeit in der Oberschule“)."@de .
+
+lvl:CourseLevelsUpperSecondary a cur:LevelScheme ;
+    skos:prefLabel "Anforderungsniveaus der gymnasialen Oberstufe"@de , "course levels upper secondary"@en ;
+    cur:levelDimension cv:dim_course ; cur:levelOrdering cv:ord_cumulative .
+lvl:course-basic a cur:LevelConcept ; skos:inScheme lvl:CourseLevelsUpperSecondary ; skos:topConceptOf lvl:CourseLevelsUpperSecondary ; skos:notation "gA" ; cur:rank 1 ;
+    skos:prefLabel "grundlegendes Anforderungsniveau"@de ; skos:altLabel "Grundkurs"@de , "GK"@de , "Basisfach"@de , "gA"@de .
+lvl:course-advanced a cur:LevelConcept ; skos:inScheme lvl:CourseLevelsUpperSecondary ; skos:topConceptOf lvl:CourseLevelsUpperSecondary ; skos:notation "eA" ; cur:rank 2 ;
+    skos:prefLabel "erhöhtes Anforderungsniveau"@de ; skos:altLabel "Leistungskurs"@de , "LK"@de , "Leistungsfach"@de , "eA"@de .
+
+# -----------------------------------------------------------------------------
+# Bewertung: nur an Prüfung, Prüfungsspezifikation oder Standard
+# -----------------------------------------------------------------------------
+lvl:Grades a cur:LevelScheme ;
+    skos:prefLabel "Notenstufen 1–6"@de , "German school grades 1–6"@en ;
+    cur:levelDimension cv:dim_grading ; cur:levelOrdering cv:ord_ordinal ;
+    dct:source "KMK-Beschluss vom 03.10.1968 (Notenstufen)" ;
+    skos:scopeNote "Schul- und Prüfungsnoten mit den Bezeichnungen „sehr gut“ bis „ungenügend“, auch Kammerprüfungen. Hochschulnoten (1,0–5,0) sind ein eigenes System und gehören nicht hierher. cur:rank steigt mit der Leistung (Note 1 = Rang 6). Tendenzen (+/−) und Zwischennoten als cur:levelText."@de .
+lvl:grade-1 a cur:LevelConcept ; skos:inScheme lvl:Grades ; skos:topConceptOf lvl:Grades ; skos:notation "1" ; cur:rank 6 ; skos:prefLabel "sehr gut"@de , "very good"@en .
+lvl:grade-2 a cur:LevelConcept ; skos:inScheme lvl:Grades ; skos:topConceptOf lvl:Grades ; skos:notation "2" ; cur:rank 5 ; skos:prefLabel "gut"@de , "good"@en .
+lvl:grade-3 a cur:LevelConcept ; skos:inScheme lvl:Grades ; skos:topConceptOf lvl:Grades ; skos:notation "3" ; cur:rank 4 ; skos:prefLabel "befriedigend"@de , "satisfactory"@en .
+lvl:grade-4 a cur:LevelConcept ; skos:inScheme lvl:Grades ; skos:topConceptOf lvl:Grades ; skos:notation "4" ; cur:rank 3 ; skos:prefLabel "ausreichend"@de , "sufficient"@en .
+lvl:grade-5 a cur:LevelConcept ; skos:inScheme lvl:Grades ; skos:topConceptOf lvl:Grades ; skos:notation "5" ; cur:rank 2 ; skos:prefLabel "mangelhaft"@de , "poor"@en .
+lvl:grade-6 a cur:LevelConcept ; skos:inScheme lvl:Grades ; skos:topConceptOf lvl:Grades ; skos:notation "6" ; cur:rank 1 ; skos:prefLabel "ungenügend"@de , "insufficient"@en .
+
+lvl:GradePoints a cur:LevelScheme ;
+    skos:prefLabel "Notenpunkte 0–15 (gymnasiale Oberstufe)"@de , "grade points 0–15 (upper secondary)"@en ;
+    cur:levelDimension cv:dim_grading ; cur:levelOrdering cv:ord_ordinal ;
+    dct:source "KMK-Vereinbarung zur Gestaltung der gymnasialen Oberstufe und der Abiturprüfung (i. d. F. vom 16.03.2023)" ;
+    skos:scopeNote "Die Zuordnung zu den Notenstufen (15–13 = 1, … 0 = 6) steht als broadMatch."@de .
+lvl:points-15 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "15" ; cur:rank 15 ; skos:prefLabel "15 Punkte"@de ; skos:broadMatch lvl:grade-1 .
+lvl:points-14 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "14" ; cur:rank 14 ; skos:prefLabel "14 Punkte"@de ; skos:broadMatch lvl:grade-1 .
+lvl:points-13 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "13" ; cur:rank 13 ; skos:prefLabel "13 Punkte"@de ; skos:broadMatch lvl:grade-1 .
+lvl:points-12 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "12" ; cur:rank 12 ; skos:prefLabel "12 Punkte"@de ; skos:broadMatch lvl:grade-2 .
+lvl:points-11 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "11" ; cur:rank 11 ; skos:prefLabel "11 Punkte"@de ; skos:broadMatch lvl:grade-2 .
+lvl:points-10 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "10" ; cur:rank 10 ; skos:prefLabel "10 Punkte"@de ; skos:broadMatch lvl:grade-2 .
+lvl:points-09 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "9" ; cur:rank 9 ; skos:prefLabel "9 Punkte"@de ; skos:broadMatch lvl:grade-3 .
+lvl:points-08 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "8" ; cur:rank 8 ; skos:prefLabel "8 Punkte"@de ; skos:broadMatch lvl:grade-3 .
+lvl:points-07 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "7" ; cur:rank 7 ; skos:prefLabel "7 Punkte"@de ; skos:broadMatch lvl:grade-3 .
+lvl:points-06 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "6" ; cur:rank 6 ; skos:prefLabel "6 Punkte"@de ; skos:broadMatch lvl:grade-4 .
+lvl:points-05 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "5" ; cur:rank 5 ; skos:prefLabel "5 Punkte"@de ; skos:broadMatch lvl:grade-4 .
+lvl:points-04 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "4" ; cur:rank 4 ; skos:prefLabel "4 Punkte"@de ; skos:broadMatch lvl:grade-4 .
+lvl:points-03 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "3" ; cur:rank 3 ; skos:prefLabel "3 Punkte"@de ; skos:broadMatch lvl:grade-5 .
+lvl:points-02 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "2" ; cur:rank 2 ; skos:prefLabel "2 Punkte"@de ; skos:broadMatch lvl:grade-5 .
+lvl:points-01 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "1" ; cur:rank 1 ; skos:prefLabel "1 Punkt"@de ; skos:broadMatch lvl:grade-5 .
+lvl:points-00 a cur:LevelConcept ; skos:inScheme lvl:GradePoints ; skos:topConceptOf lvl:GradePoints ; skos:notation "0" ; cur:rank 0 ; skos:prefLabel "0 Punkte"@de ; skos:broadMatch lvl:grade-6 .
+
+# -----------------------------------------------------------------------------
+# Aufgabenanforderung und Heuristiken (kognitiv, affektiv, psychomotorisch)
+# -----------------------------------------------------------------------------
+lvl:AFB a cur:LevelScheme ;
+    skos:prefLabel "Anforderungsbereiche I–III"@de , "task demand areas I–III"@en ;
+    cur:levelDimension cv:dim_taskDemand ; cur:levelOrdering cv:ord_cumulative ;
+    skos:scopeNote "Beziehen sich auf Aufgaben (KMK-Bildungsstandards, EPA). An Lernergebnissen nur, wenn das Dokument sie nennt (Herkunft source); aus dem Operator abgeleitet nur als Heuristik über eine Operatorenliste (Dimension cognitive, Herkunft rule). Die Zuordnung Operator → AFB ist fach- und listenabhängig."@de .
+lvl:afb-I a cur:LevelConcept ; skos:inScheme lvl:AFB ; skos:topConceptOf lvl:AFB ; skos:notation "I" ; cur:rank 1 ;
+    skos:prefLabel "Anforderungsbereich I (Reproduktion)"@de ; skos:exactMatch lp:LP_0000803 .
+lvl:afb-II a cur:LevelConcept ; skos:inScheme lvl:AFB ; skos:topConceptOf lvl:AFB ; skos:notation "II" ; cur:rank 2 ;
+    skos:prefLabel "Anforderungsbereich II (Reorganisation und Transfer)"@de ; skos:exactMatch lp:LP_0000804 .
+lvl:afb-III a cur:LevelConcept ; skos:inScheme lvl:AFB ; skos:topConceptOf lvl:AFB ; skos:notation "III" ; cur:rank 3 ;
+    skos:prefLabel "Anforderungsbereich III (Reflexion und Problemlösung)"@de ; skos:exactMatch lp:LP_0000805 .
+
+lvl:Bloom a cur:LevelScheme ;
+    skos:prefLabel "Taxonomie kognitiver Prozesse (Anderson/Krathwohl 2001)"@de , "revised Bloom taxonomy"@en ;
+    cur:levelDimension cv:dim_cognitive ; cur:levelOrdering cv:ord_cumulative ;
+    skos:closeMatch wd:Q1774565 ;
+    skos:scopeNote "Nur als Heuristik mit Konfidenz (Menschen erreichen vor Abgleich κ = 0,63; Zero-Shot-LLMs 0,42–0,73 Accuracy). Die Revision vertauscht die beiden obersten Stufen von Bloom 1956 (Synthese, Bewertung) – alte Bezeichnungen als hiddenLabel."@de .
+lvl:bloom-remember a cur:LevelConcept ; skos:inScheme lvl:Bloom ; skos:topConceptOf lvl:Bloom ; skos:notation "remember" ; cur:rank 1 ;
+    skos:prefLabel "Erinnern"@de , "remember"@en ; skos:hiddenLabel "Kenntnis"@de , "Wissen"@de .
+lvl:bloom-understand a cur:LevelConcept ; skos:inScheme lvl:Bloom ; skos:topConceptOf lvl:Bloom ; skos:notation "understand" ; cur:rank 2 ;
+    skos:prefLabel "Verstehen"@de , "understand"@en ; skos:hiddenLabel "Verständnis"@de .
+lvl:bloom-apply a cur:LevelConcept ; skos:inScheme lvl:Bloom ; skos:topConceptOf lvl:Bloom ; skos:notation "apply" ; cur:rank 3 ;
+    skos:prefLabel "Anwenden"@de , "apply"@en ; skos:hiddenLabel "Anwendung"@de .
+lvl:bloom-analyze a cur:LevelConcept ; skos:inScheme lvl:Bloom ; skos:topConceptOf lvl:Bloom ; skos:notation "analyze" ; cur:rank 4 ;
+    skos:prefLabel "Analysieren"@de , "analyze"@en ; skos:hiddenLabel "Analyse"@de .
+lvl:bloom-evaluate a cur:LevelConcept ; skos:inScheme lvl:Bloom ; skos:topConceptOf lvl:Bloom ; skos:notation "evaluate" ; cur:rank 5 ;
+    skos:prefLabel "Bewerten"@de , "evaluate"@en ; skos:hiddenLabel "Beurteilung"@de .
+lvl:bloom-create a cur:LevelConcept ; skos:inScheme lvl:Bloom ; skos:topConceptOf lvl:Bloom ; skos:notation "create" ; cur:rank 6 ;
+    skos:prefLabel "Erschaffen"@de , "create"@en ; skos:hiddenLabel "Synthese"@de , "Kreieren"@de .
+
+lvl:SOLO a cur:LevelScheme ;
+    skos:prefLabel "SOLO-Taxonomie (Biggs/Collis 1982)"@de , "SOLO taxonomy"@en ;
+    cur:levelDimension cv:dim_cognitive ; cur:levelOrdering cv:ord_cumulative ;
+    skos:scopeNote "Tiefe des Verständnisses, verbreitet in der Hochschuldidaktik. Nur als Heuristik wie Bloom."@de .
+lvl:solo-prestructural a cur:LevelConcept ; skos:inScheme lvl:SOLO ; skos:topConceptOf lvl:SOLO ; skos:notation "prestructural" ; cur:rank 1 ; skos:prefLabel "prästrukturell"@de , "prestructural"@en .
+lvl:solo-unistructural a cur:LevelConcept ; skos:inScheme lvl:SOLO ; skos:topConceptOf lvl:SOLO ; skos:notation "unistructural" ; cur:rank 2 ; skos:prefLabel "unistrukturell"@de , "unistructural"@en .
+lvl:solo-multistructural a cur:LevelConcept ; skos:inScheme lvl:SOLO ; skos:topConceptOf lvl:SOLO ; skos:notation "multistructural" ; cur:rank 3 ; skos:prefLabel "multistrukturell"@de , "multistructural"@en .
+lvl:solo-relational a cur:LevelConcept ; skos:inScheme lvl:SOLO ; skos:topConceptOf lvl:SOLO ; skos:notation "relational" ; cur:rank 4 ; skos:prefLabel "relational"@de , "relational"@en .
+lvl:solo-extendedAbstract a cur:LevelConcept ; skos:inScheme lvl:SOLO ; skos:topConceptOf lvl:SOLO ; skos:notation "extendedAbstract" ; cur:rank 5 ; skos:prefLabel "erweitert abstrakt"@de , "extended abstract"@en .
+
+lvl:AffectiveTaxonomy a cur:LevelScheme ;
+    skos:prefLabel "Affektive Taxonomie (Krathwohl/Bloom/Masia 1964)"@de , "affective taxonomy"@en ;
+    cur:levelDimension cv:dim_affective ; cur:levelOrdering cv:ord_cumulative ;
+    skos:scopeNote "Nur als Heuristik zur Planung; Haltungen von Lernenden werden damit nicht eingestuft (politische Bildung: Überwältigungsverbot)."@de .
+lvl:affective-receiving a cur:LevelConcept ; skos:inScheme lvl:AffectiveTaxonomy ; skos:topConceptOf lvl:AffectiveTaxonomy ; skos:notation "receiving" ; cur:rank 1 ; skos:prefLabel "Aufnehmen"@de , "receiving"@en .
+lvl:affective-responding a cur:LevelConcept ; skos:inScheme lvl:AffectiveTaxonomy ; skos:topConceptOf lvl:AffectiveTaxonomy ; skos:notation "responding" ; cur:rank 2 ; skos:prefLabel "Reagieren"@de , "responding"@en .
+lvl:affective-valuing a cur:LevelConcept ; skos:inScheme lvl:AffectiveTaxonomy ; skos:topConceptOf lvl:AffectiveTaxonomy ; skos:notation "valuing" ; cur:rank 3 ; skos:prefLabel "Werten"@de , "valuing"@en .
+lvl:affective-organization a cur:LevelConcept ; skos:inScheme lvl:AffectiveTaxonomy ; skos:topConceptOf lvl:AffectiveTaxonomy ; skos:notation "organization" ; cur:rank 4 ; skos:prefLabel "Wertordnung bilden"@de , "organization"@en ; skos:altLabel "Organisation"@de .
+lvl:affective-characterization a cur:LevelConcept ; skos:inScheme lvl:AffectiveTaxonomy ; skos:topConceptOf lvl:AffectiveTaxonomy ; skos:notation "characterization" ; cur:rank 5 ; skos:prefLabel "Bestimmtsein durch Werte"@de , "characterization by a value"@en ; skos:altLabel "Verinnerlichen"@de .
+
+lvl:PsychomotorDave a cur:LevelScheme ;
+    skos:prefLabel "Psychomotorische Taxonomie (Dave 1970)"@de , "psychomotor taxonomy (Dave)"@en ;
+    cur:levelDimension cv:dim_psychomotor ; cur:levelOrdering cv:ord_cumulative ;
+    skos:scopeNote "Nur als Heuristik. Simpson (1972) hat sieben andere Stufen; die beiden Modelle nicht mischen."@de .
+lvl:psy-imitation a cur:LevelConcept ; skos:inScheme lvl:PsychomotorDave ; skos:topConceptOf lvl:PsychomotorDave ; skos:notation "imitation" ; cur:rank 1 ; skos:prefLabel "Nachahmen"@de , "imitation"@en .
+lvl:psy-manipulation a cur:LevelConcept ; skos:inScheme lvl:PsychomotorDave ; skos:topConceptOf lvl:PsychomotorDave ; skos:notation "manipulation" ; cur:rank 2 ; skos:prefLabel "Handhaben"@de , "manipulation"@en ; skos:altLabel "Ausführen nach Anleitung"@de .
+lvl:psy-precision a cur:LevelConcept ; skos:inScheme lvl:PsychomotorDave ; skos:topConceptOf lvl:PsychomotorDave ; skos:notation "precision" ; cur:rank 3 ; skos:prefLabel "Präzisieren"@de , "precision"@en .
+lvl:psy-articulation a cur:LevelConcept ; skos:inScheme lvl:PsychomotorDave ; skos:topConceptOf lvl:PsychomotorDave ; skos:notation "articulation" ; cur:rank 4 ; skos:prefLabel "Koordinieren"@de , "articulation"@en ; skos:altLabel "Handlungsgliederung"@de .
+lvl:psy-naturalization a cur:LevelConcept ; skos:inScheme lvl:PsychomotorDave ; skos:topConceptOf lvl:PsychomotorDave ; skos:notation "naturalization" ; cur:rank 5 ; skos:prefLabel "Automatisieren"@de , "naturalization"@en ; skos:altLabel "Naturalisierung"@de .

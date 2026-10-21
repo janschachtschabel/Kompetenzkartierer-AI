@@ -1,0 +1,24 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-NW;Lernbereich Naturwissenschaften;negative;cur:Curriculum;Curriculum;;;;0.85;nein;NRW-Gesamtschule: „Lernbereich Naturwissenschaften“/„Lernbereich Gesellschaftslehre“ ist ein Fächerverbund (eigenes Curriculum mit mehreren Fächern), kein Knoten.;schul:cue-ib-lernbereich-faecherverbund
+DE-NW;Handlungskompetenz;cue;kd:gw-action, schul:Kompetenzbereich;Handlungskompetenz, Kompetenzbereich;;;;0.85;nein;;schul:cue-kb-handlung
+DE-NW;Urteilskompetenz;cue;kd:gw-judgement, schul:Kompetenzbereich;Urteilskompetenz, Kompetenzbereich;;;;0.85;nein;NW: wird je Inhaltsfeld konkretisiert – als Bereichskonzept deduplizieren (cur:inArea), nicht als neuen Knoten je Inhaltsfeld.;schul:cue-kb-urteil
+DE-NW;Methodenkompetenz;cue;kd:gw-method, schul:Kompetenzbereich;Methodenkompetenz, Kompetenzbereich;;;;0.85;nein;;schul:cue-kb-methode
+DE-NW;Sachkompetenz;cue;kd:gw-subject, schul:Kompetenzbereich;Sachkompetenz, Kompetenzbereich;;;;0.85;nein;;schul:cue-kb-sach
+DE-NW;Medienkompetenzrahmen;cue;qz:MKR-NW;Medienkompetenzrahmen NRW;;;;0.9;nein;;schul:cue-qs-medienkompetenzrahmen
+DE-NW;Ergänzung zu einem Basiskonzept;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030005
+DE-NW;Möglicher Kontext;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030006
+DE-NW;Fachliche Konkretisierung;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030074
+DE-NW;Inhalt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030075
+DE-NW;Inhaltlicher Schwerpunkt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0002192
+DE-NW;Basiskonzept;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030077
+DE-NW;Bereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030073
+DE-NW;Inhaltsfeld;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.95;nein;NW: darunter „Inhaltliche Schwerpunkte“ und konkretisierte Kompetenzerwartungen nach Sach- und Urteilskompetenz.;schul:cue-ib-inhaltsfeld
+DE-NW;Teilkompetenzbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0002190
+DE-NW;Kompetenzbereich;pref;schul:Kompetenzbereich;Kompetenzbereich;;;;0.8;nein;;schul:cue-kb-kompetenzbereich
+DE-NW;Kompetenzerwartung;pref;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.95;nein;NW: übergeordnete und konkretisierte Kompetenzerwartungen unterscheiden.;schul:cue-ke-kompetenzerwartung
+DE-NW;Lehrplanfragment;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0002186
+DE-NW;Doppeljahrgangsstufe;alt;schul:Stufenabschnitt;Stufenabschnitt;;;;0.85;nein;;schul:cue-sa-doppeljahrgang
+DE-NW;Inhaltliche Schwerpunkte;cue;schul:Teilbereich;Teilbereich;;;;0.85;nein;"NW: Stichwortliste unter dem Inhaltsfeld; die Stichworte selbst sind Inhaltsaussagen.";schul:cue-tb-inhaltlicherschwerpunkt
+DE-NW;Verweis auf Basiskonzept;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030009
+DE-NW;Verweis auf Kompetenzerwartung;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030187
+DE-NW;Kernlehrplan;cue;schul:dt-Lehrplan;Lehrplan;titlePage;;;0.95;nein;;schul:cue-dt-kernlehrplan

@@ -1,0 +1,21 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-BB;Hygiene;cue;ctx:body-care;Körperpflege, Wickeln, Toilette;heading;;;0.80;nein;Alltagssituation.;elem:lex-f47d7c4e2cc1-BB
+DE-BB;Kinderkreise;cue;ctx:circle-time;Gesprächs- und Kinderkreis;heading;;;0.80;nein;Alltagssituation.;elem:lex-bda64918ae14-BB
+DE-BB;Spielen;cue;ctx:free-play, ctx:play;Freispiel, Spielsituationen;heading;;;0.70;nein;Alltagssituation.;elem:lex-819cc4b809eb-BB
+DE-BB;Essen;cue;ctx:meals;Mahlzeiten;heading;;;0.85;nein;Alltagssituation.;elem:lex-1e360e4ef6f4-BB
+DE-BB;Ausruhen und Schlafen;cue;ctx:rest-sleep;Ruhen und Schlafen;heading;;;0.85;nein;Alltagssituation.;elem:lex-201764ac3dbc-BB
+DE-BB;Aufräumen;pref;ctx:tidying;Aufräumen;heading;;;0.85;nein;Alltagssituation.;elem:lex-4301b6def029-BB
+DE-BB;Pädagogische Alltagssituationen;cue;elem:Alltagssituation;Pädagogische Alltagssituation;heading, toc;;;0.98;ja;Situationen in 4 Gruppen, systematisch mit Bildungsbereichen verknüpft.;elem:lex-60c972917bf3-BB
+DE-BB;Umsetzungsideen;cue;elem:Impuls;Impuls/Anregung;box, heading;;;0.85;nein;;elem:lex-d62346b371f2-BB
+DE-BB;Bildungsplan – Erweiterte Grundsätze elementarer Bildung;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.98;ja;Altersübergreifend für Krippe, Kita, Hort und Kindertagespflege. Gliedert nach Alltagssituationen und 10 Bildungsbereichen.;elem:lex-0caa81a08540-BB
+DE-BB;Grundsätze elementarer Bildung;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.90;ja;Fassung 2004, durch den Bildungsplan 2024 ersetzt.;elem:lex-8433d5a790aa-BB
+DE-BB;Ästhetik und Musik;cue;elem:f-aesthetik, elem:f-musik;Ästhetische Bildung, Musik und Rhythmik;heading;;;0.95;ja;;elem:lex-b3cbef8c6693-BB
+DE-BB;Bewegung und Sport;cue;elem:f-bewegung;Bewegung;heading;;;0.90;ja;;elem:lex-fe37b9abc298-BB
+DE-BB;Nachhaltige Entwicklung;cue;elem:f-bne;Bildung für nachhaltige Entwicklung;heading;;;0.90;ja;In Brandenburg Bildungsbereich.;elem:lex-9d1804f11d81-BB
+DE-BB;Kinderrechte, Menschenrechte und Demokratie;cue;elem:f-demokratie-gesellschaft, elem:p-kinderrechte;Demokratie und Gesellschaft, Kinderrechte;heading;;;0.95;ja;In Brandenburg Bildungsbereich, nicht Leitprinzip.;elem:lex-5561806e60fd-BB
+DE-BB;Digitale Medien;cue;elem:f-digitale-technologien, elem:f-medien;Digitale Geräte und Technologien, Medien und digitale Bildung;heading;;;0.90;ja;;elem:lex-a69228968b70-BB
+DE-BB;Körper und Gesundheit;cue;elem:f-gesundheit-ernaehrung, elem:f-koerper;Gesundheit, Ernährung und Hygiene, Körper, Bewegung, Gesundheit und Prävention;heading;;;0.90;ja;;elem:lex-e276f03e57ad-BB
+DE-BB;Mathematik;pref;elem:f-mathematik;Mathematik;heading;;;0.80;ja;;elem:lex-9dba6833e71a-BB
+DE-BB;Natur und Technik;cue;elem:f-natur-oekologie, elem:f-naturwissenschaft, elem:f-technik;Naturerfahrung und Ökologie, Naturwissenschaftliche Phänomene, Technik;heading;;;0.90;ja;;elem:lex-93764b7938b9-BB
+DE-BB;Philosophie, Ethik und Religion;cue;elem:f-religion-weltanschauung, elem:f-werte-ethik-philosophie;Religion und Weltanschauung, Werte, Ethik und Philosophieren;heading;;;0.95;ja;;elem:lex-eef258b97182-BB
+DE-BB;Sprache und Kommunikation;cue;elem:f-sprache;Sprache, Kommunikation und Literacy;heading;;;0.95;ja;;elem:lex-1b906f37fd4b-BB

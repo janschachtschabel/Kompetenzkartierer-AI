@@ -1,0 +1,112 @@
+@prefix ex:    <https://w3id.org/wlo/curriculum/example/> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix kd:    <https://w3id.org/wlo/curriculum/dimension/> .
+@prefix qz:    <https://w3id.org/wlo/curriculum/crosscutting/> .
+@prefix ctx:   <https://w3id.org/wlo/curriculum/context/> .
+@prefix land:  <https://w3id.org/wlo/curriculum/region/> .
+@prefix op:    <https://w3id.org/wlo/curriculum/operator/> .
+@prefix elem:  <https://w3id.org/wlo/curriculum/profile/early-childhood#> .
+@prefix schul: <https://w3id.org/wlo/curriculum/profile/school#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+# =============================================================================
+# Beispiel Elementarbildung: fiktiver Bildungsplan „0 bis 10“ mit zwei
+# Curricula (Kita, Grundschule) in einem Dokument. Gezeigt werden:
+#   - gemeinsamer Abschnitt (cur:appliesTo beide Curricula, scopeShare common)
+#   - Alter als Zeit (Monate), kein Niveau (cur:checkedAbsent dock_level)
+#   - Bildungsziel des Kindes vs. Auftrag an Fachkräfte (Adressat)
+#   - Situation als Kontext (Alltagssituation Mahlzeiten)
+#   - Querschnitt per Leitprinzip (cur:contributesTo)
+#   - Fachkraft-Aussage dockt NICHT an ein Kompetenzkonzept, sondern über eine
+#     vorgeschlagene Kante rel_supports
+# Wortlaute FIKTIV.
+# =============================================================================
+
+ex:el-doc a cur:Document ;
+    dct:title "Bildungsplan für Kinder von 0 bis 10 Jahren (fiktives Beispiel)"@de ; dct:publisher "Ministerium (fiktiv)" ;
+    cur:documentType elem:dt-Bildungsplan-0-10 ; cur:educationSector cv:sec_elementary , cv:sec_school ; cur:region land:DE-HE ;
+    cur:legalForm cv:lf_officialRecommendation ; cur:documentBinding cv:bind_orienting ; cur:lifecycle cv:life_inForce ;
+    cur:represents ex:el-kita , ex:el-gs .
+
+ex:el-kita a cur:Curriculum ; dct:title "Bildungsplan – Kindertageseinrichtung"@de ;
+    cur:fieldText "alle Bildungsbereiche; Feld je Bereichsknoten" ;
+    cur:applicability ex:el-kita-ctx ; cur:competencyModel kd:EarlyChildhood .
+ex:el-kita-ctx a cur:ApplicabilityContext ; cur:educationSector cv:sec_elementary ; cur:formality cv:form_formal ;
+    elem:setting elem:set-kita , elem:set-kindertagespflege ; cur:timeSpan ex:el-kita-alter .
+ex:el-kita-alter a cur:TimeSpan ; cur:timeKind cv:time_age ; cur:from 0.0 ; cur:to 72.0 .
+ex:el-kita cur:checkedAbsent cv:dock_level .
+
+ex:el-gs a cur:Curriculum ; dct:title "Bildungsplan – Grundschule"@de ;
+    cur:applicability ex:el-gs-ctx .
+ex:el-gs-ctx a cur:ApplicabilityContext ; cur:educationSector cv:sec_school ; elem:setting elem:set-grundschule ;
+    cur:timeSpan ex:el-gs-alter .
+ex:el-gs-alter a cur:TimeSpan ; cur:timeKind cv:time_age ; cur:from 72.0 ; cur:to 120.0 .
+ex:el-gs cur:checkedAbsent cv:dock_field .
+
+# Leitprinzipien am Dokument, gelten für beide Curricula
+ex:el-prinzipien a cur:CurriculumNode ; cur:partOf ex:el-doc ;
+    cur:nodeFunction cv:fn_crossCutting ; cur:nodeType elem:Querschnitt ;
+    cur:originalTitle "Leitprinzipien"@de ; cur:appliesTo ex:el-kita , ex:el-gs ; cur:scopeShare cv:share_common ;
+    cur:anchor ex:el-anc-1 .
+ex:el-st-partizipation a cur:Statement ; cur:partOf ex:el-prinzipien ;
+    cur:verbatim "Kinder werden an Entscheidungen, die ihren Alltag betreffen, ihrem Alter entsprechend beteiligt."@de ;
+    cur:statementKind cv:kind_mandate ; cur:statementSubkind elem:Grundsatz ; cur:addressee cv:addr_institution ;
+    cur:contributesTo elem:p-partizipation ; cur:origin cv:orig_source ; cur:anchor ex:el-anc-2 .
+
+# Bildungsbereich mit Feld aus dem Gemeinsamen Rahmen
+ex:el-mathe a cur:CurriculumNode ; cur:partOf ex:el-doc ;
+    cur:nodeFunction cv:fn_area ; cur:nodeType elem:Bildungsbereich ;
+    cur:originalTitle "Mathematik, Naturwissenschaft und Technik"@de ; cur:field elem:f-mint ;
+    cur:appliesTo ex:el-kita , ex:el-gs ; cur:scopeShare cv:share_common ; cur:anchor ex:el-anc-3 .
+
+ex:el-st-ziel a cur:Statement ; cur:partOf ex:el-mathe ;
+    cur:verbatim "erfahren Mengen im Alltag und vergleichen sie zunehmend sicher"@de ;
+    cur:leadIn "Die Kinder …"@de ;
+    cur:statementKind cv:kind_developmentGoal ; cur:statementSubkind elem:Bildungsziel ;
+    cur:addressee cv:addr_learner ; cur:origin cv:orig_source ;
+    cur:appliesTo ex:el-kita ;
+    cur:anchor ex:el-anc-4 .
+ex:el-dec-ziel a cur:Decomposition ; cur:decomposes ex:el-st-ziel ;
+    cur:actionText "vergleichen" ; cur:action op:vergleichen ; cur:objectText "Mengen" ; cur:conditionText "im Alltag" ;
+    elem:developmentQualifier "zunehmend sicher"@de ;
+    cur:origin cv:orig_model ; cur:confidence 0.83 ;
+    cur:expresses ex:el-kk-mengen ; cur:mentions ex:el-ic-mengen .
+
+ex:el-st-fachkraft a cur:Statement ; cur:partOf ex:el-mathe ;
+    cur:verbatim "Pädagogische Fachkräfte greifen Zählanlässe beim Tischdecken auf."@de ;
+    cur:statementKind cv:kind_mandate ; cur:statementSubkind elem:FachkraftAufgabe ;
+    cur:addressee cv:addr_educator ; cur:origin cv:orig_source ;
+    cur:context ctx:meals ; cur:appliesTo ex:el-kita ;
+    cur:anchor ex:el-anc-5 .
+
+ex:el-st-frage a cur:Statement ; cur:partOf ex:el-mathe ;
+    cur:verbatim "Welche Gelegenheiten zum Zählen bietet unser Tagesablauf?"@de ;
+    cur:statementKind cv:kind_guidance ; cur:statementSubkind elem:Reflexionsfrage ;
+    cur:addressee cv:addr_educator ; cur:origin cv:orig_source ; cur:anchor ex:el-anc-6 .
+
+# Hubs
+ex:el-hub-k a skos:ConceptScheme ; skos:prefLabel "Kompetenz-Hub (Beispiel Elementar)"@de .
+ex:el-hub-i a skos:ConceptScheme ; skos:prefLabel "Inhalts-Hub (Beispiel Elementar)"@de .
+ex:el-kk-mengen a cur:CompetencyConcept ; skos:inScheme ex:el-hub-k ; skos:prefLabel "Mengen vergleichen und ordnen"@de .
+ex:el-ic-mengen a cur:ContentConcept ; skos:inScheme ex:el-hub-i ; skos:prefLabel "Mengen"@de .
+
+# Fachkraft-Aussage → Kompetenzkonzept nur als vorgeschlagene Kante (kein Kindziel erfinden)
+ex:el-al-supports a cur:Alignment ; cur:source ex:el-st-fachkraft ; cur:target ex:el-kk-mengen ;
+    cur:relation cv:rel_supports ; cur:origin cv:orig_model ; cur:reviewStatus cv:rev_proposed ;
+    cur:method cv:meth_llmChoice ; cur:confidence 0.71 .
+
+ex:el-anc-1 a cur:SourceAnchor ; cur:inDocument ex:el-doc ; cur:pageStart 18 ; cur:pageEnd 22 ; cur:blockId "p18-b1" ; cur:matchKind cv:match_exact ; cur:quote "Leitprinzipien" .
+ex:el-anc-2 a cur:SourceAnchor ; cur:inDocument ex:el-doc ; cur:pageStart 19 ; cur:pageEnd 19 ; cur:blockId "p19-b4" ; cur:matchKind cv:match_exact ;
+    cur:quote "Kinder werden an Entscheidungen, die ihren Alltag betreffen, ihrem Alter entsprechend beteiligt." .
+ex:el-anc-3 a cur:SourceAnchor ; cur:inDocument ex:el-doc ; cur:pageStart 64 ; cur:pageEnd 71 ; cur:blockId "p64-b1" ; cur:matchKind cv:match_exact ;
+    cur:quote "Mathematik, Naturwissenschaft und Technik" .
+ex:el-anc-4 a cur:SourceAnchor ; cur:inDocument ex:el-doc ; cur:pageStart 65 ; cur:pageEnd 65 ; cur:blockId "p65-b3" ; cur:matchKind cv:match_exact ;
+    cur:quote "erfahren Mengen im Alltag und vergleichen sie zunehmend sicher" .
+ex:el-anc-5 a cur:SourceAnchor ; cur:inDocument ex:el-doc ; cur:pageStart 66 ; cur:pageEnd 66 ; cur:blockId "p66-b2" ; cur:matchKind cv:match_exact ;
+    cur:quote "Pädagogische Fachkräfte greifen Zählanlässe beim Tischdecken auf." .
+ex:el-anc-6 a cur:SourceAnchor ; cur:inDocument ex:el-doc ; cur:pageStart 66 ; cur:pageEnd 66 ; cur:blockId "p66-b5" ; cur:matchKind cv:match_exact ;
+    cur:quote "Welche Gelegenheiten zum Zählen bietet unser Tagesablauf?" .

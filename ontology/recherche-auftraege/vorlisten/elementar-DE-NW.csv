@@ -1,0 +1,14 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-NW;Bildungsmöglichkeiten;homonym;elem:Impuls;Impuls/Anregung;heading;;;0.60;nein;;elem:lex-9c28a41449ab-NW
+DE-NW;Fragen zur Reflexion;cue;elem:Reflexionsfrage;Reflexionsfrage;box, heading;;;0.90;ja;;elem:lex-f56d91682573-NW
+DE-NW;Bildungsgrundsätze für Kinder von 0 bis 10 Jahren;cue;elem:dt-Bildungsplan-0-10;Altersübergreifender Bildungsplan;titlePage;;;0.98;ja;Kita und Primarbereich, einheitlicher Aufbau je Bildungsbereich.;elem:lex-a7d71ea98cd2-NW
+DE-NW;Musisch-ästhetische Bildung;cue;elem:f-aesthetik, elem:f-musik;Ästhetische Bildung, Musik und Rhythmik;heading;;;0.95;ja;;elem:lex-d92658d5ddf9-NW
+DE-NW;Bewegung;pref;elem:f-bewegung;Bewegung;heading;;;0.80;ja;;elem:lex-80122321ca4d-NW
+DE-NW;Ökologische Bildung;cue;elem:f-bne, elem:f-natur-oekologie;Bildung für nachhaltige Entwicklung, Naturerfahrung und Ökologie;heading;;;0.95;ja;;elem:lex-8206e53b8789-NW
+DE-NW;Körper, Gesundheit und Ernährung;cue;elem:f-gesundheit-ernaehrung, elem:f-koerperwahrnehmung-sexualitaet;Gesundheit, Ernährung und Hygiene, Körperwahrnehmung und Sexualität;heading;;;0.95;ja;;elem:lex-14ac6df656f1-NW
+DE-NW;Soziale und (inter-)kulturelle Bildung;cue;elem:f-kulturelle-vielfalt, elem:f-soziale-beziehungen;Kulturelle Vielfalt und interkulturelles Lernen, Soziale Beziehungen, Kooperation und Konflikte;heading;;;0.95;ja;;elem:lex-aafe0393288d-NW
+DE-NW;Mathematische Bildung;cue;elem:f-mathematik;Mathematik;heading;;;0.95;ja;Sachsen: Leitbegriff Ordnen.;elem:lex-d3f636d97215-NW
+DE-NW;Medien;cue;elem:f-medien;Medien und digitale Bildung;heading;;;0.80;ja;;elem:lex-ae7ad1da4203-NW
+DE-NW;Naturwissenschaftlich-technische Bildung;cue;elem:f-naturwissenschaft, elem:f-technik;Naturwissenschaftliche Phänomene, Technik;heading;;;0.95;ja;;elem:lex-1ed6a29b0d3c-NW
+DE-NW;Religion und Ethik;cue;elem:f-religion-weltanschauung, elem:f-werte-ethik-philosophie;Religion und Weltanschauung, Werte, Ethik und Philosophieren;heading;;;0.95;ja;;elem:lex-cfc402c1ecbc-NW
+DE-NW;Sprache und Kommunikation;cue;elem:f-sprache;Sprache, Kommunikation und Literacy;heading;;;0.95;ja;;elem:lex-1b906f37fd4b-NW

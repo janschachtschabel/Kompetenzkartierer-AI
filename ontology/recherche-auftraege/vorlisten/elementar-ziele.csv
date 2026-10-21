@@ -1,0 +1,468 @@
+id;art;label;kernfunktion_oder_kernart;definition
+elem:Alltagssituation;Knotentyp;Pädagogische Alltagssituation;cv:fn_area;Gliederung nach Situationen statt Weltausschnitten (BB 2024: 18 Alltagssituationen in 4 Gruppen). Setzt cur:context auf ctx:situations-Werte statt cur:field.
+elem:Basiskompetenzen;Knotentyp;Basiskompetenzen;cv:fn_crossCutting;Abschnitt, der Kompetenzen ohne Weltausschnitt beschreibt (Basiskompetenzen BY/HE nach Fthenakis, Ich-/Sozial-/Sach-/lernmethodische Kompetenzen BE). Liefert in X3 das Kompetenzmodell (kd:EarlyChildhood) als Auswahllist…
+elem:BeobachtungDokumentation;Knotentyp;Beobachtung und Dokumentation;cv:fn_frame;
+elem:Bildungsbereich;Knotentyp;Bildungsbereich;cv:fn_area;Weltausschnitt des Plans (Sprache, Mathematik, Körper …), in den Ländern Bildungsbereich, Bildungs- und Entwicklungsfeld (BW), Lernbereich und Erfahrungsfeld (NI), Bildungs- und Erziehungsbereich (MV, RP). Setzt cur:fie…
+elem:Einleitung;Knotentyp;Einleitung/Vorwort;cv:fn_nonCurricular;
+elem:Grundlagen;Knotentyp;Grundlagen/Bildungsverständnis;cv:fn_frame;Bild vom Kind, Bildungsverständnis, rechtliche Grundlagen, Ziele des Plans. Liefert Grundsätze und übergreifende Bildungsziele.
+elem:Handlungsfeld;Knotentyp;Handlungsfeld der Fachkräfte;cv:fn_frame;Kapitel zu Gestaltung der pädagogischen Arbeit, Raum, Team, didaktisch-methodischen Überlegungen, Aufgaben der pädagogischen Fachkräfte. Aussagen sind Aufträge (cv:kind_mandate) an Fachkräfte.
+elem:Leitbild;Knotentyp;Leitbild/Vision;cv:fn_grouping;Gruppenüberschrift über mehreren Bildungsbereichen in der Form „[Adjektiv] Kinder“ (BY Leitbilder, HE Visionen).
+elem:Qualitaet;Knotentyp;Qualität und Qualitätsentwicklung;cv:fn_frame;
+elem:Querschnitt;Knotentyp;Querschnitt/Leitprinzip;cv:fn_crossCutting;Abschnitt mit wenigen (3–6) übergreifenden Prinzipien vor den Bereichen: Leitprinzip (BW), Leitmotiv (HH), Querschnittsthema (RP), Handlungsprinzip (SH), Pädagogische Grundprinzipien (Gemeinsamer Rahmen).
+elem:Rahmenbedingungen;Knotentyp;Rahmenbedingungen;cv:fn_frame;
+elem:Sammelabschnitt;Knotentyp;Sammelabschnitt;cv:fn_grouping;Teil, Kapitel oder Abschnitt, der Bereiche bündelt („Teil II Bildungsziele“, „Kap. 7 Themenbezogene Bildungs- und Erziehungsbereiche“).
+elem:Teilbereich;Knotentyp;Teilbereich;cv:fn_subunit;Unterabschnitt eines Bildungsbereichs (Aspekt, Schwerpunkt, Unterbereich, Leitbegriff SN).
+elem:Uebergang;Knotentyp;Übergänge;cv:fn_frame;Eingewöhnung, Übergang in die Schule, Übergänge im Tagesablauf.
+elem:Verzeichnis;Knotentyp;Verzeichnis/Anhang;cv:fn_nonCurricular;
+elem:Zusammenarbeit;Knotentyp;Zusammenarbeit;cv:fn_frame;Zusammenarbeit mit Familien, Schule, Sozialraum und Kooperationspartnern.
+elem:Bildungsanspruch;Aussage-Unterart;Bildungsanspruch;cv:kind_developmentGoal;Anspruch des Kindes auf Bildungsgelegenheiten (TH „Bildungsansprüche“).
+elem:Bildungsziel;Aussage-Unterart;Bildungs- und Entwicklungsziel;cv:kind_developmentGoal;Ziel für das Kind ohne Prüfanspruch: Haltung, Erfahrung, Disposition, Entwicklung („Das Kind entwickelt Freude am …“, „Kinder erfahren …“).
+elem:Entwicklungsindikator;Aussage-Unterart;Entwicklungsindikator;cv:kind_standard;"Beobachtungsmerkmal mit Altersangabe („3–5-Wort-Sätze (36 Monate)“); Alter als cur:timeSpan mit cv:time_age."
+elem:FachkraftAufgabe;Aussage-Unterart;Aufgabe der pädagogischen Fachkraft;cv:kind_mandate;„Pädagogische Fachkräfte …“, „Die Fachkraft unterstützt …“, „Aufgaben der pädagogischen Fachkräfte“ (HH).
+elem:Grundsatz;Aussage-Unterart;Pädagogischer Grundsatz;cv:kind_mandate;Normatives Prinzip der pädagogischen Arbeit (Bild vom Kind, Bildungsverständnis, Grundprinzip). Dockt an Querschnittsziele (cur:contributesTo), nicht an Kompetenzen.
+elem:Impuls;Aussage-Unterart;Impuls/Anregung;cv:kind_guidance;
+elem:Inhalt;Aussage-Unterart;Bildungsinhalt;cv:kind_content;
+elem:Kompetenzbeschreibung;Aussage-Unterart;Kompetenzbeschreibung;cv:kind_learningOutcome;"Beobachtbares Können des Kindes („Das Kind kann Mengen bis fünf simultan erfassen“). Selten; nur bei ausdrücklichem Können/Wissen."
+elem:Praxisbeispiel;Aussage-Unterart;Praxisbeispiel;cv:kind_guidance;
+elem:Qualitaetsanspruch;Aussage-Unterart;Qualitätsanspruch;cv:kind_standard;Nummerierter Maßstab an die pädagogische Arbeit (BE QA1, QA2 …).
+elem:Reflexionsfrage;Aussage-Unterart;Reflexionsfrage;cv:kind_guidance;
+elem:dt-Beobachtungsinstrument;Dokumenttyp;Beobachtungsinstrument/Entwicklungstabelle;cv:dk_assessment;Wird als cur:CompetencyFramework (Raster Bereich × Altersstufe, Zellen = Entwicklungsindikatoren) importiert und referenziert, nicht als Curriculum extrahiert.
+elem:dt-Bildungsplan;Dokumenttyp;Landesbildungsplan Elementarbereich;cv:dk_curriculum;Bildungsplan, Bildungsprogramm, Orientierungsplan, Bildungsempfehlungen, Bildungsleitlinien, Bildungskonzeption, Bildungsgrundsätze. Rechtsform meist cv:lf_officialRecommendation (§ 85 Abs. 2 SGB VIII) oder durch Verord…
+elem:dt-Bildungsplan-0-10;Dokumenttyp;Altersübergreifender Bildungsplan;cv:dk_curriculum;"HE, MV, NW, HB 0–10, TH 0–18, BayBL: mindestens zwei Curricula (Kita, Grundschule/Schule) in einem Dokument; das Grundschul-Curriculum gehört zum Bereich Schule (cv:sec_school)."
+elem:dt-Einrichtungskonzeption;Dokumenttyp;Einrichtungskonzeption;cv:dk_institutional;"Pädagogische Konzeption einer Kita; Rechtsform cv:lf_institutionalDocument, nie amtlich."
+elem:dt-GemeinsamerRahmen;Dokumenttyp;Länderübergreifender Rahmen;cv:dk_framework;„Gemeinsamer Rahmen der Länder für die frühe Bildung in Kindertageseinrichtungen“ (JMK/KMK 2004, i. d. F. JFMK 2021/KMK 2022). Anker des Feldvokabulars elem:Fields.
+elem:dt-Handreichung;Dokumenttyp;Handreichung/Handlungsempfehlung;cv:dk_guidance;U3-Handreichung, Handlungsempfehlungen Sprachbildung (NI), Konkretisierungen (HB), Handreichungen SH. Ergänzt einen Bildungsplan (cur:Curriculum mit cur:scopeShare cv:share_supplementary) oder ist reines Begleitdokument.
+elem:dt-Qualitaetsempfehlung;Dokumenttyp;Qualitätsempfehlung;cv:dk_guidance;
+elem:dt-Rechtsnorm;Dokumenttyp;Ausführungsverordnung/Kita-Gesetz;cv:dk_regulation;"AVBayKiBiG, KiFöG-VO ST u. a.; Grundlage eines Bildungsplans (cur:derivedFrom), selbst kein Curriculum. Nur Bildungs- und Erziehungsziele (§§) extrahieren."
+elem:dt-Traegerkonzeption;Dokumenttyp;Trägerkonzeption;cv:dk_institutional;
+elem:f-aesthetik;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Ästhetische Bildung;qz:Cultural;
+elem:f-bewegung;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Bewegung;elem:f-koerper;
+elem:f-bildnerisch;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Bildnerisches Gestalten;elem:f-aesthetik;
+elem:f-bne;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Bildung für nachhaltige Entwicklung;elem:f-umwelt-bne, qz:BNE;"BNE ist Bereich (ST) oder Leitprinzip (BW); der Knotentyp entscheidet. Querschnittsfragen laufen über qz:BNE."
+elem:f-daten-zufall;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Daten und Zufall;elem:f-mathematik;
+elem:f-demokratie-gesellschaft;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Demokratie und Gesellschaft;elem:f-personal-sozial, qz:Democracy;
+elem:f-digitale-technologien;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Digitale Geräte und Technologien;elem:f-medien;
+elem:f-emotionen;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Emotionen;elem:f-personal-sozial;
+elem:f-erzaehl-buchkultur;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Erzähl- und Buchkultur;elem:f-literacy;
+elem:f-gesundheit-ernaehrung;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Gesundheit, Ernährung und Hygiene;elem:f-koerper;
+elem:f-groessen-messen;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Größen und Messen;elem:f-mathematik;
+elem:f-identitaet-selbstbild;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Identität und Selbstbild;elem:f-personal-sozial;
+elem:f-informatik;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Informatische Grunderfahrungen;elem:f-mint;
+elem:f-koerper;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Körper, Bewegung, Gesundheit und Prävention;qz:Health;
+elem:f-koerperwahrnehmung-sexualitaet;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Körperwahrnehmung und Sexualität;elem:f-koerper;
+elem:f-kulturelle-vielfalt;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Kulturelle Vielfalt und interkulturelles Lernen;elem:f-personal-sozial, qz:Intercultural;
+elem:f-lebenspraxis;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Lebenspraxis und Selbstständigkeit;elem:f-personal-sozial;
+elem:f-literacy;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Literacy, Erzähl- und Schriftkultur;elem:f-sprache, qz:Literacy;
+elem:f-mathematik;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Mathematik;elem:f-mint;
+elem:f-medien;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Medien und digitale Bildung;qz:DigitalWorld;
+elem:f-medienerleben-reflexion;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Medien erleben und reflektieren;elem:f-medien;
+elem:f-mediengestaltung;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Medien gestalten;elem:f-medien;
+elem:f-mehrsprachigkeit;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Mehrsprachigkeit;elem:f-sprache, qz:Plurilingual;
+elem:f-mint;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Mathematik, Informatik, Naturwissenschaft und Technik;qz:STEM;
+elem:f-musik;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Musik und Rhythmik;elem:f-aesthetik;
+elem:f-muster-strukturen;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Muster und Strukturen;elem:f-mathematik;
+elem:f-natur-oekologie;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Naturerfahrung und Ökologie;elem:f-umwelt-bne;
+elem:f-naturwissenschaft;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Naturwissenschaftliche Phänomene;elem:f-mint;
+elem:f-nonverbale-kommunikation;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Nonverbale Kommunikation;elem:f-sprache;
+elem:f-personal-sozial;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Personale und sozial-emotionale Entwicklung, Werte, Religion und Kultur;qz:SocialEmotional;
+elem:f-phonologische-bewusstheit;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Phonologische Bewusstheit;elem:f-literacy;
+elem:f-praevention-sicherheit;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Prävention und Sicherheit;elem:f-koerper;
+elem:f-raum-form;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Raum und Form;elem:f-mathematik;
+elem:f-religion-weltanschauung;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Religion und Weltanschauung;elem:f-personal-sozial;
+elem:f-schriftkultur;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Begegnung mit Schrift;elem:f-literacy;
+elem:f-sinneswahrnehmung;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Sinneswahrnehmung;elem:f-aesthetik;
+elem:f-soziale-beziehungen;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Soziale Beziehungen, Kooperation und Konflikte;elem:f-personal-sozial;
+elem:f-sprachbetrachtung;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Sprachbetrachtung;elem:f-sprache;Brücke zu KMK Deutsch Primarbereich „Sprache und Sprachgebrauch untersuchen“.
+elem:f-sprache;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Sprache, Kommunikation und Literacy;qz:LanguageEducation;Alltagsintegrierte sprachliche Bildung, Kommunikation, Mehrsprachigkeit, Literacy.
+elem:f-sprechen-zuhoeren;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Sprechen und Zuhören;elem:f-sprache;Brücke zum KMK-Kompetenzbereich Deutsch Primarbereich „Sprechen und Zuhören“.
+elem:f-tanz-darstellendes-spiel;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Tanz und darstellendes Spiel;elem:f-aesthetik;
+elem:f-technik;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Technik;elem:f-mint;
+elem:f-umwelt-bne;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Umweltbildung und Bildung für nachhaltige Entwicklung;;
+elem:f-werte-ethik-philosophie;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Werte, Ethik und Philosophieren;elem:f-personal-sozial, qz:Values;
+elem:f-zahlen-operationen;Konzept: Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen);Mengen, Zahlen und Operationen;elem:f-mathematik;Brücke zur KMK-Leitidee „Zahl und Operation“ (Primarbereich).
+elem:p-alltagsintegration;Konzept: Pädagogische Prinzipien Elementarbildung;Alltagsintegrierte Bildung;;
+elem:p-bindung-beziehung;Konzept: Pädagogische Prinzipien Elementarbildung;Bindung und Beziehung;;
+elem:p-bne;Konzept: Pädagogische Prinzipien Elementarbildung;Bildung für nachhaltige Entwicklung (Leitprinzip);qz:BNE;
+elem:p-diversitaet;Konzept: Pädagogische Prinzipien Elementarbildung;Diversität und vorurteilsbewusste Bildung;qz:Diversity;
+elem:p-geschlechtersensibel;Konzept: Pädagogische Prinzipien Elementarbildung;Geschlechtersensible Pädagogik;qz:GenderEquality;
+elem:p-inklusion;Konzept: Pädagogische Prinzipien Elementarbildung;Inklusion;qz:Diversity;
+elem:p-kinderrechte;Konzept: Pädagogische Prinzipien Elementarbildung;Kinderrechte;qz:ChildrensRights;
+elem:p-kinderschutz;Konzept: Pädagogische Prinzipien Elementarbildung;Kinderschutz;qz:ChildProtection;
+elem:p-ko-konstruktion;Konzept: Pädagogische Prinzipien Elementarbildung;Ko-Konstruktion;;
+elem:p-partizipation;Konzept: Pädagogische Prinzipien Elementarbildung;Partizipation;qz:ChildrensRights;
+elem:p-sozialraum;Konzept: Pädagogische Prinzipien Elementarbildung;Sozialraum und Vernetzung;;
+elem:p-spiel;Konzept: Pädagogische Prinzipien Elementarbildung;Spiel als Lernform;;
+elem:p-uebergaenge;Konzept: Pädagogische Prinzipien Elementarbildung;Übergänge gestalten;qz:Transitions;
+elem:p-umgang-mit-veraenderung;Konzept: Pädagogische Prinzipien Elementarbildung;Umgang mit Veränderungen und Herausforderungen;;Leitmotiv HH 2024.
+elem:p-zusammenarbeit-familie;Konzept: Pädagogische Prinzipien Elementarbildung;Zusammenarbeit mit Familien;qz:FamilyPartnership;
+elem:set-grundschule;Konzept: Bildungsorte Elementarbildung;Grundschule;;"Teilcurriculum eines 0–10-Plans; gehört zum Bereich Schule (cv:sec_school)."
+elem:set-hort;Konzept: Bildungsorte Elementarbildung;Hort;ctx:after-school;auch: Schulkindbetreuung
+elem:set-kindergarten;Konzept: Bildungsorte Elementarbildung;Kindergarten;ctx:ecec;
+elem:set-kindertagespflege;Konzept: Bildungsorte Elementarbildung;Kindertagespflege;ctx:childminding;auch: KTP, Tagespflege
+elem:set-kita;Konzept: Bildungsorte Elementarbildung;Kindertageseinrichtung;ctx:ecec;auch: Kindertagesstätte, Kita
+elem:set-krippe;Konzept: Bildungsorte Elementarbildung;Krippe;ctx:ecec;auch: U3, unter drei Jahren
+ctx:abroad;Konzept: Kontexte;Ausland/Partnerhochschule;ctx:settings;
+ctx:after-school;Konzept: Kontexte;Hort/Schulkindbetreuung;ctx:settings;
+ctx:arrival-farewell;Konzept: Kontexte;Ankommen und Abschied;ctx:everyday;
+ctx:body-care;Konzept: Kontexte;Körperpflege, Wickeln, Toilette;ctx:everyday;
+ctx:childminding;Konzept: Kontexte;Kindertagespflege;ctx:settings;
+ctx:circle-time;Konzept: Kontexte;Gesprächs- und Kinderkreis;ctx:everyday;auch: Kinderkonferenz, Kinderkreis, Morgenkreis
+ctx:clinic;Konzept: Kontexte;Klinik/Lehrpraxis;ctx:settings;
+ctx:company;Konzept: Kontexte;Ausbildungsbetrieb/Praxispartner;ctx:settings;auch: Betrieb, Praxisstelle
+ctx:conflict;Konzept: Kontexte;Konfliktsituation;ctx:social-situations;
+ctx:construction-play;Konzept: Kontexte;Bauen und Konstruieren;ctx:play;
+ctx:course-provider;Konzept: Kontexte;Kurs- oder Lehrgangsträger;ctx:settings;auch: Bildungsträger, Volkshochschule
+ctx:customers;Konzept: Kontexte;Kundinnen und Kunden;ctx:roles;
+ctx:daz-learners;Konzept: Kontexte;Lernende mit Deutsch als Zweitsprache;ctx:roles;auch: DaZ-Lernende
+ctx:dressing;Konzept: Kontexte;An- und Ausziehen;ctx:everyday;
+ctx:ecec;Konzept: Kontexte;Kindertageseinrichtung;ctx:settings;auch: Kita
+ctx:educator-dialogue;Konzept: Kontexte;Dialog Fachkraft–Kind;ctx:social-situations;
+ctx:employees;Konzept: Kontexte;Beschäftigte;ctx:roles;
+ctx:everyday;Konzept: Kontexte;Alltagssituationen;ctx:situations;
+ctx:excursion;Konzept: Kontexte;Ausflug in den Sozialraum;ctx:places;
+ctx:experimenting;Konzept: Kontexte;Forschen und Experimentieren;ctx:offers-projects;
+ctx:experiments-lab;Konzept: Kontexte;Experiment und Messung;ctx:situations;Schule, Hochschule: Versuch, Labor, Messung als Lernsituation.
+ctx:family;Konzept: Kontexte;Familie;ctx:settings;
+ctx:festivals-rituals;Konzept: Kontexte;Feste und Rituale;ctx:situations;
+ctx:free-play;Konzept: Kontexte;Freispiel;ctx:play;
+ctx:fulltime-vocational;Konzept: Kontexte;Berufliche Vollzeitschule;ctx:settings;auch: Berufsfachschule, Fachschule
+ctx:group-decision;Konzept: Kontexte;Gruppenentscheidung;ctx:social-situations;
+ctx:guided-activity;Konzept: Kontexte;Angeleitetes Angebot;ctx:offers-projects;
+ctx:hf-authorities;Konzept: Kontexte;Ämter und Behörden;ctx:ik-hf;
+ctx:hf-banking;Konzept: Kontexte;Banken und Versicherungen;ctx:ik-hf;
+ctx:hf-children;Konzept: Kontexte;Betreuung und Ausbildung der Kinder;ctx:ik-hf;
+ctx:hf-classroom;Konzept: Kontexte;Unterricht;ctx:ik-hf;
+ctx:hf-education;Konzept: Kontexte;Aus- und Weiterbildung;ctx:ik-hf;
+ctx:hf-health;Konzept: Kontexte;Gesundheit;ctx:ik-hf;
+ctx:hf-housing;Konzept: Kontexte;Wohnen;ctx:ik-hf;
+ctx:hf-jobsearch;Konzept: Kontexte;Arbeitssuche;ctx:ik-hf;
+ctx:hf-media;Konzept: Kontexte;Mediennutzung;ctx:ik-hf;
+ctx:hf-mobility;Konzept: Kontexte;Mobilität;ctx:ik-hf;
+ctx:hf-shopping;Konzept: Kontexte;Einkaufen;ctx:ik-hf;
+ctx:hf-work;Konzept: Kontexte;Arbeit;ctx:ik-hf;
+ctx:ik-hf;Konzept: Kontexte;Handlungsfelder des Rahmencurriculums für Integrationskurse;ctx:lifeDomains;
+ctx:ik-migration;Konzept: Kontexte;Umgang mit der Migrationssituation;ctx:ik-transversal;
+ctx:ik-own-learning;Konzept: Kontexte;Umgang mit dem eigenen Sprachenlernen;ctx:ik-transversal;
+ctx:ik-transversal;Konzept: Kontexte;Handlungsfelder übergreifende Kommunikation;ctx:lifeDomains;"Situationsunabhängig; erzeugen keinen Lebensbereich-Kontext für die Aussagen darunter. Belegt: A Umgang mit der Migrationssituation, E Umgang mit dem eigenen Sprachenlernen; B–D am Rahmencurriculum ergänzen."
+ctx:intercompany;Konzept: Kontexte;Überbetriebliche Bildungsstätte;ctx:settings;auch: ÜBS, überbetriebliche Lehrlingsunterweisung (ÜLU)
+ctx:jobseekers;Konzept: Kontexte;Arbeitsuchende;ctx:roles;
+ctx:kldb;Konzept: Kontexte;Berufsbereiche der KldB 2010;ctx:occupationalFields;
+ctx:kldb-0;Konzept: Kontexte;Militär;ctx:kldb;
+ctx:kldb-1;Konzept: Kontexte;Land-, Forst- und Tierwirtschaft und Gartenbau;ctx:kldb;
+ctx:kldb-2;Konzept: Kontexte;Rohstoffgewinnung, Produktion und Fertigung;ctx:kldb;
+ctx:kldb-3;Konzept: Kontexte;Bau, Architektur, Vermessung und Gebäudetechnik;ctx:kldb;
+ctx:kldb-4;Konzept: Kontexte;Naturwissenschaft, Geografie und Informatik;ctx:kldb;
+ctx:kldb-5;Konzept: Kontexte;Verkehr, Logistik, Schutz und Sicherheit;ctx:kldb;
+ctx:kldb-6;Konzept: Kontexte;Kaufmännische Dienstleistungen, Warenhandel, Vertrieb, Hotel und Tourismus;ctx:kldb;
+ctx:kldb-7;Konzept: Kontexte;Unternehmensorganisation, Buchhaltung, Recht und Verwaltung;ctx:kldb;
+ctx:kldb-8;Konzept: Kontexte;Gesundheit, Soziales, Lehre und Erziehung;ctx:kldb;
+ctx:kldb-9;Konzept: Kontexte;Sprach-, Literatur-, Geistes-, Gesellschafts- und Wirtschaftswissenschaften, Medien, Kunst, Kultur und Gestaltung;ctx:kldb;
+ctx:lifeDomains;Konzept: Kontexte;Lebens- und Handlungsbereiche;;
+ctx:long-term-resident;Konzept: Kontexte;Länger in Deutschland Lebende;ctx:roles;auch: nachholende Integration
+ctx:low-literate;Konzept: Kontexte;Gering literalisierte Erwachsene;ctx:roles;auch: Zweitschriftlernende, funktionale Analphabeten
+ctx:meals;Konzept: Kontexte;Mahlzeiten;ctx:everyday;
+ctx:movement-play;Konzept: Kontexte;Bewegungsspiel;ctx:play;
+ctx:newly-arrived;Konzept: Kontexte;Neuzugewanderte;ctx:roles;
+ctx:nursing-school;Konzept: Kontexte;Pflegeschule;ctx:settings;
+ctx:occupationalFields;Konzept: Kontexte;Berufsfelder;;
+ctx:offers-projects;Konzept: Kontexte;Angebote und Projekte;ctx:situations;
+ctx:online;Konzept: Kontexte;Online/Fernlernen;ctx:settings;auch: E-Learning, Fernstudium
+ctx:outdoors;Konzept: Kontexte;Draußen und in der Natur;ctx:places;
+ctx:parents;Konzept: Kontexte;Eltern;ctx:roles;
+ctx:peer-interaction;Konzept: Kontexte;Interaktion unter Kindern;ctx:social-situations;
+ctx:places;Konzept: Kontexte;Orte und Lernumgebungen;ctx:situations;
+ctx:play;Konzept: Kontexte;Spielsituationen;ctx:situations;
+ctx:practice-placement;Konzept: Kontexte;Praxiseinsatz/Praxisphase;ctx:settings;auch: Praktikum, Praxissemester
+ctx:practice-school;Konzept: Kontexte;Praktikumsschule;ctx:settings;
+ctx:project;Konzept: Kontexte;Projekt;ctx:offers-projects;
+ctx:rest-sleep;Konzept: Kontexte;Ruhen und Schlafen;ctx:everyday;
+ctx:role-play;Konzept: Kontexte;Rollen- und Fantasiespiel;ctx:play;
+ctx:roles;Konzept: Kontexte;Rollen und Zielgruppen;;
+ctx:room-design;Konzept: Kontexte;Raum- und Materialgestaltung;ctx:places;
+ctx:school;Konzept: Kontexte;Schule;ctx:settings;
+ctx:school-preparation;Konzept: Kontexte;Zeit vor dem Schuleintritt;ctx:transition-situations;
+ctx:settings;Konzept: Kontexte;Lernorte;;
+ctx:settling-in;Konzept: Kontexte;Eingewöhnungsphase;ctx:transition-situations;
+ctx:situations;Konzept: Kontexte;Situationen;;
+ctx:social-situations;Konzept: Kontexte;Soziale Situationen;ctx:situations;
+ctx:special-needs;Konzept: Kontexte;Lernende mit sonderpädagogischem Förderbedarf;ctx:roles;
+ctx:tidying;Konzept: Kontexte;Aufräumen;ctx:everyday;
+ctx:transition-situations;Konzept: Kontexte;Übergangssituationen;ctx:situations;
+ctx:transitions-in-day;Konzept: Kontexte;Wechsel im Tagesablauf;ctx:everyday;
+ctx:university;Konzept: Kontexte;Hochschule;ctx:settings;auch: Studienakademie
+ctx:vocational-school;Konzept: Kontexte;Berufsschule;ctx:settings;
+ctx:work-order;Konzept: Kontexte;Kundenauftrag/betrieblicher Arbeitsauftrag;ctx:situations;Typische Handlungssituation in Lernfeldern und Prüfungsbereichen.
+ctx:young-adults;Konzept: Kontexte;Junge Erwachsene;ctx:roles;
+qz:bebb-bso;Konzept: Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen;Berufs- und Studienorientierung;qz:CareerOrientation;
+qz:bebb-demokratie;Konzept: Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen;Demokratiebildung;qz:Democracy;
+qz:bebb-europa;Konzept: Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen;Europabildung in der Schule;qz:Europe;
+qz:bebb-gender;Konzept: Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen;Gleichstellung und Gleichberechtigung der Geschlechter (Gender Mainstreaming);qz:GenderEquality;
+qz:bebb-gesundheit;Konzept: Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen;Gesundheitsförderung;qz:Health;
+qz:bebb-gewalt;Konzept: Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen;Gewaltprävention;qz:ViolencePrevention;
+qz:bebb-interkulturell;Konzept: Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen;Interkulturelle Bildung und Erziehung;qz:Intercultural;
+qz:bebb-kultur;Konzept: Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen;Kulturelle Bildung;qz:Cultural;
+qz:bebb-medienbildung;Konzept: Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen;Basiscurriculum Medienbildung;qz:DigitalWorld;
+qz:bebb-mobilitaet;Konzept: Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen;Mobilitätsbildung und Verkehrserziehung;qz:Mobility;
+qz:bebb-nachhaltigkeit;Konzept: Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen;Nachhaltige Entwicklung/Lernen in globalen Zusammenhängen;qz:BNE;
+qz:bebb-sexualitaet;Konzept: Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen;Sexualerziehung/Bildung für sexuelle Selbstbestimmung;qz:SexualEducation;
+qz:bebb-sprachbildung;Konzept: Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen;Basiscurriculum Sprachbildung;qz:LanguageEducation;
+qz:bebb-verbraucher;Konzept: Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen;Verbraucherbildung;qz:ConsumerEducation;
+qz:bebb-vielfalt;Konzept: Rahmenlehrplan 1–10 BE/BB, Teil B: Basiscurricula und übergreifende Themen;Bildung zur Akzeptanz von Vielfalt (Diversity);qz:Diversity;
+qz:bw-BNE;Konzept: Leitperspektiven Bildungsplan 2016 (BW);Bildung für nachhaltige Entwicklung;qz:BNE;
+qz:bw-BO;Konzept: Leitperspektiven Bildungsplan 2016 (BW);Berufliche Orientierung;qz:CareerOrientation;
+qz:bw-BTV;Konzept: Leitperspektiven Bildungsplan 2016 (BW);Bildung für Toleranz und Akzeptanz von Vielfalt;qz:Diversity;
+qz:bw-MB;Konzept: Leitperspektiven Bildungsplan 2016 (BW);Medienbildung;qz:DigitalWorld;
+qz:bw-PG;Konzept: Leitperspektiven Bildungsplan 2016 (BW);Prävention und Gesundheitsförderung;qz:Health;
+qz:bw-VB;Konzept: Leitperspektiven Bildungsplan 2016 (BW);Verbraucherbildung;qz:ConsumerEducation;
+qz:eb-diversity;Konzept: Querschnittsdimensionen der Erwachsenen- und Weiterbildung;Fokus Diversität und Interkulturalität;qz:Intercultural;
+qz:eb-landeskunde;Konzept: Querschnittsdimensionen der Erwachsenen- und Weiterbildung;Fokus Landeskunde;qz:CountryKnowledge;
+qz:eb-strategic;Konzept: Querschnittsdimensionen der Erwachsenen- und Weiterbildung;Strategische Kompetenz;qz:LearningToLearn;auch: Kommunikationsstrategien
+qz:eukc-citizenship;Konzept: EU-Schlüsselkompetenzen für lebenslanges Lernen (2018);Bürgerkompetenz;qz:Democracy;
+qz:eukc-cultural;Konzept: EU-Schlüsselkompetenzen für lebenslanges Lernen (2018);Kulturbewusstsein und kulturelle Ausdrucksfähigkeit;qz:Cultural;
+qz:eukc-digital;Konzept: EU-Schlüsselkompetenzen für lebenslanges Lernen (2018);Digitale Kompetenz;qz:DigitalWorld;
+qz:eukc-entrepreneurship;Konzept: EU-Schlüsselkompetenzen für lebenslanges Lernen (2018);Unternehmerische Kompetenz;qz:Entrepreneurship;
+qz:eukc-literacy;Konzept: EU-Schlüsselkompetenzen für lebenslanges Lernen (2018);Lese- und Schreibkompetenz;qz:Literacy;
+qz:eukc-multilingual;Konzept: EU-Schlüsselkompetenzen für lebenslanges Lernen (2018);Mehrsprachenkompetenz;qz:Plurilingual;
+qz:eukc-personal;Konzept: EU-Schlüsselkompetenzen für lebenslanges Lernen (2018);Persönliche, soziale und Lernkompetenz;;
+qz:eukc-stem;Konzept: EU-Schlüsselkompetenzen für lebenslanges Lernen (2018);Mathematische Kompetenz und Kompetenz in Naturwissenschaften, Informatik und Technik;qz:STEM;
+qz:hh-BNE;Konzept: Leitperspektiven der Hamburger Bildungspläne;Bildung für nachhaltige Entwicklung;qz:BNE;
+qz:hh-D;Konzept: Leitperspektiven der Hamburger Bildungspläne;Leben und Lernen in einer digital geprägten Welt;qz:DigitalWorld;
+qz:hh-W;Konzept: Leitperspektiven der Hamburger Bildungspläne;Wertebildung/Werteorientierung;qz:Values;
+qz:BNE;Konzept: Querschnittsziele – Hub;Bildung für nachhaltige Entwicklung;;auch: BBNE, BNE, Globales Lernen, Nachhaltigkeit, Umweltbildung
+qz:CareerOrientation;Konzept: Querschnittsziele – Hub;Berufliche Orientierung;;auch: Arbeitsweltbezug, BO, Berufs- und Studienorientierung
+qz:ChildProtection;Konzept: Querschnittsziele – Hub;Kinderschutz;;
+qz:ChildrensRights;Konzept: Querschnittsziele – Hub;Kinderrechte und Partizipation;;auch: Kinderrechte, Partizipation, demokratische Mitbestimmung
+qz:ConsumerEducation;Konzept: Querschnittsziele – Hub;Verbraucherbildung;;auch: VB
+qz:CountryKnowledge;Konzept: Querschnittsziele – Hub;Landeskundliches Orientierungswissen;;auch: Landeskunde
+qz:Cultural;Konzept: Querschnittsziele – Hub;Kulturelle Bildung;;auch: Kulturbewusstsein und kulturelle Ausdrucksfähigkeit
+qz:DataProtection;Konzept: Querschnittsziele – Hub;Datenschutz und Informationssicherheit;qz:DigitalWorld;
+qz:Democracy;Konzept: Querschnittsziele – Hub;Demokratiebildung und politische Bildung;;auch: Bürgerkompetenz, Demokratieerziehung, politische Bildung
+qz:DigitalWorld;Konzept: Querschnittsziele – Hub;Medienbildung und Bildung in der digitalen Welt;;auch: Digitale Bildung, Digitalität, Digitalkompetenz, Leben und Lernen in einer digitalisierten Welt, Medienbildung, Medienkompetenz
+qz:Diversity;Konzept: Querschnittsziele – Hub;Akzeptanz von Vielfalt und Inklusion;;auch: BTV, Bildung für Toleranz und Akzeptanz von Vielfalt, Diversität, Inklusion, Umgang mit Heterogenität, vorurteilsbewusste Bildung
+qz:Employability;Konzept: Querschnittsziele – Hub;Befähigung zu qualifizierter Erwerbstätigkeit;;auch: Berufsbefähigung, Employability, berufliche Handlungsfähigkeit
+qz:Entrepreneurship;Konzept: Querschnittsziele – Hub;Unternehmerisches Denken und Handeln;;auch: unternehmerische Kompetenz
+qz:Ethics;Konzept: Querschnittsziele – Hub;Ethik und Verantwortung;;auch: Berufsethos
+qz:Europe;Konzept: Querschnittsziele – Hub;Europabildung;;
+qz:FamilyPartnership;Konzept: Querschnittsziele – Hub;Bildungs- und Erziehungspartnerschaft mit Familien;;auch: Elternarbeit, Zusammenarbeit mit Familien
+qz:GenderEquality;Konzept: Querschnittsziele – Hub;Gleichstellung der Geschlechter;;auch: Gender Mainstreaming, geschlechtersensible Pädagogik
+qz:Health;Konzept: Querschnittsziele – Hub;Gesundheitsförderung und Prävention;;auch: Gesundheitsbildung, PG, Prävention und Gesundheitsförderung, Sicherheit und Gesundheit bei der Arbeit
+qz:Intercultural;Konzept: Querschnittsziele – Hub;Interkulturelle Bildung;;auch: Interkulturalität, interkulturelle Kompetenz
+qz:LanguageEducation;Konzept: Querschnittsziele – Hub;Sprachbildung;;auch: alltagsintegrierte Sprachbildung, durchgängige Sprachbildung, sprachsensibler Fachunterricht
+qz:LearningToLearn;Konzept: Querschnittsziele – Hub;Lernkompetenz und eigenverantwortliches Lernen;;auch: Lernen lernen, Lernstrategien, Umgang mit dem eigenen Sprachenlernen, lernmethodische Kompetenz
+qz:Literacy;Konzept: Querschnittsziele – Hub;Literalität und Numeralität (Grundbildung);;auch: Grundbildung, Lese- und Schreibkompetenz
+qz:Mobility;Konzept: Querschnittsziele – Hub;Mobilitätsbildung und Verkehrserziehung;;
+qz:PersonalDevelopment;Konzept: Querschnittsziele – Hub;Persönlichkeitsentwicklung und gesellschaftliches Engagement;;auch: Persönlichkeitsbildung
+qz:Plurilingual;Konzept: Querschnittsziele – Hub;Mehrsprachigkeit und Fremdsprachenkompetenz;;auch: Fremdsprachenkompetenz, Mehrsprachenkompetenz
+qz:Research;Konzept: Querschnittsziele – Hub;Wissenschaftliche Befähigung und Forschungskompetenz;;auch: Forschendes Lernen, gute wissenschaftliche Praxis
+qz:STEM;Konzept: Querschnittsziele – Hub;MINT-Bildung;;
+qz:SexualEducation;Konzept: Querschnittsziele – Hub;Sexualbildung;;auch: Bildung für sexuelle Selbstbestimmung, Sexualerziehung
+qz:SocialEmotional;Konzept: Querschnittsziele – Hub;Personale und sozial-emotionale Kompetenz;;auch: Kooperation, Resilienz, Selbstkompetenz, Sozialkompetenz, sozial-emotionales Lernen
+qz:Transitions;Konzept: Querschnittsziele – Hub;Übergänge und Bildungskontinuität;;auch: Eingewöhnung, Übergang in die Schule, Übergänge
+qz:Values;Konzept: Querschnittsziele – Hub;Wertebildung und Werteorientierung;;auch: Werteorientierung, Wertevermittlung
+qz:ViolencePrevention;Konzept: Querschnittsziele – Hub;Gewaltprävention;;
+qz:WorkOrganisation;Konzept: Querschnittsziele – Hub;Organisation, Berufsbildung, Arbeits- und Tarifrecht;;
+qz:kmkdig-1;Konzept: KMK-Strategie Bildung in der digitalen Welt – Kompetenzbereiche;Suchen, Verarbeiten und Aufbewahren;qz:DigitalWorld;
+qz:kmkdig-2;Konzept: KMK-Strategie Bildung in der digitalen Welt – Kompetenzbereiche;Kommunizieren und Kooperieren;qz:DigitalWorld;
+qz:kmkdig-3;Konzept: KMK-Strategie Bildung in der digitalen Welt – Kompetenzbereiche;Produzieren und Präsentieren;qz:DigitalWorld;
+qz:kmkdig-4;Konzept: KMK-Strategie Bildung in der digitalen Welt – Kompetenzbereiche;Schützen und sicher Agieren;qz:DigitalWorld;
+qz:kmkdig-5;Konzept: KMK-Strategie Bildung in der digitalen Welt – Kompetenzbereiche;Problemlösen und Handeln;qz:DigitalWorld;
+qz:kmkdig-6;Konzept: KMK-Strategie Bildung in der digitalen Welt – Kompetenzbereiche;Analysieren und Reflektieren;qz:DigitalWorld;
+qz:mkr-1;Konzept: Medienkompetenzrahmen NRW;Bedienen und Anwenden;qz:DigitalWorld;
+qz:mkr-2;Konzept: Medienkompetenzrahmen NRW;Informieren und Recherchieren;qz:DigitalWorld, qz:kmkdig-1;
+qz:mkr-3;Konzept: Medienkompetenzrahmen NRW;Kommunizieren und Kooperieren;qz:DigitalWorld, qz:kmkdig-2;
+qz:mkr-4;Konzept: Medienkompetenzrahmen NRW;Produzieren und Präsentieren;qz:DigitalWorld, qz:kmkdig-3;
+qz:mkr-5;Konzept: Medienkompetenzrahmen NRW;Analysieren und Reflektieren;qz:DigitalWorld, qz:kmkdig-6;
+qz:mkr-6;Konzept: Medienkompetenzrahmen NRW;Problemlösen und Modellieren;qz:DigitalWorld;
+qz:mrvo-EW;Konzept: Qualifikationsziele nach § 11 MRVO;Befähigung zu einer qualifizierten Erwerbstätigkeit;qz:Employability;
+qz:mrvo-GE;Konzept: Qualifikationsziele nach § 11 MRVO;Gesellschaftliches Engagement;qz:Democracy, qz:mrvo-PE;auch: zivilgesellschaftliches Engagement
+qz:mrvo-PE;Konzept: Qualifikationsziele nach § 11 MRVO;Persönlichkeitsentwicklung;qz:PersonalDevelopment;Umfasst laut MRVO-Begründung das gesellschaftliche Engagement.
+qz:mrvo-WB;Konzept: Qualifikationsziele nach § 11 MRVO;Wissenschaftliche oder künstlerische Befähigung;qz:Research;
+qz:sbbp-digital;Konzept: Modernisierte Standardberufsbildpositionen (BIBB-HA-Empfehlung Nr. 172);Digitalisierte Arbeitswelt;qz:DigitalWorld;
+qz:sbbp-org;Konzept: Modernisierte Standardberufsbildpositionen (BIBB-HA-Empfehlung Nr. 172);Organisation des Ausbildungsbetriebes, Berufsbildung sowie Arbeits- und Tarifrecht;qz:WorkOrganisation;auch: Aufbau und Organisation des Ausbildungsbetriebes, Berufsbildung, Arbeits- und Tarifrecht
+qz:sbbp-safety;Konzept: Modernisierte Standardberufsbildpositionen (BIBB-HA-Empfehlung Nr. 172);Sicherheit und Gesundheit bei der Arbeit;qz:Health;auch: Sicherheit und Gesundheitsschutz bei der Arbeit
+qz:sbbp-sustainability;Konzept: Modernisierte Standardberufsbildpositionen (BIBB-HA-Empfehlung Nr. 172);Umweltschutz und Nachhaltigkeit;qz:BNE;auch: Umweltschutz
+lvl:afb-I;Konzept: Anforderungsbereiche I–III;Anforderungsbereich I (Reproduktion);;
+lvl:afb-II;Konzept: Anforderungsbereiche I–III;Anforderungsbereich II (Reorganisation und Transfer);;
+lvl:afb-III;Konzept: Anforderungsbereiche I–III;Anforderungsbereich III (Reflexion und Problemlösung);;
+lvl:avt-bachelor;Konzept: Fortbildungsstufen der höherqualifizierenden Berufsbildung (§ 53a BBiG);Bachelor Professional;lvl:DQR-6;auch: Fachwirt/in, Meister/in, Techniker/in
+lvl:avt-master;Konzept: Fortbildungsstufen der höherqualifizierenden Berufsbildung (§ 53a BBiG);Master Professional;lvl:DQR-7;auch: Geprüfte/r Betriebswirt/in
+lvl:avt-specialist;Konzept: Fortbildungsstufen der höherqualifizierenden Berufsbildung (§ 53a BBiG);Geprüfte/r Berufsspezialist/in;lvl:DQR-5;
+lvl:affective-characterization;Konzept: Affektive Taxonomie (Krathwohl/Bloom/Masia 1964);Bestimmtsein durch Werte;;auch: Verinnerlichen
+lvl:affective-organization;Konzept: Affektive Taxonomie (Krathwohl/Bloom/Masia 1964);Wertordnung bilden;;auch: Organisation
+lvl:affective-receiving;Konzept: Affektive Taxonomie (Krathwohl/Bloom/Masia 1964);Aufnehmen;;
+lvl:affective-responding;Konzept: Affektive Taxonomie (Krathwohl/Bloom/Masia 1964);Reagieren;;
+lvl:affective-valuing;Konzept: Affektive Taxonomie (Krathwohl/Bloom/Masia 1964);Werten;;
+lvl:alpha-1;Konzept: Alpha-Level (lea.);Alpha-Level 1;;
+lvl:alpha-2;Konzept: Alpha-Level (lea.);Alpha-Level 2;;
+lvl:alpha-3;Konzept: Alpha-Level (lea.);Alpha-Level 3;;
+lvl:alpha-4;Konzept: Alpha-Level (lea.);Alpha-Level 4;;
+lvl:alpha-5;Konzept: Alpha-Level (lea.);Alpha-Level 5;;lea. Lesen: Textebene 2, mittelschwere Texte mit Illustrationen.
+lvl:alpha-6;Konzept: Alpha-Level (lea.);Alpha-Level 6;;lea. Lesen: Textebene 3, überwiegend lexikalisches Lesen.
+lvl:att-increased;Konzept: Erwartungsniveaus (Standards);erhöhte Anforderung;;auch: Regelstandard plus, erhöhte Anforderungen
+lvl:att-minimum;Konzept: Erwartungsniveaus (Standards);Mindestanforderung/Mindeststandard;;auch: Mindestanforderungen
+lvl:att-optimal;Konzept: Erwartungsniveaus (Standards);Optimalstandard;;
+lvl:att-regular;Konzept: Erwartungsniveaus (Standards);Regelanforderung/Regelstandard;;
+lvl:track-ESA;Konzept: Anforderungsebenen nach Abschluss (Sekundarstufe I);Anforderungsebene Erster allgemeinbildender Schulabschluss;;auch: ESA
+lvl:track-MSA;Konzept: Anforderungsebenen nach Abschluss (Sekundarstufe I);Anforderungsebene Mittlerer Schulabschluss;;auch: MSA
+lvl:track-transition;Konzept: Anforderungsebenen nach Abschluss (Sekundarstufe I);Anforderungsebene Übergang in die Oberstufe;;
+lvl:bebb-A;Konzept: Niveaustufen A–H (Rahmenlehrplan 1–10 Berlin/Brandenburg);Niveaustufe A;;
+lvl:bebb-B;Konzept: Niveaustufen A–H (Rahmenlehrplan 1–10 Berlin/Brandenburg);Niveaustufe B;;
+lvl:bebb-C;Konzept: Niveaustufen A–H (Rahmenlehrplan 1–10 Berlin/Brandenburg);Niveaustufe C;;
+lvl:bebb-D;Konzept: Niveaustufen A–H (Rahmenlehrplan 1–10 Berlin/Brandenburg);Niveaustufe D;;
+lvl:bebb-E;Konzept: Niveaustufen A–H (Rahmenlehrplan 1–10 Berlin/Brandenburg);Niveaustufe E;;
+lvl:bebb-F;Konzept: Niveaustufen A–H (Rahmenlehrplan 1–10 Berlin/Brandenburg);Niveaustufe F;;
+lvl:bebb-G;Konzept: Niveaustufen A–H (Rahmenlehrplan 1–10 Berlin/Brandenburg);Niveaustufe G;;
+lvl:bebb-H;Konzept: Niveaustufen A–H (Rahmenlehrplan 1–10 Berlin/Brandenburg);Niveaustufe H;;
+lvl:bw-E;Konzept: Niveaus G/M/E (Bildungsplan BW, Sekundarstufe I);Niveau E (erweitert);;
+lvl:bw-G;Konzept: Niveaus G/M/E (Bildungsplan BW, Sekundarstufe I);Niveau G (grundlegend);;
+lvl:bw-M;Konzept: Niveaus G/M/E (Bildungsplan BW, Sekundarstufe I);Niveau M (mittel);;
+lvl:bloom-analyze;Konzept: Taxonomie kognitiver Prozesse (Anderson/Krathwohl 2001);Analysieren;;
+lvl:bloom-apply;Konzept: Taxonomie kognitiver Prozesse (Anderson/Krathwohl 2001);Anwenden;;
+lvl:bloom-create;Konzept: Taxonomie kognitiver Prozesse (Anderson/Krathwohl 2001);Erschaffen;;
+lvl:bloom-evaluate;Konzept: Taxonomie kognitiver Prozesse (Anderson/Krathwohl 2001);Bewerten;;
+lvl:bloom-remember;Konzept: Taxonomie kognitiver Prozesse (Anderson/Krathwohl 2001);Erinnern;;
+lvl:bloom-understand;Konzept: Taxonomie kognitiver Prozesse (Anderson/Krathwohl 2001);Verstehen;;
+lvl:cefr-A1;Konzept: Gemeinsamer Europäischer Referenzrahmen für Sprachen (GER);GER A1;;
+lvl:cefr-A2;Konzept: Gemeinsamer Europäischer Referenzrahmen für Sprachen (GER);GER A2;;
+lvl:cefr-B1;Konzept: Gemeinsamer Europäischer Referenzrahmen für Sprachen (GER);GER B1;;
+lvl:cefr-B2;Konzept: Gemeinsamer Europäischer Referenzrahmen für Sprachen (GER);GER B2;;
+lvl:cefr-C1;Konzept: Gemeinsamer Europäischer Referenzrahmen für Sprachen (GER);GER C1;;
+lvl:cefr-C2;Konzept: Gemeinsamer Europäischer Referenzrahmen für Sprachen (GER);GER C2;;
+lvl:cefr-PreA1;Konzept: Gemeinsamer Europäischer Referenzrahmen für Sprachen (GER);GER Pre-A1;;
+lvl:course-E;Konzept: Kursniveaus Sekundarstufe I (G-/E-/Z-Kurs);E-Kurs (erweitert);;auch: ER-Kurs, ER-Niveau, Erweiterungskurs
+lvl:course-G;Konzept: Kursniveaus Sekundarstufe I (G-/E-/Z-Kurs);G-Kurs (grundlegend);;auch: GR-Kurs, GR-Niveau, Grundkurs Sek I
+lvl:course-Z;Konzept: Kursniveaus Sekundarstufe I (G-/E-/Z-Kurs);Z-Kurs (zusätzliche Anforderungsebene);;auch: zusätzliche Anforderungsebene. NI Oberschule: dritte Ebene nach den Kerncurricula des Gymnasiums (RdErl. „Die Arbeit in der Oberschule“).
+lvl:course-advanced;Konzept: Anforderungsniveaus der gymnasialen Oberstufe;erhöhtes Anforderungsniveau;;auch: LK, Leistungsfach, Leistungskurs, eA
+lvl:course-basic;Konzept: Anforderungsniveaus der gymnasialen Oberstufe;grundlegendes Anforderungsniveau;;auch: Basisfach, GK, Grundkurs, gA
+lvl:DQR-1;Konzept: Deutscher Qualifikationsrahmen (DQR);DQR-Niveau 1;lvl:EQF-1;
+lvl:DQR-2;Konzept: Deutscher Qualifikationsrahmen (DQR);DQR-Niveau 2;lvl:EQF-2;
+lvl:DQR-3;Konzept: Deutscher Qualifikationsrahmen (DQR);DQR-Niveau 3;lvl:EQF-3;
+lvl:DQR-4;Konzept: Deutscher Qualifikationsrahmen (DQR);DQR-Niveau 4;lvl:EQF-4;
+lvl:DQR-5;Konzept: Deutscher Qualifikationsrahmen (DQR);DQR-Niveau 5;lvl:EQF-5;
+lvl:DQR-6;Konzept: Deutscher Qualifikationsrahmen (DQR);DQR-Niveau 6;lvl:EQF-6;
+lvl:DQR-7;Konzept: Deutscher Qualifikationsrahmen (DQR);DQR-Niveau 7;lvl:EQF-7;
+lvl:DQR-8;Konzept: Deutscher Qualifikationsrahmen (DQR);DQR-Niveau 8;lvl:EQF-8;
+lvl:digcomp-advanced;Konzept: DigComp 3.0 – Kompetenzniveaus;fortgeschritten;;
+lvl:digcomp-basic;Konzept: DigComp 3.0 – Kompetenzniveaus;grundlegend;;
+lvl:digcomp-highlyAdvanced;Konzept: DigComp 3.0 – Kompetenzniveaus;hoch fortgeschritten;;
+lvl:digcomp-intermediate;Konzept: DigComp 3.0 – Kompetenzniveaus;mittel;;
+lvl:dreyfus-advancedBeginner;Konzept: Stufen der Expertise (Dreyfus/Benner);fortgeschrittene/r Anfänger/in;;
+lvl:dreyfus-competent;Konzept: Stufen der Expertise (Dreyfus/Benner);kompetent;;
+lvl:dreyfus-expert;Konzept: Stufen der Expertise (Dreyfus/Benner);Expertin/Experte;;
+lvl:dreyfus-novice;Konzept: Stufen der Expertise (Dreyfus/Benner);Neuling;;
+lvl:dreyfus-proficient;Konzept: Stufen der Expertise (Dreyfus/Benner);erfahren;;auch: gewandt
+lvl:EQF-1;Konzept: Europäischer Qualifikationsrahmen (EQR);EQR-Niveau 1;;
+lvl:EQF-2;Konzept: Europäischer Qualifikationsrahmen (EQR);EQR-Niveau 2;;
+lvl:EQF-3;Konzept: Europäischer Qualifikationsrahmen (EQR);EQR-Niveau 3;;
+lvl:EQF-4;Konzept: Europäischer Qualifikationsrahmen (EQR);EQR-Niveau 4;;
+lvl:EQF-5;Konzept: Europäischer Qualifikationsrahmen (EQR);EQR-Niveau 5;;
+lvl:EQF-6;Konzept: Europäischer Qualifikationsrahmen (EQR);EQR-Niveau 6;;
+lvl:EQF-7;Konzept: Europäischer Qualifikationsrahmen (EQR);EQR-Niveau 7;;
+lvl:EQF-8;Konzept: Europäischer Qualifikationsrahmen (EQR);EQR-Niveau 8;;
+lvl:points-00;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);0 Punkte;lvl:grade-6;
+lvl:points-01;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);1 Punkt;lvl:grade-5;
+lvl:points-02;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);2 Punkte;lvl:grade-5;
+lvl:points-03;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);3 Punkte;lvl:grade-5;
+lvl:points-04;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);4 Punkte;lvl:grade-4;
+lvl:points-05;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);5 Punkte;lvl:grade-4;
+lvl:points-06;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);6 Punkte;lvl:grade-4;
+lvl:points-07;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);7 Punkte;lvl:grade-3;
+lvl:points-08;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);8 Punkte;lvl:grade-3;
+lvl:points-09;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);9 Punkte;lvl:grade-3;
+lvl:points-10;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);10 Punkte;lvl:grade-2;
+lvl:points-11;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);11 Punkte;lvl:grade-2;
+lvl:points-12;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);12 Punkte;lvl:grade-2;
+lvl:points-13;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);13 Punkte;lvl:grade-1;
+lvl:points-14;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);14 Punkte;lvl:grade-1;
+lvl:points-15;Konzept: Notenpunkte 0–15 (gymnasiale Oberstufe);15 Punkte;lvl:grade-1;
+lvl:grade-1;Konzept: Notenstufen 1–6;sehr gut;;
+lvl:grade-2;Konzept: Notenstufen 1–6;gut;;
+lvl:grade-3;Konzept: Notenstufen 1–6;befriedigend;;
+lvl:grade-4;Konzept: Notenstufen 1–6;ausreichend;;
+lvl:grade-5;Konzept: Notenstufen 1–6;mangelhaft;;
+lvl:grade-6;Konzept: Notenstufen 1–6;ungenügend;;
+lvl:he-bachelor;Konzept: Hochschulabschlussstufen (HQR/QF-EHEA);Bachelor (1. Stufe);lvl:EQF-6;
+lvl:he-doctorate;Konzept: Hochschulabschlussstufen (HQR/QF-EHEA);Promotion (3. Stufe);lvl:EQF-8;
+lvl:he-master;Konzept: Hochschulabschlussstufen (HQR/QF-EHEA);Master (2. Stufe);lvl:EQF-7;
+lvl:iqb-I;Konzept: IQB-Kompetenzstufen (Bildungsstandards);Kompetenzstufe I (unter Mindeststandard);;
+lvl:iqb-II;Konzept: IQB-Kompetenzstufen (Bildungsstandards);Kompetenzstufe II (Mindeststandard);;
+lvl:iqb-III;Konzept: IQB-Kompetenzstufen (Bildungsstandards);Kompetenzstufe III (Regelstandard);;
+lvl:iqb-IV;Konzept: IQB-Kompetenzstufen (Bildungsstandards);Kompetenzstufe IV (Regelstandard plus);;
+lvl:iqb-V;Konzept: IQB-Kompetenzstufen (Bildungsstandards);Kompetenzstufe V (Optimalstandard);;
+lvl:isced-0;Konzept: ISCED 2011 – Bildungsstufen;Frühkindliche Bildung, Betreuung und Erziehung;;
+lvl:isced-01;Konzept: ISCED 2011 – Bildungsstufen;Frühkindliche Erziehung (unter 3 Jahren);lvl:isced-0;
+lvl:isced-02;Konzept: ISCED 2011 – Bildungsstufen;Elementarbereich (ab 3 Jahren bis Schuleintritt);lvl:isced-0;
+lvl:isced-1;Konzept: ISCED 2011 – Bildungsstufen;Primarbereich;;
+lvl:isced-2;Konzept: ISCED 2011 – Bildungsstufen;Sekundarbereich I;;
+lvl:isced-3;Konzept: ISCED 2011 – Bildungsstufen;Sekundarbereich II;;In Deutschland auch die duale Berufsausbildung.
+lvl:isced-4;Konzept: ISCED 2011 – Bildungsstufen;Postsekundärer nicht tertiärer Bereich;;
+lvl:isced-5;Konzept: ISCED 2011 – Bildungsstufen;Kurzer tertiärer Bildungsgang;;
+lvl:isced-6;Konzept: ISCED 2011 – Bildungsstufen;Bachelor- bzw. gleichwertiges Bildungsprogramm;;
+lvl:isced-7;Konzept: ISCED 2011 – Bildungsstufen;Master- bzw. gleichwertiges Bildungsprogramm;;
+lvl:isced-8;Konzept: ISCED 2011 – Bildungsstufen;Promotion bzw. gleichwertiges Bildungsprogramm;;
+lvl:psy-articulation;Konzept: Psychomotorische Taxonomie (Dave 1970);Koordinieren;;auch: Handlungsgliederung
+lvl:psy-imitation;Konzept: Psychomotorische Taxonomie (Dave 1970);Nachahmen;;
+lvl:psy-manipulation;Konzept: Psychomotorische Taxonomie (Dave 1970);Handhaben;;auch: Ausführen nach Anleitung
+lvl:psy-naturalization;Konzept: Psychomotorische Taxonomie (Dave 1970);Automatisieren;;auch: Naturalisierung
+lvl:psy-precision;Konzept: Psychomotorische Taxonomie (Dave 1970);Präzisieren;;
+lvl:solo-extendedAbstract;Konzept: SOLO-Taxonomie (Biggs/Collis 1982);erweitert abstrakt;;
+lvl:solo-multistructural;Konzept: SOLO-Taxonomie (Biggs/Collis 1982);multistrukturell;;
+lvl:solo-prestructural;Konzept: SOLO-Taxonomie (Biggs/Collis 1982);prästrukturell;;
+lvl:solo-relational;Konzept: SOLO-Taxonomie (Biggs/Collis 1982);relational;;
+lvl:solo-unistructural;Konzept: SOLO-Taxonomie (Biggs/Collis 1982);unistrukturell;;
+lvl:school-AHR;Konzept: Allgemeinbildende Schulabschlüsse;Allgemeine Hochschulreife;lvl:DQR-4;auch: Abitur
+lvl:school-EESA;Konzept: Allgemeinbildende Schulabschlüsse;Erweiterter Erster Schulabschluss;;auch: EBBR, EESA, erweiterte Berufsbildungsreife, qualifizierender Hauptschulabschluss
+lvl:school-ESA;Konzept: Allgemeinbildende Schulabschlüsse;Erster Schulabschluss;lvl:DQR-2;auch: BBR, Berufsbildungsreife, ESA, Hauptschulabschluss
+lvl:school-FHR;Konzept: Allgemeinbildende Schulabschlüsse;Fachhochschulreife;lvl:DQR-4;
+lvl:school-MSA;Konzept: Allgemeinbildende Schulabschlüsse;Mittlerer Schulabschluss;lvl:DQR-3;auch: FOR, Fachoberschulreife, MSA, Realschulabschluss
+lvl:school-transition;Konzept: Allgemeinbildende Schulabschlüsse;Übergang in die gymnasiale Oberstufe;;auch: FOR-Q. Berechtigung zum Besuch der gymnasialen Oberstufe (z. B. FOR-Q in NRW). Die gleichnamige Anforderungsebene der SH-Fachanforderungen ist lvl:track-transition.
+kd:autonomy;Konzept: Brückenschema Kompetenzdimensionen (DQR/EQR);Selbstständigkeit;kd:personal;"auch: Selbstkompetenz, Verantwortung und Selbstständigkeit. Eigenständigkeit, Verantwortung, Reflexivität, Lernkompetenz (DQR); EQR-Spalte Verantwortung und Selbstständigkeit."
+kd:knowledge;Konzept: Brückenschema Kompetenzdimensionen (DQR/EQR);Wissen;kd:professional;"auch: Kenntnisse. Tiefe und Breite des Wissens (DQR); EQR-Spalte Kenntnisse."
+kd:methodological;Konzept: Brückenschema Kompetenzdimensionen (DQR/EQR);Methodenkompetenz;;"Im DQR Querschnittskompetenz ohne eigene Spalte; nur verwenden, wenn ein Dokument sie ausdrücklich führt."
+kd:personal;Konzept: Brückenschema Kompetenzdimensionen (DQR/EQR);Personale Kompetenz;;
+kd:professional;Konzept: Brückenschema Kompetenzdimensionen (DQR/EQR);Fachkompetenz;;
+kd:skills;Konzept: Brückenschema Kompetenzdimensionen (DQR/EQR);Fertigkeiten;kd:professional;"Instrumentale und systemische Fertigkeiten, Beurteilungsfähigkeit (DQR); EQR-Spalte Fertigkeiten."
+kd:social;Konzept: Brückenschema Kompetenzdimensionen (DQR/EQR);Sozialkompetenz;kd:personal;Team- und Führungsfähigkeit, Mitgestaltung, Kommunikation (DQR). Im EQR Teil von Verantwortung und Selbstständigkeit.
+kd:dhbw-FK;Konzept: Qualifikationsziele und Kompetenzen (DHBW-Modulhandbuch);Fachkompetenz;kd:professional;
+kd:dhbw-MK;Konzept: Qualifikationsziele und Kompetenzen (DHBW-Modulhandbuch);Methodenkompetenz;kd:methodological;
+kd:dhbw-PSK;Konzept: Qualifikationsziele und Kompetenzen (DHBW-Modulhandbuch);Personale und soziale Kompetenz;kd:personal;Ein Feld für Sozial- und Selbstkompetenz zusammen.
+kd:dhbw-UHK;Konzept: Qualifikationsziele und Kompetenzen (DHBW-Modulhandbuch);Übergreifende Handlungskompetenz;;"Ohne Gegenstück im Brückenschema; kein Mapping."
+kd:ec-cognition;Konzept: Basiskompetenzen der Elementarbildung;Kognitive Kompetenzen;kd:ec-personal;Für Länderbereiche ohne Weltausschnitt („Wahrnehmen und Denken“ BW, „Entwicklung kognitiver Fähigkeiten und der Freude am Lernen“ NI).
+kd:ec-learning;Konzept: Basiskompetenzen der Elementarbildung;Lernmethodische Kompetenz;;auch: Lernen, wie man lernt
+kd:ec-motivation;Konzept: Basiskompetenzen der Elementarbildung;Motivationale Kompetenzen;kd:ec-personal;
+kd:ec-participation;Konzept: Basiskompetenzen der Elementarbildung;Demokratische Teilhabe;kd:ec-social;
+kd:ec-personal;Konzept: Basiskompetenzen der Elementarbildung;Personale Kompetenzen;;auch: Ich-Kompetenzen, personale Dimension
+kd:ec-physical;Konzept: Basiskompetenzen der Elementarbildung;Physische Kompetenzen;kd:ec-personal;
+kd:ec-resilience;Konzept: Basiskompetenzen der Elementarbildung;Resilienz;;auch: Widerstandsfähigkeit
+kd:ec-responsibility;Konzept: Basiskompetenzen der Elementarbildung;Verantwortungsübernahme;kd:ec-social;
+kd:ec-self-perception;Konzept: Basiskompetenzen der Elementarbildung;Selbstwahrnehmung;kd:ec-personal;
+kd:ec-self-regulation;Konzept: Basiskompetenzen der Elementarbildung;Selbstregulation;kd:ec-personal;
+kd:ec-social;Konzept: Basiskompetenzen der Elementarbildung;Soziale Kompetenzen;kd:social;auch: Kompetenzen zum Handeln im sozialen Kontext, soziale Dimension
+kd:ec-subject;Konzept: Basiskompetenzen der Elementarbildung;Sachkompetenzen;kd:professional;auch: sachliche Dimension
+kd:four-method;Konzept: Fach-, Methoden-, Sozial-, Selbstkompetenz;Methodenkompetenz;kd:methodological;
+kd:four-self;Konzept: Fach-, Methoden-, Sozial-, Selbstkompetenz;Selbstkompetenz;kd:autonomy;auch: Personalkompetenz
+kd:four-social;Konzept: Fach-, Methoden-, Sozial-, Selbstkompetenz;Sozialkompetenz;kd:social;
+kd:four-subject;Konzept: Fach-, Methoden-, Sozial-, Selbstkompetenz;Fachkompetenz;kd:professional;auch: Sachkompetenz
+kd:hqr-EAE;Konzept: Dimensionen des Hochschulqualifikationsrahmens (HQR 2017);Einsatz, Anwendung und Erzeugung von Wissen;kd:skills;"Nutzung und Transfer; wissenschaftliche Innovation."
+kd:hqr-KK;Konzept: Dimensionen des Hochschulqualifikationsrahmens (HQR 2017);Kommunikation und Kooperation;kd:social;
+kd:hqr-WSP;Konzept: Dimensionen des Hochschulqualifikationsrahmens (HQR 2017);Wissenschaftliches Selbstverständnis/Professionalität;kd:autonomy;
+kd:hqr-WV;Konzept: Dimensionen des Hochschulqualifikationsrahmens (HQR 2017);Wissen und Verstehen;kd:knowledge;Wissensverbreiterung, Wissensvertiefung, Wissensverständnis.
+kd:kmk-communication;Konzept: Handlungskompetenz nach KMK-Handreichung;Kommunikative Kompetenz;;Immanenter Bestandteil, keine eigene Dimension.
+kd:kmk-learning;Konzept: Handlungskompetenz nach KMK-Handreichung;Lernkompetenz;;Immanenter Bestandteil, keine eigene Dimension.
+kd:kmk-method;Konzept: Handlungskompetenz nach KMK-Handreichung;Methodenkompetenz;;Immanenter Bestandteil von Fach-, Selbst- und Sozialkompetenz, keine eigene Dimension.
+kd:kmk-self;Konzept: Handlungskompetenz nach KMK-Handreichung;Selbstkompetenz;kd:autonomy;auch: Personalkompetenz
+kd:kmk-social;Konzept: Handlungskompetenz nach KMK-Handreichung;Sozialkompetenz;kd:social;
+kd:kmk-subject;Konzept: Handlungskompetenz nach KMK-Handreichung;Fachkompetenz;kd:professional;
+kd:nw-communication;Konzept: Kompetenzbereiche der Bildungsstandards Naturwissenschaften;Kommunikationskompetenz;;auch: Kommunikation
+kd:nw-evaluation;Konzept: Kompetenzbereiche der Bildungsstandards Naturwissenschaften;Bewertungskompetenz;;auch: Bewertung
+kd:nw-inquiry;Konzept: Kompetenzbereiche der Bildungsstandards Naturwissenschaften;Erkenntnisgewinnungskompetenz;kd:skills;auch: Erkenntnisgewinnung
+kd:nw-subject;Konzept: Kompetenzbereiche der Bildungsstandards Naturwissenschaften;Sachkompetenz;kd:knowledge;auch: Fachwissen
+kd:sk-content;Konzept: Kompetenzarten schulischer Lernergebnisse;inhaltsbezogen;;
+kd:sk-cross;Konzept: Kompetenzarten schulischer Lernergebnisse;überfachlich;;
+kd:sk-development;Konzept: Kompetenzarten schulischer Lernergebnisse;entwicklungsbezogen;;Sonderpädagogische Lehrpläne (BY Förderschule).
+kd:sk-integrated;Konzept: Kompetenzarten schulischer Lernergebnisse;integriert;;
+kd:sk-process;Konzept: Kompetenzarten schulischer Lernergebnisse;prozessbezogen;;auch: allgemeine mathematische Kompetenzen
+kd:gw-action;Konzept: Kompetenzbereiche gesellschaftswissenschaftlicher Fächer;Handlungskompetenz;;
+kd:gw-judgement;Konzept: Kompetenzbereiche gesellschaftswissenschaftlicher Fächer;Urteilskompetenz;;
+kd:gw-method;Konzept: Kompetenzbereiche gesellschaftswissenschaftlicher Fächer;Methodenkompetenz;kd:methodological;
+kd:gw-subject;Konzept: Kompetenzbereiche gesellschaftswissenschaftlicher Fächer;Sachkompetenz;kd:knowledge;

@@ -1,0 +1,17 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+ohne-land;Anhörungsfassung;cue;cv:life_consultation;Anhörungsfassung;titlePage;;;0.95;nein;"Setzt den Lebenszyklus; das Dokument ist nicht in Kraft (ST 2026, NI 2024).";schul:cue-dt-anhoerung
+ohne-land;Anforderungsbereich;cue;lvl:AFB;Anforderungsbereiche I–III;;;;0.9;nein;"Nur an Aufgaben und Prüfungsvorgaben; an Kompetenzerwartungen nie als Anforderungsbereich erfassen.";schul:cue-nv-afb
+ohne-land;Niveau;homonym;lvl:BEBB;Niveaustufen A–H (Rahmenlehrplan 1–10 Berlin/Brandenburg);;;;0.6;nein;"Buchstaben A–H → Kompetenzstufe (BE/BB); „grundlegend/erhöht“ → Kursniveau Sek II; G/M/E → BW-Niveau.";schul:cue-nv-niveau-homonym
+ohne-land;erhöhtes Anforderungsniveau;cue;lvl:course-advanced;erhöhtes Anforderungsniveau;;;;0.85;nein;Nicht mit HH „erhöhte Anforderungen“ (Erwartungsniveau Sek I) verwechseln.;schul:cue-nv-ea
+ohne-land;grundlegendes Anforderungsniveau;cue;lvl:course-basic;grundlegendes Anforderungsniveau;;;;0.85;nein;;schul:cue-nv-ga
+ohne-land;Fachbegriffe:;cue;schul:Fachbegriff;Fachbegriff/Basisbegriff;;;;0.8;nein;;schul:cue-in-fachbegriffe
+ohne-land;(bietet sich an|bieten sich an|z\. ?B\. durch|eignet sich);cue;schul:Hinweis;Hinweis/Anregung;;;;0.75;nein;;schul:cue-hw-bietetsichan
+ohne-land;Leitidee;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.8;nein;Mathematik (KMK-Bildungsstandards und Landespläne): Leitideen wie „Zahl und Operation“, „Raum und Form“.;schul:cue-ib-leitidee
+ohne-land;^(Die )?(Schülerinnen und Schüler|Lernenden|SuS)\b;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.8;nein;"Satzstamm als cur:leadIn speichern; Operator meist am Satzende.";schul:cue-ke-satzstamm
+ohne-land;Aufgaben und Ziele des Faches;cue;schul:Rahmenteil;Rahmenteil;;;;0.75;nein;"Auch „Bildungsbeitrag des Faches“, „Bildungs- und Erziehungsauftrag“; Aussagen darin sind meist Bildungsbeiträge (developmentGoal).";schul:cue-rt-bildungsauftrag
+ohne-land;Operatoren;cue;schul:Rahmenteil;Rahmenteil;;;;0.85;nein;Operatorenliste des Plans: in X3 als cur:OperatorList mit Geltung des Plans übernehmen (Lemma, Definition, AFB laut Liste).;schul:cue-rt-operatoren
+ohne-land;Regelstandard;cue;schul:Regelstandard;Regelstandard (KMK-Bildungsstandard);;schul:dt-Bildungsstandards;;0.9;nein;;schul:cue-ke-regelstandard
+ohne-land;Jahrgangsstufe;pref;schul:Stufenabschnitt;Stufenabschnitt;;;;0.8;nein;;schul:cue-sa-jahrgangsstufe
+ohne-land;Einführungsphase;cue;schul:Stufenabschnitt, schul:ph-einfuehrung;Stufenabschnitt, Einführungsphase;;;;0.85;nein;;schul:cue-sa-einfuehrungsphase
+ohne-land;Qualifikationsphase;cue;schul:Stufenabschnitt, schul:ph-qualifikation;Stufenabschnitt, Qualifikationsphase;;;;0.85;nein;;schul:cue-sa-qualifikationsphase
+ohne-land;Unterrichtsvorhaben;cue;schul:Unterrichtseinheit;Unterrichtseinheit;;schul:dt-Schulintern;;0.85;nein;;schul:cue-ib-unterrichtsvorhaben

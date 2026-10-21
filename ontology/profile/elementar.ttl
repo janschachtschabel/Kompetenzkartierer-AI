@@ -1,0 +1,449 @@
+@prefix elem:  <https://w3id.org/wlo/curriculum/profile/early-childhood#> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:    <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix lvl:   <https://w3id.org/wlo/curriculum/level/> .
+@prefix qz:    <https://w3id.org/wlo/curriculum/crosscutting/> .
+@prefix kd:    <https://w3id.org/wlo/curriculum/dimension/> .
+@prefix land:  <https://w3id.org/wlo/curriculum/region/> .
+@prefix ctx:   <https://w3id.org/wlo/curriculum/context/> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix kimsf: <http://w3id.org/kim/schulfaecher/> .
+@prefix kimsa: <https://w3id.org/kim/schularten/> .
+@prefix kimel: <https://w3id.org/kim/educationalLevel/> .
+
+# =============================================================================
+# Profil Elementarbildung (elem:) – Bildungspläne der 16 Länder für Kita,
+# Kindertagespflege und Hort, 0–10-/0–18-Pläne, Gemeinsamer Rahmen der Länder.
+#
+# Besonderheiten gegenüber Schule: Bildungsziele statt Lernergebnisse
+# (Normalfall cv:kind_developmentGoal), viele Aussagen an Fachkräfte
+# (cv:addr_educator – docken nie an Kompetenzkonzepte), Alter statt Jahrgang
+# (cv:time_age, Einheit Monate), Niveau fast immer leer (cur:checkedAbsent),
+# Situation als Andockpunkt (ctx:situations), große Rahmenteile mit
+# Extraktionstiefe „typed“. Ein Dokument trägt oft mehrere Curricula
+# (Krippe/Kita/Hort/Grundschule) – getrennt über cur:ApplicabilityContext mit
+# elem:setting und Altersband, gemeinsame Teile über cur:appliesTo.
+#
+# Das Länderlexikon (201 Hinweise der ELEM-Recherche, je Land aufgefächert,
+# korrigiert) steht generiert in elementar-lexikon.ttl; hier nur Struktur,
+# Werte und die von Hand ergänzten Hinweise.
+#
+# Quellen: ELEM V2 (CUR-Kern + ELEM-Profil, 15 Steuervokabulare, Themenkanon
+# des Gemeinsamen Rahmens JFMK 2021/KMK 2022), ELEM-v1-Archiv,
+# Deep-Research-Bericht Elementarbildung.
+# =============================================================================
+
+<https://w3id.org/wlo/curriculum/profile/early-childhood> a owl:Ontology ;
+    dct:title "Curriculum-Profil Elementarbildung"@de , "curriculum profile early childhood education"@en ;
+    owl:imports <https://w3id.org/wlo/curriculum/core> , <https://w3id.org/wlo/curriculum/vocab> ,
+        <https://w3id.org/wlo/curriculum/dimension> , <https://w3id.org/wlo/curriculum/crosscutting> ,
+        <https://w3id.org/wlo/curriculum/context> , <https://w3id.org/wlo/curriculum/region> ;
+    owl:versionInfo "1.0-entwurf" ;
+    dct:created "2026-10-19"^^xsd:date .
+
+# =============================================================================
+# 1. Profil-Eigenschaften
+# =============================================================================
+elem:setting a owl:ObjectProperty ; rdfs:subPropertyOf cur:institutionType ;
+    rdfs:label "Bildungsort"@de , "setting"@en ;
+    skos:definition "Bildungsort, für den ein Curriculum oder ein Abschnitt gilt (Krippe, Kindergarten, Hort, Kindertagespflege, Grundschule). Trennt Teilcurricula eines 0–10-Plans."@de .
+elem:developmentQualifier a owl:DatatypeProperty ; rdfs:range rdf:langString ;
+    rdfs:label "Entwicklungsqualifikator"@de , "development qualifier"@en ;
+    skos:definition "Wortlaut eines Entwicklungs- oder Fortschrittssignals in einer Zielaussage („zunehmend selbstständig“, „erste Erfahrungen“, „mit Unterstützung“). Das einzige Niveausignal in Kita-Texten; wird nie in eine Niveaustufe übersetzt."@de ;
+    skos:scopeNote "Wird in N1 an cur:Decomposition gesetzt (neben cur:conditionText, cur:autonomy)."@de .
+elem:basicNeed a owl:ObjectProperty ;
+    rdfs:label "Grundbedürfnis"@de , "basic need"@en ;
+    skos:definition "Zweite Achse der BW-Bildungs- und Erziehungsmatrix (Grundbedürfnisse × Bildungs- und Entwicklungsfelder). Wird nur gesetzt, wenn die Matrixzelle es angibt."@de ;
+    skos:editorialNote "Werteliste offen: die Grundbedürfnis-Bezeichnungen des Orientierungsplans BW 2025 sind am Original zu erheben."@de .
+
+# =============================================================================
+# 2. Dokumenttypen
+# =============================================================================
+elem:DocumentTypes a skos:ConceptScheme ; skos:prefLabel "Dokumenttypen Elementarbildung"@de .
+
+elem:dt-Bildungsplan a cur:DocumentType ; skos:inScheme elem:DocumentTypes ; skos:broader cv:dk_curriculum ;
+    skos:prefLabel "Landesbildungsplan Elementarbereich"@de ;
+    skos:scopeNote "Bildungsplan, Bildungsprogramm, Orientierungsplan, Bildungsempfehlungen, Bildungsleitlinien, Bildungskonzeption, Bildungsgrundsätze. Rechtsform meist cv:lf_officialRecommendation (§ 85 Abs. 2 SGB VIII) oder durch Verordnung verbindlich; das steht am Dokument, nie am Typ."@de .
+elem:dt-Bildungsplan-0-10 a cur:DocumentType ; skos:inScheme elem:DocumentTypes ; skos:broader cv:dk_curriculum ;
+    skos:prefLabel "Altersübergreifender Bildungsplan"@de ; skos:altLabel "Bildungsplan 0 bis 10"@de , "Bildungsplan bis 18 Jahre"@de ;
+    skos:scopeNote "HE, MV, NW, HB 0–10, TH 0–18, BayBL: mindestens zwei Curricula (Kita, Grundschule/Schule) in einem Dokument; das Grundschul-Curriculum gehört zum Bereich Schule (cv:sec_school)."@de .
+elem:dt-GemeinsamerRahmen a cur:DocumentType ; skos:inScheme elem:DocumentTypes ; skos:broader cv:dk_framework ;
+    skos:prefLabel "Länderübergreifender Rahmen"@de ;
+    skos:scopeNote "„Gemeinsamer Rahmen der Länder für die frühe Bildung in Kindertageseinrichtungen“ (JMK/KMK 2004, i. d. F. JFMK 2021/KMK 2022). Anker des Feldvokabulars elem:Fields."@de .
+elem:dt-Rechtsnorm a cur:DocumentType ; skos:inScheme elem:DocumentTypes ; skos:broader cv:dk_regulation ;
+    skos:prefLabel "Ausführungsverordnung/Kita-Gesetz"@de ;
+    skos:scopeNote "AVBayKiBiG, KiFöG-VO ST u. a.; Grundlage eines Bildungsplans (cur:derivedFrom), selbst kein Curriculum. Nur Bildungs- und Erziehungsziele (§§) extrahieren."@de .
+elem:dt-Handreichung a cur:DocumentType ; skos:inScheme elem:DocumentTypes ; skos:broader cv:dk_guidance ;
+    skos:prefLabel "Handreichung/Handlungsempfehlung"@de ;
+    skos:scopeNote "U3-Handreichung, Handlungsempfehlungen Sprachbildung (NI), Konkretisierungen (HB), Handreichungen SH. Ergänzt einen Bildungsplan (cur:Curriculum mit cur:scopeShare cv:share_supplementary) oder ist reines Begleitdokument."@de .
+elem:dt-Qualitaetsempfehlung a cur:DocumentType ; skos:inScheme elem:DocumentTypes ; skos:broader cv:dk_guidance ;
+    skos:prefLabel "Qualitätsempfehlung"@de .
+elem:dt-Einrichtungskonzeption a cur:DocumentType ; skos:inScheme elem:DocumentTypes ; skos:broader cv:dk_institutional ;
+    skos:prefLabel "Einrichtungskonzeption"@de ;
+    skos:scopeNote "Pädagogische Konzeption einer Kita; Rechtsform cv:lf_institutionalDocument, nie amtlich."@de .
+elem:dt-Traegerkonzeption a cur:DocumentType ; skos:inScheme elem:DocumentTypes ; skos:broader cv:dk_institutional ;
+    skos:prefLabel "Trägerkonzeption"@de .
+elem:dt-Beobachtungsinstrument a cur:DocumentType ; skos:inScheme elem:DocumentTypes ; skos:broader cv:dk_assessment ;
+    skos:prefLabel "Beobachtungsinstrument/Entwicklungstabelle"@de ;
+    skos:scopeNote "Wird als cur:CompetencyFramework (Raster Bereich × Altersstufe, Zellen = Entwicklungsindikatoren) importiert und referenziert, nicht als Curriculum extrahiert."@de .
+
+# =============================================================================
+# 3. Knotentypen (ELEM-Rollen; je genau eine Kernfunktion)
+# =============================================================================
+elem:NodeTypes a skos:ConceptScheme ; skos:prefLabel "Knotentypen Elementarbildung"@de .
+
+elem:Sammelabschnitt a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_grouping ;
+    skos:prefLabel "Sammelabschnitt"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Teil, Kapitel oder Abschnitt, der Bereiche bündelt („Teil II Bildungsziele“, „Kap. 7 Themenbezogene Bildungs- und Erziehungsbereiche“)."@de .
+elem:Leitbild a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_grouping ;
+    skos:prefLabel "Leitbild/Vision"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Gruppenüberschrift über mehreren Bildungsbereichen in der Form „[Adjektiv] Kinder“ (BY Leitbilder, HE Visionen)."@de ;
+    cur:delimitation "Kein Bildungsbereich: trägt kein Feld; die Bereiche darunter tragen es."@de ;
+    cur:positiveExample "„Sprach- und medienkompetente Kinder“ (BY)"@de , "„Starke Kinder“ (HE)"@de .
+elem:Bildungsbereich a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Bildungsbereich"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Weltausschnitt des Plans (Sprache, Mathematik, Körper …), in den Ländern Bildungsbereich, Bildungs- und Entwicklungsfeld (BW), Lernbereich und Erfahrungsfeld (NI), Bildungs- und Erziehungsbereich (MV, RP). Setzt cur:field auf einen Wert aus elem:Fields; Ziel 4 im Andockkonzept."@de ;
+    cur:typicalParent elem:Sammelabschnitt , elem:Leitbild ;
+    cur:delimitation "Ein Bereich ohne Weltausschnitt („Wahrnehmen und Denken“ BW, „Entwicklung kognitiver Fähigkeiten“ NI) bleibt Bildungsbereich, erhält aber cur:competenceDimension statt cur:field."@de .
+elem:Teilbereich a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_subunit ;
+    skos:prefLabel "Teilbereich"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Unterabschnitt eines Bildungsbereichs (Aspekt, Schwerpunkt, Unterbereich, Leitbegriff SN)."@de ;
+    cur:typicalParent elem:Bildungsbereich .
+elem:Querschnitt a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_crossCutting ;
+    skos:prefLabel "Querschnitt/Leitprinzip"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Abschnitt mit wenigen (3–6) übergreifenden Prinzipien vor den Bereichen: Leitprinzip (BW), Leitmotiv (HH), Querschnittsthema (RP), Handlungsprinzip (SH), Pädagogische Grundprinzipien (Gemeinsamer Rahmen)."@de ;
+    cur:positiveExample "„Inklusion“, „Partizipation“, „Kinderrechte“, „BNE“"@de .
+elem:Basiskompetenzen a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_crossCutting ;
+    skos:prefLabel "Basiskompetenzen"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Abschnitt, der Kompetenzen ohne Weltausschnitt beschreibt (Basiskompetenzen BY/HE nach Fthenakis, Ich-/Sozial-/Sach-/lernmethodische Kompetenzen BE). Liefert in X3 das Kompetenzmodell (kd:EarlyChildhood) als Auswahlliste; Aussagen darin tragen cur:competenceDimension."@de ;
+    cur:delimitation "TH: die drei Bildungsdimensionen stehen als Tabellenkopf in jedem Bereich – keinen Teilbaum bilden, die Dimension an den Aussagen erfassen."@de .
+elem:Alltagssituation a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_area ;
+    skos:prefLabel "Pädagogische Alltagssituation"@de ; cur:extractionDepth cv:depth_full ;
+    skos:definition "Gliederung nach Situationen statt Weltausschnitten (BB 2024: 18 Alltagssituationen in 4 Gruppen). Setzt cur:context auf ctx:situations-Werte statt cur:field."@de ;
+    cur:impliesContext ctx:everyday ;
+    cur:delimitation "Nicht als Bildungsbereich instanziieren."@de .
+elem:Handlungsfeld a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_frame ;
+    skos:prefLabel "Handlungsfeld der Fachkräfte"@de ; cur:extractionDepth cv:depth_typed ;
+    skos:definition "Kapitel zu Gestaltung der pädagogischen Arbeit, Raum, Team, didaktisch-methodischen Überlegungen, Aufgaben der pädagogischen Fachkräfte. Aussagen sind Aufträge (cv:kind_mandate) an Fachkräfte."@de ;
+    cur:defaultAddressee cv:addr_educator .
+elem:Uebergang a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_frame ;
+    skos:prefLabel "Übergänge"@de ; cur:extractionDepth cv:depth_typed ;
+    skos:definition "Eingewöhnung, Übergang in die Schule, Übergänge im Tagesablauf."@de ;
+    cur:impliesContext ctx:transition-situations ; cur:defaultAddressee cv:addr_educator .
+elem:BeobachtungDokumentation a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_frame ;
+    skos:prefLabel "Beobachtung und Dokumentation"@de ; cur:extractionDepth cv:depth_typed ;
+    cur:defaultAddressee cv:addr_educator .
+elem:Zusammenarbeit a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_frame ;
+    skos:prefLabel "Zusammenarbeit"@de ; cur:extractionDepth cv:depth_typed ;
+    skos:definition "Zusammenarbeit mit Familien, Schule, Sozialraum und Kooperationspartnern."@de ;
+    cur:defaultAddressee cv:addr_institution .
+elem:Qualitaet a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_frame ;
+    skos:prefLabel "Qualität und Qualitätsentwicklung"@de ; cur:extractionDepth cv:depth_typed ;
+    cur:defaultAddressee cv:addr_institution .
+elem:Grundlagen a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_frame ;
+    skos:prefLabel "Grundlagen/Bildungsverständnis"@de ; cur:extractionDepth cv:depth_typed ;
+    skos:definition "Bild vom Kind, Bildungsverständnis, rechtliche Grundlagen, Ziele des Plans. Liefert Grundsätze und übergreifende Bildungsziele."@de .
+elem:Rahmenbedingungen a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_frame ;
+    skos:prefLabel "Rahmenbedingungen"@de ; cur:extractionDepth cv:depth_typed .
+elem:Einleitung a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_nonCurricular ;
+    skos:prefLabel "Einleitung/Vorwort"@de ; cur:extractionDepth cv:depth_skip .
+elem:Verzeichnis a cur:NodeType ; skos:inScheme elem:NodeTypes ; skos:broader cv:fn_nonCurricular ;
+    skos:prefLabel "Verzeichnis/Anhang"@de ; cur:extractionDepth cv:depth_skip .
+
+# =============================================================================
+# 4. Aussage-Unterarten
+# =============================================================================
+elem:StatementSubkinds a skos:ConceptScheme ; skos:prefLabel "Aussage-Unterarten Elementarbildung"@de .
+
+elem:Bildungsziel a cur:StatementSubkind ; skos:inScheme elem:StatementSubkinds ; skos:broader cv:kind_developmentGoal ;
+    skos:prefLabel "Bildungs- und Entwicklungsziel"@de ;
+    skos:definition "Ziel für das Kind ohne Prüfanspruch: Haltung, Erfahrung, Disposition, Entwicklung („Das Kind entwickelt Freude am …“, „Kinder erfahren …“)."@de ;
+    cur:segmentation cv:seg_bullet ; cur:defaultAddressee cv:addr_learner ;
+    cur:wordingRule "Wortlaut wörtlich; Satzstamm („Das Kind …“, „Kinder …“) in cur:leadIn. Nicht in Lernergebnisse umformulieren, keine Operatorformeln."@de ;
+    cur:negativeExample "„Wie unterstützen wir Kinder beim …?“ (Reflexionsfrage)"@de .
+elem:Kompetenzbeschreibung a cur:StatementSubkind ; skos:inScheme elem:StatementSubkinds ; skos:broader cv:kind_learningOutcome ;
+    skos:prefLabel "Kompetenzbeschreibung"@de ;
+    skos:definition "Beobachtbares Können des Kindes („Das Kind kann Mengen bis fünf simultan erfassen“). Selten; nur bei ausdrücklichem Können/Wissen."@de ;
+    cur:defaultAddressee cv:addr_learner .
+elem:Bildungsanspruch a cur:StatementSubkind ; skos:inScheme elem:StatementSubkinds ; skos:broader cv:kind_developmentGoal ;
+    skos:prefLabel "Bildungsanspruch"@de ;
+    skos:definition "Anspruch des Kindes auf Bildungsgelegenheiten (TH „Bildungsansprüche“)."@de ;
+    cur:defaultAddressee cv:addr_learner .
+elem:Grundsatz a cur:StatementSubkind ; skos:inScheme elem:StatementSubkinds ; skos:broader cv:kind_mandate ;
+    skos:prefLabel "Pädagogischer Grundsatz"@de ;
+    skos:definition "Normatives Prinzip der pädagogischen Arbeit (Bild vom Kind, Bildungsverständnis, Grundprinzip). Dockt an Querschnittsziele (cur:contributesTo), nicht an Kompetenzen."@de ;
+    cur:defaultAddressee cv:addr_educator .
+elem:FachkraftAufgabe a cur:StatementSubkind ; skos:inScheme elem:StatementSubkinds ; skos:broader cv:kind_mandate ;
+    skos:prefLabel "Aufgabe der pädagogischen Fachkraft"@de ;
+    skos:definition "„Pädagogische Fachkräfte …“, „Die Fachkraft unterstützt …“, „Aufgaben der pädagogischen Fachkräfte“ (HH)."@de ;
+    cur:defaultAddressee cv:addr_educator ;
+    cur:wordingRule "Kein Kindziel daraus ableiten. Der Bezug zu Kompetenzen entsteht in G1 als vorgeschlagene Kante rel_supports zu einem Kompetenzkonzept, nicht als neue Aussage."@de .
+elem:Qualitaetsanspruch a cur:StatementSubkind ; skos:inScheme elem:StatementSubkinds ; skos:broader cv:kind_standard ;
+    skos:prefLabel "Qualitätsanspruch"@de ;
+    skos:definition "Nummerierter Maßstab an die pädagogische Arbeit (BE QA1, QA2 …)."@de ;
+    cur:defaultAddressee cv:addr_educator .
+elem:Entwicklungsindikator a cur:StatementSubkind ; skos:inScheme elem:StatementSubkinds ; skos:broader cv:kind_standard ;
+    skos:prefLabel "Entwicklungsindikator"@de ;
+    skos:definition "Beobachtungsmerkmal mit Altersangabe („3–5-Wort-Sätze (36 Monate)“); Alter als cur:timeSpan mit cv:time_age."@de ;
+    cur:defaultAddressee cv:addr_learner .
+elem:Inhalt a cur:StatementSubkind ; skos:inScheme elem:StatementSubkinds ; skos:broader cv:kind_content ;
+    skos:prefLabel "Bildungsinhalt"@de ; skos:altLabel "Erfahrungsinhalt"@de .
+elem:Impuls a cur:StatementSubkind ; skos:inScheme elem:StatementSubkinds ; skos:broader cv:kind_guidance ;
+    skos:prefLabel "Impuls/Anregung"@de ; skos:altLabel "Umsetzungsidee"@de , "Bildungsmöglichkeit"@de .
+elem:Reflexionsfrage a cur:StatementSubkind ; skos:inScheme elem:StatementSubkinds ; skos:broader cv:kind_guidance ;
+    skos:prefLabel "Reflexionsfrage"@de ; skos:altLabel "Erkundungsfrage"@de , "Frage zur Reflexion"@de ;
+    cur:delimitation "Fragesätze sind nie Ziele."@de ; cur:defaultAddressee cv:addr_educator .
+elem:Praxisbeispiel a cur:StatementSubkind ; skos:inScheme elem:StatementSubkinds ; skos:broader cv:kind_guidance ;
+    skos:prefLabel "Praxisbeispiel"@de .
+
+# =============================================================================
+# 5. Bildungsorte
+# =============================================================================
+elem:Settings a skos:ConceptScheme ; skos:prefLabel "Bildungsorte Elementarbildung"@de .
+elem:set-krippe a skos:Concept ; skos:inScheme elem:Settings ; skos:topConceptOf elem:Settings ;
+    skos:prefLabel "Krippe"@de ; skos:altLabel "U3"@de , "unter drei Jahren"@de ; skos:broadMatch ctx:ecec .
+elem:set-kindergarten a skos:Concept ; skos:inScheme elem:Settings ; skos:topConceptOf elem:Settings ;
+    skos:prefLabel "Kindergarten"@de ; skos:broadMatch ctx:ecec .
+elem:set-kita a skos:Concept ; skos:inScheme elem:Settings ; skos:topConceptOf elem:Settings ;
+    skos:prefLabel "Kindertageseinrichtung"@de ; skos:altLabel "Kita"@de , "Kindertagesstätte"@de ; skos:exactMatch ctx:ecec ;
+    skos:narrower elem:set-krippe , elem:set-kindergarten .
+elem:set-kindertagespflege a skos:Concept ; skos:inScheme elem:Settings ; skos:topConceptOf elem:Settings ;
+    skos:prefLabel "Kindertagespflege"@de ; skos:altLabel "KTP"@de , "Tagespflege"@de ; skos:exactMatch ctx:childminding .
+elem:set-hort a skos:Concept ; skos:inScheme elem:Settings ; skos:topConceptOf elem:Settings ;
+    skos:prefLabel "Hort"@de ; skos:altLabel "Schulkindbetreuung"@de ; skos:exactMatch ctx:after-school .
+elem:set-grundschule a skos:Concept ; skos:inScheme elem:Settings ; skos:topConceptOf elem:Settings ;
+    skos:prefLabel "Grundschule"@de ; skos:exactMatch kimsa:s02 ;
+    skos:scopeNote "Teilcurriculum eines 0–10-Plans; gehört zum Bereich Schule (cv:sec_school)."@de .
+
+# =============================================================================
+# 6. Feldvokabular (Andockpunkt Fach/Feld): Bildungsbereiche des Gemeinsamen
+#    Rahmens 3.2.1–3.2.7 mit Unterkonzepten. Länderbereiche werden über das
+#    Lexikon (elementar-lexikon.ttl) auf diese Werte abgebildet. Brücken zu
+#    Grundschulfächern sind relatedMatch (Vorschlag, nicht geprüft).
+# =============================================================================
+elem:Fields a skos:ConceptScheme ;
+    skos:prefLabel "Bildungsbereiche Elementarbildung (Gemeinsamer Rahmen)"@de ;
+    dct:source "Gemeinsamer Rahmen der Länder für die frühe Bildung in Kindertageseinrichtungen, i. d. F. JFMK 06.05.2021 / KMK 24.03.2022, Abschnitt 3.2" ;
+    skos:hasTopConcept elem:f-sprache , elem:f-personal-sozial , elem:f-mint , elem:f-medien , elem:f-aesthetik , elem:f-koerper , elem:f-umwelt-bne .
+
+elem:f-sprache a skos:Concept ; skos:inScheme elem:Fields ; skos:topConceptOf elem:Fields ; skos:notation "3.2.1" ;
+    skos:prefLabel "Sprache, Kommunikation und Literacy"@de ;
+    skos:definition "Alltagsintegrierte sprachliche Bildung, Kommunikation, Mehrsprachigkeit, Literacy."@de ;
+    skos:relatedMatch kimsf:s1005 ; skos:closeMatch qz:LanguageEducation .
+elem:f-sprechen-zuhoeren a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-sprache ; skos:prefLabel "Sprechen und Zuhören"@de ;
+    skos:scopeNote "Brücke zum KMK-Kompetenzbereich Deutsch Primarbereich „Sprechen und Zuhören“."@de .
+elem:f-nonverbale-kommunikation a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-sprache ; skos:prefLabel "Nonverbale Kommunikation"@de .
+elem:f-mehrsprachigkeit a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-sprache ; skos:prefLabel "Mehrsprachigkeit"@de ; skos:closeMatch qz:Plurilingual .
+elem:f-literacy a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-sprache ; skos:prefLabel "Literacy, Erzähl- und Schriftkultur"@de ; skos:closeMatch qz:Literacy .
+elem:f-erzaehl-buchkultur a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-literacy ; skos:prefLabel "Erzähl- und Buchkultur"@de .
+elem:f-schriftkultur a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-literacy ; skos:prefLabel "Begegnung mit Schrift"@de .
+elem:f-phonologische-bewusstheit a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-literacy ; skos:prefLabel "Phonologische Bewusstheit"@de .
+elem:f-sprachbetrachtung a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-sprache ; skos:prefLabel "Sprachbetrachtung"@de ;
+    skos:scopeNote "Brücke zu KMK Deutsch Primarbereich „Sprache und Sprachgebrauch untersuchen“."@de .
+
+elem:f-personal-sozial a skos:Concept ; skos:inScheme elem:Fields ; skos:topConceptOf elem:Fields ; skos:notation "3.2.2" ;
+    skos:prefLabel "Personale und sozial-emotionale Entwicklung, Werte, Religion und Kultur"@de ;
+    skos:closeMatch qz:SocialEmotional .
+elem:f-identitaet-selbstbild a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-personal-sozial ; skos:prefLabel "Identität und Selbstbild"@de .
+elem:f-emotionen a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-personal-sozial ; skos:prefLabel "Emotionen"@de .
+elem:f-soziale-beziehungen a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-personal-sozial ; skos:prefLabel "Soziale Beziehungen, Kooperation und Konflikte"@de .
+elem:f-werte-ethik-philosophie a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-personal-sozial ; skos:prefLabel "Werte, Ethik und Philosophieren"@de ;
+    skos:relatedMatch kimsf:s1008 ; skos:closeMatch qz:Values .
+elem:f-religion-weltanschauung a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-personal-sozial ; skos:prefLabel "Religion und Weltanschauung"@de ;
+    skos:relatedMatch kimsf:s1055 .
+elem:f-kulturelle-vielfalt a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-personal-sozial ; skos:prefLabel "Kulturelle Vielfalt und interkulturelles Lernen"@de ;
+    skos:closeMatch qz:Intercultural .
+elem:f-demokratie-gesellschaft a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-personal-sozial ; skos:prefLabel "Demokratie und Gesellschaft"@de ;
+    skos:closeMatch qz:Democracy .
+elem:f-lebenspraxis a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-personal-sozial ; skos:prefLabel "Lebenspraxis und Selbstständigkeit"@de .
+
+elem:f-mint a skos:Concept ; skos:inScheme elem:Fields ; skos:topConceptOf elem:Fields ; skos:notation "3.2.3" ;
+    skos:prefLabel "Mathematik, Informatik, Naturwissenschaft und Technik"@de ; skos:closeMatch qz:STEM .
+elem:f-mathematik a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-mint ; skos:prefLabel "Mathematik"@de ; skos:relatedMatch kimsf:s1017 .
+elem:f-zahlen-operationen a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-mathematik ; skos:prefLabel "Mengen, Zahlen und Operationen"@de ;
+    skos:scopeNote "Brücke zur KMK-Leitidee „Zahl und Operation“ (Primarbereich)."@de .
+elem:f-raum-form a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-mathematik ; skos:prefLabel "Raum und Form"@de .
+elem:f-muster-strukturen a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-mathematik ; skos:prefLabel "Muster und Strukturen"@de .
+elem:f-groessen-messen a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-mathematik ; skos:prefLabel "Größen und Messen"@de .
+elem:f-daten-zufall a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-mathematik ; skos:prefLabel "Daten und Zufall"@de .
+elem:f-naturwissenschaft a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-mint ; skos:prefLabel "Naturwissenschaftliche Phänomene"@de ; skos:relatedMatch kimsf:s1028 .
+elem:f-technik a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-mint ; skos:prefLabel "Technik"@de ; skos:relatedMatch kimsf:s1059 .
+elem:f-informatik a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-mint ; skos:prefLabel "Informatische Grunderfahrungen"@de ; skos:relatedMatch kimsf:s1013 .
+
+elem:f-medien a skos:Concept ; skos:inScheme elem:Fields ; skos:topConceptOf elem:Fields ; skos:notation "3.2.4" ;
+    skos:prefLabel "Medien und digitale Bildung"@de ; skos:closeMatch qz:DigitalWorld ; skos:relatedMatch kimsf:s1046 .
+elem:f-medienerleben-reflexion a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-medien ; skos:prefLabel "Medien erleben und reflektieren"@de .
+elem:f-mediengestaltung a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-medien ; skos:prefLabel "Medien gestalten"@de .
+elem:f-digitale-technologien a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-medien ; skos:prefLabel "Digitale Geräte und Technologien"@de .
+
+elem:f-aesthetik a skos:Concept ; skos:inScheme elem:Fields ; skos:topConceptOf elem:Fields ; skos:notation "3.2.5" ;
+    skos:prefLabel "Ästhetische Bildung"@de ; skos:closeMatch qz:Cultural .
+elem:f-bildnerisch a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-aesthetik ; skos:prefLabel "Bildnerisches Gestalten"@de ; skos:relatedMatch kimsf:s1015 .
+elem:f-musik a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-aesthetik ; skos:prefLabel "Musik und Rhythmik"@de ; skos:relatedMatch kimsf:s1020 .
+elem:f-tanz-darstellendes-spiel a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-aesthetik ; skos:prefLabel "Tanz und darstellendes Spiel"@de ; skos:relatedMatch kimsf:s1004 .
+elem:f-sinneswahrnehmung a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-aesthetik ; skos:prefLabel "Sinneswahrnehmung"@de .
+
+elem:f-koerper a skos:Concept ; skos:inScheme elem:Fields ; skos:topConceptOf elem:Fields ; skos:notation "3.2.6" ;
+    skos:prefLabel "Körper, Bewegung, Gesundheit und Prävention"@de ; skos:closeMatch qz:Health .
+elem:f-bewegung a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-koerper ; skos:prefLabel "Bewegung"@de ; skos:relatedMatch kimsf:s1031 .
+elem:f-gesundheit-ernaehrung a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-koerper ; skos:prefLabel "Gesundheit, Ernährung und Hygiene"@de .
+elem:f-koerperwahrnehmung-sexualitaet a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-koerper ; skos:prefLabel "Körperwahrnehmung und Sexualität"@de ;
+    skos:relatedMatch qz:SexualEducation .
+elem:f-praevention-sicherheit a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-koerper ; skos:prefLabel "Prävention und Sicherheit"@de ;
+    skos:editorialNote "ELEM-Mapping auf DigComp „Safety“ verworfen: Körper-/Unfallprävention ist keine digitale Sicherheit."@de .
+
+elem:f-umwelt-bne a skos:Concept ; skos:inScheme elem:Fields ; skos:topConceptOf elem:Fields ; skos:notation "3.2.7" ;
+    skos:prefLabel "Umweltbildung und Bildung für nachhaltige Entwicklung"@de .
+elem:f-natur-oekologie a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-umwelt-bne ; skos:prefLabel "Naturerfahrung und Ökologie"@de .
+elem:f-bne a skos:Concept ; skos:inScheme elem:Fields ; skos:broader elem:f-umwelt-bne ; skos:prefLabel "Bildung für nachhaltige Entwicklung"@de ;
+    skos:exactMatch qz:BNE ;
+    skos:scopeNote "BNE ist Bereich (ST) oder Leitprinzip (BW); der Knotentyp entscheidet. Querschnittsfragen laufen über qz:BNE."@de .
+
+# =============================================================================
+# 7. Pädagogische Prinzipien (Quellschema am Querschnitts-Hub)
+#    Prinzipien des ELEM-Themenkanons, die keine Weltausschnitte sind.
+#    „Beobachtung und Dokumentation“, „Übergänge“ und „Zusammenarbeit“ sind
+#    Knotentypen (Rahmenteile), keine Themen.
+# =============================================================================
+elem:Principles a skos:ConceptScheme ; skos:prefLabel "Pädagogische Prinzipien Elementarbildung"@de .
+
+elem:p-kinderrechte a cur:CrossCuttingObjective ; skos:inScheme elem:Principles ; skos:topConceptOf elem:Principles ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Kinderrechte"@de ; skos:broadMatch qz:ChildrensRights .
+elem:p-partizipation a cur:CrossCuttingObjective ; skos:inScheme elem:Principles ; skos:topConceptOf elem:Principles ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Partizipation"@de ; skos:broadMatch qz:ChildrensRights ; skos:relatedMatch qz:Democracy .
+elem:p-kinderschutz a cur:CrossCuttingObjective ; skos:inScheme elem:Principles ; skos:topConceptOf elem:Principles ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Kinderschutz"@de ; skos:exactMatch qz:ChildProtection .
+elem:p-inklusion a cur:CrossCuttingObjective ; skos:inScheme elem:Principles ; skos:topConceptOf elem:Principles ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Inklusion"@de ; skos:broadMatch qz:Diversity .
+elem:p-diversitaet a cur:CrossCuttingObjective ; skos:inScheme elem:Principles ; skos:topConceptOf elem:Principles ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Diversität und vorurteilsbewusste Bildung"@de ; skos:broadMatch qz:Diversity .
+elem:p-geschlechtersensibel a cur:CrossCuttingObjective ; skos:inScheme elem:Principles ; skos:topConceptOf elem:Principles ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Geschlechtersensible Pädagogik"@de ; skos:closeMatch qz:GenderEquality .
+elem:p-spiel a cur:CrossCuttingObjective ; skos:inScheme elem:Principles ; skos:topConceptOf elem:Principles ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Spiel als Lernform"@de .
+elem:p-alltagsintegration a cur:CrossCuttingObjective ; skos:inScheme elem:Principles ; skos:topConceptOf elem:Principles ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Alltagsintegrierte Bildung"@de .
+elem:p-ko-konstruktion a cur:CrossCuttingObjective ; skos:inScheme elem:Principles ; skos:topConceptOf elem:Principles ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Ko-Konstruktion"@de .
+elem:p-bindung-beziehung a cur:CrossCuttingObjective ; skos:inScheme elem:Principles ; skos:topConceptOf elem:Principles ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Bindung und Beziehung"@de .
+elem:p-uebergaenge a cur:CrossCuttingObjective ; skos:inScheme elem:Principles ; skos:topConceptOf elem:Principles ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Übergänge gestalten"@de ; skos:exactMatch qz:Transitions .
+elem:p-zusammenarbeit-familie a cur:CrossCuttingObjective ; skos:inScheme elem:Principles ; skos:topConceptOf elem:Principles ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Zusammenarbeit mit Familien"@de ; skos:exactMatch qz:FamilyPartnership .
+elem:p-sozialraum a cur:CrossCuttingObjective ; skos:inScheme elem:Principles ; skos:topConceptOf elem:Principles ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Sozialraum und Vernetzung"@de .
+elem:p-umgang-mit-veraenderung a cur:CrossCuttingObjective ; skos:inScheme elem:Principles ; skos:topConceptOf elem:Principles ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Umgang mit Veränderungen und Herausforderungen"@de ; skos:relatedMatch kd:ec-resilience ;
+    skos:scopeNote "Leitmotiv HH 2024."@de .
+elem:p-bne a cur:CrossCuttingObjective ; skos:inScheme elem:Principles ; skos:topConceptOf elem:Principles ; cur:objectiveType cv:obj_principle ;
+    skos:prefLabel "Bildung für nachhaltige Entwicklung (Leitprinzip)"@de ; skos:exactMatch qz:BNE .
+
+# =============================================================================
+# 8. Terminologieprofil: von Hand ergänzte Hinweise (Archiv v1, Deep Research,
+#    Formmuster). Die portierten Länderhinweise stehen in elementar-lexikon.ttl
+#    und hängen per cur:hasCue an demselben Profil.
+# =============================================================================
+elem:Terminology a cur:TerminologyProfile ;
+    rdfs:label "Terminologie Elementarbildung (alle Länder)"@de ;
+    cur:profileScope cv:sec_elementary ;
+    cur:hasCue elem:cue-toc , elem:cue-leitbild-muster , elem:cue-qa , elem:cue-reflexionsfrage , elem:cue-fachkraft ,
+        elem:cue-kind-satz , elem:cue-rahmenlehrplan-fachschule , elem:cue-konzeption-kita , elem:cue-th-dimension ,
+        elem:cue-hf-gestaltung , elem:cue-hf-teil3-ni , elem:cue-hf-didaktisch-sn , elem:cue-hf-qualitaet-th ,
+        elem:cue-ziele-felder , elem:cue-ziele-bez , elem:cue-praxisbeispiele ,
+        elem:cue-he-starke , elem:cue-he-kommunikation , elem:cue-he-kreativ , elem:cue-he-lernend , elem:cue-he-verantwortung ,
+        elem:cue-by-sprachmedien , elem:cue-by-fragend ,
+        elem:cue-u3 , elem:cue-alter-bis , elem:cue-monate , elem:cue-entwicklungsqualifikator ,
+        elem:cue-gen-orientierungsplan , elem:cue-gen-bildungsprogramm , elem:cue-gen-bildungsempfehlungen , elem:cue-gen-bildungsleitlinien ,
+        elem:cue-gen-erfahrungsfeld , elem:cue-gen-schwerpunkt , elem:cue-gen-kompetenzbereich .
+
+elem:cue-toc a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ; cur:occursIn cv:occ_toc ;
+    cur:pattern "^\\d+(\\.\\d+)*\\s+.+\\s+\\d+$" ; cur:mapsTo cv:occ_toc ; cur:strength 0.9 ;
+    cur:recognitionHint "Inhaltsverzeichniszeile mit Seitenzahl; liefert in X1 den Gliederungsbaum und die gedruckten Seiten."@de .
+elem:cue-leitbild-muster a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_headingPattern ;
+    cur:pattern "^([A-ZÄÖÜ][a-zäöüß-]+(,| und| oder)? )+Kinder$" ; cur:mapsTo elem:Leitbild ; cur:scopeRegion land:DE-BY , land:DE-HE ; cur:strength 0.85 ;
+    cur:negativeHint "Nicht als Bildungsbereich instanziieren; die Unterkapitel sind die Bereiche."@de .
+elem:cue-qa a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_codePattern ;
+    cur:pattern "^QA\\s?\\d+\\b" ; cur:mapsTo elem:Qualitaetsanspruch ; cur:scopeRegion land:DE-BE ; cur:strength 0.9 ;
+    cur:recognitionHint "Berliner Bildungsprogramm: nummerierte Qualitätsansprüche, Adressat Fachkraft; Nummer als cur:code."@de .
+elem:cue-reflexionsfrage a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "\\?\\s*$" ; cur:mapsTo elem:Reflexionsfrage ; cur:strength 0.85 ;
+    cur:negativeHint "Fragesätze sind nie Ziele, auch wenn sie ein Ziel umschreiben."@de .
+elem:cue-fachkraft a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "^(Die )?(pädagogischen? Fachkr(a|ä)fte?|Fachkr(a|ä)fte?|Erzieherinnen und Erzieher|Tagespflegepersonen?)\\b" ;
+    cur:mapsTo elem:FachkraftAufgabe , cv:addr_educator ; cur:strength 0.9 .
+elem:cue-kind-satz a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "^(Das Kind|Die Kinder|Kinder)\\b" ; cur:mapsTo elem:Bildungsziel , cv:addr_learner ; cur:strength 0.75 ;
+    cur:recognitionHint "„Kinder lernen …“ kann Ziel oder Beschreibung sein; bei Zweifel cv:kind_unclassified."@de .
+elem:cue-rahmenlehrplan-fachschule a cur:LexicalCue ; cur:surfaceForm "Rahmenlehrplan Fachschule Sozialpädagogik" ; cur:cueRole cv:role_negative ;
+    cur:cueKind cv:ck_term ; cur:occursIn cv:occ_titlePage ; cur:mapsTo cv:sec_vocational ; cur:strength 0.95 ;
+    cur:recognitionHint "Ausbildung der Erzieherinnen und Erzieher – Profil beruf:, nicht Elementarbildung."@de .
+elem:cue-konzeption-kita a cur:LexicalCue ; cur:surfaceForm "Konzeption" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_titlePage ; cur:mapsTo elem:dt-Einrichtungskonzeption ; cur:strength 0.7 ;
+    cur:recognitionHint "Nur mit Kita- oder Trägername auf der Titelseite; Landesministerium als Herausgeber spricht für einen Bildungsplan."@de .
+elem:cue-th-dimension a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_tablePattern ; cur:occursIn cv:occ_tableHeader ;
+    cur:pattern "^(personale|soziale|sachliche) (Bildungs)?[Dd]imension$" ; cur:mapsTo kd:ec-personal , kd:ec-social , kd:ec-subject ;
+    cur:scopeRegion land:DE-TH ; cur:strength 0.9 ;
+    cur:recognitionHint "Spaltenkopf der Bereichstabellen; Wert per cur:competenceDimension an jede Aussage der Spalte, kein Teilbaum."@de .
+elem:cue-hf-gestaltung a cur:LexicalCue ; cur:surfaceForm "Gestaltung der pädagogischen Arbeit" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo elem:Handlungsfeld ; cur:scopeRegion land:DE ; cur:strength 0.85 .
+elem:cue-hf-teil3-ni a cur:LexicalCue ; cur:surfaceForm "Arbeit in der Tageseinrichtung" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo elem:Handlungsfeld ; cur:scopeRegion land:DE-NI ; cur:strength 0.8 ; cur:verified false .
+elem:cue-hf-didaktisch-sn a cur:LexicalCue ; cur:surfaceForm "Didaktisch-methodische Überlegungen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo elem:Handlungsfeld ; cur:scopeRegion land:DE-SN ; cur:strength 0.8 ; cur:verified false .
+elem:cue-hf-qualitaet-th a cur:LexicalCue ; cur:surfaceForm "Qualität, Professionalität und Qualitätsmanagement" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo elem:Qualitaet ; cur:scopeRegion land:DE-TH ; cur:strength 0.8 ; cur:verified false .
+elem:cue-ziele-felder a cur:LexicalCue ; cur:surfaceForm "Ziele der Bildungs- und Entwicklungsfelder" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo elem:Bildungsziel , cv:obl_binding ; cur:scopeRegion land:DE-BW ; cur:strength 0.85 ; cur:verified false ;
+    cur:recognitionHint "BW: Ziele der Felder sind verbindlich (cur:obligation cv:obl_binding), der übrige Plan orientierend."@de .
+elem:cue-ziele-bez a cur:LexicalCue ; cur:surfaceForm "Bildungs- und Erziehungsziele" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo elem:Bildungsziel ; cur:strength 0.8 .
+elem:cue-praxisbeispiele a cur:LexicalCue ; cur:surfaceForm "Praxisbeispiele" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo elem:Praxisbeispiel ; cur:scopeRegion land:DE-BE , land:DE-BY ; cur:strength 0.85 .
+elem:cue-he-starke a cur:LexicalCue ; cur:surfaceForm "Starke Kinder" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:occursIn cv:occ_heading ;
+    cur:mapsTo elem:Leitbild ; cur:scopeRegion land:DE-HE ; cur:strength 0.8 ; cur:verified false ;
+    cur:recognitionHint "HE-BEP: gemeinsamer Teil für Kita und Grundschule (cur:scopeShare cv:share_common)."@de .
+elem:cue-he-kommunikation a cur:LexicalCue ; cur:surfaceForm "Kommunikationsfreudige und medienkompetente Kinder" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_heading ; cur:mapsTo elem:Leitbild ; cur:scopeRegion land:DE-HE ; cur:strength 0.8 ; cur:verified false .
+elem:cue-he-kreativ a cur:LexicalCue ; cur:surfaceForm "Kreative, fantasievolle und künstlerische Kinder" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_heading ; cur:mapsTo elem:Leitbild ; cur:scopeRegion land:DE-HE ; cur:strength 0.8 ; cur:verified false .
+elem:cue-he-lernend a cur:LexicalCue ; cur:surfaceForm "Lernende, forschende und entdeckungsfreudige Kinder" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_heading ; cur:mapsTo elem:Leitbild ; cur:scopeRegion land:DE-HE ; cur:strength 0.8 ; cur:verified false .
+elem:cue-he-verantwortung a cur:LexicalCue ; cur:surfaceForm "Verantwortungsvoll und wertorientiert handelnde Kinder" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_heading ; cur:mapsTo elem:Leitbild ; cur:scopeRegion land:DE-HE ; cur:strength 0.8 ; cur:verified false .
+elem:cue-by-sprachmedien a cur:LexicalCue ; cur:surfaceForm "Sprach- und medienkompetente Kinder" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_heading ; cur:mapsTo elem:Leitbild ; cur:scopeRegion land:DE-BY ; cur:strength 0.8 ; cur:verified false .
+elem:cue-by-fragend a cur:LexicalCue ; cur:surfaceForm "Fragende und forschende Kinder" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_heading ; cur:mapsTo elem:Leitbild ; cur:scopeRegion land:DE-BY ; cur:strength 0.8 ; cur:verified false .
+elem:cue-u3 a cur:LexicalCue ; cur:surfaceForm "U3" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo elem:set-krippe , cv:time_age ; cur:strength 0.85 ;
+    cur:recognitionHint "Altersband 0–36 Monate (cur:from 0, cur:to 36, Einheit Monate); oft ergänzendes Teilcurriculum."@de .
+elem:cue-alter-bis a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "(von )?(\\d+|Geburt) bis (\\d+|zum (Schuleintritt|Ende der Grundschulzeit))( Jahren?)?" ; cur:mapsTo cv:time_age ; cur:strength 0.85 ;
+    cur:recognitionHint "Altersband im Wortlaut in cur:timeText; Monate nur, wenn genannt (Jahre × 12 ist Normierung, Herkunft cv:orig_rule)."@de .
+elem:cue-monate a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "\\((\\d+)\\s*Monate?\\)" ; cur:mapsTo elem:Entwicklungsindikator , cv:time_age ; cur:scopeRegion land:DE-MV ; cur:strength 0.8 .
+elem:cue-entwicklungsqualifikator a cur:LexicalCue ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_sentencePattern ;
+    cur:pattern "\\b(zunehmend|allmählich|erste[nrs]?|mit Unterstützung|selbstständig|immer mehr)\\b" ; cur:mapsTo elem:developmentQualifier ; cur:strength 0.7 ;
+    cur:recognitionHint "In N1 wörtlich als elem:developmentQualifier speichern; keine Niveaustufe daraus machen."@de .
+elem:cue-gen-orientierungsplan a cur:LexicalCue ; cur:surfaceForm "Orientierungsplan" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_titlePage ; cur:mapsTo elem:dt-Bildungsplan ; cur:scopeRegion land:DE-BW , land:DE-NI ; cur:strength 0.9 .
+elem:cue-gen-bildungsprogramm a cur:LexicalCue ; cur:surfaceForm "Bildungsprogramm" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_titlePage ; cur:mapsTo elem:dt-Bildungsplan ; cur:scopeRegion land:DE-BE , land:DE-SL ; cur:strength 0.9 .
+elem:cue-gen-bildungsempfehlungen a cur:LexicalCue ; cur:surfaceForm "Bildungs- und Erziehungsempfehlungen" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_titlePage ; cur:mapsTo elem:dt-Bildungsplan ; cur:scopeRegion land:DE-RP ; cur:strength 0.9 .
+elem:cue-gen-bildungsleitlinien a cur:LexicalCue ; cur:surfaceForm "Bildungsleitlinien" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:occursIn cv:occ_titlePage ; cur:mapsTo elem:dt-Bildungsplan ; cur:scopeRegion land:DE-HH ; cur:strength 0.9 ; cur:validFrom "2024-09-28"^^xsd:date .
+elem:cue-gen-erfahrungsfeld a cur:LexicalCue ; cur:surfaceForm "Erfahrungsfeld" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ;
+    cur:mapsTo elem:Bildungsbereich ; cur:strength 0.6 ; cur:verified false .
+elem:cue-gen-schwerpunkt a cur:LexicalCue ; cur:surfaceForm "Schwerpunkt" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_term ;
+    cur:mapsTo elem:Teilbereich ; cur:alsoMapsTo elem:Inhalt ; cur:strength 0.4 ;
+    cur:recognitionHint "Überschrift mit eigenen Zielen darunter → Teilbereich; Stichwort in einer Liste → Inhalt. Nicht als Synonym behandeln."@de .
+elem:cue-gen-kompetenzbereich a cur:LexicalCue ; cur:surfaceForm "Kompetenzbereich" ; cur:cueRole cv:role_homonym ; cur:cueKind cv:ck_term ;
+    cur:mapsTo elem:Basiskompetenzen ; cur:alsoMapsTo elem:Bildungsbereich ; cur:strength 0.4 ;
+    cur:recognitionHint "Kompetenz ohne Weltausschnitt (Ich-, Sozial-, lernmethodische Kompetenz) → Basiskompetenzen; sonst Bildungsbereich."@de .

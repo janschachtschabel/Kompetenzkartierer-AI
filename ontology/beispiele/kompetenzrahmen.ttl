@@ -1,0 +1,157 @@
+@prefix ex:     <https://w3id.org/wlo/curriculum/example/> .
+@prefix cur:    <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv:     <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix lvl:    <https://w3id.org/wlo/curriculum/level/> .
+@prefix fld:    <https://w3id.org/wlo/curriculum/field/> .
+@prefix qz:     <https://w3id.org/wlo/curriculum/crosscutting/> .
+@prefix kd:     <https://w3id.org/wlo/curriculum/dimension/> .
+@prefix land:   <https://w3id.org/wlo/curriculum/region/> .
+@prefix schul:  <https://w3id.org/wlo/curriculum/profile/school#> .
+@prefix eb:     <https://w3id.org/wlo/curriculum/profile/adult-education#> .
+@prefix schema: <https://schema.org/> .
+@prefix dct:    <http://purl.org/dc/terms/> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+
+# =============================================================================
+# Beispiel generisches Andocken von Kompetenzrahmen und Standards.
+# Standards sind auch Spezifikationen: ein Rahmen wird EINMAL importiert
+# (cur:CompetencyFramework), seine Zeilen sind Kriterien-Knoten, seine Zellen
+# niveaugebundene Standard-Aussagen. Curricula docken per cur:Alignment an
+# einzelne Zellen oder Kriterien an – dieselben Kanten und Regeln wie zwischen
+# Curricula. Gezeigt werden:
+#   (a) Raster „Digitale Kompetenzen“ (fiktiv, nach DigComp-Muster)
+#   (b) KMK-Bildungsstandard (fiktiv) ← Landeslehrplan konkretisiert (bestätigt)
+#   (c) EB-Kann-Beschreibung → Rasterzelle (broadMatch, vorgeschlagen)
+#   (d) Lernressource nach AMB: schema:teaches auf ein Kompetenzkonzept
+# Wortlaute FIKTIV und sinngemäß, keine Originaldeskriptoren.
+# =============================================================================
+
+# --- (a) Raster ----------------------------------------------------------------
+ex:fw-doc a cur:Document ;
+    dct:title "Referenzrahmen Digitale Kompetenzen (fiktives Beispiel)"@de ; dct:publisher "Europäische Stelle (fiktiv)" ;
+    cur:documentType eb:dt-D7 ; cur:educationSector cv:sec_adult , cv:sec_school ; cur:legalForm cv:lf_officialRecommendation ;
+    cur:documentBinding cv:bind_orienting ; cur:represents ex:fw-dig .
+ex:fw-dig a cur:CompetencyFramework ; dct:title "Digitale Kompetenzen (fiktiv)"@de ;
+    cur:usesCrossCutting qz:DigitalWorld .
+
+ex:fw-krit-1 a cur:CurriculumNode ; cur:partOf ex:fw-dig ; cur:nodeFunction cv:fn_area ; cur:nodeType cv:nt_criterion ; cur:code "1.1" ;
+    cur:originalTitle "Informationen suchen und filtern"@de ; cur:anchor ex:fw-anc-1 ;
+    skos:note "Kriterium (Rasterzeile) mit dem bereichsneutralen Knotentyp des Kerns."@de .
+ex:fw-z-1a a cur:Statement ; cur:partOf ex:fw-krit-1 ;
+    cur:verbatim "findet mit Anleitung Informationen über eine einfache Suche"@de ;
+    cur:statementKind cv:kind_standard ; cur:addressee cv:addr_learner ; cur:origin cv:orig_source ;
+    cur:levelAssignment ex:fw-z-1a-niv ; cur:anchor ex:fw-anc-2 .
+ex:fw-z-1a-niv a cur:LevelAssignment ; cur:level lvl:digcomp-basic ; cur:levelRelation cv:lrel_assigned ; cur:origin cv:orig_source .
+ex:fw-z-1b a cur:Statement ; cur:partOf ex:fw-krit-1 ;
+    cur:verbatim "wählt selbstständig Suchstrategien und bewertet die Treffer"@de ;
+    cur:statementKind cv:kind_standard ; cur:addressee cv:addr_learner ; cur:origin cv:orig_source ;
+    cur:levelAssignment ex:fw-z-1b-niv ; cur:anchor ex:fw-anc-3 .
+ex:fw-z-1b-niv a cur:LevelAssignment ; cur:level lvl:digcomp-intermediate ; cur:levelRelation cv:lrel_assigned ; cur:origin cv:orig_source .
+# Innerhalb eines kumulativen Niveausystems ist „steigert“ amtlich ableitbar.
+ex:fw-al-steig a cur:Alignment ; cur:source ex:fw-z-1b ; cur:target ex:fw-z-1a ;
+    cur:relation cv:rel_buildsOn ; cur:origin cv:orig_rule ; cur:reviewStatus cv:rev_confirmed ; cur:method cv:meth_table ;
+    cur:rationale "Gleiches Kriterium, nächsthöhere Stufe eines kumulativen Systems."@de .
+ex:fw-z-1a cur:mentions ex:fw-ic-suche .
+ex:fw-z-1b cur:mentions ex:fw-ic-suche .
+ex:fw-z-1b cur:buildsOn ex:fw-z-1a .
+
+# --- (b) Bildungsstandard ← Landeslehrplan ---------------------------------------
+ex:bs-doc a cur:Document ;
+    dct:title "Bildungsstandards Physik Mittlerer Schulabschluss (fiktives Beispiel)"@de ; dct:publisher "Kultusministerkonferenz (fiktiv)" ;
+    cur:documentType schul:dt-Bildungsstandards ; cur:educationSector cv:sec_school ; cur:region land:DE ;
+    cur:legalForm cv:lf_resolution ; cur:documentBinding cv:bind_binding ; cur:represents ex:bs-physik .
+ex:bs-physik a cur:CompetencyFramework ; dct:title "Bildungsstandards Physik MSA (fiktiv)"@de ; cur:field fld:0533 .
+ex:bs-bereich a cur:CurriculumNode ; cur:partOf ex:bs-physik ; cur:nodeFunction cv:fn_area ; cur:nodeType schul:Kompetenzbereich ;
+    cur:originalTitle "Sachkompetenz"@de ; cur:competenceDimension kd:nw-subject ; cur:anchor ex:bs-anc-1 .
+ex:bs-std a cur:Statement ; cur:partOf ex:bs-bereich ;
+    cur:verbatim "erklären Phänomene mithilfe des Zusammenhangs von Spannung, Stromstärke und Widerstand"@de ;
+    cur:statementKind cv:kind_standard ; cur:statementSubkind schul:Regelstandard ; cur:addressee cv:addr_learner ;
+    cur:origin cv:orig_source ; cur:anchor ex:bs-anc-2 .
+
+ex:lp-doc a cur:Document ;
+    dct:title "Lehrplan Physik (fiktives Beispiel)"@de ; dct:publisher "Ministerium (fiktiv)" ;
+    cur:documentType schul:dt-Lehrplan ; cur:educationSector cv:sec_school ; cur:region land:DE-SN ;
+    cur:legalForm cv:lf_administrativeRegulation ; cur:represents ex:lp-physik .
+ex:lp-physik a cur:Curriculum ; dct:title "Physik Oberschule (fiktiv)"@de ; cur:field fld:0533 .
+ex:lp-lb a cur:CurriculumNode ; cur:partOf ex:lp-physik ; cur:nodeFunction cv:fn_unit ; cur:nodeType schul:Unterrichtseinheit ;
+    cur:originalTitle "Lernbereich 2: Elektrische Stromkreise"@de ; cur:workload ex:lp-lb-wl ; cur:anchor ex:lp-anc-1 .
+ex:lp-lb-wl a cur:Workload ; cur:amount 20.0 ; cur:unit cv:unit_lesson ; cur:workloadKind cv:wl_guidanceValue .
+ex:lp-st a cur:Statement ; cur:partOf ex:lp-lb ;
+    cur:verbatim "Anwenden des ohmschen Gesetzes bei Berechnungen an Reihen- und Parallelschaltungen"@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:statementSubkind schul:Kompetenzerwartung ; cur:addressee cv:addr_learner ;
+    cur:origin cv:orig_source ; cur:anchor ex:lp-anc-2 .
+
+ex:al-konkretisiert a cur:Alignment ; cur:source ex:lp-st ; cur:target ex:bs-std ;
+    cur:relation cv:rel_concretizes ; cur:origin cv:orig_model ; cur:reviewStatus cv:rev_confirmed ;
+    cur:method cv:meth_llmChoice ; cur:confidence 0.81 ; cur:targetVersion "2024" ;
+    cur:rationale "Landeserwartung wendet den im Standard geforderten Zusammenhang auf Schaltungen an."@de .
+ex:lp-st cur:concretizes ex:bs-std .
+
+# --- (c) EB-Kann-Beschreibung → Rasterzelle --------------------------------------
+ex:eb-kb a cur:Statement ; cur:partOf ex:eb-kb-node ;
+    cur:verbatim "Kann im Internet nach Öffnungszeiten einer Behörde suchen."@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:statementSubkind eb:KannBeschreibung ; cur:addressee cv:addr_learner ;
+    cur:origin cv:orig_source ; cur:mentions ex:fw-ic-suche ; cur:anchor ex:eb-kb-anc .
+ex:eb-kb-dec a cur:Decomposition ; cur:decomposes ex:eb-kb ;
+    cur:actionText "suchen" ; cur:objectText "nach Öffnungszeiten einer Behörde" ; cur:conditionText "im Internet" ;
+    cur:origin cv:orig_model ; cur:confidence 0.8 ; cur:expresses ex:kk-suchen ; cur:mentions ex:fw-ic-suche .
+ex:eb-kb-node a cur:CurriculumNode ; cur:partOf ex:eb-kb-spec ; cur:nodeFunction cv:fn_subunit ; cur:nodeType eb:SprachlicheHandlung ;
+    cur:originalTitle "SICH INFORMIEREN"@de ; cur:anchor ex:eb-kb-anc .
+ex:eb-kb-spec a cur:Curriculum ; dct:title "Integrationskurs (Auszug, fiktiv)"@de ; cur:field fld:0231 .
+ex:eb-kb-doc a cur:Document ; dct:title "Rahmencurriculum (Auszug, fiktiv)"@de ; dct:publisher "fiktiv" ;
+    cur:documentType eb:dt-D2 ; cur:educationSector cv:sec_adult ; cur:legalForm cv:lf_providerDocument ; cur:represents ex:eb-kb-spec .
+ex:al-raster a cur:Alignment ; cur:source ex:eb-kb ; cur:target ex:fw-z-1a ;
+    cur:relation cv:rel_broadMatch ; cur:origin cv:orig_model ; cur:reviewStatus cv:rev_proposed ;
+    cur:method cv:meth_embedding ; cur:confidence 0.69 ; cur:targetSystem "Digitale Kompetenzen (fiktiv)" .
+
+# --- (d) Lernressource (AMB) -------------------------------------------------------
+ex:hub a skos:ConceptScheme ; skos:prefLabel "Hub (Beispiel Rahmen)"@de .
+ex:fw-ic-suche a cur:ContentConcept ; skos:inScheme ex:hub ; skos:prefLabel "Informationssuche im Internet"@de .
+ex:kk-suchen a cur:CompetencyConcept ; skos:inScheme ex:hub ; skos:prefLabel "Informationen im Internet suchen und bewerten"@de .
+ex:res-1 a cur:LearningResource , schema:LearningResource ;
+    schema:name "Arbeitsblatt Suchmaschinen vergleichen (fiktiv)"@de ;
+    schema:teaches ex:kk-suchen ; schema:educationalLevel lvl:digcomp-intermediate .
+
+# --- (e) Bewertungsraster: Kriterium für einen Notenpunktbereich ---------------------
+ex:br-doc a cur:Document ;
+    dct:title "Bewertungsraster Facharbeit Physik (fiktives Beispiel)"@de ; dct:publisher "Ministerium (fiktiv)" ;
+    cur:documentType schul:dt-Pruefungsvorgabe ; cur:educationSector cv:sec_school ; cur:region land:DE-NI ;
+    cur:legalForm cv:lf_administrativeRegulation ; cur:represents ex:br-spec .
+ex:br-spec a cur:AssessmentSpecification ; dct:title "Bewertung der Facharbeit (fiktiv)"@de ; cur:field fld:0533 .
+ex:br-bereich a cur:CurriculumNode ; cur:partOf ex:br-spec ; cur:nodeFunction cv:fn_area ; cur:nodeType schul:Kompetenzbereich ;
+    cur:originalTitle "Fachliche Darstellung"@de ; cur:anchor ex:br-anc .
+ex:br-std a cur:Statement ; cur:partOf ex:br-bereich ;
+    cur:verbatim "stellt die physikalischen Zusammenhänge vollständig und fachsprachlich korrekt dar"@de ;
+    cur:statementKind cv:kind_standard ; cur:addressee cv:addr_learner ; cur:origin cv:orig_source ; cur:anchor ex:br-anc ;
+    cur:levelAssignment ex:br-std-niv .
+ex:br-std-niv a cur:LevelAssignment ; cur:level lvl:points-13 ; cur:levelTo lvl:points-15 ;
+    cur:levelRelation cv:lrel_range ; cur:origin cv:orig_source ;
+    skos:note "Erlaubt: Bewertungsstufe an einem Standard (Kriterium je Notenbereich)."@de .
+
+# --- (f) Anforderungsebene an einer Kompetenzerwartung (SH) ----------------------------
+ex:fa-doc a cur:Document ;
+    dct:title "Fachanforderungen Mathematik (fiktives Beispiel)"@de ; dct:publisher "Ministerium (fiktiv)" ;
+    cur:documentType schul:dt-Lehrplan ; cur:educationSector cv:sec_school ; cur:region land:DE-SH ;
+    cur:legalForm cv:lf_administrativeRegulation ; cur:represents ex:fa-mathe .
+ex:fa-mathe a cur:Curriculum ; dct:title "Mathematik Sekundarstufe I (fiktiv)"@de ; cur:field fld:0541 .
+ex:fa-bereich a cur:CurriculumNode ; cur:partOf ex:fa-mathe ; cur:nodeFunction cv:fn_area ; cur:nodeType schul:Kompetenzbereich ;
+    cur:originalTitle "Funktionaler Zusammenhang"@de ; cur:anchor ex:fa-anc .
+ex:fa-st a cur:Statement ; cur:partOf ex:fa-bereich ;
+    cur:verbatim "beschreiben lineare Zusammenhänge mit Gleichungen"@de ;
+    cur:statementKind cv:kind_learningOutcome ; cur:statementSubkind schul:Kompetenzerwartung ; cur:addressee cv:addr_learner ;
+    cur:origin cv:orig_source ; cur:anchor ex:fa-anc ; cur:levelAssignment ex:fa-st-niv .
+ex:fa-st-niv a cur:LevelAssignment ; cur:level lvl:track-MSA ; cur:levelRelation cv:lrel_assigned ; cur:origin cv:orig_source ;
+    skos:note "Anforderungsebene MSA an einer Aussage: Erwartungsniveau, kein Abschluss."@de .
+
+# --- Fundstellen ------------------------------------------------------------------
+ex:fw-anc-1 a cur:SourceAnchor ; cur:inDocument ex:fw-doc ; cur:pageStart 12 ; cur:pageEnd 12 ; cur:blockId "p12-b1" ; cur:matchKind cv:match_exact .
+ex:fw-anc-2 a cur:SourceAnchor ; cur:inDocument ex:fw-doc ; cur:pageStart 12 ; cur:pageEnd 12 ; cur:blockId "p12-b4" ; cur:tableCell "R1C1" ; cur:matchKind cv:match_exact .
+ex:fw-anc-3 a cur:SourceAnchor ; cur:inDocument ex:fw-doc ; cur:pageStart 12 ; cur:pageEnd 12 ; cur:blockId "p12-b5" ; cur:tableCell "R1C2" ; cur:matchKind cv:match_exact .
+ex:bs-anc-1 a cur:SourceAnchor ; cur:inDocument ex:bs-doc ; cur:pageStart 11 ; cur:pageEnd 11 ; cur:blockId "p11-b1" ; cur:matchKind cv:match_exact .
+ex:bs-anc-2 a cur:SourceAnchor ; cur:inDocument ex:bs-doc ; cur:pageStart 11 ; cur:pageEnd 11 ; cur:blockId "p11-b6" ; cur:matchKind cv:match_exact .
+ex:lp-anc-1 a cur:SourceAnchor ; cur:inDocument ex:lp-doc ; cur:pageStart 22 ; cur:pageEnd 23 ; cur:blockId "p22-b1" ; cur:matchKind cv:match_exact .
+ex:lp-anc-2 a cur:SourceAnchor ; cur:inDocument ex:lp-doc ; cur:pageStart 22 ; cur:pageEnd 22 ; cur:blockId "p22-b3" ; cur:matchKind cv:match_exact .
+ex:eb-kb-anc a cur:SourceAnchor ; cur:inDocument ex:eb-kb-doc ; cur:pageStart 61 ; cur:pageEnd 61 ; cur:blockId "p61-b2" ; cur:matchKind cv:match_exact .
+ex:br-anc a cur:SourceAnchor ; cur:inDocument ex:br-doc ; cur:pageStart 4 ; cur:pageEnd 4 ; cur:blockId "p4-b2" ; cur:matchKind cv:match_exact .
+ex:fa-anc a cur:SourceAnchor ; cur:inDocument ex:fa-doc ; cur:pageStart 30 ; cur:pageEnd 30 ; cur:blockId "p30-b5" ; cur:matchKind cv:match_exact .

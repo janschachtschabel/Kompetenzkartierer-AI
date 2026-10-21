@@ -1,0 +1,21 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-MV;\[(BNE|BO|BTV|PG)\];cue;qz:BNE, qz:CareerOrientation, qz:Diversity, qz:Health;Bildung für nachhaltige Entwicklung, Berufliche Orientierung, Akzeptanz von Vielfalt und Inklusion, Gesundheitsförderung und Prävention;;;;0.85;nein;Kürzel → Querschnittsziel: [BNE] qz:BNE, [BO] qz:CareerOrientation, [BTV] qz:Diversity, [PG] qz:Health. [DRF] ist ohne Legende im Material – am Plan auflösen, bis dahin nur als Rohmarker.;schul:cue-qk-mv
+DE-MV;\[MD([1-6])\];cue;qz:KMKDigital;KMK-Strategie Bildung in der digitalen Welt – Kompetenzbereiche;;;;0.8;nein;"Ziffer 1–6 vermutlich KMK-Kompetenzbereich qz:kmkdig-1 … -6; am Plan prüfen.";schul:cue-qk-mv-md
+DE-MV;Hinweis und Anregung;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0002145
+DE-MV;Hinweise und Anregungen;cue;schul:Hinweis;Hinweis/Anregung;;;;0.9;nein;;schul:cue-hw-hinweiseanregungen
+DE-MV;Konkretisierung;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0002151
+DE-MV;Verbindlicher Inhalt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0002144
+DE-MV;Verbindliche Inhalte;cue;schul:Inhalt, cv:obl_binding;Inhalt, verbindlich;;;;0.9;nein;;schul:cue-in-verbindliche
+DE-MV;Grundfertigkeit;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030002
+DE-MV;Thema;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0002147
+DE-MV;Themenbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.75;nein;;schul:cue-ib-themenbereich
+DE-MV;Kompetenzbereich;cue;schul:Kompetenzbereich;Kompetenzbereich;;;;0.6;nein;;schul:fwu-LP_0002139
+DE-MV;Beispiel Verknüpfung von Inhalt und Kompetenzbereich;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0002163
+DE-MV;Kompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0002140
+DE-MV;Verbindliches Ziel;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030048
+DE-MV;Standard;homonym;schul:NiveaugebundeneErwartung;niveaugebundene Erwartung;;;;0.7;nein;"Im Landeslehrplan ist ein „Standard“ eine Kompetenzerwartung (learningOutcome; BE/BB: Tabelle mit Niveaustufen A–H). Nur im Dokumenttyp KMK-Bildungsstandards ist er ein Regelstandard (standard).";schul:cue-ke-standard
+DE-MV;Querschnittsthema;cue;schul:Querschnittsbereich;Querschnittsbereich;;;;0.85;nein;"Kürzel in eckigen Klammern am Element ([BNE], [MD3]) als cur:crossCuttingMarker; Legende aus X3.";schul:cue-qs-querschnittsthema
+DE-MV;Lehrplanfragment;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0002136
+DE-MV;Verweis auf Kompetenzbereich;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030199
+DE-MV;Verweis auf Möglichkeiten der Verknüpfung;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0002149
+DE-MV;Rahmenplan;cue;schul:dt-Lehrplan;Lehrplan;;;;0.9;nein;;schul:cue-dt-rahmenplan

@@ -1,0 +1,53 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+ohne-land;^(Abschnitt|Teil)\s+[A-E]\s*:;cue;beruf:AbschnittARP;Abschnitt des Ausbildungsrahmenplans;;beruf:dt-Ausbildungsordnung;;0.9;nein;;beruf:c-abs-1
+ohne-land;^Anlage\s*(\d+\s*)?\(zu\s+(den\s+)?§;cue;beruf:AbschnittARP, beruf:dt-Ausbildungsordnung;Abschnitt des Ausbildungsrahmenplans, Ausbildungsordnung;;;;0.85;nein;"Anlage mit Ausbildungsrahmenplan; „zu den §§ …“ mit mehreren Nummern → mehrere Berufe (Sammelverordnung).";beruf:c-ao-3
+ohne-land;^Lfd\.?\s*Nr\.?$;cue;beruf:Berufsbildposition;Berufsbildposition;tableHeader;;;0.9;nein;"Vierspaltige ARP-Tabelle: Spalte 1 laufende Nummer (cur:code), Spalte 2 Berufsbildposition, Spalte 3 Lernziele a), b) …, Spalte 4 Wochen je Zeitraum. Leere Zellen mit der zuletzt gesehenen Position füllen; Kopfzeilen „1…";beruf:c-bbp-2
+ohne-land;Berufsbildposition;pref;beruf:Berufsbildposition;Berufsbildposition;;beruf:dt-Ausbildungsordnung;;0.95;nein;;beruf:c-bbp-1
+ohne-land;Teil des Ausbildungsberufsbildes;alt;beruf:Berufsbildposition;Berufsbildposition;tableHeader;;;0.9;nein;;beruf:c-bbp-3
+ohne-land;Teil der Zusatzqualifikation;cue;beruf:Berufsbildposition, cv:var_additionalQualification;Berufsbildposition, Zusatzqualifikation;tableHeader;;;0.85;nein;Position gehört zu einer cur:Variant der Art Zusatzqualifikation (gesondert geprüft, cv:share_supplementary).;beruf:c-zq-1
+ohne-land;^CE\s*\d{2}\b;cue;beruf:CurriculareEinheit;Curriculare Einheit;;beruf:dt-PflegeRahmenplan;;0.95;nein;;beruf:c-ce-1
+ohne-land;^[a-z]\)\s;cue;beruf:FKF;Lernziel (Fertigkeiten, Kenntnisse und Fähigkeiten);;beruf:dt-Ausbildungsordnung;;0.85;nein;"Buchstabe als cur:code; ein Buchstabe = eine Aussage.";beruf:c-fkf-1
+ohne-land;Kernqualifikationen, die unter Einbeziehung selbstständigen Planens, Durchführens und Kontrollierens;cue;beruf:FKF;Lernziel (Fertigkeiten, Kenntnisse und Fähigkeiten);tableHeader;beruf:dt-Ausbildungsordnung;;0.9;nein;Spaltenkopf in Sammelverordnungen.;beruf:c-fkf-2
+ohne-land;Lernziele;homonym;beruf:FKF;Lernziel (Fertigkeiten, Kenntnisse und Fähigkeiten);;;;0.6;nein;"In Entsprechungslisten und ARP → FKF; in Landeslehrplänen eher Zielformulierung.";beruf:c-fkf-3
+ohne-land;^Handlungsfeld\s+\d+;cue;beruf:Handlungsfeld;Handlungsfeld;;;;0.8;nein;Kein Lernfeld. Im Integrationskurs (Profil eb:) bedeutet „Handlungsfeld“ einen Lebensbereich.;beruf:c-hf-1
+ohne-land;^Inhalte\s*:;cue;beruf:Inhalt;Inhalt;;beruf:dt-Rahmenlehrplan;;0.8;nein;Ältere Rahmenlehrpläne.;beruf:c-inh-4
+ohne-land;cv:mark_italic;cue;beruf:Inhalt;Inhalt;;beruf:dt-Rahmenlehrplan;;0.9;nein;„Inhalte stehen kursiv, wenn sie Kompetenzen konkretisieren oder einschränken.“ Kursivsatz als cur:layoutMarker erhalten.;beruf:c-inh-1
+ohne-land;verbindliche Mindestinhalte;cue;beruf:Inhalt, cv:obl_binding;Inhalt, verbindlich;;;;0.85;nein;;beruf:c-inh-2
+ohne-land;mögliche Inhalte;cue;beruf:Inhalt, cv:obl_exemplary;Inhalt, beispielhaft;;;;0.85;nein;;beruf:c-inh-3
+ohne-land;\b(besitzen|verfügen)\s+(über\s+)?die\s+Kompetenz;cue;beruf:Kernkompetenz;Kernkompetenz;;;;0.85;nein;;beruf:c-kk-2
+ohne-land;cv:mark_bold;cue;beruf:Kernkompetenz;Kernkompetenz;;beruf:dt-Rahmenlehrplan;;0.9;nein;Erster, fett gesetzter Satz eines Lernfelds.;beruf:c-kk-1
+ohne-land;Gemeinsame Kernqualifikationen;pref;beruf:Kernqualifikationen;Gemeinsame Kernqualifikationen;;;;0.95;nein;;beruf:c-kq-1
+ohne-land;^Kompetenzbereich\s+(I|II|III|IV|V)\b;cue;beruf:Kompetenzbereich;Kompetenzbereich;;beruf:dt-AusbildungsPruefungsverordnung;;0.9;nein;PflAPrV: Kompetenzbereich → Kompetenzschwerpunkt → Kompetenz a)–h).;beruf:c-kb-1
+ohne-land;fachrichtungsübergreifender Lernbereich;cue;beruf:Lernbereich, cv:share_common;Lernbereich, gemeinsam;;beruf:dt-Landeslehrplan;;0.85;nein;;beruf:c-lb-1
+ohne-land;^Lernfeld\s+\d+[A-Z]*\b\s*:?;cue;beruf:Lernfeld;Lernfeld;;;;0.95;nein;"Nummer als cur:code (Zeichenkette, auch „13GH“); Ausbildungsjahr als cur:timeSpan, Zeitrichtwert als cur:workload (cv:unit_lesson, cv:wl_guidanceValue).";beruf:c-lf-1
+ohne-land;cv:mark_tableCell;cue;beruf:Lernfeld;Lernfeld;;beruf:dt-Rahmenlehrplan;;0.9;nein;Kopfzeile mit Lernfeldnummer, Titel, Ausbildungsjahr und Zeitrichtwert.;beruf:c-lf-2
+ohne-land;Übersicht über die Lernfelder;cue;beruf:Lernfeldteil;Lernfeldteil (Teil V);;beruf:dt-Rahmenlehrplan;;0.9;nein;Tabelle liefert in X2 das Skelett (Nummer, Titel, Zeitrichtwerte je Jahr) ohne LLM.;beruf:c-lft-1
+ohne-land;^Lerngebiet\s+\d+;cue;beruf:Lerngebiet;Lerngebiet;;;;0.85;nein;;beruf:c-lg-1
+ohne-land;Handlungsbereich;alt;beruf:Pruefungsbereich;Prüfungs- oder Handlungsbereich;;beruf:dt-Fortbildungsordnung;;0.85;nein;;beruf:c-hb-1
+ohne-land;Qualifikationsbereich;alt;beruf:Pruefungsbereich;Prüfungs- oder Handlungsbereich;;beruf:dt-Fortbildungsordnung;;0.7;nein;;beruf:c-qb-1
+ohne-land;Qualifikationsschwerpunkte;cue;beruf:Qualifikationsschwerpunkt;Qualifikationsschwerpunkt;;beruf:dt-Fortbildungsordnung;;0.85;nein;;beruf:c-qs-1
+ohne-land;integrativ zu vermittelnde;cue;beruf:Standardberufsbildposition, cv:obl_binding;Standardberufsbildposition, verbindlich;;;;0.7;nein;"Setzt cur:integrative true am Abschnitt; Positionen darin haben keine Wochenwerte.";beruf:c-int-1
+ohne-land;^(G-)?[A-Z]+\d+/\d{2}\b;cue;beruf:ULULehrgang, beruf:dt-UeLU;ÜLU-Lehrgang, ÜLU-Unterweisungsplan;;;;0.85;nein;"Kennziffer als cur:code; „G-“ = Grundstufe.";beruf:c-uelu-1
+ohne-land;Bundesgesetzblatt;cue;beruf:dt-Ausbildungsordnung;Ausbildungsordnung;headerFooter;;;0.5;nein;;beruf:c-ao-2
+ohne-land;Verordnung über die Berufsausbildung zum;cue;beruf:dt-Ausbildungsordnung;Ausbildungsordnung;titlePage;;;0.95;ja;;beruf:c-ao-1
+ohne-land;Liste der Entsprechungen;pref;beruf:dt-Entsprechungsliste;Liste der Entsprechungen;;;;0.95;nein;;beruf:c-el-1
+ohne-land;Prüfung zum anerkannten Fortbildungsabschluss;cue;beruf:dt-Fortbildungsordnung;Fortbildungsordnung;titlePage;;;0.9;nein;;beruf:c-fo-1
+ohne-land;§\s*54\s*BBiG|§\s*42a\s*HwO;cue;beruf:dt-Fortbildungsregelung;Fortbildungsprüfungsregelung der zuständigen Stelle (§ 54 BBiG);;;;0.8;nein;Regelung einer zuständigen Stelle: Kammer in beruf:competentBody.;beruf:c-fo-2
+ohne-land;Fachkommission nach § 53 PflBG;cue;beruf:dt-PflegeRahmenplan;Rahmenplan der Fachkommission nach § 53 PflBG;;;;0.95;nein;;beruf:c-pflege-1
+ohne-land;Beschluss der (Kultusministerkonferenz|Bildungsministerkonferenz) vom;cue;beruf:dt-Rahmenlehrplan;KMK-Rahmenlehrplan;;;;0.8;nein;;beruf:c-rlp-2
+ohne-land;Rahmenlehrplan für den Ausbildungsberuf;cue;beruf:dt-Rahmenlehrplan;KMK-Rahmenlehrplan;titlePage;;;0.95;ja;;beruf:c-rlp-1
+ohne-land;Fachpraktiker;cue;beruf:dt-Regelung66;Ausbildungsregelung nach § 66 BBiG / § 42r HwO;titlePage;;;0.8;nein;;beruf:c-66-2
+ohne-land;§\s*66\s*BBiG|§\s*42[mr]\s*HwO;cue;beruf:dt-Regelung66;Ausbildungsregelung nach § 66 BBiG / § 42r HwO;;;;0.9;nein;Ältere Texte § 42m HwO, neuere § 42r HwO.;beruf:c-66-1
+ohne-land;Unterweisungsplan für einen Lehrgang der überbetrieblichen;cue;beruf:dt-UeLU;ÜLU-Unterweisungsplan;titlePage;;;0.9;nein;;beruf:c-uelu-2
+ohne-land;Rahmenausbildungsplan;cue;ctx:practice-placement, beruf:dt-PflegeRahmenplan;Praxiseinsatz/Praxisphase, Rahmenplan der Fachkommission nach § 53 PflBG;;;;0.85;nein;Lernort Praxiseinsatz (beruf:learningPlace ctx:practice-placement).;beruf:c-pflege-2
+ohne-land;^§\s*\d+\s+(Zwischenprüfung|Abschlussprüfung|Gesellenprüfung|Teil\s+[12]\s+der\s+(Abschluss|Gesellen)prüfung|Prüfungsbereich);cue;cur:Assessment, beruf:Verordnungsteil;Prüfung, Verordnungsteil/Paragraf;;;;0.9;nein;Prüfung als cur:Assessment mit beruf:examType, Teile und Bereiche über cur:partOf, Dauer cur:durationMinutes, Gewicht cur:weightPercent, geprüfte Positionen/Lernfelder über cur:assesses.;beruf:c-pruef-1
+ohne-land;\b(zwei|drei|vier|fünf|\d+)\s+(der|aus den)\s+(folgenden|nachstehenden)\s+(\w+\s+)?Wahlqualifikationen|\b(zwei|drei|vier|fünf|\d+)\s+Wahlqualifikationen\s+aus\s+(den\s+)?(folgenden|nachstehenden);cue;cur:SelectionRule, cv:obl_selectionPool;Auswahlregel, Auswahlpool;;;;0.9;nein;"Erzeugt eine cur:SelectionRule (cur:minCount = cur:maxCount = Zahl; Optionen = folgende Liste) und Varianten der Art cv:var_electiveQualification.";beruf:c-wahl-1
+ohne-land;entsprechend dem Rahmenlehrplan zu vermittelnden Lehrstoff;cue;cv:rel_correspondsTo;entspricht (lernortübergreifend);;;;0.8;nein;Normverweis der Prüfungs-§§ auf den RLP: amtliche Kante Prüfung → Rahmenlehrplan (rel_correspondsTo, Methode cv:meth_verbatim).;beruf:c-entspr-1
+ohne-land;(fachrichtungs|wahlqualifikations|schwerpunkt|einsatzgebiets|berufs)übergreifend;cue;cv:share_common;gemeinsam;;;;0.9;nein;;beruf:c-gem-1
+ohne-land;\b(in der Fachrichtung|im Schwerpunkt|im Einsatzgebiet|in der Wahlqualifikation)\b;cue;cv:share_specific;spezifisch;;;;0.85;nein;Der Name hinter der Wendung benennt die cur:Variant (cur:appliesToVariant).;beruf:c-spez-1
+ohne-land;\b\d+\.\s*(bis|–|-)\s*\d+\.\s*(Ausbildungs)?[Mm]onat;cue;cv:time_trainingMonth;Ausbildungsmonat;;beruf:dt-Ausbildungsordnung;;0.9;nein;"Zeitraum der Wochenwerte in Spalte 4: cur:timeSpan (cv:time_trainingMonth, cur:from, cur:to); Wochen als cur:workload cv:unit_week je Zeitraum.";beruf:c-mon-1
+ohne-land;\b([1-4])\.\s*Ausbildungsjahr;cue;cv:time_trainingYear;Ausbildungsjahr;;;;0.9;nein;;beruf:c-ajahr-1
+ohne-land;Zusatzqualifikation;cue;cv:var_additionalQualification;Zusatzqualifikation;;;;0.85;nein;;beruf:c-zq-2
+ohne-land;Zeitrichtwert:?\s*\d+(\s*[–-]\s*\d+)?\s*(UStd|Unterrichtsstunden|Std);cue;cv:wl_guidanceValue;Zeitrichtwert;;;;0.9;nein;"cur:amount (und cur:amountTo bei Spannen) mit cv:unit_lesson; „Stunden“ im RLP sind Unterrichtsstunden, nie in Zeitstunden umrechnen.";beruf:c-zrw-1
+ohne-land;DQR-Niveau;cue;lvl:DQR;Deutscher Qualifikationsrahmen (DQR);;;;0.9;nein;"Nur an der Qualifikation (cur:Qualification) speichern; DQR-Kategorien an Aussagen (NRW Anlage C) sind Kompetenzdimensionen (kd:Bridge), kein Niveau.";beruf:c-nicht-dqr
+ohne-land;Der Erwerb von Fremdsprachenkompetenz ist in den Lernfeldern integriert;cue;qz:Plurilingual;Mehrsprachigkeit und Fremdsprachenkompetenz;;beruf:dt-Rahmenlehrplan;;0.8;nein;Querschnittssignal: alle Lernfelder cur:contributesTo qz:Plurilingual (Herkunft cv:orig_inherited).;beruf:c-fs-1

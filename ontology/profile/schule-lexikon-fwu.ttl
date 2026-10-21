@@ -1,0 +1,4184 @@
+# =============================================================================
+# GENERIERT von werkzeuge/erzeuge_schul_lexikon_fwu.py aus
+# werkzeuge/quellen/fwu-landesklassen.csv (Länderklassen der FWU-Lehrplan-
+# Ontologie, data/sources/fwu-lehrplan-ontologie/lp.ttl).
+# Abgeleitet aus der FWU-Ontologie: Lizenz CC BY-SA 4.0
+# (https://creativecommons.org/licenses/by-sa/4.0/), Weitergabe unter
+# gleichen Bedingungen. Nicht von Hand ändern.
+# Startbestand: Stärke 0,6, nicht am Dokument geprüft. Von Hand geprüfte
+# Hinweise stehen in schule.ttl und haben Vorrang.
+# =============================================================================
+@prefix cur: <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv: <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix land: <https://w3id.org/wlo/curriculum/region/> .
+@prefix lp: <https://w3id.org/lehrplan/ontology/> .
+@prefix schul: <https://w3id.org/wlo/curriculum/profile/school#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+schul:Terminology cur:hasCue schul:fwu-LP_0000328,
+        schul:fwu-LP_0000345,
+        schul:fwu-LP_0000350,
+        schul:fwu-LP_0000352,
+        schul:fwu-LP_0000353,
+        schul:fwu-LP_0000423,
+        schul:fwu-LP_0000424,
+        schul:fwu-LP_0000425,
+        schul:fwu-LP_0000428,
+        schul:fwu-LP_0000432,
+        schul:fwu-LP_0000445,
+        schul:fwu-LP_0000446,
+        schul:fwu-LP_0000448,
+        schul:fwu-LP_0000450,
+        schul:fwu-LP_0000451,
+        schul:fwu-LP_0000459,
+        schul:fwu-LP_0001001,
+        schul:fwu-LP_0001003,
+        schul:fwu-LP_0001006,
+        schul:fwu-LP_0001007,
+        schul:fwu-LP_0001009,
+        schul:fwu-LP_0001223,
+        schul:fwu-LP_0001226,
+        schul:fwu-LP_0001227,
+        schul:fwu-LP_0001445,
+        schul:fwu-LP_0001446,
+        schul:fwu-LP_0001448,
+        schul:fwu-LP_0001450,
+        schul:fwu-LP_0001451,
+        schul:fwu-LP_0002044,
+        schul:fwu-LP_0002048,
+        schul:fwu-LP_0002050,
+        schul:fwu-LP_0002052,
+        schul:fwu-LP_0002057,
+        schul:fwu-LP_0002059,
+        schul:fwu-LP_0002060,
+        schul:fwu-LP_0002110,
+        schul:fwu-LP_0002115,
+        schul:fwu-LP_0002116,
+        schul:fwu-LP_0002122,
+        schul:fwu-LP_0002126,
+        schul:fwu-LP_0002129,
+        schul:fwu-LP_0002133,
+        schul:fwu-LP_0002134,
+        schul:fwu-LP_0002136,
+        schul:fwu-LP_0002139,
+        schul:fwu-LP_0002140,
+        schul:fwu-LP_0002144,
+        schul:fwu-LP_0002145,
+        schul:fwu-LP_0002147,
+        schul:fwu-LP_0002149,
+        schul:fwu-LP_0002151,
+        schul:fwu-LP_0002163,
+        schul:fwu-LP_0002169,
+        schul:fwu-LP_0002174,
+        schul:fwu-LP_0002175,
+        schul:fwu-LP_0002177,
+        schul:fwu-LP_0002178,
+        schul:fwu-LP_0002179,
+        schul:fwu-LP_0002182,
+        schul:fwu-LP_0002186,
+        schul:fwu-LP_0002190,
+        schul:fwu-LP_0002192,
+        schul:fwu-LP_0002193,
+        schul:fwu-LP_0002195,
+        schul:fwu-LP_0002197,
+        schul:fwu-LP_0002198,
+        schul:fwu-LP_0002200,
+        schul:fwu-LP_0002201,
+        schul:fwu-LP_0002202,
+        schul:fwu-LP_0002205,
+        schul:fwu-LP_0002206,
+        schul:fwu-LP_0002207,
+        schul:fwu-LP_0002208,
+        schul:fwu-LP_0002209,
+        schul:fwu-LP_0002210,
+        schul:fwu-LP_0002214,
+        schul:fwu-LP_0002215,
+        schul:fwu-LP_0002218,
+        schul:fwu-LP_0002219,
+        schul:fwu-LP_0002220,
+        schul:fwu-LP_0002221,
+        schul:fwu-LP_0002223,
+        schul:fwu-LP_0002225,
+        schul:fwu-LP_0002227,
+        schul:fwu-LP_0002228,
+        schul:fwu-LP_0002229,
+        schul:fwu-LP_0002233,
+        schul:fwu-LP_0002235,
+        schul:fwu-LP_0002238,
+        schul:fwu-LP_0002239,
+        schul:fwu-LP_0002240,
+        schul:fwu-LP_0002241,
+        schul:fwu-LP_0002243,
+        schul:fwu-LP_0030001,
+        schul:fwu-LP_0030002,
+        schul:fwu-LP_0030005,
+        schul:fwu-LP_0030006,
+        schul:fwu-LP_0030007,
+        schul:fwu-LP_0030008,
+        schul:fwu-LP_0030009,
+        schul:fwu-LP_0030011,
+        schul:fwu-LP_0030012,
+        schul:fwu-LP_0030013,
+        schul:fwu-LP_0030014,
+        schul:fwu-LP_0030015,
+        schul:fwu-LP_0030016,
+        schul:fwu-LP_0030017,
+        schul:fwu-LP_0030018,
+        schul:fwu-LP_0030020,
+        schul:fwu-LP_0030021,
+        schul:fwu-LP_0030022,
+        schul:fwu-LP_0030023,
+        schul:fwu-LP_0030025,
+        schul:fwu-LP_0030026,
+        schul:fwu-LP_0030027,
+        schul:fwu-LP_0030028,
+        schul:fwu-LP_0030029,
+        schul:fwu-LP_0030031,
+        schul:fwu-LP_0030033,
+        schul:fwu-LP_0030034,
+        schul:fwu-LP_0030035,
+        schul:fwu-LP_0030036,
+        schul:fwu-LP_0030037,
+        schul:fwu-LP_0030042,
+        schul:fwu-LP_0030043,
+        schul:fwu-LP_0030044,
+        schul:fwu-LP_0030045,
+        schul:fwu-LP_0030047,
+        schul:fwu-LP_0030048,
+        schul:fwu-LP_0030050,
+        schul:fwu-LP_0030052,
+        schul:fwu-LP_0030058,
+        schul:fwu-LP_0030059,
+        schul:fwu-LP_0030060,
+        schul:fwu-LP_0030061,
+        schul:fwu-LP_0030062,
+        schul:fwu-LP_0030063,
+        schul:fwu-LP_0030064,
+        schul:fwu-LP_0030066,
+        schul:fwu-LP_0030067,
+        schul:fwu-LP_0030068,
+        schul:fwu-LP_0030069,
+        schul:fwu-LP_0030070,
+        schul:fwu-LP_0030073,
+        schul:fwu-LP_0030074,
+        schul:fwu-LP_0030075,
+        schul:fwu-LP_0030076,
+        schul:fwu-LP_0030077,
+        schul:fwu-LP_0030078,
+        schul:fwu-LP_0030079,
+        schul:fwu-LP_0030081,
+        schul:fwu-LP_0030082,
+        schul:fwu-LP_0030083,
+        schul:fwu-LP_0030085,
+        schul:fwu-LP_0030086,
+        schul:fwu-LP_0030087,
+        schul:fwu-LP_0030088,
+        schul:fwu-LP_0030089,
+        schul:fwu-LP_0030090,
+        schul:fwu-LP_0030092,
+        schul:fwu-LP_0030093,
+        schul:fwu-LP_0030094,
+        schul:fwu-LP_0030095,
+        schul:fwu-LP_0030096,
+        schul:fwu-LP_0030097,
+        schul:fwu-LP_0030098,
+        schul:fwu-LP_0030099,
+        schul:fwu-LP_0030100,
+        schul:fwu-LP_0030101,
+        schul:fwu-LP_0030102,
+        schul:fwu-LP_0030103,
+        schul:fwu-LP_0030104,
+        schul:fwu-LP_0030105,
+        schul:fwu-LP_0030106,
+        schul:fwu-LP_0030107,
+        schul:fwu-LP_0030108,
+        schul:fwu-LP_0030109,
+        schul:fwu-LP_0030110,
+        schul:fwu-LP_0030111,
+        schul:fwu-LP_0030112,
+        schul:fwu-LP_0030113,
+        schul:fwu-LP_0030114,
+        schul:fwu-LP_0030116,
+        schul:fwu-LP_0030117,
+        schul:fwu-LP_0030118,
+        schul:fwu-LP_0030119,
+        schul:fwu-LP_0030120,
+        schul:fwu-LP_0030121,
+        schul:fwu-LP_0030122,
+        schul:fwu-LP_0030123,
+        schul:fwu-LP_0030124,
+        schul:fwu-LP_0030125,
+        schul:fwu-LP_0030126,
+        schul:fwu-LP_0030127,
+        schul:fwu-LP_0030128,
+        schul:fwu-LP_0030129,
+        schul:fwu-LP_0030130,
+        schul:fwu-LP_0030131,
+        schul:fwu-LP_0030132,
+        schul:fwu-LP_0030133,
+        schul:fwu-LP_0030134,
+        schul:fwu-LP_0030135,
+        schul:fwu-LP_0030136,
+        schul:fwu-LP_0030137,
+        schul:fwu-LP_0030138,
+        schul:fwu-LP_0030139,
+        schul:fwu-LP_0030140,
+        schul:fwu-LP_0030141,
+        schul:fwu-LP_0030142,
+        schul:fwu-LP_0030143,
+        schul:fwu-LP_0030144,
+        schul:fwu-LP_0030145,
+        schul:fwu-LP_0030146,
+        schul:fwu-LP_0030147,
+        schul:fwu-LP_0030148,
+        schul:fwu-LP_0030149,
+        schul:fwu-LP_0030150,
+        schul:fwu-LP_0030151,
+        schul:fwu-LP_0030152,
+        schul:fwu-LP_0030153,
+        schul:fwu-LP_0030154,
+        schul:fwu-LP_0030155,
+        schul:fwu-LP_0030156,
+        schul:fwu-LP_0030157,
+        schul:fwu-LP_0030158,
+        schul:fwu-LP_0030159,
+        schul:fwu-LP_0030160,
+        schul:fwu-LP_0030161,
+        schul:fwu-LP_0030162,
+        schul:fwu-LP_0030163,
+        schul:fwu-LP_0030164,
+        schul:fwu-LP_0030165,
+        schul:fwu-LP_0030166,
+        schul:fwu-LP_0030167,
+        schul:fwu-LP_0030168,
+        schul:fwu-LP_0030169,
+        schul:fwu-LP_0030170,
+        schul:fwu-LP_0030171,
+        schul:fwu-LP_0030172,
+        schul:fwu-LP_0030173,
+        schul:fwu-LP_0030174,
+        schul:fwu-LP_0030175,
+        schul:fwu-LP_0030176,
+        schul:fwu-LP_0030177,
+        schul:fwu-LP_0030178,
+        schul:fwu-LP_0030179,
+        schul:fwu-LP_0030180,
+        schul:fwu-LP_0030181,
+        schul:fwu-LP_0030182,
+        schul:fwu-LP_0030183,
+        schul:fwu-LP_0030184,
+        schul:fwu-LP_0030185,
+        schul:fwu-LP_0030186,
+        schul:fwu-LP_0030187,
+        schul:fwu-LP_0030188,
+        schul:fwu-LP_0030189,
+        schul:fwu-LP_0030190,
+        schul:fwu-LP_0030191,
+        schul:fwu-LP_0030192,
+        schul:fwu-LP_0030193,
+        schul:fwu-LP_0030194,
+        schul:fwu-LP_0030195,
+        schul:fwu-LP_0030196,
+        schul:fwu-LP_0030197,
+        schul:fwu-LP_0030198,
+        schul:fwu-LP_0030199,
+        schul:fwu-LP_0030200,
+        schul:fwu-LP_0030201,
+        schul:fwu-LP_0030202,
+        schul:fwu-LP_0030204,
+        schul:fwu-LP_0030205,
+        schul:fwu-LP_0030207,
+        schul:fwu-LP_0030208,
+        schul:fwu-LP_0030209,
+        schul:fwu-LP_0030210,
+        schul:fwu-LP_0030212,
+        schul:fwu-LP_0030213,
+        schul:fwu-LP_0030214,
+        schul:fwu-LP_0030215,
+        schul:fwu-LP_0030216,
+        schul:fwu-LP_0030217,
+        schul:fwu-LP_0030218,
+        schul:fwu-LP_0030219,
+        schul:fwu-LP_0030220,
+        schul:fwu-LP_0030222,
+        schul:fwu-LP_0030223,
+        schul:fwu-LP_0030224,
+        schul:fwu-LP_0030225,
+        schul:fwu-LP_0030226,
+        schul:fwu-LP_0030227,
+        schul:fwu-LP_0030228,
+        schul:fwu-LP_0030229,
+        schul:fwu-LP_0030230,
+        schul:fwu-LP_0030231,
+        schul:fwu-LP_0030232,
+        schul:fwu-LP_0030233,
+        schul:fwu-LP_0030234,
+        schul:fwu-LP_0030235,
+        schul:fwu-LP_0030236,
+        schul:fwu-LP_0030237,
+        schul:fwu-LP_0030238,
+        schul:fwu-LP_0030239,
+        schul:fwu-LP_0030240,
+        schul:fwu-LP_0030241,
+        schul:fwu-LP_0030242,
+        schul:fwu-LP_0030243,
+        schul:fwu-LP_0030244,
+        schul:fwu-LP_0030245,
+        schul:fwu-LP_0030246,
+        schul:fwu-LP_0030247,
+        schul:fwu-LP_0030248,
+        schul:fwu-LP_0030249,
+        schul:fwu-LP_0030250,
+        schul:fwu-LP_0030251,
+        schul:fwu-LP_0030252,
+        schul:fwu-LP_0030253,
+        schul:fwu-LP_0030254,
+        schul:fwu-LP_0030255,
+        schul:fwu-LP_0030256,
+        schul:fwu-LP_0030257,
+        schul:fwu-LP_0030259,
+        schul:fwu-LP_0030260,
+        schul:fwu-LP_0030261,
+        schul:fwu-LP_0030262,
+        schul:fwu-LP_0030264,
+        schul:fwu-LP_0030265,
+        schul:fwu-LP_0030266,
+        schul:fwu-LP_0030268,
+        schul:fwu-LP_0030269,
+        schul:fwu-LP_0030270,
+        schul:fwu-LP_0030271,
+        schul:fwu-LP_0030272,
+        schul:fwu-LP_0030273,
+        schul:fwu-LP_0030274,
+        schul:fwu-LP_0030275,
+        schul:fwu-LP_0030276,
+        schul:fwu-LP_0030278,
+        schul:fwu-LP_0030279,
+        schul:fwu-LP_0030280,
+        schul:fwu-LP_0030281,
+        schul:fwu-LP_0030282,
+        schul:fwu-LP_0030284,
+        schul:fwu-LP_0030285,
+        schul:fwu-LP_0030286,
+        schul:fwu-LP_0030287,
+        schul:fwu-LP_0030288,
+        schul:fwu-LP_0030289,
+        schul:fwu-LP_0030290,
+        schul:fwu-LP_0030291,
+        schul:fwu-LP_0030292,
+        schul:fwu-LP_0030293,
+        schul:fwu-LP_0030294,
+        schul:fwu-LP_0030295,
+        schul:fwu-LP_0030296,
+        schul:fwu-LP_0030297,
+        schul:fwu-LP_0030298,
+        schul:fwu-LP_0030299,
+        schul:fwu-LP_0030300,
+        schul:fwu-LP_0030301,
+        schul:fwu-LP_0030302,
+        schul:fwu-LP_0030303,
+        schul:fwu-LP_0030304,
+        schul:fwu-LP_0030307,
+        schul:fwu-LP_0030308,
+        schul:fwu-LP_0030309,
+        schul:fwu-LP_0030310,
+        schul:fwu-LP_0030318,
+        schul:fwu-LP_0030329,
+        schul:fwu-LP_0030330,
+        schul:fwu-LP_0030331,
+        schul:fwu-LP_0030332,
+        schul:fwu-LP_0030333,
+        schul:fwu-LP_0030335,
+        schul:fwu-LP_0030336 .
+
+schul:fwu-LP_0000328 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000328 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Thema" ;
+    cur:verified false .
+
+schul:fwu-LP_0000345 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000345 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Teilthema" ;
+    cur:verified false .
+
+schul:fwu-LP_0000350 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000350 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lernziel" ;
+    cur:verified false .
+
+schul:fwu-LP_0000352 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000352 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Unterteilthema" ;
+    cur:verified false .
+
+schul:fwu-LP_0000353 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000353 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0000423 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000423 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf standardillustrierende Aufgaben" ;
+    cur:verified false .
+
+schul:fwu-LP_0000424 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000424 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf vernetzte Kompetenzen" ;
+    cur:verified false .
+
+schul:fwu-LP_0000425 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000425 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Materialien" ;
+    cur:verified false .
+
+schul:fwu-LP_0000428 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000428 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0000432 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000432 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0000445 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000445 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0000446 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000446 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:kind_unclassified ;
+    cur:recognitionHint "FWU-Basistyp nur „Curriculares Element“; Art am Dokument bestimmen."@de ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lernmaterial" ;
+    cur:verified false .
+
+schul:fwu-LP_0000448 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000448 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Thema" ;
+    cur:verified false .
+
+schul:fwu-LP_0000450 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000450 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:kind_unclassified ;
+    cur:recognitionHint "FWU-Basistyp nur „Curriculares Element“; Art am Dokument bestimmen."@de ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Zusatzmaterial" ;
+    cur:verified false .
+
+schul:fwu-LP_0000451 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000451 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:kind_unclassified ;
+    cur:recognitionHint "FWU-Basistyp nur „Curriculares Element“; Art am Dokument bestimmen."@de ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Übung" ;
+    cur:verified false .
+
+schul:fwu-LP_0000459 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0000459 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzbereich ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenzbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0001001 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0001001 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-HE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0001003 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0001003 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Erwartete Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0001006 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0001006 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0001007 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0001007 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kerninhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0001009 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0001009 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Ergänzender Hinweis" ;
+    cur:verified false .
+
+schul:fwu-LP_0001223 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0001223 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0001226 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0001226 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Eingangsvoraussetzung" ;
+    cur:verified false .
+
+schul:fwu-LP_0001227 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0001227 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Unterrichtsanregung" ;
+    cur:verified false .
+
+schul:fwu-LP_0001445 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0001445 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0001446 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0001446 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:kind_unclassified ;
+    cur:recognitionHint "FWU-Basistyp nur „Curriculares Element“; Art am Dokument bestimmen."@de ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lernmaterial" ;
+    cur:verified false .
+
+schul:fwu-LP_0001448 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0001448 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Thema" ;
+    cur:verified false .
+
+schul:fwu-LP_0001450 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0001450 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:kind_unclassified ;
+    cur:recognitionHint "FWU-Basistyp nur „Curriculares Element“; Art am Dokument bestimmen."@de ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Zusatzmaterial" ;
+    cur:verified false .
+
+schul:fwu-LP_0001451 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0001451 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:kind_unclassified ;
+    cur:recognitionHint "FWU-Basistyp nur „Curriculares Element“; Art am Dokument bestimmen."@de ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Übung" ;
+    cur:verified false .
+
+schul:fwu-LP_0002044 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002044 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0002048 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002048 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenzerwartung und Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0002050 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002050 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhalt zu den Kompetenzen" ;
+    cur:verified false .
+
+schul:fwu-LP_0002052 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002052 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0002057 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002057 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Prozessbezogene Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0002059 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002059 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhaltsbezogene Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0002060 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002060 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Denkanstoß" ;
+    cur:verified false .
+
+schul:fwu-LP_0002110 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002110 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0002115 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002115 ;
+    cur:alsoMapsTo schul:Inhalt ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:recognitionHint "Spalte mit Lernzielen und Inhalten: Sätze mit Operator → Kompetenzerwartung, Stichworte → Inhalt."@de ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lernziel und Lerninhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0002116 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002116 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Bemerkung" ;
+    cur:verified false .
+
+schul:fwu-LP_0002122 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002122 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0002126 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002126 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Aufgabenbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0002129 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002129 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0002133 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002133 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Themenfeld" ;
+    cur:verified false .
+
+schul:fwu-LP_0002134 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002134 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kommentar" ;
+    cur:verified false .
+
+schul:fwu-LP_0002136 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002136 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0002139 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002139 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzbereich ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenzbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0002140 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002140 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0002144 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002144 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verbindlicher Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0002145 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002145 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Hinweis und Anregung" ;
+    cur:verified false .
+
+schul:fwu-LP_0002147 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002147 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Thema" ;
+    cur:verified false .
+
+schul:fwu-LP_0002149 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002149 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Möglichkeiten der Verknüpfung" ;
+    cur:verified false .
+
+schul:fwu-LP_0002151 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002151 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Konkretisierung" ;
+    cur:verified false .
+
+schul:fwu-LP_0002163 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002163 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Beispiel Verknüpfung von Inhalt und Kompetenzbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0002169 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002169 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-HE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Bildungsstandard" ;
+    cur:verified false .
+
+schul:fwu-LP_0002174 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002174 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0002175 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002175 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzbereich ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenzbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0002177 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002177 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0002178 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002178 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Flexibel anwendbares Grundwissen" ;
+    cur:verified false .
+
+schul:fwu-LP_0002179 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002179 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Grundlegender Wissensbestand" ;
+    cur:verified false .
+
+schul:fwu-LP_0002182 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002182 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Gegenstandsfeld" ;
+    cur:verified false .
+
+schul:fwu-LP_0002186 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002186 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0002190 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002190 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Teilkompetenzbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0002192 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002192 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhaltlicher Schwerpunkt" ;
+    cur:verified false .
+
+schul:fwu-LP_0002193 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002193 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Sachgebiet" ;
+    cur:verified false .
+
+schul:fwu-LP_0002195 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002195 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhalt zum Erwerb der Kompetenzen" ;
+    cur:verified false .
+
+schul:fwu-LP_0002197 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002197 ;
+    cur:alsoMapsTo schul:Inhalt ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:recognitionHint "Spalte mit Lernzielen und Inhalten: Sätze mit Operator → Kompetenzerwartung, Stichworte → Inhalt."@de ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0002198 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002198 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Hinweis und Vernetzung" ;
+    cur:verified false .
+
+schul:fwu-LP_0002200 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002200 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Ziel / Inhalt (Sach- und Methodenkompetenz)" ;
+    cur:verified false .
+
+schul:fwu-LP_0002201 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002201 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Hinweis zur Unterrichtsgestaltung und Methodenkompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0002202 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002202 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kernbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0002205 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002205 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzbereich ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kernkompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0002206 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002206 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Beispiel" ;
+    cur:verified false .
+
+schul:fwu-LP_0002207 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002207 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Umsetzung im Unterricht" ;
+    cur:verified false .
+
+schul:fwu-LP_0002208 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002208 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lernbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0002209 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002209 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Thema" ;
+    cur:verified false .
+
+schul:fwu-LP_0002210 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002210 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0002214 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002214 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Beobachtungskriterium" ;
+    cur:verified false .
+
+schul:fwu-LP_0002215 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002215 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Regelanforderung" ;
+    cur:verified false .
+
+schul:fwu-LP_0002218 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002218 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Thema" ;
+    cur:verified false .
+
+schul:fwu-LP_0002219 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002219 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Modul" ;
+    cur:verified false .
+
+schul:fwu-LP_0002220 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002220 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Sachgebiet" ;
+    cur:verified false .
+
+schul:fwu-LP_0002221 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002221 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0002223 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002223 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0002225 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002225 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Eingangsvoraussetzung" ;
+    cur:verified false .
+
+schul:fwu-LP_0002227 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002227 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Unterrichtsanregung" ;
+    cur:verified false .
+
+schul:fwu-LP_0002228 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002228 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-HE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lernzeitbezogene Kompetenzerwartung" ;
+    cur:verified false .
+
+schul:fwu-LP_0002229 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002229 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0002233 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002233 ;
+    cur:alsoMapsTo schul:Hinweis ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo schul:Inhalt ;
+    cur:recognitionHint "FWU führt den Begriff als Inhalt und Hinweis: verbindliche Stichworte → Inhalt, „z. B.“/Anregungen → Hinweis."@de ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Hinweis zur Umsetzung" ;
+    cur:verified false .
+
+schul:fwu-LP_0002235 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002235 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verbindliches Fachwissen" ;
+    cur:verified false .
+
+schul:fwu-LP_0002238 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002238 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verbindlicher Kompetenzschwerpunkt" ;
+    cur:verified false .
+
+schul:fwu-LP_0002239 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002239 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Vorschlag und Hinweis" ;
+    cur:verified false .
+
+schul:fwu-LP_0002240 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002240 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Basisbegriff" ;
+    cur:verified false .
+
+schul:fwu-LP_0002241 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002241 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lernbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0002243 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0002243 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzbereich ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenzbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030001 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030001 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Schwerpunktthema" ;
+    cur:verified false .
+
+schul:fwu-LP_0030002 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030002 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Grundfertigkeit" ;
+    cur:verified false .
+
+schul:fwu-LP_0030005 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030005 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Ergänzung zu einem Basiskonzept" ;
+    cur:verified false .
+
+schul:fwu-LP_0030006 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030006 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Möglicher Kontext" ;
+    cur:verified false .
+
+schul:fwu-LP_0030007 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030007 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenzerwerb im Themenfeld" ;
+    cur:verified false .
+
+schul:fwu-LP_0030008 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030008 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Möglicher Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030009 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030009 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Basiskonzept" ;
+    cur:verified false .
+
+schul:fwu-LP_0030011 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030011 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Basiskonzept" ;
+    cur:verified false .
+
+schul:fwu-LP_0030012 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030012 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Orientierungsrahmen" ;
+    cur:verified false .
+
+schul:fwu-LP_0030013 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030013 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030014 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030014 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Ergänzung zur Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030015 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030015 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Basiskonzept" ;
+    cur:verified false .
+
+schul:fwu-LP_0030016 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030016 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf thematische Querverbindungen im Lehrplan" ;
+    cur:verified false .
+
+schul:fwu-LP_0030017 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030017 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Möglichkeit zur Abstimmung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030018 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030018 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "KMK-Bildungsstandard" ;
+    cur:verified false .
+
+schul:fwu-LP_0030020 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030020 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Textsorte" ;
+    cur:verified false .
+
+schul:fwu-LP_0030021 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030021 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhalt und Wissbestand" ;
+    cur:verified false .
+
+schul:fwu-LP_0030022 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030022 ;
+    cur:alsoMapsTo schul:Hinweis ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo schul:Inhalt ;
+    cur:recognitionHint "FWU führt den Begriff als Inhalt und Hinweis: verbindliche Stichworte → Inhalt, „z. B.“/Anregungen → Hinweis."@de ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Konkretisierung - Hinweis und Vorschlag" ;
+    cur:verified false .
+
+schul:fwu-LP_0030023 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030023 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Themenvorschlag" ;
+    cur:verified false .
+
+schul:fwu-LP_0030025 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030025 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzbereich ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenzbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030026 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030026 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030027 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030027 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Erfahrungbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030028 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030028 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0030029 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030029 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Thema" ;
+    cur:verified false .
+
+schul:fwu-LP_0030031 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030031 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030033 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030033 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanfragment" ;
+    cur:verified false .
+
+schul:fwu-LP_0030034 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030034 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Thematischer Leitgedanke" ;
+    cur:verified false .
+
+schul:fwu-LP_0030035 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030035 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lernbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030036 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030036 ;
+    cur:alsoMapsTo schul:Inhalt ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:recognitionHint "Spalte mit Lernzielen und Inhalten: Sätze mit Operator → Kompetenzerwartung, Stichworte → Inhalt."@de ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Fähigkeit" ;
+    cur:verified false .
+
+schul:fwu-LP_0030037 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030037 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-HE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Schwerpunktsetzung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030042 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030042 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Bezüge zu den Basiskonzepten" ;
+    cur:verified false .
+
+schul:fwu-LP_0030043 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030043 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Beispiel zu einem Basiskonzept" ;
+    cur:verified false .
+
+schul:fwu-LP_0030044 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030044 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Beispiel zu einem Basiskonzept" ;
+    cur:verified false .
+
+schul:fwu-LP_0030045 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030045 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Bezüge zu den Basiskonzepten" ;
+    cur:verified false .
+
+schul:fwu-LP_0030047 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030047 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Basiskonzept" ;
+    cur:verified false .
+
+schul:fwu-LP_0030048 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030048 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verbindliches Ziel" ;
+    cur:verified false .
+
+schul:fwu-LP_0030050 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030050 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Allgemeines fachliches Ziel" ;
+    cur:verified false .
+
+schul:fwu-LP_0030052 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030052 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Experiment/Untersuchung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030058 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030058 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Aufgabenstellung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030059 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030059 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Möglicher Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030060 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030060 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Literaturhinweis" ;
+    cur:verified false .
+
+schul:fwu-LP_0030061 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030061 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verbindliche Form mündlicher Kommunikation" ;
+    cur:verified false .
+
+schul:fwu-LP_0030062 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030062 ;
+    cur:alsoMapsTo schul:Inhalt ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:recognitionHint "Spalte mit Lernzielen und Inhalten: Sätze mit Operator → Kompetenzerwartung, Stichworte → Inhalt."@de ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verbindliche fachspezifische Fertigkeit/Fähigkeit und fachspezifische Methode" ;
+    cur:verified false .
+
+schul:fwu-LP_0030063 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030063 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verbindlicher Lerngegenstand" ;
+    cur:verified false .
+
+schul:fwu-LP_0030064 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030064 ;
+    cur:alsoMapsTo schul:Hinweis ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo schul:Inhalt ;
+    cur:recognitionHint "FWU führt den Begriff als Inhalt und Hinweis: verbindliche Stichworte → Inhalt, „z. B.“/Anregungen → Hinweis."@de ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Vorschlag und Hinweis zu Inhalten und Methoden" ;
+    cur:verified false .
+
+schul:fwu-LP_0030066 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030066 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Vertiefungsmöglichkeit" ;
+    cur:verified false .
+
+schul:fwu-LP_0030067 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030067 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhaltsbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030068 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030068 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Vertiefungsmöglichkeit" ;
+    cur:verified false .
+
+schul:fwu-LP_0030069 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030069 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Thema" ;
+    cur:verified false .
+
+schul:fwu-LP_0030070 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030070 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzbereich ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenzbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030073 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030073 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Bereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030074 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030074 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Fachliche Konkretisierung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030075 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030075 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030076 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030076 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-HE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhalt zu einem Inhaltsfeld" ;
+    cur:verified false .
+
+schul:fwu-LP_0030077 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030077 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Basiskonzept" ;
+    cur:verified false .
+
+schul:fwu-LP_0030078 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030078 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Themenbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030079 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030079 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Mögliche Textsorte / Kommunikationssituation" ;
+    cur:verified false .
+
+schul:fwu-LP_0030081 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030081 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kommunikative Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030082 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030082 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhaltsbezogene Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030083 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030083 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Prozessbezogene Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030085 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030085 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Sprachliches Mittel" ;
+    cur:verified false .
+
+schul:fwu-LP_0030086 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030086 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Soziokulturelles Orientierungswissen" ;
+    cur:verified false .
+
+schul:fwu-LP_0030087 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030087 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Bereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030088 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030088 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Bezüge zu fächerübergreifenden Themen" ;
+    cur:verified false .
+
+schul:fwu-LP_0030089 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030089 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verbindliches Schülerexperiment" ;
+    cur:verified false .
+
+schul:fwu-LP_0030090 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030090 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kommunikativer Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030092 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030092 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Themenbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030093 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030093 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Sprachanlass" ;
+    cur:verified false .
+
+schul:fwu-LP_0030094 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030094 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Redemittel" ;
+    cur:verified false .
+
+schul:fwu-LP_0030095 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030095 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Themenfeld" ;
+    cur:verified false .
+
+schul:fwu-LP_0030096 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030096 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhaltsbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030097 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030097 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Ziel" ;
+    cur:verified false .
+
+schul:fwu-LP_0030098 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030098 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lehrplanbaustein" ;
+    cur:verified false .
+
+schul:fwu-LP_0030099 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030099 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Hinweis zur unterrichtlichen Umsetzung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030100 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030100 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhalt und Zusammenhang" ;
+    cur:verified false .
+
+schul:fwu-LP_0030101 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030101 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Teilkompetenzbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030102 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030102 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Teilteilkompetenzbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030103 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030103 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Anwendungsfähiges Wissen" ;
+    cur:verified false .
+
+schul:fwu-LP_0030104 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030104 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Teilleitgedanke" ;
+    cur:verified false .
+
+schul:fwu-LP_0030105 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030105 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Teillernbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030106 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030106 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Teilteillernbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030107 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030107 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Teilerfahrungsberich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030108 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030108 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Fachbegriff" ;
+    cur:verified false .
+
+schul:fwu-LP_0030109 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030109 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Entwicklung des Konzepts" ;
+    cur:verified false .
+
+schul:fwu-LP_0030110 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030110 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kontext" ;
+    cur:verified false .
+
+schul:fwu-LP_0030111 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030111 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Beitrag zur Entwicklung der Basiskonzepte" ;
+    cur:verified false .
+
+schul:fwu-LP_0030112 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030112 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Erschließung des Themenfeldes durch Kontextorientierung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030113 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030113 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-RP ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Differenzierungsmöglichkeit" ;
+    cur:verified false .
+
+schul:fwu-LP_0030114 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030114 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Experiment" ;
+    cur:verified false .
+
+schul:fwu-LP_0030116 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030116 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Möglicher Kontext" ;
+    cur:verified false .
+
+schul:fwu-LP_0030117 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030117 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Fachbegriff" ;
+    cur:verified false .
+
+schul:fwu-LP_0030118 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030118 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Beispiel für Differenzierungsmöglichkeiten" ;
+    cur:verified false .
+
+schul:fwu-LP_0030119 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030119 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Experiment/Untersuchung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030120 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030120 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Technik" ;
+    cur:verified false .
+
+schul:fwu-LP_0030121 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030121 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verbindliche Form des Schreibens" ;
+    cur:verified false .
+
+schul:fwu-LP_0030122 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030122 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Fachmethode" ;
+    cur:verified false .
+
+schul:fwu-LP_0030123 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030123 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Basiskonzept" ;
+    cur:verified false .
+
+schul:fwu-LP_0030124 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030124 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Beispiel für Unterrichtseinheiten" ;
+    cur:verified false .
+
+schul:fwu-LP_0030125 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030125 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhaltsbezogene Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030126 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030126 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verfügung über sprachliche Mittel" ;
+    cur:verified false .
+
+schul:fwu-LP_0030127 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030127 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhalt und Thema" ;
+    cur:verified false .
+
+schul:fwu-LP_0030128 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030128 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Beispiel" ;
+    cur:verified false .
+
+schul:fwu-LP_0030129 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030129 ;
+    cur:alsoMapsTo schul:Hinweis ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:recognitionHint "FWU führt den Begriff als Kompetenzspezifikation und Hinweis: Sätze mit Operator → Erwartung, Anregungen → Hinweis."@de ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Methodenkompetenz/Lern- und Kommunikationsstrategie" ;
+    cur:verified false .
+
+schul:fwu-LP_0030130 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030130 ;
+    cur:alsoMapsTo schul:Hinweis ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:recognitionHint "FWU führt den Begriff als Kompetenzspezifikation und Hinweis: Sätze mit Operator → Erwartung, Anregungen → Hinweis."@de ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Orientierungswissen" ;
+    cur:verified false .
+
+schul:fwu-LP_0030131 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030131 ;
+    cur:alsoMapsTo schul:Hinweis ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:recognitionHint "FWU führt den Begriff als Kompetenzspezifikation und Hinweis: Sätze mit Operator → Erwartung, Anregungen → Hinweis."@de ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Begegnungssituaton" ;
+    cur:verified false .
+
+schul:fwu-LP_0030132 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030132 ;
+    cur:alsoMapsTo schul:Hinweis ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:recognitionHint "FWU führt den Begriff als Kompetenzspezifikation und Hinweis: Sätze mit Operator → Erwartung, Anregungen → Hinweis."@de ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Einstellung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030133 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030133 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Relevantes Genre" ;
+    cur:verified false .
+
+schul:fwu-LP_0030134 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030134 ;
+    cur:alsoMapsTo schul:Hinweis ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:recognitionHint "FWU führt den Begriff als Kompetenzspezifikation und Hinweis: Sätze mit Operator → Erwartung, Anregungen → Hinweis."@de ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Wortschatz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030135 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030135 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Geeignete Methode / Anlass für das exemplarische Arbeiten" ;
+    cur:verified false .
+
+schul:fwu-LP_0030136 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030136 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Hinweis für die Konzeption von Lernaufgaben mit IK-Schwerpunkt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030137 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030137 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Mögliche Sprecharrangements und Genres" ;
+    cur:verified false .
+
+schul:fwu-LP_0030138 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030138 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Literatur und Film im Unterricht der Hauptphase" ;
+    cur:verified false .
+
+schul:fwu-LP_0030139 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030139 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Themenkomplex" ;
+    cur:verified false .
+
+schul:fwu-LP_0030140 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030140 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verbindliche Textsorte" ;
+    cur:verified false .
+
+schul:fwu-LP_0030141 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030141 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Vorgabe zum Erwerb von Methodenkompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030142 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030142 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Basiskonzept" ;
+    cur:verified false .
+
+schul:fwu-LP_0030143 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030143 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Standard für den Kompetenzbereich Fachwissen" ;
+    cur:verified false .
+
+schul:fwu-LP_0030144 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030144 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Themenbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030145 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030145 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verwendung von Lehrwerken" ;
+    cur:verified false .
+
+schul:fwu-LP_0030146 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030146 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Möglicher Einstieg / Motivation / Kontext" ;
+    cur:verified false .
+
+schul:fwu-LP_0030147 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030147 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Zusammenarbeit mit anderen Fächern" ;
+    cur:verified false .
+
+schul:fwu-LP_0030148 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030148 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Außerschulischer Lernort und außerunterrichtliche Veranstaltung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030149 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030149 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Berufsorientierender Aspekt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030150 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030150 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Unterstützungsangebot" ;
+    cur:verified false .
+
+schul:fwu-LP_0030151 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030151 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Prozessbezogene Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030152 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030152 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Hinweis zum sprachsensiblen Fachunterricht" ;
+    cur:verified false .
+
+schul:fwu-LP_0030153 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030153 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Querschnittsbereich ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Orientierungsrahmen" ;
+    cur:verified false .
+
+schul:fwu-LP_0030154 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030154 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Fachübergreifender und fächerverbindender Bezug" ;
+    cur:verified false .
+
+schul:fwu-LP_0030155 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030155 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Geeignetes (Schüler-)Experiment" ;
+    cur:verified false .
+
+schul:fwu-LP_0030156 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030156 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Projekt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030157 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030157 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Sach-, Erkenntnisgewinnungs-, Kommunikations- und Bewertungskompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030158 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030158 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Bildung für nachhaltige Entwicklung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030159 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030159 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Medienbildung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030160 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030160 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Hinweis zur Unterrichtsgestaltung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030161 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030161 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Hinweis zu Methoden und Arbeitstechniken" ;
+    cur:verified false .
+
+schul:fwu-LP_0030162 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030162 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Methodik und Fachdidaktik" ;
+    cur:verified false .
+
+schul:fwu-LP_0030163 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030163 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Einsatz digitaler Mathematikwerkzeuge" ;
+    cur:verified false .
+
+schul:fwu-LP_0030164 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030164 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Anregung zur selbstständigen Schülerarbeit" ;
+    cur:verified false .
+
+schul:fwu-LP_0030165 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030165 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Leitgedanke" ;
+    cur:verified false .
+
+schul:fwu-LP_0030166 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030166 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Beitrag zur Leitperspektive" ;
+    cur:verified false .
+
+schul:fwu-LP_0030167 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030167 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Leitperspektiven" ;
+    cur:verified false .
+
+schul:fwu-LP_0030168 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030168 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Kompetenzen" ;
+    cur:verified false .
+
+schul:fwu-LP_0030169 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030169 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Redemittel und grammatische Grundlagen" ;
+    cur:verified false .
+
+schul:fwu-LP_0030170 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030170 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Basisgrammatik" ;
+    cur:verified false .
+
+schul:fwu-LP_0030171 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030171 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Fachperspektive" ;
+    cur:verified false .
+
+schul:fwu-LP_0030172 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030172 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Bildungsstandard" ;
+    cur:verified false .
+
+schul:fwu-LP_0030173 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030173 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Basiskonzept" ;
+    cur:verified false .
+
+schul:fwu-LP_0030174 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030174 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzbereich ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenzbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030175 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030175 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf die prozessbezogenen Kompetenzen" ;
+    cur:verified false .
+
+schul:fwu-LP_0030176 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030176 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf andere Standards für inhaltsbezogene Kompetenzen desselben Fachs" ;
+    cur:verified false .
+
+schul:fwu-LP_0030177 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030177 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Leitperspektiven" ;
+    cur:verified false .
+
+schul:fwu-LP_0030178 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030178 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf andere Fächer" ;
+    cur:verified false .
+
+schul:fwu-LP_0030179 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030179 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Umsetzungshilfen" ;
+    cur:verified false .
+
+schul:fwu-LP_0030180 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030180 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf DaZ" ;
+    cur:verified false .
+
+schul:fwu-LP_0030181 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030181 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf übergreifende Ziele" ;
+    cur:verified false .
+
+schul:fwu-LP_0030182 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030182 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Querverweise" ;
+    cur:verified false .
+
+schul:fwu-LP_0030183 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030183 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Servicematerialien" ;
+    cur:verified false .
+
+schul:fwu-LP_0030184 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030184 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Interkulturelle Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030185 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030185 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Sprachlernkompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030186 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030186 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Text- und Medienkompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030187 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030187 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Kompetenzerwartung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030188 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030188 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Lernbereich des gleichen Faches der gleichen Klassenstufe" ;
+    cur:verified false .
+
+schul:fwu-LP_0030189 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030189 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Lernbereich des gleichen Faches einer anderen Klassenstufe" ;
+    cur:verified false .
+
+schul:fwu-LP_0030190 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030190 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Klassenstufe, Lernbereich eines anderen Faches" ;
+    cur:verified false .
+
+schul:fwu-LP_0030191 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030191 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf ein überfachliches Bildungs- und Erziehungsziel" ;
+    cur:verified false .
+
+schul:fwu-LP_0030192 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030192 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-HE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Bezüge zu Kompetenzbereichen / Standards" ;
+    cur:verified false .
+
+schul:fwu-LP_0030193 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030193 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Aufgabengebiete" ;
+    cur:verified false .
+
+schul:fwu-LP_0030194 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030194 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Sprachbildung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030195 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030195 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf fachübergreifende Bezüge" ;
+    cur:verified false .
+
+schul:fwu-LP_0030196 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030196 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Fachbegriffe" ;
+    cur:verified false .
+
+schul:fwu-LP_0030197 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030197 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf fachinterne Bezüge" ;
+    cur:verified false .
+
+schul:fwu-LP_0030198 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030198 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf allgemeine mathematische Kompetenzen" ;
+    cur:verified false .
+
+schul:fwu-LP_0030199 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030199 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-MV ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Kompetenzbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030200 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030200 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Textsorte" ;
+    cur:verified false .
+
+schul:fwu-LP_0030201 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030201 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzbereich ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kommunikative Teilkompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030202 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030202 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Sprachliches Mittel" ;
+    cur:verified false .
+
+schul:fwu-LP_0030204 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030204 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Methodenkompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030205 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030205 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Lernstrategie und Arbeitstechnik" ;
+    cur:verified false .
+
+schul:fwu-LP_0030207 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030207 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Themenfeld" ;
+    cur:verified false .
+
+schul:fwu-LP_0030208 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030208 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Teilaspekt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030209 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030209 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Fachliche Perspektive" ;
+    cur:verified false .
+
+schul:fwu-LP_0030210 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030210 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Fachbegriff" ;
+    cur:verified false .
+
+schul:fwu-LP_0030212 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030212 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Vernetzungsmöglichkeiten" ;
+    cur:verified false .
+
+schul:fwu-LP_0030213 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030213 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Prozessbezogene Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030214 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030214 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Beispiel für Unterrichtseinheiten" ;
+    cur:verified false .
+
+schul:fwu-LP_0030215 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030215 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhaltsbezogene Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030216 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030216 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Fachbezug" ;
+    cur:verified false .
+
+schul:fwu-LP_0030217 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030217 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhaltsbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030218 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030218 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verbindlicher Unterrichtsinhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030219 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030219 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Autor und Textgruppe" ;
+    cur:verified false .
+
+schul:fwu-LP_0030220 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030220 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Empfohlene Schreibform und Übung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030222 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030222 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Pflichtmodul" ;
+    cur:verified false .
+
+schul:fwu-LP_0030223 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030223 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Wahlpflichtmodul" ;
+    cur:verified false .
+
+schul:fwu-LP_0030224 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030224 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verbindlicher Unterrichtsaspekt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030225 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030225 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Möglicher Unterrichtsaspekt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030226 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030226 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Sprachbildung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030227 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030227 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Weiterführende Anforderung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030228 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030228 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Hinweis zum Einsatz digitaler Medien und Werkzeuge" ;
+    cur:verified false .
+
+schul:fwu-LP_0030229 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030229 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Unterrichtsidee zur Handlungsorientierung online" ;
+    cur:verified false .
+
+schul:fwu-LP_0030230 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030230 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Fakultative Erweiterung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030231 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030231 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Hinweis zum Einsatz digitaler Mathematikwerkzeuge" ;
+    cur:verified false .
+
+schul:fwu-LP_0030232 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030232 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Online-Material" ;
+    cur:verified false .
+
+schul:fwu-LP_0030233 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030233 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Inhaltsbezogene Kompetenzbereiche" ;
+    cur:verified false .
+
+schul:fwu-LP_0030234 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030234 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-NI ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Prozessbezogene Kompetenzbereiche" ;
+    cur:verified false .
+
+schul:fwu-LP_0030235 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030235 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Prozessbezogene Anforderung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030236 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030236 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhaltsbezogene Anforderung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030237 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030237 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Fakultativer Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030238 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030238 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Rahmenthema" ;
+    cur:verified false .
+
+schul:fwu-LP_0030239 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030239 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Basiskonzept" ;
+    cur:verified false .
+
+schul:fwu-LP_0030240 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030240 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Grammatik" ;
+    cur:verified false .
+
+schul:fwu-LP_0030241 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030241 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Aussprache und Prosodie" ;
+    cur:verified false .
+
+schul:fwu-LP_0030242 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030242 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhaltsbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030243 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030243 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-HB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Erweiterungsbaustein (Zugangswege/Anwendungsbereiche/Vertiefungen)" ;
+    cur:verified false .
+
+schul:fwu-LP_0030244 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030244 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verstehen und Handeln" ;
+    cur:verified false .
+
+schul:fwu-LP_0030245 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030245 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-HE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Hinweis zu Bezüge zu Kompetenzbereichen / Standards" ;
+    cur:verified false .
+
+schul:fwu-LP_0030246 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030246 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Beispiel für Differenzierungsmöglichkeiten" ;
+    cur:verified false .
+
+schul:fwu-LP_0030247 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030247 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Standard" ;
+    cur:verified false .
+
+schul:fwu-LP_0030248 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030248 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenzerwerb im Themenfeld" ;
+    cur:verified false .
+
+schul:fwu-LP_0030249 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030249 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Sachgebiet" ;
+    cur:verified false .
+
+schul:fwu-LP_0030250 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030250 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Fachmethode" ;
+    cur:verified false .
+
+schul:fwu-LP_0030251 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030251 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Technik" ;
+    cur:verified false .
+
+schul:fwu-LP_0030252 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030252 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Thema" ;
+    cur:verified false .
+
+schul:fwu-LP_0030253 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030253 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Möglicher Kontext" ;
+    cur:verified false .
+
+schul:fwu-LP_0030254 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030254 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Thema und Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030255 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030255 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Materialien" ;
+    cur:verified false .
+
+schul:fwu-LP_0030256 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030256 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030257 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030257 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf vernetzte Kompetenzen" ;
+    cur:verified false .
+
+schul:fwu-LP_0030259 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030259 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf standardillustrierende Aufgaben" ;
+    cur:verified false .
+
+schul:fwu-LP_0030260 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030260 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Vorgabe und Hinweis" ;
+    cur:verified false .
+
+schul:fwu-LP_0030261 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030261 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Dialogisches Sprechen – mündliche Interaktion" ;
+    cur:verified false .
+
+schul:fwu-LP_0030262 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030262 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-SL ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Zusammenhängendes monologisches Sprechen – mündliche Produktion" ;
+    cur:verified false .
+
+schul:fwu-LP_0030264 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030264 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeDocumentType schul:dt-Bildungsstandards ;
+    cur:scopeRegion land:DE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Domänenspezifischer Kompetenzbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030265 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030265 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeDocumentType schul:dt-Bildungsstandards ;
+    cur:scopeRegion land:DE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Prozessbezogener Kompetenzbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030266 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030266 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeDocumentType schul:dt-Bildungsstandards ;
+    cur:scopeRegion land:DE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Standard" ;
+    cur:verified false .
+
+schul:fwu-LP_0030268 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030268 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeDocumentType schul:dt-Bildungsstandards ;
+    cur:scopeRegion land:DE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Basiskonzept" ;
+    cur:verified false .
+
+schul:fwu-LP_0030269 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030269 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeDocumentType schul:dt-Bildungsstandards ;
+    cur:scopeRegion land:DE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verbindlicher inhaltlicher Aspekt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030270 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030270 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Basiskonzept" ;
+    cur:verified false .
+
+schul:fwu-LP_0030271 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030271 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhaltsbezogene Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030272 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030272 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verbindlicher Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030273 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030273 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Bereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030274 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030274 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Basiskonzept" ;
+    cur:verified false .
+
+schul:fwu-LP_0030275 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030275 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Aspekt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030276 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030276 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Beispielinhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030278 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030278 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzerwartung ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Prozessbezogene Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030279 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030279 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verbindliches Thema und Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030280 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030280 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Mögliches Thema und Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030281 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030281 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Mögliches Thema" ;
+    cur:verified false .
+
+schul:fwu-LP_0030282 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030282 ;
+    cur:alsoMapsTo schul:Hinweis ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo schul:Inhalt ;
+    cur:recognitionHint "FWU führt den Begriff als Inhalt und Hinweis: verbindliche Stichworte → Inhalt, „z. B.“/Anregungen → Hinweis."@de ;
+    cur:scopeRegion land:DE-SH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhalt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030284 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030284 ;
+    cur:alsoMapsTo schul:Hinweis ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo schul:Inhalt ;
+    cur:recognitionHint "FWU führt den Begriff als Inhalt und Hinweis: verbindliche Stichworte → Inhalt, „z. B.“/Anregungen → Hinweis."@de ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Möglicher inhaltlicher Aspekt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030285 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030285 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Thema und Kommunikationsbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030286 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030286 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Einblick in andere Kulturen" ;
+    cur:verified false .
+
+schul:fwu-LP_0030287 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030287 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Sprachfunktion/Redeabsicht" ;
+    cur:verified false .
+
+schul:fwu-LP_0030288 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030288 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Mögliches sprachliche Mittel zur Realisierung der Redeabsichten" ;
+    cur:verified false .
+
+schul:fwu-LP_0030289 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030289 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Thema und Situation" ;
+    cur:verified false .
+
+schul:fwu-LP_0030290 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030290 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Wesentlicher inhaltlicher Schwerpunkt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030291 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030291 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Wesentlicher inhaltlicher Aspekt" ;
+    cur:verified false .
+
+schul:fwu-LP_0030292 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030292 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Sprachliches Mittel" ;
+    cur:verified false .
+
+schul:fwu-LP_0030293 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030293 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Structure" ;
+    cur:verified false .
+
+schul:fwu-LP_0030294 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030294 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Themenkomplex" ;
+    cur:verified false .
+
+schul:fwu-LP_0030295 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030295 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhalt ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Schülerexperiment" ;
+    cur:verified false .
+
+schul:fwu-LP_0030296 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030296 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Projektvorschlag" ;
+    cur:verified false .
+
+schul:fwu-LP_0030297 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030297 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Themenbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030298 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030298 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-TH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhaltsbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030299 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030299 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Aufgabe" ;
+    cur:verified false .
+
+schul:fwu-LP_0030300 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030300 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Material" ;
+    cur:verified false .
+
+schul:fwu-LP_0030301 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030301 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf mebis" ;
+    cur:verified false .
+
+schul:fwu-LP_0030302 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030302 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Verweis ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verweis auf Erläuterung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030303 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030303 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Hinweis ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Erläuterung" ;
+    cur:verified false .
+
+schul:fwu-LP_0030304 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030304 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Bildungs- und Erziehungsauftrag" ;
+    cur:verified false .
+
+schul:fwu-LP_0030307 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030307 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Grundlegende Kompetenzen (Jahrgangsstufenprofil)" ;
+    cur:verified false .
+
+schul:fwu-LP_0030308 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030308 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Rahmenteil ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Bayerische Leitlinie für die Bildung und Erziehung von Kindern bis zum Ender der Grundschulzeit" ;
+    cur:verified false .
+
+schul:fwu-LP_0030309 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030309 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Kompetenzbereich ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Kompetenzbereich" ;
+    cur:verified false .
+
+schul:fwu-LP_0030310 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030310 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Inhaltsbereich ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Prozessbezogene Kompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030318 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030318 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Querschnittsbereich ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Schlüsselkompetenz" ;
+    cur:verified false .
+
+schul:fwu-LP_0030329 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030329 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Querschnittsbereich ;
+    cur:scopeRegion land:DE-SN ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Bildungs- und Erziehungsziel" ;
+    cur:verified false .
+
+schul:fwu-LP_0030330 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030330 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Querschnittsbereich ;
+    cur:scopeRegion land:DE-ST ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Fachübergreifendes Thema" ;
+    cur:verified false .
+
+schul:fwu-LP_0030331 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030331 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Querschnittsbereich ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Übergreifendes Bildungs- und Erziehungsziel" ;
+    cur:verified false .
+
+schul:fwu-LP_0030332 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030332 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Querschnittsbereich ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Fachübergreifendes Thema" ;
+    cur:verified false .
+
+schul:fwu-LP_0030333 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030333 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Querschnittsbereich ;
+    cur:scopeRegion land:DE-BB ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Fachübergreifendes Thema" ;
+    cur:verified false .
+
+schul:fwu-LP_0030335 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030335 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Querschnittsbereich ;
+    cur:scopeDocumentType schul:dt-Bildungsstandards ;
+    cur:scopeRegion land:DE ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Weiteres Thema" ;
+    cur:verified false .
+
+schul:fwu-LP_0030336 a cur:LexicalCue ;
+    skos:exactMatch lp:LP_0030336 ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo schul:Querschnittsbereich ;
+    cur:scopeRegion land:DE-HH ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Aufgabengebiet" ;
+    cur:verified false .
+

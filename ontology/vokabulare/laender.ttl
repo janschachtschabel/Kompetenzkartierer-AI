@@ -1,0 +1,81 @@
+@prefix land:  <https://w3id.org/wlo/curriculum/region/> .
+@prefix cur:   <https://w3id.org/wlo/curriculum/core#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix dct:   <http://purl.org/dc/terms/> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+@prefix wd:    <http://www.wikidata.org/entity/> .
+@prefix lp:    <https://w3id.org/lehrplan/ontology/> .
+
+# Länder und Geltungsräume. Notation = ISO 3166-2.
+# exactMatch: Wikidata (QIDs am 2026-10-19 per Wikidata-API geprüft) und
+# FWU-Lehrplan-Ontologie 1.0.0rc3/rc5 (Ziel von lp:LP_0000029 „von Bundesland“,
+# aus lp-base.ttl ausgelesen). Länderübergreifende Gremien (KMK, JFMK, BIBB)
+# sind keine Regionen, sondern Herausgeber (cur:issuer); ihr Geltungsraum ist land:DE.
+
+<https://w3id.org/wlo/curriculum/region> a owl:Ontology ;
+    dct:title "Länder und Geltungsräume"@de , "German federal states"@en ;
+    owl:versionInfo "1.0-entwurf" ;
+    dct:created "2026-10-19"^^xsd:date .
+
+land:Regions a skos:ConceptScheme ;
+    skos:prefLabel "Länder und Geltungsräume"@de , "regions"@en ;
+    skos:hasTopConcept land:DE .
+
+land:DE a skos:Concept ; skos:inScheme land:Regions ; skos:topConceptOf land:Regions ;
+    skos:notation "DE" ; skos:prefLabel "Deutschland (bundesweit/länderübergreifend)"@de , "Germany (nationwide)"@en ;
+    skos:scopeNote "Für Bundesrecht (Ausbildungsordnungen) und länderübergreifende Beschlüsse (KMK-Bildungsstandards, KMK-Rahmenlehrpläne, Gemeinsamer Rahmen der Länder)."@de ;
+    skos:exactMatch wd:Q183 .
+
+land:DE-BW a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-BW" ; skos:altLabel "BW" ; skos:prefLabel "Baden-Württemberg"@de ;
+    skos:exactMatch wd:Q985 , lp:LP_3000049 .
+land:DE-BY a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-BY" ; skos:altLabel "BY" ; skos:prefLabel "Bayern"@de , "Bavaria"@en ;
+    skos:exactMatch wd:Q980 , lp:LP_3000051 .
+land:DE-BE a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-BE" ; skos:altLabel "BE" ; skos:prefLabel "Berlin"@de ;
+    skos:exactMatch wd:Q64 , lp:LP_3000048 .
+land:DE-BB a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-BB" ; skos:altLabel "BB" ; skos:prefLabel "Brandenburg"@de ;
+    skos:exactMatch wd:Q1208 , lp:LP_3000057 .
+land:DE-HB a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-HB" ; skos:altLabel "HB" ; skos:prefLabel "Bremen"@de ;
+    skos:exactMatch wd:Q1209 , lp:LP_3000056 .
+land:DE-HH a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-HH" ; skos:altLabel "HH" ; skos:prefLabel "Hamburg"@de ;
+    skos:exactMatch wd:Q1055 , lp:LP_3000045 .
+land:DE-HE a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-HE" ; skos:altLabel "HE" ; skos:prefLabel "Hessen"@de , "Hesse"@en ;
+    skos:exactMatch wd:Q1199 , lp:LP_3000050 .
+land:DE-MV a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-MV" ; skos:altLabel "MV" ; skos:prefLabel "Mecklenburg-Vorpommern"@de ;
+    skos:exactMatch wd:Q1196 , lp:LP_3000052 .
+land:DE-NI a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-NI" ; skos:altLabel "NI" ; skos:prefLabel "Niedersachsen"@de , "Lower Saxony"@en ;
+    skos:exactMatch wd:Q1197 , lp:LP_3000043 .
+land:DE-NW a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-NW" ; skos:altLabel "NW" , "NRW" ; skos:prefLabel "Nordrhein-Westfalen"@de , "North Rhine-Westphalia"@en ;
+    skos:exactMatch wd:Q1198 , lp:LP_3000044 .
+land:DE-RP a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-RP" ; skos:altLabel "RP" , "RLP" ; skos:prefLabel "Rheinland-Pfalz"@de , "Rhineland-Palatinate"@en ;
+    skos:exactMatch wd:Q1200 , lp:LP_3000046 .
+land:DE-SL a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-SL" ; skos:altLabel "SL" ; skos:prefLabel "Saarland"@de ;
+    skos:exactMatch wd:Q1201 , lp:LP_3000055 .
+land:DE-SN a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-SN" ; skos:altLabel "SN" ; skos:prefLabel "Sachsen"@de , "Saxony"@en ;
+    skos:exactMatch wd:Q1202 , lp:LP_3000047 .
+land:DE-ST a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-ST" ; skos:altLabel "ST" ; skos:prefLabel "Sachsen-Anhalt"@de , "Saxony-Anhalt"@en ;
+    skos:exactMatch wd:Q1206 , lp:LP_3000053 .
+land:DE-SH a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-SH" ; skos:altLabel "SH" ; skos:prefLabel "Schleswig-Holstein"@de ;
+    skos:exactMatch wd:Q1194 , lp:LP_3000054 .
+land:DE-TH a skos:Concept ; skos:inScheme land:Regions ; skos:broader land:DE ;
+    skos:notation "DE-TH" ; skos:altLabel "TH" ; skos:prefLabel "Thüringen"@de , "Thuringia"@en ;
+    skos:exactMatch wd:Q1205 , lp:LP_3000031 .
+
+land:DE skos:narrower land:DE-BW , land:DE-BY , land:DE-BE , land:DE-BB , land:DE-HB , land:DE-HH ,
+    land:DE-HE , land:DE-MV , land:DE-NI , land:DE-NW , land:DE-RP , land:DE-SL , land:DE-SN ,
+    land:DE-ST , land:DE-SH , land:DE-TH .

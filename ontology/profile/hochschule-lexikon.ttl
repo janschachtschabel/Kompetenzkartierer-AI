@@ -1,0 +1,4099 @@
+# =============================================================================
+# GENERIERT von werkzeuge/portiere_hochschul_lexikon.py aus
+# hochschule/hco-lexicon.ttl (HCO v1.0, 396 Einträge).
+# Nicht von Hand ändern: Quelle oder Skript anpassen und neu erzeugen.
+# Feldlexikon des Modulsteckbriefs; Korrekturen laut HCO-Bericht H.9.
+# =============================================================================
+@prefix cur: <https://w3id.org/wlo/curriculum/core#> .
+@prefix cv: <https://w3id.org/wlo/curriculum/vocab#> .
+@prefix fld: <https://w3id.org/wlo/curriculum/field/> .
+@prefix hs: <https://w3id.org/wlo/curriculum/profile/higher-education#> .
+@prefix land: <https://w3id.org/wlo/curriculum/region/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+hs:Terminology cur:hasCue hs:lex-AdmissionRequirement-alt-admission-requirements,
+        hs:lex-AdmissionRequirement-alt-zugangsberechtigung,
+        hs:lex-AdmissionRequirement-alt-zulassungsvoraussetzungen,
+        hs:lex-AdmissionRequirement-cue-eignungsfeststellungsverfahren,
+        hs:lex-AdmissionRequirement-cue-eignungspruefung,
+        hs:lex-AdmissionRequirement-cue-hochschulzugangsberechtigung,
+        hs:lex-AdmissionRequirement-pref-zugangsvoraussetzungen,
+        hs:lex-Annex-alt-anhang,
+        hs:lex-Annex-alt-annex,
+        hs:lex-Annex-alt-appendix,
+        hs:lex-Annex-cue-moduluebersicht,
+        hs:lex-Annex-cue-pruefungsplan,
+        hs:lex-Annex-pref-anlage,
+        hs:lex-ArtisticComponent-alt-hauptfach-gesang,
+        hs:lex-ArtisticComponent-alt-hauptfach-instrument,
+        hs:lex-ArtisticComponent-alt-kuenstlerischer-einzelunterricht,
+        hs:lex-ArtisticComponent-alt-kuenstlerisches-kernfach,
+        hs:lex-ArtisticComponent-homonym-hauptfach,
+        hs:lex-ArtisticComponent-pref-kuenstlerisches-hauptfach,
+        hs:lex-Assessment-alt-assessment,
+        hs:lex-Assessment-alt-examination,
+        hs:lex-Assessment-alt-form-der-pruefung,
+        hs:lex-Assessment-alt-pruefung,
+        hs:lex-Assessment-alt-pruefungsart,
+        hs:lex-Assessment-alt-pruefungsform,
+        hs:lex-Assessment-homonym-pruefungsvorleistung,
+        hs:lex-Assessment-homonym-studienleistung,
+        hs:lex-Assessment-homonym-testat,
+        hs:lex-Assessment-pref-pruefungsleistung,
+        hs:lex-ComponentGroup-alt-elective-catalogue,
+        hs:lex-ComponentGroup-alt-katalog,
+        hs:lex-ComponentGroup-alt-modulliste,
+        hs:lex-ComponentGroup-alt-modulpool,
+        hs:lex-ComponentGroup-alt-wahlkatalog,
+        hs:lex-ComponentGroup-alt-wahlpflichtmodulgruppe,
+        hs:lex-ComponentGroup-homonym-modulkatalog,
+        hs:lex-ComponentGroup-pref-wahlpflichtkatalog,
+        hs:lex-ComponentUse-cue-applicability,
+        hs:lex-ComponentUse-cue-einordnung-in-das-curriculum,
+        hs:lex-ComponentUse-cue-moduluebersicht,
+        hs:lex-ComponentUse-cue-polyvalenz,
+        hs:lex-ComponentUse-cue-studienverlaufsplan,
+        hs:lex-ComponentUse-cue-zuordnung-zum-curriculum,
+        hs:lex-ComponentUse-homonym-verwendbarkeit-des-moduls,
+        hs:lex-ComponentUse-pref-verwendung-im-studiengang,
+        hs:lex-ContentStatement-alt-content,
+        hs:lex-ContentStatement-alt-gliederung,
+        hs:lex-ContentStatement-alt-inhalt,
+        hs:lex-ContentStatement-alt-lehrinhalte,
+        hs:lex-ContentStatement-alt-modulinhalte,
+        hs:lex-ContentStatement-alt-studieninhalte,
+        hs:lex-ContentStatement-alt-syllabus,
+        hs:lex-ContentStatement-alt-themen,
+        hs:lex-ContentStatement-negative-die-studierenden-koennen,
+        hs:lex-ContentStatement-pref-inhalte,
+        hs:lex-CourseUnit-alt-course-unit,
+        hs:lex-CourseUnit-alt-modulelement,
+        hs:lex-CourseUnit-alt-modulteil,
+        hs:lex-CourseUnit-alt-teilmodul,
+        hs:lex-CourseUnit-alt-veranstaltung,
+        hs:lex-CourseUnit-cue-lehrveranstaltungen-und-lehrformen,
+        hs:lex-CourseUnit-negative-modul,
+        hs:lex-CourseUnit-pref-lehrveranstaltung,
+        hs:lex-CurriculumPlan-alt-aufbau-des-studiums,
+        hs:lex-CurriculumPlan-alt-gliederung-des-studiums,
+        hs:lex-CurriculumPlan-alt-studienaufbau,
+        hs:lex-CurriculumPlan-cue-curriculum,
+        hs:lex-CurriculumPlan-cue-studienplan,
+        hs:lex-CurriculumPlan-cue-studienverlaufsplan,
+        hs:lex-CurriculumPlan-pref-studienstruktur,
+        hs:lex-ExternalComponentReference-cue-aus-dem-angebot-der-fakultaet,
+        hs:lex-ExternalComponentReference-cue-gemaess-modulhandbuch-des-studiengangs,
+        hs:lex-ExternalComponentReference-cue-importmodul,
+        hs:lex-ExternalComponentReference-cue-nach-massgabe-der-pruefungsordnung,
+        hs:lex-ExternalComponentReference-cue-siehe-modulbeschreibung,
+        hs:lex-LearningOutcomeStatement-alt-angestrebte-lernergebnisse,
+        hs:lex-LearningOutcomeStatement-alt-intended-learning-outcomes,
+        hs:lex-LearningOutcomeStatement-alt-kompetenzen,
+        hs:lex-LearningOutcomeStatement-alt-kompetenzziele,
+        hs:lex-LearningOutcomeStatement-alt-learning-outcomes,
+        hs:lex-LearningOutcomeStatement-alt-lern-und-qualifikationsziele,
+        hs:lex-LearningOutcomeStatement-alt-lernergebnisse,
+        hs:lex-LearningOutcomeStatement-alt-lernziele,
+        hs:lex-LearningOutcomeStatement-alt-modulziele,
+        hs:lex-LearningOutcomeStatement-alt-qualifikations-und-kompetenzziele,
+        hs:lex-LearningOutcomeStatement-cue-die-studierenden-koennen,
+        hs:lex-LearningOutcomeStatement-cue-die-studierenden-sind-in-der-lage,
+        hs:lex-LearningOutcomeStatement-cue-nach-erfolgreichem-abschluss-des-moduls,
+        hs:lex-LearningOutcomeStatement-cue-students-will-be-able-to,
+        hs:lex-LearningOutcomeStatement-homonym-inhalte-und-qualifikationsziele-des-modu,
+        hs:lex-LearningOutcomeStatement-homonym-ziele,
+        hs:lex-LearningOutcomeStatement-negative-inhalte,
+        hs:lex-LearningOutcomeStatement-pref-qualifikationsziele,
+        hs:lex-Module-alt-module,
+        hs:lex-Module-alt-moduleinheit,
+        hs:lex-Module-alt-unit,
+        hs:lex-Module-homonym-kurs,
+        hs:lex-Module-negative-lehrveranstaltung,
+        hs:lex-Module-negative-vorlesung-innerhalb-des-moduls,
+        hs:lex-Module-pref-modul,
+        hs:lex-ParticipationRequirement-alt-prerequisites,
+        hs:lex-ParticipationRequirement-alt-teilnahmevoraussetzungen,
+        hs:lex-ParticipationRequirement-cue-empfohlene-vorkenntnisse,
+        hs:lex-ParticipationRequirement-cue-formale-voraussetzungen,
+        hs:lex-ParticipationRequirement-cue-inhaltliche-voraussetzungen,
+        hs:lex-ParticipationRequirement-cue-keine,
+        hs:lex-ParticipationRequirement-cue-vorkenntnisse,
+        hs:lex-ParticipationRequirement-pref-voraussetzungen-fuer-die-teilnahme,
+        hs:lex-Placement-alt-berufspraktikum,
+        hs:lex-Placement-alt-famulatur,
+        hs:lex-Placement-alt-internship,
+        hs:lex-Placement-alt-orientierungspraktikum,
+        hs:lex-Placement-alt-pflichtpraktikum,
+        hs:lex-Placement-alt-praktisches-jahr,
+        hs:lex-Placement-alt-praxismodul,
+        hs:lex-Placement-alt-praxisprojekt,
+        hs:lex-Placement-alt-praxissemester,
+        hs:lex-Placement-alt-schulpraktikum,
+        hs:lex-Placement-homonym-praktikum,
+        hs:lex-Placement-pref-praxisphase,
+        hs:lex-PrerequisiteRule-cue-setzt-das-bestehen-voraus,
+        hs:lex-PrerequisiteRule-cue-voraussetzung-fuer-die-anmeldung,
+        hs:lex-PrerequisiteRule-cue-zulassungsvoraussetzung,
+        hs:lex-ProgrammeArea-alt-modulbereich,
+        hs:lex-ProgrammeArea-cue-abv,
+        hs:lex-ProgrammeArea-cue-allgemeine-berufsvorbereitung,
+        hs:lex-ProgrammeArea-cue-bildungswissenschaften,
+        hs:lex-ProgrammeArea-cue-block,
+        hs:lex-ProgrammeArea-cue-ergaenzungsbereich,
+        hs:lex-ProgrammeArea-cue-grundlagenbereich,
+        hs:lex-ProgrammeArea-cue-kompetenzfeld,
+        hs:lex-ProgrammeArea-cue-komplementaerbereich,
+        hs:lex-ProgrammeArea-cue-optionalbereich,
+        hs:lex-ProgrammeArea-cue-pflichtbereich,
+        hs:lex-ProgrammeArea-cue-professionalisierungsbereich,
+        hs:lex-ProgrammeArea-cue-profilbereich,
+        hs:lex-ProgrammeArea-cue-saeule,
+        hs:lex-ProgrammeArea-cue-schluesselqualifikationen,
+        hs:lex-ProgrammeArea-cue-sq-bereich,
+        hs:lex-ProgrammeArea-cue-studium-fundamentale,
+        hs:lex-ProgrammeArea-cue-studium-generale,
+        hs:lex-ProgrammeArea-cue-wahlbereich,
+        hs:lex-ProgrammeArea-cue-wahlpflichtbereich,
+        hs:lex-ProgrammeArea-homonym-modulgruppe,
+        hs:lex-ProgrammeArea-homonym-studienbereich,
+        hs:lex-ProgrammeQualificationGoal-alt-ausbildungsziel,
+        hs:lex-ProgrammeQualificationGoal-alt-fachspezifisches-kompetenzprofil,
+        hs:lex-ProgrammeQualificationGoal-alt-graduate-attributes,
+        hs:lex-ProgrammeQualificationGoal-alt-kompetenzprofil,
+        hs:lex-ProgrammeQualificationGoal-alt-programme-learning-outcomes,
+        hs:lex-ProgrammeQualificationGoal-alt-qualifikationsprofil,
+        hs:lex-ProgrammeQualificationGoal-alt-studienziele,
+        hs:lex-ProgrammeQualificationGoal-alt-ziele-des-studiums,
+        hs:lex-ProgrammeQualificationGoal-cue-4-2-lernergebnisse-des-studiengangs,
+        hs:lex-ProgrammeQualificationGoal-cue-absolvent-innen-verfuegen-ueber,
+        hs:lex-ProgrammeQualificationGoal-cue-das-studium-befaehigt,
+        hs:lex-ProgrammeQualificationGoal-cue-die-absolventinnen-und-absolventen,
+        hs:lex-ProgrammeQualificationGoal-cue-ziel-des-studiums-ist,
+        hs:lex-ProgrammeQualificationGoal-pref-qualifikationsziele-des-studiengangs,
+        hs:lex-ProgrammeVersion-cue-fassung-vom,
+        hs:lex-ProgrammeVersion-cue-gueltig-ab,
+        hs:lex-ProgrammeVersion-cue-po-20xx,
+        hs:lex-ProgrammeVersion-cue-po-version,
+        hs:lex-ProgrammeVersion-cue-spo-version,
+        hs:lex-ProgrammeVersion-pref-studiengangsfassung,
+        hs:lex-ProgressionRule-cue-fristueberschreitung,
+        hs:lex-ProgressionRule-cue-grundlagen-und-orientierungspruefung,
+        hs:lex-ProgressionRule-cue-orientierungspruefung,
+        hs:lex-ProgressionRule-cue-wiederholung-von-pruefungen,
+        hs:lex-ProjectComponent-alt-lehrforschungsprojekt,
+        hs:lex-ProjectComponent-alt-projektmodul,
+        hs:lex-ProjectComponent-alt-studienarbeit,
+        hs:lex-ProjectComponent-alt-studienprojekt,
+        hs:lex-ProjectComponent-alt-teamprojekt,
+        hs:lex-ProjectComponent-pref-projekt,
+        hs:lex-RecognitionRule-alt-anerkennung,
+        hs:lex-RecognitionRule-alt-anrechnung-ausserhochschulisch-erworbene,
+        hs:lex-RecognitionRule-alt-recognition-of-prior-learning,
+        hs:lex-RecognitionRule-cue-gleichwertig-nach-inhalt-und-niveau,
+        hs:lex-RecognitionRule-cue-hoechstens-50,
+        hs:lex-RecognitionRule-cue-pauschale-anrechnung,
+        hs:lex-RecognitionRule-pref-anrechnung,
+        hs:lex-ScopeAssignment-cue-abweichend-gilt-fuer,
+        hs:lex-ScopeAssignment-cue-fuer-den-schwerpunkt-gilt,
+        hs:lex-ScopeAssignment-cue-gilt-nur-fuer,
+        hs:lex-SelectionRule-cue-aus-dem-katalog,
+        hs:lex-SelectionRule-cue-eines-der-folgenden-module,
+        hs:lex-SelectionRule-cue-entweder-oder,
+        hs:lex-SelectionRule-cue-mindestens-lp,
+        hs:lex-SelectionRule-cue-nach-wahl-der-studierenden,
+        hs:lex-SelectionRule-cue-sind-lp-aus-folgenden-modulen-zu-waehlen,
+        hs:lex-SelectionRule-pref-wahlregel,
+        hs:lex-Specialisation-alt-fachrichtung,
+        hs:lex-Specialisation-alt-profillinie,
+        hs:lex-Specialisation-alt-specialisation,
+        hs:lex-Specialisation-alt-spezialisierung,
+        hs:lex-Specialisation-alt-studienrichtung,
+        hs:lex-Specialisation-alt-track,
+        hs:lex-Specialisation-alt-vertiefung,
+        hs:lex-Specialisation-alt-vertiefungsrichtung,
+        hs:lex-Specialisation-homonym-profil,
+        hs:lex-Specialisation-pref-schwerpunkt,
+        hs:lex-StudyPhase-alt-studienphase,
+        hs:lex-StudyPhase-cue-grundstudium,
+        hs:lex-StudyPhase-cue-hauptstudium,
+        hs:lex-StudyPhase-cue-klinischer-abschnitt,
+        hs:lex-StudyPhase-cue-orientierungsphase,
+        hs:lex-StudyPhase-cue-studieneingangsphase,
+        hs:lex-StudyPhase-cue-studienjahr,
+        hs:lex-StudyPhase-cue-vorklinischer-abschnitt,
+        hs:lex-StudyPhase-pref-studienabschnitt,
+        hs:lex-StudyProgramme-alt-degree-programme,
+        hs:lex-StudyProgramme-alt-programme-of-study,
+        hs:lex-StudyProgramme-alt-studienangebot,
+        hs:lex-StudyProgramme-alt-studienprogramm,
+        hs:lex-StudyProgramme-alt-study-programme,
+        hs:lex-StudyProgramme-cue-2-fach-bachelor,
+        hs:lex-StudyProgramme-cue-bachelorstudiengang,
+        hs:lex-StudyProgramme-cue-kombi-bachelor,
+        hs:lex-StudyProgramme-cue-kombinationsstudiengang,
+        hs:lex-StudyProgramme-cue-masterstudiengang,
+        hs:lex-StudyProgramme-cue-teilstudiengang,
+        hs:lex-StudyProgramme-cue-zwei-faecher-bachelor,
+        hs:lex-StudyProgramme-homonym-studienfach,
+        hs:lex-StudyProgramme-pref-studiengang,
+        hs:lex-TeachingLearningActivity-alt-lehr-und-lernmethoden,
+        hs:lex-TeachingLearningActivity-alt-lehrformen,
+        hs:lex-TeachingLearningActivity-alt-lehrmethoden,
+        hs:lex-TeachingLearningActivity-alt-lehrveranstaltungsart,
+        hs:lex-TeachingLearningActivity-alt-lernformen,
+        hs:lex-TeachingLearningActivity-alt-teaching-methods,
+        hs:lex-TeachingLearningActivity-alt-veranstaltungsform,
+        hs:lex-TeachingLearningActivity-cue-2-sws-v-2-sws-ue,
+        hs:lex-TeachingLearningActivity-pref-lehr-und-lernformen,
+        hs:lex-Thesis-alt-abschlussmodul,
+        hs:lex-Thesis-alt-bachelor-thesis,
+        hs:lex-Thesis-alt-bachelorarbeit,
+        hs:lex-Thesis-alt-diplomarbeit,
+        hs:lex-Thesis-alt-master-thesis,
+        hs:lex-Thesis-alt-masterarbeit,
+        hs:lex-Thesis-alt-staatsexamensarbeit,
+        hs:lex-Thesis-alt-wissenschaftliche-hausarbeit,
+        hs:lex-Thesis-cue-kolloquium-zur-abschlussarbeit,
+        hs:lex-Thesis-pref-abschlussarbeit,
+        hs:lex-Workload-alt-arbeitsbelastung,
+        hs:lex-Workload-alt-gesamtaufwand,
+        hs:lex-Workload-alt-studentischer-arbeitsaufwand,
+        hs:lex-Workload-alt-workload,
+        hs:lex-Workload-cue-eigenstudium,
+        hs:lex-Workload-cue-kontaktzeit,
+        hs:lex-Workload-cue-praesenzzeit,
+        hs:lex-Workload-cue-selbststudium,
+        hs:lex-Workload-homonym-sws,
+        hs:lex-Workload-pref-arbeitsaufwand,
+        hs:lex-amends-cue-aenderungssatzung,
+        hs:lex-amends-cue-artikel-1,
+        hs:lex-amends-cue-satzung-zur-aenderung,
+        hs:lex-amends-cue-wird-wie-folgt-geaendert,
+        hs:lex-appliesToCohort-cue-gilt-fuer-studierende-die-ihr-studium-ab,
+        hs:lex-appliesToCohort-cue-studienbeginn-ab,
+        hs:lex-appliesToCohort-cue-uebergangsbestimmungen,
+        hs:lex-appliesToCohort-cue-uebergangsregelung,
+        hs:lex-componentCode-alt-kennziffer,
+        hs:lex-componentCode-alt-kuerzel,
+        hs:lex-componentCode-alt-modul-id,
+        hs:lex-componentCode-alt-modul-nr,
+        hs:lex-componentCode-alt-modulcode,
+        hs:lex-componentCode-alt-module-code,
+        hs:lex-componentCode-alt-modulkennung,
+        hs:lex-componentCode-pref-modulnummer,
+        hs:lex-componentType-alt-modulkategorie,
+        hs:lex-componentType-pref-modultyp,
+        hs:lex-creditAwardCondition-alt-leistungsnachweis,
+        hs:lex-creditAwardCondition-alt-modulabschluss,
+        hs:lex-creditAwardCondition-alt-requirements-for-the-award-of-credits,
+        hs:lex-creditAwardCondition-alt-studien-und-pruefungsleistungen,
+        hs:lex-creditAwardCondition-alt-voraussetzungen-fuer-die-vergabe-von-lei,
+        hs:lex-creditAwardCondition-homonym-modulpruefung,
+        hs:lex-creditAwardCondition-pref-voraussetzungen-fuer-die-vergabe-von-ect,
+        hs:lex-dt_AdmissionRegulation-alt-eignungsfeststellungsordnung,
+        hs:lex-dt_AdmissionRegulation-alt-eignungspruefungsordnung,
+        hs:lex-dt_CombinedStudyExaminationRegulation-cue-fpso,
+        hs:lex-dt_CombinedStudyExaminationRegulation-cue-spo,
+        hs:lex-dt_CombinedStudyExaminationRegulation-cue-stupo,
+        hs:lex-dt_CombinedStudyExaminationRegulation-pref-studien-und-pruefungsordnung,
+        hs:lex-dt_ExaminationRegulation-alt-fachspezifische-pruefungsordnung,
+        hs:lex-dt_ExaminationRegulation-cue-fpo,
+        hs:lex-dt_ExaminationRegulation-cue-fsb,
+        hs:lex-dt_GeneralExaminationRegulation-alt-gemeinsame-pruefungsordnung,
+        hs:lex-dt_GeneralExaminationRegulation-cue-apo,
+        hs:lex-dt_GeneralExaminationRegulation-cue-aspo,
+        hs:lex-dt_GeneralExaminationRegulation-cue-rpo,
+        hs:lex-dt_GeneralExaminationRegulation-cue-rspo,
+        hs:lex-dt_ModuleCatalogue-alt-ects-course-catalogue,
+        hs:lex-dt_ModuleCatalogue-cue-studienfuehrer,
+        hs:lex-dt_PlacementRegulation-alt-praxissemesterordnung,
+        hs:lex-dt_PlacementRegulation-cue-rahmenausbildungsplan,
+        hs:lex-dt_StateExaminationRegulation-cue-aeappro,
+        hs:lex-dt_StateExaminationRegulation-cue-japo,
+        hs:lex-dt_TeacherTrainingRegulation-alt-lehramtspruefungsordnung,
+        hs:lex-dt_TeacherTrainingRegulation-cue-lpo-i,
+        hs:lex-dt_TeacherTrainingRegulation-cue-lzv,
+        hs:lex-durationSemesters-alt-dauer,
+        hs:lex-durationSemesters-alt-duration,
+        hs:lex-durationSemesters-alt-moduldauer,
+        hs:lex-durationSemesters-cue-einsemestrig,
+        hs:lex-durationSemesters-cue-zweisemestrig,
+        hs:lex-durationSemesters-pref-dauer-des-moduls,
+        hs:lex-ectsCredits-alt-cp,
+        hs:lex-ectsCredits-alt-credit-points,
+        hs:lex-ectsCredits-alt-credits,
+        hs:lex-ectsCredits-alt-ects,
+        hs:lex-ectsCredits-alt-ects-punkte,
+        hs:lex-ectsCredits-alt-kp,
+        hs:lex-ectsCredits-alt-kreditpunkte,
+        hs:lex-ectsCredits-alt-leistungspunkte,
+        hs:lex-ectsCredits-alt-lp,
+        hs:lex-ectsCredits-pref-ects-leistungspunkte,
+        hs:lex-ectsRequired-cue-im-umfang-von-lp,
+        hs:lex-ectsRequired-cue-summe-lp,
+        hs:lex-ectsRequired-pref-zu-erbringende-leistungspunkte,
+        hs:lex-gradeWeight-alt-notengewicht,
+        hs:lex-gradeWeight-alt-stellenwert-der-note-fuer-die-endnote,
+        hs:lex-gradeWeight-cue-faktor,
+        hs:lex-gradeWeight-pref-gewichtung-fuer-die-gesamtnote,
+        hs:lex-gradingScheme-alt-gewichtung-der-note,
+        hs:lex-gradingScheme-cue-bestanden-nicht-bestanden,
+        hs:lex-gradingScheme-cue-unbenotet,
+        hs:lex-gradingScheme-pref-benotung,
+        hs:lex-inheritsFrom-cue-besonderer-teil,
+        hs:lex-inheritsFrom-cue-ergaenzend-gelten-die-allgemeinen-bestim,
+        hs:lex-inheritsFrom-cue-fachspezifische-bestimmungen-zur-rahmenp,
+        hs:lex-inheritsFrom-cue-i-v-m-der-allgemeinen-pruefungsordnung,
+        hs:lex-inheritsFrom-cue-in-verbindung-mit,
+        hs:lex-instructionLanguage-alt-language-of-instruction,
+        hs:lex-instructionLanguage-alt-sprache,
+        hs:lex-instructionLanguage-alt-unterrichtssprache,
+        hs:lex-instructionLanguage-pref-lehrsprache,
+        hs:lex-ns_binding-cue-amtliche-bekanntmachung,
+        hs:lex-ns_binding-cue-amtliche-mitteilungen,
+        hs:lex-ns_binding-cue-amtsblatt-der-hochschule,
+        hs:lex-ns_binding-cue-aufgrund-von-des-hochschulgesetzes-hat-d,
+        hs:lex-ns_binding-cue-mitteilungsblatt,
+        hs:lex-ns_binding-cue-tritt-am-tage-nach-ihrer-veroeffentlichu,
+        hs:lex-ns_binding-cue-verkuendungsblatt,
+        hs:lex-ns_bindingAnnex-cue-anlage-zur-pruefungsordnung,
+        hs:lex-ns_bindingAnnex-cue-das-modulhandbuch-ist-anlage,
+        hs:lex-ns_bindingAnnex-cue-ist-bestandteil-dieser-ordnung,
+        hs:lex-ns_informative-cue-es-gilt-die-jeweils-gueltige-pruefungsor,
+        hs:lex-ns_informative-cue-lesefassung,
+        hs:lex-ns_informative-cue-nicht-rechtsverbindlich,
+        hs:lex-ns_informative-cue-stand,
+        hs:lex-obligation-cue-art-des-moduls,
+        hs:lex-obligation-cue-p-wp-w,
+        hs:lex-obligation-cue-pflicht-wahlpflicht,
+        hs:lex-obligation-cue-status,
+        hs:lex-obligation-homonym-modulart,
+        hs:lex-obligation-homonym-p,
+        hs:lex-offerFrequency-alt-angebotshaeufigkeit,
+        hs:lex-offerFrequency-alt-angebotsturnus,
+        hs:lex-offerFrequency-alt-frequency,
+        hs:lex-offerFrequency-alt-haeufigkeit-des-angebots,
+        hs:lex-offerFrequency-alt-turnus,
+        hs:lex-offerFrequency-pref-haeufigkeit-des-angebots-des-moduls,
+        hs:lex-recommendedSemester-alt-fachsemester,
+        hs:lex-recommendedSemester-alt-lage-im-studienverlauf,
+        hs:lex-recommendedSemester-alt-semesterlage,
+        hs:lex-recommendedSemester-alt-studiensemester,
+        hs:lex-recommendedSemester-cue-fs,
+        hs:lex-recommendedSemester-cue-sem,
+        hs:lex-recommendedSemester-homonym-semester,
+        hs:lex-recommendedSemester-pref-empfohlenes-fachsemester,
+        hs:lex-responsiblePerson-alt-modulbeauftragte-r,
+        hs:lex-responsiblePerson-alt-module-coordinator,
+        hs:lex-responsiblePerson-alt-modulkoordination,
+        hs:lex-responsiblePerson-alt-verantwortlich,
+        hs:lex-responsiblePerson-pref-modulverantwortliche-r,
+        hs:lex-standardDurationSemesters-alt-standard-period-of-study,
+        hs:lex-standardDurationSemesters-alt-studiendauer,
+        hs:lex-standardDurationSemesters-pref-regelstudienzeit,
+        hs:lex-studyMode-alt-studienart,
+        hs:lex-studyMode-alt-studienmodell,
+        hs:lex-studyMode-cue-ausbildungsintegrierend,
+        hs:lex-studyMode-cue-berufsbegleitend,
+        hs:lex-studyMode-cue-praxisintegrierend,
+        hs:lex-studyMode-homonym-dual,
+        hs:lex-studyMode-pref-studienform,
+        hs:lex-totalCredits-cue-gesamtumfang,
+        hs:lex-totalCredits-cue-insgesamt-leistungspunkte,
+        hs:lex-totalCredits-cue-umfang-des-studiums,
+        hs:lex-usabilityText-alt-applicability,
+        hs:lex-usabilityText-alt-einsetzbarkeit,
+        hs:lex-usabilityText-alt-verwendbarkeit,
+        hs:lex-usabilityText-alt-verwendung-in-anderen-studiengaengen,
+        hs:lex-usabilityText-pref-verwendbarkeit-des-moduls .
+
+hs:lex-AdmissionRequirement-alt-admission-requirements a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/AdmissionRequirement--alt--admission-requirements> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:PrerequisiteRule,
+        hs:rk-zugang ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Admission requirements" ;
+    cur:verified false .
+
+hs:lex-AdmissionRequirement-alt-zugangsberechtigung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/AdmissionRequirement--alt--zugangsberechtigung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:PrerequisiteRule,
+        hs:rk-zugang ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Zugangsberechtigung" ;
+    cur:verified false .
+
+hs:lex-AdmissionRequirement-alt-zulassungsvoraussetzungen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/AdmissionRequirement--alt--zulassungsvoraussetzungen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:PrerequisiteRule,
+        hs:rk-zugang ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Zulassungsvoraussetzungen" ;
+    cur:verified false .
+
+hs:lex-AdmissionRequirement-cue-eignungsfeststellungsverfahren a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/AdmissionRequirement--cue--eignungsfeststellungsverfahren> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:PrerequisiteRule,
+        hs:rk-zugang ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Eignungsfeststellungsverfahren" ;
+    cur:verified false .
+
+hs:lex-AdmissionRequirement-cue-eignungspruefung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/AdmissionRequirement--cue--eignungspruefung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:PrerequisiteRule,
+        hs:rk-zugang ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Eignungsprüfung" ;
+    cur:verified false .
+
+hs:lex-AdmissionRequirement-cue-hochschulzugangsberechtigung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/AdmissionRequirement--cue--hochschulzugangsberechtigung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:PrerequisiteRule,
+        hs:rk-zugang ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Hochschulzugangsberechtigung" ;
+    cur:verified false .
+
+hs:lex-AdmissionRequirement-pref-zugangsvoraussetzungen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/AdmissionRequirement--pref--zugangsvoraussetzungen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cur:PrerequisiteRule,
+        hs:rk-zugang ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Zugangsvoraussetzungen" ;
+    cur:verified false .
+
+hs:lex-Annex-alt-anhang a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Annex--alt--anhang> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:annexOf ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Anhang" ;
+    cur:verified false .
+
+hs:lex-Annex-alt-annex a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Annex--alt--annex> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:annexOf ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Annex" ;
+    cur:verified false .
+
+hs:lex-Annex-alt-appendix a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Annex--alt--appendix> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:annexOf ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Appendix" ;
+    cur:verified false .
+
+hs:lex-Annex-cue-moduluebersicht a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Annex--cue--moduluebersicht> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:annexOf ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Modulübersicht" ;
+    cur:verified false .
+
+hs:lex-Annex-cue-pruefungsplan a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Annex--cue--pruefungsplan> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:annexOf ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Prüfungsplan" ;
+    cur:verified false .
+
+hs:lex-Annex-pref-anlage a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Annex--pref--anlage> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:annexOf ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Anlage" ;
+    cur:verified false .
+
+hs:lex-ArtisticComponent-alt-hauptfach-gesang a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ArtisticComponent--alt--hauptfach-gesang> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:KuenstlerischesHauptfach ;
+    cur:scopeInstitutionType hs:it-kunst ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Hauptfach Gesang" ;
+    cur:verified false .
+
+hs:lex-ArtisticComponent-alt-hauptfach-instrument a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ArtisticComponent--alt--hauptfach-instrument> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:KuenstlerischesHauptfach ;
+    cur:scopeInstitutionType hs:it-kunst ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Hauptfach Instrument" ;
+    cur:verified false .
+
+hs:lex-ArtisticComponent-alt-kuenstlerischer-einzelunterricht a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ArtisticComponent--alt--kuenstlerischer-einzelunterricht> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:KuenstlerischesHauptfach ;
+    cur:scopeInstitutionType hs:it-kunst ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Künstlerischer Einzelunterricht" ;
+    cur:verified false .
+
+hs:lex-ArtisticComponent-alt-kuenstlerisches-kernfach a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ArtisticComponent--alt--kuenstlerisches-kernfach> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:KuenstlerischesHauptfach ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Künstlerisches Kernfach" ;
+    cur:verified false .
+
+hs:lex-ArtisticComponent-homonym-hauptfach a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ArtisticComponent--homonym--hauptfach> ;
+    cur:alsoMapsTo hs:pr-kernfach ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo hs:KuenstlerischesHauptfach ;
+    cur:recognitionHint "An Kunst-/Musikhochschulen künstlerisches Kernfach; im Kombi-Studium Rolle eines Teilstudiengangs."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Hauptfach" ;
+    cur:verified false .
+
+hs:lex-ArtisticComponent-pref-kuenstlerisches-hauptfach a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ArtisticComponent--pref--kuenstlerisches-hauptfach> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:KuenstlerischesHauptfach ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Künstlerisches Hauptfach" ;
+    cur:verified false .
+
+hs:lex-Assessment-alt-assessment a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Assessment--alt--assessment> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:Assessment ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Assessment" ;
+    cur:verified false .
+
+hs:lex-Assessment-alt-examination a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Assessment--alt--examination> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:Assessment ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Examination" ;
+    cur:verified false .
+
+hs:lex-Assessment-alt-form-der-pruefung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Assessment--alt--form-der-pruefung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:Assessment ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Form der Prüfung" ;
+    cur:verified false .
+
+hs:lex-Assessment-alt-pruefung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Assessment--alt--pruefung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:Assessment ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Prüfung" ;
+    cur:verified false .
+
+hs:lex-Assessment-alt-pruefungsart a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Assessment--alt--pruefungsart> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:Assessment ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Prüfungsart" ;
+    cur:verified false .
+
+hs:lex-Assessment-alt-pruefungsform a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Assessment--alt--pruefungsform> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:Assessment ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Prüfungsform" ;
+    cur:verified false .
+
+hs:lex-Assessment-homonym-pruefungsvorleistung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Assessment--homonym--pruefungsvorleistung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo cur:Assessment ;
+    cur:recognitionHint "hco:isPrerequisiteAssessment=true."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Prüfungsvorleistung" ;
+    cur:verified false .
+
+hs:lex-Assessment-homonym-studienleistung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Assessment--homonym--studienleistung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo cur:Assessment ;
+    cur:recognitionHint "Unbenotet bzw. Bestehensvoraussetzung: hco:graded=false."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Studienleistung" ;
+    cur:verified false .
+
+hs:lex-Assessment-homonym-testat a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Assessment--homonym--testat> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo cur:Assessment ;
+    cur:recognitionHint "Meist unbenotete Studienleistung."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Testat" ;
+    cur:verified false .
+
+hs:lex-Assessment-pref-pruefungsleistung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Assessment--pref--pruefungsleistung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cur:Assessment ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Prüfungsleistung" ;
+    cur:verified false .
+
+hs:lex-ComponentGroup-alt-elective-catalogue a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentGroup--alt--elective-catalogue> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Wahlpflichtkatalog ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Elective catalogue" ;
+    cur:verified false .
+
+hs:lex-ComponentGroup-alt-katalog a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentGroup--alt--katalog> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Wahlpflichtkatalog ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Katalog" ;
+    cur:verified false .
+
+hs:lex-ComponentGroup-alt-modulliste a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentGroup--alt--modulliste> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Wahlpflichtkatalog ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modulliste" ;
+    cur:verified false .
+
+hs:lex-ComponentGroup-alt-modulpool a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentGroup--alt--modulpool> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Wahlpflichtkatalog ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modulpool" ;
+    cur:verified false .
+
+hs:lex-ComponentGroup-alt-wahlkatalog a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentGroup--alt--wahlkatalog> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Wahlpflichtkatalog ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Wahlkatalog" ;
+    cur:verified false .
+
+hs:lex-ComponentGroup-alt-wahlpflichtmodulgruppe a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentGroup--alt--wahlpflichtmodulgruppe> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Wahlpflichtkatalog ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Wahlpflichtmodulgruppe" ;
+    cur:verified false .
+
+hs:lex-ComponentGroup-homonym-modulkatalog a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentGroup--homonym--modulkatalog> ;
+    cur:alsoMapsTo hs:dt-Modulhandbuch ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo hs:Wahlpflichtkatalog ;
+    cur:recognitionHint "Als Dokumenttitel = Modulhandbuch; innerhalb einer Ordnung = Wahlliste."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Modulkatalog" ;
+    cur:verified false .
+
+hs:lex-ComponentGroup-pref-wahlpflichtkatalog a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentGroup--pref--wahlpflichtkatalog> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:Wahlpflichtkatalog ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Wahlpflichtkatalog" ;
+    cur:verified false .
+
+hs:lex-ComponentUse-cue-applicability a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentUse--cue--applicability> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:Placement ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Applicability" ;
+    cur:verified false .
+
+hs:lex-ComponentUse-cue-einordnung-in-das-curriculum a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentUse--cue--einordnung-in-das-curriculum> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:Placement ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Einordnung in das Curriculum" ;
+    cur:verified false .
+
+hs:lex-ComponentUse-cue-moduluebersicht a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentUse--cue--moduluebersicht> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:Placement ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Modulübersicht" ;
+    cur:verified false .
+
+hs:lex-ComponentUse-cue-polyvalenz a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentUse--cue--polyvalenz> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:Placement ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Polyvalenz" ;
+    cur:verified false .
+
+hs:lex-ComponentUse-cue-studienverlaufsplan a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentUse--cue--studienverlaufsplan> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:Placement ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Studienverlaufsplan" ;
+    cur:verified false .
+
+hs:lex-ComponentUse-cue-zuordnung-zum-curriculum a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentUse--cue--zuordnung-zum-curriculum> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:Placement ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Zuordnung zum Curriculum" ;
+    cur:verified false .
+
+hs:lex-ComponentUse-homonym-verwendbarkeit-des-moduls a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentUse--homonym--verwendbarkeit-des-moduls> ;
+    cur:alsoMapsTo hs:usabilityText ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo cur:Placement ;
+    cur:recognitionHint "Freitext liefert nur KANDIDATEN für Verwendungen; bestätigen erst, wenn eine Modulübersicht/ein Verlaufsplan das Modul ebenfalls nennt."@de ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Verwendbarkeit des Moduls" ;
+    cur:verified true .
+
+hs:lex-ComponentUse-pref-verwendung-im-studiengang a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ComponentUse--pref--verwendung-im-studiengang> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cur:Placement ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Verwendung im Studiengang" ;
+    cur:verified false .
+
+hs:lex-ContentStatement-alt-content a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ContentStatement--alt--content> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Inhalt ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Content" ;
+    cur:verified false .
+
+hs:lex-ContentStatement-alt-gliederung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ContentStatement--alt--gliederung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Inhalt ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Gliederung" ;
+    cur:verified false .
+
+hs:lex-ContentStatement-alt-inhalt a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ContentStatement--alt--inhalt> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Inhalt ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Inhalt" ;
+    cur:verified false .
+
+hs:lex-ContentStatement-alt-lehrinhalte a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ContentStatement--alt--lehrinhalte> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Inhalt ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Lehrinhalte" ;
+    cur:verified false .
+
+hs:lex-ContentStatement-alt-modulinhalte a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ContentStatement--alt--modulinhalte> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Inhalt ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modulinhalte" ;
+    cur:verified false .
+
+hs:lex-ContentStatement-alt-studieninhalte a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ContentStatement--alt--studieninhalte> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Inhalt ;
+    cur:strength 0.9 ;
+    cur:surfaceForm "Studieninhalte" ;
+    cur:verified true .
+
+hs:lex-ContentStatement-alt-syllabus a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ContentStatement--alt--syllabus> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Inhalt ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Syllabus" ;
+    cur:verified false .
+
+hs:lex-ContentStatement-alt-themen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ContentStatement--alt--themen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Inhalt ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Themen" ;
+    cur:verified false .
+
+hs:lex-ContentStatement-negative-die-studierenden-koennen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ContentStatement--negative--die-studierenden-koennen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_negative ;
+    cur:mapsTo hs:Inhalt ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Die Studierenden können" ;
+    cur:verified false .
+
+hs:lex-ContentStatement-pref-inhalte a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ContentStatement--pref--inhalte> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:Inhalt ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Inhalte" ;
+    cur:verified false .
+
+hs:lex-CourseUnit-alt-course-unit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/CourseUnit--alt--course-unit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Lehrveranstaltung ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Course unit" ;
+    cur:verified false .
+
+hs:lex-CourseUnit-alt-modulelement a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/CourseUnit--alt--modulelement> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Lehrveranstaltung ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modulelement" ;
+    cur:verified false .
+
+hs:lex-CourseUnit-alt-modulteil a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/CourseUnit--alt--modulteil> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Lehrveranstaltung ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modulteil" ;
+    cur:verified false .
+
+hs:lex-CourseUnit-alt-teilmodul a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/CourseUnit--alt--teilmodul> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Lehrveranstaltung ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Teilmodul" ;
+    cur:verified false .
+
+hs:lex-CourseUnit-alt-veranstaltung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/CourseUnit--alt--veranstaltung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Lehrveranstaltung ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Veranstaltung" ;
+    cur:verified false .
+
+hs:lex-CourseUnit-cue-lehrveranstaltungen-und-lehrformen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/CourseUnit--cue--lehrveranstaltungen-und-lehrformen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Lehrveranstaltung ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Lehrveranstaltungen und Lehrformen" ;
+    cur:verified false .
+
+hs:lex-CourseUnit-negative-modul a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/CourseUnit--negative--modul> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_negative ;
+    cur:mapsTo hs:Lehrveranstaltung ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Modul" ;
+    cur:verified false .
+
+hs:lex-CourseUnit-pref-lehrveranstaltung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/CourseUnit--pref--lehrveranstaltung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:Lehrveranstaltung ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Lehrveranstaltung" ;
+    cur:verified false .
+
+hs:lex-CurriculumPlan-alt-aufbau-des-studiums a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/CurriculumPlan--alt--aufbau-des-studiums> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:Curriculum ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Aufbau des Studiums" ;
+    cur:verified false .
+
+hs:lex-CurriculumPlan-alt-gliederung-des-studiums a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/CurriculumPlan--alt--gliederung-des-studiums> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:Curriculum ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Gliederung des Studiums" ;
+    cur:verified false .
+
+hs:lex-CurriculumPlan-alt-studienaufbau a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/CurriculumPlan--alt--studienaufbau> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:Curriculum ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studienaufbau" ;
+    cur:verified false .
+
+hs:lex-CurriculumPlan-cue-curriculum a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/CurriculumPlan--cue--curriculum> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo cur:Curriculum ;
+    cur:recognitionHint "Als Überschrift einer Ordnung („§ 5 Curriculum“) = Studienstruktur; im Fließtext ohne Signalwert."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Curriculum" ;
+    cur:verified false .
+
+hs:lex-CurriculumPlan-cue-studienplan a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/CurriculumPlan--cue--studienplan> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:Curriculum ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Studienplan" ;
+    cur:verified false .
+
+hs:lex-CurriculumPlan-cue-studienverlaufsplan a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/CurriculumPlan--cue--studienverlaufsplan> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:Curriculum ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Studienverlaufsplan" ;
+    cur:verified false .
+
+hs:lex-CurriculumPlan-pref-studienstruktur a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/CurriculumPlan--pref--studienstruktur> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cur:Curriculum ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studienstruktur" ;
+    cur:verified false .
+
+hs:lex-ExternalComponentReference-cue-aus-dem-angebot-der-fakultaet a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ExternalComponentReference--cue--aus-dem-angebot-der-fakultaet> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Verweis ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "aus dem Angebot der Fakultät" ;
+    cur:verified false .
+
+hs:lex-ExternalComponentReference-cue-gemaess-modulhandbuch-des-studiengangs a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ExternalComponentReference--cue--gemaess-modulhandbuch-des-studiengangs> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Verweis ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "gemäß Modulhandbuch des Studiengangs" ;
+    cur:verified false .
+
+hs:lex-ExternalComponentReference-cue-importmodul a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ExternalComponentReference--cue--importmodul> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Verweis ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Importmodul" ;
+    cur:verified false .
+
+hs:lex-ExternalComponentReference-cue-nach-massgabe-der-pruefungsordnung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ExternalComponentReference--cue--nach-massgabe-der-pruefungsordnung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Verweis ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "nach Maßgabe der Prüfungsordnung" ;
+    cur:verified false .
+
+hs:lex-ExternalComponentReference-cue-siehe-modulbeschreibung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ExternalComponentReference--cue--siehe-modulbeschreibung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Verweis ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "siehe Modulbeschreibung" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-alt-angestrebte-lernergebnisse a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--alt--angestrebte-lernergebnisse> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Modulziel ;
+    cur:strength 0.9 ;
+    cur:surfaceForm "angestrebte Lernergebnisse" ;
+    cur:verified true .
+
+hs:lex-LearningOutcomeStatement-alt-intended-learning-outcomes a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--alt--intended-learning-outcomes> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Modulziel ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Intended learning outcomes" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-alt-kompetenzen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--alt--kompetenzen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Modulziel ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Kompetenzen" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-alt-kompetenzziele a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--alt--kompetenzziele> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Modulziel ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Kompetenzziele" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-alt-learning-outcomes a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--alt--learning-outcomes> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Modulziel ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Learning outcomes" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-alt-lern-und-qualifikationsziele a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--alt--lern-und-qualifikationsziele> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Modulziel ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Lern- und Qualifikationsziele" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-alt-lernergebnisse a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--alt--lernergebnisse> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Modulziel ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Lernergebnisse" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-alt-lernziele a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--alt--lernziele> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Modulziel ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Lernziele" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-alt-modulziele a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--alt--modulziele> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Modulziel ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modulziele" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-alt-qualifikations-und-kompetenzziele a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--alt--qualifikations-und-kompetenzziele> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Modulziel ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Qualifikations- und Kompetenzziele" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-cue-die-studierenden-koennen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--cue--die-studierenden-koennen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Modulziel ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Die Studierenden können" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-cue-die-studierenden-sind-in-der-lage a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--cue--die-studierenden-sind-in-der-lage> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Modulziel ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Die Studierenden sind in der Lage" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-cue-nach-erfolgreichem-abschluss-des-moduls a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--cue--nach-erfolgreichem-abschluss-des-moduls> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Modulziel ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Nach erfolgreichem Abschluss des Moduls" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-cue-students-will-be-able-to a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--cue--students-will-be-able-to> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Modulziel ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Students will be able to" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-homonym-inhalte-und-qualifikationsziele-des-modu a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--homonym--inhalte-und-qualifikationsziele-des-modu> ;
+    cur:alsoMapsTo hs:Inhalt ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo hs:Modulziel ;
+    cur:recognitionHint "Kombiniertes MRVO-2017-Feld: in Lernergebnis- und Inhaltsaussagen auftrennen."@de ;
+    cur:strength 0.6 ;
+    cur:surfaceForm "Inhalte und Qualifikationsziele des Moduls" ;
+    cur:verified true .
+
+hs:lex-LearningOutcomeStatement-homonym-ziele a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--homonym--ziele> ;
+    cur:alsoMapsTo hs:Inhalt ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo hs:Modulziel ;
+    cur:recognitionHint "'Ziel der Veranstaltung ist es, ... zu vermitteln' ist Lehrendenperspektive und eher Inhalt."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Ziele" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-negative-inhalte a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--negative--inhalte> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_negative ;
+    cur:mapsTo hs:Modulziel ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Inhalte" ;
+    cur:verified false .
+
+hs:lex-LearningOutcomeStatement-pref-qualifikationsziele a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/LearningOutcomeStatement--pref--qualifikationsziele> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:Modulziel ;
+    cur:recognitionHint "Wortlaut MRVO 2017; Fassung 2024: 'angestrebte Lernergebnisse'."@de ;
+    cur:strength 0.9 ;
+    cur:surfaceForm "Qualifikationsziele" ;
+    cur:verified true .
+
+hs:lex-Module-alt-module a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Module--alt--module> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Modul ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Module" ;
+    cur:verified false .
+
+hs:lex-Module-alt-moduleinheit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Module--alt--moduleinheit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Modul ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Moduleinheit" ;
+    cur:verified false .
+
+hs:lex-Module-alt-unit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Module--alt--unit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Modul ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Unit" ;
+    cur:verified false .
+
+hs:lex-Module-homonym-kurs a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Module--homonym--kurs> ;
+    cur:alsoMapsTo hs:Lehrveranstaltung ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo hs:Modul ;
+    cur:recognitionHint "In Weiterbildung/Zertifikaten oft = Modul; sonst meist Lehrveranstaltung."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Kurs" ;
+    cur:verified false .
+
+hs:lex-Module-negative-lehrveranstaltung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Module--negative--lehrveranstaltung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_negative ;
+    cur:mapsTo hs:Modul ;
+    cur:recognitionHint "Lehrveranstaltungen liegen unterhalb des Moduls."@de ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Lehrveranstaltung" ;
+    cur:verified false .
+
+hs:lex-Module-negative-vorlesung-innerhalb-des-moduls a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Module--negative--vorlesung-innerhalb-des-moduls> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_negative ;
+    cur:mapsTo hs:Modul ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Vorlesung innerhalb des Moduls" ;
+    cur:verified false .
+
+hs:lex-Module-pref-modul a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Module--pref--modul> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:Modul ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modul" ;
+    cur:verified false .
+
+hs:lex-ParticipationRequirement-alt-prerequisites a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ParticipationRequirement--alt--prerequisites> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:PrerequisiteRule ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Prerequisites" ;
+    cur:verified false .
+
+hs:lex-ParticipationRequirement-alt-teilnahmevoraussetzungen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ParticipationRequirement--alt--teilnahmevoraussetzungen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:PrerequisiteRule ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Teilnahmevoraussetzungen" ;
+    cur:verified false .
+
+hs:lex-ParticipationRequirement-cue-empfohlene-vorkenntnisse a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ParticipationRequirement--cue--empfohlene-vorkenntnisse> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:PrerequisiteRule ;
+    cur:recognitionHint "-> requirementKind = inhaltlich/empfohlen"@de ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "empfohlene Vorkenntnisse" ;
+    cur:verified false .
+
+hs:lex-ParticipationRequirement-cue-formale-voraussetzungen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ParticipationRequirement--cue--formale-voraussetzungen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:PrerequisiteRule ;
+    cur:recognitionHint "-> requirementKind = formal"@de ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "formale Voraussetzungen" ;
+    cur:verified false .
+
+hs:lex-ParticipationRequirement-cue-inhaltliche-voraussetzungen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ParticipationRequirement--cue--inhaltliche-voraussetzungen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:PrerequisiteRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "inhaltliche Voraussetzungen" ;
+    cur:verified false .
+
+hs:lex-ParticipationRequirement-cue-keine a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ParticipationRequirement--cue--keine> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:PrerequisiteRule ;
+    cur:recognitionHint "Explizit 'keine' als leere Menge speichern, nicht als fehlendes Feld."@de ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "keine" ;
+    cur:verified false .
+
+hs:lex-ParticipationRequirement-cue-vorkenntnisse a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ParticipationRequirement--cue--vorkenntnisse> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:PrerequisiteRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Vorkenntnisse" ;
+    cur:verified false .
+
+hs:lex-ParticipationRequirement-pref-voraussetzungen-fuer-die-teilnahme a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ParticipationRequirement--pref--voraussetzungen-fuer-die-teilnahme> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cur:PrerequisiteRule ;
+    cur:strength 0.9 ;
+    cur:surfaceForm "Voraussetzungen für die Teilnahme" ;
+    cur:verified true .
+
+hs:lex-Placement-alt-berufspraktikum a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Placement--alt--berufspraktikum> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Praxisphase ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Berufspraktikum" ;
+    cur:verified false .
+
+hs:lex-Placement-alt-famulatur a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Placement--alt--famulatur> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Praxisphase ;
+    cur:scopeSubject fld:0912 ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Famulatur" ;
+    cur:verified false .
+
+hs:lex-Placement-alt-internship a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Placement--alt--internship> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Praxisphase ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Internship" ;
+    cur:verified false .
+
+hs:lex-Placement-alt-orientierungspraktikum a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Placement--alt--orientierungspraktikum> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Praxisphase ;
+    cur:scopeSubject fld:011 ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Orientierungspraktikum" ;
+    cur:verified false .
+
+hs:lex-Placement-alt-pflichtpraktikum a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Placement--alt--pflichtpraktikum> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Praxisphase ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Pflichtpraktikum" ;
+    cur:verified false .
+
+hs:lex-Placement-alt-praktisches-jahr a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Placement--alt--praktisches-jahr> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Praxisphase ;
+    cur:scopeSubject fld:0912 ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Praktisches Jahr" ;
+    cur:verified false .
+
+hs:lex-Placement-alt-praxismodul a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Placement--alt--praxismodul> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Praxisphase ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Praxismodul" ;
+    cur:verified false .
+
+hs:lex-Placement-alt-praxisprojekt a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Placement--alt--praxisprojekt> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Praxisphase ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Praxisprojekt" ;
+    cur:verified false .
+
+hs:lex-Placement-alt-praxissemester a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Placement--alt--praxissemester> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Praxisphase ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Praxissemester" ;
+    cur:verified false .
+
+hs:lex-Placement-alt-schulpraktikum a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Placement--alt--schulpraktikum> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Praxisphase ;
+    cur:scopeSubject fld:011 ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Schulpraktikum" ;
+    cur:verified false .
+
+hs:lex-Placement-homonym-praktikum a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Placement--homonym--praktikum> ;
+    cur:alsoMapsTo hs:tf-labor ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo hs:Praxisphase ;
+    cur:recognitionHint "Praxisphase außerhalb der Hochschule vs. Laborpraktikum als Lehrform."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Praktikum" ;
+    cur:verified false .
+
+hs:lex-Placement-pref-praxisphase a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Placement--pref--praxisphase> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:Praxisphase ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Praxisphase" ;
+    cur:verified false .
+
+hs:lex-PrerequisiteRule-cue-setzt-das-bestehen-voraus a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/PrerequisiteRule--cue--setzt-das-bestehen-voraus> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:PrerequisiteRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "setzt das Bestehen ... voraus" ;
+    cur:verified false .
+
+hs:lex-PrerequisiteRule-cue-voraussetzung-fuer-die-anmeldung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/PrerequisiteRule--cue--voraussetzung-fuer-die-anmeldung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:PrerequisiteRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Voraussetzung für die Anmeldung" ;
+    cur:verified false .
+
+hs:lex-PrerequisiteRule-cue-zulassungsvoraussetzung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/PrerequisiteRule--cue--zulassungsvoraussetzung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:PrerequisiteRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Zulassungsvoraussetzung" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-alt-modulbereich a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--alt--modulbereich> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modulbereich" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-abv a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--abv> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:recognitionHint "Allgemeine Berufsvorbereitung (u. a. FU Berlin)."@de ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "ABV" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-allgemeine-berufsvorbereitung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--allgemeine-berufsvorbereitung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Allgemeine Berufsvorbereitung" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-bildungswissenschaften a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--bildungswissenschaften> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:scopeSubject fld:011 ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Bildungswissenschaften" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-block a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--block> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Block" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-ergaenzungsbereich a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--ergaenzungsbereich> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Ergänzungsbereich" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-grundlagenbereich a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--grundlagenbereich> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Grundlagenbereich" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-kompetenzfeld a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--kompetenzfeld> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Kompetenzfeld" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-komplementaerbereich a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--komplementaerbereich> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Komplementärbereich" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-optionalbereich a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--optionalbereich> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Optionalbereich" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-pflichtbereich a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--pflichtbereich> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Pflichtbereich" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-professionalisierungsbereich a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--professionalisierungsbereich> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Professionalisierungsbereich" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-profilbereich a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--profilbereich> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Profilbereich" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-saeule a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--saeule> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Säule" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-schluesselqualifikationen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--schluesselqualifikationen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Schlüsselqualifikationen" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-sq-bereich a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--sq-bereich> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "SQ-Bereich" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-studium-fundamentale a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--studium-fundamentale> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Studium fundamentale" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-studium-generale a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--studium-generale> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Studium generale" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-wahlbereich a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--wahlbereich> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Wahlbereich" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-cue-wahlpflichtbereich a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--cue--wahlpflichtbereich> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Wahlpflichtbereich" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-homonym-modulgruppe a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--homonym--modulgruppe> ;
+    cur:alsoMapsTo hs:Wahlpflichtkatalog ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:recognitionHint "Bereich, wenn Unterbereiche folgen; Wahlkatalog, wenn direkt Module mit Wahlregel folgen."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Modulgruppe" ;
+    cur:verified false .
+
+hs:lex-ProgrammeArea-homonym-studienbereich a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeArea--homonym--studienbereich> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo hs:Studienbereich ;
+    cur:recognitionHint "Auch Ebene der Destatis-Fächersystematik; nur als Strukturknoten werten, wenn Module/LP zugeordnet sind."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Studienbereich" ;
+    cur:verified false .
+
+hs:lex-ProgrammeQualificationGoal-alt-ausbildungsziel a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeQualificationGoal--alt--ausbildungsziel> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Studiengangsziel ;
+    cur:scopeInstitutionType hs:it-dual ;
+    cur:scopeSubject fld:0421,
+        fld:0912 ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Ausbildungsziel" ;
+    cur:verified false .
+
+hs:lex-ProgrammeQualificationGoal-alt-fachspezifisches-kompetenzprofil a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeQualificationGoal--alt--fachspezifisches-kompetenzprofil> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Studiengangsziel ;
+    cur:scopeSubject fld:011 ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Fachspezifisches Kompetenzprofil" ;
+    cur:verified false .
+
+hs:lex-ProgrammeQualificationGoal-alt-graduate-attributes a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeQualificationGoal--alt--graduate-attributes> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Studiengangsziel ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Graduate attributes" ;
+    cur:verified false .
+
+hs:lex-ProgrammeQualificationGoal-alt-kompetenzprofil a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeQualificationGoal--alt--kompetenzprofil> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Studiengangsziel ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Kompetenzprofil" ;
+    cur:verified false .
+
+hs:lex-ProgrammeQualificationGoal-alt-programme-learning-outcomes a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeQualificationGoal--alt--programme-learning-outcomes> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Studiengangsziel ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Programme learning outcomes" ;
+    cur:verified false .
+
+hs:lex-ProgrammeQualificationGoal-alt-qualifikationsprofil a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeQualificationGoal--alt--qualifikationsprofil> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Studiengangsziel ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Qualifikationsprofil" ;
+    cur:verified false .
+
+hs:lex-ProgrammeQualificationGoal-alt-studienziele a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeQualificationGoal--alt--studienziele> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Studiengangsziel ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studienziele" ;
+    cur:verified false .
+
+hs:lex-ProgrammeQualificationGoal-alt-ziele-des-studiums a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeQualificationGoal--alt--ziele-des-studiums> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Studiengangsziel ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Ziele des Studiums" ;
+    cur:verified false .
+
+hs:lex-ProgrammeQualificationGoal-cue-4-2-lernergebnisse-des-studiengangs a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeQualificationGoal--cue--4-2-lernergebnisse-des-studiengangs> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studiengangsziel ;
+    cur:recognitionHint "Diploma Supplement Abschnitt 4.2."@de ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "4.2 Lernergebnisse des Studiengangs" ;
+    cur:verified false .
+
+hs:lex-ProgrammeQualificationGoal-cue-absolvent-innen-verfuegen-ueber a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeQualificationGoal--cue--absolvent-innen-verfuegen-ueber> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studiengangsziel ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Absolvent*innen verfügen über" ;
+    cur:verified false .
+
+hs:lex-ProgrammeQualificationGoal-cue-das-studium-befaehigt a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeQualificationGoal--cue--das-studium-befaehigt> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studiengangsziel ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Das Studium befähigt" ;
+    cur:verified false .
+
+hs:lex-ProgrammeQualificationGoal-cue-die-absolventinnen-und-absolventen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeQualificationGoal--cue--die-absolventinnen-und-absolventen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studiengangsziel ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Die Absolventinnen und Absolventen" ;
+    cur:verified false .
+
+hs:lex-ProgrammeQualificationGoal-cue-ziel-des-studiums-ist a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeQualificationGoal--cue--ziel-des-studiums-ist> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studiengangsziel ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Ziel des Studiums ist" ;
+    cur:verified false .
+
+hs:lex-ProgrammeQualificationGoal-pref-qualifikationsziele-des-studiengangs a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeQualificationGoal--pref--qualifikationsziele-des-studiengangs> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:Studiengangsziel ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Qualifikationsziele des Studiengangs" ;
+    cur:verified false .
+
+hs:lex-ProgrammeVersion-cue-fassung-vom a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeVersion--cue--fassung-vom> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:edition ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Fassung vom" ;
+    cur:verified false .
+
+hs:lex-ProgrammeVersion-cue-gueltig-ab a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeVersion--cue--gueltig-ab> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:edition ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "gültig ab" ;
+    cur:verified false .
+
+hs:lex-ProgrammeVersion-cue-po-20xx a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeVersion--cue--po-20xx> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:edition ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "PO 20xx" ;
+    cur:verified false .
+
+hs:lex-ProgrammeVersion-cue-po-version a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeVersion--cue--po-version> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:edition ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "PO-Version" ;
+    cur:verified false .
+
+hs:lex-ProgrammeVersion-cue-spo-version a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeVersion--cue--spo-version> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:edition ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "SPO-Version" ;
+    cur:verified false .
+
+hs:lex-ProgrammeVersion-pref-studiengangsfassung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgrammeVersion--pref--studiengangsfassung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cur:edition ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studiengangsfassung" ;
+    cur:verified false .
+
+hs:lex-ProgressionRule-cue-fristueberschreitung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgressionRule--cue--fristueberschreitung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:ProgressionRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Fristüberschreitung" ;
+    cur:verified false .
+
+hs:lex-ProgressionRule-cue-grundlagen-und-orientierungspruefung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgressionRule--cue--grundlagen-und-orientierungspruefung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:ProgressionRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Grundlagen- und Orientierungsprüfung" ;
+    cur:verified false .
+
+hs:lex-ProgressionRule-cue-orientierungspruefung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgressionRule--cue--orientierungspruefung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:ProgressionRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Orientierungsprüfung" ;
+    cur:verified false .
+
+hs:lex-ProgressionRule-cue-wiederholung-von-pruefungen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProgressionRule--cue--wiederholung-von-pruefungen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:ProgressionRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Wiederholung von Prüfungen" ;
+    cur:verified false .
+
+hs:lex-ProjectComponent-alt-lehrforschungsprojekt a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProjectComponent--alt--lehrforschungsprojekt> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Projektmodul ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Lehrforschungsprojekt" ;
+    cur:verified false .
+
+hs:lex-ProjectComponent-alt-projektmodul a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProjectComponent--alt--projektmodul> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Projektmodul ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Projektmodul" ;
+    cur:verified false .
+
+hs:lex-ProjectComponent-alt-studienarbeit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProjectComponent--alt--studienarbeit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Projektmodul ;
+    cur:scopeInstitutionType hs:it-dual ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studienarbeit" ;
+    cur:verified false .
+
+hs:lex-ProjectComponent-alt-studienprojekt a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProjectComponent--alt--studienprojekt> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Projektmodul ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studienprojekt" ;
+    cur:verified false .
+
+hs:lex-ProjectComponent-alt-teamprojekt a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProjectComponent--alt--teamprojekt> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Projektmodul ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Teamprojekt" ;
+    cur:verified false .
+
+hs:lex-ProjectComponent-pref-projekt a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ProjectComponent--pref--projekt> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:Projektmodul ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Projekt" ;
+    cur:verified false .
+
+hs:lex-RecognitionRule-alt-anerkennung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/RecognitionRule--alt--anerkennung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:RecognitionRule ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Anerkennung" ;
+    cur:verified false .
+
+hs:lex-RecognitionRule-alt-anrechnung-ausserhochschulisch-erworbene a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/RecognitionRule--alt--anrechnung-ausserhochschulisch-erworbene> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:RecognitionRule ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Anrechnung außerhochschulisch erworbener Kompetenzen" ;
+    cur:verified false .
+
+hs:lex-RecognitionRule-alt-recognition-of-prior-learning a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/RecognitionRule--alt--recognition-of-prior-learning> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:RecognitionRule ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Recognition of prior learning" ;
+    cur:verified false .
+
+hs:lex-RecognitionRule-cue-gleichwertig-nach-inhalt-und-niveau a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/RecognitionRule--cue--gleichwertig-nach-inhalt-und-niveau> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:RecognitionRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "gleichwertig nach Inhalt und Niveau" ;
+    cur:verified false .
+
+hs:lex-RecognitionRule-cue-hoechstens-50 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/RecognitionRule--cue--hoechstens-50> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:RecognitionRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "höchstens 50 %" ;
+    cur:verified false .
+
+hs:lex-RecognitionRule-cue-pauschale-anrechnung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/RecognitionRule--cue--pauschale-anrechnung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:RecognitionRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "pauschale Anrechnung" ;
+    cur:verified false .
+
+hs:lex-RecognitionRule-pref-anrechnung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/RecognitionRule--pref--anrechnung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cur:RecognitionRule ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Anrechnung" ;
+    cur:verified false .
+
+hs:lex-ScopeAssignment-cue-abweichend-gilt-fuer a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ScopeAssignment--cue--abweichend-gilt-fuer> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:appliesTo ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "abweichend gilt für" ;
+    cur:verified false .
+
+hs:lex-ScopeAssignment-cue-fuer-den-schwerpunkt-gilt a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ScopeAssignment--cue--fuer-den-schwerpunkt-gilt> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:appliesTo ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "für den Schwerpunkt ... gilt" ;
+    cur:verified false .
+
+hs:lex-ScopeAssignment-cue-gilt-nur-fuer a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ScopeAssignment--cue--gilt-nur-fuer> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:appliesTo ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "gilt nur für" ;
+    cur:verified false .
+
+hs:lex-SelectionRule-cue-aus-dem-katalog a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/SelectionRule--cue--aus-dem-katalog> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:SelectionRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "aus dem Katalog" ;
+    cur:verified false .
+
+hs:lex-SelectionRule-cue-eines-der-folgenden-module a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/SelectionRule--cue--eines-der-folgenden-module> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:SelectionRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "eines der folgenden Module" ;
+    cur:verified false .
+
+hs:lex-SelectionRule-cue-entweder-oder a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/SelectionRule--cue--entweder-oder> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:SelectionRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "entweder ... oder" ;
+    cur:verified false .
+
+hs:lex-SelectionRule-cue-mindestens-lp a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/SelectionRule--cue--mindestens-lp> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:SelectionRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "mindestens ... LP" ;
+    cur:verified false .
+
+hs:lex-SelectionRule-cue-nach-wahl-der-studierenden a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/SelectionRule--cue--nach-wahl-der-studierenden> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:SelectionRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "nach Wahl der Studierenden" ;
+    cur:verified false .
+
+hs:lex-SelectionRule-cue-sind-lp-aus-folgenden-modulen-zu-waehlen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/SelectionRule--cue--sind-lp-aus-folgenden-modulen-zu-waehlen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:SelectionRule ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "sind ... LP aus folgenden Modulen zu wählen" ;
+    cur:verified false .
+
+hs:lex-SelectionRule-pref-wahlregel a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/SelectionRule--pref--wahlregel> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cur:SelectionRule ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Wahlregel" ;
+    cur:verified false .
+
+hs:lex-Specialisation-alt-fachrichtung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Specialisation--alt--fachrichtung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo hs:Schwerpunkt ;
+    cur:recognitionHint "In der Berufsbildung Variante eines Ausbildungsberufs (Profil beruf:); an Hochschulen Schwerpunkt."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Fachrichtung" ;
+    cur:verified false .
+
+hs:lex-Specialisation-alt-profillinie a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Specialisation--alt--profillinie> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Schwerpunkt ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Profillinie" ;
+    cur:verified false .
+
+hs:lex-Specialisation-alt-specialisation a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Specialisation--alt--specialisation> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Schwerpunkt ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Specialisation" ;
+    cur:verified false .
+
+hs:lex-Specialisation-alt-spezialisierung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Specialisation--alt--spezialisierung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Schwerpunkt ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Spezialisierung" ;
+    cur:verified false .
+
+hs:lex-Specialisation-alt-studienrichtung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Specialisation--alt--studienrichtung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Schwerpunkt ;
+    cur:scopeInstitutionType hs:it-dual ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studienrichtung" ;
+    cur:verified false .
+
+hs:lex-Specialisation-alt-track a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Specialisation--alt--track> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Schwerpunkt ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Track" ;
+    cur:verified false .
+
+hs:lex-Specialisation-alt-vertiefung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Specialisation--alt--vertiefung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Schwerpunkt ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Vertiefung" ;
+    cur:verified false .
+
+hs:lex-Specialisation-alt-vertiefungsrichtung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Specialisation--alt--vertiefungsrichtung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Schwerpunkt ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Vertiefungsrichtung" ;
+    cur:verified false .
+
+hs:lex-Specialisation-homonym-profil a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Specialisation--homonym--profil> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo hs:Schwerpunkt ;
+    cur:recognitionHint "Kann Schwerpunkt meinen oder das Masterprofil (forschungs-/anwendungsorientiert, hco:programmeProfile)."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Profil" ;
+    cur:verified false .
+
+hs:lex-Specialisation-pref-schwerpunkt a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Specialisation--pref--schwerpunkt> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:Schwerpunkt ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Schwerpunkt" ;
+    cur:verified false .
+
+hs:lex-StudyPhase-alt-studienphase a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyPhase--alt--studienphase> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Studienabschnitt ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studienphase" ;
+    cur:verified false .
+
+hs:lex-StudyPhase-cue-grundstudium a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyPhase--cue--grundstudium> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienabschnitt ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Grundstudium" ;
+    cur:verified false ;
+    hs:scopeQualification hs:qt-diplom,
+        hs:qt-staatsexamen .
+
+hs:lex-StudyPhase-cue-hauptstudium a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyPhase--cue--hauptstudium> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienabschnitt ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Hauptstudium" ;
+    cur:verified false ;
+    hs:scopeQualification hs:qt-diplom,
+        hs:qt-staatsexamen .
+
+hs:lex-StudyPhase-cue-klinischer-abschnitt a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyPhase--cue--klinischer-abschnitt> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienabschnitt ;
+    cur:scopeSubject fld:0912 ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Klinischer Abschnitt" ;
+    cur:verified false .
+
+hs:lex-StudyPhase-cue-orientierungsphase a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyPhase--cue--orientierungsphase> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienabschnitt ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Orientierungsphase" ;
+    cur:verified false .
+
+hs:lex-StudyPhase-cue-studieneingangsphase a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyPhase--cue--studieneingangsphase> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienabschnitt ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Studieneingangsphase" ;
+    cur:verified false .
+
+hs:lex-StudyPhase-cue-studienjahr a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyPhase--cue--studienjahr> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienabschnitt ;
+    cur:scopeInstitutionType hs:it-dual ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Studienjahr" ;
+    cur:verified false .
+
+hs:lex-StudyPhase-cue-vorklinischer-abschnitt a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyPhase--cue--vorklinischer-abschnitt> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Studienabschnitt ;
+    cur:scopeSubject fld:0912 ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Vorklinischer Abschnitt" ;
+    cur:verified false .
+
+hs:lex-StudyPhase-pref-studienabschnitt a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyPhase--pref--studienabschnitt> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:Studienabschnitt ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studienabschnitt" ;
+    cur:verified false .
+
+hs:lex-StudyProgramme-alt-degree-programme a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyProgramme--alt--degree-programme> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:Programme ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "degree programme" ;
+    cur:verified false .
+
+hs:lex-StudyProgramme-alt-programme-of-study a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyProgramme--alt--programme-of-study> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:Programme ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "programme of study" ;
+    cur:verified false .
+
+hs:lex-StudyProgramme-alt-studienangebot a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyProgramme--alt--studienangebot> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:Programme ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studienangebot" ;
+    cur:verified false .
+
+hs:lex-StudyProgramme-alt-studienprogramm a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyProgramme--alt--studienprogramm> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:Programme ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studienprogramm" ;
+    cur:verified false .
+
+hs:lex-StudyProgramme-alt-study-programme a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyProgramme--alt--study-programme> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:Programme ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "study programme" ;
+    cur:verified false .
+
+hs:lex-StudyProgramme-cue-2-fach-bachelor a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyProgramme--cue--2-fach-bachelor> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:Programme ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "2-Fach-Bachelor" ;
+    cur:verified false .
+
+hs:lex-StudyProgramme-cue-bachelorstudiengang a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyProgramme--cue--bachelorstudiengang> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:Programme ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Bachelorstudiengang" ;
+    cur:verified false .
+
+hs:lex-StudyProgramme-cue-kombi-bachelor a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyProgramme--cue--kombi-bachelor> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:Programme ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Kombi-Bachelor" ;
+    cur:verified false .
+
+hs:lex-StudyProgramme-cue-kombinationsstudiengang a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyProgramme--cue--kombinationsstudiengang> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:Programme ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Kombinationsstudiengang" ;
+    cur:verified false .
+
+hs:lex-StudyProgramme-cue-masterstudiengang a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyProgramme--cue--masterstudiengang> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:Programme ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Masterstudiengang" ;
+    cur:verified false .
+
+hs:lex-StudyProgramme-cue-teilstudiengang a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyProgramme--cue--teilstudiengang> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:Programme ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Teilstudiengang" ;
+    cur:verified false .
+
+hs:lex-StudyProgramme-cue-zwei-faecher-bachelor a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyProgramme--cue--zwei-faecher-bachelor> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:Programme ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Zwei-Fächer-Bachelor" ;
+    cur:verified false .
+
+hs:lex-StudyProgramme-homonym-studienfach a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyProgramme--homonym--studienfach> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo cur:Programme ;
+    cur:recognitionHint "Im Kombi-/Lehramtsstudium = Teilstudiengang; in der Destatis-Systematik eine Klassifikationsebene (dann hco:destatisSubjectCode)."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Studienfach" ;
+    cur:verified false .
+
+hs:lex-StudyProgramme-pref-studiengang a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/StudyProgramme--pref--studiengang> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cur:Programme ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studiengang" ;
+    cur:verified false .
+
+hs:lex-TeachingLearningActivity-alt-lehr-und-lernmethoden a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/TeachingLearningActivity--alt--lehr-und-lernmethoden> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:teachingFormat ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Lehr- und Lernmethoden" ;
+    cur:verified false .
+
+hs:lex-TeachingLearningActivity-alt-lehrformen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/TeachingLearningActivity--alt--lehrformen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:teachingFormat ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Lehrformen" ;
+    cur:verified false .
+
+hs:lex-TeachingLearningActivity-alt-lehrmethoden a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/TeachingLearningActivity--alt--lehrmethoden> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:teachingFormat ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Lehrmethoden" ;
+    cur:verified false .
+
+hs:lex-TeachingLearningActivity-alt-lehrveranstaltungsart a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/TeachingLearningActivity--alt--lehrveranstaltungsart> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:teachingFormat ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Lehrveranstaltungsart" ;
+    cur:verified false .
+
+hs:lex-TeachingLearningActivity-alt-lernformen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/TeachingLearningActivity--alt--lernformen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:teachingFormat ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Lernformen" ;
+    cur:verified false .
+
+hs:lex-TeachingLearningActivity-alt-teaching-methods a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/TeachingLearningActivity--alt--teaching-methods> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:teachingFormat ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Teaching methods" ;
+    cur:verified false .
+
+hs:lex-TeachingLearningActivity-alt-veranstaltungsform a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/TeachingLearningActivity--alt--veranstaltungsform> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:teachingFormat ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Veranstaltungsform" ;
+    cur:verified false .
+
+hs:lex-TeachingLearningActivity-cue-2-sws-v-2-sws-ue a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/TeachingLearningActivity--cue--2-sws-v-2-sws-ue> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:teachingFormat ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "2 SWS V + 2 SWS Ü" ;
+    cur:verified false .
+
+hs:lex-TeachingLearningActivity-pref-lehr-und-lernformen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/TeachingLearningActivity--pref--lehr-und-lernformen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:teachingFormat ;
+    cur:strength 0.9 ;
+    cur:surfaceForm "Lehr- und Lernformen" ;
+    cur:verified true .
+
+hs:lex-Thesis-alt-abschlussmodul a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Thesis--alt--abschlussmodul> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Abschlussarbeit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Abschlussmodul" ;
+    cur:verified false .
+
+hs:lex-Thesis-alt-bachelor-thesis a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Thesis--alt--bachelor-thesis> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Abschlussarbeit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Bachelor-Thesis" ;
+    cur:verified false .
+
+hs:lex-Thesis-alt-bachelorarbeit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Thesis--alt--bachelorarbeit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Abschlussarbeit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Bachelorarbeit" ;
+    cur:verified false .
+
+hs:lex-Thesis-alt-diplomarbeit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Thesis--alt--diplomarbeit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Abschlussarbeit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Diplomarbeit" ;
+    cur:verified false ;
+    hs:scopeQualification hs:qt-diplom .
+
+hs:lex-Thesis-alt-master-thesis a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Thesis--alt--master-thesis> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Abschlussarbeit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Master-Thesis" ;
+    cur:verified false .
+
+hs:lex-Thesis-alt-masterarbeit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Thesis--alt--masterarbeit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Abschlussarbeit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Masterarbeit" ;
+    cur:verified false .
+
+hs:lex-Thesis-alt-staatsexamensarbeit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Thesis--alt--staatsexamensarbeit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Abschlussarbeit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Staatsexamensarbeit" ;
+    cur:verified false ;
+    hs:scopeQualification hs:qt-staatsexamen .
+
+hs:lex-Thesis-alt-wissenschaftliche-hausarbeit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Thesis--alt--wissenschaftliche-hausarbeit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:Abschlussarbeit ;
+    cur:scopeSubject fld:011 ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Wissenschaftliche Hausarbeit" ;
+    cur:verified false .
+
+hs:lex-Thesis-cue-kolloquium-zur-abschlussarbeit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Thesis--cue--kolloquium-zur-abschlussarbeit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:Abschlussarbeit ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Kolloquium zur Abschlussarbeit" ;
+    cur:verified false .
+
+hs:lex-Thesis-pref-abschlussarbeit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Thesis--pref--abschlussarbeit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:Abschlussarbeit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Abschlussarbeit" ;
+    cur:verified false .
+
+hs:lex-Workload-alt-arbeitsbelastung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Workload--alt--arbeitsbelastung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:workload ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Arbeitsbelastung" ;
+    cur:verified false .
+
+hs:lex-Workload-alt-gesamtaufwand a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Workload--alt--gesamtaufwand> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:workload ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Gesamtaufwand" ;
+    cur:verified false .
+
+hs:lex-Workload-alt-studentischer-arbeitsaufwand a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Workload--alt--studentischer-arbeitsaufwand> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:workload ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "studentischer Arbeitsaufwand" ;
+    cur:verified false .
+
+hs:lex-Workload-alt-workload a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Workload--alt--workload> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:workload ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Workload" ;
+    cur:verified false .
+
+hs:lex-Workload-cue-eigenstudium a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Workload--cue--eigenstudium> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:workload ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Eigenstudium" ;
+    cur:verified false .
+
+hs:lex-Workload-cue-kontaktzeit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Workload--cue--kontaktzeit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:workload ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Kontaktzeit" ;
+    cur:verified false .
+
+hs:lex-Workload-cue-praesenzzeit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Workload--cue--praesenzzeit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:workload ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Präsenzzeit" ;
+    cur:verified false .
+
+hs:lex-Workload-cue-selbststudium a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Workload--cue--selbststudium> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:workload ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Selbststudium" ;
+    cur:verified false .
+
+hs:lex-Workload-homonym-sws a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Workload--homonym--sws> ;
+    cur:alsoMapsTo hs:sws ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo cur:workload ;
+    cur:recognitionHint "Semesterwochenstunden sind keine Arbeitsstunden; 1 SWS ≈ 15 Präsenzstunden pro Semester [A]."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "SWS" ;
+    cur:verified false .
+
+hs:lex-Workload-pref-arbeitsaufwand a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/Workload--pref--arbeitsaufwand> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cur:workload ;
+    cur:strength 0.9 ;
+    cur:surfaceForm "Arbeitsaufwand" ;
+    cur:verified true .
+
+hs:lex-amends-cue-aenderungssatzung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/amends--cue--aenderungssatzung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:amends ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Änderungssatzung" ;
+    cur:verified false .
+
+hs:lex-amends-cue-artikel-1 a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/amends--cue--artikel-1> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:amends ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Artikel 1" ;
+    cur:verified false .
+
+hs:lex-amends-cue-satzung-zur-aenderung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/amends--cue--satzung-zur-aenderung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:amends ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Satzung zur Änderung" ;
+    cur:verified false .
+
+hs:lex-amends-cue-wird-wie-folgt-geaendert a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/amends--cue--wird-wie-folgt-geaendert> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:amends ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "wird wie folgt geändert" ;
+    cur:verified false .
+
+hs:lex-appliesToCohort-cue-gilt-fuer-studierende-die-ihr-studium-ab a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/appliesToCohort--cue--gilt-fuer-studierende-die-ihr-studium-ab> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:appliesToCohort ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "gilt für Studierende, die ihr Studium ab dem ... aufnehmen" ;
+    cur:verified false .
+
+hs:lex-appliesToCohort-cue-studienbeginn-ab a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/appliesToCohort--cue--studienbeginn-ab> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:appliesToCohort ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Studienbeginn ab" ;
+    cur:verified false .
+
+hs:lex-appliesToCohort-cue-uebergangsbestimmungen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/appliesToCohort--cue--uebergangsbestimmungen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:appliesToCohort ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Übergangsbestimmungen" ;
+    cur:verified false .
+
+hs:lex-appliesToCohort-cue-uebergangsregelung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/appliesToCohort--cue--uebergangsregelung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:appliesToCohort ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Übergangsregelung" ;
+    cur:verified false .
+
+hs:lex-componentCode-alt-kennziffer a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/componentCode--alt--kennziffer> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:code ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Kennziffer" ;
+    cur:verified false .
+
+hs:lex-componentCode-alt-kuerzel a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/componentCode--alt--kuerzel> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:code ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Kürzel" ;
+    cur:verified false .
+
+hs:lex-componentCode-alt-modul-id a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/componentCode--alt--modul-id> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:code ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modul-ID" ;
+    cur:verified false .
+
+hs:lex-componentCode-alt-modul-nr a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/componentCode--alt--modul-nr> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:code ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modul-Nr." ;
+    cur:verified false .
+
+hs:lex-componentCode-alt-modulcode a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/componentCode--alt--modulcode> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:code ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modulcode" ;
+    cur:verified false .
+
+hs:lex-componentCode-alt-module-code a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/componentCode--alt--module-code> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:code ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Module code" ;
+    cur:verified false .
+
+hs:lex-componentCode-alt-modulkennung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/componentCode--alt--modulkennung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:code ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modulkennung" ;
+    cur:verified false .
+
+hs:lex-componentCode-pref-modulnummer a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/componentCode--pref--modulnummer> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cur:code ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modulnummer" ;
+    cur:verified false .
+
+hs:lex-componentType-alt-modulkategorie a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/componentType--alt--modulkategorie> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:componentType ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modulkategorie" ;
+    cur:verified false .
+
+hs:lex-componentType-pref-modultyp a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/componentType--pref--modultyp> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:componentType ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modultyp" ;
+    cur:verified false .
+
+hs:lex-creditAwardCondition-alt-leistungsnachweis a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/creditAwardCondition--alt--leistungsnachweis> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo hs:creditAwardCondition ;
+    cur:recognitionHint "Als Feld = Voraussetzung für die LP-Vergabe; als Prüfung selbst = cur:Assessment."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Leistungsnachweis" ;
+    cur:verified false .
+
+hs:lex-creditAwardCondition-alt-modulabschluss a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/creditAwardCondition--alt--modulabschluss> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:creditAwardCondition ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modulabschluss" ;
+    cur:verified false .
+
+hs:lex-creditAwardCondition-alt-requirements-for-the-award-of-credits a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/creditAwardCondition--alt--requirements-for-the-award-of-credits> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:creditAwardCondition ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Requirements for the award of credits" ;
+    cur:verified false .
+
+hs:lex-creditAwardCondition-alt-studien-und-pruefungsleistungen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/creditAwardCondition--alt--studien-und-pruefungsleistungen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:creditAwardCondition ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studien- und Prüfungsleistungen" ;
+    cur:verified false .
+
+hs:lex-creditAwardCondition-alt-voraussetzungen-fuer-die-vergabe-von-lei a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/creditAwardCondition--alt--voraussetzungen-fuer-die-vergabe-von-lei> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:creditAwardCondition ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Voraussetzungen für die Vergabe von Leistungspunkten" ;
+    cur:verified false .
+
+hs:lex-creditAwardCondition-homonym-modulpruefung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/creditAwardCondition--homonym--modulpruefung> ;
+    cur:alsoMapsTo cur:Assessment ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo hs:creditAwardCondition ;
+    cur:recognitionHint "Bezeichnet oft das Feld und zugleich die Prüfung selbst; Prüfung als hco:Assessment anlegen."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Modulprüfung" ;
+    cur:verified false .
+
+hs:lex-creditAwardCondition-pref-voraussetzungen-fuer-die-vergabe-von-ect a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/creditAwardCondition--pref--voraussetzungen-fuer-die-vergabe-von-ect> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:creditAwardCondition ;
+    cur:strength 0.9 ;
+    cur:surfaceForm "Voraussetzungen für die Vergabe von ECTS-Leistungspunkten" ;
+    cur:verified true .
+
+hs:lex-dt_AdmissionRegulation-alt-eignungsfeststellungsordnung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_AdmissionRegulation--alt--eignungsfeststellungsordnung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:dt-Zugangsordnung ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Eignungsfeststellungsordnung" ;
+    cur:verified false .
+
+hs:lex-dt_AdmissionRegulation-alt-eignungspruefungsordnung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_AdmissionRegulation--alt--eignungspruefungsordnung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:dt-Zugangsordnung ;
+    cur:scopeInstitutionType hs:it-kunst ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Eignungsprüfungsordnung" ;
+    cur:verified false .
+
+hs:lex-dt_CombinedStudyExaminationRegulation-cue-fpso a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_CombinedStudyExaminationRegulation--cue--fpso> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:dt-SPO ;
+    cur:recognitionHint "Fachprüfungs- und Studienordnung (u. a. TU München)."@de ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "FPSO" ;
+    cur:verified false .
+
+hs:lex-dt_CombinedStudyExaminationRegulation-cue-spo a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_CombinedStudyExaminationRegulation--cue--spo> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:dt-SPO ;
+    cur:recognitionHint "In BW verbreitete Kurzform; andernorts auch für Studien- und Prüfungsordnung allgemein."@de ;
+    cur:scopeRegion land:DE-BW ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "SPO" ;
+    cur:verified false .
+
+hs:lex-dt_CombinedStudyExaminationRegulation-cue-stupo a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_CombinedStudyExaminationRegulation--cue--stupo> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:dt-SPO ;
+    cur:scopeRegion land:DE-BE ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "StuPO" ;
+    cur:verified false .
+
+hs:lex-dt_CombinedStudyExaminationRegulation-pref-studien-und-pruefungsordnung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_CombinedStudyExaminationRegulation--pref--studien-und-pruefungsordnung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:dt-SPO ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studien- und Prüfungsordnung" ;
+    cur:verified false .
+
+hs:lex-dt_ExaminationRegulation-alt-fachspezifische-pruefungsordnung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_ExaminationRegulation--alt--fachspezifische-pruefungsordnung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:dt-Pruefungsordnung ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Fachspezifische Prüfungsordnung" ;
+    cur:verified false .
+
+hs:lex-dt_ExaminationRegulation-cue-fpo a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_ExaminationRegulation--cue--fpo> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:dt-Pruefungsordnung ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "FPO" ;
+    cur:verified false .
+
+hs:lex-dt_ExaminationRegulation-cue-fsb a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_ExaminationRegulation--cue--fsb> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:dt-Pruefungsordnung ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "FSB" ;
+    cur:verified false .
+
+hs:lex-dt_GeneralExaminationRegulation-alt-gemeinsame-pruefungsordnung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_GeneralExaminationRegulation--alt--gemeinsame-pruefungsordnung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:dt-RahmenPO ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Gemeinsame Prüfungsordnung" ;
+    cur:verified false .
+
+hs:lex-dt_GeneralExaminationRegulation-cue-apo a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_GeneralExaminationRegulation--cue--apo> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:dt-RahmenPO ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "APO" ;
+    cur:verified false .
+
+hs:lex-dt_GeneralExaminationRegulation-cue-aspo a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_GeneralExaminationRegulation--cue--aspo> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:dt-RahmenPO ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "ASPO" ;
+    cur:verified false .
+
+hs:lex-dt_GeneralExaminationRegulation-cue-rpo a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_GeneralExaminationRegulation--cue--rpo> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:dt-RahmenPO ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "RPO" ;
+    cur:verified false .
+
+hs:lex-dt_GeneralExaminationRegulation-cue-rspo a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_GeneralExaminationRegulation--cue--rspo> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:dt-RahmenPO ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "RSPO" ;
+    cur:verified false .
+
+hs:lex-dt_ModuleCatalogue-alt-ects-course-catalogue a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_ModuleCatalogue--alt--ects-course-catalogue> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:dt-Modulhandbuch ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "ECTS Course Catalogue" ;
+    cur:verified false .
+
+hs:lex-dt_ModuleCatalogue-cue-studienfuehrer a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_ModuleCatalogue--cue--studienfuehrer> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:dt-Modulhandbuch ;
+    cur:recognitionHint "Kann auch reine Informationsbroschüre sein."@de ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Studienführer" ;
+    cur:verified false .
+
+hs:lex-dt_PlacementRegulation-alt-praxissemesterordnung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_PlacementRegulation--alt--praxissemesterordnung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:dt-Praxisordnung ;
+    cur:scopeSubject fld:011 ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Praxissemesterordnung" ;
+    cur:verified false .
+
+hs:lex-dt_PlacementRegulation-cue-rahmenausbildungsplan a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_PlacementRegulation--cue--rahmenausbildungsplan> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:dt-Praxisordnung ;
+    cur:scopeInstitutionType hs:it-dual ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Rahmenausbildungsplan" ;
+    cur:verified false .
+
+hs:lex-dt_StateExaminationRegulation-cue-aeappro a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_StateExaminationRegulation--cue--aeappro> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:dt-Staatsexamen ;
+    cur:scopeSubject fld:0912 ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "ÄApprO" ;
+    cur:verified false .
+
+hs:lex-dt_StateExaminationRegulation-cue-japo a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_StateExaminationRegulation--cue--japo> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:dt-Staatsexamen ;
+    cur:scopeSubject fld:0421 ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "JAPO" ;
+    cur:verified false .
+
+hs:lex-dt_TeacherTrainingRegulation-alt-lehramtspruefungsordnung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_TeacherTrainingRegulation--alt--lehramtspruefungsordnung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:dt-Lehramt ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Lehramtsprüfungsordnung" ;
+    cur:verified false .
+
+hs:lex-dt_TeacherTrainingRegulation-cue-lpo-i a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_TeacherTrainingRegulation--cue--lpo-i> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:dt-Lehramt ;
+    cur:scopeRegion land:DE-BY ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "LPO I" ;
+    cur:verified false .
+
+hs:lex-dt_TeacherTrainingRegulation-cue-lzv a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/dt_TeacherTrainingRegulation--cue--lzv> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:dt-Lehramt ;
+    cur:scopeRegion land:DE-NW ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "LZV" ;
+    cur:verified false .
+
+hs:lex-durationSemesters-alt-dauer a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/durationSemesters--alt--dauer> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:durationSemesters ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Dauer" ;
+    cur:verified false .
+
+hs:lex-durationSemesters-alt-duration a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/durationSemesters--alt--duration> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:durationSemesters ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Duration" ;
+    cur:verified false .
+
+hs:lex-durationSemesters-alt-moduldauer a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/durationSemesters--alt--moduldauer> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:durationSemesters ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Moduldauer" ;
+    cur:verified false .
+
+hs:lex-durationSemesters-cue-einsemestrig a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/durationSemesters--cue--einsemestrig> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:durationSemesters ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "einsemestrig" ;
+    cur:verified false .
+
+hs:lex-durationSemesters-cue-zweisemestrig a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/durationSemesters--cue--zweisemestrig> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:durationSemesters ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "zweisemestrig" ;
+    cur:verified false .
+
+hs:lex-durationSemesters-pref-dauer-des-moduls a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/durationSemesters--pref--dauer-des-moduls> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:durationSemesters ;
+    cur:strength 0.9 ;
+    cur:surfaceForm "Dauer des Moduls" ;
+    cur:verified true .
+
+hs:lex-ectsCredits-alt-cp a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ectsCredits--alt--cp> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cv:unit_ectsCredit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "CP" ;
+    cur:verified false .
+
+hs:lex-ectsCredits-alt-credit-points a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ectsCredits--alt--credit-points> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cv:unit_ectsCredit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Credit Points" ;
+    cur:verified false .
+
+hs:lex-ectsCredits-alt-credits a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ectsCredits--alt--credits> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cv:unit_ectsCredit ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Credits" ;
+    cur:verified false .
+
+hs:lex-ectsCredits-alt-ects a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ectsCredits--alt--ects> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cv:unit_ectsCredit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "ECTS" ;
+    cur:verified false .
+
+hs:lex-ectsCredits-alt-ects-punkte a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ectsCredits--alt--ects-punkte> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cv:unit_ectsCredit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "ECTS-Punkte" ;
+    cur:verified false .
+
+hs:lex-ectsCredits-alt-kp a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ectsCredits--alt--kp> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cv:unit_ectsCredit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "KP" ;
+    cur:verified false .
+
+hs:lex-ectsCredits-alt-kreditpunkte a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ectsCredits--alt--kreditpunkte> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cv:unit_ectsCredit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Kreditpunkte" ;
+    cur:verified false .
+
+hs:lex-ectsCredits-alt-leistungspunkte a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ectsCredits--alt--leistungspunkte> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cv:unit_ectsCredit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Leistungspunkte" ;
+    cur:verified false .
+
+hs:lex-ectsCredits-alt-lp a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ectsCredits--alt--lp> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cv:unit_ectsCredit ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "LP" ;
+    cur:verified false .
+
+hs:lex-ectsCredits-pref-ects-leistungspunkte a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ectsCredits--pref--ects-leistungspunkte> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cv:unit_ectsCredit ;
+    cur:strength 0.9 ;
+    cur:surfaceForm "ECTS-Leistungspunkte" ;
+    cur:verified true .
+
+hs:lex-ectsRequired-cue-im-umfang-von-lp a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ectsRequired--cue--im-umfang-von-lp> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:minAmount ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "im Umfang von ... LP" ;
+    cur:verified false .
+
+hs:lex-ectsRequired-cue-summe-lp a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ectsRequired--cue--summe-lp> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:minAmount ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Summe LP" ;
+    cur:verified false .
+
+hs:lex-ectsRequired-pref-zu-erbringende-leistungspunkte a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ectsRequired--pref--zu-erbringende-leistungspunkte> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cur:minAmount ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "zu erbringende Leistungspunkte" ;
+    cur:verified false .
+
+hs:lex-gradeWeight-alt-notengewicht a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/gradeWeight--alt--notengewicht> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:gradeWeight ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Notengewicht" ;
+    cur:verified false .
+
+hs:lex-gradeWeight-alt-stellenwert-der-note-fuer-die-endnote a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/gradeWeight--alt--stellenwert-der-note-fuer-die-endnote> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:gradeWeight ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Stellenwert der Note für die Endnote" ;
+    cur:verified false .
+
+hs:lex-gradeWeight-cue-faktor a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/gradeWeight--cue--faktor> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:gradeWeight ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Faktor" ;
+    cur:verified false .
+
+hs:lex-gradeWeight-pref-gewichtung-fuer-die-gesamtnote a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/gradeWeight--pref--gewichtung-fuer-die-gesamtnote> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cur:gradeWeight ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Gewichtung für die Gesamtnote" ;
+    cur:verified false .
+
+hs:lex-gradingScheme-alt-gewichtung-der-note a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/gradingScheme--alt--gewichtung-der-note> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cur:gradeWeight ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Gewichtung der Note" ;
+    cur:verified false .
+
+hs:lex-gradingScheme-cue-bestanden-nicht-bestanden a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/gradingScheme--cue--bestanden-nicht-bestanden> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:graded,
+        hs:gradingText ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "bestanden/nicht bestanden" ;
+    cur:verified false .
+
+hs:lex-gradingScheme-cue-unbenotet a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/gradingScheme--cue--unbenotet> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:graded,
+        hs:gradingText ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "unbenotet" ;
+    cur:verified false .
+
+hs:lex-gradingScheme-pref-benotung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/gradingScheme--pref--benotung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cur:graded,
+        hs:gradingText ;
+    cur:strength 0.9 ;
+    cur:surfaceForm "Benotung" ;
+    cur:verified true .
+
+hs:lex-inheritsFrom-cue-besonderer-teil a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/inheritsFrom--cue--besonderer-teil> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:inheritsFrom ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Besonderer Teil" ;
+    cur:verified false .
+
+hs:lex-inheritsFrom-cue-ergaenzend-gelten-die-allgemeinen-bestim a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/inheritsFrom--cue--ergaenzend-gelten-die-allgemeinen-bestim> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:inheritsFrom ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "ergänzend gelten die Allgemeinen Bestimmungen" ;
+    cur:verified false .
+
+hs:lex-inheritsFrom-cue-fachspezifische-bestimmungen-zur-rahmenp a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/inheritsFrom--cue--fachspezifische-bestimmungen-zur-rahmenp> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:inheritsFrom ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "fachspezifische Bestimmungen zur Rahmenprüfungsordnung" ;
+    cur:verified false .
+
+hs:lex-inheritsFrom-cue-i-v-m-der-allgemeinen-pruefungsordnung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/inheritsFrom--cue--i-v-m-der-allgemeinen-pruefungsordnung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:inheritsFrom ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "i. V. m. der Allgemeinen Prüfungsordnung" ;
+    cur:verified false .
+
+hs:lex-inheritsFrom-cue-in-verbindung-mit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/inheritsFrom--cue--in-verbindung-mit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:inheritsFrom ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "in Verbindung mit" ;
+    cur:verified false .
+
+hs:lex-instructionLanguage-alt-language-of-instruction a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/instructionLanguage--alt--language-of-instruction> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:instructionLanguage ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Language of instruction" ;
+    cur:verified false .
+
+hs:lex-instructionLanguage-alt-sprache a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/instructionLanguage--alt--sprache> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:instructionLanguage ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Sprache" ;
+    cur:verified false .
+
+hs:lex-instructionLanguage-alt-unterrichtssprache a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/instructionLanguage--alt--unterrichtssprache> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:instructionLanguage ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Unterrichtssprache" ;
+    cur:verified false .
+
+hs:lex-instructionLanguage-pref-lehrsprache a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/instructionLanguage--pref--lehrsprache> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:instructionLanguage ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Lehrsprache" ;
+    cur:verified false .
+
+hs:lex-ns_binding-cue-amtliche-bekanntmachung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ns_binding--cue--amtliche-bekanntmachung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:bind_binding ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Amtliche Bekanntmachung" ;
+    cur:verified false .
+
+hs:lex-ns_binding-cue-amtliche-mitteilungen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ns_binding--cue--amtliche-mitteilungen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:bind_binding ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Amtliche Mitteilungen" ;
+    cur:verified false .
+
+hs:lex-ns_binding-cue-amtsblatt-der-hochschule a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ns_binding--cue--amtsblatt-der-hochschule> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:bind_binding ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Amtsblatt der Hochschule" ;
+    cur:verified false .
+
+hs:lex-ns_binding-cue-aufgrund-von-des-hochschulgesetzes-hat-d a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ns_binding--cue--aufgrund-von-des-hochschulgesetzes-hat-d> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:bind_binding ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Aufgrund von § ... des Hochschulgesetzes hat der Senat/Fakultätsrat ... beschlossen" ;
+    cur:verified false .
+
+hs:lex-ns_binding-cue-mitteilungsblatt a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ns_binding--cue--mitteilungsblatt> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:bind_binding ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Mitteilungsblatt" ;
+    cur:verified false .
+
+hs:lex-ns_binding-cue-tritt-am-tage-nach-ihrer-veroeffentlichu a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ns_binding--cue--tritt-am-tage-nach-ihrer-veroeffentlichu> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:bind_binding ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "tritt am Tage nach ihrer Veröffentlichung in Kraft" ;
+    cur:verified false .
+
+hs:lex-ns_binding-cue-verkuendungsblatt a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ns_binding--cue--verkuendungsblatt> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:bind_binding ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Verkündungsblatt" ;
+    cur:verified false .
+
+hs:lex-ns_bindingAnnex-cue-anlage-zur-pruefungsordnung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ns_bindingAnnex--cue--anlage-zur-pruefungsordnung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:annexOf,
+        cv:bind_binding ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Anlage zur Prüfungsordnung" ;
+    cur:verified false .
+
+hs:lex-ns_bindingAnnex-cue-das-modulhandbuch-ist-anlage a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ns_bindingAnnex--cue--das-modulhandbuch-ist-anlage> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:annexOf,
+        cv:bind_binding ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Das Modulhandbuch ist Anlage" ;
+    cur:verified false .
+
+hs:lex-ns_bindingAnnex-cue-ist-bestandteil-dieser-ordnung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ns_bindingAnnex--cue--ist-bestandteil-dieser-ordnung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:annexOf,
+        cv:bind_binding ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "ist Bestandteil dieser Ordnung" ;
+    cur:verified false .
+
+hs:lex-ns_informative-cue-es-gilt-die-jeweils-gueltige-pruefungsor a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ns_informative--cue--es-gilt-die-jeweils-gueltige-pruefungsor> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:bind_informative ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Es gilt die jeweils gültige Prüfungsordnung" ;
+    cur:verified false .
+
+hs:lex-ns_informative-cue-lesefassung a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ns_informative--cue--lesefassung> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:bind_informative ;
+    cur:recognitionHint "Nicht-amtliche konsolidierte Fassung: Inhalt stammt aus verbindlichen Ordnungen, das Dokument selbst ist nicht verbindlich."@de ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Lesefassung" ;
+    cur:verified false .
+
+hs:lex-ns_informative-cue-nicht-rechtsverbindlich a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ns_informative--cue--nicht-rechtsverbindlich> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:bind_informative ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "nicht rechtsverbindlich" ;
+    cur:verified false .
+
+hs:lex-ns_informative-cue-stand a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/ns_informative--cue--stand> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:bind_informative ;
+    cur:recognitionHint "Datumsangabe ohne Beschluss/Bekanntmachung deutet auf Begleitdokument."@de ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Stand:" ;
+    cur:verified false .
+
+hs:lex-obligation-cue-art-des-moduls a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/obligation--cue--art-des-moduls> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:obligation ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Art des Moduls" ;
+    cur:verified false .
+
+hs:lex-obligation-cue-p-wp-w a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/obligation--cue--p-wp-w> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:obligation ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "P/WP/W" ;
+    cur:verified false .
+
+hs:lex-obligation-cue-pflicht-wahlpflicht a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/obligation--cue--pflicht-wahlpflicht> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:obligation ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Pflicht/Wahlpflicht" ;
+    cur:verified false .
+
+hs:lex-obligation-cue-status a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/obligation--cue--status> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:obligation ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Status" ;
+    cur:verified false .
+
+hs:lex-obligation-homonym-modulart a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/obligation--homonym--modulart> ;
+    cur:alsoMapsTo hs:componentType ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo cur:obligation ;
+    cur:recognitionHint "Kann Verbindlichkeit (Pflicht/WP) oder lokalen Modultyp (Basis/Aufbau) meinen."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Modulart" ;
+    cur:verified false .
+
+hs:lex-obligation-homonym-p a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/obligation--homonym--p> ;
+    cur:alsoMapsTo hs:tf-labor ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo cur:obligation ;
+    cur:recognitionHint "In Tabellen: Pflicht; in SWS-Angaben: Praktikum."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "P" ;
+    cur:verified false .
+
+hs:lex-offerFrequency-alt-angebotshaeufigkeit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/offerFrequency--alt--angebotshaeufigkeit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:offerFrequency ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Angebotshäufigkeit" ;
+    cur:verified false .
+
+hs:lex-offerFrequency-alt-angebotsturnus a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/offerFrequency--alt--angebotsturnus> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:offerFrequency ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Angebotsturnus" ;
+    cur:verified false .
+
+hs:lex-offerFrequency-alt-frequency a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/offerFrequency--alt--frequency> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:offerFrequency ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Frequency" ;
+    cur:verified false .
+
+hs:lex-offerFrequency-alt-haeufigkeit-des-angebots a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/offerFrequency--alt--haeufigkeit-des-angebots> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:offerFrequency ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Häufigkeit des Angebots" ;
+    cur:verified false .
+
+hs:lex-offerFrequency-alt-turnus a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/offerFrequency--alt--turnus> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:offerFrequency ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Turnus" ;
+    cur:verified false .
+
+hs:lex-offerFrequency-pref-haeufigkeit-des-angebots-des-moduls a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/offerFrequency--pref--haeufigkeit-des-angebots-des-moduls> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:offerFrequency ;
+    cur:strength 0.9 ;
+    cur:surfaceForm "Häufigkeit des Angebots des Moduls" ;
+    cur:verified true .
+
+hs:lex-recommendedSemester-alt-fachsemester a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/recommendedSemester--alt--fachsemester> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cv:time_semester ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Fachsemester" ;
+    cur:verified false .
+
+hs:lex-recommendedSemester-alt-lage-im-studienverlauf a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/recommendedSemester--alt--lage-im-studienverlauf> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cv:time_semester ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Lage im Studienverlauf" ;
+    cur:verified false .
+
+hs:lex-recommendedSemester-alt-semesterlage a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/recommendedSemester--alt--semesterlage> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cv:time_semester ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Semesterlage" ;
+    cur:verified false .
+
+hs:lex-recommendedSemester-alt-studiensemester a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/recommendedSemester--alt--studiensemester> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo cv:time_semester ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studiensemester" ;
+    cur:verified false .
+
+hs:lex-recommendedSemester-cue-fs a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/recommendedSemester--cue--fs> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:time_semester ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "FS" ;
+    cur:verified false .
+
+hs:lex-recommendedSemester-cue-sem a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/recommendedSemester--cue--sem> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cv:time_semester ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Sem." ;
+    cur:verified false .
+
+hs:lex-recommendedSemester-homonym-semester a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/recommendedSemester--homonym--semester> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo cv:time_semester ;
+    cur:recognitionHint "Spalte in Modulübersicht = empfohlenes Semester (an ComponentUse); im Modulsteckbrief kann 'Semester' auch Angebotsturnus meinen."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "Semester" ;
+    cur:verified false .
+
+hs:lex-recommendedSemester-pref-empfohlenes-fachsemester a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/recommendedSemester--pref--empfohlenes-fachsemester> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo cv:time_semester ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "empfohlenes Fachsemester" ;
+    cur:verified false .
+
+hs:lex-responsiblePerson-alt-modulbeauftragte-r a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/responsiblePerson--alt--modulbeauftragte-r> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:if-person ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modulbeauftragte:r" ;
+    cur:verified false .
+
+hs:lex-responsiblePerson-alt-module-coordinator a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/responsiblePerson--alt--module-coordinator> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:if-person ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Module coordinator" ;
+    cur:verified false .
+
+hs:lex-responsiblePerson-alt-modulkoordination a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/responsiblePerson--alt--modulkoordination> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:if-person ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modulkoordination" ;
+    cur:verified false .
+
+hs:lex-responsiblePerson-alt-verantwortlich a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/responsiblePerson--alt--verantwortlich> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:if-person ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Verantwortlich" ;
+    cur:verified false .
+
+hs:lex-responsiblePerson-pref-modulverantwortliche-r a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/responsiblePerson--pref--modulverantwortliche-r> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:if-person ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Modulverantwortliche:r" ;
+    cur:verified false .
+
+hs:lex-standardDurationSemesters-alt-standard-period-of-study a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/standardDurationSemesters--alt--standard-period-of-study> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:standardDurationSemesters ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "standard period of study" ;
+    cur:verified false .
+
+hs:lex-standardDurationSemesters-alt-studiendauer a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/standardDurationSemesters--alt--studiendauer> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:standardDurationSemesters ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studiendauer" ;
+    cur:verified false .
+
+hs:lex-standardDurationSemesters-pref-regelstudienzeit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/standardDurationSemesters--pref--regelstudienzeit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:standardDurationSemesters ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Regelstudienzeit" ;
+    cur:verified false .
+
+hs:lex-studyMode-alt-studienart a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/studyMode--alt--studienart> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:studyMode ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studienart" ;
+    cur:verified false .
+
+hs:lex-studyMode-alt-studienmodell a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/studyMode--alt--studienmodell> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:studyMode ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studienmodell" ;
+    cur:verified false .
+
+hs:lex-studyMode-cue-ausbildungsintegrierend a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/studyMode--cue--ausbildungsintegrierend> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:studyMode ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "ausbildungsintegrierend" ;
+    cur:verified false .
+
+hs:lex-studyMode-cue-berufsbegleitend a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/studyMode--cue--berufsbegleitend> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:studyMode ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "berufsbegleitend" ;
+    cur:verified false .
+
+hs:lex-studyMode-cue-praxisintegrierend a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/studyMode--cue--praxisintegrierend> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo hs:studyMode ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "praxisintegrierend" ;
+    cur:verified false .
+
+hs:lex-studyMode-homonym-dual a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/studyMode--homonym--dual> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_homonym ;
+    cur:mapsTo hs:studyMode ;
+    cur:recognitionHint "Nur als dual klassifizieren, wenn curriculare und organisatorische Verzahnung der Lernorte beschrieben ist (WR 2013)."@de ;
+    cur:strength 0.5 ;
+    cur:surfaceForm "dual" ;
+    cur:verified false .
+
+hs:lex-studyMode-pref-studienform a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/studyMode--pref--studienform> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:studyMode ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Studienform" ;
+    cur:verified false .
+
+hs:lex-totalCredits-cue-gesamtumfang a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/totalCredits--cue--gesamtumfang> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:totalWorkload ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Gesamtumfang" ;
+    cur:verified false .
+
+hs:lex-totalCredits-cue-insgesamt-leistungspunkte a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/totalCredits--cue--insgesamt-leistungspunkte> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:totalWorkload ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "insgesamt ... Leistungspunkte" ;
+    cur:verified false .
+
+hs:lex-totalCredits-cue-umfang-des-studiums a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/totalCredits--cue--umfang-des-studiums> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_cue ;
+    cur:mapsTo cur:totalWorkload ;
+    cur:strength 0.7 ;
+    cur:surfaceForm "Umfang des Studiums" ;
+    cur:verified false .
+
+hs:lex-usabilityText-alt-applicability a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/usabilityText--alt--applicability> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:usabilityText ;
+    cur:recognitionHint "Englischsprachige Fassung oder Modulhandbuch."@de ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Applicability" ;
+    cur:verified false .
+
+hs:lex-usabilityText-alt-einsetzbarkeit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/usabilityText--alt--einsetzbarkeit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:usabilityText ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Einsetzbarkeit" ;
+    cur:verified false .
+
+hs:lex-usabilityText-alt-verwendbarkeit a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/usabilityText--alt--verwendbarkeit> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:usabilityText ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Verwendbarkeit" ;
+    cur:verified false .
+
+hs:lex-usabilityText-alt-verwendung-in-anderen-studiengaengen a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/usabilityText--alt--verwendung-in-anderen-studiengaengen> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_alt ;
+    cur:mapsTo hs:usabilityText ;
+    cur:strength 0.8 ;
+    cur:surfaceForm "Verwendung in anderen Studiengängen" ;
+    cur:verified false .
+
+hs:lex-usabilityText-pref-verwendbarkeit-des-moduls a cur:LexicalCue ;
+    prov:wasDerivedFrom <https://w3id.org/hco/lex/usabilityText--pref--verwendbarkeit-des-moduls> ;
+    cur:cueKind cv:ck_term ;
+    cur:cueRole cv:role_pref ;
+    cur:mapsTo hs:usabilityText ;
+    cur:strength 0.9 ;
+    cur:surfaceForm "Verwendbarkeit des Moduls" ;
+    cur:verified true .
+

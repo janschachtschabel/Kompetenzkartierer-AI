@@ -1,0 +1,567 @@
+{
+  "type": "object",
+  "description": "Stufe X3: einmal je Dokument die Rahmenteile lesen – Kompetenzmodell, Niveaumodell, Operatorenliste, Querschnittslegende, Regeln, Bildungsziele und Aufträge. Die Ergebnisse werden Auswahllisten für X4.",
+  "additionalProperties": false,
+  "required": [
+    "competencyModels",
+    "levelModels",
+    "operators",
+    "crossCuttingLegend",
+    "rules",
+    "statements",
+    "checkedAbsent"
+  ],
+  "properties": {
+    "competencyModels": {
+      "type": "array",
+      "description": "Vom Dokument erklärte Kompetenzmodelle.",
+      "items": {
+        "type": "object",
+        "description": "Kompetenzmodell",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "dimensions",
+          "evidenceBlockIds"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Bezeichnung wörtlich."
+          },
+          "dimensions": {
+            "type": "array",
+            "description": "Dimensionen in Dokumentreihenfolge.",
+            "items": {
+              "type": "object",
+              "description": "Dimension",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "label",
+                "parentLabel"
+              ],
+              "properties": {
+                "code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Kürzel, falls vorhanden."
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Bezeichnung wörtlich."
+                },
+                "parentLabel": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Übergeordnete Dimension oder null."
+                }
+              }
+            }
+          },
+          "evidenceBlockIds": {
+            "type": "array",
+            "description": "Block-IDs aus Stufe X0 (Muster p<Seite>-b<Block>), in Lesereihenfolge. Nie Seitenzahlen erfinden.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "levelModels": {
+      "type": "array",
+      "description": "Vom Dokument erklärte Niveau- oder Stufenmodelle.",
+      "items": {
+        "type": "object",
+        "description": "Niveaumodell",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "levelDimension",
+          "competenceDimension",
+          "levels",
+          "defaultRelation",
+          "evidenceBlockIds"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Bezeichnung wörtlich."
+          },
+          "levelDimension": {
+            "type": "string",
+            "enum": [
+              "affective",
+              "attainment",
+              "cognitive",
+              "conduct",
+              "course",
+              "development",
+              "grading",
+              "proficiency",
+              "psychomotor",
+              "qualification",
+              "stage",
+              "taskDemand"
+            ],
+            "description": "Was die Stufen messen.",
+            "x-cv-scheme": "LevelDimensions"
+          },
+          "competenceDimension": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Kompetenzbereich, für den die Stufen gelten („Lesen“, „Hörverstehen“), wörtlich; null, wenn sie für alle Bereiche gelten."
+          },
+          "levels": {
+            "type": "array",
+            "description": "Stufen von der niedrigsten zur höchsten Leistung oder Anforderung (bei Noten von 6 nach 1).",
+            "items": {
+              "type": "object",
+              "description": "Stufe",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "label"
+              ],
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "description": "Kürzel."
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Bezeichnung wörtlich."
+                }
+              }
+            }
+          },
+          "defaultRelation": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "assigned",
+              "entry",
+              "minimum",
+              "range",
+              "target",
+              null
+            ],
+            "description": "Wie das Dokument Aussagen den Stufen zuordnet.",
+            "x-cv-scheme": "LevelRelations"
+          },
+          "evidenceBlockIds": {
+            "type": "array",
+            "description": "Block-IDs aus Stufe X0 (Muster p<Seite>-b<Block>), in Lesereihenfolge. Nie Seitenzahlen erfinden.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "operators": {
+      "type": "array",
+      "description": "Operatorenliste des Dokuments.",
+      "items": {
+        "type": "object",
+        "description": "Operator",
+        "additionalProperties": false,
+        "required": [
+          "lemma",
+          "definition",
+          "taskDemandText",
+          "evidenceBlockId"
+        ],
+        "properties": {
+          "lemma": {
+            "type": "string",
+            "description": "Operator in Grundform; trennbare Verben als „wählen … aus“."
+          },
+          "definition": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Erklärung wörtlich."
+          },
+          "taskDemandText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Anforderungsbereich laut Liste im Wortlaut."
+          },
+          "evidenceBlockId": {
+            "type": "string",
+            "description": "Block der Zeile."
+          }
+        }
+      }
+    },
+    "crossCuttingLegend": {
+      "type": "array",
+      "description": "Legende der Querschnittsmarker.",
+      "items": {
+        "type": "object",
+        "description": "Marker",
+        "additionalProperties": false,
+        "required": [
+          "marker",
+          "label",
+          "evidenceBlockId"
+        ],
+        "properties": {
+          "marker": {
+            "type": "string",
+            "description": "Marker wie im Dokument („L BNE“, „[MD3]“)."
+          },
+          "label": {
+            "type": "string",
+            "description": "Erklärung wörtlich."
+          },
+          "evidenceBlockId": {
+            "type": "string",
+            "description": "Block der Legende."
+          }
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "description": "Regeln (Wahl, Voraussetzung, Abschluss, Anrechnung, Fortschritt) im Wortlaut mit geparsten Werten.",
+      "items": {
+        "type": "object",
+        "description": "Regel",
+        "additionalProperties": false,
+        "required": [
+          "blockIds",
+          "verbatim",
+          "ruleKind",
+          "minCount",
+          "maxCount",
+          "minAmount",
+          "maxAmount",
+          "amountUnit",
+          "requirementKind",
+          "maxShare",
+          "optionTexts"
+        ],
+        "properties": {
+          "blockIds": {
+            "type": "array",
+            "description": "Block-IDs aus Stufe X0 (Muster p<Seite>-b<Block>), in Lesereihenfolge. Nie Seitenzahlen erfinden.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "verbatim": {
+            "type": "string",
+            "description": "Wortlaut der Regel."
+          },
+          "ruleKind": {
+            "type": "string",
+            "enum": [
+              "selection",
+              "prerequisite",
+              "completion",
+              "recognition",
+              "progression"
+            ],
+            "description": "Regelart (Kernklassen)."
+          },
+          "minCount": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Mindestzahl der Optionen."
+          },
+          "maxCount": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Höchstzahl der Optionen."
+          },
+          "minAmount": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Mindestumfang."
+          },
+          "maxAmount": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Höchstumfang."
+          },
+          "amountUnit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "day",
+              "ectsCredit",
+              "hour",
+              "lesson",
+              "month",
+              "semester",
+              "teachingUnit",
+              "week",
+              "weeklyLesson",
+              "year",
+              null
+            ],
+            "description": "Einheit des Umfangs.",
+            "x-cv-scheme": "WorkloadUnits"
+          },
+          "requirementKind": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "formal",
+              "none",
+              "recommended",
+              null
+            ],
+            "description": "Art der Voraussetzung.",
+            "x-cv-scheme": "RequirementKinds"
+          },
+          "maxShare": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Höchstanteil der Anrechnung (0–1)."
+          },
+          "optionTexts": {
+            "type": "array",
+            "description": "Optionen wie im Dokument (Titel oder Kennungen).",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "statements": {
+      "type": "array",
+      "description": "Bildungsziele, Aufträge und Grundsätze der Rahmenteile.",
+      "items": {
+        "type": "object",
+        "description": "Aussage eines Rahmenteils",
+        "additionalProperties": false,
+        "required": [
+          "blockIds",
+          "verbatim",
+          "leadIn",
+          "statementKind",
+          "statementSubkind",
+          "addressee",
+          "obligation",
+          "layoutMarkers",
+          "codeText",
+          "levelText",
+          "timeText",
+          "contextText",
+          "crossCuttingMarkers",
+          "referenceMarker",
+          "exampleText",
+          "purposeText",
+          "targetsContent"
+        ],
+        "properties": {
+          "blockIds": {
+            "type": "array",
+            "description": "Block-IDs aus Stufe X0 (Muster p<Seite>-b<Block>), in Lesereihenfolge. Nie Seitenzahlen erfinden.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "verbatim": {
+            "type": "string",
+            "description": "Wortlaut der Aussage, wörtlich und vollständig, ohne gemeinsamen Einleitungssatz."
+          },
+          "leadIn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Gemeinsamer Einleitungssatz („Die Schülerinnen und Schüler …“), sonst null."
+          },
+          "statementKind": {
+            "type": "string",
+            "enum": [
+              "content",
+              "developmentGoal",
+              "guidance",
+              "learningOutcome",
+              "mandate",
+              "reference",
+              "standard",
+              "unclassified"
+            ],
+            "description": "Aussageart nach Funktion, nicht nach Wort; im Zweifel unclassified.",
+            "x-cv-scheme": "StatementKinds"
+          },
+          "statementSubkind": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Aussage-Unterart-ID aus der Liste im Prompt oder null."
+          },
+          "addressee": {
+            "type": "string",
+            "enum": [
+              "educator",
+              "family",
+              "institution",
+              "learner",
+              "other",
+              "partner"
+            ],
+            "description": "An wen sich die Aussage richtet.",
+            "x-cv-scheme": "Addressees"
+          },
+          "obligation": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "binding",
+              "elective",
+              "electiveRequired",
+              "exemplary",
+              "informative",
+              "recommended",
+              "selectionPool",
+              "unknown",
+              null
+            ],
+            "description": "Verbindlichkeit nur, wenn sie an dieser Aussage steht; sonst null (wird vererbt).",
+            "x-cv-scheme": "Obligations"
+          },
+          "layoutMarkers": {
+            "type": "array",
+            "description": "Satz- und Layoutsignale am Wortlaut (fett, kursiv, Klammer …).",
+            "x-cv-scheme": "LayoutMarkers",
+            "items": {
+              "type": "string",
+              "enum": [
+                "bold",
+                "box",
+                "bullet",
+                "italic",
+                "marginSymbol",
+                "numbered",
+                "parenthesis",
+                "plain",
+                "tableCell"
+              ]
+            }
+          },
+          "codeText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Nummer oder Kennung wie im Dokument („(3)“, „a)“, „QA2“)."
+          },
+          "levelText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Niveauangabe im Wortlaut an dieser Aussage („G/M/E“, „A1“, „Niveau D“)."
+          },
+          "timeText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Zeitangabe im Wortlaut an dieser Aussage."
+          },
+          "contextText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Ausdrücklich genannte Situation, Lebensbereich oder Lernort."
+          },
+          "crossCuttingMarkers": {
+            "type": "array",
+            "description": "Querschnittsmarker roh („L BNE“, „[MD3]“, „⇒ Medienbildung“).",
+            "items": {
+              "type": "string"
+            }
+          },
+          "referenceMarker": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Verweis roh („P 2.1“, „➔ GE, Kl. 8/9, LB 2“)."
+          },
+          "exampleText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Beispielteil („z. B. …“) wörtlich."
+          },
+          "purposeText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Handlungsziel („Möchte …“) wörtlich."
+          },
+          "targetsContent": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "Indizes (0-basiert) der Inhaltsaussagen derselben Antwort, auf die diese Aussage zeigt."
+          }
+        }
+      }
+    },
+    "checkedAbsent": {
+      "type": "array",
+      "description": "Andockpunkte, die das Dokument nachweislich nicht angibt (z. B. kein Niveaumodell).",
+      "x-cv-scheme": "DockingPoints",
+      "items": {
+        "type": "string",
+        "enum": [
+          "addressee",
+          "competency",
+          "content",
+          "context",
+          "crossCutting",
+          "field",
+          "level",
+          "time"
+        ]
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/wlo/curriculum/schema/x3-rahmenteile",
+  "title": "X3 Rahmenteile"
+}

@@ -1,0 +1,37 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-SH;überfachliche Kompetenzen;cue;kd:sk-cross, schul:Querschnittsbereich;überfachlich, Querschnittsbereich;;;;0.9;nein;;schul:cue-qs-ueberfachlich
+DE-SH;prozessbezogene Kompetenzen;cue;kd:sk-process, schul:Kompetenzbereich;prozessbezogen, Kompetenzbereich;;;;0.9;nein;;schul:cue-kb-prozessbezogen
+DE-SH;ESA / MSA;cue;lvl:AttainmentTracks;Anforderungsebenen nach Abschluss (Sekundarstufe I);;;;0.85;nein;"SH: drei Anforderungsebenen ESA, MSA, Übergang in die Oberstufe an den Aussagen (Erwartungsniveau, kein Abschluss; lvl:track-*).";schul:cue-nv-esa-msa
+DE-SH;Beispielinhalt;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030276
+DE-SH;Mögliche Textsorte / Kommunikationssituation;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030079
+DE-SH;Möglicher Inhalt;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030059
+DE-SH;Mögliches Thema;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030281
+DE-SH;Mögliches Thema und Inhalt;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030280
+DE-SH;Themenvorschlag;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030023
+DE-SH;Vorgabe und Hinweis;cue;schul:Hinweis;Hinweis/Anregung;;;;0.6;nein;;schul:fwu-LP_0030260
+DE-SH;Aspekt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030275
+DE-SH;Inhalt;homonym;schul:Inhalt;Inhalt;;;;0.6;nein;FWU führt den Begriff als Inhalt und Hinweis: verbindliche Stichworte → Inhalt, „z. B.“/Anregungen → Hinweis.;schul:fwu-LP_0030282
+DE-SH;Inhalt und Wissbestand;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030021
+DE-SH;Konkretisierung - Hinweis und Vorschlag;homonym;schul:Inhalt;Inhalt;;;;0.6;nein;FWU führt den Begriff als Inhalt und Hinweis: verbindliche Stichworte → Inhalt, „z. B.“/Anregungen → Hinweis.;schul:fwu-LP_0030022
+DE-SH;Thema und Inhalt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030254
+DE-SH;Themen und Inhalte;cue;schul:Inhalt;Inhalt;;;;0.8;nein;BE/BB C3: verbindliche und wahlobligatorische Themen unterscheiden (cur:obligation).;schul:cue-in-themeninhalte
+DE-SH;Verbindlicher Inhalt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030272
+DE-SH;Verbindliches Thema und Inhalt;cue;schul:Inhalt;Inhalt;;;;0.6;nein;;schul:fwu-LP_0030279
+DE-SH;Verbindliche Inhalte;cue;schul:Inhalt, cv:obl_binding;Inhalt, verbindlich;;;;0.9;nein;;schul:cue-in-verbindliche
+DE-SH;Basiskonzept;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030270
+DE-SH;Bereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030273
+DE-SH;Inhaltsbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030067
+DE-SH;Sachgebiet;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030249
+DE-SH;Textsorte;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030020
+DE-SH;Thema;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030252
+DE-SH;Themenbereich;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.75;nein;;schul:cue-ib-themenbereich
+DE-SH;Themenfeld;cue;schul:Inhaltsbereich;Inhaltsbereich;;;;0.6;nein;;schul:fwu-LP_0030095
+DE-SH;Kompetenzbereich;cue;schul:Kompetenzbereich;Kompetenzbereich;;;;0.6;nein;;schul:fwu-LP_0030070
+DE-SH;Inhaltsbezogene Kompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030271
+DE-SH;KMK-Bildungsstandard;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030018
+DE-SH;Kompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030256
+DE-SH;Prozessbezogene Kompetenz;cue;schul:Kompetenzerwartung;Kompetenzerwartung;;;;0.6;nein;;schul:fwu-LP_0030278
+DE-SH;Lehrplanfragment;cue;schul:Rahmenteil;Rahmenteil;;;;0.6;nein;;schul:fwu-LP_0030033
+DE-SH;Allgemeiner Teil;cue;schul:Rahmenteil, schul:dt-Rahmendokument;Rahmenteil, Rahmendokument/Allgemeiner Teil;;;;0.9;nein;;schul:cue-dt-allgemeinerteil
+DE-SH;Verweis auf Basiskonzept;cue;schul:Verweis;Verweis;;;;0.6;nein;;schul:fwu-LP_0030274
+DE-SH;Fachanforderungen;cue;schul:dt-Lehrplan;Lehrplan;;;;0.95;nein;;schul:cue-dt-fachanforderungen

@@ -1,0 +1,9 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-SN;Didaktisch-methodische Überlegungen;cue;elem:Handlungsfeld;Handlungsfeld der Fachkräfte;;;;0.8;nein;;elem:cue-hf-didaktisch-sn
+DE-SN;Der Sächsische Bildungsplan;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.98;ja;Leitfaden für Krippen, Kindergärten, Horte und Kindertagespflege.;elem:lex-b51cd53a21e3-SN
+DE-SN;Ästhetische Bildung;pref;elem:f-aesthetik;Ästhetische Bildung;heading;;;0.95;ja;Bereich 5 des Gemeinsamen Rahmens. Sachsen: Leitbegriff Wahrnehmung.;elem:lex-f9f210ff4865-SN
+DE-SN;Somatische Bildung;cue;elem:f-koerper;Körper, Bewegung, Gesundheit und Prävention;heading;;;0.98;ja;Leitbegriff Wohlbefinden.;elem:lex-b8ffc650198b-SN
+DE-SN;Mathematische Bildung;cue;elem:f-mathematik;Mathematik;heading;;;0.95;ja;Sachsen: Leitbegriff Ordnen.;elem:lex-d3f636d97215-SN
+DE-SN;Naturwissenschaftliche Bildung;cue;elem:f-naturwissenschaft;Naturwissenschaftliche Phänomene;heading;;;0.95;ja;Sachsen: Leitbegriff Entdecken.;elem:lex-20061e0f7c57-SN
+DE-SN;Soziale Bildung;cue;elem:f-soziale-beziehungen;Soziale Beziehungen, Kooperation und Konflikte;heading;;;0.95;ja;Leitbegriff Beteiligung.;elem:lex-468e01df2934-SN
+DE-SN;Kommunikative Bildung;cue;elem:f-sprache;Sprache, Kommunikation und Literacy;heading;;;0.95;ja;Leitbegriff Dialog.;elem:lex-482d50c896c7-SN

@@ -1,0 +1,10 @@
+# Anwendungsfall „Durchlässigkeit“: Welche Abschlüsse werden amtlich auf
+# welche Einheiten angerechnet, und wo steht das?
+PREFIX cur: <https://w3id.org/wlo/curriculum/core#>
+PREFIX cv:  <https://w3id.org/wlo/curriculum/vocab#>
+
+SELECT ?qualification ?unit ?quote ?page WHERE {
+  ?al a cur:Alignment ; cur:relation cv:rel_recognizedFor ; cur:origin cv:orig_official ;
+      cur:source ?qualification ; cur:target ?unit ; cur:anchor ?anc .
+  ?anc cur:quote ?quote ; cur:pageStart ?page .
+}

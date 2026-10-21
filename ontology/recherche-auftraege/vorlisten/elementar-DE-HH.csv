@@ -1,0 +1,11 @@
+land;begriff_oder_muster;rolle;ziel;ziel_label;fundort;dokumenttyp;plangeneration;staerke;geprueft;regel_oder_hinweis;hinweis_id
+DE-HH;Leitmotiv;cue;elem:Querschnitt;Querschnitt/Leitprinzip;heading;;;0.95;ja;Kinderrechte, Inklusion, BNE, Umgang mit Veränderungen und Herausforderungen.;elem:lex-2aa4f1fa2762-HH
+DE-HH;Erkundungsfragen;cue;elem:Reflexionsfrage;Reflexionsfrage;box, heading;;;0.80;nein;;elem:lex-6019c314c9b3-HH
+DE-HH;Bildungsleitlinien;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.9;nein;;elem:cue-gen-bildungsleitlinien
+DE-HH;Hamburger Bildungsempfehlungen;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.90;ja;Fassungen 2005 und 2012, durch 'Perspektive Kind' ersetzt.;elem:lex-b8336389834d-HH
+DE-HH;Perspektive Kind – Hamburger Bildungsleitlinien;cue;elem:dt-Bildungsplan;Landesbildungsplan Elementarbereich;titlePage;;;0.98;ja;Vier Leitmotive und sieben Bildungsbereiche.;elem:lex-e32c4a1172f0-HH
+DE-HH;Bildung für nachhaltige Entwicklung;pref;elem:f-bne;Bildung für nachhaltige Entwicklung;heading;;;0.95;ja;BW und HH als Leitprinzip bzw. Leitmotiv, ST als Bildungsbereich – Rolle am Knoten aus dem Kontext bestimmen.;elem:lex-abb1a65ac887-HH
+DE-HH;Soziokulturelles Leben;cue;elem:f-demokratie-gesellschaft, elem:f-kulturelle-vielfalt;Demokratie und Gesellschaft, Kulturelle Vielfalt und interkulturelles Lernen;heading;;;0.80;nein;;elem:lex-48c6e33c78bd-HH
+DE-HH;Inklusion;pref;elem:p-inklusion;Inklusion;heading;;;0.85;ja;;elem:lex-18a3dd4fa837-HH
+DE-HH;Kinderrechte;pref;elem:p-kinderrechte;Kinderrechte;heading;;;0.85;ja;Leitmotiv.;elem:lex-f8bba26e16e5-HH
+DE-HH;Umgang mit Veränderungen und Herausforderungen;pref;elem:p-umgang-mit-veraenderung;Umgang mit Veränderungen und Herausforderungen;heading;;;0.95;ja;Leitmotiv.;elem:lex-376cd2c7a7c9-HH
