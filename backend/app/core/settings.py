@@ -5,8 +5,9 @@ secrets); the file wins over the plain variable. Errors never echo a value.
 """
 
 import os
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Annotated, Any, Literal, Self, get_args
+from typing import Annotated, Any, Literal, Self, get_args, get_origin
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic.fields import FieldInfo
@@ -45,14 +46,19 @@ class SecretFileSource(PydanticBaseSettingsSource):
 
 
 def _is_secret(annotation: object) -> bool:
-    return annotation is SecretStr or SecretStr in get_args(annotation)
+    """``SecretStr`` itself, constrained (``Annotated``) or optional (``... | None``)."""
+    if annotation is SecretStr:
+        return True
+    if get_origin(annotation) is Annotated:
+        return _is_secret(get_args(annotation)[0])
+    return any(_is_secret(argument) for argument in get_args(annotation))
 
 
-def _environment_value(name: str) -> str | None:
+def _environment_value(name: str, environment: Mapping[str, str] = os.environ) -> str | None:
     """``name`` in the environment in any case, as pydantic matches the plain variables."""
-    if name in os.environ:
-        return os.environ[name]
-    return next((value for key, value in os.environ.items() if key.upper() == name), None)
+    if name in environment:
+        return environment[name]
+    return next((value for key, value in environment.items() if key.upper() == name), None)
 
 
 class Settings(BaseSettings):
@@ -79,6 +85,13 @@ class Settings(BaseSettings):
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         return init_settings, SecretFileSource(settings_cls), env_settings
+
+    @field_validator("database_url")
+    @classmethod
+    def _not_blank(cls, value: SecretStr) -> SecretStr:
+        if not value.get_secret_value().strip():
+            raise ValueError("must not be blank")
+        return value
 
     @field_validator("log_level", mode="before")
     @classmethod

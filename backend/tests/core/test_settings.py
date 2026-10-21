@@ -6,11 +6,12 @@ would read real keys, and pydantic would print them in a validation error.
 
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Annotated
 
 import pytest
-from pydantic import SecretStr, ValidationError
+from pydantic import Field, SecretStr, ValidationError
 
-from app.core.settings import Settings
+from app.core.settings import Settings, _environment_value
 from tests.support import FAKE_DATABASE_URL as FAKE_URL
 from tests.support import without_settings_variables
 
@@ -197,4 +198,37 @@ def test_the_two_ports_must_differ(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("INTERNAL_PORT", "8000")
 
     with pytest.raises(ValidationError, match="internal_port"):
+        Settings()
+
+
+def test_a_file_variable_is_found_in_any_case_on_a_case_sensitive_environment() -> None:
+    # Windows' environment ignores case anyway; Linux' does not
+    environment = {"database_url_file": "/run/secrets/lower", "OTHER_FILE": "/x"}
+
+    assert _environment_value("DATABASE_URL_FILE", environment) == "/run/secrets/lower"
+    assert _environment_value("DATABASE_URL_FILE", {"DATABASE_URL_FILE": "/exact"}) == "/exact"
+    assert _environment_value("DATABASE_URL_FILE", {}) is None
+
+
+def test_a_constrained_optional_secret_is_read_from_its_file(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    class WithConstrainedSecret(Settings):
+        invented_key: Annotated[SecretStr, Field(min_length=1)] | None = None
+
+    secret = tmp_path / "invented_key"
+    secret.write_text("invented-value", encoding="utf-8")
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+    monkeypatch.setenv("INVENTED_KEY_FILE", str(secret))
+
+    key = WithConstrainedSecret().invented_key
+
+    assert key is not None
+    assert key.get_secret_value() == "invented-value"
+
+
+def test_a_blank_required_secret_counts_as_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", "   ")
+
+    with pytest.raises(ValidationError, match="database_url"):
         Settings()
