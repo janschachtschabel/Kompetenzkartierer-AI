@@ -23,9 +23,10 @@ MAX_REQUEST_ID_CHARS = 64  # a header is caller input; a log line must stay read
 _NOT_IN_AN_ID = re.compile("[^A-Za-z0-9._:@+/=-]")
 UVICORN_LOGGER = "uvicorn"
 UVICORN_ACCESS_LOGGER = "uvicorn.access"  # the service writes its own line per request
-# httpx names every request at INFO and httpcore logs headers at DEBUG - an Authorization header
-# among them; the openai SDK logs request options at DEBUG. All stay at WARNING, whatever the level
-QUIET_LOGGERS = ("httpx", "httpcore", "openai")
+# httpx names every request with its query at INFO and httpcore logs headers at DEBUG - an
+# Authorization header among them; httpx2 and httpcore2 (starlette's test client) do the same, the
+# openai SDK logs request options at DEBUG. All stay at WARNING, whatever the level
+QUIET_LOGGERS = ("httpx", "httpcore", "httpx2", "httpcore2", "openai")
 
 _request_id: ContextVar[str] = ContextVar("request_id", default=NO_REQUEST)
 

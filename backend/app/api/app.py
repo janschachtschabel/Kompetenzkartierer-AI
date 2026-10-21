@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app import __version__
 from app.api import internal, system
+from app.api.request_log import RequestLog
 from app.core.settings import Settings
 
 SUMMARY = "Curricula captured after Curriculum-Kern 1.0, docked to competence and level schemes, linked."
@@ -33,4 +34,6 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(internal.router)
     app.include_router(system.router)
     app.add_middleware(internal.InternalOnly, port=settings.internal_port)
+    # Added last, so it runs first: every answer, the refused internal ones too, is named and logged
+    app.add_middleware(RequestLog, routes=app.routes)
     return app
