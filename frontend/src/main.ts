@@ -9,5 +9,6 @@ import "@fontsource-variable/roboto/wght.css";
 import "@fontsource-variable/roboto-mono/wght.css";
 
 import App from "./App.vue";
+import "./style.css";
 
 createApp(App).mount("#app");
