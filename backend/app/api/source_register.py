@@ -25,9 +25,16 @@ from app.core.auth import Principal, one_spelling, shows_whole, visible_only
 from app.core.logging import current_request_id
 from app.core.storage import ObjectNotFound
 from app.db.accounts import record_audit
-from app.db.source_queries import Filters, Reader, get_source, list_sources, ownerless_source
+from app.db.source_queries import Filters, Reader, get_source, list_sources, ownerless_source, seed_of
 from app.db.sources import sector_by_notation, update_source
-from app.sources.register import EDUCATION_SECTORS, Provenance, RegisterStatus, RightsStatus, SourceType
+from app.sources.register import (
+    EDUCATION_SECTORS,
+    Provenance,
+    RegisterStatus,
+    RightsStatus,
+    SeedDataset,
+    SourceType,
+)
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["sources"], responses=AUTH_RESPONSES)
@@ -94,10 +101,38 @@ class AcquisitionOut(BaseModel):
     received_name: str | None
 
 
+class SeedOut(BaseModel):
+    """What the dataset or the land's research said of the entry (source_seed)."""
+
+    dataset: SeedDataset
+    school_form: str | None
+    stage: str | None
+    subject_key: str | None
+    subject: str | None
+    grade_from: int | None
+    grade_to: int | None
+    binding: str | None
+    archive_url: str | None
+    archived_at: str | None
+    evidence: Literal["E", "S"] | None
+
+
+class AccessNoteOut(BaseModel):
+    """How the documents of the entry's land, school form and subject can be reached (access_note)."""
+
+    categories: list[str]
+    field: str | None
+    text: str
+    url: str | None
+    origin: str | None
+
+
 class SourceDetail(SourceEntry):
     license: str | None
     rights_evidence: str | None
     acquisitions: list[AcquisitionOut]
+    seed: SeedOut | None
+    access_notes: list[AccessNoteOut]
 
 
 class SourcePage(BaseModel):
@@ -143,18 +178,25 @@ async def list_register(
 async def get_register_entry(source_id: UUID, request: Request, who: Account) -> SourceDetail:
     async with request.app.state.pool.connection() as connection:
         found = await get_source(connection, _reader(who), source_id)
-    if found is None:
-        raise HTTPException(404, "No such register entry.")
-    return SourceDetail.model_validate(_detail(*found, who))
+        if found is None:
+            raise HTTPException(404, "No such register entry.")
+        return await _detail(connection, *found, who)
 
 
-def _detail(row: dict[str, Any], acquisitions: list[Any], who: Principal) -> dict[str, Any]:
-    return {
-        **_fields(row, who),
-        "license": row["license"],
-        "rights_evidence": row["rights_evidence"],
-        "acquisitions": [acquisition.__dict__ for acquisition in acquisitions],
-    }
+async def _detail(
+    connection: Any, row: dict[str, Any], acquisitions: list[Any], who: Principal
+) -> SourceDetail:
+    seed, notes = await seed_of(connection, row["id"])
+    return SourceDetail.model_validate(
+        {
+            **_fields(row, who),
+            "license": row["license"],
+            "rights_evidence": row["rights_evidence"],
+            "acquisitions": [acquisition.__dict__ for acquisition in acquisitions],
+            "seed": seed,
+            "access_notes": notes,
+        }
+    )
 
 
 def _reader(who: Principal) -> Reader:
@@ -222,8 +264,8 @@ async def edit_register_entry(
             current_request_id(),
         )
         changed = await get_source(connection, _reader(who), source_id)
-    assert changed is not None  # noqa: S101 - changed in this transaction
-    return SourceDetail.model_validate(_detail(*changed, who))
+        assert changed is not None  # noqa: S101 - changed in this transaction
+        return await _detail(connection, *changed, who)
 
 
 def _check_terms(given: dict[str, Any], row: dict[str, Any]) -> None:

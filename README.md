@@ -84,7 +84,8 @@ ungültig.
 
 - Saat des Quellregisters: `python -m app.sources.seed` legt die 1.498 Kandidaten des
   Vergleichsdatensatzes an (`data/seed/vergleichsdatensatz/`, auch im API-Image), ohne Konto
-  und ungeprüft. Ein zweiter Lauf ändert nichts. Vorher muss das Vokabular geladen sein. In
+  und ungeprüft, dazu 353 Zugangsnotizen zu gesperrten Portalen und Umwegen (je Land, Schulform
+  und Fach; die Einzelansicht eines Eintrags nennt sie). Ein zweiter Lauf ändert nichts. Vorher muss das Vokabular geladen sein. In
   Compose: `docker compose -f deploy/docker-compose.yml run --rm migrate python -m app.sources.seed`.
 - Erster Admin: `python -m app.bootstrap NAME` gibt das Token einmal auf stdout aus. Interaktiv
   ausführen (`docker compose run`, `kubectl exec -it`), nicht als Job, dessen Ausgabe ein

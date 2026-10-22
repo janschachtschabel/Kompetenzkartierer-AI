@@ -1,4 +1,4 @@
-"""``python -m app.sources.seed [FILE]``: the comparison dataset v62.493 into the source register.
+"""``python -m app.sources.seed [DOCUMENTS [NOTES]]``: the comparison dataset v62.493 into the register.
 
 Its rows become candidates of no account, unchecked (plan M1, 2.2; Gesamtplan §7.5): what was
 published of a curriculum - its address and archived copy, land, school form, subject, grades,
@@ -6,7 +6,8 @@ binding, kind of source - never the dataset's titles, descriptions, themes or no
 register names an entry itself ("Bayern · Physik · Gymnasium"). ESA derivations (a plan of
 another school form, cut short) and "kanonisch" rows (no document of the land's own) are no
 curricula of their own and are left out. A second run adds nothing: a row's key is its
-Beispiel_ID.
+Beispiel_ID. The dataset's notes on blocked portals and detours come with it, as access notes
+(app/sources/access_notes.py).
 
 Exit code 0 when the register holds the dataset afterwards (seeded now or before), 1 when the
 file or the database refused. Logs go to stderr.
@@ -29,13 +30,13 @@ from app.core.logging import configure_logging
 from app.core.settings import Settings
 from app.db.pool import CONNECTION_OPTIONS
 from app.db.sources import sector_by_notation
-from app.sources.register import EDUCATION_SECTORS, SeedDataset, SourceType
+from app.sources.access_notes import NOTES, Notes, NotesReport, read_notes, record_notes
+from app.sources.register import COMPARISON_DATASET, EDUCATION_SECTORS, SEED_DIR, SourceType
 from app.sources.url_fetch import UrlNotAllowed, check_url
 
 log = logging.getLogger("app.sources.seed")  # also when run as __main__
 
-DATASET: SeedDataset = "vergleichsdatensatz-v62.493"
-SEED_DIR = Path(__file__).resolve().parents[3] / "data" / "seed" / "vergleichsdatensatz"
+DATASET = COMPARISON_DATASET
 DOCUMENTS = SEED_DIR / "lehrplan_dokumente_de.csv"
 # The dataset's kind of source, as the register says who publishes the copy
 _KINDS: dict[str, SourceType] = {
@@ -205,29 +206,35 @@ def _seed_values(id_: Any, row: SeedRow) -> tuple[Any, ...]:
     )
 
 
-async def _seed(settings: Settings, rows: list[SeedRow]) -> SeedReport:
+async def _seed(settings: Settings, documents: Documents, notes: Notes) -> tuple[SeedReport, NotesReport]:
     url = settings.database_url.get_secret_value()
     async with await psycopg.AsyncConnection.connect(url, **CONNECTION_OPTIONS) as connection:
-        return await seed_register(connection, rows)
+        return await seed_register(connection, documents.rows), await record_notes(connection, notes.notes)
 
 
 def main(arguments: list[str]) -> int:
     settings = Settings()
     configure_logging(settings.log_level, settings.log_format, stream=sys.stderr)
-    path = Path(arguments[0]) if arguments else DOCUMENTS
+    documents_path = Path(arguments[0]) if arguments else DOCUMENTS
+    notes_path = Path(arguments[1]) if len(arguments) > 1 else NOTES
     try:
-        documents = read_documents(path)
-        report = asyncio.run(_seed(settings, documents.rows), loop_factory=asyncio.SelectorEventLoop)
+        documents, notes = read_documents(documents_path), read_notes(notes_path)
+        seeded, noted = asyncio.run(_seed(settings, documents, notes), loop_factory=asyncio.SelectorEventLoop)
     except (SeedError, OSError, csv.Error, KeyError, psycopg.Error) as error:
         log.error("register not seeded: %s", " ".join(str(error).split()))
         return 1
-    left_out = ", ".join(f"{reason} {count}" for reason, count in sorted(documents.left_out.items()))
-    log.info(
-        "%d entries added, %d in the register already; left out: %s",
-        report.added,
-        report.present,
-        left_out or "none",
-    )
+    for what, report, left_out in (
+        ("entries", seeded, documents.left_out),
+        ("access notes", noted, notes.left_out),
+    ):
+        reasons = ", ".join(f"{reason} {count}" for reason, count in sorted(left_out.items())) or "none"
+        log.info(
+            "%d %s added, %d in the register already; left out: %s",
+            report.added,
+            what,
+            report.present,
+            reasons,
+        )
     return 0
 
 

@@ -21,8 +21,8 @@ import pytest
 from psycopg.rows import dict_row
 
 from app.db.migrate import migrate
-from app.sources.register import EDUCATION_SECTORS, Provenance, SeedDataset
-from app.sources.seed import DATASET, SEED_DIR, SeedError, read_documents, seed_register
+from app.sources.register import EDUCATION_SECTORS, SEED_DIR, Provenance, SeedDataset
+from app.sources.seed import DATASET, SeedError, read_documents, seed_register
 from tests.support import without_settings_variables
 
 BACKEND = Path(__file__).resolve().parents[2]
@@ -351,6 +351,8 @@ def test_the_command_seeds_a_file_and_says_how_many(seeded: str, tmp_path: Path)
 
     assert done.returncode == 0, done.stderr
     assert "1 entries added, 0 in the register already; left out: esa 1" in done.stderr
+    # the access notes come with the seed, from the published file beside it
+    assert "353 access notes added, 0 in the register already; left out: empty 2" in done.stderr
 
 
 @pytest.mark.pg
