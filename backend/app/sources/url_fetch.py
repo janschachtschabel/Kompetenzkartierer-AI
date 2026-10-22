@@ -45,10 +45,27 @@ MAX_REDIRECTS = 3
 NOT_PUBLIC = "the host is not publicly reachable"
 
 ResolveHost = Callable[[str], list[str]]
+# What a resolver says of a name that does not exist (EAI_NODATA is the same code on Windows)
+_NO_SUCH_NAME = frozenset(
+    code
+    for code in (getattr(socket, "EAI_NONAME", None), getattr(socket, "EAI_NODATA", None))
+    if code is not None
+)
 
 
 class UrlNotAllowed(ValueError):
     """The URL is no http(s) address of a public host."""
+
+
+class HostNotResolved(UrlNotAllowed):
+    """The host's name resolved to no address: ``transient`` unless the resolver said the name does
+    not exist (or it cannot be spelled), so that a later try may fare better. Worded as any host
+    that is not public: an account must not tell unknown names from those inside the network."""
+
+    def __init__(self, host: str, *, transient: bool) -> None:
+        super().__init__(NOT_PUBLIC)
+        self.host = host
+        self.transient = transient
 
 
 class DownloadError(ValueError):
@@ -137,11 +154,15 @@ def public_address(host: str, resolve: ResolveHost) -> str:
     except ValueError:
         try:
             addresses = resolve(host)
-        except (OSError, UnicodeError) as error:  # UnicodeError: an IDN label it cannot encode
+        except UnicodeError as error:  # an IDN label it cannot encode: no try ever resolves it
             log.info("the host %s did not resolve: %s", host, error)
-            raise UrlNotAllowed(NOT_PUBLIC) from None
+            raise HostNotResolved(host, transient=False) from None
+        except OSError as error:
+            log.info("the host %s did not resolve: %s", host, error)
+            known = isinstance(error, socket.gaierror) and error.errno in _NO_SUCH_NAME
+            raise HostNotResolved(host, transient=not known) from None
     if not addresses:
-        raise UrlNotAllowed(NOT_PUBLIC)
+        raise HostNotResolved(host, transient=False)
     for address in addresses:
         if not is_public(ipaddress.ip_address(address)):
             log.info("the host %s resolves to the non-public address %s", host, address)
@@ -238,18 +259,23 @@ async def follow[T](
     timeout: float = PHASE_TIMEOUT_S,
     total_timeout: float = TOTAL_TIMEOUT_S,
     max_redirects: int = MAX_REDIRECTS,
+    before_hop: Callable[[str], Awaitable[None]] | None = None,
+    trace: bool = True,
 ) -> tuple[T, list[str]]:
     """GET ``url``, its redirects followed by hand, each address checked where it connects;
     ``read`` takes the answer that is no redirect, still streaming, and what it returns comes
     back with every address asked. UrlNotAllowed, DownloadError, TooManyRedirects and BadAnswer
     as for ``fetch``; a transport failure or the deadline while ``read`` reads is a DownloadError
-    too."""
+    too. ``before_hop`` hears of each address before it is asked - what it raises ends the way as
+    it is, and the time it takes is no part of the deadline; ``trace`` False sends no trace
+    headers, for the hosts of others the check job asks."""
     chain: list[str] = []
     current = url
-    headers = {**outgoing_headers(), "Accept-Encoding": ACCEPT_ENCODING, "User-Agent": user_agent}
+    traced = outgoing_headers() if trace else {}
+    headers = {**traced, "Accept-Encoding": ACCEPT_ENCODING, "User-Agent": user_agent}
     try:
         async with (
-            asyncio.timeout(total_timeout),
+            asyncio.timeout(total_timeout) as deadline,
             httpx2.AsyncClient(
                 transport=transport or pinned_transport(),
                 follow_redirects=False,
@@ -260,6 +286,8 @@ async def follow[T](
         ):
             for _ in range(max_redirects + 1):
                 check_url(current)
+                if before_hop is not None:
+                    await _without_deadline(deadline, before_hop(current))
                 chain.append(current)
                 try:
                     async with client.stream("GET", current, headers=headers) as response:
@@ -275,6 +303,18 @@ async def follow[T](
         log.warning("the fetch of %s failed: %s", _site(current), error)
         raise DownloadError("the server could not be reached, or the transfer broke off") from None
     raise TooManyRedirects("too many redirects")
+
+
+async def _without_deadline(deadline: asyncio.Timeout, waited: Awaitable[None]) -> None:
+    """Await ``waited`` with the deadline held: what is left of it is left after."""
+    loop = asyncio.get_running_loop()
+    when = deadline.when()
+    left = None if when is None else when - loop.time()
+    deadline.reschedule(None)
+    try:
+        await waited
+    finally:
+        deadline.reschedule(None if left is None else loop.time() + left)
 
 
 def _site(url: str) -> str:

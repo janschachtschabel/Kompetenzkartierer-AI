@@ -79,7 +79,7 @@ class LimitedBody:
         self._packed = 0
         self._size = 0
         self._pieces: list[bytes] = []
-        self._sink = sink or self._pieces.append
+        self._sink = sink if sink is not None else self._pieces.append
 
     def feed(self, chunk: bytes) -> None:
         """Take the next raw chunk of the body."""

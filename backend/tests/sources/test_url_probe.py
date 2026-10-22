@@ -5,13 +5,14 @@ the guards on the way (public hosts, redirects checked where they connect) are f
 
 import asyncio
 import hashlib
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from typing import Any
 
 import httpx2
 import pytest
 
-from app.sources.url_fetch import BadAnswer, DownloadError, TooManyRedirects
+from app.core.tracing import take_trace_headers
+from app.sources.url_fetch import BadAnswer, DownloadError, TooManyRedirects, UrlNotAllowed
 from app.sources.url_probe import probe
 from tests.sources.compressed import arriving, in_chunks, packed
 
@@ -69,10 +70,51 @@ async def test_a_body_past_the_limit_is_too_large_and_still_known_by_its_first_b
 
 @pytest.mark.parametrize("status", [404, 403, 410, 429, 500, 503])
 async def test_an_answer_that_refuses_is_its_status_and_no_body_is_read(status: int) -> None:
-    found = await probe(URL, max_bytes=1_000, transport=answer(status, body=b"<html>Forbidden</html>"))
+    handed: list[bytes] = []
+
+    async def body() -> AsyncIterator[bytes]:
+        for chunk in (b"<html>", b"Forbidden", b"</html>"):
+            handed.append(chunk)
+            yield chunk
+
+    refusing = mock(lambda request: httpx2.Response(status, content=body()))
+
+    found = await probe(URL, max_bytes=1_000, transport=refusing)
 
     assert found.status_code == status
     assert (found.size, found.sha256, found.kind, found.too_large) == (None, None, None, False)
+    assert handed == []
+
+
+@pytest.mark.parametrize("status", [999, 600, 99])
+async def test_an_answer_with_no_http_status_is_a_bad_answer(status: int) -> None:
+    # h11 takes any status line of three digits; url_check holds 100 to 599
+    def odd(request: httpx2.Request) -> httpx2.Response:
+        response = httpx2.Response(200, content=PDF)
+        response.status_code = status
+        return response
+
+    with pytest.raises(BadAnswer, match="no HTTP status"):
+        await probe(URL, max_bytes=1_000_000, transport=mock(odd))
+
+
+async def test_without_a_transport_the_probe_asks_public_hosts_alone() -> None:
+    # the pinned transport refuses a literal inside the network before any connection
+    with pytest.raises(UrlNotAllowed):
+        await probe("http://127.0.0.1/lp.pdf", max_bytes=1_000)
+
+
+async def test_the_probe_carries_no_trace_of_ours_to_the_host() -> None:
+    asked: list[httpx2.Headers] = []
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        asked.append(request.headers)
+        return httpx2.Response(200, content=PDF)
+
+    take_trace_headers([(b"x-client-trace-id", b"trace-of-the-check")], "request-1")
+    await probe(URL, max_bytes=1_000_000, transport=mock(handler))
+
+    assert "x-client-trace-id" not in asked[0]
 
 
 async def test_redirects_are_followed_and_the_way_kept() -> None:
