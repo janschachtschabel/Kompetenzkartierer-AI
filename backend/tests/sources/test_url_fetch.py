@@ -310,6 +310,31 @@ async def test_a_transport_failure_is_reported_in_our_words() -> None:
 
 
 @pytest.mark.anyio
+async def test_the_log_names_only_the_scheme_and_host_of_a_failed_fetch(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # a portal's download link may carry a token in its path, query or fragment
+    url = f"https://{PUBLIC}/dl/SECRET-PATH?token=SECRET-QUERY#SECRET-FRAGMENT"
+
+    def refusing(request: httpx2.Request) -> httpx2.Response:
+        raise httpx2.ConnectError("refused")
+
+    async def late(request: httpx2.Request) -> httpx2.Response:
+        await asyncio.sleep(5)
+        return httpx2.Response(200)
+
+    caplog.set_level("INFO", logger="app.sources.url_fetch")
+    with pytest.raises(DownloadError):
+        await fetch(url, max_bytes=1000, transport=mock(refusing))
+    with pytest.raises(DownloadError):
+        await fetch(url, max_bytes=1000, transport=mock(late), total_timeout=0.1)
+
+    assert len(caplog.records) == 2
+    assert all(f"https://{PUBLIC}" in record.getMessage() for record in caplog.records)
+    assert "SECRET" not in caplog.text
+
+
+@pytest.mark.anyio
 @pytest.mark.parametrize("location", [f"http://{PUBLIC}:8o80/x", "mailto:a@b.test", "http://xn--zz.test/"])
 async def test_a_redirect_to_an_address_that_cannot_be_spelled_is_a_download_error(location: str) -> None:
     with pytest.raises((DownloadError, UrlNotAllowed)):

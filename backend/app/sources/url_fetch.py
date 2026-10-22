@@ -210,14 +210,23 @@ async def fetch(
                 except _Redirect as redirect:
                     current = _redirect_target(current, redirect.location)
     except TimeoutError:
-        log.warning("the fetch of %s ran past %.0f s", current, total_timeout)
+        log.warning("the fetch of %s ran past %.0f s", _site(current), total_timeout)
         raise DownloadError("the fetch took too long") from None
     # InvalidURL is no HTTPError: the entry's own address may hold a port of letters; nor is
     # idna's IDNAError, a UnicodeError, which a broken xn-- label raises
     except (httpx2.HTTPError, httpx2.InvalidURL, UnicodeError) as error:
-        log.warning("the fetch of %s failed: %s", current, error)
+        log.warning("the fetch of %s failed: %s", _site(current), error)
         raise DownloadError("the server could not be reached, or the transfer broke off") from None
     raise TooManyRedirects("too many redirects")
+
+
+def _site(url: str) -> str:
+    """Scheme and host of ``url``, for the log: a download link may carry a token anywhere else."""
+    try:
+        parts = urlsplit(url)
+        return f"{parts.scheme}://{parts.hostname or ''}"
+    except ValueError:  # brackets that close no IPv6 address
+        return "an address that cannot be read"
 
 
 class _Redirect(Exception):
