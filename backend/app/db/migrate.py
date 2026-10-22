@@ -20,6 +20,7 @@ from importlib.resources.abc import Traversable
 import psycopg
 
 from app.db.pool import CONNECTION_OPTIONS
+from app.db.sql_scan import transaction_control
 
 log = logging.getLogger("app.db.migrate")  # also when run as __main__
 
@@ -30,12 +31,6 @@ _FILENAME = re.compile(r"(\d{4})_[a-z0-9_]+\.sql")
 # Waiting behind a long transaction, an ALTER would block all traffic on its table; better
 # the migration fails and the job runs again
 LOCK_TIMEOUT = "10s"
-# A file that controls the transaction itself would commit the runner's halfway
-_TRANSACTION_CONTROL = frozenset(
-    {"begin", "commit", "rollback", "end", "start", "savepoint", "release", "abort"}
-)
-# What is no statement: comments, quoted text and dollar-quoted bodies (BEGIN ... END in plpgsql)
-_NOT_STATEMENTS = re.compile(r"--[^\n]*|/\*.*?\*/|'(?:[^']|'')*'|(\$[A-Za-z_]*\$).*?\1", re.DOTALL)
 _BOOKKEEPING = """
 CREATE TABLE IF NOT EXISTS schema_migration (
     version integer PRIMARY KEY CHECK (version > 0),
@@ -85,12 +80,8 @@ def load_migrations(directory: Traversable = MIGRATIONS) -> list[Migration]:
 
 
 def _transaction_control(sql: str) -> str | None:
-    """The first statement of ``sql`` that controls the transaction, or ``None``."""
-    for statement in _NOT_STATEMENTS.sub(" ", sql).split(";"):
-        words = statement.split()
-        if words and words[0].lower() in _TRANSACTION_CONTROL:
-            return " ".join(words[:2])
-    return None
+    """The first statement that controls the transaction itself (it would commit the runner's)."""
+    return transaction_control(sql)
 
 
 def migrate(conninfo: str, directory: Traversable = MIGRATIONS) -> list[int]:
@@ -148,6 +139,13 @@ def _apply(connection: psycopg.Connection, migration: Migration) -> None:
     try:
         with connection.transaction():
             connection.execute(migration.sql.encode("utf-8"))  # bytes: the file as it is, several statements
+            if connection.info.transaction_status != psycopg.pq.TransactionStatus.INTRANS:
+                # the last guard, should the scanner miss a COMMIT: what came before it is
+                # committed, so nothing is recorded and a person has to look
+                raise MigrationError(
+                    f"{migration.filename} ended the runner's transaction itself; "
+                    "what it did before that is committed and needs repair by hand"
+                )
             connection.execute(
                 "INSERT INTO schema_migration (version, name, checksum) VALUES (%s, %s, %s)",
                 (migration.version, migration.filename, migration.checksum),
