@@ -173,6 +173,17 @@ def test_the_sector_is_a_concept_of_the_sector_scheme(connection: psycopg.Connec
         add_source(connection, sector_scheme=other, sector_iri=SECTOR)
 
 
+def test_an_address_as_long_as_the_register_takes_is_held_in_any_script(
+    connection: psycopg.Connection,
+) -> None:
+    # 2000 signs of CJK are 6000 bytes, past what one B-tree entry holds (2704): an index on the
+    # address made the longest one a 500. Signs that do not repeat, which compress no better
+    # than a real address would
+    url = "https://example.org/" + "".join(chr(0x4E00 + index * 7919 % 0x5200) for index in range(1980))
+
+    add_source(connection, url=url)
+
+
 @pytest.mark.parametrize("country", ["DE", "DE-BY", "AT", "CH-ZH"])
 def test_a_country_is_an_iso_code(connection: psycopg.Connection, country: str) -> None:
     add_source(connection, country=country)

@@ -51,7 +51,7 @@ CREATE TABLE source (
 );
 CREATE INDEX source_owner ON source (owner_id);
 CREATE INDEX source_file_ref ON source (file_id);
-CREATE INDEX source_url ON source (url);
+-- No B-tree on url: 2000 signs may be 8000 bytes, past what one index entry holds (2704)
 
 -- Each time a source's file came in: by upload or by fetching its URL (the chain of addresses
 -- fetched, redirects in order)
