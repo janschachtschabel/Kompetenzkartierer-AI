@@ -11,10 +11,10 @@ Angebots haben eigene Lizenzen, zum Beispiel Frankreich, England und Singapur. S
 nicht enthalten.
 
 **Verwendung (Gesamtplan §7.5):**
-- **Saat:** Jede Zeile wird ein Kandidat im Quellregister mit Herkunft `vergleichsdatensatz-v62.493`
-  und Status `unchecked` (`python -m app.sources.seed`).
+- **Saat:** Jede nicht ausgelassene Zeile wird ein Kandidat im Quellregister mit Herkunft
+  `vergleichsdatensatz-v62.493` und Status `unchecked` (`python -m app.sources.seed`).
 - **Übernommene Felder:** URL, Archiv-URL, Land, Schulform, Fach, Jahrgänge, Verbindlichkeit und
-  Quelltyp.
+  Quelltyp, dazu Bildungsstufe, Fach-Schlüssel und Wayback-Zeitstempel der Archivkopie.
 - **Nicht übernommen:** Titel, Beschreibungen, Themen, Knotenzahlen und Verifikationsangaben.
 - **Ausgelassen:** ESA-Ableitungen und „kanonisch“ modellierte Zeilen.
 - **Zugangsnotizen:** Die Umgehungshinweise werden Zugangsnotizen je Land, Schulform und Fach;
@@ -30,6 +30,7 @@ Tabelle (`backend/tests/sources/test_seed_files.py`).
 
 **Inhalt:**
 - **`lehrplan_dokumente_de.csv`:** 1.831 Dokumente je Land × Schulform × Fach. Nach dem
-  Auslassen bleiben 1.498 Einträge mit 1.279 URLs auf 34 Hosts.
+  Auslassen bleiben 1.498 Einträge mit 1.278 Adressen (1.279 Zeichenketten: eine trägt einen
+  Vermerk in Klammern) auf 34 Hosts.
 - **`umgehungshinweise_de.csv`:** 355 Hinweise auf gesperrte Portale und Umwege: Wayback-Archiv,
   Sekundärquelle, Sperre 403/429, Spiegel, GEI.

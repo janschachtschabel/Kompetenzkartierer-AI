@@ -20,8 +20,9 @@ RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin kka
 COPY --from=build /opt/venv /opt/venv
 # The repository's layout: settings find ontology/ two folders above app/ by default; ONTOLOGY_DIR
 # says it as well, for whoever reads the environment. Of ontology/ only what the service reads
-# (MODEL_DIRS in app/vocab/loader.py) and the lands' research the register is seeded from
-# (python -m app.sources.research_t1, 2.4 MB), not the assignments, examples and tools beside it.
+# (MODEL_DIRS in app/vocab/loader.py) and the folder of the research results, 2.4 MB, whole: the
+# register is seeded from the reports of its five assignments (python -m app.sources.research_t1,
+# ASSIGNMENTS); not the research assignments, examples and tools beside it.
 COPY backend/app /srv/backend/app
 COPY ontology/ontologie /srv/ontology/ontologie
 COPY ontology/vokabulare /srv/ontology/vokabulare

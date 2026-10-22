@@ -1,7 +1,11 @@
 """The values of the source register that the Kern does not know (Gesamtplan §7; plan M1).
 
-The database holds the same lists as CHECKs (migration 0006_sources); tests/db/test_sources_schema.py
-writes every value named here, so the two cannot drift. In the interface: "ungeprüft" etc.
+The database holds the same lists as CHECKs, and tests compare the two, so they cannot drift:
+tests/db/test_sources_schema.py the lists of source (migration 0006_sources: Provenance,
+RightsStatus, SourceType, RegisterStatus), and writes each of their values;
+tests/sources/test_seed.py and test_research_t1.py those of source_seed (0008: SeedDataset,
+Evidence); tests/sources/test_check_schema.py those of url_check (0010: CheckOutcome,
+DetectedKind). In the interface: "ungeprüft" etc.
 """
 
 import re

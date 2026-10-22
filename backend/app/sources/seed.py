@@ -1,13 +1,13 @@
 """``python -m app.sources.seed [DOCUMENTS [NOTES]]``: the comparison dataset v62.493 into the register.
 
 Its rows become candidates of no account, unchecked (plan M1, 2.2; Gesamtplan §7.5): what was
-published of a curriculum - its address and archived copy, land, school form, subject, grades,
-binding, kind of source - never the dataset's titles, descriptions, themes or node counts; the
-register names an entry itself ("Bayern · Physik · Gymnasium"). ESA derivations (a plan of
-another school form, cut short) and "kanonisch" rows (no document of the land's own) are no
-curricula of their own and are left out. A second run adds nothing: a row's key is its
-Beispiel_ID. The dataset's notes on blocked portals and detours come with it, as access notes
-(app/sources/access_notes.py).
+published of a curriculum - its address and archived copy (with its time), land, school form,
+stage, subject (with its key), grades, binding, kind of source - never the dataset's titles,
+descriptions, themes or node counts; the register names an entry itself ("Bayern · Physik ·
+Gymnasium"). ESA derivations (a plan of another school form, cut short) and "kanonisch" rows (no
+document of the land's own) are no curricula of their own and are left out. A second run adds
+nothing: a row's key is its Beispiel_ID. The dataset's notes on blocked portals and detours come
+with it, as access notes (app/sources/access_notes.py).
 
 Exit code 0 when the register holds the dataset afterwards (seeded now or before), 1 when the
 file or the database refused. Logs go to stderr.
