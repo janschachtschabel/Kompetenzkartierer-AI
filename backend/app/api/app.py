@@ -9,6 +9,7 @@ from app import __version__
 from app.api import accounts, internal, system
 from app.api.errors import ERROR_RESPONSES, install_error_handlers
 from app.api.request_log import RequestLog
+from app.api.security_headers import SecurityHeaders
 from app.core.settings import Settings
 from app.db.migrate import load_migrations
 from app.db.pool import create_pool
@@ -66,6 +67,9 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(system.router)
     app.include_router(accounts.router)
     app.add_middleware(internal.InternalOnly, port=settings.internal_port)
-    # Added last, so it runs first: every answer, the refused internal ones too, is named and logged
+    # Added after InternalOnly, so it runs before: every answer, the refused internal ones too, is
+    # named and logged
     app.add_middleware(RequestLog, routes=app.routes)
+    # Added last, so it runs first: the 500 the request log answers itself carries the headers too
+    app.add_middleware(SecurityHeaders)
     return app
