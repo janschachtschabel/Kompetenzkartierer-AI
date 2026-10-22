@@ -311,6 +311,19 @@ describe("the register page's filter", () => {
     expect(idle).toMatch(/visibility:\s*hidden/);
     expect(idle).not.toMatch(/display:\s*none/);
   });
+
+  it("shows the sign only for a reading that lasts, and hides it at once: a quick answer does not flash it", () => {
+    const rules = cssRules(stylesOf(readFileSync(join(SRC, "views", "SourcesView.vue"), "utf8")));
+    const of = (selector: string) =>
+      rules
+        .filter(({ selectors }) => selectors.includes(selector))
+        .map(({ body }) => body)
+        .join("");
+
+    // a delay, not a duration: the reduced-motion rule shortens durations, and this is no motion
+    expect(of(".sources__reading")).toMatch(/transition:\s*visibility\s+0s\s+linear\s+\d+ms/);
+    expect(of(".sources__reading--idle")).toMatch(/transition-delay:\s*0s/);
+  });
 });
 
 describe("the register page after a reading that failed", () => {

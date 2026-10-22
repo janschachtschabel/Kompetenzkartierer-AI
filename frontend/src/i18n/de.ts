@@ -161,7 +161,7 @@ export const messages = {
       moreFailed: "Weitere Einträge wurden nicht geladen.",
       reloadFailed: "Das Register wurde nicht neu geladen; es zeigt den Stand von vorher.",
       // Beside the heading while what the register shows is read again (SourcesView.vue)
-      reading: "Wird neu gelesen …",
+      reading: "Wird neu geladen …",
     },
     // What the register shows (RegisterFilter.vue)
     filter: {

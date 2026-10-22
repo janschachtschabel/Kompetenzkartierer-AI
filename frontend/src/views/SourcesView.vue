@@ -222,9 +222,16 @@ onMounted(async () => {
   margin: 0;
 }
 
+/* Shown only once a reading has lasted a moment, so a quick answer does not flash it; gone at
+   once. A delay, no motion: the reduced-motion rule shortens durations, not this. */
+.sources__reading {
+  transition: visibility 0s linear 300ms;
+}
+
 /* Idle, the sign keeps its room: the table under it does not move when a reading starts. */
 .sources__reading--idle {
   visibility: hidden;
+  transition-delay: 0s;
 }
 
 /* Read again, what the register shows fades a little and the pointer says it is busy; the
