@@ -98,6 +98,10 @@ class Settings(BaseSettings):
     # path): plain segments without a trailing slash; empty for none
     root_path: Annotated[str, Field(pattern=r"^(/[A-Za-z0-9._~-]+)*$")] = ""
     log_level: LogLevel = "INFO"
+    # A job's lease; the worker renews it at a third. A worker gone silent loses its job after this
+    job_lease_s: Annotated[float, Field(ge=3, le=3600)] = 60.0
+    # How often an idle worker looks for work
+    job_poll_s: Annotated[float, Field(gt=0, le=60)] = 1.0
     ontology_dir: Path = REPOSITORY_ONTOLOGY
     log_format: Literal["text", "json"] = "text"
 
