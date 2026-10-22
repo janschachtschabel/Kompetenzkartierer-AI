@@ -1,0 +1,74 @@
+"""deploy/helm-values.example.yaml: what T6 can rely on when they build the chart from it."""
+
+from pathlib import Path
+from typing import Any
+
+import pytest
+import yaml  # type: ignore[import-untyped]
+
+from app.core.settings import Settings
+
+VALUES: dict[str, Any] = yaml.safe_load(
+    (Path(__file__).resolve().parents[3] / "deploy" / "helm-values.example.yaml").read_text(encoding="utf-8")
+)
+
+
+def test_the_probes_ask_the_internal_port() -> None:
+    probes = VALUES["api"]["probes"]
+
+    assert {probe["port"] for probe in probes.values()} == {9000}
+    assert probes["readiness"]["path"] == "/ready"
+    assert probes["liveness"]["path"] == "/health"
+
+
+def test_readiness_waits_longer_than_ready_itself() -> None:
+    # /ready waits up to 2 s for a pool connection and 2 s for its query; a probe that gives up
+    # sooner takes a slow database for a dead pod
+    assert VALUES["api"]["probes"]["readiness"]["timeoutSeconds"] >= 5
+
+
+def test_no_container_runs_as_root_or_with_capabilities() -> None:
+    pod = VALUES["podSecurityContext"]
+    container = VALUES["containerSecurityContext"]
+
+    assert pod["runAsNonRoot"] is True
+    assert pod["runAsUser"] == 10001
+    assert container["readOnlyRootFilesystem"] is True
+    assert container["capabilities"]["drop"] == ["ALL"]
+    assert container["allowPrivilegeEscalation"] is False
+
+
+@pytest.mark.parametrize("part", ["api", "worker", "migrate", "vocab"])
+def test_secrets_are_named_never_given(part: str) -> None:
+    secrets = VALUES[part]["secrets"]
+
+    assert set(secrets) == {"existingSecret", "keys"}
+    assert all(isinstance(key, str) and key.isupper() for key in secrets["keys"])
+    assert not {"DATABASE_URL", "API_KEY_PEPPER", "OPENAI_API_KEY"} & set(VALUES[part].get("env", {}))
+
+
+def test_the_ingress_never_opens_the_internal_port() -> None:
+    ingress = VALUES["ingress"]
+
+    assert ingress["routes"]
+    assert all(route["servicePort"] not in (9000, "internal") for route in ingress["routes"])
+
+
+def test_the_worker_may_finish_its_job_before_kubernetes_kills_it() -> None:
+    worker = VALUES["worker"]
+    default = Settings.model_fields["job_shutdown_grace_s"].default
+    grace = float(worker["env"].get("JOB_SHUTDOWN_GRACE_S", default))
+
+    assert worker["terminationGracePeriodSeconds"] >= grace + 5
+
+
+def test_the_database_and_the_object_store_can_be_the_operators() -> None:
+    assert VALUES["postgresql"]["enabled"] is False
+    assert VALUES["objectStorage"]["env"]["STORAGE_BACKEND"] == "s3"
+
+
+def test_the_migration_runs_once_per_release_before_the_pods() -> None:
+    migrate = VALUES["migrate"]
+
+    assert migrate["command"] == ["python", "-m", "app.db.migrate"]
+    assert "pre-upgrade" in migrate["hook"] and "pre-install" in migrate["hook"]

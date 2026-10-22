@@ -1,0 +1,118 @@
+# Example values for a Helm chart of Kompetenzkartierer-AI (a template, not a finished chart).
+# Every key under env becomes the environment variable of that name; defaults and meaning:
+# docs/uebergabe/konfiguration.md. Reference for containers and hardening: deploy/docker-compose.yml.
+# No B-API: the service checks its own tokens (docs/uebergabe/anforderungen.md, 2).
+
+image:
+  repository: <registry>/kompetenzkartierer-ai     # api.Dockerfile; the worker and the jobs use the same image
+  tag: "0.1.0"                                     # never latest in production
+webImage:
+  repository: <registry>/kompetenzkartierer-ai-web # web.Dockerfile: the SPA behind nginx-unprivileged
+  tag: "0.1.0"
+
+env:                          # for every container of the service
+  LOG_FORMAT: json
+  LOG_LEVEL: INFO
+  PUBLIC_ACCESS: "off"
+
+podSpec:
+  enableServiceLinks: false   # a Service named "internal" would set INTERNAL_PORT=tcp://... in every pod
+podSecurityContext:           # Pod Security Standard "restricted"
+  runAsUser: 10001
+  runAsGroup: 10001
+  runAsNonRoot: true
+  seccompProfile: { type: RuntimeDefault }
+containerSecurityContext:
+  readOnlyRootFilesystem: true
+  capabilities: { drop: [ALL] }
+  allowPrivilegeEscalation: false
+tmpEmptyDir: { mountPath: /tmp, sizeLimit: 256Mi }   # the only writable path
+
+# External services; the components the chart may bring along stay off
+postgresql:
+  enabled: false              # PostgreSQL 17 with the extensions vector, pg_trgm and unaccent. The migration
+                              # creates them; where its role may not, the DBA creates them beforehand.
+objectStorage:
+  env:
+    STORAGE_BACKEND: s3
+    S3_ENDPOINT_URL: ""       # empty for AWS; the address of T6's S3 service otherwise
+    S3_BUCKET: kompetenzkartierer
+    S3_REGION: eu-central-1
+redis:
+  enabled: false              # not used before rate limits are shared across API replicas (M1)
+
+api:
+  replicas: 2                 # stateless; scale by replicas
+  ports: { public: 8000, internal: 9000 }
+  resources:                  # not measured yet: the baseline under load comes with M6
+    requests: { cpu: 250m, memory: 384Mi }
+    limits: { cpu: "1", memory: 768Mi }
+  probes:                     # internal port only; on 8000 these paths answer 404
+    startup: { port: 9000, path: /health, periodSeconds: 2, failureThreshold: 30, timeoutSeconds: 3 }
+    readiness: { port: 9000, path: /ready, periodSeconds: 10, timeoutSeconds: 5 }   # /ready waits 2 s + 2 s
+    liveness: { port: 9000, path: /health, periodSeconds: 30, timeoutSeconds: 5, failureThreshold: 3 }
+  lifecycle:
+    preStop: { exec: { command: [sleep, "5"] } }   # the Service's endpoints follow SIGTERM late
+  env:
+    FORWARDED_ALLOW_IPS: <network of the ingress controller>   # never * and never /0
+  secrets:                    # from a Secret, never in the values; mounted as files, read through *_FILE
+    existingSecret: kompetenzkartierer-secrets
+    keys: [DATABASE_URL, API_KEY_PEPPER, S3_ACCESS_KEY, S3_SECRET_KEY]
+
+worker:
+  replicas: 2
+  command: [python, -m, app.jobs.worker]
+  probes: {}                  # the worker serves no HTTP yet; a stuck worker loses its lease (JOB_LEASE_S)
+  terminationGracePeriodSeconds: 30   # JOB_SHUTDOWN_GRACE_S + 2 s to clean up + margin
+  resources:
+    requests: { cpu: 250m, memory: 384Mi }
+    limits: { cpu: "1", memory: 1Gi }
+  env:
+    JOB_SHUTDOWN_GRACE_S: "20"
+  secrets:
+    existingSecret: kompetenzkartierer-secrets
+    keys: [DATABASE_URL, API_KEY_PEPPER, S3_ACCESS_KEY, S3_SECRET_KEY, OPENAI_API_KEY]
+
+# Run once per release, before the new pods: the migration, then the vocabularies
+migrate:
+  hook: [pre-install, pre-upgrade]
+  command: [python, -m, app.db.migrate]
+  secrets:
+    existingSecret: kompetenzkartierer-secrets
+    keys: [DATABASE_URL]
+vocab:
+  hook: [post-install, post-upgrade]
+  command: [python, -m, app.vocab.load]
+  secrets:
+    existingSecret: kompetenzkartierer-secrets
+    keys: [DATABASE_URL]
+
+web:
+  replicas: 2
+  port: 8080                  # nginx-unprivileged, user 101; serves the SPA only, /api goes through the ingress
+
+service:
+  ports:
+    - { name: http, port: 8000 }
+    - { name: internal, port: 9000 }
+
+ingress:
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 60m       # uploads up to 50 MB (M1)
+  routes:                     # never the internal port: probes and /metrics stay inside the cluster
+    - { path: /api/v1/, service: api, servicePort: http }
+    - { path: /openapi.json, service: api, servicePort: http }
+    - { path: /, service: web, servicePort: 8080 }
+
+networkPolicy:
+  enabled: true
+  internalFrom: [{ namespaceSelector: { matchLabels: { name: monitoring } } }]   # port 9000: kubelet and Prometheus
+  egress:                     # placeholders; the selectors depend on the cluster
+    api: [dns, postgresql, object-store]
+    worker: [dns, postgresql, object-store, language model (OPENAI_BASE_URL)]
+    # M1 adds source fetching in the worker: allow the public internet on 443/80, deny the cluster's
+    # own ranges and the cloud metadata address (169.254.169.254)
+
+monitoring:
+  serviceMonitor: { enabled: true, port: internal, path: /metrics }
+  prometheusRule: { enabled: false }   # alert rules come with M6
