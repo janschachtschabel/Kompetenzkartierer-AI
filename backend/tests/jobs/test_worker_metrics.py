@@ -87,10 +87,39 @@ async def test_a_cancel_and_a_lost_lease_are_counted_too(pool: AsyncConnectionPo
                 await connection.execute(steal, (job_id,))
 
     counted = sample("kka_jobs_total", kind=kind, outcome=ending)
+    timed = sample("kka_job_duration_seconds_count", kind=kind)
     # a lease of 3 s is renewed every second: the worker learns of the cancel or the loss then
     await asyncio.gather(Worker(pool, {kind: waits}, owner="w1", lease_s=3).run_once(), interrupt())
 
     assert sample("kka_jobs_total", kind=kind, outcome=ending) == counted + 1
+    assert sample("kka_job_duration_seconds_count", kind=kind) == timed + 1
+
+
+@pytest.mark.pg
+async def test_a_job_handed_back_at_a_shutdown_is_counted_and_timed(pool: AsyncConnectionPool) -> None:
+    kind = "test.metrics_released"
+    async with pool.connection() as connection:
+        await enqueue(connection, kind, "account-a")
+    started = asyncio.Event()
+
+    async def waits(job: Job) -> None:
+        started.set()
+        await asyncio.sleep(30)
+
+    counted = sample("kka_jobs_total", kind=kind, outcome="released")
+    timed = sample("kka_job_duration_seconds_count", kind=kind)
+    stop = asyncio.Event()
+    # no grace: the running handler is cancelled as soon as the worker is told to stop
+    running = asyncio.create_task(
+        Worker(pool, {kind: waits}, owner="w1", lease_s=3, poll_s=0.05, grace_s=0).run(stop)
+    )
+    await asyncio.wait_for(started.wait(), 5)
+
+    stop.set()
+    await asyncio.wait_for(running, 5)
+
+    assert sample("kka_jobs_total", kind=kind, outcome="released") == counted + 1
+    assert sample("kka_job_duration_seconds_count", kind=kind) == timed + 1
 
 
 async def steal(pool: AsyncConnectionPool, job: Job) -> None:
