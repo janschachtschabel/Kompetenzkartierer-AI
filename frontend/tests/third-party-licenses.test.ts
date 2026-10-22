@@ -4,7 +4,7 @@
 // The licence of every package the bundle carries goes out with it: Vue and
 // vue-router are MIT, the Roboto fonts OFL, and both ask that their notice
 // travel with every copy -- which the minified bundle, stripped of its
-// banners, did not (audit 2026-09-26, E-65).
+// banners, did not (old app, audit 2026-09-26, E-65).
 import { describe, expect, it } from "vitest";
 
 import { packageDir, thirdPartyLicenses } from "../build/licenses.ts";

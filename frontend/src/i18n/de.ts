@@ -7,7 +7,14 @@ export const messages = {
   app: {
     title: "Kompetenzkartierer",
   },
+  dialog: {
+    // The confirm dialog's default: it asks before something is removed.
+    confirm: "Löschen",
+    cancel: "Abbrechen",
+  },
   states: {
+    loading: "Wird geladen …",
+    retry: "Erneut versuchen",
     // A sentence, with its full stop: a failure's reason may follow it.
     errorTitle: "Etwas ist schiefgelaufen.",
     offline: "Der Server ist nicht erreichbar. Prüfe die Verbindung und versuch es noch einmal.",
