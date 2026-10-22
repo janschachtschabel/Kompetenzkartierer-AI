@@ -34,3 +34,7 @@ CREATE TABLE vocab_concept (
 );
 
 CREATE INDEX vocab_concept_scheme ON vocab_concept (scheme_iri);
+-- A notation names one active concept within its scheme: the JSON schemas of the extraction
+-- give notations, and the pipeline maps (scheme, notation) to the concept
+CREATE UNIQUE INDEX vocab_concept_notation ON vocab_concept (scheme_iri, notation)
+    WHERE notation IS NOT NULL AND retired_in IS NULL;

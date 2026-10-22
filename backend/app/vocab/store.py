@@ -11,6 +11,7 @@ from dataclasses import dataclass
 import psycopg
 from psycopg.types.json import Jsonb
 
+from app.db.pool import CONNECT_TIMEOUT_S
 from app.vocab.loader import Vocabulary
 
 LOCK_KEY = 0x6B6B_612D_766F_6361  # "kka-voca"
@@ -23,7 +24,7 @@ class LoadResult:
 
 
 def load_vocabulary(conninfo: str, vocabulary: Vocabulary) -> LoadResult:
-    with psycopg.connect(conninfo) as connection, connection.transaction():
+    with psycopg.connect(conninfo, connect_timeout=CONNECT_TIMEOUT_S) as connection, connection.transaction():
         connection.execute("SELECT pg_advisory_xact_lock(%s)", (LOCK_KEY,))
         latest = connection.execute(
             "SELECT id, content_hash FROM vocab_release ORDER BY id DESC LIMIT 1"
@@ -42,6 +43,10 @@ def load_vocabulary(conninfo: str, vocabulary: Vocabulary) -> LoadResult:
 
 
 def _write_schemes(connection: psycopg.Connection, vocabulary: Vocabulary, release_id: int) -> None:
+    connection.execute(
+        "UPDATE vocab_scheme SET retired_in = %s WHERE retired_in IS NULL AND NOT (iri = ANY(%s))",
+        (release_id, list(vocabulary.schemes)),
+    )
     with connection.cursor() as cursor:
         cursor.executemany(
             """
@@ -55,13 +60,14 @@ def _write_schemes(connection: psycopg.Connection, vocabulary: Vocabulary, relea
                 for scheme in vocabulary.schemes.values()
             ],
         )
-    connection.execute(
-        "UPDATE vocab_scheme SET retired_in = %s WHERE retired_in IS NULL AND NOT (iri = ANY(%s))",
-        (release_id, list(vocabulary.schemes)),
-    )
 
 
 def _write_concepts(connection: psycopg.Connection, vocabulary: Vocabulary, release_id: int) -> None:
+    # Retired first: a notation may pass from a concept the files dropped to a new one
+    connection.execute(
+        "UPDATE vocab_concept SET retired_in = %s WHERE retired_in IS NULL AND NOT (iri = ANY(%s))",
+        (release_id, list(vocabulary.concepts)),
+    )
     with connection.cursor() as cursor:
         cursor.executemany(
             """
@@ -88,7 +94,3 @@ def _write_concepts(connection: psycopg.Connection, vocabulary: Vocabulary, rele
                 for concept in vocabulary.concepts.values()
             ],
         )
-    connection.execute(
-        "UPDATE vocab_concept SET retired_in = %s WHERE retired_in IS NULL AND NOT (iri = ANY(%s))",
-        (release_id, list(vocabulary.concepts)),
-    )
