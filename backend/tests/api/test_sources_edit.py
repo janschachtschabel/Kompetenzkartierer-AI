@@ -283,6 +283,36 @@ def test_the_owner_gets_its_file_as_a_download(client: TestClient, world: dict[s
     assert answer.headers["x-content-type-options"] == "nosniff"
 
 
+def test_a_file_goes_out_in_pieces_with_its_length(
+    client: TestClient, world: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # a file of up to MAX_UPLOAD_MB is never held whole for a download
+    def whole(*args: object) -> bytes:
+        raise AssertionError("the whole file was read")
+
+    monkeypatch.setattr(FileSystemStorage, "get", whole)
+
+    answer = client.get(f"/api/v1/sources/{world['own']}/file", headers=world["owner"])
+
+    assert answer.status_code == 200
+    assert answer.content == PDF
+    assert answer.headers["content-length"] == str(len(PDF))
+
+
+def test_a_file_gone_from_the_store_is_a_404_of_its_own_and_logged(
+    client: TestClient, store: Path, world: dict[str, Any], caplog: pytest.LogCaptureFixture
+) -> None:
+    key = "sources/" + "07" * 32
+    (store / key).unlink()
+
+    answer = client.get(f"/api/v1/sources/{world['own']}/file", headers=world["owner"])
+
+    assert answer.status_code == 404
+    assert answer.json()["code"] == "file_gone"
+    logged = [record.getMessage() for record in caplog.records if record.levelname == "WARNING"]
+    assert any(key in line and str(world["own"]) in line for line in logged)
+
+
 def test_a_file_of_no_account_is_hidden_from_accounts_by_default(
     client: TestClient, world: dict[str, Any]
 ) -> None:
