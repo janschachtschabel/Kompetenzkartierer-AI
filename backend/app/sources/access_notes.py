@@ -21,6 +21,9 @@ from app.sources.register import SEED_DIR, land_country
 from app.sources.url_fetch import UrlNotAllowed, check_url
 
 NOTES = SEED_DIR / "umgehungshinweise_de.csv"
+# One import at a time: two at once would each find the notes absent and each report them added,
+# though ON CONFLICT lets only one of them write them
+_NOTES_LOCK = int.from_bytes(b"kka-note", "big")
 
 
 @dataclass(frozen=True)
@@ -90,6 +93,7 @@ def _address(value: str) -> str | None:
 async def record_notes(connection: psycopg.AsyncConnection, notes: list[AccessNote]) -> NotesReport:
     """Add the notes the register lacks, in one transaction."""
     async with connection.transaction():
+        await connection.execute("SELECT pg_advisory_xact_lock(%s)", (_NOTES_LOCK,))
         cursor = await connection.execute("SELECT note_key FROM access_note WHERE dataset = %s", (DATASET,))
         present = {key for (key,) in await cursor.fetchall()}
         new = [note for note in notes if note.key not in present]

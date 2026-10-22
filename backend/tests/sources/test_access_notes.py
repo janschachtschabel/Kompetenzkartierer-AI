@@ -21,7 +21,7 @@ from app.db.migrate import migrate
 from app.sources.access_notes import NOTES, read_notes, record_notes
 from app.sources.register import EDUCATION_SECTORS
 from app.sources.seed import read_documents, seed_register
-from tests.sources.test_seed import SCHOOL, document, write_documents
+from tests.sources.test_seed import SCHOOL, document, run_twice_at_once, write_documents
 from tests.support import make_settings, seed_account, selector_client
 
 PUBLIC = "http://testserver:8000"
@@ -104,6 +104,19 @@ def test_the_notes_are_recorded_once(migrated: str) -> None:
     second = run(lambda connection: record_notes(connection, notes), migrated)
 
     assert (first.added, second.added, second.present) == (353, 0, 353)
+
+
+@pytest.mark.pg
+def test_two_imports_at_once_say_rightly_what_each_added(migrated: str) -> None:
+    notes = read_notes(NOTES).notes
+
+    reports = asyncio.run(
+        run_twice_at_once(migrated, "access_note", lambda connection: record_notes(connection, notes)),
+        loop_factory=asyncio.SelectorEventLoop,
+    )
+
+    assert not [report for report in reports if isinstance(report, BaseException)], reports
+    assert sorted((report.added, report.present) for report in reports) == [(0, 353), (353, 0)]
 
 
 @pytest.mark.pg
