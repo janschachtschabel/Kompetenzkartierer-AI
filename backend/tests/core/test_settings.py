@@ -13,7 +13,7 @@ from pydantic import Field, SecretStr, ValidationError
 
 from app.core.settings import Settings, _environment_value
 from tests.support import FAKE_DATABASE_URL as FAKE_URL
-from tests.support import without_settings_variables
+from tests.support import make_settings, without_settings_variables
 
 
 @pytest.fixture(autouse=True)
@@ -277,3 +277,27 @@ def test_a_malformed_database_url_is_refused_without_quoting_it(
         Settings()
 
     assert secret not in str(caught.value)
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["postgresql://kka:se/cretinvented@127.0.0.1:1/kka", "postgresql://kka:a:b/cinvented@127.0.0.1:1/kka"],
+    ids=["slash", "colon-and-slash"],
+)
+def test_an_unencoded_slash_in_the_password_is_refused(monkeypatch: pytest.MonkeyPatch, url: str) -> None:
+    # it splits the URL anew without an error: the rest of the password became the database name
+    monkeypatch.setenv("DATABASE_URL", url)
+
+    with pytest.raises(ValidationError, match="database_url") as caught:
+        Settings()
+
+    assert "invented" not in str(caught.value)
+
+
+def test_a_connection_string_with_an_undecodable_byte_is_refused_without_it() -> None:
+    # an environment byte Linux cannot decode arrives as a lone surrogate
+    with pytest.raises(ValidationError, match="database_url") as caught:
+        make_settings(database_url="postgresql://kka:pw" + chr(0xDCFF) + "@127.0.0.1:1/kka")
+
+    assert "position" not in str(caught.value)
+    assert "dcff" not in str(caught.value).lower()

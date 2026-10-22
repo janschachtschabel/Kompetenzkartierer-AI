@@ -5,6 +5,7 @@ secrets); the file wins over the plain variable. Errors never echo a value.
 """
 
 import os
+import re
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Annotated, Any, Literal, Self, get_args, get_origin
@@ -104,11 +105,16 @@ class Settings(BaseSettings):
             raise ValueError("must not be blank")
         try:
             parts = conninfo_to_dict(text)
-        except psycopg.ProgrammingError:
+        except (psycopg.ProgrammingError, ValueError):  # ValueError: a byte the system could not decode
             raise ValueError("is not a valid PostgreSQL connection string") from None
-        if "@" in str(parts.get("host", "")):
-            # an unencoded @ in the password splits it; the rest would show as the host name
-            raise ValueError("has an @ in its host; write an @ in the password as %40")
+        # An unencoded @, / or : in the password splits the URL anew without an error: its rest
+        # would be taken for the host, the port or the database name
+        if (
+            "@" in str(parts.get("host", ""))
+            or "@" in str(parts.get("dbname", ""))
+            or not re.fullmatch(r"[0-9,]*", str(parts.get("port", "")))
+        ):
+            raise ValueError("does not parse as meant; write @, / and : in the password as %40, %2F and %3A")
         return value
 
     @field_validator("log_level", mode="before")
