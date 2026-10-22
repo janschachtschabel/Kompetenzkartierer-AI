@@ -23,7 +23,7 @@ from app.core.logging import configure_logging
 from app.core.settings import Settings
 from app.db.migrate import migrate
 from app.serve import build_server, main
-from tests.support import FAKE_DATABASE_URL, make_settings, without_settings_variables
+from tests.support import FAKE_DATABASE_URL, FAKE_PEPPER, make_settings, without_settings_variables
 
 START_TIMEOUT_S = 10.0
 
@@ -166,6 +166,7 @@ def test_main_ends_with_the_startup_failure_code(
         # and so delete the process's own values
         invented = {
             "DATABASE_URL": FAKE_DATABASE_URL,
+            "API_KEY_PEPPER": FAKE_PEPPER,
             "PUBLIC_PORT": str(free_port()),
             "INTERNAL_PORT": str(blocker.getsockname()[1]),
         }

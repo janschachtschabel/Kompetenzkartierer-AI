@@ -30,6 +30,9 @@ TAGS = [
 
 
 def create_app(settings: Settings) -> FastAPI:
+    if settings.api_key_pepper is None:
+        raise ValueError("API_KEY_PEPPER is required for the API: API keys are checked against it")
+
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # Opened without waiting: the process starts and answers /health while the database
@@ -55,6 +58,7 @@ def create_app(settings: Settings) -> FastAPI:
         docs_url=None,
         redoc_url=None,
     )
+    app.state.settings = settings
     app.state.expected_migrations = frozenset(migration.version for migration in load_migrations())
     install_error_handlers(app)
     app.include_router(internal.router)

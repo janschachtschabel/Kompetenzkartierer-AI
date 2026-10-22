@@ -330,3 +330,21 @@ def test_urls_libpq_reads_as_meant_are_taken(monkeypatch: pytest.MonkeyPatch, ur
     monkeypatch.setenv("DATABASE_URL", url)
 
     assert Settings().database_url.get_secret_value() == url
+
+
+def test_visitors_get_nothing_and_sign_ins_are_limited_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+
+    settings = Settings()
+
+    assert (settings.public_access, settings.auth_failure_limit, settings.api_key_pepper) == ("off", 10, None)
+
+
+def test_a_short_pepper_is_refused_without_quoting_it(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+    monkeypatch.setenv("API_KEY_PEPPER", "short-invented")
+
+    with pytest.raises(ValidationError, match="api_key_pepper") as caught:
+        Settings()
+
+    assert "short-invented" not in str(caught.value)

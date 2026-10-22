@@ -98,6 +98,13 @@ class Settings(BaseSettings):
     # path): plain segments without a trailing slash; empty for none
     root_path: Annotated[str, Field(pattern=r"^(/[A-Za-z0-9._~-]+)*$")] = ""
     log_level: LogLevel = "INFO"
+    # The server's secret for API key hashes (HMAC); the API does not start without it
+    api_key_pepper: Annotated[SecretStr, Field(min_length=32)] | None = None
+    # What visitors without a token may do: nothing, look up published curricula, or also search
+    public_access: Literal["off", "lookup", "search"] = "off"
+    # Failed sign-ins per client address before it is refused for the window
+    auth_failure_limit: Annotated[int, Field(ge=1)] = 10
+    auth_failure_window_s: Annotated[float, Field(gt=0)] = 900.0
     # A job's lease; the worker renews it at a third. A worker gone silent loses its job after this
     job_lease_s: Annotated[float, Field(ge=3, le=3600)] = 60.0
     # How often an idle worker looks for work

@@ -23,6 +23,7 @@ from app.core.settings import Settings
 
 # A closed port: an app under test that opens its pool reaches no server, and no real one
 FAKE_DATABASE_URL = "postgresql://kka:fake@127.0.0.1:1/kka"
+FAKE_PEPPER = "invented-pepper-for-tests-0123456789abcdef"
 
 
 def settings_variables(settings_cls: type[BaseSettings]) -> set[str]:
@@ -74,6 +75,6 @@ def lock_held(url: str, statement: str, *, at_most_s: float) -> Iterator[None]:
 
 def make_settings(**values: object) -> Settings:
     """Invented settings; the pool opens no connection until a test asks for one."""
-    defaults = {"database_url": FAKE_DATABASE_URL, "db_pool_min_size": 0}
+    defaults = {"database_url": FAKE_DATABASE_URL, "api_key_pepper": FAKE_PEPPER, "db_pool_min_size": 0}
     with without_settings_variables():
         return Settings(**{**defaults, **values})  # type: ignore[arg-type]
