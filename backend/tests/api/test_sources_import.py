@@ -128,7 +128,11 @@ def test_a_title_with_hidden_signs_is_refused(client: TestClient, owner: tuple[U
 
 @pytest.mark.parametrize(
     ("title", "code"),
-    [("Physik‮", "title_invalid"), ("Physik\x00", "title_invalid"), ("x" * 501, "title_too_long")],
+    [
+        ("Physik\N{RIGHT-TO-LEFT OVERRIDE}", "title_invalid"),
+        ("Physik\x00", "title_invalid"),
+        ("x" * 501, "title_too_long"),
+    ],
     ids=["bidi", "nul", "too-long"],
 )
 def test_an_import_s_title_is_refused_as_an_upload_s_is(
@@ -145,12 +149,13 @@ def test_an_import_s_title_is_refused_as_an_upload_s_is(
 def test_an_import_s_title_is_kept_trimmed_in_one_spelling(
     client: TestClient, migrated: str, owner: tuple[UUID, dict[str, str]]
 ) -> None:
-    answer = client.post(
-        "/api/v1/sources/import", headers=owner[1], json={"url": URL, "title": "  Physik Café "}
-    )
+    title = "  Physik Cafe\N{COMBINING ACUTE ACCENT} "
+    kept = "Physik Caf\N{LATIN SMALL LETTER E WITH ACUTE}"
 
-    assert answer.json()["source"]["title"] == "Physik Café"
-    assert rows(migrated, "SELECT title FROM source") == [("Physik Café",)]
+    answer = client.post("/api/v1/sources/import", headers=owner[1], json={"url": URL, "title": title})
+
+    assert answer.json()["source"]["title"] == kept
+    assert rows(migrated, "SELECT title FROM source") == [(kept,)]
 
 
 def test_a_visitor_cannot_import(client: TestClient) -> None:

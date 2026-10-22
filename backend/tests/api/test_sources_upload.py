@@ -259,7 +259,11 @@ def test_a_title_over_500_signs_is_refused(client: TestClient, owner: tuple[UUID
     assert answer.json()["code"] == "title_too_long"
 
 
-@pytest.mark.parametrize("title", ["Physik‮", "Physik\x00", "Physik​"], ids=["bidi", "nul", "zwsp"])
+@pytest.mark.parametrize(
+    "title",
+    ["Physik\N{RIGHT-TO-LEFT OVERRIDE}", "Physik\x00", "Physik\N{ZERO WIDTH SPACE}"],
+    ids=["bidi", "nul", "zwsp"],
+)
 def test_a_title_with_hidden_signs_is_refused(
     client: TestClient, migrated: str, store: Path, owner: tuple[UUID, dict[str, str]], title: str
 ) -> None:
