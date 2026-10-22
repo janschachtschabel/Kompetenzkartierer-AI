@@ -3,6 +3,8 @@ file goes out as a download, to whom THIRD_PARTY_MARKDOWN allows.
 """
 
 import asyncio
+import threading
+import time
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -18,7 +20,7 @@ from app.core.storage import FileSystemStorage
 from app.db.migrate import migrate
 from app.db.sources import StoredFile, record_upload
 from app.sources.register import EDUCATION_SECTORS
-from tests.support import make_settings, seed_account, seed_admin, selector_client
+from tests.support import lock_held, make_settings, seed_account, seed_admin, selector_client
 
 pytestmark = pytest.mark.pg
 
@@ -195,6 +197,53 @@ def test_a_new_rights_status_comes_with_its_own_evidence(
 
     assert (changed.status_code, changed.json()["code"]) == (422, "evidence_missing")
     assert same.status_code == 200  # the status it has is no change
+    assert terms_of(migrated, world["seed"]) == ("amtlich", "Amtsblatt")
+
+
+def waiting_in(url: str) -> int:
+    """How many sessions of the test's database wait for a lock."""
+    with psycopg.connect(url) as connection:
+        found = connection.execute(
+            "SELECT count(*) FROM pg_locks l JOIN pg_stat_activity a USING (pid)"
+            " WHERE NOT l.granted AND a.datname = current_database()"
+        ).fetchone()
+    assert found is not None
+    return int(found[0])
+
+
+def until_waiting(url: str, sessions: int) -> None:
+    deadline = time.monotonic() + 10
+    while waiting_in(url) < sessions:
+        assert time.monotonic() < deadline, f"fewer than {sessions} sessions came to wait"
+        time.sleep(0.02)
+
+
+def test_two_edits_at_once_keep_the_terms_together(migrated: str, store: Path, world: dict[str, Any]) -> None:
+    # The first sets a rights status with its evidence, the second removes the evidence. Read
+    # before the first was written, the second found no status to keep it for and removed the
+    # evidence of the new one: a CheckViolation, a 500. The order is forced: the first waits,
+    # its entry written, for a lock on the audit log; the second comes to wait behind it.
+    url = f"/api/v1/sources/{world['seed']}"
+    answers: dict[str, int] = {}
+
+    def send(name: str, change: dict[str, Any]) -> None:
+        app = create_app(make_settings(database_url=migrated, storage_dir=store))
+        with selector_client(app, base_url=PUBLIC, raise_server_exceptions=False) as client:
+            answers[name] = client.patch(url, headers=world["editor"], json=change).status_code
+
+    terms = threading.Thread(
+        target=send, args=("terms", {"rights_status": "amtlich", "rights_evidence": "Amtsblatt"})
+    )
+    removal = threading.Thread(target=send, args=("removal", {"rights_evidence": None}))
+    with lock_held(migrated, "LOCK TABLE audit_log IN SHARE ROW EXCLUSIVE MODE", at_most_s=30):
+        terms.start()
+        until_waiting(migrated, 1)
+        removal.start()
+        until_waiting(migrated, 2)
+    terms.join(30)
+    removal.join(30)
+
+    assert answers == {"terms": 200, "removal": 422}
     assert terms_of(migrated, world["seed"]) == ("amtlich", "Amtsblatt")
 
 

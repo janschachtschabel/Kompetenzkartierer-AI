@@ -96,13 +96,16 @@ async def ownerless_source(connection: psycopg.AsyncConnection, source_id: UUID)
 
 
 async def get_source(
-    connection: psycopg.AsyncConnection, reader: Reader, source_id: UUID
+    connection: psycopg.AsyncConnection, reader: Reader, source_id: UUID, *, for_update: bool = False
 ) -> tuple[dict[str, Any], list[Acquisition]] | None:
-    """The entry with how its file came, if ``reader`` sees it."""
+    """The entry with how its file came, if ``reader`` sees it. ``for_update`` locks its row to
+    the end of the caller's transaction: a change checked against the entry as read is then
+    written to that entry, not to one another change wrote in between."""
+    lock = " FOR UPDATE OF s" if for_update else ""
     cursor = connection.cursor(row_factory=dict_row)
     await cursor.execute(
         f"SELECT {_COLUMNS} FROM source s LEFT JOIN source_file f ON f.id = s.file_id"  # noqa: S608 - fixed parts
-        f" WHERE s.id = %(id)s AND {_VISIBLE}",
+        f" WHERE s.id = %(id)s AND {_VISIBLE}{lock}",
         {"id": source_id, "me": reader.account_id, "all": reader.sees_all},
     )
     entry = await cursor.fetchone()

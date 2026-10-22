@@ -184,7 +184,8 @@ async def edit_register_entry(
         raise Refusal(422, "rights_status_missing", "An entry keeps a rights status, unklar at least.")
     editor = bool(who.roles & EDITORS)
     async with request.app.state.pool.connection() as connection, connection.transaction():
-        found = await get_source(connection, _reader(who), source_id)
+        # locked: two changes at once would each check the terms against the entry before either
+        found = await get_source(connection, _reader(who), source_id, for_update=True)
         if found is None:
             raise HTTPException(404, "No such register entry.")
         row, _ = found
