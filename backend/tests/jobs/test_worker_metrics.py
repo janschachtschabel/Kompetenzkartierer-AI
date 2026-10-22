@@ -81,7 +81,7 @@ async def test_a_cancel_and_a_lost_lease_are_counted_too(pool: AsyncConnectionPo
         await started.wait()
         async with pool.connection() as connection:
             if ending == "cancelled":
-                await request_cancel(connection, job_id)
+                await request_cancel(connection, job_id, "account-a")
             else:  # another worker's claim now
                 steal = "UPDATE job SET lease_token = gen_random_uuid() WHERE id = %s"
                 await connection.execute(steal, (job_id,))

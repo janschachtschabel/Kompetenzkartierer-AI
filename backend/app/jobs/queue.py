@@ -246,17 +246,19 @@ def _storable(text: str) -> str:
     return text.replace("\x00", "\ufffd").encode("utf-8", "replace").decode("utf-8")
 
 
-async def request_cancel(connection: psycopg.AsyncConnection, job_id: UUID) -> bool:
-    """Mark a waiting or running job for cancelling; a waiting one ends now. ``False`` if it had ended."""
+async def request_cancel(connection: psycopg.AsyncConnection, job_id: UUID, lane: str | None) -> bool:
+    """Mark a waiting or running job of ``lane`` for cancelling (``None``: of any lane, for an
+    admin); a waiting one ends now. ``False`` if it had ended or is another lane's."""
     cursor = await connection.execute(
         """
         UPDATE job SET cancel_requested = true,
             status = CASE WHEN status = 'queued' THEN 'cancelled' ELSE status END,
             finished_at = CASE WHEN status = 'queued' THEN now() ELSE finished_at END
-        WHERE id = %s AND status IN ('queued', 'running')
+        WHERE id = %(id)s AND status IN ('queued', 'running')
+            AND (%(lane)s::text IS NULL OR lane = %(lane)s)
         RETURNING id
         """,
-        (job_id,),
+        {"id": job_id, "lane": lane},
     )
     return await cursor.fetchone() is not None
 

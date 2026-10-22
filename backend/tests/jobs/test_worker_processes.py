@@ -58,7 +58,8 @@ async def test_two_workers_run_fifty_jobs_each_exactly_once(queue_db: str) -> No
     cancelled = await enqueue_jobs(queue_db, "test.record", 5)
     async with await psycopg.AsyncConnection.connect(queue_db, autocommit=True) as connection:
         for job_id in cancelled:
-            await request_cancel(connection, job_id)  # type: ignore[arg-type]
+            # as an admin: the jobs are in three lanes
+            await request_cancel(connection, job_id, None)  # type: ignore[arg-type]
 
     workers = [start(queue_db, owner, "record") for owner in ("w1", "w2")]
     outputs = [worker.communicate(timeout=DEADLINE_S)[0] for worker in workers]

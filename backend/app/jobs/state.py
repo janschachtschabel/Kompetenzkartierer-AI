@@ -14,7 +14,6 @@ from psycopg.rows import class_row
 class JobState:
     id: UUID
     kind: str
-    lane: str
     status: str
     progress: dict[str, Any] | None
     error_code: str | None
@@ -26,14 +25,16 @@ class JobState:
     finished_at: datetime | None
 
 
-async def job_state(connection: psycopg.AsyncConnection, job_id: UUID) -> JobState | None:
+async def job_state(connection: psycopg.AsyncConnection, job_id: UUID, lane: str | None) -> JobState | None:
+    """The job, if it is ``lane``'s (``None``: of any lane, for an admin); who may see it is
+    decided in the query, a job of another lane is not loaded."""
     cursor = connection.cursor(row_factory=class_row(JobState))
     await cursor.execute(
         """
-        SELECT id, kind, lane, status, progress, error->>'code' AS error_code, cancel_requested,
+        SELECT id, kind, status, progress, error->>'code' AS error_code, cancel_requested,
             attempts, max_attempts, created_at, started_at, finished_at
-        FROM job WHERE id = %s
+        FROM job WHERE id = %(id)s AND (%(lane)s::text IS NULL OR lane = %(lane)s)
         """,
-        (job_id,),
+        {"id": job_id, "lane": lane},
     )
     return await cursor.fetchone()

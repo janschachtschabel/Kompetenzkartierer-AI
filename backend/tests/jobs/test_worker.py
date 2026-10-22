@@ -105,7 +105,7 @@ async def test_a_cancel_stops_the_running_handler(pool: AsyncConnectionPool) -> 
     running = asyncio.create_task(worker.run_once())
     await asyncio.wait_for(started.wait(), 5)
     async with pool.connection() as connection:
-        await request_cancel(connection, job_id)
+        await request_cancel(connection, job_id, "account-a")
 
     await asyncio.wait_for(running, 5)
 

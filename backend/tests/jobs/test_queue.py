@@ -235,7 +235,7 @@ async def test_a_failure_after_a_cancel_request_ends_cancelled(connect: Any) -> 
     job_id = await enqueue(db, "test.work", "account-a", max_attempts=3)
     job = await claim(db, "worker-1", KINDS, LEASE_S)
     assert job is not None
-    await request_cancel(db, job_id)
+    await request_cancel(db, job_id, "account-a")
 
     assert await fail(db, job, "converter_down", "the converter did not answer", retry=True) == "cancelled"
     assert (await row(db, job_id))["status"] == "cancelled"
@@ -248,7 +248,7 @@ async def test_a_released_job_waits_again_unspent_unless_its_cancel_was_asked(co
     first = await claim(db, "worker-1", KINDS, LEASE_S)
     second = await claim(db, "worker-1", KINDS, LEASE_S)
     assert first is not None and second is not None
-    await request_cancel(db, dropped)
+    await request_cancel(db, dropped, "account-b")
 
     await release(db, first)
     await release(db, second)
@@ -312,10 +312,31 @@ async def test_a_waiting_job_cancelled_never_runs(connect: Any) -> None:
     db = await connect()
     job_id = await enqueue(db, "test.work", "account-a")
 
-    assert await request_cancel(db, job_id) is True
+    assert await request_cancel(db, job_id, "account-a") is True
     assert await claim(db, "worker-1", KINDS, LEASE_S) is None
     assert (await row(db, job_id))["status"] == "cancelled"
-    assert await request_cancel(db, job_id) is False
+    assert await request_cancel(db, job_id, "account-a") is False
+
+
+async def test_a_cancel_from_another_lane_changes_nothing(connect: Any) -> None:
+    # who may cancel is decided in the statement itself, not by a check before it
+    db = await connect()
+    job_id = await enqueue(db, "test.work", "account-a")
+
+    assert await request_cancel(db, job_id, "account-b") is False
+    assert {key: (await row(db, job_id))[key] for key in ("status", "cancel_requested")} == {
+        "status": "queued",
+        "cancel_requested": False,
+    }
+    assert await request_cancel(db, job_id, "account-a") is True
+
+
+async def test_an_admin_s_cancel_reaches_every_lane(connect: Any) -> None:
+    db = await connect()
+    job_id = await enqueue(db, "test.work", "account-a")
+
+    assert await request_cancel(db, job_id, None) is True
+    assert (await row(db, job_id))["status"] == "cancelled"
 
 
 async def test_a_running_job_learns_of_its_cancel_at_its_heartbeat(connect: Any) -> None:
@@ -324,7 +345,7 @@ async def test_a_running_job_learns_of_its_cancel_at_its_heartbeat(connect: Any)
     job = await claim(db, "worker-1", KINDS, LEASE_S)
     assert job is not None
 
-    assert await request_cancel(db, job_id) is True
+    assert await request_cancel(db, job_id, "account-a") is True
     assert await heartbeat(db, job, LEASE_S) is True
     await mark_cancelled(db, job)
 
@@ -335,7 +356,7 @@ async def test_an_expired_lease_of_a_cancelled_job_ends_it(connect: Any) -> None
     db = await connect()
     job_id = await enqueue(db, "test.work", "account-a")
     assert await claim(db, "worker-1", KINDS, 0.2) is not None
-    await request_cancel(db, job_id)
+    await request_cancel(db, job_id, "account-a")
     await asyncio.sleep(0.5)
 
     assert await requeue_expired(db) == ["cancelled"]

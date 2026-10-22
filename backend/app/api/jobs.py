@@ -2,7 +2,8 @@
 
 A job's lane is the account that started it (``account_lane``). Another account gets the 404
 of a job that does not exist, so ids reveal nothing; an admin, who runs the service, sees and
-cancels every job.
+cancels every job. Who may see or cancel a job is decided in the query (``lane``), never in
+Python after loading it.
 """
 
 from datetime import datetime
@@ -45,33 +46,37 @@ class JobOut(BaseModel):
 @router.get("/jobs/{job_id}", summary="The state of a job")
 async def get_job(job_id: UUID, request: Request, who: Account) -> JobOut:
     async with request.app.state.pool.connection() as connection:
-        return _out(await _visible(connection, job_id, who))
+        return _out(await _visible(connection, job_id, _lane(who)))
 
 
 @router.post("/jobs/{job_id}/cancel", summary="Cancel a waiting job, or ask a running one to stop")
 async def cancel_job(job_id: UUID, request: Request, who: Account) -> JobOut:
     """A waiting job ends at once; a running one stops at its worker's next heartbeat."""
+    lane = _lane(who)
     async with request.app.state.pool.connection() as connection:
-        await _visible(connection, job_id, who)
-        if not await request_cancel(connection, job_id):
+        await _visible(connection, job_id, lane)
+        if not await request_cancel(connection, job_id, lane):
             raise HTTPException(409, "The job has ended.")
-        state = await job_state(connection, job_id)
+        state = await job_state(connection, job_id, lane)
     assert state is not None  # noqa: S101 - jobs are not deleted
     return _out(state)
 
 
-async def _visible(connection: psycopg.AsyncConnection, job_id: UUID, who: Principal) -> JobState:
-    state = await job_state(connection, job_id)
-    if state is None or not _may_see(who, state):
+def _lane(who: Principal) -> str | None:
+    """The lane whose jobs ``who`` follows; ``None`` for an admin, who follows every lane."""
+    if "admin" in who.roles:
+        return None
+    if who.account_id is None:  # require_account lets no visitor through; never every lane
+        raise HTTPException(404, "No such job.")
+    return account_lane(who.account_id)
+
+
+async def _visible(connection: psycopg.AsyncConnection, job_id: UUID, lane: str | None) -> JobState:
+    state = await job_state(connection, job_id, lane)
+    if state is None:
         raise HTTPException(404, "No such job.")
     return state
 
 
-def _may_see(who: Principal, state: JobState) -> bool:
-    if "admin" in who.roles:
-        return True
-    return who.account_id is not None and state.lane == account_lane(who.account_id)
-
-
 def _out(state: JobState) -> JobOut:
-    return JobOut.model_validate({key: value for key, value in state.__dict__.items() if key != "lane"})
+    return JobOut.model_validate(state.__dict__)
