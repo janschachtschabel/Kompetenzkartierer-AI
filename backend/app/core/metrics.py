@@ -27,6 +27,25 @@ HTTP_DURATION = Histogram(
 )
 
 
+# Jobs run from a second to an hour (a conversion with OCR, an extraction of many units)
+JOB_DURATION_BUCKETS = (1, 5, 15, 30, 60, 120, 300, 600, 1200, 1800, 3600)
+# outcome, as the worker saw the run end: done, failed (PermanentError), error (retried while
+# attempts remain), cancelled, released (handed back at a shutdown), lost (its lease)
+JOBS = Counter("kka_jobs_total", "Job runs by kind and how they ended", ["kind", "outcome"])
+JOB_DURATION = Histogram(
+    "kka_job_duration_seconds",
+    "Duration of job runs by kind",
+    ["kind"],
+    buckets=JOB_DURATION_BUCKETS,
+)
+
+
+def observe_job(kind: str, outcome: str, seconds: float) -> None:
+    """``kind`` is a kind the worker has a handler for: a fixed set, so the series stay few."""
+    JOBS.labels(kind, outcome).inc()
+    JOB_DURATION.labels(kind).observe(seconds)
+
+
 def bounded_method(method: str) -> str:
     """The method as a label or a log field: one of the known ones, or ``other``."""
     return method if method in HTTP_METHODS else OTHER_METHOD

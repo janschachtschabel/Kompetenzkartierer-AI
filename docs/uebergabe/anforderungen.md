@@ -38,7 +38,7 @@ S3-Objektspeicher.
 
 | Frage | Antwort |
 |---|---|
-| Metriken? | Prometheus am internen Port, `GET /metrics`: Anfragen und Dauer je Route-Vorlage (`kka_http_requests_total`, `kka_http_request_duration_seconds`). Job-, LLM- und Konvertierungsmetriken und ein Metrikport des Workers kommen mit M1 |
+| Metriken? | Prometheus am internen Port, `GET /metrics`: Anfragen und Dauer je Route-Vorlage (`kka_http_requests_total`, `kka_http_request_duration_seconds`). Der Worker bedient denselben internen Port mit `/health` (Liveness) und `/metrics`: Jobs nach Art und Ausgang (`kka_jobs_total`, Ausgänge `done`, `failed`, `error`, `cancelled`, `released`, `lost`) und ihre Dauer (`kka_job_duration_seconds`); er hat keinen Service, daher ein PodMonitor. LLM- und Konvertierungsmetriken folgen in M1 |
 | Logs? | Eine Zeile je Ereignis auf stdout, mit `LOG_FORMAT=json` als JSON mit `time`, `level`, `logger`, `request_id`, `trace_id`, `message`; eine Zeile je Anfrage ohne Query-Werte; nie ein Geheimnis |
 | Tracing? | `x-client-trace-id` und B3 (`X-B3-TraceId`, `b3`) werden übernommen, ungültige Werte verworfen. Die Trace-ID steht in jeder Logzeile der Anfrage (der Rauchtest in CI prüft es). Die Header für ausgehende Aufrufe sind vorbereitet (`outgoing_headers`), eingehängt werden sie mit den ersten ausgehenden Aufrufen in M1 (Sprachmodell, Abrufe). Ein Job trägt die Trace-ID der Anfrage, die ihn anlegte; der Worker schreibt seine Zeilen damit |
 | Alarme? | Regeln mit Tests folgen in M6 (volle Warteschlange, Lease-Verluste, Fehlerquote des Sprachmodells, Kontingente, Speicherplatz) |

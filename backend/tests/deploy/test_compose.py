@@ -136,6 +136,11 @@ def test_a_stopping_worker_may_finish_its_job_before_docker_kills_it() -> None:
     assert _seconds(worker["stop_grace_period"]) >= grace + 5
 
 
+def test_the_worker_is_checked_by_the_image_s_health_check() -> None:
+    # it answers /health on its internal port: switched off, a stuck worker would look healthy
+    assert SERVICES["worker"].get("healthcheck", {}).get("disable") is not True
+
+
 def test_the_api_is_found_healthy_within_seconds_of_its_start() -> None:
     # the image checks every 30 s, and the web server waits for the first healthy check;
     # Compose keeps the image's test and only asks more often

@@ -62,9 +62,10 @@ api:
 worker:
   replicas: 2
   command: [python, -m, app.jobs.worker]
-  # None yet: the worker serves no HTTP before M1 brings its internal port (/health, /metrics).
-  # Its lease protects the job, not the capacity: a stuck worker keeps running until then.
-  probes: {}
+  # /health answers only while the worker's loop turns: a stuck worker is restarted (its lease
+  # protects the job, not the capacity). No readiness: the worker sits behind no Service.
+  probes:
+    liveness: { port: 9000, path: /health, periodSeconds: 30, timeoutSeconds: 5, failureThreshold: 3 }
   terminationGracePeriodSeconds: 30   # JOB_SHUTDOWN_GRACE_S + 2 s to clean up + margin
   resources:
     requests: { cpu: 250m, memory: 384Mi }
@@ -144,4 +145,5 @@ networkPolicy:
 
 monitoring:
   serviceMonitor: { enabled: true, port: internal, path: /metrics }
+  podMonitor: { enabled: true, component: worker, port: 9000, path: /metrics }   # the worker has no Service
   prometheusRule: { enabled: false }   # alert rules come with M6

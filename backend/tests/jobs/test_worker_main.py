@@ -4,10 +4,12 @@ stops cleanly on SIGTERM; without its store, or told a kind it has no handler fo
 import os
 import queue
 import signal
+import socket
 import subprocess
 import sys
 import threading
 import time
+import urllib.request
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -97,6 +99,28 @@ def test_sigterm_stops_the_worker_cleanly(database_url: str) -> None:
         process.kill()
 
     assert code == 0
+
+
+def free_port() -> int:
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port: int = probe.getsockname()[1]
+        return port
+
+
+def test_the_running_worker_answers_its_liveness_probe_on_the_internal_port(database_url: str) -> None:
+    migrate(database_url)
+    port = free_port()
+    process = start_worker(database_url, INTERNAL_PORT=str(port))
+    try:
+        wait_until_it_takes(process)
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=5) as answer:
+            status = answer.status
+    finally:
+        process.kill()
+        process.wait(10)
+
+    assert status == 200
 
 
 def ended_with(process: subprocess.Popen[str]) -> tuple[int, str]:

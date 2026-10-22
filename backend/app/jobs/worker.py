@@ -21,12 +21,14 @@ import os
 import signal
 import socket
 import sys
+import time
 from collections.abc import Callable, Coroutine, Mapping
 from typing import Any
 
 import psycopg
 from psycopg_pool import AsyncConnectionPool, PoolTimeout
 
+from app.core.metrics import observe_job
 from app.core.tracing import continue_trace, end_trace
 from app.jobs.outcome import Ending, Outcome, PermanentError, Result, one_line, write_outcome
 from app.jobs.queue import Job, LeaseLost, claim, heartbeat, requeue_expired
@@ -103,6 +105,7 @@ class Worker:
             end_trace(trace)
 
     async def _run_traced(self, job: Job) -> None:
+        started = time.perf_counter()
         task: asyncio.Task[Result] = asyncio.create_task(self.handlers[job.kind](job))
         try:
             ending = await self._keep_alive(job, task)
@@ -114,10 +117,12 @@ class Worker:
             # but a failure on the way out is said, by its type - asyncio would log its words
             task.add_done_callback(lambda finished: _report_unwinding(job, finished))
             await asyncio.wait({task}, timeout=RELEASE_WAIT_S)
+            observe_job(job.kind, ending, time.perf_counter() - started)
             await self._write(job, None, ending)
             return
         outcomes: tuple[Outcome] = await asyncio.gather(task, return_exceptions=True)
         [outcome] = outcomes
+        observe_job(job.kind, ending or _how_it_ended(outcome), time.perf_counter() - started)
         if ending == "lost":
             log.warning("lost the lease of job %s (%s); another worker has it", job.id, job.kind)
             return
@@ -203,6 +208,15 @@ class Worker:
             log.info("handed %d job(s) with an expired lease back", handed_back)
 
 
+def _how_it_ended(outcome: Outcome) -> str:
+    """The outcome label of a run its handler ended (app/core/metrics.py)."""
+    if isinstance(outcome, PermanentError):
+        return "failed"
+    if isinstance(outcome, BaseException):
+        return "error"
+    return "done"
+
+
 def _report_unwinding(job: Job, handler: asyncio.Task[Any]) -> None:
     if handler.cancelled() or handler.exception() is None:
         return
@@ -221,6 +235,7 @@ async def _serve() -> int:
     from app.db.pool import create_pool
     from app.jobs.context import JobContext
     from app.jobs.handlers import make_handlers, select_handlers
+    from app.jobs.probes import probe_server, start_serving
 
     settings = Settings()
     stop = asyncio.Event()
@@ -244,8 +259,15 @@ async def _serve() -> int:
             poll_s=settings.job_poll_s,
             grace_s=settings.job_shutdown_grace_s,
         )
+        # /health and /metrics on the internal port, answering before the worker says it takes jobs
+        probes = probe_server(settings.host, settings.internal_port)
+        serving = await start_serving(probes)
         log.info("worker %s takes %s", owner, sorted(handlers) or "nothing")
-        await worker.run(stop)
+        try:
+            await worker.run(stop)
+        finally:
+            probes.should_exit = True
+            await serving
     finally:
         await pool.close()
     # a supervisor restarts a worker that ended with an error

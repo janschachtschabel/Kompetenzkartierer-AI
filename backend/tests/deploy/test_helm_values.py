@@ -55,6 +55,16 @@ def test_the_ingress_never_opens_the_internal_port() -> None:
     assert all(route["servicePort"] not in (9000, "internal") for route in ingress["routes"])
 
 
+def test_a_stuck_worker_is_restarted_by_its_liveness_probe() -> None:
+    # /health answers only while the worker's loop turns; the worker sits behind no Service, so
+    # it has no readiness probe
+    probes = VALUES["worker"]["probes"]
+
+    assert set(probes) == {"liveness"}
+    assert probes["liveness"]["port"] == 9000
+    assert probes["liveness"]["path"] == "/health"
+
+
 def test_the_worker_may_finish_its_job_before_kubernetes_kills_it() -> None:
     worker = VALUES["worker"]
     default = Settings.model_fields["job_shutdown_grace_s"].default

@@ -107,8 +107,7 @@ services:
   worker:
     <<: *app
     command: [python, -m, app.jobs.worker]
-    # the worker serves no /health; the image's check would mark it unhealthy forever
-    healthcheck: {disable: true}
+    # the image's check: the worker answers /health on its internal port while its loop turns
     deploy:
       replicas: 2
     # it ends with an error when its sweeper breaks, for a supervisor to start it again

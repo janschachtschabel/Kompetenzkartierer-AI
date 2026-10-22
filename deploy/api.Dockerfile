@@ -35,8 +35,8 @@ WORKDIR /srv/backend
 USER 10001
 # 8000 the public API, 9000 the internal port: /health, /ready, /metrics
 EXPOSE 8000 9000
-# A GET: /health answers HEAD with 405, and wget --spider sends HEAD. The worker serves no
-# /health; its Compose service and its Kubernetes deployment switch this check off.
+# A GET: /health answers HEAD with 405, and wget --spider sends HEAD. The worker answers
+# /health on the same internal port, so the check serves both commands.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD ["python", "-c", "import os, sys, urllib.request; port = int(os.environ.get('INTERNAL_PORT') or 9000); sys.exit(0 if urllib.request.urlopen(f'http://127.0.0.1:{port}/health', timeout=3).status == 200 else 1)"]
 CMD ["python", "-m", "app.serve"]
