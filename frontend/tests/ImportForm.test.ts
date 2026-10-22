@@ -123,6 +123,21 @@ describe("the import form", () => {
     expect(field.attributes("aria-describedby")).toContain("import-error");
   });
 
+  it.each(["title_invalid", "title_too_long"])("says a refusal of the title (%s) at the title field", async (code) => {
+    vi.spyOn(api, "importSource").mockRejectedValue(new ApiError("server", 422, code, "no"));
+    const wrapper = mount(ImportForm);
+    await wrapper.get("#import-url").setValue("https://example.org/a.pdf");
+    await wrapper.get("#import-title").setValue("Titel");
+
+    await submit(wrapper);
+
+    const title = wrapper.get("#import-title");
+    expect(title.attributes("aria-invalid")).toBe("true");
+    expect(title.attributes("aria-describedby")).toContain("import-error");
+    expect(wrapper.get("#import-url").attributes("aria-invalid")).toBeUndefined();
+    expect(wrapper.get("#import-error").text()).toContain(t(`refusals.${code}`));
+  });
+
   it("says the same refusal again, so a screen reader reads it again", async () => {
     const wrapper = mount(ImportForm);
 

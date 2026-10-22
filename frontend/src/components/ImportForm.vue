@@ -23,8 +23,24 @@ const title = ref("");
 const busy = ref(false);
 const status = ref("");
 const failure = ref<Notice | null>(null);
-// a refusal of the address itself, said at its field; any other below the form
-const urlRefused = ref(false);
+
+type Field = "url" | "title";
+// a refusal of one field, said at that field too; any other below the form alone
+const failedField = ref<Field | null>(null);
+const FIELD_OF_CODE: Readonly<Record<string, Field>> = {
+  url_invalid: "url",
+  title_invalid: "title",
+  title_too_long: "title",
+};
+
+/** The field's help, and the error where it is this field's. */
+function describedBy(field: Field): string {
+  return failedField.value === field ? `import-${field}-hint import-error` : `import-${field}-hint`;
+}
+
+function fieldOf(error: unknown): Field | null {
+  return error instanceof ApiError && error.code ? (FIELD_OF_CODE[error.code] ?? null) : null;
+}
 
 /**
  * Why the server would not fetch `candidate`, as a catalogue key; null for a web
@@ -44,21 +60,21 @@ function addressFault(candidate: string): string | null {
 }
 
 /** The refusal to show; the same one again is read out again (liveRegion.ts). */
-function refuse(notice: Notice, atUrl: boolean): void {
+function refuse(notice: Notice, field: Field | null): void {
   failure.value = { ...notice, text: sayAnew(failure.value?.text ?? "", notice.text) };
-  urlRefused.value = atUrl;
+  failedField.value = field;
   status.value = "";
 }
 
 async function onSubmit(): Promise<void> {
   if (busy.value) return; // the button stays focusable while busy, so it can be pressed again
   const address = url.value.trim();
-  if (!address) return refuse({ text: t("sources.import.errors.missing"), failed: true }, true);
+  if (!address) return refuse({ text: t("sources.import.errors.missing"), failed: true }, "url");
   const fault = addressFault(address);
-  if (fault) return refuse({ text: t(fault), failed: true }, true);
+  if (fault) return refuse({ text: t(fault), failed: true }, "url");
   busy.value = true;
   failure.value = null;
-  urlRefused.value = false;
+  failedField.value = null;
   status.value = t("sources.import.busy");
   try {
     const started = await importSource(address, title.value);
@@ -67,7 +83,7 @@ async function onSubmit(): Promise<void> {
     title.value = "";
     emit("imported", started, address);
   } catch (error) {
-    refuse(failureNotice(error, t("sources.import.failed")), error instanceof ApiError && error.code === "url_invalid");
+    refuse(failureNotice(error, t("sources.import.failed")), fieldOf(error));
   } finally {
     busy.value = false;
   }
@@ -87,8 +103,8 @@ async function onSubmit(): Promise<void> {
         :maxlength="MAX_URL_SIGNS"
         autocomplete="url"
         spellcheck="false"
-        :aria-invalid="urlRefused || undefined"
-        :aria-describedby="urlRefused ? 'import-url-hint import-error' : 'import-url-hint'"
+        :aria-invalid="failedField === 'url' || undefined"
+        :aria-describedby="describedBy('url')"
       />
       <p id="import-url-hint" class="field__hint">{{ t("sources.import.urlHint") }}</p>
     </div>
@@ -100,7 +116,8 @@ async function onSubmit(): Promise<void> {
         type="text"
         :maxlength="MAX_TITLE_SIGNS"
         autocomplete="off"
-        aria-describedby="import-title-hint"
+        :aria-invalid="failedField === 'title' || undefined"
+        :aria-describedby="describedBy('title')"
       />
       <p id="import-title-hint" class="field__hint">{{ t("sources.import.titleHint") }}</p>
     </div>
