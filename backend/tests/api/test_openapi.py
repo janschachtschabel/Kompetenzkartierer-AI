@@ -56,7 +56,14 @@ def test_info_names_the_service_its_version_and_what_visitors_may_do() -> None:
         "name": "Kompetenzkartierer-AI",
         "version": __version__,
         "public_access": "off",
+        "max_upload_mb": 50,
     }
+
+
+def test_info_names_the_upload_limit_so_the_page_checks_a_file_before_sending_it() -> None:
+    client = TestClient(create_app(make_settings(max_upload_mb=12)), base_url="http://testserver:8000")
+
+    assert client.get("/api/v1/info").json()["max_upload_mb"] == 12
 
 
 def test_info_says_when_visitors_may_look_things_up() -> None:
