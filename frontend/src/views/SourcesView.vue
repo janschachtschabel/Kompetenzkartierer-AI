@@ -255,8 +255,20 @@ onMounted(async () => {
     </section>
 
     <section class="sources__section" aria-labelledby="sources-register">
-      <!-- tabindex -1: where the focus goes when the notice's retry button goes with the notice -->
-      <h2 id="sources-register" tabindex="-1">{{ t("sources.register.heading") }}</h2>
+      <div class="sources__register-head">
+        <!-- tabindex -1: where the focus goes when the notice's retry button goes with the notice -->
+        <h2 id="sources-register" tabindex="-1">{{ t("sources.register.heading") }}</h2>
+        <!-- the fade alone is barely seen. Quiet: the filter's status says what the reading brings,
+             and a live region here would say each change of the filter. Not at the first reading,
+             which the loading state shows in the table's place -->
+        <LoadingState
+          class="sources__reading"
+          :class="{ 'sources__reading--idle': !(loading && page) }"
+          data-test="reading"
+          quiet
+          :label="t('sources.register.reading')"
+        />
+      </div>
       <RegisterFilter v-model="filters" />
       <!-- always in the page, so the first "nothing matches" is read out -->
       <p class="visually-hidden" role="status" data-test="filter-status">{{ filterNotice }}</p>
@@ -334,6 +346,26 @@ onMounted(async () => {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* The heading's space below it moves to the row, whose margin meets the filter's as the heading's
+   did; the sign beside the heading wraps under it on a narrow screen. */
+.sources__register-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  margin: 0 0 var(--space-1);
+}
+
+.sources__register-head h2,
+.sources__reading {
+  margin: 0;
+}
+
+/* Idle, the sign keeps its room: the table under it does not move when a reading starts. */
+.sources__reading--idle {
+  visibility: hidden;
 }
 
 /* Read again, what the register shows fades a little and the pointer says it is busy; the

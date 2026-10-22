@@ -29,6 +29,7 @@ describe("the axe harness", () => {
 describe("the states", () => {
   it.each([
     ["loading", () => mount(LoadingState)],
+    ["loading, quietly", () => mount(LoadingState, { props: { quiet: true } })],
     ["empty", () => mount(EmptyState, { props: { title: "Noch nichts da", body: "Leg den ersten an." } })],
     ["failed", () => mount(ErrorState, { props: { message: "Nicht geladen.", reason: "database away" } })],
     ["partly there", () => mount(PartialState, { props: { notice: { text: "Ein Teil fehlt." }, retry: true } })],

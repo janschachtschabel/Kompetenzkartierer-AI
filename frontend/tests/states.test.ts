@@ -15,8 +15,17 @@ describe("the loading state", () => {
     const own = mount(LoadingState, { props: { label: "Lehrpläne werden geladen …" } });
 
     expect(general.attributes("role")).toBe("status");
+    expect(general.attributes("aria-live")).toBe("polite");
     expect(general.text()).toBe(t("states.loading"));
     expect(own.text()).toBe("Lehrpläne werden geladen …");
+  });
+
+  it("says nothing aloud where it is quiet: what it marks is said elsewhere", () => {
+    const quiet = mount(LoadingState, { props: { label: "Wird neu gelesen …", quiet: true } });
+
+    expect(quiet.attributes("role")).toBeUndefined();
+    expect(quiet.attributes("aria-live")).toBeUndefined();
+    expect(quiet.text()).toBe("Wird neu gelesen …");
   });
 });
 

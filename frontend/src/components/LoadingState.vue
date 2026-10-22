@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { t } from "@/i18n/de";
 
-defineProps<{ label?: string }>();
+/**
+ * `quiet`: shown, not said - where a status of the page's own says what the waiting brings, and a
+ * live region here would say each time it starts again.
+ */
+defineProps<{ label?: string; quiet?: boolean }>();
 </script>
 
 <template>
-  <p class="loading" role="status" aria-live="polite">
+  <p class="loading" :role="quiet ? undefined : 'status'" :aria-live="quiet ? undefined : 'polite'">
     <span class="spinner" aria-hidden="true"></span>
     {{ label ?? t("states.loading") }}
   </p>

@@ -265,6 +265,52 @@ describe("the register page's filter", () => {
 
     expect(busy.map(({ body }) => body).join("")).toMatch(/opacity:\s*var\(--busy-opacity\)/);
   });
+
+  it("marks the register's heading while the register is read again, without a word aloud", async () => {
+    let answer: (value: api.SourcePage) => void = () => undefined;
+    vi.spyOn(api, "listSources")
+      .mockResolvedValueOnce(page([entry("a", "Lehrplan Physik")]))
+      .mockImplementation(() => new Promise((resolve) => (answer = resolve)));
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+    await flushPromises();
+    const sign = wrapper.get("[data-test=reading]");
+    expect(sign.classes()).toContain("sources__reading--idle");
+
+    await wrapper.get("input[type=checkbox]").setValue(true);
+    await flushPromises();
+
+    expect(sign.classes()).not.toContain("sources__reading--idle");
+    expect(sign.text()).toBe(t("sources.register.reading"));
+    // a live region would say each change of the filter: the filter's status says what came of it
+    expect(sign.attributes("role")).toBeUndefined();
+    expect(sign.attributes("aria-live")).toBeUndefined();
+    // beside the heading, not faded with the results it speaks of
+    expect(sign.element.closest(".sources__results")).toBeNull();
+    answer(page([entry("b", "Kandidat")]));
+    await flushPromises();
+    expect(sign.classes()).toContain("sources__reading--idle");
+  });
+
+  it("leaves the first reading to the loading state, the sign waiting hidden beside the heading", async () => {
+    vi.spyOn(api, "listSources").mockImplementation(() => new Promise(() => undefined));
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+    await flushPromises();
+
+    expect(wrapper.get("[data-test=reading]").classes()).toContain("sources__reading--idle");
+    expect(wrapper.find(".loading[role=status]").exists()).toBe(true);
+  });
+
+  it("hides the idle sign without taking its room: the table does not move when a reading starts", () => {
+    const source = readFileSync(join(SRC, "views", "SourcesView.vue"), "utf8");
+
+    const idle = cssRules(stylesOf(source))
+      .filter(({ selectors }) => selectors.includes(".sources__reading--idle"))
+      .map(({ body }) => body)
+      .join("");
+
+    expect(idle).toMatch(/visibility:\s*hidden/);
+    expect(idle).not.toMatch(/display:\s*none/);
+  });
 });
 
 describe("the register page after a reading that failed", () => {
