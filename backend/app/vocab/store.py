@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import psycopg
 from psycopg.types.json import Jsonb
 
-from app.db.pool import CONNECT_TIMEOUT_S
+from app.db.pool import CONNECTION_OPTIONS
 from app.vocab.loader import Vocabulary
 
 LOCK_KEY = 0x6B6B_612D_766F_6361  # "kka-voca"
@@ -24,7 +24,7 @@ class LoadResult:
 
 
 def load_vocabulary(conninfo: str, vocabulary: Vocabulary) -> LoadResult:
-    with psycopg.connect(conninfo, connect_timeout=CONNECT_TIMEOUT_S) as connection, connection.transaction():
+    with psycopg.connect(conninfo, **CONNECTION_OPTIONS) as connection, connection.transaction():
         connection.execute("SELECT pg_advisory_xact_lock(%s)", (LOCK_KEY,))
         latest = connection.execute(
             "SELECT id, content_hash FROM vocab_release ORDER BY id DESC LIMIT 1"

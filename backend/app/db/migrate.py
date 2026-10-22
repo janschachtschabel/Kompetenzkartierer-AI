@@ -19,12 +19,23 @@ from importlib.resources.abc import Traversable
 
 import psycopg
 
+from app.db.pool import CONNECTION_OPTIONS
+
 log = logging.getLogger("app.db.migrate")  # also when run as __main__
 
 MIGRATIONS: Traversable = files("app.db") / "migrations"
 # Any fixed number serves; all runs against one database must agree on it
 LOCK_KEY = 0x6B6B_612D_6D69_6772  # "kka-migr"
 _FILENAME = re.compile(r"(\d{4})_[a-z0-9_]+\.sql")
+# Waiting behind a long transaction, an ALTER would block all traffic on its table; better
+# the migration fails and the job runs again
+LOCK_TIMEOUT = "10s"
+# A file that controls the transaction itself would commit the runner's halfway
+_TRANSACTION_CONTROL = frozenset(
+    {"begin", "commit", "rollback", "end", "start", "savepoint", "release", "abort"}
+)
+# What is no statement: comments, quoted text and dollar-quoted bodies (BEGIN ... END in plpgsql)
+_NOT_STATEMENTS = re.compile(r"--[^\n]*|/\*.*?\*/|'(?:[^']|'')*'|(\$[A-Za-z_]*\$).*?\1", re.DOTALL)
 _BOOKKEEPING = """
 CREATE TABLE IF NOT EXISTS schema_migration (
     version integer PRIMARY KEY CHECK (version > 0),
@@ -61,7 +72,11 @@ def load_migrations(directory: Traversable = MIGRATIONS) -> list[Migration]:
             raise MigrationError(f"version {version} twice: {migrations[version].filename}, {entry.name}")
         content = entry.read_bytes()
         checksum = hashlib.sha256(content).hexdigest()
-        migrations[version] = Migration(version, entry.name, content.decode("utf-8"), checksum)
+        sql = content.decode("utf-8")
+        control = _transaction_control(sql)
+        if control is not None:
+            raise MigrationError(f"{entry.name}: '{control}' - the runner gives each file its transaction")
+        migrations[version] = Migration(version, entry.name, sql, checksum)
     ordered = [migrations[version] for version in sorted(migrations)]
     for expected, migration in enumerate(ordered, start=1):
         if migration.version != expected:
@@ -69,12 +84,23 @@ def load_migrations(directory: Traversable = MIGRATIONS) -> list[Migration]:
     return ordered
 
 
+def _transaction_control(sql: str) -> str | None:
+    """The first statement of ``sql`` that controls the transaction, or ``None``."""
+    for statement in _NOT_STATEMENTS.sub(" ", sql).split(";"):
+        words = statement.split()
+        if words and words[0].lower() in _TRANSACTION_CONTROL:
+            return " ".join(words[:2])
+    return None
+
+
 def migrate(conninfo: str, directory: Traversable = MIGRATIONS) -> list[int]:
     """Apply the pending migrations; the versions applied by this run, in order."""
     migrations = load_migrations(directory)
-    with psycopg.connect(conninfo, autocommit=True) as connection:
-        connection.execute("SELECT pg_advisory_lock(%s)", (LOCK_KEY,))
+    with psycopg.connect(conninfo, autocommit=True, **CONNECTION_OPTIONS) as connection:
+        _take_lock(connection)
         try:
+            # Set after the advisory lock: its own wait is bounded by nothing but the other run
+            connection.execute("SELECT set_config('lock_timeout', %s, false)", (LOCK_TIMEOUT,))
             connection.execute(_BOOKKEEPING)
             rows = connection.execute("SELECT version, checksum FROM schema_migration").fetchall()
             applied = {int(version): str(checksum) for version, checksum in rows}
@@ -86,7 +112,24 @@ def migrate(conninfo: str, directory: Traversable = MIGRATIONS) -> list[int]:
                     done.append(migration.version)
             return done
         finally:
-            connection.execute("SELECT pg_advisory_unlock(%s)", (LOCK_KEY,))
+            _release_lock(connection)
+
+
+def _take_lock(connection: psycopg.Connection) -> None:
+    row = connection.execute("SELECT pg_try_advisory_lock(%s)", (LOCK_KEY,)).fetchone()
+    if not (row and row[0]):
+        log.info("waiting for the migration lock: another run is migrating")
+        connection.execute("SELECT pg_advisory_lock(%s)", (LOCK_KEY,))
+
+
+def _release_lock(connection: psycopg.Connection) -> None:
+    """The session lock ends with its connection anyway; a lost one must not hide the cause."""
+    if connection.closed:
+        return
+    try:
+        connection.execute("SELECT pg_advisory_unlock(%s)", (LOCK_KEY,))
+    except psycopg.Error:
+        log.warning("the migration lock ends with the connection")
 
 
 def _check(applied: dict[int, str], migrations: list[Migration]) -> None:
@@ -132,8 +175,9 @@ def main() -> int:
     configure_logging(settings.log_level, settings.log_format, stream=sys.stderr)
     try:
         applied = migrate(settings.database_url.get_secret_value())
-    except MigrationError as error:
-        log.error("migration stopped: %s", error)
+    except (MigrationError, psycopg.Error) as error:
+        # one line: a connection error spans several, and a traceback breaks the JSON log
+        log.error("migration stopped: %s", " ".join(str(error).split()))
         return 1
     log.info("%d migration(s) applied", len(applied))
     return 0

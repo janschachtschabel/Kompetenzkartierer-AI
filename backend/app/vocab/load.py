@@ -24,7 +24,7 @@ def main() -> int:
         vocabulary = read_vocabulary(settings.ontology_dir)
         result = load_vocabulary(settings.database_url.get_secret_value(), vocabulary)
     except (VocabularyError, OSError, psycopg.Error) as error:
-        log.error("vocabulary not loaded: %s", error)
+        log.error("vocabulary not loaded: %s", " ".join(str(error).split()))
         return 1
     if result.changed:
         counts = (result.release_id, len(vocabulary.schemes), len(vocabulary.concepts))
