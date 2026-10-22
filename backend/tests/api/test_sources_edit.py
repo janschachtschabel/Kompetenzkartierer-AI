@@ -286,6 +286,17 @@ def test_an_owner_does_not_set_the_terms_of_use(
     assert row(migrated, world["own"]) == before
 
 
+def test_an_owner_clearing_the_rights_status_is_refused_as_not_theirs_to_set(
+    client: TestClient, migrated: str, world: dict[str, Any]
+) -> None:
+    # the terms are the editors' alone, null among them: 403 before any word on the value
+    answer = client.patch(
+        f"/api/v1/sources/{world['own']}", headers=world["owner"], json={"rights_status": None}
+    )
+
+    assert answer.status_code == 403
+
+
 def test_an_admin_keeps_the_register_as_the_editors_do(
     client: TestClient, migrated: str, world: dict[str, Any]
 ) -> None:

@@ -8,6 +8,7 @@ download in pieces, never to be shown in the browser.
 """
 
 import logging
+import re
 from datetime import datetime
 from typing import Annotated, Any, Literal
 from urllib.parse import quote
@@ -58,7 +59,9 @@ EvidenceText = Annotated[
 
 
 def _shown(value: object) -> object:
-    return visible_only(value) if isinstance(value, str) else value
+    # a tab or a line break first becomes a space: visible_only drops it as a control sign, and a
+    # term from a table's cell lost the space between its words
+    return visible_only(re.sub(r"\s", " ", value)) if isinstance(value, str) else value
 
 
 # A search term is cleaned, not refused, as a file's name is: pasted from a document it may hold
@@ -188,9 +191,10 @@ async def edit_register_entry(
         raise Refusal(422, "nothing_to_change", "The change names no field.")
     if "title" in given and given["title"] is None:
         raise Refusal(422, "title_missing", "An entry keeps a title.")
-    if "rights_status" in given and given["rights_status"] is None:
-        raise Refusal(422, "rights_status_missing", "An entry keeps a rights status, unklar at least.")
     editor = bool(who.roles & EDITORS)
+    # the terms are the editors' alone, a null among them: 403 comes before any word on the value
+    if editor and "rights_status" in given and given["rights_status"] is None:
+        raise Refusal(422, "rights_status_missing", "An entry keeps a rights status, unklar at least.")
     async with request.app.state.pool.connection() as connection, connection.transaction():
         # locked: two changes at once would each check the terms against the entry before either
         found = await get_source(connection, _reader(who), source_id, for_update=True)

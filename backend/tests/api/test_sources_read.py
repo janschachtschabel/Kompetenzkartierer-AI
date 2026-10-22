@@ -125,6 +125,9 @@ def test_an_admin_sees_every_entry_as_the_editors_do(
         ({"q": "Physik\N{RIGHT-TO-LEFT OVERRIDE}"}, ["Kerncurriculum Physik Bayern", "Lehrplan Physik"]),
         ({"q": "Lehrplan\N{NO-BREAK SPACE}Physik"}, ["Lehrplan Physik"]),
         ({"q": "Lehr\N{SOFT HYPHEN}plan\N{ZERO WIDTH JOINER} Physik"}, ["Lehrplan Physik"]),
+        # a term from a table's cell or across a line: its break is a space, not nothing
+        ({"q": "Lehrplan\tPhysik"}, ["Lehrplan Physik"]),
+        ({"q": "Lehrplan\nPhysik"}, ["Lehrplan Physik"]),
     ],
 )
 def test_the_register_is_filtered(
