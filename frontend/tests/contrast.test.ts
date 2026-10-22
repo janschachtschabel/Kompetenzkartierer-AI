@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { SRC, scanned, sourceFiles } from "./sources";
+import { SRC, VUE_ANCHORS, formControlRules, scanned, sourceFiles } from "./sources";
 
 /**
  * WCAG 2.2 AA contrast, checked against the design tokens rather than against a
@@ -41,7 +41,9 @@ function declarations(block: string): Record<string, string> {
 
 function themes(): { light: Record<string, string>; dark: Record<string, string> } {
   // The first `:root {` at a line start up to its first `}`: a `}` in a comment
-  // inside the block would cut it short, and the defined-token checks below fail.
+  // inside a block would cut it short. In the light block the defined-token checks
+  // below then fail; the dark block inherits what it does not restate, so its
+  // completeness has a test of its own ("gives every colour a dark value").
   const lightBlock = /^:root \{([\s\S]*?)\}/m.exec(STYLESHEET);
   const darkBlock = /@media \(prefers-color-scheme: dark\) \{\s*:root \{([\s\S]*?)\}/.exec(STYLESHEET);
   expect(lightBlock, "style.css has a :root token block").not.toBeNull();
@@ -71,6 +73,11 @@ const PAIRS: [string, string, string, number][] = [
   ["control outline on a card", "--control-border", "--surface", 3],
   ["control outline on the page", "--control-border", "--bg", 3],
   ["selected text", "--text", "--accent-wash", 4.5],
+  ["error text on the page", "--danger", "--bg", 4.5],
+  ["text on a hovered quiet button", "--text", "--surface-subtle", 4.5],
+  ["destructive text on a hovered quiet button", "--danger", "--surface-subtle", 4.5],
+  ["warning text on a card", "--warning", "--surface", 4.5],
+  ["warning text on the page", "--warning", "--bg", 4.5],
   // A status pill brings its own background, so what matters is its label
   // against that. The pill is no control and its meaning is in the word
   // (SC 1.4.1), so 1.4.11 does not apply to its edge.
@@ -78,10 +85,13 @@ const PAIRS: [string, string, string, number][] = [
   ["success pill label", "--status-success-ink", "--status-success-bg", 4.5],
   ["error pill label", "--status-error-ink", "--status-error-bg", 4.5],
   ["warning pill label", "--status-warning-ink", "--status-warning-bg", 4.5],
+  ["neutral pill label", "--text-muted", "--surface-subtle", 4.5],
   // A page notice wears the info tint and may hold a link, a button and a failure.
   ["link text in a notice", "--accent", "--status-info-bg", 4.5],
   ["primary button against a notice", "--accent", "--status-info-bg", 3],
   ["a failure in a notice", "--status-error-ink", "--status-info-bg", 4.5],
+  ["a quiet button's outline in a notice", "--control-border", "--status-info-bg", 3],
+  ["a focus ring in a notice", "--focus", "--status-info-bg", 3],
 ];
 
 describe.each(["light", "dark"] as const)("%s theme contrast", (theme) => {
@@ -94,7 +104,7 @@ describe.each(["light", "dark"] as const)("%s theme contrast", (theme) => {
     expect(front, `${foreground} is defined`).toMatch(/^#[0-9a-f]{6}$/i);
     expect(back, `${background} is defined`).toMatch(/^#[0-9a-f]{6}$/i);
 
-    expect(Number(contrast(front, back).toFixed(2))).toBeGreaterThanOrEqual(minimum);
+    expect(contrast(front, back)).toBeGreaterThanOrEqual(minimum);
   });
 });
 
@@ -105,16 +115,43 @@ describe.each(["light", "dark"] as const)("%s theme contrast", (theme) => {
  */
 it("draws no form control's outline with the decorative border token", () => {
   const files = sourceFiles(SRC, /\.vue$/);
-  scanned(files, "App.vue");
+  scanned(files, ...VUE_ANCHORS);
 
-  const offenders = files.flatMap((path) =>
-    [...readFileSync(path, "utf8").matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-      .filter(
-        ([, selector, body]) =>
-          /\b(input|select|textarea)\b/.test(selector) && /border[\w-]*\s*:[^;]*var\(--border\)/.test(body),
-      )
-      .map(([, selector]) => `${path}: ${selector.trim()}`),
-  );
+  const decorative = /border[\w-]*\s*:[^;]*var\(--border\)/;
+  const offenders = files.flatMap((path) => {
+    const source = readFileSync(path, "utf8");
+    const byElement = [...source.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter(([, selector, body]) => /\b(input|select|textarea)\b/.test(selector) && decorative.test(body))
+      .map(([, selector]) => `${path}: ${selector.trim()}`);
+    // and by a class the template puts on the control
+    const byClass = formControlRules(source)
+      .filter((body) => decorative.test(body))
+      .map(() => `${path}: a form control's class`);
+    return [...byElement, ...byClass];
+  });
 
   expect(offenders).toEqual([]);
+  expect(
+    formControlRules('<input class="token" />\n<style>\n.token {\n  border: 1px solid var(--border);\n}\n</style>').some(
+      (body) => decorative.test(body),
+    ),
+    "the class reader sees an input's class",
+  ).toBe(true);
+});
+
+
+/**
+ * The dark theme inherits every token it does not restate, so a colour given
+ * only a light value - or a dark block cut short by a `}` in a comment - would
+ * be checked in the dark theme with its light value, and pass.
+ */
+it("gives every colour a dark value", () => {
+  const lightBlock = /^:root \{([\s\S]*?)\}/m.exec(STYLESHEET)?.[1] ?? "";
+  const darkBlock = /@media \(prefers-color-scheme: dark\) \{\s*:root \{([\s\S]*?)\}/.exec(STYLESHEET)?.[1] ?? "";
+  const light = declarations(lightBlock);
+  const dark = declarations(darkBlock);
+  const colours = Object.keys(light).filter((name) => /^#[0-9a-f]{6}$/i.test(light[name]));
+  expect(colours.length, "the colour tokens were read").toBeGreaterThan(15);
+
+  expect(colours.filter((name) => !(name in dark))).toEqual([]);
 });

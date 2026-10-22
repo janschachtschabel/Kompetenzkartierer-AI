@@ -3,7 +3,7 @@ import { basename, join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { SRC, scanned, sourceFiles } from "./sources";
+import { ANCHORS, SRC, scanned, sourceFiles } from "./sources";
 
 /**
  * The layer below `shared-styles.test.ts`: that one keeps a shared *rule* from
@@ -18,12 +18,36 @@ import { SRC, scanned, sourceFiles } from "./sources";
 const STYLESHEET = readFileSync(join(SRC, "style.css"), "utf8");
 
 it("scans the component sources", () => {
-  scanned(sourceFiles(), "App.vue", "main.ts");
+  scanned(sourceFiles(), ...ANCHORS);
 });
 
-// A colour written as a literal in a declaration: a hex value or rgb()/rgba().
-const COLOUR_LITERAL =
-  /^[ \t]*(?:background|color|border[\w-]*|fill|stroke|box-shadow)[^;:]*:[^;]*?(#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\))/gm;
+// A colour written as a value: hex, a colour function, a colour's name.
+const COLOUR_VALUE =
+  /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color-mix|color)\(|\b(?:white|black|red|green|blue|yellow|orange|purple|gr[ae]y|silver|maroon|navy|teal|olive|lime|aqua|fuchsia|pink|brown)\b/i;
+// A declaration of a property that carries colour - or of a custom property, whose value a
+// component would hand on - wherever it starts: a line, after `{`, after `;`.
+const COLOUR_DECLARATION =
+  /(?:^|[{;])\s*((?:[\w-]*color|background[\w-]*|border[\w-]*|outline[\w-]*|fill|stroke|box-shadow|text-shadow|--[\w-]+)\s*:([^;{}]*))/gim;
+// In a template: a style attribute, and SVG's fill and stroke.
+const COLOUR_ATTRIBUTE = /\s(?:style|fill|stroke)="([^"]*)"/g;
+
+/** The colour literals in `source`, CSS or template. */
+function colourLiterals(source: string): string[] {
+  const declared = [...source.matchAll(COLOUR_DECLARATION)]
+    .filter(([, , value]) => COLOUR_VALUE.test(value))
+    .map(([, declaration]) => declaration.trim());
+  const attributed = [...source.matchAll(COLOUR_ATTRIBUTE)]
+    .filter(([, value]) => COLOUR_VALUE.test(value))
+    .map(([attribute]) => attribute.trim());
+  return [...declared, ...attributed];
+}
+
+/** Widths of 40rem or 640px and more: a page's, which is a token. */
+function pageWidths(source: string): string[] {
+  return [...source.matchAll(/max-(?:width|inline-size):\s*([\d.]+)(rem|px)/g)]
+    .filter(([, value, unit]) => Number(value) >= (unit === "rem" ? 40 : 640))
+    .map(([match]) => match);
+}
 
 describe("page width", () => {
   it("is a token, and so is the narrower one prose reads at", () => {
@@ -38,9 +62,7 @@ describe("page width", () => {
    */
   it("is never written as a number in a component", () => {
     const offenders = sourceFiles().flatMap((path) =>
-      [...readFileSync(path, "utf8").matchAll(/max-width:\s*([\d.]+)rem/g)]
-        .filter(([, value]) => Number(value) >= 40)
-        .map(([match]) => `${path}: ${match}`),
+      pageWidths(readFileSync(path, "utf8")).map((width) => `${path}: ${width}`),
     );
 
     expect(offenders).toEqual([]);
@@ -68,19 +90,18 @@ describe("colour", () => {
    * token, and jsdom computes no layout for axe to find it either.
    */
   it("recognises the literals it is looking for", () => {
-    const found = (css: string) => [...css.matchAll(COLOUR_LITERAL)].map(([, value]) => value);
-    expect(found("  color: #fff;")).toEqual(["#fff"]);
-    expect(found("  border-color: #1a2b3c;")).toEqual(["#1a2b3c"]);
-    expect(found("  color: var(--danger, #f08080);")).toEqual(["#f08080"]);
-    expect(found("  background: rgba(0, 0, 0, 0.5);")).toEqual(["rgba(0, 0, 0, 0.5)"]);
-    expect(found("  color: var(--text);")).toEqual([]);
+    expect(colourLiterals("  color: #fff;")).toEqual(["color: #fff"]);
+    expect(colourLiterals("  border-color: #1a2b3c;")).toEqual(["border-color: #1a2b3c"]);
+    expect(colourLiterals("  color: var(--danger, #f08080);")).toHaveLength(1);
+    expect(colourLiterals("  background: rgba(0, 0, 0, 0.5);")).toHaveLength(1);
+    expect(colourLiterals("  color: var(--text);")).toEqual([]);
   });
 
   it("is never written as a literal in a component", () => {
     // A colour named in style.css can be checked, changed and themed; one typed
     // into a component can be none of those.
     const offenders = sourceFiles().flatMap((path) =>
-      [...readFileSync(path, "utf8").matchAll(COLOUR_LITERAL)].map(([, value]) => `${path}: ${value}`),
+      colourLiterals(readFileSync(path, "utf8")).map((literal) => `${path}: ${literal}`),
     );
 
     expect(offenders).toEqual([]);
@@ -160,5 +181,39 @@ describe("colour scheme", () => {
     expect(light).toMatch(/color-scheme:\s*light;/);
     expect(dark).toMatch(/color-scheme:\s*dark;/);
     expect(head).toMatch(/<meta name="color-scheme" content="light dark"/);
+  });
+});
+
+
+describe("a colour the token check must see", () => {
+  it.each([
+    "  color: white;",
+    "  outline: 2px solid #fff;",
+    "  text-decoration-color: #f00;",
+    "  color: hsl(0 0% 100%);",
+    "  background: oklch(70% 0.1 200);",
+    ".x { color: #fff; }",
+    '<p style="color:#fff">',
+    '<path fill="#000" />',
+    "  --ink: #123456;",
+  ])("is found: %s", (source) => {
+    expect(colourLiterals(source)).not.toEqual([]);
+  });
+
+  it.each(["  color: var(--text);", "  border: 1px solid transparent;", "  stroke: currentColor;", "  white-space: nowrap;"])(
+    "is not invented: %s",
+    (source) => {
+      expect(colourLiterals(source)).toEqual([]);
+    },
+  );
+});
+
+describe("a page width the width check must see", () => {
+  it.each(["max-width: 60rem;", "max-inline-size: 48rem;", "max-width: 1200px;"])("is found: %s", (source) => {
+    expect(pageWidths(source)).not.toEqual([]);
+  });
+
+  it.each(["max-width: 36rem;", "max-inline-size: 26rem;", "max-width: 320px;"])("is a component's own: %s", (source) => {
+    expect(pageWidths(source)).toEqual([]);
   });
 });

@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import AppIcon from "@/components/AppIcon.vue";
 
-import { SRC, scanned, sourceFiles } from "./sources";
+import { SRC, VUE_ANCHORS, scanned, sourceFiles } from "./sources";
 
 /**
  * Icons are drawn, in one file, at one weight - not emoji, whose glyph, stroke
@@ -24,16 +24,17 @@ const components = sourceFiles(SRC, /\.vue$/);
  * route names collide with icon names. A fourth pattern shows up here as an
  * unused glyph rather than as silence.
  */
+function namesAskedIn(source: string): string[] {
+  const literal = [...source.matchAll(/<AppIcon\b[^>]*\sname="([\w-]+)"/g)].map(([, name]) => name);
+  const bound = [...source.matchAll(/<AppIcon\b[^>]*\s:name="([^"]*)"/g)].flatMap(([, expr]) =>
+    [...expr.matchAll(/'([\w-]+)'/g)].map(([, name]) => name),
+  );
+  const table = [...source.matchAll(/\bicon:\s*"([\w-]+)"/g)].map(([, name]) => name);
+  return [...literal, ...bound, ...table];
+}
+
 function iconUses(): { path: string; name: string }[] {
-  return sourceFiles(SRC).flatMap((path) => {
-    const source = readFileSync(path, "utf8");
-    const literal = [...source.matchAll(/<AppIcon\b[^>]*\sname="([\w-]+)"/g)].map(([, name]) => name);
-    const bound = [...source.matchAll(/<AppIcon\b[^>]*\s:name="([^"]*)"/g)].flatMap(([, expr]) =>
-      [...expr.matchAll(/'([\w-]+)'/g)].map(([, name]) => name),
-    );
-    const table = [...source.matchAll(/\bicon:\s*"([\w-]+)"/g)].map(([, name]) => name);
-    return [...literal, ...bound, ...table].map((name) => ({ path, name }));
-  });
+  return sourceFiles(SRC).flatMap((path) => namesAskedIn(readFileSync(path, "utf8")).map((name) => ({ path, name })));
 }
 
 function templateOf(source: string): string {
@@ -49,7 +50,7 @@ function drawnNames(): string[] {
 }
 
 it("scans the component sources", () => {
-  scanned(components, "App.vue", "ErrorState.vue");
+  scanned(components, ...VUE_ANCHORS);
 });
 
 describe("iconography", () => {
@@ -73,14 +74,7 @@ describe("iconography", () => {
       "<AppIcon :name=\"open ? 'close' : 'menu'\" />",
       '{ name: "start", icon: "map" }',
     ].join("\n");
-    const found = [
-      ...[...sample.matchAll(/<AppIcon\b[^>]*\sname="([\w-]+)"/g)].map(([, name]) => name),
-      ...[...sample.matchAll(/<AppIcon\b[^>]*\s:name="([^"]*)"/g)].flatMap(([, expr]) =>
-        [...expr.matchAll(/'([\w-]+)'/g)].map(([, name]) => name),
-      ),
-      ...[...sample.matchAll(/\bicon:\s*"([\w-]+)"/g)].map(([, name]) => name),
-    ];
-    expect(found).toEqual(["warning", "close", "menu", "map"]);
+    expect(namesAskedIn(sample)).toEqual(["warning", "close", "menu", "map"]);
   });
 
   it("draws every name the app asks for", () => {

@@ -145,7 +145,7 @@ export function translate(catalogue: Catalogue, key: string, params?: MessagePar
   if (typeof value !== "string") return key;
   if (!params) return value;
   return applyPlurals(value, params).replace(/\{(\w+)\}/g, (match, name: string) =>
-    name in params ? display(params[name]) : match,
+    Object.hasOwn(params, name) ? display(params[name]) : match,
   );
 }
 

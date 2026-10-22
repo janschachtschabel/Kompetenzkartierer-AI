@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { SRC, scanned, sourceFiles } from "./sources";
+import { SRC, VUE_ANCHORS, scanned, sourceFiles } from "./sources";
 
 /** The `<a target="_blank">` tags in `template` that lack rel="noopener noreferrer". */
 function unguarded(template: string): string[] {
@@ -24,7 +24,7 @@ describe("links that open a new tab", () => {
 
   it("all carry rel=noopener noreferrer", () => {
     const files = sourceFiles(SRC, /\.vue$/);
-    scanned(files, "App.vue");
+    scanned(files, ...VUE_ANCHORS);
 
     const offenders = files.flatMap((file) => unguarded(readFileSync(file, "utf8")).map((tag) => `${file}: ${tag}`));
 

@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { SRC, scanned, sourceFiles } from "./sources";
+import { ANCHORS, SRC, formControlRules, scanned, sourceFiles } from "./sources";
 
 /**
  * Shared rules live once, in style.css. In the old app every one of them had
@@ -16,7 +16,7 @@ import { SRC, scanned, sourceFiles } from "./sources";
 const STYLESHEET = readFileSync(join(SRC, "style.css"), "utf8");
 
 it("scans the component sources", () => {
-  scanned(sourceFiles(), "App.vue", "main.ts");
+  scanned(sourceFiles(), ...ANCHORS);
 });
 
 describe("visually-hidden", () => {
@@ -46,17 +46,6 @@ const SHARED_BASE = [".card", ".btn", ".field"];
 
 /** What `input, select, textarea` in style.css already applies to every control. */
 const CONTROL_SHELL = ["border: 1px solid var(--control-border)", "background: var(--surface)", "color: var(--text)"];
-
-/** The style rules for the classes a file puts on an `<input>`, `<select>` or `<textarea>`, read from its template. */
-function formControlRules(source: string): string[] {
-  const classes = new Set<string>();
-  for (const [, attributes] of source.matchAll(/<(?:input|select|textarea)\s([^>]*)>/g)) {
-    for (const name of /class="([^"]*)"/.exec(attributes)?.[1].split(/\s+/) ?? []) if (name) classes.add(name);
-  }
-  if (classes.size === 0) return [];
-  const rule = new RegExp(`^[ \\t]*\\.(?:${[...classes].join("|")})[^{]*\\{([^}]*)\\}`, "gm");
-  return [...source.matchAll(rule)].map((match) => match[1]);
-}
 
 function declarationsOf(body: string): string[] {
   return body

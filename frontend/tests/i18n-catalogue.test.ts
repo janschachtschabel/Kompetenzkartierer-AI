@@ -3,9 +3,9 @@ import { sep } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { messages } from "@/i18n/de";
+import { messages, translate } from "@/i18n/de";
 
-import { scanned, sourceFiles } from "./sources";
+import { ANCHORS, scanned, sourceFiles } from "./sources";
 
 /** Every source file except the catalogue itself. */
 const files = sourceFiles().filter((path) => !path.endsWith(`i18n${sep}de.ts`));
@@ -23,9 +23,10 @@ function textsOf(node: object): string[] {
   );
 }
 
+const code = files.map((path) => readFileSync(path, "utf8")).join("\n");
+
 /** The catalogue holds what the pages say, and says it one way. */
 describe("the message catalogue", () => {
-  const code = files.map((path) => readFileSync(path, "utf8")).join("\n");
   const quoted = new Set([...code.matchAll(/["'`]([A-Za-z_][\w.]*)["'`]/g)].map((m) => m[1]));
   // A whole group is in use where the code builds its keys: t(`group.${x}`),
   // messages.group[x]. Only a path with a dot counts as a group - a group's bare
@@ -37,7 +38,7 @@ describe("the message catalogue", () => {
   ]);
 
   it("reads the components and a catalogue that holds something", () => {
-    scanned(files, "main.ts", "App.vue");
+    scanned(files, ...ANCHORS);
     expect(keysOf(messages).length).toBeGreaterThan(0);
   });
 
@@ -64,5 +65,15 @@ describe("the message catalogue", () => {
     );
 
     expect(formal).toEqual([]);
+  });
+});
+
+
+describe("a key the code asks for", () => {
+  it("is in the catalogue: a typo shows the raw key on the one path nobody looked at", () => {
+    const asked = [...code.matchAll(/\bt\(\s*["'`]([\w.]+)["'`]/g)].map(([, key]) => key);
+    expect(asked.length, "the code asks for keys").toBeGreaterThan(10);
+
+    expect(asked.filter((key) => translate(messages, key) === key)).toEqual([]);
   });
 });

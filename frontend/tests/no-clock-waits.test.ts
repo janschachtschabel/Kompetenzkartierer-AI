@@ -4,8 +4,11 @@ import { expect, it } from "vitest";
 
 import { TESTS, scanned, sourceFiles } from "./sources";
 
-// Put together so that this file does not match itself.
-const SLEEP = new RegExp(["new Promise\\(\\(\\w+\\) => ", "setTimeout\\("].join(""));
+// Put together so that this file does not match itself: a parameter in brackets or
+// not, an arrow to a body or a block, across lines.
+const SLEEP = new RegExp(
+  ["new Promise\\(\\s*(?:\\(\\s*\\w+\\s*\\)|\\w+)\\s*=>\\s*\\{?\\s*", "setTimeout\\("].join(""),
+);
 
 /**
  * A test waits on the work, not on the clock. In the old app real sleeps of 20 to
@@ -22,4 +25,13 @@ it("waits on the work, not on the clock", () => {
   scanned(files, "no-clock-waits.test.ts", "contrast.test.ts");
 
   expect(files.filter((path) => SLEEP.test(readFileSync(path, "utf8")))).toEqual([]);
+});
+
+
+it.each([
+  "await new Promise(r => " + "setTimeout(r, 50));",
+  "await new Promise((resolve) => {\n  " + "setTimeout(resolve, 20);\n});",
+  "await new Promise( ( done ) =>\n  " + "setTimeout(done, 5));",
+])("recognises a sleep however it is spelt: %s", (source) => {
+  expect(SLEEP.test(source)).toBe(true);
 });

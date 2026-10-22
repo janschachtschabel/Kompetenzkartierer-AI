@@ -5,12 +5,18 @@ import { describe, expect, it } from "vitest";
 
 import { messages, t, translate } from "@/i18n/de";
 
+/** `{x} Noun` without a plural form for x: "in {count} Sekunden" reads wrong for one. */
+function countsWithoutPlural(text: string): string[] {
+  return [...text.matchAll(/\{(\w+)\} (?!\{\1\|)[A-ZÄÖÜ][a-zäöüß]+/g)].map(([match]) => match);
+}
+
 const SAMPLE = {
   found: "{total} {total|Abschnitt|Abschnitte} erkannt",
   summary: "{imported} {imported|Element|Elemente} übernommen, {linked} {linked|Zusatzkante|Zusatzkanten}",
   tokens: "{tokens} Token verbraucht",
   share: "Anteil {part}",
   nested: { greeting: "Hallo {name}" },
+  inherited: "Wert {constructor}",
 } as const;
 
 describe("translate() with a count", () => {
@@ -82,5 +88,23 @@ describe("the message catalogue", () => {
     const offenders = [...source.matchAll(/[A-Za-zÄÖÜäöüß]+\((?:e|n|en|s)\)/g)].map((m) => m[0]);
 
     expect(offenders).toEqual([]);
+  });
+});
+
+
+describe("a placeholder", () => {
+  it("is filled from the values given, never from what every object inherits", () => {
+    expect(translate(SAMPLE, "inherited", {})).toBe("Wert {constructor}");
+  });
+});
+
+describe("a count before its noun", () => {
+  it("is recognised without a plural form, and not with one", () => {
+    expect(countsWithoutPlural("Versuch es in {count} Sekunden noch einmal.")).toEqual(["{count} Sekunden"]);
+    expect(countsWithoutPlural("in {count} {count|Sekunde|Sekunden}")).toEqual([]);
+  });
+
+  it("has a plural form throughout the catalogue", () => {
+    expect(countsWithoutPlural(JSON.stringify(messages))).toEqual([]);
   });
 });

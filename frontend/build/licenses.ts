@@ -3,7 +3,7 @@
 //
 // Vue and vue-router are MIT, the Roboto fonts OFL: both ask that their notice
 // travel with every copy, and the minified bundle keeps none of the banners
-// (audit 2026-09-26, E-65). The packages are read off the build itself -- every
+// (old app, audit 2026-09-26, E-65). The packages are read off the build itself -- every
 // module under node_modules it loaded, the fonts' stylesheets among them -- so a
 // new dependency is named without anyone listing it.
 import { readdirSync, readFileSync } from "node:fs";

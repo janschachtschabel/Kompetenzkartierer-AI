@@ -3,7 +3,7 @@ import { relative, sep } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { SRC, scanned, sourceFiles } from "./sources";
+import { ANCHORS, SRC, scanned, sourceFiles } from "./sources";
 
 /**
  * Guard against user-facing text that never reaches the catalogue.
@@ -25,8 +25,10 @@ import { SRC, scanned, sourceFiles } from "./sources";
  */
 const WORD = /\p{L}{2,}/u; // two letters in a row: a word, not "×", "%" or ":"
 
-/** The attributes whose value a user reads or a screen reader speaks. */
-const TEXT_ATTR = "placeholder|aria-label|title|alt";
+/** The attributes whose value a user reads or a screen reader speaks - the HTML ones, and the
+ * text props of the building blocks (ErrorState, EmptyState, LoadingState, ConfirmDialog). */
+const TEXT_ATTR =
+  "placeholder|aria-label|title|alt|value|message|body|label|heading|reason|explanation|confirm-label|confirmLabel";
 
 /** Blank a match out, keeping every offset and line break where it was. */
 const blank = (text: string) => text.replace(/[^\n]/g, " ");
@@ -89,7 +91,7 @@ const lineAt = (source: string, index: number) => source.slice(0, index).split("
 
 describe("user-facing text", () => {
   it("has a scan that actually reads the source files", () => {
-    scanned(files, "App.vue", "main.ts");
+    scanned(files, ...ANCHORS);
   });
 
   it("lives in the catalogue, not in a component", () => {
@@ -119,5 +121,18 @@ describe("user-facing text", () => {
   it("lets a key through, and a text beside it not", () => {
     expect(scan('<template><p>{{ t("login.heading") }}</p></template>', true)).toEqual([]);
     expect(scan('<template><p>{{ t("login.heading") }} Hallo</p></template>', true)).toHaveLength(1);
+  });
+});
+
+
+describe("the props that carry text", () => {
+  it.each([
+    '<template><ErrorState message="Nicht geladen" /></template>',
+    "<template><EmptyState :body=\"'Noch leer'\" /></template>",
+    '<template><ConfirmDialog confirm-label="Entfernen" /></template>',
+    '<template><LoadingState label="Wird gesucht" /></template>',
+    '<template><input type="submit" value="Senden" /></template>',
+  ])("are scanned: %s", (source) => {
+    expect(scan(source, true)).toHaveLength(1);
   });
 });
