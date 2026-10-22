@@ -236,6 +236,29 @@ def test_a_change_the_register_cannot_hold_is_refused(
     )
 
 
+@pytest.mark.parametrize("field", ["title", "license", "rights_evidence"])
+def test_a_text_of_spaces_is_no_text(
+    client: TestClient, migrated: str, world: dict[str, Any], field: str
+) -> None:
+    # the length counted after the spaces are gone: "   " passed min_length and was kept as ""
+    before = row(migrated, world["seed"])
+
+    answer = client.patch(f"/api/v1/sources/{world['seed']}", headers=world["editor"], json={field: "   "})
+
+    assert answer.status_code == 422
+    assert row(migrated, world["seed"]) == before
+
+
+def test_a_title_is_kept_trimmed_in_one_spelling(
+    client: TestClient, migrated: str, world: dict[str, Any]
+) -> None:
+    title = " Cafe\N{COMBINING ACUTE ACCENT} "
+
+    client.patch(f"/api/v1/sources/{world['own']}", headers=world["owner"], json={"title": title})
+
+    assert row(migrated, world["own"])["title"] == "Caf\N{LATIN SMALL LETTER E WITH ACUTE}"
+
+
 def test_an_edit_is_audited(client: TestClient, migrated: str, world: dict[str, Any]) -> None:
     client.patch(f"/api/v1/sources/{world['own']}", headers=world["owner"], json={"title": "Neu"})
 

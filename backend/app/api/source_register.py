@@ -32,19 +32,21 @@ EDITORS = frozenset({"redaktion", "admin"})
 TERMS = frozenset({"rights_status", "rights_evidence", "source_type", "license"})
 
 
-# Text in one spelling, showing whole (no control or hidden signs), within its length
+# Text in one spelling, showing whole (no control or hidden signs), within its length. Named
+# after the constraints, so they wrap them (as in app/api/accounts.py): one spelling first, then
+# the spaces go, then the length counts
 OneSpelling, ShowsWhole = BeforeValidator(one_spelling), AfterValidator(shows_whole)
 TitleText = Annotated[
     str,
-    OneSpelling,
     StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_TITLE_SIGNS),
+    OneSpelling,
     ShowsWhole,
 ]
 LicenseText = Annotated[
-    str, OneSpelling, StringConstraints(strip_whitespace=True, min_length=1, max_length=200), ShowsWhole
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200), OneSpelling, ShowsWhole
 ]
 EvidenceText = Annotated[
-    str, OneSpelling, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000), ShowsWhole
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000), OneSpelling, ShowsWhole
 ]
 
 
