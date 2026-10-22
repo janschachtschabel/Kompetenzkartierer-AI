@@ -69,7 +69,8 @@ onMounted(load);
 </template>
 
 <style scoped>
-.start {
+/* The reading width on the text, not on the page: the page keeps the frame every page has. */
+.start p {
   max-width: var(--reading-width);
 }
 

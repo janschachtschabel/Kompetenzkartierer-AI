@@ -167,3 +167,17 @@ describe("shared component classes", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe("a link drawn as a button", () => {
+  /**
+   * `.btn` sits on links too (the way to the sign-in): with the browser's
+   * underline and without the height the element rule gives a `button`, the
+   * same class looked different on two elements.
+   */
+  it("is drawn as one: no underline, the height of a button", () => {
+    const shared = sharedDeclarations(".btn");
+
+    expect(shared).toContain("text-decoration: none");
+    expect(shared).toContain("min-height: 40px");
+  });
+});

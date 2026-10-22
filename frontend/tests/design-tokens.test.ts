@@ -146,3 +146,19 @@ describe("reflow", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe("colour scheme", () => {
+  /**
+   * Without it the browser draws its own parts - the autofill of the token
+   * field, a checkbox's inside, a select's popup - for light in the dark theme.
+   */
+  it("is said in both themes, and in the page's head", () => {
+    const light = /^:root \{([\s\S]*?)\n\}/m.exec(STYLESHEET)?.[1] ?? "";
+    const dark = /@media \(prefers-color-scheme: dark\) \{\s*:root \{([\s\S]*?)\n {2}\}/.exec(STYLESHEET)?.[1] ?? "";
+    const head = readFileSync(join(process.cwd(), "index.html"), "utf8");
+
+    expect(light).toMatch(/color-scheme:\s*light;/);
+    expect(dark).toMatch(/color-scheme:\s*dark;/);
+    expect(head).toMatch(/<meta name="color-scheme" content="light dark"/);
+  });
+});

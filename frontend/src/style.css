@@ -9,6 +9,10 @@
    navigation and the page under it sat 32px apart. `tests/design-tokens.test.ts`
    keeps the shared values shared. */
 :root {
+  /* The browser's own parts - autofill, a checkbox's inside, a select's popup -
+     are drawn for the theme in use, not for light alone. */
+  color-scheme: light;
+
   /* Type. Roboto is self-hosted (see main.ts) rather than fetched from a font
      CDN: hotlinking one sends the IP of every visitor to the provider, which
      German courts have held to breach the GDPR. Arial is the fallback because
@@ -44,7 +48,9 @@
   /* One width for every page, one for text that is read rather than operated.
      The page width is a maximum sized for a wide screen: beside the rail, work
      surfaces such as tables and maps get about 1500px there; narrower screens
-     are unaffected. */
+     are unaffected. The reading width belongs to the text, not to its page: on
+     a page it would narrow the title and the actions too, and the page would
+     sit elsewhere than the next one. */
   --page-width: 96rem;
   --reading-width: 54rem;
   --rail-width: 15rem;
@@ -114,6 +120,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    color-scheme: dark;
     --bg: #17181a;
     --surface: #212327;
     --surface-subtle: #2d3036;
@@ -201,10 +208,11 @@ html {
   scrollbar-color: var(--control-border) transparent;
 }
 
+/* The ring only: a radius here would change the shape of the focused control
+   itself (an 8px field turned 4px on every focus). */
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
 }
 
 a {
@@ -360,6 +368,10 @@ input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:dis
   font-weight: 500;
   cursor: pointer;
   border: 1px solid transparent;
+  /* On a link as on a button: no underline, the height the element rule gives
+     a button, so one class looks one way whatever it sits on. */
+  text-decoration: none;
+  min-height: 40px;
   /* Centres a label that sits next to an icon. */
   display: inline-flex;
   align-items: center;
@@ -411,7 +423,7 @@ input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:dis
 
 /* Darkening works in both themes: it deepens the light-mode red under white
    ink, and pulls the dark-mode red away from the dark ink on top of it. */
-.btn.danger:not(.secondary):hover:not(:disabled) {
+.btn.danger:not(.secondary):hover:not(:disabled):not([aria-disabled="true"]) {
   filter: brightness(0.92);
 }
 
