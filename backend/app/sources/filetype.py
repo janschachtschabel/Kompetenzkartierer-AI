@@ -16,6 +16,8 @@ from app.sources.archives import check_archive
 
 # What the common file systems hold as one file's name
 MAX_NAME_SIGNS = 255
+# The longest ending a ZIP keeps, its dot counted: longer is a name, not a type
+MAX_KEPT_ENDING = 16
 DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 TURTLE_MIME = "text/turtle"
 # Name ending -> type, for text without a signature
@@ -84,13 +86,14 @@ def stored_name(filename: str | None, detected: DetectedType) -> str:
     its bytes are.
 
     Every conversion engine decides by the suffix: a download URL that names no file gave a PDF
-    called ``source``, which the engines refused. A ZIP keeps whatever suffix it has: the
-    signature is every OOXML type's, DOCX only the assumption, and a ``.pptx`` renamed to
-    ``.docx`` would be a lie of our own making.
+    called ``source``, which the engines refused. A ZIP keeps whatever suffix it has, up to
+    MAX_KEPT_ENDING signs: the signature is every OOXML type's, DOCX only the assumption, and a
+    ``.pptx`` renamed to ``.docx`` would be a lie of our own making.
     """
     name = _base_name(filename)
     suffix = PurePosixPath(name).suffix.lower()
-    if not (suffix == detected.extension or (suffix and detected.mime == DOCX_MIME)):
+    kept_zip = detected.mime == DOCX_MIME and 0 < len(suffix) <= MAX_KEPT_ENDING
+    if not (suffix == detected.extension or kept_zip):
         name, suffix = f"{name or 'source'}{detected.extension}", detected.extension
     if len(name) > MAX_NAME_SIGNS:  # cut the stem, keep the ending every engine decides by
         name = name[: MAX_NAME_SIGNS - len(suffix)] + name[len(name) - len(suffix) :]

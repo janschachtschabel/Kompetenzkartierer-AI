@@ -113,6 +113,21 @@ def test_a_long_name_is_cut_to_what_a_file_system_holds_keeping_its_ending() -> 
     assert stored.endswith(".pdf")
 
 
+@pytest.mark.parametrize(
+    ("ending", "kept"), [("d" * 15, True), ("d" * 16, False), ("d" * 300, False)], ids=["16", "17", "301"]
+)
+def test_a_zip_keeps_an_ending_only_as_long_as_one_is(ending: str, kept: bool) -> None:
+    # a ZIP keeps its own ending, up to 16 signs with its dot; one of 301 cut the name with a
+    # negative index, doubled it past 255 signs, and the database refused the entry
+    detected = detect_type("x.docx", b"PK\x03\x04")
+    assert detected is not None
+
+    stored = stored_name(f"lehrplan.{ending}", detected)
+
+    assert len(stored) <= 255
+    assert stored.endswith(f".{ending}" if kept else ".docx")
+
+
 # --- archives that expand past what a conversion may hold (old app audit 2026-09-26, E-05)
 
 
