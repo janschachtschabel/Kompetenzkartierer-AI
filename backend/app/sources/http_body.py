@@ -44,8 +44,9 @@ class LimitedBody:
     """One answer's body, fed its raw chunks and unpacked within ``limit`` bytes.
 
     Raises UnsupportedEncoding when made, BodyTooLarge as soon as the unpacked bytes pass the
-    limit, and httpx2.DecodingError for a broken compressed stream, or for one that ended before
-    its end (at ``result``). A gzip body of several members is unpacked whole.
+    limit (or the packed ones pass what the limit could weigh packed), and httpx2.DecodingError
+    for a broken compressed stream, or for one that ended before its end (at ``result``). A gzip
+    body of several members is unpacked whole.
     """
 
     def __init__(self, content_encoding: str | None, limit: int) -> None:
@@ -60,8 +61,12 @@ class LimitedBody:
         # gzip may hold members one after another (RFC 1952), until something else follows one
         self._members = encoding in ("gzip", "x-gzip")
         self._after_end = b""  # what followed a member's end, too short yet to tell
-        self._received = False
         self._limit = limit
+        # the packed bytes are bounded too: empty gzip members or empty deflate blocks unpack to
+        # nothing, and kept the worker unpacking as long as the server sent them. Packing adds
+        # far less than a hundredth to what does not shrink (zlib's deflateBound)
+        self._packed_limit = limit + limit // 100 + 1024
+        self._packed = 0
         self._size = 0
         self._pieces: list[bytes] = []
 
@@ -72,7 +77,9 @@ class LimitedBody:
         if self._inflater is None:
             self._keep(chunk)
             return
-        self._received = True
+        self._packed += len(chunk)
+        if self._packed > self._packed_limit:
+            raise BodyTooLarge(self._limit)
         data = chunk
         while data:
             data = self._after_member(data) if self._inflater.eof else self._unpack(data)
@@ -83,7 +90,7 @@ class LimitedBody:
         self._keep(content)
 
     def result(self) -> bytes:
-        if self._inflater is not None and self._received and not self._inflater.eof:
+        if self._inflater is not None and self._packed and not self._inflater.eof:
             raise httpx2.DecodingError("the compressed answer ended before its end")
         return b"".join(self._pieces)
 

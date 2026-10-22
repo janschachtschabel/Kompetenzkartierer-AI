@@ -6,8 +6,10 @@ is read raw and unpacked a piece at a time; one layer of gzip or deflate, nothin
 from curriculum-extractor (tests/test_http_body.py), for the async reader.
 """
 
+import random
 import tracemalloc
-from collections.abc import Mapping, Sequence
+import zlib
+from collections.abc import Callable, Mapping, Sequence
 
 import httpx2
 import pytest
@@ -143,6 +145,38 @@ async def test_a_gzip_answer_of_several_members_is_unpacked_whole(size: int) -> 
     chunks += in_chunks(wire[seam + 2 :], 1_000)
 
     assert await read(chunks, {"Content-Encoding": "gzip"}, LIMIT) == TEXT
+
+
+def _empty_members(size: int) -> bytes:
+    empty = packed(b"", "gzip")
+    return empty * (size // len(empty))
+
+
+def _empty_blocks(size: int) -> bytes:
+    # one member of empty stored blocks, as a sync flush writes them
+    packer = zlib.compressobj(6, zlib.DEFLATED, 16 + zlib.MAX_WBITS)
+    head = packer.compress(b"") + packer.flush(zlib.Z_SYNC_FLUSH)
+    empty_block = b"\x00\x00\x00\xff\xff"
+    return head + empty_block * (size // len(empty_block))
+
+
+@pytest.mark.parametrize("wire", [_empty_members, _empty_blocks], ids=["empty-members", "empty-blocks"])
+async def test_an_answer_unpacking_to_nothing_is_held_to_the_limit_by_its_weight(
+    wire: Callable[[int], bytes],
+) -> None:
+    # nothing unpacked counts: without a bound on the bytes received, the worker unpacked for as
+    # long as the server sent, until the fetch's deadline, three times
+    with pytest.raises(BodyTooLarge):
+        await read(in_chunks(wire(2 * MIB)), {"Content-Encoding": "gzip"}, MIB)
+
+
+async def test_an_incompressible_file_at_the_limit_passes_packed() -> None:
+    # packing adds a little to what does not shrink; the bound on the bytes received allows it
+    data = random.Random(7).randbytes(256 * 1024)  # noqa: S311 - test data, seeded to repeat
+    wire = zlib.compress(data, 9, 16 + zlib.MAX_WBITS)
+
+    assert len(wire) > len(data)
+    assert await read(in_chunks(wire), {"Content-Encoding": "gzip"}, len(data)) == data
 
 
 async def test_a_later_gzip_member_is_held_to_the_limit_as_the_first() -> None:
