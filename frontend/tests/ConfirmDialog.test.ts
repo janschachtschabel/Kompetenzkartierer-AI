@@ -136,11 +136,38 @@ describe("ConfirmDialog on a small screen", () => {
     // The batch enrichment asks with up to thirteen options; the dialog had no
     // height limit, so on a phone or at 200% zoom its buttons sat below the
     // screen with no way to reach them (old app, audit 2026-09-26, E-54). jsdom lays
-    // nothing out, so the rule itself is what is checked.
-    const source = readFileSync(join(process.cwd(), "src", "components", "ConfirmDialog.vue"), "utf8");
+    // nothing out, so the rule itself is what is checked - in the frame it sits in.
+    const source = readFileSync(join(process.cwd(), "src", "components", "ModalShell.vue"), "utf8");
     const rule = /\n\.dialog \{([^}]*)\}/.exec(source)?.[1] ?? "";
 
     expect(rule).toMatch(/max-height:\s*calc\(100dvh/);
     expect(rule).toMatch(/overflow-y:\s*auto/);
+  });
+});
+
+
+describe("ConfirmDialog's confirm button", () => {
+  it("is the destructive one unless the question says otherwise", () => {
+    // it asks before something is removed: its default word is the catalogue's "Löschen"
+    const plain = open();
+    const adding = mount(ConfirmDialog, { props: { title: "Frage", message: "Text", danger: false } });
+
+    expect(plain.get("[data-test='confirm']").classes()).toEqual(expect.arrayContaining(["btn", "danger"]));
+    expect(adding.get("[data-test='confirm']").classes()).toEqual(expect.arrayContaining(["btn", "primary"]));
+    plain.unmount();
+    adding.unmount();
+  });
+});
+
+describe("ConfirmDialog in its frame", () => {
+  it("cancels on Escape after a click on its text left the keyboard on the page's body", async () => {
+    const wrapper = open();
+    await wrapper.vm.$nextTick();
+    (document.activeElement as HTMLElement | null)?.blur();
+
+    document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+
+    expect(wrapper.emitted("cancel")).toHaveLength(1);
+    wrapper.unmount();
   });
 });

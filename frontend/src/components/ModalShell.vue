@@ -68,11 +68,24 @@ function onKeydown(event: KeyboardEvent): void {
   trapTab(event, dialog.value);
 }
 
+// A click whose press began inside - a text selection let go past the dialog's edge - lands on
+// the scrim as the common ancestor; only a press and a click both on the scrim close.
+let pressedOnScrim = false;
+
+function onScrimPress(event: MouseEvent): void {
+  pressedOnScrim = event.target === event.currentTarget;
+}
+
+function onScrimClick(): void {
+  if (pressedOnScrim) emit("close");
+  pressedOnScrim = false;
+}
+
 defineExpose({ dialog });
 </script>
 
 <template>
-  <div class="backdrop" @click.self="emit('close')">
+  <div class="backdrop" @mousedown="onScrimPress" @click.self="onScrimClick">
     <div
       ref="dialog"
       class="dialog"

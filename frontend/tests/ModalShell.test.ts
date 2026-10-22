@@ -58,6 +58,7 @@ describe("ModalShell", () => {
     await wrapper.get("[role='dialog']").trigger("keydown", { key: "Escape" });
     await wrapper.get("#first").trigger("click");
     expect(wrapper.emitted("close")).toHaveLength(1);
+    await wrapper.get(".backdrop").trigger("mousedown");
     await wrapper.get(".backdrop").trigger("click");
     expect(wrapper.emitted("close")).toHaveLength(2);
   });
@@ -198,5 +199,23 @@ describe("ModalShell", () => {
 
     const found = await violations(wrapper.html());
     expect(found, describeViolations(found)).toEqual([]);
+  });
+});
+
+
+describe("a text selection that ends on the scrim", () => {
+  it("closes nothing: the click lands on the scrim, the press began inside", async () => {
+    // selecting a dialog's text and letting go past its edge closed it, and what was typed went
+    const wrapper = mount(ModalShell, {
+      props: { labelledby: "t" },
+      slots: { default: '<h2 id="t">Titel</h2><p id="text">Langer Text</p>' },
+      attachTo: document.body,
+    });
+
+    await wrapper.get("#text").trigger("mousedown");
+    await wrapper.get(".backdrop").trigger("click");
+
+    expect(wrapper.emitted("close")).toBeUndefined();
+    wrapper.unmount();
   });
 });
