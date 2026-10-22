@@ -134,7 +134,8 @@ export const messages = {
         "Der Server fragt jetzt die Adressen aller Kandidaten bei fremden Servern ab. Die Prüfung läuft im " +
         "Hintergrund weiter, auch wenn du die Seite verlässt; eine spätere Prüfung fragt nur, was noch offen ist.",
       confirm: "Prüfung starten",
-      started: "Die Prüfung läuft; wie weit sie ist, zeigt die Liste der Aufträge.",
+      // an event, not a state: the line stays once the check has ended
+      started: "Die Prüfung wurde gestartet; wie weit sie ist, zeigt die Liste der Aufträge.",
       running: "Eine Prüfung lief schon; wie weit sie ist, zeigt die Liste der Aufträge.",
       failed: "Die Prüfung wurde nicht gestartet.",
       jobLabel: "Prüfung der Saat",
@@ -297,11 +298,11 @@ export const messages = {
       checking: "{done} von {total} {total|Adresse|Adressen} angesehen",
     },
     trouble: "Der Server antwortet gerade nicht; der Stand wird weiter abgefragt.",
-    // why there is nothing left to ask (jobWatch.ts, JobGone)
+    // why there is nothing left to ask (jobWatch.ts, JobGone); for a fetch and the seed's check alike
     goneReasons: {
-      unauthorized: "Deine Anmeldung ist abgelaufen. Melde dich neu an; den Stand des Eintrags zeigt danach das Register.",
+      unauthorized: "Deine Anmeldung ist abgelaufen. Melde dich neu an; was der Auftrag erreicht hat, zeigt danach das Register.",
       forbidden: "Diesen Auftrag darf dein Konto nicht verfolgen. Rollen vergibt die Administration.",
-      not_found: "Dieser Auftrag ist nicht mehr zu finden. Den Stand des Eintrags zeigt das Register unten.",
+      not_found: "Dieser Auftrag ist nicht mehr zu finden. Was er erreicht hat, zeigt das Register unten.",
     },
     failedUnknown: "Der Auftrag ist fehlgeschlagen. Versuch es noch einmal; scheitert er wieder, melde es der Administration.",
     failures: {
