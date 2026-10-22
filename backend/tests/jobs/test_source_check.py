@@ -475,6 +475,122 @@ async def test_a_redirect_to_a_host_that_waits_defers_that_host_not_the_first(co
     assert result["deferred_hosts"] == ["z.example"]
 
 
+@pytest.mark.parametrize("status", [429, 503, 502])
+async def test_a_host_that_waits_is_asked_no_more_by_the_redirects_to_it(
+    context: JobContext, status: int
+) -> None:
+    # an old host sends every address to a new one, which is down for maintenance
+    for step in (1, 2, 3):
+        await add_entry(context, f"https://a.example/{step}")
+    moved = {f"a.example/{step}": reply(302, location="https://z.example/lp.pdf") for step in (1, 2, 3)}
+    network = Network({**moved, "z.example/lp.pdf": reply(status)})
+
+    result = await run(context, network)
+
+    assert network.paths().count("z.example/lp.pdf") == 1
+    assert result == {"checked": 0, "deferred": 3, "deferred_hosts": ["z.example"]}
+
+
+async def test_each_hop_of_robots_txt_takes_its_host_s_turn(context: JobContext) -> None:
+    await add_entry(context, A + "/lp.pdf")
+    network = Network(
+        {
+            **SITE_A,
+            "a.example/robots.txt": reply(301, location="/robots-neu.txt"),
+            "a.example/robots-neu.txt": reply(301, location="https://z.example/robots.txt"),
+            "z.example/robots.txt": reply(200, b"User-agent: *\nDisallow: /intern\n"),
+        }
+    )
+    sleeps = Sleeps()
+
+    await run(context, network, sleeps)
+
+    assert network.paths() == [
+        "a.example/robots.txt",
+        "a.example/robots-neu.txt",
+        "z.example/robots.txt",
+        "a.example/lp.pdf",
+    ]
+    # a.example's turns 2 s apart; z.example's first, at once
+    assert [round(wait) for wait in sleeps.waits] == [2, 4]
+    async with context.pool.connection() as connection:
+        cursor = await connection.execute("SELECT host FROM host_throttle ORDER BY host")
+        assert [host for (host,) in await cursor.fetchall()] == ["a.example", "z.example"]
+
+
+async def test_a_robots_txt_that_asks_to_wait_holds_its_host_off_as_long(context: JobContext) -> None:
+    await add_entry(context, "https://b.example/x")
+    await run(context, Network({"b.example/robots.txt": reply(429, **{"retry-after": "3600"})}))
+    network = Network({"b.example/x": reply(200, PDF)})
+
+    result = await run(context, network)
+
+    assert network.asked == []
+    assert result == {"checked": 0, "deferred": 1, "deferred_hosts": ["b.example"]}
+
+
+async def test_a_host_robots_txt_led_to_that_gave_no_answer_now_waits_too(context: JobContext) -> None:
+    await add_entry(context, A + "/lp.pdf")
+    await add_entry(context, "https://z.example/lp.pdf")
+    network = Network(
+        {
+            **SITE_A,
+            "a.example/robots.txt": reply(301, location="https://z.example/robots.txt"),
+            "z.example/robots.txt": reply(503),
+            "z.example/lp.pdf": reply(200, PDF),
+        }
+    )
+
+    result = await run(context, network)
+
+    assert network.paths() == ["a.example/robots.txt", "z.example/robots.txt"]
+    assert result == {"checked": 0, "deferred": 2, "deferred_hosts": ["a.example", "z.example"]}
+
+
+async def test_a_wait_in_signs_that_read_as_no_number_ends_no_check(context: JobContext) -> None:
+    # a header's byte 0xB2 is "²" in Latin-1: a digit to str.isdigit, none to float()
+    await add_entry(context, "https://b.example/x")
+    await add_entry(context, A + "/lp.pdf")
+
+    def superscript(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(429, headers=[(b"retry-after", b"\xb2")])
+
+    result = await run(context, Network({**SITE_A, "b.example/x": superscript}))
+
+    found = await checks(context)
+    assert (found["https://b.example/x"]["outcome"], found[A + "/lp.pdf"]["outcome"]) == (
+        "throttled",
+        "reachable",
+    )
+    assert result["deferred_hosts"] == ["b.example"]
+
+
+async def test_robots_txt_is_read_once_per_origin_however_its_host_is_written(context: JobContext) -> None:
+    await add_entry(context, "https://WWW.Lehrplaene.example/start")
+    network = Network(
+        {
+            "www.lehrplaene.example/start": reply(302, location="https://www.lehrplaene.example/lp.pdf"),
+            "www.lehrplaene.example/lp.pdf": reply(200, PDF),
+        }
+    )
+
+    await run(context, network)
+
+    assert network.paths().count("www.lehrplaene.example/robots.txt") == 1
+
+
+async def test_a_redirect_past_what_the_register_holds_is_unreachable_unasked(context: JobContext) -> None:
+    # the server sets the address; matched against robots.txt, an address of any length costs
+    await add_entry(context, A + "/start")
+    far = "/" + "x" * 2_000
+    network = Network({**SITE_A, "a.example/start": reply(302, location=far)})
+
+    await run(context, network)
+
+    assert network.paths() == ["a.example/robots.txt", "a.example/start"]
+    assert (await checks(context))[A + "/start"]["outcome"] == "unreachable"
+
+
 def resolving(names: dict[str, int]) -> httpx2.AsyncBaseTransport:
     """The pinned transport over a resolver that fails each name with its error, connecting nowhere."""
 
@@ -628,6 +744,9 @@ def test_a_wait_is_read_in_seconds_or_as_a_date_within_a_day() -> None:
     assert _retry_after_s(str(10 * 86_400)) == MAX_RETRY_AFTER_S
     assert _retry_after_s("bald") is None
     assert _retry_after_s(None) is None
+    # digits to str.isdigit, none to float()
+    assert _retry_after_s("²") is None
+    assert _retry_after_s("\N{ETHIOPIC DIGIT ONE}") is None
 
 
 @pytest.mark.parametrize(("transient", "outcome"), [(True, None), (False, "unreachable")])
