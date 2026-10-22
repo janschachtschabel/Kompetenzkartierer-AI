@@ -85,18 +85,32 @@ ungültig.
 - Saat des Quellregisters: `python -m app.sources.seed` legt die 1.498 Kandidaten des
   Vergleichsdatensatzes an (`data/seed/vergleichsdatensatz/`, auch im API-Image), ohne Konto
   und ungeprüft, dazu 353 Zugangsnotizen zu gesperrten Portalen und Umwegen (je Land, Schulform
-  und Fach; die Einzelansicht eines Eintrags nennt sie). Ein zweiter Lauf ändert nichts. Vorher muss das Vokabular geladen sein. In
-  Compose: `docker compose -f deploy/docker-compose.yml run --rm migrate python -m app.sources.seed`.
+  und Fach; eine Notiz ohne Fach gilt für alle Fächer; die Einzelansicht eines Eintrags nennt
+  sie). Ein zweiter Lauf ändert nichts. Vorher muss das Vokabular geladen sein. In Compose:
+  `docker compose -f deploy/docker-compose.yml run --rm migrate python -m app.sources.seed`.
 - Zweite Saat aus der eigenen Länderrecherche: `python -m app.sources.research_t1` legt die
   668 Dokumente der T1-Tabellen an (`ontology/recherche-ergebnisse/`, auch im API-Image), mit
-  Bildungsbereich je Auftrag und Beleg E/S. Danach meldet der Befehl, wie viele Adressen nur
-  der Vergleichsdatensatz kennt, nur die Recherche oder beide. Ein zweiter Lauf ändert nichts.
+  Bildungsbereich je Auftrag, Beleg E/S und gekennzeichneten Archiv-, Spiegel- und
+  Sekundärquellen. Danach meldet der Befehl, wie viele Adressen nur der Vergleichsdatensatz
+  kennt, nur die Recherche oder beide. Ein zweiter Lauf ändert nichts. Vorher müssen das
+  Vokabular geladen sein (alle fünf Bildungsbereiche, sonst Exit-Code 1). In Compose:
+  `docker compose -f deploy/docker-compose.yml run --rm migrate python -m app.sources.research_t1`.
 - Prüfung der Saat: `POST /api/v1/sources/checks` (nur Admin) startet den Job `source.check`.
-  Er fragt jede Adresse der Einträge ohne Konto einmal ab und streamt und hasht den Inhalt,
-  ohne ihn zu speichern. Er beachtet robots.txt und hält je Host `CHECK_HOST_INTERVAL_S`
-  Abstand. Ein 403 oder 429 wird vermerkt, nicht umgangen; nach einem 429 wartet der Host auf
-  eine spätere Prüfung. Ein zweiter Start, solange einer wartet oder läuft, gibt 409
-  `check_running` mit der Job-ID. Ein neuer Start prüft nur, was noch offen ist.
+  Er fragt jede Adresse der Einträge ohne Konto und ohne Datei einmal ab – nach beiden Saaten
+  rund 1.800 Adressen auf über 140 Hosts – und streamt und hasht den Inhalt, ohne ihn zu
+  speichern. Jede Adresse, auch jedes Weiterleitungsziel, prüft er zuerst gegen die robots.txt
+  ihres Hosts und fragt jeden Host höchstens alle `CHECK_HOST_INTERVAL_S` Sekunden, über alle
+  Worker. Nichts wird umgangen: kein anderer User-Agent, kein Archiv oder Spiegel statt der
+  Adresse. Ausgänge und Registerstand: 2xx erreichbar; 4xx (auch 403), 5xx, keine Antwort, die
+  es geben kann, und ein Verbot laut robots.txt nicht erreichbar; 429 und 503 („später“)
+  lassen den Eintrag ungeprüft und halten den Host für die verlangte Zeit (`Retry-After`,
+  höchstens ein Tag) zurück; 502, 504, Zeitüberschreitung und Verbindungsabbruch gelten als
+  vorübergehend nicht erreichbar. Diese beiden fragt eine spätere Prüfung erneut, und die
+  übrigen Adressen des Hosts warten mit. Ein neuer Start prüft nur, was noch offen ist; ein
+  Kandidat, der später mit einer schon geprüften Adresse dazukommt, übernimmt deren Ergebnis.
+  Ein zweiter Start, solange einer wartet oder läuft, gibt 409 `check_running` mit der Job-ID.
+  Der Lauf dauert Stunden (allein ein Host trägt 400 Adressen) und belegt einen Worker; dafür
+  einen eigenen Worker mit `WORKER_KINDS=source.check` vorsehen.
 - Erster Admin: `python -m app.bootstrap NAME` gibt das Token einmal auf stdout aus. Interaktiv
   ausführen (`docker compose run`, `kubectl exec -it`), nicht als Job, dessen Ausgabe ein
   Log-System sammelt. Exit-Code 0: angelegt; 2: es gibt schon einen Admin, der sich anmelden
@@ -112,8 +126,11 @@ ungültig.
   je Konto und Minute, gezählt in PostgreSQL für alle Replicas; darüber 429 mit `Retry-After`.
 - `FETCH_USER_AGENT`: so stellen sich URL-Import und Prüfjob den Servern vor. Vorn steht das
   Produktkürzel, unter dem robots.txt uns kennt (`Kompetenzkartierer-AI`), dahinter, wo die
-  Betreiber zu erreichen sind. `CHECK_HOST_INTERVAL_S` (Standard 2, mindestens 0,5): der
-  kleinste Abstand zweier Anfragen des Prüfjobs an einen Host, über alle Worker.
+  Betreiber zu erreichen sind – hier den eigenen Kontakt eintragen (öffentliche Seite oder
+  Postfach), denn der Standard nennt nur das Repository. Druckbares ASCII, ohne Leerzeichen am
+  Ende. Der Prüfjob sendet fremden Hosts keine Trace-Header. `CHECK_HOST_INTERVAL_S`
+  (Standard 2, mindestens 0,5): der kleinste Abstand zweier Anfragen des Prüfjobs an einen
+  Host, über alle Worker.
 - `THIRD_PARTY_MARKDOWN` (`hidden` | `accounts` | `public`, Standard `hidden`): wer außer
   Redaktion und Admin die Datei eines Registereintrags ohne Eigentümer (Saat, Recherche)
   bekommt, später auch seine Blöcke und sein Markdown: niemand, jedes Konto oder auch Besucher,

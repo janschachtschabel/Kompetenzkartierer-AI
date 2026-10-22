@@ -1,6 +1,6 @@
 """Starting the check of the register's candidates, and what it found per entry (plan M1, 2.5).
 
-An admin starts it, one check at a time: it asks 34 hosts of other people, and two would ask
+An admin starts it, one check at a time: it asks some 140 hosts of other people, and two would ask
 each address twice. An entry shows what the check found at its address.
 """
 

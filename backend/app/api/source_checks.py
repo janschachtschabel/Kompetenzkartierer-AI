@@ -1,6 +1,6 @@
 """Starting the check of the register's candidates (plan M1, 2.5): an admin's, one at a time.
 
-The check asks hosts of other people - 34 for the comparison dataset - each address once (the job
+The check asks hosts of other people - some 140 for both seeds - each address once (the job
 source.check, app/sources/check_job.py); two at once would ask twice, so a start while one waits
 or runs is refused (409 check_running, naming the job to follow). The job is followed and
 cancelled as any (``/api/v1/jobs/{id}``); an entry shows what the check found (``check``).
