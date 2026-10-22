@@ -20,7 +20,7 @@ from starlette.datastructures import UploadFile
 
 from app.api.deps import require_account
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
-from app.core.auth import Principal, one_spelling, plain_text, shows_whole, visible_only
+from app.core.auth import Principal, one_spelling, plain_text, shows_whole
 from app.core.logging import current_request_id
 from app.db.accounts import record_audit
 from app.db.rate_limits import RateLimited, take
@@ -28,7 +28,14 @@ from app.db.sources import StoredFile, record_upload, record_url_source
 from app.jobs.queue import account_lane, enqueue
 from app.sources import fetch_job
 from app.sources.archives import ArchiveTooLarge, ArchiveUnreadable
-from app.sources.filetype import MAX_NAME_SIGNS, DetectedType, UnsupportedType, examine, stored_name
+from app.sources.filetype import (
+    MAX_NAME_SIGNS,
+    DetectedType,
+    UnsupportedType,
+    base_name,
+    examine,
+    stored_name,
+)
 from app.sources.register import Provenance, RegisterStatus, RightsStatus
 from app.sources.url_fetch import UrlNotAllowed, check_url
 
@@ -105,7 +112,7 @@ async def upload_source(request: Request, who: Account) -> SourceOut:
             owner=who.account_id,
             stored=stored,
             file_name=file_name,
-            received_name=visible_only(received)[:MAX_NAME_SIGNS],
+            received_name=base_name(received)[:MAX_NAME_SIGNS],
             title=title,
         )
         details = {"sha256": digest.hex(), "size": len(data), "mime": detected.mime}
@@ -208,7 +215,8 @@ def _examine(name: str, data: bytes) -> tuple[DetectedType, bytes]:
 
 def _title(given: str | None, file_name: str) -> str:
     if given is None or not given.strip():
-        return PurePosixPath(file_name).stem[:MAX_TITLE_SIGNS]
+        # the stem trimmed ("Lehrplan .pdf"); should nothing be left, the whole name
+        return PurePosixPath(file_name).stem[:MAX_TITLE_SIGNS].strip() or file_name[:MAX_TITLE_SIGNS]
     try:
         title = plain_text(given.strip())
     except ValueError:

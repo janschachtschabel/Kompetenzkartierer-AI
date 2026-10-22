@@ -53,7 +53,7 @@ def detect_type(filename: str | None, data: bytes) -> DetectedType | None:
         return DetectedType(DOCX_MIME, ".docx")
     if data.startswith(b"{\\rtf"):
         return DetectedType("application/rtf", ".rtf")
-    suffix = PurePosixPath(_base_name(filename)).suffix.lower()
+    suffix = PurePosixPath(base_name(filename)).suffix.lower()
     text_mime = _TEXT_TYPES.get(suffix)
     if text_mime and _is_utf8(data):
         return DetectedType(text_mime, suffix)
@@ -90,7 +90,7 @@ def stored_name(filename: str | None, detected: DetectedType) -> str:
     MAX_KEPT_ENDING signs: the signature is every OOXML type's, DOCX only the assumption, and a
     ``.pptx`` renamed to ``.docx`` would be a lie of our own making.
     """
-    name = _base_name(filename)
+    name = base_name(filename)
     suffix = PurePosixPath(name).suffix.lower()
     kept_zip = detected.mime == DOCX_MIME and 0 < len(suffix) <= MAX_KEPT_ENDING
     if not (suffix == detected.extension or kept_zip):
@@ -100,9 +100,10 @@ def stored_name(filename: str | None, detected: DetectedType) -> str:
     return name
 
 
-def _base_name(filename: str | None) -> str:
+def base_name(filename: str | None) -> str:
     """The last part of a name a sender gave, with either kind of slash, without signs that hide
-    what it is (a right-to-left override made ``lehrplan<RLO>fdp.exe`` read as a PDF)."""
+    what it is (a right-to-left override made ``lehrplan<RLO>fdp.exe`` read as a PDF). A path
+    of the sender's disk would also tell the sender's user name."""
     return visible_only(PureWindowsPath(PurePosixPath(filename or "").name).name).strip()
 
 

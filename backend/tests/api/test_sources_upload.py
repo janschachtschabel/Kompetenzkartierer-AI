@@ -120,6 +120,23 @@ def test_without_a_title_the_file_name_names_the_entry(
     assert upload(client, owner[1], name="Lehrplan_Physik_RS.pdf").json()["title"] == "Lehrplan_Physik_RS"
 
 
+def test_a_title_from_the_file_name_is_trimmed(
+    client: TestClient, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    assert upload(client, owner[1], name="Lehrplan Physik .pdf").json()["title"] == "Lehrplan Physik"
+
+
+def test_the_name_an_upload_came_by_is_kept_without_its_folders(
+    client: TestClient, migrated: str, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    # a browser may send the path of the sender's own disk, and with it the sender's user name
+    source_id = UUID(upload(client, owner[1], name="Lehrkraft/Downloads/lehrplan.pdf").json()["id"])
+
+    assert rows(migrated, "SELECT received_name FROM acquisition WHERE source_id = %s", source_id) == [
+        ("lehrplan.pdf",)
+    ]
+
+
 def test_the_same_file_from_two_accounts_is_stored_once(
     client: TestClient, migrated: str, store: Path, owner: tuple[UUID, dict[str, str]]
 ) -> None:
