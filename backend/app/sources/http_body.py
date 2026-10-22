@@ -68,8 +68,9 @@ class LimitedBody:
         self._limit = limit
         # the packed bytes are bounded too: empty gzip members or empty deflate blocks unpack to
         # nothing, and kept the worker unpacking as long as the server sent them. Packing adds
-        # far less than a hundredth to what does not shrink (zlib's deflateBound)
-        self._packed_limit = limit + limit // 100 + 1024
+        # little to what does not shrink, a few hundredths with a flush every few hundred bytes;
+        # an eighth more keeps a whole file, and the work on empty members bounded all the same
+        self._packed_limit = limit + limit // 8 + 1024
         self._packed = 0
         self._size = 0
         self._pieces: list[bytes] = []

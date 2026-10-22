@@ -185,6 +185,21 @@ async def test_an_incompressible_file_at_the_limit_passes_packed() -> None:
     assert await read(in_chunks(wire), {"Content-Encoding": "gzip"}, len(data)) == data
 
 
+async def test_a_file_packed_with_frequent_flushes_passes_at_the_limit() -> None:
+    # a server that flushes every 512 bytes adds a block's few bytes each time, some 2 % on what
+    # does not shrink: the bound on the bytes received is there for empty members, not for this
+    data = random.Random(11).randbytes(256 * 1024)  # noqa: S311 - test data, seeded to repeat
+    packer = zlib.compressobj(9, zlib.DEFLATED, 16 + zlib.MAX_WBITS)
+    pieces = [
+        packer.compress(data[at : at + 512]) + packer.flush(zlib.Z_SYNC_FLUSH)
+        for at in range(0, len(data), 512)
+    ]
+    wire = b"".join(pieces) + packer.flush()
+
+    assert len(wire) > len(data) * 1.015
+    assert await read(in_chunks(wire), {"Content-Encoding": "gzip"}, len(data)) == data
+
+
 async def test_a_later_gzip_member_is_held_to_the_limit_with_the_first() -> None:
     # each member below the limit, together past it: the count runs on across members
     member = packed(bytes(LIMIT * 6 // 10), "gzip")
