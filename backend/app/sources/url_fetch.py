@@ -162,11 +162,14 @@ class PinnedBackend(httpcore2.AsyncNetworkBackend):
 
 class _PinnedTransport(httpx2.AsyncHTTPTransport):
     """httpx2's transport over a PinnedBackend. It hands no network backend to its connection
-    pool, so the pool is made again with one; trust_env=False: no proxy, no certificate path of
-    the environment."""
+    pool, so the pool is made again with one; trust_env=False: no proxy of the environment. The
+    TLS context is httpcore2's default: the certificates SSL_CERT_FILE or SSL_CERT_DIR name if
+    set, the system's (truststore) otherwise."""
 
     def __init__(self, backend: httpcore2.AsyncNetworkBackend) -> None:
         super().__init__(trust_env=False)
+        # _pool is httpx2's own, not its API: the pinning tests (tests/sources/test_url_fetch.py)
+        # connect through a recording backend and fail if a release no longer sends through it
         self._pool = httpcore2.AsyncConnectionPool(
             ssl_context=httpcore2.default_ssl_context(), network_backend=backend, http1=True, http2=False
         )
