@@ -14,13 +14,14 @@ Backend (Python 3.13, uv):
 
 ```bash
 cd backend
-uv venv --python 3.13 .venv
-uv pip install --python .venv/Scripts/python.exe -r requirements-dev-win.txt
+uv sync --frozen
 .venv/Scripts/python.exe -m pytest
 ```
 
-`requirements-dev-win.txt` ist vorläufig: Es wurde ohne Netz für Windows aufgelöst. Sobald
-Downloads möglich sind, ersetzt ein universeller `uv.lock` die Datei.
+`uv.lock` legt alle Versionen für jede Plattform fest, mit Prüfsummen. Wer eine Abhängigkeit
+ändert, sperrt neu (`uv lock`) und schreibt den Export für das Image neu:
+`uv export --frozen --no-dev --format requirements-txt -o ../deploy/requirements-api.txt`
+(ein Test vergleicht beide).
 
 Datenbank-Tests (Marker `pg`) brauchen einen PostgreSQL-Server nur für Tests, etwa diesen
 Container (Daten nur im Arbeitsspeicher, Port nur lokal):

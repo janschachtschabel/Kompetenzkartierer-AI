@@ -21,6 +21,8 @@ dependencies = [
     # the HTTP client app/llm/client.py hands the SDK, and the one starlette's TestClient takes
     # (with plain httpx it warns that support ends)
     "httpx2>=2.13",
+    # the object store in a cluster: any S3-compatible service, MinIO in Compose
+    "boto3",
 ]
 
 [dependency-groups]

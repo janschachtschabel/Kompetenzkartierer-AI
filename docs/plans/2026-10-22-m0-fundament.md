@@ -14,8 +14,8 @@ aufbaut. Keine Fachlogik außer dem Vokabular-Lader.
   kein Push ohne Auftrag.
 - Python 3.13 über uv. Ohne Netz ließ sich nur eine Windows-Auflösung bauen
   (`requirements-dev-win.txt`, `uv pip compile --offline`); 3.12 scheiterte, weil der Cache
-  fast nur cp313-Wheels hat. Der universelle `uv.lock` folgt mit der Download-Freigabe in
-  Paket D. Tests gegen PostgreSQL in
+  fast nur cp313-Wheels hat. Seit Paket D gilt der universelle `uv.lock`, gesperrt auf
+  dieselben Versionen; die Windows-Auflösung entfiel. Tests gegen PostgreSQL in
   einem eigenen Container `kka-test-pg` aus dem lokal vorhandenen Image
   `pgvector/pgvector:pg17`, Port 55432, Daten in tmpfs.
 - Downloads nur nach Freigabe. Noch nicht lokal vorhanden: Image `python:3.13-slim`,
