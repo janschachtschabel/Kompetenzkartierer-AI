@@ -57,11 +57,15 @@ def add_file(
 ) -> uuid.UUID:
     file_id = new_id()
     connection.execute(
-        "INSERT INTO source_file (id, sha256, size_bytes, mime, storage_key)"
-        " VALUES (%s, %s, 4, 'application/pdf', %s)",
+        "INSERT INTO source_file (id, sha256, size_bytes, storage_key) VALUES (%s, %s, 4, %s)",
         (file_id, digest, key or f"sources/{digest.hex()}.pdf"),
     )
     return file_id
+
+
+def filed(file_id: uuid.UUID, name: str = "a.pdf", status: str = "acquired") -> dict[str, Any]:
+    """The columns of a source that holds the file: its name and type beside it."""
+    return {"file_id": file_id, "file_name": name, "mime": "application/pdf", "register_status": status}
 
 
 @pytest.mark.parametrize(
@@ -95,8 +99,8 @@ def test_a_new_source_s_rights_are_unclear_and_it_is_unchecked(connection: psyco
 def test_one_file_is_held_once_and_shared_by_its_sources(connection: psycopg.Connection) -> None:
     # the same PDF uploaded by two accounts: one file, two register entries
     file_id = add_file(connection)
-    first = add_source(connection, file_id=file_id, file_name="a.pdf", register_status="acquired")
-    second = add_source(connection, file_id=file_id, file_name="b.pdf", register_status="acquired")
+    first = add_source(connection, **filed(file_id, "a.pdf"))
+    second = add_source(connection, **filed(file_id, "b.pdf"))
 
     with pytest.raises(errors.UniqueViolation):  # the same bytes under another key
         add_file(connection, key="sources/elsewhere.pdf")
@@ -148,7 +152,7 @@ def test_a_source_is_acquired_exactly_when_its_file_is_here(connection: psycopg.
     with pytest.raises(errors.CheckViolation):
         add_source(connection, register_status="acquired")
     with pytest.raises(errors.CheckViolation):
-        add_source(connection, file_id=file_id, file_name="a.pdf", register_status="reachable")
+        add_source(connection, **filed(file_id, status="reachable"))
 
 
 def test_a_source_s_id_is_an_entity_of_kind_source(connection: psycopg.Connection) -> None:
@@ -182,7 +186,7 @@ def test_anything_else_is_no_country(connection: psycopg.Connection, country: st
 
 def test_an_acquisition_names_the_source_and_the_file_it_brought(connection: psycopg.Connection) -> None:
     file_id = add_file(connection)
-    source_id = add_source(connection, file_id=file_id, file_name="a.pdf", register_status="acquired")
+    source_id = add_source(connection, **filed(file_id))
 
     connection.execute(
         "INSERT INTO acquisition (id, source_id, file_id, method, chain) VALUES (%s, %s, %s, 'url', %s)",

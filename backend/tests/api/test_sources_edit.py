@@ -86,9 +86,9 @@ def world(migrated: str, store: Path) -> dict[str, Any]:
             seed = new_id()
             await connection.execute("INSERT INTO entity (id, kind) VALUES (%s, 'source')", (seed,))
             await connection.execute(
-                "INSERT INTO source (id, provenance, title, register_status, file_id, file_name)"
-                " SELECT %s, 'vergleichsdatensatz-v62.493', 'Saat', 'acquired', id, 'saat.pdf'"
-                " FROM source_file",
+                "INSERT INTO source (id, provenance, title, register_status, file_id, file_name, mime)"
+                " SELECT %s, 'vergleichsdatensatz-v62.493', 'Saat', 'acquired', id, 'saat.pdf',"
+                " 'application/pdf' FROM source_file",
                 (seed,),
             )
             return {"own": own, "seed": seed}

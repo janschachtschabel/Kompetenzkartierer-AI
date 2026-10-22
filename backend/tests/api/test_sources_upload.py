@@ -128,6 +128,23 @@ def test_the_same_file_from_two_accounts_is_stored_once(
     assert len(list((store / "sources").iterdir())) == 1
 
 
+def test_the_same_text_under_two_names_keeps_the_type_each_name_gives(
+    client: TestClient, migrated: str, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    # a text format is known by its name: the bytes are one file, the type is the entry's
+    other = seed_account(migrated, "Andere", ["nutzer"])[1]
+    text = b"<h1>Lehrplan</h1>\n"
+
+    as_text = upload(client, owner[1], data=text, name="notiz.txt").json()["id"]
+    as_html = upload(client, other, data=text, name="lehrplan.html").json()["id"]
+
+    for source_id, header, mime in ((as_text, owner[1], "text/plain"), (as_html, other, "text/html")):
+        assert client.get(f"/api/v1/sources/{source_id}", headers=header).json()["file"]["mime"] == mime
+        download = client.get(f"/api/v1/sources/{source_id}/file", headers=header)
+        assert download.headers["content-type"].split(";")[0] == mime
+    assert rows(migrated, "SELECT count(*) FROM source_file") == [(1,)]
+
+
 def test_a_name_with_folders_is_filed_under_its_last_part(
     client: TestClient, owner: tuple[UUID, dict[str, str]]
 ) -> None:

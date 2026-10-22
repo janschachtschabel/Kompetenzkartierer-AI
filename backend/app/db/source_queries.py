@@ -17,7 +17,7 @@ _VISIBLE = "(s.owner_id = %(me)s OR s.owner_id IS NULL OR %(all)s)"
 _COLUMNS = """
     s.id, s.title, s.provenance, s.rights_status, s.source_type, s.register_status, s.country,
     s.sector_iri, s.url, s.license, s.rights_evidence, s.owner_id, s.created_at, s.updated_at,
-    s.file_name, f.mime, f.size_bytes, f.sha256, f.storage_key
+    s.file_name, s.mime, f.size_bytes, f.sha256, f.storage_key
 """
 
 

@@ -1,7 +1,8 @@
 """The source register in the database (migration 0006_sources).
 
 A file is one ``source_file`` row per SHA-256, shared by every source that holds those bytes;
-who may see what is decided at ``source``.
+who may see what is decided at ``source``, and so is the file's type: text is known by the name
+it came by, and the same bytes may come as ``.txt`` and as ``.html``.
 """
 
 from dataclasses import dataclass
@@ -17,7 +18,7 @@ from app.sources.register import EDUCATION_SECTORS
 
 @dataclass(frozen=True)
 class StoredFile:
-    """Bytes as the store holds them."""
+    """Bytes as the store holds them, with the type they came as (kept at the entry)."""
 
     sha256: bytes
     size: int
@@ -31,9 +32,9 @@ async def file_row(connection: psycopg.AsyncConnection, stored: StoredFile) -> U
     target: the storage key is unique too, and a conflict on a column that is not the target
     fails instead of doing nothing."""
     cursor = await connection.execute(
-        "INSERT INTO source_file (id, sha256, size_bytes, mime, storage_key) VALUES (%s, %s, %s, %s, %s)"
+        "INSERT INTO source_file (id, sha256, size_bytes, storage_key) VALUES (%s, %s, %s, %s)"
         " ON CONFLICT DO NOTHING RETURNING id",
-        (new_id(), stored.sha256, stored.size, stored.mime, stored.storage_key),
+        (new_id(), stored.sha256, stored.size, stored.storage_key),
     )
     made = await cursor.fetchone()
     if made is not None:
@@ -142,9 +143,9 @@ async def record_fetch(
     async with connection.transaction():
         file_id = await file_row(connection, stored)
         await connection.execute(
-            "UPDATE source SET register_status = 'acquired', file_id = %s, file_name = %s,"
+            "UPDATE source SET register_status = 'acquired', file_id = %s, file_name = %s, mime = %s,"
             " title = CASE WHEN title = '' THEN %s ELSE title END, updated_at = now() WHERE id = %s",
-            (file_id, file_name, title, source_id),
+            (file_id, file_name, stored.mime, title, source_id),
         )
         await connection.execute(
             "INSERT INTO acquisition (id, source_id, file_id, method, account_id, chain, received_name)"
@@ -168,9 +169,9 @@ async def record_upload(
         file_id = await file_row(connection, stored)
         await connection.execute("INSERT INTO entity (id, kind) VALUES (%s, 'source')", (source_id,))
         await connection.execute(
-            "INSERT INTO source (id, owner_id, provenance, title, register_status, file_id, file_name)"
-            " VALUES (%s, %s, 'upload', %s, 'acquired', %s, %s)",
-            (source_id, owner, title, file_id, file_name),
+            "INSERT INTO source (id, owner_id, provenance, title, register_status, file_id, file_name, mime)"
+            " VALUES (%s, %s, 'upload', %s, 'acquired', %s, %s, %s)",
+            (source_id, owner, title, file_id, file_name, stored.mime),
         )
         await connection.execute(
             "INSERT INTO acquisition (id, source_id, file_id, method, account_id, received_name)"
