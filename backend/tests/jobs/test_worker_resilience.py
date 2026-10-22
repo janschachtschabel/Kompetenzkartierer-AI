@@ -2,6 +2,7 @@
 Stopping is in test_worker_shutdown.py."""
 
 import asyncio
+import logging
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
@@ -200,6 +201,34 @@ async def test_an_outcome_is_written_after_a_brief_database_error(
     await Worker(pool, {"test.work": answer}, owner="w1", lease_s=0.9).run_once()
 
     assert (calls, (await job_row(pool, job_id))["status"]) == (2, "done")
+
+
+@pytest.mark.pg
+async def test_a_handler_s_failure_is_logged_with_its_cause_though_its_outcome_cannot_be_written(
+    pool: AsyncConnectionPool, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    # with the database away for a moment the job runs again after its lease; the cause of this
+    # attempt's failure is then only in the log
+    async def database_away(*args: Any, **kwargs: Any) -> None:
+        raise psycopg.OperationalError("the server closed the connection (invented)")
+
+    async def breaks(job: Job) -> None:
+        raise RuntimeError("the cause")
+
+    monkeypatch.setattr(outcome_module, "fail", database_away)
+    await add(pool)
+    caplog.set_level(logging.WARNING, logger="app.jobs.worker")
+
+    await Worker(pool, {"test.work": breaks}, owner="w1", lease_s=0.9).run_once()
+
+    causes = [
+        record
+        for record in caplog.records
+        if record.levelno == logging.ERROR
+        and record.exc_info
+        and isinstance(record.exc_info[1], RuntimeError)
+    ]
+    assert len(causes) == 1  # once, not once per try
 
 
 @pytest.mark.pg

@@ -51,6 +51,9 @@ async def write_outcome(
     ``False`` if nothing was recorded: the lease was lost, or the database would not take it -
     the job runs again once its lease expires.
     """
+    if ending is None and isinstance(outcome, BaseException) and not isinstance(outcome, PermanentError):
+        # said before the write, once: with the database away the cause would be lost
+        log.error("job %s (%s) failed", job.id, job.kind, exc_info=outcome)
     for attempt in range(1, WRITE_ATTEMPTS + 1):
         try:
             async with pool.connection() as connection:
@@ -94,9 +97,7 @@ async def _record(
     elif isinstance(outcome, PermanentError):
         await fail(connection, job, outcome.code, outcome.message, retry=False)
     elif isinstance(outcome, BaseException):
-        # said once the failure is recorded: a job whose lease is gone is another worker's
         await fail(connection, job, "handler_error", type(outcome).__name__, retry=True)
-        log.error("job %s (%s) failed", job.id, job.kind, exc_info=outcome)
     else:
         try:
             # as the database will take it: no NaN, no type JSON does not know, not too deep

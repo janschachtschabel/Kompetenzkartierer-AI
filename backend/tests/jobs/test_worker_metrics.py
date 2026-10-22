@@ -178,12 +178,19 @@ async def fails(job: Job) -> None:
 
 @pytest.mark.pg
 @pytest.mark.parametrize(
-    ("ends", "outcome"), [(returns_a_result, "done"), (fails, "error")], ids=["done", "error"]
+    ("ends", "outcome", "causes"),
+    [(returns_a_result, "done", []), (fails, "error", [RuntimeError])],
+    ids=["done", "error"],
 )
 async def test_a_lease_lost_between_two_heartbeats_counts_as_lost_at_the_end(
-    pool: AsyncConnectionPool, caplog: pytest.LogCaptureFixture, ends: Handler, outcome: str
+    pool: AsyncConnectionPool,
+    caplog: pytest.LogCaptureFixture,
+    ends: Handler,
+    outcome: str,
+    causes: list[type[BaseException]],
 ) -> None:
-    # the lease expired while the loop was held, a sweep handed the job on; no heartbeat saw it
+    # the lease expired while the loop was held, a sweep handed the job on; no heartbeat saw it.
+    # A handler's own failure is still said, with its traceback; the loss is a warning
     kind = f"test.metrics_end_lost_{outcome}"
     async with pool.connection() as connection:
         job_id = await enqueue(connection, kind, "account-a")
@@ -201,7 +208,9 @@ async def test_a_lease_lost_between_two_heartbeats_counts_as_lost_at_the_end(
     assert sample("kka_jobs_total", kind=kind, outcome="lost") == before["lost"] + 1
     assert sample("kka_jobs_total", kind=kind, outcome=outcome) == before[outcome]
     assert sample("kka_job_duration_seconds_count", kind=kind) == timed + 1
-    assert errors_of(caplog) == []
+    errors = [record for record in caplog.records if record.levelno >= logging.ERROR]
+    assert [type(record.exc_info[1]) for record in errors if record.exc_info] == causes
+    assert len(errors) == len(causes)
     assert await job_row(pool, job_id) == ("running", None, None)
 
 
