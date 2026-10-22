@@ -8,11 +8,10 @@ for word; the first address of its url field (which also holds notes for its rea
 addresses); who publishes the copy there, as its host or the field's note on it says (an archive,
 a mirror, a secondary source: §7.5 has mirrors marked); its land; the sector of its assignment;
 its evidence, E from the primary document or S from a secondary source (A, an assumption, is
-none). A row whose fields a semicolon moved, or
-without a title or an address, is left out and counted, and so is each address an entry's url
-field names beyond the first ("further_address"). A second run adds nothing: a row's key
-is its assignment, land, title and address; a title the research corrects later is a new
-candidate beside the old one, which the editors clear away.
+none). A row whose fields a semicolon moved, or without a title or an address, is left out and
+counted, and so is each address an entry's url field names beyond the first ("further_address").
+A second run adds nothing: a row's key is its assignment, land, title and address; a title the
+research corrects later is a new candidate beside the old one, which the editors clear away.
 
 The comparison then counts the addresses of the register only the comparison dataset holds,
 only the research, or both.
