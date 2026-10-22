@@ -13,9 +13,12 @@ class UnknownJobKind(ValueError):
 
 
 def make_handlers(context: JobContext) -> dict[str, Handler]:
-    from app.sources import fetch_job
+    from app.sources import check_job, fetch_job
 
-    return {fetch_job.KIND: partial(fetch_job.fetch_source, context)}
+    return {
+        fetch_job.KIND: partial(fetch_job.fetch_source, context),
+        check_job.KIND: partial(check_job.check_sources, context),
+    }
 
 
 def select_handlers(handlers: Mapping[str, Handler], kinds: Collection[str]) -> dict[str, Handler]:
