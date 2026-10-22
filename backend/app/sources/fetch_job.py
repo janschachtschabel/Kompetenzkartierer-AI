@@ -78,7 +78,8 @@ async def fetch_source(
             file_name=file_name,
             received_name=visible_only(name)[:MAX_NAME_SIGNS],
             chain=fetched.chain,
-            title=PurePosixPath(file_name).stem[:MAX_TITLE_SIGNS],
+            # the stem trimmed, as an upload's ("Lehrplan .pdf"); should nothing be left, the name
+            title=PurePosixPath(file_name).stem[:MAX_TITLE_SIGNS].strip() or file_name[:MAX_TITLE_SIGNS],
         )
     return _result(source_id, stored)
 

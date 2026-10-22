@@ -137,6 +137,17 @@ async def test_the_name_the_address_gave_is_kept_without_hidden_signs(
         assert await cursor.fetchall() == [(received,)]
 
 
+async def test_the_title_from_the_file_name_is_trimmed(context: JobContext) -> None:
+    # as the upload's: "Lehrplan .pdf" is titled "Lehrplan", not "Lehrplan "
+    source_id, job = await add_source(context, url="https://lehrplaene.example/Lehrplan%20.pdf")
+
+    await fetch_source(context, job, transport=serving(pdf_answer))
+
+    row = await source_row(context, source_id)
+    assert row["file_name"] == "Lehrplan .pdf"
+    assert row["title"] == "Lehrplan"
+
+
 async def test_a_title_the_entry_has_is_kept(context: JobContext) -> None:
     source_id, job = await add_source(context, title="Kerncurriculum Physik")
 
