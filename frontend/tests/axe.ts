@@ -43,6 +43,23 @@ export async function violations(html: string, options: RunOptions = {}): Promis
   }
 }
 
+/**
+ * The violations axe finds in the whole document, as a page is shown: the rules
+ * that look at the page itself - one main region, a level-one heading, the
+ * document's title and language, a way past repeated blocks - never fire inside
+ * the `div` `violations` checks. Geometry stays off, as there.
+ */
+export async function pageViolations(options: RunOptions = {}): Promise<Result[]> {
+  const result = await axe.run(document, {
+    rules: {
+      "color-contrast": { enabled: false },
+      "target-size": { enabled: false },
+    },
+    ...options,
+  });
+  return result.violations;
+}
+
 /** A one-line summary per violation, so a failure names what to fix. */
 export function describeViolations(found: Result[]): string {
   return found.map((v) => `${v.id}: ${v.help} (${v.nodes.length}x)`).join("\n");
