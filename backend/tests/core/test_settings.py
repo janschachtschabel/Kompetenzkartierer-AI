@@ -254,6 +254,33 @@ def test_a_request_waits_for_a_connection_a_bounded_time(
         Settings()
 
 
+def test_the_worker_s_times_have_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+
+    settings = Settings()
+
+    assert (settings.job_lease_s, settings.job_poll_s, settings.job_shutdown_grace_s) == (60.0, 1.0, 20.0)
+
+
+@pytest.mark.parametrize(
+    ("variable", "value"),
+    [
+        ("JOB_LEASE_S", "2"),
+        ("JOB_LEASE_S", "3601"),
+        ("JOB_POLL_S", "0"),
+        ("JOB_POLL_S", "61"),
+        ("JOB_SHUTDOWN_GRACE_S", "-1"),
+        ("JOB_SHUTDOWN_GRACE_S", "3601"),
+    ],
+)
+def test_the_worker_s_times_are_bounded(monkeypatch: pytest.MonkeyPatch, variable: str, value: str) -> None:
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+    monkeypatch.setenv(variable, value)
+
+    with pytest.raises(ValidationError, match=variable.lower()):
+        Settings()
+
+
 def test_the_pool_cannot_be_smaller_than_its_minimum(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DATABASE_URL", FAKE_URL)
     monkeypatch.setenv("DB_POOL_MIN_SIZE", "5")

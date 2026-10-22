@@ -17,6 +17,7 @@ from app.jobs.queue import (
     fail,
     heartbeat,
     mark_cancelled,
+    release,
     request_cancel,
     requeue_expired,
 )
@@ -220,6 +221,29 @@ async def test_a_failure_after_a_cancel_request_ends_cancelled(connect: Any) -> 
 
     assert await fail(db, job, "converter_down", "the converter did not answer", retry=True) == "cancelled"
     assert (await row(db, job_id))["status"] == "cancelled"
+
+
+async def test_a_released_job_waits_again_unspent_unless_its_cancel_was_asked(connect: Any) -> None:
+    db = await connect()
+    kept = await enqueue(db, "test.work", "account-a")
+    dropped = await enqueue(db, "test.work", "account-b")
+    first = await claim(db, "worker-1", KINDS, LEASE_S)
+    second = await claim(db, "worker-1", KINDS, LEASE_S)
+    assert first is not None and second is not None
+    await request_cancel(db, dropped)
+
+    await release(db, first)
+    await release(db, second)
+
+    assert {key: (await row(db, kept))[key] for key in ("status", "attempts", "lease_owner", "later")} == {
+        "status": "queued",
+        "attempts": 0,
+        "lease_owner": None,
+        "later": False,
+    }
+    assert (await row(db, dropped))["status"] == "cancelled"
+    with pytest.raises(LeaseLost):
+        await release(db, first)
 
 
 async def test_an_expired_lease_on_the_last_attempt_fails_the_job(connect: Any) -> None:

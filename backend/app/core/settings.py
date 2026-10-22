@@ -115,6 +115,9 @@ class Settings(BaseSettings):
     job_lease_s: Annotated[float, Field(ge=3, le=3600)] = 60.0
     # How often an idle worker looks for work
     job_poll_s: Annotated[float, Field(gt=0, le=60)] = 1.0
+    # How long a stopping worker lets its job run before it hands it back unspent; keep it below
+    # the deployment's termination grace period (Kubernetes: 30 s), or the job waits for its lease
+    job_shutdown_grace_s: Annotated[float, Field(ge=0, le=3600)] = 20.0
     ontology_dir: Path = REPOSITORY_ONTOLOGY
     log_format: Literal["text", "json"] = "text"
 

@@ -181,6 +181,27 @@ async def fail(
     return status
 
 
+async def release(connection: psycopg.AsyncConnection, job: Job) -> None:
+    """Give a running job back unspent, for the next worker: its attempt is not counted.
+
+    A stopping worker does this with a job that outlasted its grace; one asked to cancel ends.
+    """
+    cursor = await connection.execute(
+        """
+        UPDATE job SET lease_owner = NULL, lease_token = NULL, lease_expires_at = NULL,
+            status = CASE WHEN cancel_requested THEN 'cancelled' ELSE 'queued' END,
+            attempts = CASE WHEN cancel_requested THEN attempts ELSE greatest(attempts - 1, 0) END,
+            run_after = now(),
+            finished_at = CASE WHEN cancel_requested THEN now() END
+        WHERE id = %s AND lease_token = %s AND status = 'running'
+        RETURNING id
+        """,
+        (job.id, job.lease_token),
+    )
+    if await cursor.fetchone() is None:
+        raise LeaseLost(str(job.id))
+
+
 async def request_cancel(connection: psycopg.AsyncConnection, job_id: UUID) -> bool:
     """Mark a waiting or running job for cancelling; a waiting one ends now. ``False`` if it had ended."""
     cursor = await connection.execute(
