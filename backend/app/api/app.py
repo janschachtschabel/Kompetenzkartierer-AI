@@ -8,6 +8,7 @@ from fastapi import FastAPI
 
 from app import __version__
 from app.api import accounts, internal, jobs, system
+from app.api.body_limit import JSON_BODY_LIMIT, BodyLimit
 from app.api.errors import ERROR_RESPONSES, install_error_handlers
 from app.api.request_log import RequestLog
 from app.api.security_headers import SecurityHeaders
@@ -76,6 +77,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(accounts.router)
     app.include_router(jobs.router)
     app.add_middleware(internal.InternalOnly, port=settings.internal_port)
+    app.add_middleware(BodyLimit, default=JSON_BODY_LIMIT, limits={})
     # Added after InternalOnly, so it runs before: every answer, the refused internal ones too, is
     # named and logged
     app.add_middleware(RequestLog, routes=app.routes)
