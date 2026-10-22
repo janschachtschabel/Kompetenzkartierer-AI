@@ -198,3 +198,18 @@ def test_an_address_httpx2_cannot_read_is_refused_at_the_import(
     assert answer.status_code == 422
     assert answer.json()["code"] == "url_invalid"
     assert rows(migrated, "SELECT (SELECT count(*) FROM source), (SELECT count(*) FROM job)") == [(0, 0)]
+
+
+def test_a_user_part_urlsplit_refuses_is_refused_and_its_password_logged_nowhere(
+    client: TestClient, owner: tuple[UUID, dict[str, str]], caplog: pytest.LogCaptureFixture
+) -> None:
+    # urlsplit's NFKC check raised a bare ValueError quoting the netloc: a 500, its line the password
+    url = f"https://kka:geheim{chr(0xFF03)}@lehrplaene.example/a.pdf"
+    caplog.set_level("DEBUG")
+
+    answer = client.post("/api/v1/sources/import", headers=owner[1], json={"url": url})
+
+    assert answer.status_code == 422
+    assert answer.json()["code"] == "url_invalid"
+    assert "geheim" not in answer.text
+    assert "geheim" not in caplog.text

@@ -85,6 +85,22 @@ def test_an_address_httpx2_cannot_read_or_whose_port_is_none_is_refused(url: str
         check_url(url)
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        f"http://u{chr(0x2100)}@lehrplaene.example/a.pdf",  # ACCOUNT OF, a/c under NFKC
+        f"http://kka:geheim{chr(0xFF03)}@lehrplaene.example/a.pdf",  # a fullwidth number sign
+    ],
+    ids=["user-account-of", "password-fullwidth-number-sign"],
+)
+def test_a_user_part_urlsplit_refuses_is_refused_without_naming_it(url: str) -> None:
+    # urlsplit raised a bare ValueError quoting the netloc, password and all: a 500 at the import
+    with pytest.raises(UrlNotAllowed) as refused:
+        check_url(url)
+
+    assert "geheim" not in str(refused.value)
+
+
 @pytest.mark.parametrize("port", [1, 65535])
 def test_a_port_within_its_range_passes(port: int) -> None:
     assert check_url(f"https://lehrplaene.example:{port}/a.pdf") == f"https://lehrplaene.example:{port}/a.pdf"

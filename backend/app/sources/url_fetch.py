@@ -106,7 +106,10 @@ def check_url(url: str) -> str:
         raise UrlNotAllowed("the address cannot be read") from None
     if port is not None and not 1 <= port <= 65535:
         raise UrlNotAllowed("the address names no port there can be")
-    parts = urlsplit(url)
+    try:
+        parts = urlsplit(url)
+    except ValueError:  # a netloc NFKC changes; its message quotes it, password and all
+        raise UrlNotAllowed("the address cannot be read") from None
     if parts.scheme not in ("http", "https"):
         raise UrlNotAllowed(f"only http and https addresses are fetched, not {parts.scheme[:20] or 'none'!r}")
     if not parts.hostname:
