@@ -383,6 +383,40 @@ input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:dis
   overflow-wrap: anywhere;
 }
 
+/* An entry's facts, and those of each time its file came (SourceDetailView, AcquisitionList): the
+   term beside its value where there is room, above it where there is not. An address breaks
+   rather than pushing the page sideways at 320px. */
+.facts {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+}
+
+.facts dt {
+  font-weight: 600;
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.facts__address {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 30rem) {
+  .facts {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0;
+  }
+
+  .facts dd {
+    margin-block-end: var(--space-1);
+  }
+}
+
 /* Every page sits on the same grid: one width, one gutter, decided here so that
    moving between two menu entries does not shift the page sideways. */
 .page {

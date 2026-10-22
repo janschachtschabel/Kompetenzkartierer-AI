@@ -16,6 +16,11 @@ function decoded(text: string): string {
   }
 }
 
+/** Only an address of the web becomes a link: whatever else came is shown as it is. */
+export function isWebAddress(address: string | null): address is string {
+  return address !== null && /^https?:\/\//i.test(address);
+}
+
 /** `address` without what tells no address from another; what is no web address, as it is. */
 export function readableAddress(address: string): string {
   let url: URL;

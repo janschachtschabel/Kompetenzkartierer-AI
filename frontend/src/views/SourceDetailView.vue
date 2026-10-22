@@ -11,12 +11,14 @@ import { onMounted, ref, watch } from "vue";
 import { RouterLink, useRouter, type RouteLocationRaw } from "vue-router";
 
 import { ApiError, getSource, MIB, type SeedFields, type SourceDetail } from "@/api";
+import AcquisitionList from "@/components/AcquisitionList.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
 import { LOCALE, messages, t } from "@/i18n/de";
 import { failureNotice, type Notice } from "@/notice";
 import { pageTitle } from "@/pageTitle";
+import { isWebAddress } from "@/readableAddress";
 import { word } from "@/registerWords";
 
 const props = defineProps<{ id: string }>();
@@ -87,11 +89,6 @@ function grades(seed: SeedFields): string | null {
   if (from === null || to === null || from === to) return String(from ?? to);
   return t("entryPage.seed.gradeRange", { from, to });
 }
-
-/** Only an address of the web becomes a link: whatever else came is shown as it is. */
-function isWebAddress(address: string | null): address is string {
-  return address !== null && /^https?:\/\//i.test(address);
-}
 </script>
 
 <template>
@@ -157,35 +154,7 @@ function isWebAddress(address: string | null): address is string {
 
       <section v-if="source.acquisitions.length" class="source__section" aria-labelledby="source-acquisitions">
         <h2 id="source-acquisitions">{{ t("entryPage.acquisitions.heading") }}</h2>
-        <ul class="acquisitions">
-          <li v-for="(acquisition, index) in source.acquisitions" :key="index" class="card acquisition">
-            <dl class="facts">
-              <dt>{{ t("entryPage.acquisitions.method") }}</dt>
-              <dd>{{ word(messages.entryPage.acquisitionMethod, acquisition.method) }}</dd>
-              <dt>{{ t("entryPage.acquisitions.acquiredAt") }}</dt>
-              <dd>
-                <time :datetime="acquisition.acquired_at">{{ dateTime.format(new Date(acquisition.acquired_at)) }}</time>
-              </dd>
-              <template v-if="acquisition.received_name">
-                <dt>{{ t("entryPage.acquisitions.receivedName") }}</dt>
-                <dd><bdi>{{ acquisition.received_name }}</bdi></dd>
-              </template>
-              <template v-if="acquisition.chain.length">
-                <dt>{{ t("entryPage.acquisitions.chain") }}</dt>
-                <dd>
-                  <ol class="acquisition__chain">
-                    <li v-for="(address, step) in acquisition.chain" :key="step">
-                      <a v-if="isWebAddress(address)" class="facts__address" :href="address" rel="noreferrer">
-                        <bdi>{{ address }}</bdi>
-                      </a>
-                      <bdi v-else class="facts__address">{{ address }}</bdi>
-                    </li>
-                  </ol>
-                </dd>
-              </template>
-            </dl>
-          </li>
-        </ul>
+        <AcquisitionList :acquisitions="source.acquisitions" />
       </section>
 
       <section v-if="source.seed" class="source__section" aria-labelledby="source-seed">
@@ -277,9 +246,9 @@ function isWebAddress(address: string | null): address is string {
   margin: 0 0 var(--space-2);
 }
 
-/* A long title or address breaks rather than pushing the page sideways at 320px. */
+/* A long title or address breaks rather than pushing the page sideways at 320px; among the facts
+   (style.css) an address does so too. */
 .source__title,
-.facts__address,
 .note__address {
   overflow-wrap: anywhere;
 }
@@ -295,36 +264,7 @@ function isWebAddress(address: string | null): address is string {
   margin: 0 0 var(--space-2);
 }
 
-/* Term and value side by side where there is room, the term above its value where there is not. */
-.facts {
-  display: grid;
-  grid-template-columns: minmax(8rem, max-content) minmax(0, 1fr);
-  gap: var(--space-1) var(--space-3);
-  margin: 0;
-}
-
-.facts dt {
-  font-weight: 600;
-}
-
-.facts dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-@media (max-width: 30rem) {
-  .facts {
-    grid-template-columns: minmax(0, 1fr);
-    row-gap: 0;
-  }
-
-  .facts dd {
-    margin-block-end: var(--space-1);
-  }
-}
-
-.notes,
-.acquisitions {
+.notes {
   display: grid;
   gap: var(--space-1);
   margin: 0;
@@ -332,14 +272,8 @@ function isWebAddress(address: string | null): address is string {
   list-style: none;
 }
 
-.note,
-.acquisition {
+.note {
   margin: 0;
-}
-
-.acquisition__chain {
-  margin: 0;
-  padding-inline-start: var(--space-3);
 }
 
 .note__text {
