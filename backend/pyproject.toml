@@ -22,7 +22,7 @@ dependencies = [
     # (with plain httpx it warns that support ends)
     "httpx2>=2.13",
     # the object store in a cluster: any S3-compatible service, MinIO in Compose
-    "boto3",
+    "boto3>=1.43",
 ]
 
 [dependency-groups]
