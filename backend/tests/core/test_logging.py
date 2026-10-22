@@ -118,6 +118,18 @@ def test_http_clients_stay_quiet_even_at_debug(name: str) -> None:
     assert not logging.getLogger(name).isEnabledFor(logging.INFO)
 
 
+@pytest.mark.parametrize("name", ["botocore", "botocore.endpoint", "boto3", "s3transfer", "urllib3"])
+def test_the_object_store_client_stays_quiet_even_at_debug(name: str) -> None:
+    # botocore logs each signed request at DEBUG: the access key id and the signature
+    stream = configured("json", level="DEBUG")
+
+    logging.getLogger(name).debug("Authorization: AWS4-HMAC-SHA256 Credential=invented")
+    logging.getLogger(name).info("Authorization: AWS4-HMAC-SHA256 Credential=invented")
+
+    assert not logging.getLogger(name).isEnabledFor(logging.INFO)
+    assert "Credential" not in stream.getvalue()
+
+
 def test_configuring_again_does_not_double_the_lines() -> None:
     configured("json")
     stream = configured("json")

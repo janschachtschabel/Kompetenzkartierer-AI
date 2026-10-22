@@ -25,8 +25,19 @@ UVICORN_LOGGER = "uvicorn"
 UVICORN_ACCESS_LOGGER = "uvicorn.access"  # the service writes its own line per request
 # httpx names every request with its query at INFO and httpcore logs headers at DEBUG - an
 # Authorization header among them; httpx2 and httpcore2 (starlette's test client) do the same, the
-# openai SDK logs request options at DEBUG. All stay at WARNING, whatever the level
-QUIET_LOGGERS = ("httpx", "httpcore", "httpx2", "httpcore2", "openai")
+# openai SDK logs request options at DEBUG; botocore logs each signed request at DEBUG (the access
+# key id and the signature), urllib3 below it every connection. All stay at WARNING, whatever the level
+QUIET_LOGGERS = (
+    "httpx",
+    "httpcore",
+    "httpx2",
+    "httpcore2",
+    "openai",
+    "botocore",
+    "boto3",
+    "s3transfer",
+    "urllib3",
+)
 
 _request_id: ContextVar[str] = ContextVar("request_id", default=NO_REQUEST)
 
