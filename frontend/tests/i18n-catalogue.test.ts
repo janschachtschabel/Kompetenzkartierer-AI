@@ -80,6 +80,12 @@ function keysNamedIn(source: string): string[] {
   return [...source.matchAll(literal)].map(([, key]) => key);
 }
 
+/** Every key the code asks for: what it hands to t(), whatever the group, and what it keeps as data. */
+function keysAskedIn(source: string): string[] {
+  const handed = [...source.matchAll(/\bt\(\s*["'`]([\w.]+)["'`]/g)].map(([, key]) => key);
+  return [...new Set([...handed, ...keysNamedIn(source)])];
+}
+
 describe("a key the code asks for", () => {
   it("is found as data too, and only where it reads as a key", () => {
     expect(keysNamedIn('{ name: "start", meta: { title: "app.titles.missing" } }')).toEqual(["app.titles.missing"]);
@@ -87,8 +93,15 @@ describe("a key the code asks for", () => {
     expect(keysNamedIn('const route = "start"; const file = "notes.start.md"')).toEqual([]);
   });
 
+  it("is found in t() whatever its group, a new or a misspelt one too", () => {
+    // the groups above are only those the catalogue has; t() names any
+    expect(keysAskedIn('{{ t("curricula.title") }}')).toEqual(["curricula.title"]);
+    expect(keysAskedIn('t("strat.heading") + t("start.welcome")')).toEqual(["strat.heading", "start.welcome"]);
+    expect(keysAskedIn('{ label: "app.nav.start" }')).toEqual(["app.nav.start"]);
+  });
+
   it("is in the catalogue: a typo shows the raw key on the one path nobody looked at", () => {
-    const asked = keysNamedIn(code);
+    const asked = keysAskedIn(code);
     expect(asked.length, "the code asks for keys").toBeGreaterThan(10);
     expect(asked, "the keys kept as data were read").toEqual(expect.arrayContaining(["app.nav.start", "app.titles.login"]));
 
