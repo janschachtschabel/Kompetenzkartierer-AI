@@ -51,15 +51,15 @@ watch(filters, (value) => {
 });
 
 // The address changed from elsewhere - the navigation's link to the register, without the
-// filter: the filter follows it. Its own changes come back the same. Only under the path the page
-// was mounted at: a KeepAlive or a leaving Transition keeps it mounted under the next page's
-// address, which it would read with and write its query into. The path, not the route's name:
-// mounted elsewhere than at its route, as its tests mount it, the page has no name of its own.
-const ownPath = route.path;
+// filter: the filter follows it. Its own changes come back the same. Only under the route the
+// page was mounted at: a KeepAlive or a leaving Transition keeps it mounted under the next page's
+// address, which it would read with and write its query into. The route's name, not its path:
+// the router takes "/Quellen/" for "/quellen", and the link then leads to the same page.
+const ownRoute = route.name;
 watch(
   () => route.query,
   (query) => {
-    if (route.path !== ownPath) return;
+    if (route.name !== ownRoute) return;
     const held = filtersFromQuery(query);
     if (!sameFilters(held, filters.value)) filters.value = held;
   },

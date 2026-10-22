@@ -440,6 +440,28 @@ describe("the register page's filter in the address", () => {
     expect(listed).toHaveBeenLastCalledWith({}, { limit: 50 });
   });
 
+  it("follows the navigation's link however the register's address was spelled on arrival", async () => {
+    // the router matches without regard to case or a closing slash: the same page stays
+    api.setToken("kka_token");
+    try {
+      await router.push("/Quellen/?kandidaten=1");
+      vi.spyOn(api, "getMe").mockResolvedValue({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
+      const listed = vi.spyOn(api, "listSources").mockResolvedValue(page([entry("a", "Lehrplan Physik")]));
+      mount(App, { global: { plugins: [router] }, attachTo: document.body });
+      await flushPromises();
+
+      await router.push({ name: "sources" });
+      await flushPromises();
+
+      expect(document.querySelector<HTMLInputElement>("input[type=checkbox]")?.checked).toBe(false);
+      expect(listed).toHaveBeenLastCalledWith({}, { limit: 50 });
+    } finally {
+      api.clearToken();
+      await router.push("/");
+      document.body.innerHTML = "";
+    }
+  });
+
   it("leaves an address that is no longer its own alone where the page stays mounted after leaving", async () => {
     // mounted without a RouterView, as a KeepAlive or a leaving Transition holds it
     await router.replace({ query: { kandidaten: "1" } });
