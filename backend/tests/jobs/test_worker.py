@@ -1,6 +1,7 @@
 """The worker runs claimed jobs, keeps their lease alive and writes their outcome."""
 
 import asyncio
+import logging
 from collections.abc import AsyncIterator
 from typing import Any
 from uuid import UUID
@@ -135,6 +136,40 @@ async def test_a_worker_that_lost_its_lease_stops_and_writes_nothing(pool: Async
 
     found = await state(pool, job_id)
     assert (found["status"], found["owner"], found["result"]) == ("running", "w2", None)
+
+
+@pytest.mark.parametrize("ending", ["cancelled", "lost"])
+async def test_a_handler_that_breaks_as_it_is_stopped_leaves_its_traceback_as_a_warning(
+    pool: AsyncConnectionPool, caplog: pytest.LogCaptureFixture, ending: str
+) -> None:
+    # the run ended by a cancel or a lost lease, not by the failure; its cause is still said
+    started = asyncio.Event()
+
+    async def breaks_on_its_way_out(job: Job) -> None:
+        started.set()
+        try:
+            await asyncio.sleep(3600)
+        except asyncio.CancelledError:
+            raise RuntimeError("the cleanup broke") from None
+
+    job_id = await add(pool)
+    caplog.set_level(logging.WARNING, logger="app.jobs.worker")
+    worker = Worker(pool, {"test.work": breaks_on_its_way_out}, owner="w1", lease_s=0.6)
+    running = asyncio.create_task(worker.run_once())
+    await asyncio.wait_for(started.wait(), 5)
+    async with pool.connection() as connection:
+        if ending == "cancelled":
+            await request_cancel(connection, job_id, "account-a")
+        else:
+            await connection.execute(
+                "UPDATE job SET lease_token = gen_random_uuid() WHERE id = %s", (job_id,)
+            )
+
+    await asyncio.wait_for(running, 5)
+
+    traced = [(record.levelno, type(record.exc_info[1])) for record in caplog.records if record.exc_info]
+    assert traced == [(logging.WARNING, RuntimeError)]
+    assert not [record for record in caplog.records if record.levelno >= logging.ERROR]
 
 
 async def test_a_stopped_worker_finishes_its_job_and_takes_no_new_one(pool: AsyncConnectionPool) -> None:

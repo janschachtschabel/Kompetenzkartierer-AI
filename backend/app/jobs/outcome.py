@@ -43,6 +43,20 @@ def one_line(error: BaseException) -> str:
     return " ".join(str(error).split())
 
 
+def say_failure(job: Job, outcome: Outcome, ending: Ending) -> None:
+    """Log a handler's own failure with its traceback, once and before any write - with the
+    database away its cause would be lost: an error when it ended the run, a warning when a
+    cancel or a lost lease did. A PermanentError that ended the run is its answer, not a fault;
+    a CancelledError or LeaseLost is how the run was stopped."""
+    if not isinstance(outcome, BaseException) or isinstance(outcome, asyncio.CancelledError | LeaseLost):
+        return
+    if ending is None:
+        if not isinstance(outcome, PermanentError):
+            log.error("job %s (%s) failed", job.id, job.kind, exc_info=outcome)
+        return
+    log.warning("job %s (%s) failed as it was stopped (%s)", job.id, job.kind, ending, exc_info=outcome)
+
+
 async def write_outcome(
     pool: AsyncConnectionPool, job: Job, outcome: Outcome, ending: Ending, *, lease_s: float
 ) -> bool:
@@ -51,9 +65,6 @@ async def write_outcome(
     ``False`` if nothing was recorded: the lease was lost, or the database would not take it -
     the job runs again once its lease expires.
     """
-    if ending is None and isinstance(outcome, BaseException) and not isinstance(outcome, PermanentError):
-        # said before the write, once: with the database away the cause would be lost
-        log.error("job %s (%s) failed", job.id, job.kind, exc_info=outcome)
     for attempt in range(1, WRITE_ATTEMPTS + 1):
         try:
             async with pool.connection() as connection:

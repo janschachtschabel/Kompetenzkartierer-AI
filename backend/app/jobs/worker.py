@@ -31,7 +31,7 @@ from psycopg_pool import AsyncConnectionPool, PoolTimeout
 from app.core.logging import current_request_id, set_request_id
 from app.core.metrics import observe_expired_leases, observe_job
 from app.core.tracing import continue_trace, end_trace
-from app.jobs.outcome import Ending, Outcome, PermanentError, Result, one_line, write_outcome
+from app.jobs.outcome import Ending, Outcome, PermanentError, Result, one_line, say_failure, write_outcome
 from app.jobs.queue import Job, LeaseLost, claim, heartbeat, requeue_expired
 
 __all__ = ["Handler", "PermanentError", "Result", "Worker", "main"]
@@ -132,6 +132,7 @@ class Worker:
         elapsed = time.perf_counter() - started
         if ending is None and isinstance(outcome, LeaseLost):
             ending = "lost"  # the handler saw it first, writing its progress
+        say_failure(job, outcome, ending)
         if ending == "lost":
             log.warning("lost the lease of job %s (%s); another worker has it", job.id, job.kind)
             observe_job(job.kind, ending, elapsed)
