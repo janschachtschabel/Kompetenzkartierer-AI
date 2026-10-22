@@ -57,6 +57,13 @@ ein Test schlägt an, wenn sie veraltet.
 | `LLM_CONTEXT_TOKENS` | Zahl ≥ 8000 | – | – | Sprachmodell |
 <!-- settings:end -->
 
+## Auf einem Rechner
+
+- `INTERNAL_PORT` gilt für API und Worker: Beide bedienen dort `/health` und `/metrics`. Läuft
+  ein Worker neben der API auf demselben Rechner, braucht er ein eigenes `INTERNAL_PORT` (etwa
+  `9001`); sonst startet der zweite Prozess nicht, oder beide teilen sich den Port still
+  (Windows). Im Cluster und in Compose hat jeder Pod bzw. Container seinen eigenen.
+
 ## Für einen Cluster
 
 - `HOST` setzt das Image auf `0.0.0.0`; außerhalb des Images bleibt der Dienst auf Loopback.

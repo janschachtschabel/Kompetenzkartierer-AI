@@ -71,7 +71,11 @@ oder Worker), `python -m app.vocab.load` lädt die Vokabulare aus `ONTOLOGY_DIR`
 `ontology/` dieses Repositorys), `python -m app.serve` startet die API auf `PUBLIC_PORT` und
 `INTERNAL_PORT` (`/health`, `/ready`, `/metrics`), `python -m app.jobs.worker` den Worker
 (`WORKER_KINDS` beschränkt ihn auf Job-Arten, kommagetrennt). Beide starten nur mit einem
-nutzbaren Objektspeicher (lokal etwa `STORAGE_DIR=../data/store`).
+nutzbaren Objektspeicher (lokal etwa `STORAGE_DIR=../data/store`). Der Worker bedient
+`/health` und `/metrics` ebenfalls auf `INTERNAL_PORT`; im Cluster hat jeder Pod seinen eigenen.
+Läuft ein Worker neben der API auf demselben Rechner, braucht er ein eigenes `INTERNAL_PORT`
+(etwa `INTERNAL_PORT=9001`): Sonst startet der zweite Prozess nicht, oder beide teilen sich den
+Port still (Windows).
 
 Anmeldung: Es gibt nur API-Tokens (`kka_…`), die ein Admin ausgibt; die Datenbank hält ihren
 HMAC unter `API_KEY_PEPPER` (Geheimnis, mindestens 32 Zeichen, auch als Datei über
