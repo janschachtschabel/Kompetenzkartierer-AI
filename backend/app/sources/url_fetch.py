@@ -101,10 +101,10 @@ def check_url(url: str) -> str:
     if any(sign.isspace() or unicodedata.category(sign) in ("Cc", "Cf") for sign in url):
         raise UrlNotAllowed("the address holds spaces, control or format signs")
     try:
-        port = httpx2.URL(url).port  # None for the scheme's own
+        parsed = httpx2.URL(url)
     except httpx2.InvalidURL:
         raise UrlNotAllowed("the address cannot be read") from None
-    if port is not None and not 1 <= port <= 65535:
+    if not _port_there_can_be(parsed):
         raise UrlNotAllowed("the address names no port there can be")
     try:
         parts = urlsplit(url)
@@ -117,6 +117,10 @@ def check_url(url: str) -> str:
     if "@" in parts.netloc:
         raise UrlNotAllowed("the address must not hold a user or a password")
     return parts.geturl()
+
+
+def _port_there_can_be(url: httpx2.URL) -> bool:
+    return url.port is None or 1 <= url.port <= 65535  # None: the scheme's own
 
 
 def public_address(host: str, resolve: ResolveHost) -> str:
@@ -265,9 +269,12 @@ def _redirect_target(current: str, location: str | None) -> str:
     if not location:
         raise BadAnswer("a redirect without an address")
     try:
-        return str(httpx2.URL(current).join(location))
+        target = httpx2.URL(current).join(location)
     except httpx2.InvalidURL:
-        raise BadAnswer("a redirect to an address that cannot be read") from None
+        target = None
+    if target is None or not _port_there_can_be(target):
+        raise BadAnswer("a redirect to an address that cannot be read")
+    return str(target)
 
 
 async def _body(response: httpx2.Response, max_bytes: int) -> bytes:

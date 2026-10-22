@@ -448,11 +448,17 @@ async def test_a_redirect_to_an_address_that_cannot_be_spelled_is_a_download_err
 @pytest.mark.anyio
 @pytest.mark.parametrize(
     "location",
-    [f"http://{PUBLIC}:8o80/x".encode(), f"http://a{chr(0x200D)}b.example/x".encode()],
-    ids=["port-of-letters", "host-idna-refuses"],
+    [
+        f"http://{PUBLIC}:8o80/x".encode(),
+        f"http://{PUBLIC}:99999/x".encode(),
+        f"http://{PUBLIC}:0/x".encode(),
+        f"http://a{chr(0x200D)}b.example/x".encode(),
+    ],
+    ids=["port-of-letters", "port-past-65535", "port-0", "host-idna-refuses"],
 )
 async def test_a_redirect_to_an_address_that_cannot_be_read_is_a_bad_answer(location: bytes) -> None:
-    # a port of letters, a host IDNA refuses (sent as a server sends it, in bytes): the same again
+    # a port of letters or none there can be, a host IDNA refuses (sent as a server sends it, in
+    # bytes): the server's answer, the same again - not an address the entry named
     with pytest.raises(BadAnswer, match="cannot be read"):
         await fetch(
             f"http://{PUBLIC}/start",
