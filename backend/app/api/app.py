@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app import __version__
-from app.api import accounts, internal, jobs, sources, system
+from app.api import accounts, internal, jobs, source_register, sources, system
 from app.api.body_limit import JSON_BODY_LIMIT, MIB, BodyLimit
 from app.api.errors import ERROR_RESPONSES, install_error_handlers
 from app.api.request_log import RequestLog
@@ -78,6 +78,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(accounts.router)
     app.include_router(jobs.router)
     app.include_router(sources.router)
+    app.include_router(source_register.router)
     app.add_middleware(internal.InternalOnly, port=settings.internal_port)
     # an upload takes a file and the form around it; every other body is JSON
     upload_limit = (settings.max_upload_mb + 1) * MIB
