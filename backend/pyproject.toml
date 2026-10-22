@@ -57,6 +57,16 @@ markers = [
 ]
 addopts = "-ra --strict-markers --import-mode=importlib"
 
+[tool.coverage.run]
+# the bootstrap, the vocabulary load, the migration and the worker run as processes of their own
+# in their tests; coverage follows them there
+patch = ["subprocess"]
+
+[tool.coverage.report]
+# 96 % measured on Windows at the end of M0 (the old app holds 96); one point for the branches of
+# the other platform, which CI runs on Linux
+fail_under = 95
+
 [tool.ruff]
 line-length = 110
 target-version = "py313"

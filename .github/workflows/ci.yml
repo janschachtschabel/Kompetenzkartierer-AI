@@ -1,24 +1,28 @@
-# Every check of the repository on each push to main and each pull request: the ontology, the
-# backend (lint, types, tests against PostgreSQL and MinIO), the frontend (tests, lint, types,
-# build) and both images, with a smoke test of the whole service in Compose.
-# Actions are pinned by commit (a tag can be moved); the comment names the version.
+# Every check of the repository on each push to main and each pull request, or by hand for any
+# branch: the ontology, the backend (lint, types, tests against PostgreSQL and MinIO, coverage),
+# the frontend (tests, lint, types, build) and both images, with a smoke test of the whole service
+# in Compose. Actions are pinned by commit (a tag can be moved); the comment names the version.
 name: ci
 
 on:
   push:
     branches: [main]
   pull_request:
+  # a test branch is checked by hand: a push alone starts nothing there
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # a newer push to a pull request replaces its run; a run on main always ends
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   backend:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     services:
       postgres:
         image: pgvector/pgvector:pg17@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f
@@ -27,8 +31,9 @@ jobs:
           POSTGRES_PASSWORD: kka-test
           POSTGRES_DB: kka
         ports: ["55432:5432"]
+        # over TCP: the first start's socket-only server would count as healthy
         options: >-
-          --health-cmd "pg_isready -U kka -d kka" --health-interval 5s --health-timeout 3s --health-retries 20
+          --health-cmd "pg_isready -h 127.0.0.1 -U kka -d kka" --health-interval 5s --health-timeout 3s --health-retries 20
     env:
       # invented credentials of the test services; CI=true makes their tests required
       KKA_TEST_DATABASE_URL: postgresql://kka:kka-test@127.0.0.1:55432/kka
@@ -40,6 +45,8 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           version: "0.7.13"   # the version that wrote uv.lock
@@ -57,20 +64,25 @@ jobs:
       - run: uv sync --frozen
       - name: Ontology check
         run: .venv/bin/python -I ../ontology/pruefung/pruefe.py
-      - run: .venv/bin/python -m ruff check app tests
-      - run: .venv/bin/python -m ruff format --check app tests
-      - run: .venv/bin/python -m mypy
+      # deploy/make-secrets.py runs in the smoke test below; ruff takes the backend's settings for it
+      - run: .venv/bin/python -m ruff check --config pyproject.toml app tests ../deploy/make-secrets.py
+      - run: .venv/bin/python -m ruff format --check --config pyproject.toml app tests ../deploy/make-secrets.py
+      - run: .venv/bin/python -m mypy app tests ../deploy/make-secrets.py
       - name: Wait for the test object store
-        run: for i in $(seq 1 30); do curl -sf http://127.0.0.1:59000/minio/health/ready && exit 0; sleep 1; done; exit 1
-      - run: .venv/bin/python -m pytest
+        run: for i in $(seq 1 30); do curl -sf --max-time 2 http://127.0.0.1:59000/minio/health/ready && exit 0; sleep 1; done; exit 1
+      # the floor is fail_under in pyproject.toml
+      - run: .venv/bin/python -m pytest --cov=app --cov-report=term-missing:skip-covered
 
   frontend:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
@@ -84,8 +96,11 @@ jobs:
   images:
     needs: [backend, frontend]
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
@@ -104,12 +119,27 @@ jobs:
           python3 deploy/make-secrets.py
           docker compose -f deploy/docker-compose.yml up -d
           for i in $(seq 1 60); do
-            if curl -sf http://127.0.0.1:18080/api/v1/info; then echo; ok=1; break; fi
+            if curl -sf --max-time 5 http://127.0.0.1:18080/api/v1/info; then echo; ok=1; break; fi
             sleep 2
           done
           docker compose -f deploy/docker-compose.yml ps -a
           test "${ok:-0}" = 1
-          test "$(docker compose -f deploy/docker-compose.yml ps -a migrate --format '{{.ExitCode}}')" = 0
+          # no service waits for the vocabulary load, so up -d stays green when it fails
+          docker compose -f deploy/docker-compose.yml wait vocab
+          test "$(docker compose -f deploy/docker-compose.yml ps -a vocab --format '{{.ExitCode}}')" = 0
+          test "$(docker compose -f deploy/docker-compose.yml ps -q --status running worker | wc -l)" = 2
+          # /info needs no database; /ready asks it and the migrations, on each replica's internal port
+          ready="import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/ready', timeout=5)"
+          docker compose -f deploy/docker-compose.yml exec -T --index 1 api python -c "$ready"
+          docker compose -f deploy/docker-compose.yml exec -T --index 2 api python -c "$ready"
+          # a trace id the client sends shows in the API's log line of the request
+          trace="smoke-$(date +%s)"
+          curl -sf --max-time 5 -H "x-client-trace-id: $trace" -o /dev/null http://127.0.0.1:18080/api/v1/info
+          for i in $(seq 1 5); do
+            if docker compose -f deploy/docker-compose.yml logs api | grep -qF "$trace"; then traced=1; break; fi
+            sleep 1
+          done
+          test "${traced:-0}" = 1
       - name: Logs of the smoke test
         if: always()
         run: docker compose -f deploy/docker-compose.yml logs --no-color | tail -200
