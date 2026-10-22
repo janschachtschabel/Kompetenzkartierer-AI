@@ -141,12 +141,18 @@ def terms_of(url: str, source_id: UUID) -> tuple[str, str | None]:
     return stored["rights_status"], stored["rights_evidence"]
 
 
-def test_a_rights_status_is_never_cleared(client: TestClient, migrated: str, world: dict[str, Any]) -> None:
-    answer = client.patch(
-        f"/api/v1/sources/{world['seed']}", headers=world["editor"], json={"rights_status": None}
-    )
+@pytest.mark.parametrize(
+    "change",
+    [{"rights_status": None}, {"rights_status": None, "rights_evidence": "Amtsblatt 2023"}],
+    ids=["alone", "with-evidence"],
+)
+def test_a_rights_status_is_never_cleared(
+    client: TestClient, migrated: str, world: dict[str, Any], change: dict[str, Any]
+) -> None:
+    # with evidence beside it, a null status passed every other rule and broke NOT NULL (500)
+    answer = client.patch(f"/api/v1/sources/{world['seed']}", headers=world["editor"], json=change)
 
-    assert answer.status_code == 422
+    assert (answer.status_code, answer.json()["code"]) == (422, "rights_status_missing")
     assert terms_of(migrated, world["seed"]) == ("unklar", None)
 
 
