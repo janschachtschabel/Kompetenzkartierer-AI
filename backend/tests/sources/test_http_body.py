@@ -14,7 +14,7 @@ from collections.abc import Callable, Mapping, Sequence
 import httpx2
 import pytest
 
-from app.sources.http_body import BodyTooLarge, UnsupportedEncoding, aread_body
+from app.sources.http_body import BodyTooLarge, BrokenCompression, UnsupportedEncoding, aread_body
 from tests.sources.compressed import CHUNK, MIB, arriving, gzip_bomb, in_chunks, packed
 
 pytestmark = pytest.mark.anyio
@@ -114,9 +114,15 @@ async def test_an_answer_packed_twice_or_in_an_unknown_way_is_refused(headers: H
         await read([packed(packed(TEXT, "gzip"), "gzip")], headers, LIMIT)
 
 
-async def test_a_broken_compressed_answer_is_a_decoding_error() -> None:
-    with pytest.raises(httpx2.DecodingError):
-        await read([b"not gzip at all"], {"Content-Encoding": "gzip"}, LIMIT)
+@pytest.mark.parametrize(
+    "wire",
+    [[b"not gzip at all"], [packed(b"%PDF-1.7 ", "gzip"), b"\x1f\x8b" + b"X" * 20]],
+    ids=["no-gzip", "broken-second-member"],
+)
+async def test_a_broken_compressed_answer_cannot_be_unpacked(wire: list[bytes]) -> None:
+    # the same bytes again at the next attempt: not the DecodingError of a transfer cut short
+    with pytest.raises(BrokenCompression):
+        await read(wire, {"Content-Encoding": "gzip"}, LIMIT)
 
 
 @pytest.mark.parametrize(

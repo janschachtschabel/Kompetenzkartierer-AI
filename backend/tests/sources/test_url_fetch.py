@@ -545,6 +545,17 @@ async def test_a_fetch_whose_compressed_body_breaks_off_is_tried_again() -> None
 
 
 @pytest.mark.anyio
+async def test_a_fetch_whose_compressed_body_cannot_be_unpacked_is_a_bad_answer() -> None:
+    # the server sends the same broken bytes at every attempt
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        broken = arriving([b"not gzip at all"])
+        return httpx2.Response(200, content=broken, headers={"Content-Encoding": "gzip"})
+
+    with pytest.raises(BadAnswer, match="cannot be unpacked"):
+        await fetch(f"http://{PUBLIC}/lp.pdf", max_bytes=len(PDF), transport=mock(handler))
+
+
+@pytest.mark.anyio
 @pytest.mark.parametrize("encoding", ["gzip, gzip", "br", "zstd"])
 async def test_a_fetch_packed_twice_or_in_an_unknown_way_is_refused(encoding: str) -> None:
     asked: list[str | None] = []

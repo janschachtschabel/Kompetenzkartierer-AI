@@ -40,13 +40,17 @@ class UnsupportedEncoding(Exception):
         self.encoding = encoding
 
 
+class BrokenCompression(Exception):
+    """The compressed body is no gzip or deflate stream: another attempt gets the same bytes."""
+
+
 class LimitedBody:
     """One answer's body, fed its raw chunks and unpacked within ``limit`` bytes.
 
     Raises UnsupportedEncoding when made, BodyTooLarge as soon as the unpacked bytes pass the
-    limit (or the packed ones pass what the limit could weigh packed), and httpx2.DecodingError
-    for a broken compressed stream, or for one that ended before its end (at ``result``). A gzip
-    body of several members is unpacked whole.
+    limit (or the packed ones pass what the limit could weigh packed), BrokenCompression for a
+    compressed stream zlib cannot unpack, and httpx2.DecodingError for one that ended before its
+    end (at ``result``): a transfer cut short. A gzip body of several members is unpacked whole.
     """
 
     def __init__(self, content_encoding: str | None, limit: int) -> None:
@@ -129,7 +133,7 @@ class LimitedBody:
             piece = self._inflater.decompress(data, wanted)
         except zlib.error as error:
             if not self._may_be_bare:
-                raise httpx2.DecodingError(str(error)) from error
+                raise BrokenCompression(str(error)) from error
             self._may_be_bare = False
             self._inflater = zlib.decompressobj(-zlib.MAX_WBITS)
             return self._inflate(data, wanted)

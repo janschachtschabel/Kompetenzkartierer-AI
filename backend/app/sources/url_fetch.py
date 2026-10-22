@@ -25,7 +25,13 @@ import httpcore2
 import httpx2
 
 from app.core.tracing import outgoing_headers
-from app.sources.http_body import ACCEPT_ENCODING, BodyTooLarge, UnsupportedEncoding, aread_body
+from app.sources.http_body import (
+    ACCEPT_ENCODING,
+    BodyTooLarge,
+    BrokenCompression,
+    UnsupportedEncoding,
+    aread_body,
+)
 
 log = logging.getLogger(__name__)
 
@@ -286,6 +292,8 @@ async def _body(response: httpx2.Response, max_bytes: int) -> bytes:
         raise FileTooLarge("the file exceeds the size limit") from None
     except UnsupportedEncoding as error:
         raise BadAnswer(str(error)) from None
+    except BrokenCompression:
+        raise BadAnswer("the compressed answer cannot be unpacked") from None
 
 
 def filename_from_url(url: str) -> str | None:
