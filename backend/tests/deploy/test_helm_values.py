@@ -1,5 +1,6 @@
 """deploy/helm-values.example.yaml: what T6 can rely on when they build the chart from it."""
 
+import ipaddress
 from pathlib import Path
 from typing import Any
 
@@ -110,3 +111,32 @@ def test_the_web_server_has_its_probes_resources_and_user() -> None:
 @pytest.mark.parametrize("part", ["api", "web"])
 def test_a_drain_of_nodes_leaves_one_pod_serving(part: str) -> None:
     assert VALUES["podDisruptionBudget"][part] == {"minAvailable": 1}
+
+
+PRIVATE_V4 = {"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "169.254.0.0/16"}
+PRIVATE_V6 = {"fc00::/7", "fe80::/10", "fec0::/10"}
+
+
+def test_the_worker_reaches_the_public_web_on_80_and_443_and_nothing_private() -> None:
+    # source.fetch imports a file from an address an account names; without this entry the
+    # policy blocked every import, and with 0.0.0.0/0 alone the cluster's own networks lay open
+    [public] = [rule for rule in VALUES["networkPolicy"]["egress"]["worker"] if isinstance(rule, dict)]
+    blocks = {block["ipBlock"]["cidr"]: block["ipBlock"]["except"] for block in public["to"]}
+
+    assert public["name"] == "public-web"
+    assert sorted(public["ports"]) == [80, 443]
+    assert set(blocks) == {"0.0.0.0/0", "::/0"}
+    for cidr, private in (("0.0.0.0/0", PRIVATE_V4), ("::/0", PRIVATE_V6)):
+        networks = [entry for entry in blocks[cidr] if not entry.startswith("<")]
+        placeholders = [entry for entry in blocks[cidr] if entry.startswith("<")]
+        assert private <= set(networks)
+        # an exception outside its block's family is refused by the API server
+        assert {ipaddress.ip_network(entry).version for entry in networks} == {
+            ipaddress.ip_network(cidr).version
+        }
+        assert placeholders, "the cluster's own networks go in by name of the operator"
+    assert any(
+        ipaddress.ip_address("169.254.169.254") in ipaddress.ip_network(entry)
+        for entry in blocks["0.0.0.0/0"]
+        if not entry.startswith("<")
+    )

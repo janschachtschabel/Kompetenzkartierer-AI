@@ -139,9 +139,20 @@ networkPolicy:
   internalFrom: [{ namespaceSelector: { matchLabels: { name: monitoring } } }]   # port 9000: kubelet and Prometheus
   egress:                     # placeholders; the selectors depend on the cluster
     api: [dns, postgresql, object-store]
-    worker: [dns, postgresql, object-store, language model (OPENAI_BASE_URL)]
-    # M1 adds source fetching in the worker: allow the public internet on 443/80, deny the cluster's
-    # own ranges and the cloud metadata address (169.254.169.254)
+    worker:
+      - dns
+      - postgresql
+      - object-store
+      - language model (OPENAI_BASE_URL)
+      # source.fetch: the public internet on 80/443, never the private, CGNAT and link-local
+      # ranges (the cloud metadata address 169.254.169.254 among them) nor the cluster's own
+      - name: public-web
+        ports: [80, 443]
+        to:
+          - ipBlock: { cidr: 0.0.0.0/0, except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10,
+                       169.254.0.0/16, <pod network of the cluster>, <service network of the cluster>] }
+          - ipBlock: { cidr: "::/0", except: ["fc00::/7", "fe80::/10", "fec0::/10",
+                       <IPv6 pod network of the cluster>, <IPv6 service network of the cluster>] }
 
 monitoring:
   serviceMonitor: { enabled: true, port: internal, path: /metrics }
