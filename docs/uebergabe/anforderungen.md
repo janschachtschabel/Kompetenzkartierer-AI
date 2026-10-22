@@ -60,7 +60,7 @@ S3-Objektspeicher.
 | Zustandslos? | Ja: kein Zustand im Prozess, der über eine Anfrage hinaus gilt. Jobs, Sperren, Zähler und Kontingente liegen in PostgreSQL, Dateien im Objektspeicher. API und Worker skalieren über Replicas |
 | Warteschlange? | Eine Tabelle in PostgreSQL: Worker holen Jobs mit `FOR UPDATE SKIP LOCKED`, halten eine Lease mit Lebenszeichen, geben sie bei SIGTERM nach `JOB_SHUTDOWN_GRACE_S` zurück; ein abgestürzter Worker verliert sie nach `JOB_LEASE_S`. Faire Bedienung je Konto. Kein eigener Broker |
 | Datenbank? | PostgreSQL 17 mit `vector`, `pg_trgm`, `unaccent` (anlegen durch die Migration oder vorab durch den DBA). Migrationen einmal je Release per `python -m app.db.migrate` (Helm-Hook), unter Advisory-Lock; API und Worker migrieren nie selbst, `/ready` meldet einen fehlenden Stand |
-| Objektspeicher? | S3-kompatibel (`STORAGE_BACKEND=s3`), Bucket von T6; der Dienst fragt ihn beim Öffnen des Speichers ab. Rechte: `s3:ListBucket` auf den Bucket (ohne sie meldet S3 ein fehlendes Objekt als 403), `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` auf seine Objekte. Ohne Schlüssel gilt die Standardkette von boto3 (`AWS_*`-Variablen, Web-Identity/IRSA, Rolle der Instanz) |
+| Objektspeicher? | S3-kompatibel (`STORAGE_BACKEND=s3`), Bucket von T6; der Dienst fragt ihn beim Öffnen des Speichers ab (ab M1, wenn API und Worker ihn öffnen). Rechte: `s3:ListBucket` auf den Bucket (ohne sie meldet S3 ein fehlendes Objekt als 403), `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` auf seine Objekte. Ohne Schlüssel gilt die Standardkette von boto3 (`AWS_*`-Variablen, Web-Identity/IRSA, Rolle der Instanz) |
 | Volumes? | Keine in M0. Ab M3 kommen lesend eingebundene Volumes für lokale Abzüge (Wikidata, GND, ESCO) und Modelle, befüllt von Sidecars bzw. CronJobs |
 | Ressourcen? | Noch nicht gemessen; das Helm-Beispiel nennt vorläufige Werte. Die Konvertierung (ab M1 eigener Worker, ein Job je Pod) braucht deutlich mehr Speicher; die Baseline unter Last kommt in M6 |
 | Konfiguration? | Nur Umgebungsvariablen, Geheimnisse als Dateien (`*_FILE`); vollständige Liste in [konfiguration.md](konfiguration.md), aus dem Code erzeugt |
@@ -91,6 +91,7 @@ S3-Objektspeicher.
 - Abstimmung der Content-Types für Uploads und Dateiausgaben (M1).
 - Prüfsummen beim Objektspeicher: boto3 schickt seit 1.36 bei jedem Schreiben eine CRC32-Prüfsumme
   mit (`x-amz-checksum-crc32`, über HTTPS als `aws-chunked`), die manche S3-kompatiblen Dienste
-  ablehnen. Getestet ist MinIO. Nimmt T6s Dienst sie nicht an, schaltet eine Einstellung sie auf
-  „nur wo verlangt" um.
+  ablehnen. Getestet ist MinIO. Nimmt T6s Dienst sie nicht an, schalten botocores eigene Variablen
+  `AWS_REQUEST_CHECKSUM_CALCULATION=when_required` und `AWS_RESPONSE_CHECKSUM_VALIDATION=when_required`
+  sie auf „nur wo verlangt" um; der Dienst setzt keinen der beiden Werte selbst (getestet).
 - Ressourcen, Alarme und Lastmessung (M6).

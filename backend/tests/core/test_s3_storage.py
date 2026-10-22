@@ -165,6 +165,21 @@ def test_only_s3_endpoint_url_says_where_the_service_is(monkeypatch: pytest.Monk
     assert _client(s3_endpoint_url="http://minio:9000").meta.endpoint_url == "http://minio:9000"
 
 
+def test_a_service_that_refuses_checksums_is_served_by_botocore_s_own_variables(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The handover names these two for T6 (anforderungen.md): the client sets neither, so
+    # botocore's variables decide; without them every write carries a CRC32
+    assert _client().meta.config.request_checksum_calculation == "when_supported"
+    monkeypatch.setenv("AWS_REQUEST_CHECKSUM_CALCULATION", "when_required")
+    monkeypatch.setenv("AWS_RESPONSE_CHECKSUM_VALIDATION", "when_required")
+
+    config = _client().meta.config
+
+    assert config.request_checksum_calculation == "when_required"
+    assert config.response_checksum_validation == "when_required"
+
+
 def test_the_configured_keys_sign_the_requests() -> None:
     client = _client(s3_access_key="invented-key", s3_secret_key="invented-secret")  # noqa: S106 - invented
 

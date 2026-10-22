@@ -7,7 +7,8 @@ dieselben. Ein Geheimnis kann stattdessen aus der Datei kommen, die `<NAME>_FILE
 (Kubernetes- oder Docker-Secret); die Datei gewinnt dann. Fehlermeldungen nennen nie einen Wert.
 Ohne Vorgabe („Pflicht") startet der Dienst nicht; „Pflicht bei …" und „Pflicht für …" gelten
 nur unter dieser Bedingung bzw. für diesen Teil. Ein Muster ist ein regulärer Ausdruck, dem der
-ganze Wert genügen muss. Eine `.env`-Datei liest er nicht.
+ganze Wert genügen muss; die Endpunkte (`S3_ENDPOINT_URL`, `OPENAI_BASE_URL`) nehmen zudem keinen
+Nutzer, keine Query und kein Fragment an. Eine `.env`-Datei liest er nicht.
 
 Was jede Einstellung bewirkt, steht im [README](../../README.md), Abschnitt „Betrieb". Die
 Tabelle unten ist aus dem Code erzeugt (`python -m app.core.config_doc` im Ordner `backend/`);
@@ -55,11 +56,13 @@ ein Test schlägt an, wenn sie veraltet.
 
 - `HOST` setzt das Image auf `0.0.0.0`; außerhalb des Images bleibt der Dienst auf Loopback.
 - `STORAGE_BACKEND=s3` mit `S3_BUCKET`; für einen eigenen S3-Dienst dazu `S3_ENDPOINT_URL` und
-  `S3_REGION` (leer bzw. weggelassen heißt AWS selbst). Der Bucket muss bestehen: API und Worker
-  fragen ihn beim Öffnen des Speichers ab.
+  `S3_REGION`. Ein leerer oder fehlender `S3_ENDPOINT_URL` heißt AWS selbst; ohne `S3_REGION` gilt
+  `us-east-1` (leer wird es abgewiesen). Der Bucket muss bestehen: ab M1, wenn API und Worker den
+  Speicher öffnen, fragen sie ihn ab. In M0 öffnet ihn noch kein Teil des Dienstes.
 - Schlüssel: `S3_ACCESS_KEY_FILE` und `S3_SECRET_KEY_FILE`, beide oder keiner. Ohne sie nimmt
   boto3 seine Standardkette (`AWS_*`-Variablen, Web-Identity/IRSA, die Rolle der Instanz). Wohin
-  der Dienst geht, sagt nur `S3_ENDPOINT_URL`; `AWS_ENDPOINT_URL` und `~/.aws/config` übergeht er.
+  der Dienst geht, sagt nur `S3_ENDPOINT_URL`: `AWS_ENDPOINT_URL` und ein `endpoint_url` in
+  `~/.aws/config` übergeht er. Profile und Anmeldedaten von boto3 gelten weiter.
 - Rechte der Rolle: `s3:ListBucket` auf den Bucket (ohne sie antwortet S3 auf ein fehlendes
   Objekt mit 403 statt 404), `s3:GetObject`, `s3:PutObject` und `s3:DeleteObject` auf seine Objekte.
 - `FORWARDED_ALLOW_IPS`: die Adressen oder Netze des Ingress, nie `*` und nie ein Netz `/0`.

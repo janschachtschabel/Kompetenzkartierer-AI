@@ -110,8 +110,9 @@ Objektspeicher: `STORAGE_BACKEND` (`fs` | `s3`, Standard `fs`). Mit `fs` braucht
 `S3_ENDPOINT_URL` (leer für AWS selbst), `S3_REGION` (Standard `us-east-1`) und den Schlüsseln
 `S3_ACCESS_KEY`/`S3_SECRET_KEY` (beide oder keiner, auch als `*_FILE`; ohne sie nimmt boto3
 seine Standardkette: `AWS_*`-Variablen, Web-Identity, die Rolle der Instanz). Wohin der Dienst
-geht, sagt nur `S3_ENDPOINT_URL`; `AWS_ENDPOINT_URL` und `~/.aws/config` übergeht er. Beim Öffnen
-fragt der Speicher einmal nach dem Bucket und bricht ab, wenn es ihn nicht gibt.
+geht, sagt nur `S3_ENDPOINT_URL`: `AWS_ENDPOINT_URL` und ein `endpoint_url` in `~/.aws/config`
+übergeht er. Beim Öffnen (ab M1 beim Start von API und Worker) fragt der Speicher einmal nach dem
+Bucket und bricht ab, wenn es ihn nicht gibt.
 `python -m app.core.storage_bucket` legt den Bucket an, wo die Umgebung keinen mitbringt
 (Compose).
 
