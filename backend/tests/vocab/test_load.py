@@ -13,6 +13,7 @@ from app.db.migrate import migrate
 from app.vocab.loader import read_vocabulary
 from app.vocab.store import load_vocabulary
 from tests.support import without_settings_variables
+from tests.vocab.model import write_model
 
 pytestmark = pytest.mark.pg
 
@@ -31,9 +32,7 @@ BLUE = 'ex:blue a skos:Concept ; skos:inScheme ex:colours ; skos:prefLabel "Blau
 
 
 def colours(root: Path, *concepts: str) -> Path:
-    (root / "vokabulare").mkdir(parents=True, exist_ok=True)
-    (root / "vokabulare" / "farben.ttl").write_text(SCHEME + "".join(concepts), encoding="utf-8")
-    return root
+    return write_model(root, SCHEME + "".join(concepts))
 
 
 def fetch(url: str, query: str, *params: Any) -> list[tuple[Any, ...]]:

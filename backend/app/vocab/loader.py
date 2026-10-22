@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from rdflib import RDF, Graph, Literal, Namespace, URIRef
-from rdflib.namespace import SKOS
+from rdflib.namespace import SKOS, XSD
 from rdflib.term import Node
 
 CUR = Namespace("https://w3id.org/wlo/curriculum/core#")
@@ -24,6 +24,11 @@ CUR = Namespace("https://w3id.org/wlo/curriculum/core#")
 MODEL_DIRS = ("ontologie", "vokabulare", "profile")
 SCHEME_CLASSES = frozenset({SKOS.ConceptScheme, CUR.CompetencyModel, CUR.LevelScheme, CUR.OperatorList})
 NO_LANGUAGE = "und"  # BCP 47 for "undetermined"
+# Raised with every change to what the reader yields, so the same files load anew afterwards
+READER_FORMAT = 1
+# A relative IRI resolves under this base (.invalid is reserved) and is refused: against the
+# file's own place it would differ from machine to machine
+_RELATIVE_BASE = "https://relative.invalid/"
 _SCHEME_COLUMNS = frozenset({RDF.type, SKOS.prefLabel})
 _CONCEPT_COLUMNS = frozenset(
     {RDF.type, SKOS.inScheme, SKOS.prefLabel, SKOS.altLabel, SKOS.notation, SKOS.definition, SKOS.broader}
@@ -66,21 +71,54 @@ class Vocabulary:
 
 
 def read_vocabulary(root: Path) -> Vocabulary:
-    """Schemes and concepts of the model folders under ``root`` (the ``ontology`` folder)."""
+    """Schemes and concepts of the model folders under ``root`` (the ``ontology`` folder).
+
+    A missing or empty model folder, or files without any scheme, are refused: read as a
+    smaller vocabulary, a wrong ONTOLOGY_DIR would retire everything it does not hold.
+    """
+    root = root.resolve()
     graph = Graph()
     files: dict[str, str] = {}
-    for path in sorted(path for directory in MODEL_DIRS for path in (root / directory).glob("*.ttl")):
+    for path in _model_files(root):
         content = path.read_bytes()
-        files[path.relative_to(root).as_posix()] = hashlib.sha256(content).hexdigest()
-        graph.parse(data=content, format="turtle", publicID=path.as_uri())
-    listing = "\n".join(f"{name} {digest}" for name, digest in sorted(files.items()))
+        name = path.relative_to(root).as_posix()
+        files[name] = hashlib.sha256(content).hexdigest()
+        try:
+            graph.parse(data=content, format="turtle", publicID=_RELATIVE_BASE + name)
+        except Exception as error:  # rdflib reports bad Turtle as SyntaxError, IndexError, ...
+            raise VocabularyError(f"{name} does not parse: {error}") from error
+    _refuse_relative_iris(graph)
+    entries = [f"{name} {digest}" for name, digest in sorted(files.items())]
+    listing = "\n".join([f"reader {READER_FORMAT}", *entries])
     schemes = {
         str(iri): _scheme(graph, iri)
         for iri in sorted({iri for cls in SCHEME_CLASSES for iri in graph.subjects(RDF.type, cls)}, key=str)
         if isinstance(iri, URIRef)
     }
+    if not schemes:
+        raise VocabularyError(f"no scheme in {root}: is ONTOLOGY_DIR the ontology folder?")
     concepts = _concepts(graph, schemes)
     return Vocabulary(hashlib.sha256(listing.encode()).hexdigest(), files, schemes, concepts)
+
+
+def _model_files(root: Path) -> list[Path]:
+    if not root.is_dir():
+        raise VocabularyError(f"{root} is no folder: is ONTOLOGY_DIR the ontology folder?")
+    paths: list[Path] = []
+    for directory in MODEL_DIRS:
+        found = sorted((root / directory).glob("*.ttl"))
+        if not found:
+            raise VocabularyError(f"{root / directory} holds no Turtle files: is ONTOLOGY_DIR right?")
+        paths.extend(found)
+    return sorted(paths)
+
+
+def _refuse_relative_iris(graph: Graph) -> None:
+    for triple in graph:
+        for term in triple:
+            if isinstance(term, URIRef) and str(term).startswith(_RELATIVE_BASE):
+                place = str(term).removeprefix(_RELATIVE_BASE)
+                raise VocabularyError(f"relative IRI <{place}>: write the full IRI")
 
 
 def _scheme(graph: Graph, iri: URIRef) -> Scheme:
@@ -101,25 +139,58 @@ def _concepts(graph: Graph, schemes: dict[str, Scheme]) -> dict[str, Concept]:
     for iri in sorted(members, key=str):
         if len(members[iri]) > 1:
             raise VocabularyError(f"{iri} is in more than one scheme: {sorted(members[iri])}")
-        notations = [str(notation) for notation in graph.objects(iri, SKOS.notation)]
-        if len(notations) > 1:
-            raise VocabularyError(f"{iri} has more than one notation: {sorted(notations)}")
+        outside = sorted(
+            str(other) for other in graph.objects(iri, SKOS.inScheme) if str(other) not in schemes
+        )
+        if outside:
+            raise VocabularyError(f"{iri} is also in a scheme the model does not define: {outside}")
         concepts[str(iri)] = Concept(
             iri=str(iri),
             scheme=members[iri][0],
             types=_iris(graph.objects(iri, RDF.type)),
-            notation=notations[0] if notations else None,
+            notation=_notation(graph, iri),
             pref_labels=_one_per_language(graph, iri, SKOS.prefLabel),
             alt_labels=_all_per_language(graph, iri, SKOS.altLabel),
             definitions=_one_per_language(graph, iri, SKOS.definition),
-            broader=_iris(graph.objects(iri, SKOS.broader)),
+            broader=_broader(graph, iri),
             properties=_properties(graph, iri, _CONCEPT_COLUMNS),
         )
+    _check_links(concepts)
+    return concepts
+
+
+def _check_links(concepts: dict[str, Concept]) -> None:
+    """Every broader concept exists; a notation names one concept within its scheme."""
+    named: dict[tuple[str, str], str] = {}
     for concept in concepts.values():
         for broader in concept.broader:
             if broader not in concepts:
                 raise VocabularyError(f"{concept.iri}: broader {broader} is no concept of the vocabularies")
-    return concepts
+        if concept.notation is not None:
+            first = named.setdefault((concept.scheme, concept.notation), concept.iri)
+            if first != concept.iri:
+                raise VocabularyError(
+                    f"notation {concept.notation} twice in {concept.scheme}: {first}, {concept.iri}"
+                )
+
+
+def _notation(graph: Graph, iri: URIRef) -> str | None:
+    values = list(graph.objects(iri, SKOS.notation))
+    if len(values) > 1:
+        raise VocabularyError(f"{iri} has more than one notation: {sorted(str(value) for value in values)}")
+    if not values:
+        return None
+    value = values[0]
+    if not isinstance(value, Literal) or value.datatype not in (None, XSD.string):
+        raise VocabularyError(f"{iri}: a notation is a plain string, not {value!r}")
+    return str(value)
+
+
+def _broader(graph: Graph, iri: URIRef) -> list[str]:
+    values = list(graph.objects(iri, SKOS.broader))
+    if any(not isinstance(value, URIRef) for value in values):
+        raise VocabularyError(f"{iri}: broader must name a concept by its IRI")
+    return _iris(values)
 
 
 def _iris(nodes: Iterable[Node]) -> list[str]:
@@ -129,8 +200,11 @@ def _iris(nodes: Iterable[Node]) -> list[str]:
 def _all_per_language(graph: Graph, iri: URIRef, predicate: URIRef) -> dict[str, list[str]]:
     texts: dict[str, list[str]] = defaultdict(list)
     for value in graph.objects(iri, predicate):
-        if isinstance(value, Literal):
-            texts[value.language or NO_LANGUAGE].append(str(value))
+        if not isinstance(value, Literal):
+            name = predicate.split("#")[-1]
+            raise VocabularyError(f"{iri} {name}: text belongs here, not {value!r}")
+        # BCP 47 tags ignore case: "de" and "DE" are one language
+        texts[(value.language or NO_LANGUAGE).lower()].append(str(value))
     return {language: sorted(values) for language, values in sorted(texts.items())}
 
 
