@@ -5,6 +5,8 @@ come from fixed sets - route templates, known methods, status codes - never from
 so the number of series stays bounded.
 """
 
+from collections.abc import Iterable
+
 from prometheus_client import REGISTRY, Counter, Histogram
 from prometheus_client.exposition import choose_encoder
 
@@ -40,12 +42,23 @@ JOB_DURATION = Histogram(
     ["kind"],
     buckets=JOB_DURATION_BUCKETS,
 )
+# Leases no worker renewed, handed on by a sweep (a worker died, or its loop was held): outcome
+# is what became of the job - queued (attempts remain), failed (lease_lost) or cancelled
+JOB_LEASES_EXPIRED = Counter(
+    "kka_job_leases_expired_total", "Expired job leases by what became of the job", ["outcome"]
+)
 
 
 def observe_job(kind: str, outcome: str, seconds: float) -> None:
     """``kind`` is a kind the worker has a handler for: a fixed set, so the series stay few."""
     JOBS.labels(kind, outcome).inc()
     JOB_DURATION.labels(kind).observe(seconds)
+
+
+def observe_expired_leases(outcomes: Iterable[str]) -> None:
+    """``outcomes`` are job statuses a sweep set: a fixed set."""
+    for outcome in outcomes:
+        JOB_LEASES_EXPIRED.labels(outcome).inc()
 
 
 def bounded_method(method: str) -> str:

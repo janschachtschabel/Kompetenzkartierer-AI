@@ -166,7 +166,7 @@ async def test_an_expired_lease_goes_back_to_the_queue_and_the_old_owner_is_refu
     assert lost is not None
     await asyncio.sleep(0.5)
 
-    assert await requeue_expired(db) == 1
+    assert await requeue_expired(db) == ["queued"]
     # it waits out the backoff first: a job that killed its worker may kill the next one too
     assert (await row(db, job_id))["later"] is True
     await db.execute("UPDATE job SET run_after = now() WHERE id = %s", (job_id,))
@@ -226,7 +226,7 @@ async def test_a_job_with_very_many_attempts_does_not_break_the_backoff(connect:
     await db.execute("UPDATE job SET attempts = 2000 WHERE id = %s", (job_id,))
     await asyncio.sleep(0.5)
 
-    assert await requeue_expired(db) == 1
+    assert await requeue_expired(db) == ["failed"]
     assert (await row(db, job_id))["status"] == "failed"
 
 
@@ -338,6 +338,6 @@ async def test_an_expired_lease_of_a_cancelled_job_ends_it(connect: Any) -> None
     await request_cancel(db, job_id)
     await asyncio.sleep(0.5)
 
-    await requeue_expired(db)
+    assert await requeue_expired(db) == ["cancelled"]
 
     assert (await row(db, job_id))["status"] == "cancelled"

@@ -28,7 +28,7 @@ from typing import Any
 import psycopg
 from psycopg_pool import AsyncConnectionPool, PoolTimeout
 
-from app.core.metrics import observe_job
+from app.core.metrics import observe_expired_leases, observe_job
 from app.core.tracing import continue_trace, end_trace
 from app.jobs.outcome import Ending, Outcome, PermanentError, Result, one_line, write_outcome
 from app.jobs.queue import Job, LeaseLost, claim, heartbeat, requeue_expired
@@ -210,8 +210,9 @@ class Worker:
         except (psycopg.Error, PoolTimeout) as error:
             log.warning("could not look for expired leases: %s", one_line(error))
             return
+        observe_expired_leases(handed_back)
         if handed_back:
-            log.info("handed %d job(s) with an expired lease back", handed_back)
+            log.info("handed %d job(s) with an expired lease back", len(handed_back))
 
 
 def _how_it_ended(outcome: Outcome) -> str:

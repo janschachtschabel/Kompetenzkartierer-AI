@@ -261,8 +261,10 @@ async def request_cancel(connection: psycopg.AsyncConnection, job_id: UUID) -> b
     return await cursor.fetchone() is not None
 
 
-async def requeue_expired(connection: psycopg.AsyncConnection) -> int:
-    """Hand jobs whose lease expired back to the queue, or end them; how many were touched."""
+async def requeue_expired(
+    connection: psycopg.AsyncConnection,
+) -> list[Literal["queued", "failed", "cancelled"]]:
+    """Hand jobs whose lease expired back to the queue, or end them; what became of each."""
     cursor = await connection.execute(
         f"""
         UPDATE job SET lease_owner = NULL, lease_token = NULL, lease_expires_at = NULL,
@@ -274,9 +276,10 @@ async def requeue_expired(connection: psycopg.AsyncConnection) -> int:
                               'message', 'the worker stopped renewing its lease') END,
             finished_at = CASE WHEN NOT cancel_requested AND attempts < max_attempts THEN NULL ELSE now() END
         WHERE status = 'running' AND lease_expires_at < now()
+        RETURNING status
         """  # noqa: S608 - _BACKOFF is a constant expression
     )
-    return cursor.rowcount
+    return [status for (status,) in await cursor.fetchall()]
 
 
 async def _finish(

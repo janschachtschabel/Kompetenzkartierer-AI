@@ -176,6 +176,43 @@ async def test_a_lease_lost_between_two_heartbeats_counts_as_lost_at_the_end(
     assert await job_row(pool, job_id) == ("running", None, None)
 
 
+@pytest.mark.pg
+async def test_a_sweep_counts_the_expired_leases_by_what_became_of_their_jobs(
+    pool: AsyncConnectionPool,
+) -> None:
+    # a worker that died, or a loop held past its lease: no run of this worker ends, the sweep
+    # is the only one to see it
+    ends = {"queued": (1, False), "failed": (3, False), "cancelled": (1, True)}
+    async with pool.connection() as connection:
+        for attempts, cancel in ends.values():
+            job_id = await enqueue(connection, "test.metrics_expired", "account-a", max_attempts=3)
+            await connection.execute(
+                "UPDATE job SET status = 'running', lease_owner = 'gone', lease_token = gen_random_uuid(),"
+                " lease_expires_at = now() - interval '1 s', attempts = %s, cancel_requested = %s"
+                " WHERE id = %s",
+                (attempts, cancel, job_id),
+            )
+    before = {outcome: sample("kka_job_leases_expired_total", outcome=outcome) for outcome in ends}
+
+    def counted() -> dict[str, float]:
+        return {
+            outcome: sample("kka_job_leases_expired_total", outcome=outcome) - before[outcome]
+            for outcome in ends
+        }
+
+    stop = asyncio.Event()
+    running = asyncio.create_task(Worker(pool, {}, owner="sweeper", lease_s=3, poll_s=0.05).run(stop))
+    deadline = asyncio.get_running_loop().time() + 5
+    try:
+        while counted() != dict.fromkeys(ends, 1.0) and asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(0.05)
+    finally:
+        stop.set()
+        await asyncio.wait_for(running, 5)
+
+    assert counted() == dict.fromkeys(ends, 1.0)
+
+
 @pytest.fixture
 async def probes() -> AsyncIterator[str]:
     listening = socket.socket()
@@ -206,6 +243,7 @@ async def test_the_worker_serves_its_metrics(probes: str) -> None:
     assert answer.status_code == 200
     assert "kka_jobs_total" in answer.text
     assert "kka_job_duration_seconds" in answer.text
+    assert "kka_job_leases_expired_total" in answer.text
 
 
 @pytest.mark.parametrize("path", ["/ready", "/api/v1/info", "/"])

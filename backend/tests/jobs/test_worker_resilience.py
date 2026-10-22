@@ -207,7 +207,7 @@ async def test_a_sweeper_that_breaks_stops_the_worker_and_says_why(
     pool: AsyncConnectionPool, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     # a worker that went on without its sweep would strand every dead worker's job
-    async def broken_sweep(connection: Any) -> int:
+    async def broken_sweep(connection: Any) -> list[str]:
         raise RuntimeError("invented")
 
     async def anything(job: Job) -> None:
