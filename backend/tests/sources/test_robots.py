@@ -14,6 +14,7 @@ import pytest
 from app.core.tracing import take_trace_headers
 from app.sources.robots import (
     EVERYTHING_FORBIDDEN,
+    MAX_ADDRESS_SIGNS,
     MAX_RULE_SIGNS,
     MAX_RULES,
     ROBOTS_BYTES,
@@ -125,6 +126,16 @@ def test_comments_spaces_case_and_a_byte_order_mark_are_read_through() -> None:
     assert allows(text, "/lp.pdf")
 
 
+@pytest.mark.parametrize(
+    "sign", ["\x0b", "\x0c", "\x1c", "\x1d", "\x1e", "\x85", "\N{LINE SEPARATOR}", "\N{PARAGRAPH SEPARATOR}"]
+)
+def test_only_cr_and_lf_end_a_line(sign: str) -> None:
+    # RFC 9309 2.2; split at any other sign, "Allow: /intern/<sign>oeffentlich" became "Allow: /intern/"
+    text = f"User-agent: *\nDisallow: /intern/\nAllow: /intern/{sign}oeffentlich\n"
+
+    assert not allows(text, "/intern/lp.pdf")
+
+
 def test_a_rule_before_any_robot_is_named_counts_for_none() -> None:
     assert allows("Disallow: /\nUser-agent: *\nDisallow: /intern\n", "/lp.pdf")
 
@@ -148,15 +159,26 @@ def test_stars_without_end_match_in_no_time() -> None:
     assert time.perf_counter() - started < 1.0
 
 
-def test_a_file_full_of_star_rules_matches_a_long_address_in_no_time() -> None:
-    # a redirect's address is as long as its server likes; a star tried at each sign of it, and a
-    # long run after the star compared sign by sign each time, the rules of 500 KiB took minutes
-    rule = "/*" + "a" * (MAX_RULE_SIGNS - 3) + "b"
-    rules = Rules(disallow=(rule,) * (ROBOTS_BYTES // (len(rule) + len("Disallow: \n"))))
+@pytest.mark.parametrize("run", [MAX_RULE_SIGNS - 3, 240], ids=["one-long-run", "runs-str-find-walks"])
+def test_a_file_full_of_star_rules_matches_the_longest_address_in_bounded_time(run: int) -> None:
+    # a star tried at each sign of the address, the run after it compared sign by sign each time:
+    # the rules of 500 KiB took minutes. str.find walks a short run sign by sign too, below 2500
+    # signs of text - the worst a file can do to the longest address matched, within seconds
+    rule = "/*" + "a" * run + "baa"
+    rules = Rules(disallow=(rule,) * min(MAX_RULES - 1, ROBOTS_BYTES // (len(rule) + len("Disallow: \n"))))
+    address = f"{SITE}/" + "a" * (MAX_ADDRESS_SIGNS - len(SITE) - 1)
     started = time.perf_counter()
 
-    assert rules.allows(f"{SITE}/" + "a" * 8_000)
-    assert time.perf_counter() - started < 1.0
+    assert rules.allows(address)
+    assert time.perf_counter() - started < 5.0
+
+
+def test_an_address_longer_than_is_matched_is_not_taken_to_be_allowed() -> None:
+    # what is not matched is not taken to allow; without rules there is nothing to match
+    address = f"{SITE}/" + "a" * MAX_ADDRESS_SIGNS
+
+    assert not Rules(disallow=("/intern",)).allows(address)
+    assert Rules().allows(address)
 
 
 def as_rfc_9309_reads(rule: str, target: str) -> bool:

@@ -41,9 +41,13 @@ from app.sources.url_fetch import (
 
 ROBOTS_BYTES = 500 * 1024  # what a crawler must read at least (RFC 9309 2.5)
 ROBOTS_REDIRECTS = 5  # what it must follow at least (2.3.1.2)
-# What the matching holds: a robots.txt that names more rules, or longer ones, forbids everything
+# What the matching holds: a robots.txt that names more rules, or longer ones, forbids everything,
+# and a longer address is not taken to be allowed. str.find walks a run sign by sign below 2500
+# signs of text: the worst 500 KiB of rules take some tenths of a second against the longest
 MAX_RULES = 2000
 MAX_RULE_SIGNS = 2000
+MAX_ADDRESS_SIGNS = 2000
+_LINE_END = re.compile(r"\r\n|\r|\n")  # RFC 9309 2.2: no other sign ends a line
 _ASKED_TO_WAIT = frozenset({429, 503})  # the answers whose Retry-After says how long
 _KEY = re.compile(r"[A-Za-z-]+")
 _ESCAPE = re.compile(r"%[0-9a-fA-F]{2}")
@@ -74,8 +78,10 @@ class Rules:
     def allows(self, url: str) -> bool:
         parts = urlsplit(url)
         target = _spelled(parts.path or "/") + (f"?{_spelled(parts.query)}" if parts.query else "")
-        if target == "/robots.txt":
+        if target == "/robots.txt" or not (self.allow or self.disallow):
             return True
+        if len(url) > MAX_ADDRESS_SIGNS:
+            return False  # what is not matched is not taken to allow
         allowed = max((len(rule) for rule in self.allow if _matches(rule, target)), default=-1)
         denied = max((len(rule) for rule in self.disallow if _matches(rule, target)), default=-1)
         return allowed >= denied
@@ -99,7 +105,7 @@ def parse_robots(text: str, product: str) -> Rules:
     named_us = False
     agents: list[str] = []
     in_rules = False  # the group's rules have begun: the next user-agent starts a group
-    for raw in text.lstrip(_BYTE_ORDER_MARK).splitlines():
+    for raw in _LINE_END.split(text.lstrip(_BYTE_ORDER_MARK)):
         key, colon, value = raw.split("#", 1)[0].partition(":")
         key = key.strip()
         if not colon or not _KEY.fullmatch(key):
