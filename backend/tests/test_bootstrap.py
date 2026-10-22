@@ -54,7 +54,7 @@ def test_the_first_admin_gets_a_token_once(database_url: str) -> None:
     principal = asyncio.run(principal_of(database_url, token), loop_factory=asyncio.SelectorEventLoop)
     assert getattr(principal, "roles", None) == frozenset({"admin"})
     assert token not in first.stderr
-    assert (second.returncode, second.stdout) == (1, "")
+    assert (second.returncode, second.stdout) == (2, "")
     assert "an admin exists" in second.stderr
 
 
@@ -65,3 +65,39 @@ def test_without_a_pepper_no_admin_is_made(database_url: str) -> None:
 
     assert (refused.returncode, refused.stdout) == (1, "")
     assert "API_KEY_PEPPER" in refused.stderr
+
+
+def test_the_bootstrap_audits_the_account_and_its_key(database_url: str) -> None:
+    migrate(database_url)
+
+    assert bootstrap(database_url, "Erste Admin").returncode == 0
+
+    with psycopg.connect(database_url) as connection:
+        actions = [action for (action,) in connection.execute("SELECT action FROM audit_log ORDER BY id")]
+    assert actions == ["account.create", "key.issue"]
+
+
+def test_a_second_bootstrap_says_it_is_done_with_its_own_exit_code(database_url: str) -> None:
+    migrate(database_url)
+    bootstrap(database_url, "Erste Admin")
+
+    assert bootstrap(database_url, "Zweite Admin").returncode == 2
+
+
+def test_the_bootstrap_name_is_kept_in_one_spelling(database_url: str) -> None:
+    # as the API keeps it: NFC, so the unique index sees one name however it was typed
+    migrate(database_url)
+
+    assert bootstrap(database_url, "Ju" + chr(0x308) + "rgen").returncode == 0
+
+    with psycopg.connect(database_url) as connection:
+        names = [name for (name,) in connection.execute("SELECT name FROM account")]
+    assert names == ["J" + chr(0xFC) + "rgen"]
+
+
+def test_a_bootstrap_name_with_a_hidden_sign_is_refused(database_url: str) -> None:
+    migrate(database_url)
+
+    refused = bootstrap(database_url, "Ad" + chr(0x200B) + "min")
+
+    assert (refused.returncode, refused.stdout) == (1, "")

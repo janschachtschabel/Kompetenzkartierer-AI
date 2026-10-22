@@ -18,7 +18,8 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Annotated, Literal
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Request, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from psycopg_pool import AsyncConnectionPool
 
 from app.core.auth import ANONYMOUS, Principal
@@ -34,7 +35,14 @@ PublicLevel = Literal["lookup", "search"]
 _OPENS = {"off": frozenset[str](), "lookup": frozenset({"lookup"}), "search": frozenset({"lookup", "search"})}
 
 
-async def principal(request: Request) -> Principal:
+# Declares the scheme in the OpenAPI spec; the header itself is read below, where a malformed
+# one is counted as a failure rather than taken for a visitor
+_BEARER = HTTPBearer(auto_error=False, description="An API token an admin issued (kka_...)")
+
+
+async def principal(
+    request: Request, _declared: Annotated[HTTPAuthorizationCredentials | None, Security(_BEARER)]
+) -> Principal:
     header = request.headers.get("authorization")
     if header is None:
         return ANONYMOUS

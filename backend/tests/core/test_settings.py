@@ -240,6 +240,18 @@ def test_the_database_pool_has_bounded_defaults(monkeypatch: pytest.MonkeyPatch)
     settings = Settings()
 
     assert (settings.db_pool_min_size, settings.db_pool_max_size) == (1, 10)
+    assert settings.db_pool_timeout_s == 5.0
+
+
+@pytest.mark.parametrize("seconds", ["0", "61"])
+def test_a_request_waits_for_a_connection_a_bounded_time(
+    monkeypatch: pytest.MonkeyPatch, seconds: str
+) -> None:
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+    monkeypatch.setenv("DB_POOL_TIMEOUT_S", seconds)
+
+    with pytest.raises(ValidationError, match="db_pool_timeout_s"):
+        Settings()
 
 
 def test_the_pool_cannot_be_smaller_than_its_minimum(monkeypatch: pytest.MonkeyPatch) -> None:

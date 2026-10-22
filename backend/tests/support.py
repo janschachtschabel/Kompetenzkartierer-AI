@@ -78,3 +78,21 @@ def make_settings(**values: object) -> Settings:
     defaults = {"database_url": FAKE_DATABASE_URL, "api_key_pepper": FAKE_PEPPER, "db_pool_min_size": 0}
     with without_settings_variables():
         return Settings(**{**defaults, **values})  # type: ignore[arg-type]
+
+
+def seed_token(url: str, name: str, roles: list[str]) -> str:
+    """A new account with ``roles`` in a migrated test database, and its token."""
+    from app.db.accounts import create_account, issue_key
+
+    async def seed() -> str:
+        async with await psycopg.AsyncConnection.connect(url, autocommit=True) as connection:
+            account = await create_account(connection, name, roles)
+            _, token = await issue_key(connection, account, "seed", FAKE_PEPPER)
+        return token
+
+    return asyncio.run(seed(), loop_factory=asyncio.SelectorEventLoop)
+
+
+def seed_admin(url: str) -> dict[str, str]:
+    """The Authorization header of a new admin in a migrated test database."""
+    return {"Authorization": f"Bearer {seed_token(url, 'Admin', ['admin'])}"}

@@ -8,6 +8,7 @@ not know is masked as ``_``, as the caller chose it. uvicorn answers a request i
 before the application sees it, in plain text.
 """
 
+import logging
 from collections.abc import Mapping
 from http import HTTPStatus
 from typing import Any
@@ -15,9 +16,12 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.utils import is_body_allowed_for_status_code
+from psycopg import OperationalError
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse, Response
+
+log = logging.getLogger(__name__)
 
 VALIDATION_FAILED = "validation_failed"
 MASKED = "_"
@@ -50,6 +54,14 @@ class ErrorBody(BaseModel):
     details: dict[str, Any] = {}
 
 
+DATABASE_RETRY_S = 5
+_REFUSAL = {"model": ErrorBody}
+# Documented on the routers whose operations need a token
+AUTH_RESPONSES: dict[int | str, dict[str, Any]] = {
+    401: {**_REFUSAL, "description": "No valid token"},
+    403: {**_REFUSAL, "description": "The token's account lacks the role"},
+    429: {**_REFUSAL, "description": "Too many failed sign-ins from this address"},
+}
 # Documented for every operation in place of FastAPI's own validation error shape
 ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
     422: {"model": ErrorBody, "description": "The request is not valid"},
@@ -108,6 +120,16 @@ def _location(fault: Mapping[str, Any]) -> list[Any]:
     return location
 
 
+async def _database_away(request: Request, error: Exception) -> Response:
+    """No pool connection in time (PoolTimeout is one), or the database cut it: try again soon."""
+    log.warning(
+        "the database did not answer %s %s: %s", request.method, request.url.path, type(error).__name__
+    )
+    retry = {"Retry-After": str(DATABASE_RETRY_S)}
+    return error_response(503, "The database does not answer; try again shortly.", headers=retry)
+
+
 def install_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(HTTPException, _http_error)
     app.add_exception_handler(RequestValidationError, _validation_error)
+    app.add_exception_handler(OperationalError, _database_away)

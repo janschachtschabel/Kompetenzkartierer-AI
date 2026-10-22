@@ -9,21 +9,23 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
 
 from app.api.deps import require_account, require_role
-from app.core.auth import Principal, Role
+from app.api.errors import AUTH_RESPONSES
+from app.core.auth import Principal, Role, plain_text
 from app.core.logging import current_request_id
 from app.db import accounts as store
 
-router = APIRouter(prefix="/api/v1", tags=["accounts"])
+router = APIRouter(prefix="/api/v1", tags=["accounts"], responses=AUTH_RESPONSES)
 Admin = Annotated[Principal, Depends(require_role("admin"))]
+PlainText = AfterValidator(plain_text)
 
 
 class AccountIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200), PlainText]
     roles: Annotated[list[Role], Field(min_length=1)]
 
 
@@ -43,7 +45,7 @@ class AccountChange(BaseModel):
 class KeyIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    label: Annotated[str, Field(max_length=200)] = ""
+    label: Annotated[str, Field(max_length=200), PlainText] = ""
 
 
 class KeyOut(BaseModel):

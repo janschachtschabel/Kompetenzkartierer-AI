@@ -35,6 +35,7 @@ def create_pool(settings: Settings) -> AsyncConnectionPool:
         max_size=settings.db_pool_max_size,
         kwargs=CONNECTION_OPTIONS,
         check=AsyncConnectionPool.check_connection,
+        timeout=settings.db_pool_timeout_s,
         reconnect_timeout=RECONNECT_TIMEOUT_S,
         open=False,
         name="kka",

@@ -91,6 +91,8 @@ class Settings(BaseSettings):
     # Connections per process: the API holds a few; the cluster's total is replicas times max
     db_pool_min_size: Annotated[int, Field(ge=0)] = 1
     db_pool_max_size: Annotated[int, Field(ge=1)] = 10
+    # How long a request waits for a pool connection before it answers 503
+    db_pool_timeout_s: Annotated[float, Field(gt=0, le=60)] = 5.0
     # Loopback unless set: the image sets 0.0.0.0, a developer's start stays off the network
     host: str = "127.0.0.1"
     public_port: Port = 8000
