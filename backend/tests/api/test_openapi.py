@@ -45,13 +45,24 @@ def test_every_operation_has_a_tag_and_a_summary(spec: dict[str, Any]) -> None:
             assert operation.get("summary", "").strip(), f"{method.upper()} {path} has no summary"
 
 
-def test_info_names_the_service_and_its_version() -> None:
+def test_info_names_the_service_its_version_and_what_visitors_may_do() -> None:
+    # the start page asks it before anyone signs in: PUBLIC_ACCESS decides what it offers a visitor
     client = TestClient(create_app(make_settings()), base_url="http://testserver:8000")
 
     response = client.get("/api/v1/info")
 
     assert response.status_code == 200
-    assert response.json() == {"name": "Kompetenzkartierer-AI", "version": __version__}
+    assert response.json() == {
+        "name": "Kompetenzkartierer-AI",
+        "version": __version__,
+        "public_access": "off",
+    }
+
+
+def test_info_says_when_visitors_may_look_things_up() -> None:
+    client = TestClient(create_app(make_settings(public_access="lookup")), base_url="http://testserver:8000")
+
+    assert client.get("/api/v1/info").json()["public_access"] == "lookup"
 
 
 @pytest.mark.parametrize("path", ["/docs", "/redoc", "/docs/oauth2-redirect"])
