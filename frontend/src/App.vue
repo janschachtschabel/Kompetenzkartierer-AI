@@ -101,6 +101,14 @@ async function signOut(): Promise<void> {
   transform: translateY(0);
 }
 
+/* The main region takes focus as a target - of the skip link, after a
+   navigation - so a screen reader starts reading there; it is no control, and
+   a focus ring around it framed the whole page. Its first control shows the
+   ring again on the next Tab. */
+#main:focus-visible {
+  outline: none;
+}
+
 .shell {
   display: flex;
   flex-wrap: wrap;
