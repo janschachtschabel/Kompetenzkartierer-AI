@@ -176,3 +176,21 @@ def test_main_ends_with_the_startup_failure_code(
             main()
 
     assert caught.value.code == STARTUP_FAILURE
+
+
+def test_the_server_trusts_forwarded_headers_from_the_configured_proxies_only(restore_logging: None) -> None:
+    configure_logging("INFO", "json", stream=io.StringIO())
+    public_port, internal_port = two_free_ports()
+    settings = make_settings(
+        host="127.0.0.1",
+        public_port=public_port,
+        internal_port=internal_port,
+        forwarded_allow_ips="10.42.0.0/16",
+    )
+
+    server, sockets = build_server(settings)
+    for sock in sockets:
+        sock.close()
+
+    assert server.config.forwarded_allow_ips == "10.42.0.0/16"
+    assert server.config.proxy_headers is True

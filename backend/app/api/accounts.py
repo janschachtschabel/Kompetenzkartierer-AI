@@ -89,16 +89,20 @@ async def issue_key(
 @router.delete("/keys/{key_id}", status_code=204, summary="Revoke an API token")
 async def revoke_key(key_id: UUID, request: Request, admin: Admin) -> None:
     async with request.app.state.pool.connection() as connection:
+        await store.lock_admins(connection)
         if not await store.revoke_key(connection, key_id):
             raise HTTPException(404, "No such active key.")
+        await _keep_an_admin(connection)
         await _audit(connection, admin, "key.revoke", f"key:{key_id}", {})
 
 
 @router.patch("/accounts/{account_id}", summary="Block or unblock an account")
 async def change_account(account_id: UUID, body: AccountChange, request: Request, admin: Admin) -> AccountOut:
     async with request.app.state.pool.connection() as connection:
+        await store.lock_admins(connection)
         if not await store.set_disabled(connection, account_id, body.disabled):
             raise HTTPException(404, "No such account.")
+        await _keep_an_admin(connection)
         action = "account.disable" if body.disabled else "account.enable"
         await _audit(connection, admin, action, f"account:{account_id}", {})
         record = await store.get_account(connection, account_id)
@@ -110,6 +114,12 @@ async def change_account(account_id: UUID, body: AccountChange, request: Request
 async def me(who: Annotated[Principal, Depends(require_account)]) -> Me:
     assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
     return Me(id=who.account_id, name=who.name, roles=sorted(who.roles))
+
+
+async def _keep_an_admin(connection: Any) -> None:
+    """409 - inside the transaction, so the change is rolled back - if no admin could sign in."""
+    if await store.active_admin_keys(connection) == 0:
+        raise HTTPException(409, "This would leave no admin who can sign in.")
 
 
 async def _audit(

@@ -348,3 +348,28 @@ def test_a_short_pepper_is_refused_without_quoting_it(monkeypatch: pytest.Monkey
         Settings()
 
     assert "short-invented" not in str(caught.value)
+
+
+def test_only_the_local_proxy_is_trusted_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+
+    assert Settings().forwarded_allow_ips == "127.0.0.1,::1"
+
+
+@pytest.mark.parametrize("value", ["*", "10.0.0.0/8,*", "not-an-address", ""])
+def test_trusting_every_proxy_or_a_wrong_address_is_refused(
+    monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
+    # with * every client could name its own address in X-Forwarded-For and dodge the limit
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+    monkeypatch.setenv("FORWARDED_ALLOW_IPS", value)
+
+    with pytest.raises(ValidationError, match="forwarded_allow_ips"):
+        Settings()
+
+
+def test_proxy_networks_are_taken(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+    monkeypatch.setenv("FORWARDED_ALLOW_IPS", "10.42.0.0/16, fd00::/8")
+
+    assert Settings().forwarded_allow_ips == "10.42.0.0/16,fd00::/8"

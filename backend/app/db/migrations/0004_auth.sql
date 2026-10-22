@@ -40,7 +40,8 @@ CREATE TABLE audit_log (
 
 -- Failed sign-ins per source (client address), for the limit; old rows go as new ones come
 CREATE TABLE auth_failure (
-    source text NOT NULL,
+    source text NOT NULL CHECK (length(source) <= 64),  -- an address, an IPv6 /64 or "unknown"
     at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX auth_failure_source ON auth_failure (source, at);
+CREATE INDEX auth_failure_at ON auth_failure (at);  -- the sweep of old rows

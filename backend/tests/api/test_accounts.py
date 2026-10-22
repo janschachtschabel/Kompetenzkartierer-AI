@@ -145,3 +145,36 @@ def test_unknown_accounts_and_keys_are_not_found(client: TestClient, admin: dict
 
 def test_me_needs_a_token(client: TestClient) -> None:
     assert client.get("/api/v1/me").status_code == 401
+
+
+def me_id(client: TestClient, headers: dict[str, str]) -> str:
+    return str(client.get("/api/v1/me", headers=headers).json()["id"])
+
+
+def test_the_last_admin_key_cannot_be_revoked(
+    client: TestClient, admin: dict[str, str], migrated: str
+) -> None:
+    [(key_id,)] = fetch(migrated, "SELECT id FROM api_key")
+
+    refused = client.delete(f"/api/v1/keys/{key_id}", headers=admin)
+
+    assert refused.status_code == 409
+    assert client.get("/api/v1/me", headers=admin).status_code == 200
+
+
+def test_the_last_admin_cannot_block_themselves(client: TestClient, admin: dict[str, str]) -> None:
+    refused = client.patch(f"/api/v1/accounts/{me_id(client, admin)}", json={"disabled": True}, headers=admin)
+
+    assert refused.status_code == 409
+    assert client.get("/api/v1/me", headers=admin).status_code == 200
+
+
+def test_with_a_second_admin_the_first_one_may_go(client: TestClient, admin: dict[str, str]) -> None:
+    other = client.post(
+        "/api/v1/accounts", json={"name": "Zweite Admin", "roles": ["admin"]}, headers=admin
+    ).json()
+    client.post(f"/api/v1/accounts/{other['id']}/keys", json={}, headers=admin)
+
+    blocked = client.patch(f"/api/v1/accounts/{me_id(client, admin)}", json={"disabled": True}, headers=admin)
+
+    assert blocked.status_code == 200

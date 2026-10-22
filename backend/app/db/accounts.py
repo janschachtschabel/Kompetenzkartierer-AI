@@ -16,6 +16,9 @@ from app.core.auth import Principal
 from app.core.ids import new_id
 from app.core.tokens import new_token, token_hash
 
+SWEEP_BATCH = 1000
+_ADMIN_LOCK = 0x6B6B_6161  # "kkaa"
+
 
 class AccountExists(Exception):
     """An account of this name exists already (names compare without case)."""
@@ -89,15 +92,37 @@ async def principal_for(connection: psycopg.AsyncConnection, key_hash: bytes) ->
 
 
 async def admin_exists(connection: psycopg.AsyncConnection) -> bool:
-    cursor = await connection.execute("SELECT EXISTS (SELECT 1 FROM role_grant WHERE role = 'admin')")
+    """Whether an admin can sign in: an active account with the role and a key not revoked."""
+    return await active_admin_keys(connection) > 0
+
+
+async def active_admin_keys(connection: psycopg.AsyncConnection) -> int:
+    cursor = await connection.execute(
+        """
+        SELECT count(*) FROM api_key
+        JOIN account ON account.id = api_key.account_id
+        JOIN role_grant ON role_grant.account_id = account.id AND role_grant.role = 'admin'
+        WHERE api_key.revoked_at IS NULL AND account.disabled_at IS NULL
+        """
+    )
     row = await cursor.fetchone()
-    return bool(row and row[0])
+    return int(row[0]) if row else 0
+
+
+async def lock_admins(connection: psycopg.AsyncConnection) -> None:
+    """Serialise changes that could leave no admin, for the caller's transaction."""
+    await connection.execute("SELECT pg_advisory_xact_lock(%s)", (_ADMIN_LOCK,))
 
 
 async def record_failure(connection: psycopg.AsyncConnection, source: str) -> None:
     """Note a failed sign-in from ``source``; rows older than a day go with it."""
     await connection.execute("INSERT INTO auth_failure (source) VALUES (%s)", (source,))
-    await connection.execute("DELETE FROM auth_failure WHERE at < now() - interval '1 day'")
+    # at most a batch per failure, over the index on at: an attack costs no full-table scan
+    await connection.execute(
+        "DELETE FROM auth_failure WHERE ctid IN (SELECT ctid FROM auth_failure"
+        " WHERE at < now() - interval '1 day' LIMIT %s)",
+        (SWEEP_BATCH,),
+    )
 
 
 async def recent_failures(connection: psycopg.AsyncConnection, source: str, window_s: float) -> int:

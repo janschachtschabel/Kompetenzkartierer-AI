@@ -133,22 +133,25 @@ def test_a_header_with_no_valid_token_is_refused(client: TestClient, header: str
     assert client.post("/api/v1/t/write", headers={"Authorization": header}).status_code == 401
 
 
-def test_too_many_failures_lock_out_the_source_even_with_a_valid_token(migrated: str) -> None:
+def test_too_many_failures_refuse_the_source_s_further_failures_only(migrated: str) -> None:
+    # a valid token still passes: behind one address there may be many people (review C, auth 1)
     _, _, token = run(account_with_token(migrated, "Lehrkraft", ["nutzer"]))
     app = app_with_probes(migrated)
     with selector_client(app, base_url=PUBLIC, client=("192.0.2.7", 5000)) as guessing:
         statuses = [
             guessing.post("/api/v1/t/write", headers=bearer("kka_" + "x" * 43)).status_code for _ in range(10)
         ]
-        locked = guessing.post("/api/v1/t/write", headers=bearer(token))
+        locked = guessing.post("/api/v1/t/write", headers=bearer("kka_" + "y" * 43))
+        valid = guessing.post("/api/v1/t/write", headers=bearer(token))
     with selector_client(app, base_url=PUBLIC, client=("192.0.2.8", 5000)) as other:
-        unaffected = other.post("/api/v1/t/write", headers=bearer(token))
+        elsewhere = other.post("/api/v1/t/write", headers=bearer("kka_" + "x" * 43))
 
     assert statuses == [401] * 10
     assert locked.status_code == 429
     assert locked.json()["code"] == "too_many_requests"
     assert int(locked.headers["Retry-After"]) > 0
-    assert unaffected.status_code == 200
+    assert valid.status_code == 200
+    assert elsewhere.status_code == 401
 
 
 def test_an_app_without_a_pepper_does_not_start() -> None:

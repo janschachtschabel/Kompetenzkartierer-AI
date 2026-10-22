@@ -99,9 +99,11 @@ async def test_failures_are_counted_per_source_within_the_window(db: psycopg.Asy
     assert await recent_failures(db, "192.0.2.2", 900) == 0
 
 
-async def test_an_admin_is_known_to_exist_once_granted(db: psycopg.AsyncConnection) -> None:
+async def test_an_admin_is_known_to_exist_once_granted_with_a_key(db: psycopg.AsyncConnection) -> None:
     assert await admin_exists(db) is False
-    await create_account(db, "Admin", ["admin"])
+    admin = await create_account(db, "Admin", ["admin"])
+    assert await admin_exists(db) is False
+    await issue_key(db, admin, "", PEPPER)
 
     assert await admin_exists(db) is True
 
@@ -117,3 +119,17 @@ async def test_the_audit_log_keeps_who_did_what(db: psycopg.AsyncConnection) -> 
     assert await cursor.fetchall() == [
         (account, "Admin", "key.issue", "key:123", {"label": "laptop"}, "req-1")
     ]
+
+
+async def test_an_admin_without_a_live_key_or_blocked_counts_for_no_admin(
+    db: psycopg.AsyncConnection,
+) -> None:
+    # the bootstrap must stay possible when no admin can sign in any more
+    keyless = await create_account(db, "Admin ohne Schlüssel", ["admin"])
+    key, _ = await issue_key(db, keyless, "", PEPPER)
+    await revoke_key(db, key)
+    blocked = await create_account(db, "Gesperrte Admin", ["admin"])
+    await issue_key(db, blocked, "", PEPPER)
+    await set_disabled(db, blocked, True)
+
+    assert await admin_exists(db) is False

@@ -4,6 +4,7 @@ A secret may instead come from a file named by ``<NAME>_FILE`` (Docker and Kuber
 secrets); the file wins over the plain variable. Errors never echo a value.
 """
 
+import ipaddress
 import os
 import re
 from collections.abc import Mapping
@@ -102,6 +103,9 @@ class Settings(BaseSettings):
     api_key_pepper: Annotated[SecretStr, Field(min_length=32)] | None = None
     # What visitors without a token may do: nothing, look up published curricula, or also search
     public_access: Literal["off", "lookup", "search"] = "off"
+    # The proxies (ingress, web server) whose X-Forwarded-For names the client: addresses or
+    # networks, never "*" - with it every client could name its own address and dodge the limit
+    forwarded_allow_ips: str = "127.0.0.1,::1"
     # Failed sign-ins per client address before it is refused for the window
     auth_failure_limit: Annotated[int, Field(ge=1)] = 10
     auth_failure_window_s: Annotated[float, Field(gt=0)] = 900.0
@@ -140,6 +144,17 @@ class Settings(BaseSettings):
         if _split_by_the_password(parts):
             raise ValueError("does not parse as meant; write @, / and : in the password as %40, %2F and %3A")
         return value
+
+    @field_validator("forwarded_allow_ips")
+    @classmethod
+    def _proxy_networks(cls, value: str) -> str:
+        entries = [entry.strip() for entry in value.split(",")]
+        try:
+            networks = [ipaddress.ip_network(entry, strict=False) for entry in entries]
+        except ValueError:
+            raise ValueError("must list proxy addresses or networks, comma-separated, never *") from None
+        # a single address as it was written, a network with its prefix
+        return ",".join(str(net.network_address) if net.num_addresses == 1 else str(net) for net in networks)
 
     @field_validator("log_level", mode="before")
     @classmethod
