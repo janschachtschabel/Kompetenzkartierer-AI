@@ -178,6 +178,30 @@ def test_only_its_owner_or_an_admin_cancels_a_job(
     assert client.post(f"/api/v1/jobs/{job_id}/cancel", headers=admin).status_code == 200
 
 
+def cancels_audited(url: str) -> list[tuple[Any, ...]]:
+    with psycopg.connect(url) as connection:
+        return connection.execute(
+            "SELECT actor_id, action, subject, details FROM audit_log WHERE action = 'job.cancel'"
+        ).fetchall()
+
+
+def test_a_cancel_is_audited_and_a_refused_one_is_not(
+    client: TestClient,
+    migrated: str,
+    owner: tuple[UUID, dict[str, str]],
+    stranger: dict[str, str],
+) -> None:
+    account, header = owner
+    job_id = add_job(migrated, str(account))
+    ended = add_job(migrated, str(account), status="done")
+
+    assert client.post(f"/api/v1/jobs/{job_id}/cancel", headers=stranger).status_code == 404
+    assert client.post(f"/api/v1/jobs/{ended}/cancel", headers=header).status_code == 409
+    assert client.post(f"/api/v1/jobs/{job_id}/cancel", headers=header).status_code == 200
+
+    assert cancels_audited(migrated) == [(account, "job.cancel", f"job:{job_id}", {"kind": "source.fetch"})]
+
+
 def test_an_ended_job_cannot_be_cancelled(
     client: TestClient, migrated: str, owner: tuple[UUID, dict[str, str]]
 ) -> None:

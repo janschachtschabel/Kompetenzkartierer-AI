@@ -3,7 +3,7 @@
 A job's lane is the account that started it (``account_lane``). Another account gets the 404
 of a job that does not exist, so ids reveal nothing; an admin, who runs the service, sees and
 cancels every job. Who may see or cancel a job is decided in the query (``lane``), never in
-Python after loading it.
+Python after loading it. A cancel is audited (``job.cancel``).
 """
 
 from datetime import datetime
@@ -17,6 +17,8 @@ from pydantic import BaseModel
 from app.api.deps import require_account
 from app.api.errors import AUTH_RESPONSES
 from app.core.auth import Principal
+from app.core.logging import current_request_id
+from app.db.accounts import record_audit
 from app.jobs.queue import account_lane, request_cancel
 from app.jobs.state import JobState, job_state
 
@@ -53,10 +55,19 @@ async def get_job(job_id: UUID, request: Request, who: Account) -> JobOut:
 async def cancel_job(job_id: UUID, request: Request, who: Account) -> JobOut:
     """A waiting job ends at once; a running one stops at its worker's next heartbeat."""
     lane = _lane(who)
-    async with request.app.state.pool.connection() as connection:
-        await _visible(connection, job_id, lane)
+    async with request.app.state.pool.connection() as connection, connection.transaction():
+        asked = await _visible(connection, job_id, lane)
         if not await request_cancel(connection, job_id, lane):
             raise HTTPException(409, "The job has ended.")
+        await record_audit(
+            connection,
+            who.account_id,
+            who.name,
+            "job.cancel",
+            f"job:{job_id}",
+            {"kind": asked.kind},
+            current_request_id(),
+        )
         state = await job_state(connection, job_id, lane)
     assert state is not None  # noqa: S101 - jobs are not deleted
     return _out(state)
