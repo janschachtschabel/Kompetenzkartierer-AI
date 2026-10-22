@@ -47,7 +47,9 @@ CREATE TABLE source (
     CHECK ((sector_scheme IS NULL) = (sector_iri IS NULL)),
     CHECK ((register_status = 'acquired') = (file_id IS NOT NULL)),
     CHECK ((file_id IS NULL) = (file_name IS NULL)),
-    CHECK ((file_id IS NULL) = (mime IS NULL))
+    CHECK ((file_id IS NULL) = (mime IS NULL)),
+    -- a rights status the editors set stands on its evidence (coalesce: a CHECK passes on NULL)
+    CHECK (rights_status = 'unklar' OR length(btrim(coalesce(rights_evidence, ''))) > 0)
 );
 CREATE INDEX source_owner ON source (owner_id);
 CREATE INDEX source_file_ref ON source (file_id);

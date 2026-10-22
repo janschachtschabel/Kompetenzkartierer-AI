@@ -81,7 +81,7 @@ def test_every_value_the_code_knows_is_held_and_no_other(
     connection: psycopg.Connection, column: str, values: tuple[str, ...]
 ) -> None:
     for value in values:
-        add_source(connection, **{column: value})
+        add_source(connection, **{column: value, "rights_evidence": "Amtsblatt 2023"})
 
     with pytest.raises(errors.CheckViolation):
         add_source(connection, **{column: "invented"})
@@ -153,6 +153,16 @@ def test_a_source_is_acquired_exactly_when_its_file_is_here(connection: psycopg.
         add_source(connection, register_status="acquired")
     with pytest.raises(errors.CheckViolation):
         add_source(connection, **filed(file_id, status="reachable"))
+
+
+@pytest.mark.parametrize("evidence", [None, "", "   "], ids=["none", "empty", "blank"])
+def test_a_rights_status_other_than_unclear_holds_its_evidence(
+    connection: psycopg.Connection, evidence: str | None
+) -> None:
+    add_source(connection, rights_status="unklar", rights_evidence=evidence)
+
+    with pytest.raises(errors.CheckViolation):
+        add_source(connection, rights_status="amtlich", rights_evidence=evidence)
 
 
 def test_a_source_s_id_is_an_entity_of_kind_source(connection: psycopg.Connection) -> None:

@@ -134,6 +134,39 @@ def test_a_rights_status_needs_its_evidence(client: TestClient, world: dict[str,
     assert answer.json()["code"] == "evidence_missing"
 
 
+def terms_of(url: str, source_id: UUID) -> tuple[str, str | None]:
+    stored = row(url, source_id)
+    return stored["rights_status"], stored["rights_evidence"]
+
+
+def test_a_rights_status_is_never_cleared(client: TestClient, migrated: str, world: dict[str, Any]) -> None:
+    answer = client.patch(
+        f"/api/v1/sources/{world['seed']}", headers=world["editor"], json={"rights_status": None}
+    )
+
+    assert answer.status_code == 422
+    assert terms_of(migrated, world["seed"]) == ("unklar", None)
+
+
+@pytest.mark.parametrize(
+    "change",
+    [{"rights_evidence": None}, {"rights_status": "geschuetzt", "rights_evidence": None}],
+    ids=["evidence-removed", "status-changed-evidence-removed"],
+)
+def test_a_rights_status_keeps_its_evidence(
+    client: TestClient, migrated: str, world: dict[str, Any], change: dict[str, Any]
+) -> None:
+    # the rule holds for what the entry would be, not for the fields sent
+    terms = {"rights_status": "amtlich", "rights_evidence": "Amtsblatt 2023"}
+    client.patch(f"/api/v1/sources/{world['seed']}", headers=world["editor"], json=terms)
+
+    answer = client.patch(f"/api/v1/sources/{world['seed']}", headers=world["editor"], json=change)
+
+    assert answer.status_code == 422
+    assert answer.json()["code"] == "evidence_missing"
+    assert terms_of(migrated, world["seed"]) == ("amtlich", "Amtsblatt 2023")
+
+
 def test_an_owner_describes_its_entry(client: TestClient, migrated: str, world: dict[str, Any]) -> None:
     change = {"title": "Lehrplan Physik", "country": "DE-BY", "sector": "school"}
 

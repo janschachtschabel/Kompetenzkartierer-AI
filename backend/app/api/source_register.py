@@ -168,6 +168,8 @@ async def edit_register_entry(
         raise Refusal(422, "nothing_to_change", "The change names no field.")
     if "title" in given and given["title"] is None:
         raise Refusal(422, "title_missing", "An entry keeps a title.")
+    if "rights_status" in given and given["rights_status"] is None:
+        raise Refusal(422, "rights_status_missing", "An entry keeps a rights status, unklar at least.")
     editor = bool(who.roles & EDITORS)
     async with request.app.state.pool.connection() as connection, connection.transaction():
         found = await get_source(connection, _reader(who), source_id)
@@ -178,10 +180,7 @@ async def edit_register_entry(
             raise HTTPException(403, "Only the editors change an entry that is not yours.")
         if not editor and TERMS & given.keys():
             raise HTTPException(403, "Only the editors set the terms of use.")
-        if given.get("rights_status") not in (None, "unklar") and not (
-            given.get("rights_evidence") or row["rights_evidence"]
-        ):
-            raise Refusal(422, "evidence_missing", "A rights status needs its evidence.")
+        _check_terms(given, row)
         changes = {name: value for name, value in given.items() if name != "sector"}
         if "sector" in given:
             changes |= await _sector(connection, given["sector"])
@@ -199,6 +198,15 @@ async def edit_register_entry(
         changed = await get_source(connection, _reader(who), source_id)
     assert changed is not None  # noqa: S101 - changed in this transaction
     return SourceDetail.model_validate(_detail(*changed, who))
+
+
+def _check_terms(given: dict[str, Any], row: dict[str, Any]) -> None:
+    """The terms the entry would have after the change hold together: a rights status other
+    than ``unklar`` stands on its evidence, whichever of the two the change names."""
+    status = given.get("rights_status", row["rights_status"])
+    evidence = given["rights_evidence"] if "rights_evidence" in given else row["rights_evidence"]
+    if status != "unklar" and not (evidence or "").strip():
+        raise Refusal(422, "evidence_missing", "A rights status needs its evidence.")
 
 
 @router.get("/sources/{source_id}/file", summary="The entry's file, as a download")
