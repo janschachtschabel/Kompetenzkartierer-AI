@@ -122,6 +122,40 @@ async def test_a_job_handed_back_at_a_shutdown_is_counted_and_timed(pool: AsyncC
     assert sample("kka_job_duration_seconds_count", kind=kind) == timed + 1
 
 
+@pytest.mark.pg
+async def test_a_job_whose_lease_is_lost_in_the_shutdown_grace_counts_as_lost(
+    pool: AsyncConnectionPool,
+) -> None:
+    # the release finds the job another worker's: nothing was handed back
+    kind = "test.metrics_release_lost"
+    async with pool.connection() as connection:
+        await enqueue(connection, kind, "account-a")
+    running_jobs: list[Job] = []
+
+    async def waits(job: Job) -> None:
+        running_jobs.append(job)
+        await asyncio.sleep(30)
+
+    before = {
+        outcome: sample("kka_jobs_total", kind=kind, outcome=outcome) for outcome in ("released", "lost")
+    }
+    timed = sample("kka_job_duration_seconds_count", kind=kind)
+    stop = asyncio.Event()
+    # a lease of 60 s is renewed after 20 s: no heartbeat sees the loss within the grace
+    worker = Worker(pool, {kind: waits}, owner="w1", lease_s=60, poll_s=0.05, grace_s=0.5)
+    running = asyncio.create_task(worker.run(stop))
+    while not running_jobs:
+        await asyncio.sleep(0.01)
+
+    stop.set()
+    await steal(pool, running_jobs[0])
+    await asyncio.wait_for(running, 5)
+
+    assert sample("kka_jobs_total", kind=kind, outcome="lost") == before["lost"] + 1
+    assert sample("kka_jobs_total", kind=kind, outcome="released") == before["released"]
+    assert sample("kka_job_duration_seconds_count", kind=kind) == timed + 1
+
+
 async def steal(pool: AsyncConnectionPool, job: Job) -> None:
     """Another worker's claim now, as after a sweep that found the lease expired."""
     async with pool.connection() as connection:
