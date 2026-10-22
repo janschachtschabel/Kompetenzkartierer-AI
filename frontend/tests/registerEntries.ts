@@ -82,11 +82,8 @@ export function detail(overrides: Partial<SourceDetail> = {}): SourceDetail {
     access_notes: [
       {
         categories: ["Sperre 403", "Archiv"],
-        field: "URL",
         text: "Das Landesportal sperrt automatische Abrufe; eine Archivkopie liegt vor.",
         url: "https://web.archive.org/web/2024/https://lehrplaene.bildung-rp.de/",
-        // the dataset's own bookkeeping, no words for a reader
-        origin: "laender_meta",
       },
     ],
     check: {

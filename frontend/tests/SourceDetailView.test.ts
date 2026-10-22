@@ -206,12 +206,11 @@ describe("a register entry's page", () => {
     expect(notes[0].text()).toContain("Das Landesportal sperrt automatische Abrufe");
     expect(notes[0].text()).toContain("Sperre 403");
     expect(notes[0].get("a").attributes("rel")).toBe("noreferrer");
-    expect(notes[0].text()).not.toContain("laender_meta");
   });
 
   it("shows a note that is its address alone once, as the link", async () => {
     const address = "https://web.archive.org/web/2024/https://lehrplaene.bildung-rp.de/physik.pdf";
-    const note = { categories: ["Wayback-Archiv"], field: null, text: address, url: address, origin: null };
+    const note: api.AccessNote = { categories: ["Wayback-Archiv"], text: address, url: address };
     vi.spyOn(api, "getSource").mockResolvedValue(detail({ access_notes: [note] }));
     const wrapper = await open();
 

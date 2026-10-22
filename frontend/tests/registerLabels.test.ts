@@ -3,7 +3,23 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import type * as api from "@/api";
 import { messages } from "@/i18n/de";
+
+/** true where `A` and `B` name the same values; vue-tsc fails the list below where they do not. */
+type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+
+// The api's types name what the catalogue names, which the test below ties to the backend's lists:
+// a value the type lacks reads as no value at all to the code that switches on it.
+const typesFollow: [
+  Same<api.Provenance, keyof typeof messages.sources.provenance>,
+  Same<api.RegisterStatus, keyof typeof messages.sources.status>,
+  Same<api.RightsStatus, keyof typeof messages.sources.rights>,
+  Same<api.SourceType, keyof typeof messages.entryPage.sourceType>,
+  Same<api.CheckOutcome, keyof typeof messages.entryPage.outcome>,
+  Same<api.DetectedKind, keyof typeof messages.entryPage.kind>,
+  Same<api.Evidence, keyof typeof messages.entryPage.evidence>,
+] = [true, true, true, true, true, true, true];
 
 /** The values of a `Literal[...]` the backend names `name` in app/sources/register.py. */
 function backendValues(name: string): string[] {
@@ -16,6 +32,7 @@ describe("the register's words", () => {
   it("read the backend's lists", () => {
     expect(backendValues("RegisterStatus")).toContain("acquired");
     expect(backendValues("Provenance")).toContain("upload");
+    expect(typesFollow.every(Boolean)).toBe(true);
   });
 
   it.each([

@@ -25,6 +25,7 @@ export type CheckOutcome =
   | "refused"
   | "throttled"
   | "server_error"
+  | "unavailable"
   | "unreachable"
   | "robots";
 /** What the bytes at an address are, as far as the check could tell (DetectedKind). */
@@ -83,10 +84,8 @@ export interface SeedFields {
 /** How the documents of the entry's land, school form and subject can be reached (backend AccessNoteOut). */
 export interface AccessNote {
   categories: string[];
-  field: string | null;
   text: string;
   url: string | null;
-  origin: string | null;
 }
 
 /** What the check found at the entry's address (backend CheckOut). */
