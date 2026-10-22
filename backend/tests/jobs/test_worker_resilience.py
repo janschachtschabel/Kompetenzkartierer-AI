@@ -12,6 +12,7 @@ import pytest
 from psycopg_pool import AsyncConnectionPool
 
 from app.db.migrate import migrate
+from app.jobs import outcome as outcome_module
 from app.jobs import worker as worker_module
 from app.jobs.queue import Job, complete, enqueue
 from app.jobs.worker import Worker
@@ -193,7 +194,7 @@ async def test_an_outcome_is_written_after_a_brief_database_error(
     async def answer(job: Job) -> dict[str, Any]:
         return {"ok": True}
 
-    monkeypatch.setattr(worker_module, "complete", flaky_complete)
+    monkeypatch.setattr(outcome_module, "complete", flaky_complete)
     job_id = await add(pool)
 
     await Worker(pool, {"test.work": answer}, owner="w1", lease_s=0.9).run_once()

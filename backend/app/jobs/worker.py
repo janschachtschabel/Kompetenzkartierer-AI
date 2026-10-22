@@ -2,11 +2,10 @@
 
 A worker claims one job at a time, runs its handler as a task and renews the lease at a third
 of its length. A requested cancel or a lost lease cancels the handler; a lost lease writes
-nothing, since the job is another worker's by then. A ``PermanentError`` ends the job; any
-other error is retried, keeping only the error's type - its text may quote input. A result
-that is no JSON fails the job (``result_not_storable``). Every third of a lease, busy or idle,
-the worker hands expired leases back to the queue. A database away for a moment costs a
-warning, not the worker: the claim waits for the next poll, an outcome is written again.
+nothing, since the job is another worker's by then. How a job's end is written - its result, a
+``PermanentError``, a retry - is app/jobs/outcome.py. Every third of a lease, busy or idle, the
+worker hands expired leases back to the queue. A database away for a moment costs a warning,
+not the worker: the claim waits for the next poll, an outcome is written again.
 
 On SIGTERM the worker takes no new job and gives the running one JOB_SHUTDOWN_GRACE_S to
 finish; then it cancels the handler and hands the job back unspent, for the next worker.
@@ -17,54 +16,28 @@ loses it. CPU-heavy or blocking work goes through ``asyncio.to_thread`` or a pro
 
 import asyncio
 import contextlib
-import json
 import logging
 import os
 import signal
 import socket
 import sys
 from collections.abc import Callable, Coroutine, Mapping
-from typing import Any, Literal
+from typing import Any
 
 import psycopg
 from psycopg_pool import AsyncConnectionPool, PoolTimeout
 
-from app.jobs.queue import (
-    Job,
-    LeaseLost,
-    claim,
-    complete,
-    fail,
-    heartbeat,
-    mark_cancelled,
-    release,
-    requeue_expired,
-)
+from app.jobs.outcome import Ending, Outcome, PermanentError, Result, one_line, write_outcome
+from app.jobs.queue import Job, LeaseLost, claim, heartbeat, requeue_expired
+
+__all__ = ["Handler", "PermanentError", "Result", "Worker", "main"]
 
 log = logging.getLogger("app.jobs.worker")  # also when run as __main__
 
-Result = dict[str, Any] | None
 Handler = Callable[[Job], Coroutine[Any, Any, Result]]
-Outcome = Result | BaseException
-# How a job's run ended other than by its handler: asked to cancel, lease lost, handed back
-Ending = Literal["cancelled", "lost", "released"] | None
-# Tries to write an outcome while the database is away, within a third of the lease
-WRITE_ATTEMPTS = 3
 # How long a cancelled handler may take to unwind before its job goes back anyway: the deployment
 # kills the pod at the end of its grace, and a kill would count the attempt after all
 RELEASE_WAIT_S = 2.0
-# What a database away for a moment raises (PoolTimeout is an OperationalError); anything else -
-# a value the database refuses, a fault in a query - would only fail the same way again
-TRANSIENT = (psycopg.OperationalError, psycopg.InterfaceError)
-
-
-class PermanentError(Exception):
-    """A failure another attempt cannot cure (bad input); ``message`` is kept, so no secrets."""
-
-    def __init__(self, code: str, message: str) -> None:
-        super().__init__(message)
-        self.code = code
-        self.message = message
 
 
 class Worker:
@@ -97,7 +70,7 @@ class Worker:
                     if await self.run_once():
                         continue
                 except (psycopg.Error, PoolTimeout) as error:
-                    log.warning("could not claim a job: %s", _one_line(error))
+                    log.warning("could not claim a job: %s", one_line(error))
                 with contextlib.suppress(TimeoutError):
                     await asyncio.wait_for(stop.wait(), self.poll_s)
         finally:
@@ -180,7 +153,7 @@ class Worker:
             return "lost"
         except (psycopg.Error, PoolTimeout) as error:
             # the database is away for a moment: the next beat may still be in time
-            log.warning("could not renew the lease of job %s: %s", job.id, _one_line(error))
+            log.warning("could not renew the lease of job %s: %s", job.id, one_line(error))
             return None
         if cancel_requested:
             task.cancel()
@@ -188,82 +161,7 @@ class Worker:
         return None
 
     async def _write(self, job: Job, outcome: Outcome, ending: Ending) -> None:
-        """Record how the job ended; a database away for a moment gets WRITE_ATTEMPTS tries.
-
-        Past them the outcome is lost and the job runs again once its lease expires.
-        """
-        for attempt in range(1, WRITE_ATTEMPTS + 1):
-            try:
-                async with self.pool.connection() as connection:
-                    if ending == "released":
-                        await release(connection, job)
-                    else:
-                        await self._record(connection, job, outcome, cancelled=ending == "cancelled")
-                return
-            except LeaseLost:
-                log.warning(
-                    "lost the lease of job %s (%s) at its end; its outcome is dropped", job.id, job.kind
-                )
-                return
-            except TRANSIENT as error:
-                if attempt == WRITE_ATTEMPTS:
-                    log.error(
-                        "could not write the outcome of job %s (%s): %s; it runs again after its lease",
-                        job.id,
-                        job.kind,
-                        _one_line(error),
-                    )
-                    return
-                log.warning("could not write the outcome of job %s yet: %s", job.id, _one_line(error))
-                await asyncio.sleep(self.lease_s / 9)
-            except psycopg.Error as error:
-                # the type and state only: the database's message may quote the result
-                log.error(
-                    "could not write the outcome of job %s (%s): %s %s; it runs again after its lease",
-                    job.id,
-                    job.kind,
-                    type(error).__name__,
-                    error.sqlstate,
-                )
-                return
-
-    async def _record(
-        self, connection: psycopg.AsyncConnection, job: Job, outcome: Outcome, *, cancelled: bool
-    ) -> None:
-        if cancelled:
-            await mark_cancelled(connection, job)
-        elif isinstance(outcome, PermanentError):
-            await fail(connection, job, outcome.code, outcome.message, retry=False)
-        elif isinstance(outcome, BaseException):
-            log.error("job %s (%s) failed", job.id, job.kind, exc_info=outcome)
-            await fail(connection, job, "handler_error", type(outcome).__name__, retry=True)
-        else:
-            try:
-                # as the database will take it: no NaN, no type JSON does not know, not too deep
-                json.dumps(outcome, allow_nan=False)
-            except (TypeError, ValueError, RecursionError) as error:
-                log.error(
-                    "job %s (%s) returned a result that is no JSON: %s",
-                    job.id,
-                    job.kind,
-                    type(error).__name__,
-                )
-                await fail(connection, job, "result_not_storable", type(error).__name__, retry=False)
-                return
-            try:
-                # in a savepoint, so the transaction lives on to record the failure
-                async with connection.transaction():
-                    await complete(connection, job, outcome)
-            except psycopg.DataError as error:
-                # JSON the database refuses: a NUL, a lone surrogate. Another attempt would
-                # return the same; the type only, the message quotes the result
-                log.error(
-                    "job %s (%s) returned a result the database refuses: %s",
-                    job.id,
-                    job.kind,
-                    type(error).__name__,
-                )
-                await fail(connection, job, "result_not_storable", type(error).__name__, retry=False)
+        await write_outcome(self.pool, job, outcome, ending, lease_s=self.lease_s)
 
     async def _sweep_until(self, stop: asyncio.Event) -> None:
         """Hand expired leases back every third of a lease, whether this worker is busy or not."""
@@ -277,14 +175,10 @@ class Worker:
             async with self.pool.connection() as connection:
                 handed_back = await requeue_expired(connection)
         except (psycopg.Error, PoolTimeout) as error:
-            log.warning("could not look for expired leases: %s", _one_line(error))
+            log.warning("could not look for expired leases: %s", one_line(error))
             return
         if handed_back:
             log.info("handed %d job(s) with an expired lease back", handed_back)
-
-
-def _one_line(error: BaseException) -> str:
-    return " ".join(str(error).split())
 
 
 def _stop_when_broken(sweeper: asyncio.Task[None], stop: asyncio.Event) -> None:
