@@ -116,8 +116,10 @@ def _model_files(root: Path) -> list[Path]:
 def _refuse_relative_iris(graph: Graph) -> None:
     for triple in graph:
         for term in triple:
-            if isinstance(term, URIRef) and str(term).startswith(_RELATIVE_BASE):
-                place = str(term).removeprefix(_RELATIVE_BASE)
+            # a literal's datatype is an IRI too, and resolves the same way
+            iri = term.datatype if isinstance(term, Literal) else term
+            if isinstance(iri, URIRef) and str(iri).startswith(_RELATIVE_BASE):
+                place = str(iri).removeprefix(_RELATIVE_BASE)
                 raise VocabularyError(f"relative IRI <{place}>: write the full IRI")
 
 
@@ -234,7 +236,7 @@ def _value(iri: URIRef, predicate: Node, value: Node) -> dict[str, str]:
     if isinstance(value, Literal):
         literal = {"value": str(value)}
         if value.language:
-            literal["lang"] = value.language
+            literal["lang"] = value.language.lower()  # as in the label columns: tags ignore case
         elif value.datatype is not None:
             literal["datatype"] = str(value.datatype)
         return literal

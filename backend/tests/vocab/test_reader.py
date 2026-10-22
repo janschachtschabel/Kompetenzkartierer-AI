@@ -209,3 +209,16 @@ def test_a_new_reader_format_changes_the_content_hash(
     monkeypatch.setattr(loader, "READER_FORMAT", loader.READER_FORMAT + 1)
 
     assert read_vocabulary(root).content_hash != before
+
+
+def test_a_relative_datatype_is_refused(tmp_path: Path) -> None:
+    with pytest.raises(VocabularyError, match="relative IRI"):
+        read_vocabulary(vocabulary_dir(tmp_path, COLOURS + 'ex:red cur:code "7"^^<code> .'))
+
+
+def test_language_tags_in_properties_are_lower_case_too(tmp_path: Path) -> None:
+    red = read_vocabulary(vocabulary_dir(tmp_path, COLOURS + 'ex:red cur:note "Hinweis"@DE .')).concepts[
+        EX + "red"
+    ]
+
+    assert red.properties["https://w3id.org/wlo/curriculum/core#note"] == [{"value": "Hinweis", "lang": "de"}]
