@@ -1,11 +1,11 @@
 """The job source.fetch: a register entry's URL fetched, its file stored, the entry acquired.
 
-A server that refuses (4xx but 429), an address inside the network, a file too large, a redirect
-loop, an answer no attempt can use or a file of no type a conversion reads end the job
-(PermanentError, with a code the interface words); a server away for a moment, a broken transfer
-or a timeout are tried again by the queue. The entry's register status says what was found:
-unreachable, reachable (it answered, its file is of no use here), or acquired. The file is named
-by the last address of the chain, or by the first.
+A server that refuses (4xx) or asks to slow down (429), an address inside the network, a file too
+large, a redirect loop, an answer no attempt can use or a file of no type a conversion reads end
+the job (PermanentError, with a code the interface words); a server away for a moment, a broken
+transfer or a timeout are tried again by the queue. The entry's register status says what was
+found: unreachable, reachable (it answered, its file is of no use here), or acquired. The file is
+named by the last address of the chain, or by the first.
 """
 
 import asyncio
@@ -106,7 +106,10 @@ async def _fetched(
         await _note(context, source_id, "reachable")
         raise PermanentError("bad_answer", str(error)) from None
     except DownloadError as error:
-        if error.status is not None and 400 <= error.status < 500 and error.status != 429:
+        if error.status == 429:  # another attempt within seconds would only press the server
+            await _note(context, source_id, "reachable")
+            raise PermanentError("download_throttled", str(error)) from None
+        if error.status is not None and 400 <= error.status < 500:
             await _note(context, source_id, "unreachable")
             raise PermanentError("download_refused", str(error)) from None
         if last_attempt:  # the queue fails the job: the entry must not stay unchecked

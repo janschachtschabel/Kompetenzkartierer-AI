@@ -133,6 +133,20 @@ async def test_a_refusing_server_makes_the_entry_unreachable(context: JobContext
     assert (await source_row(context, source_id))["register_status"] == "unreachable"
 
 
+async def test_a_server_asking_to_slow_down_ends_the_job_and_the_entry_is_reachable(
+    context: JobContext,
+) -> None:
+    # another attempt after ten seconds would only press the server further
+    source_id, job = await add_source(context)
+    throttling = serving(lambda request: httpx2.Response(429, headers={"retry-after": "3600"}))
+
+    with pytest.raises(PermanentError) as failed:
+        await fetch_source(context, job, transport=throttling)
+
+    assert failed.value.code == "download_throttled"
+    assert (await source_row(context, source_id))["register_status"] == "reachable"
+
+
 async def test_an_address_inside_the_network_is_never_fetched(context: JobContext) -> None:
     source_id, job = await add_source(context, url="http://intern.example/lehrplan.pdf")
     nowhere = pinned_transport(PinnedBackend(lambda host: ["10.0.0.7"], httpcore2.AsyncMockBackend([])))
