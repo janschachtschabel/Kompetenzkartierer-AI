@@ -1,6 +1,7 @@
 -- How a land's documents can be reached where its portal blocks or moved them (plan M1, 2.3;
 -- Gesamtplan §7.5): the comparison dataset's notes on blocked portals and detours, each for a
--- land, school form and subject. A register entry seeded with the same three shows them. The
+-- land, school form and subject. A register entry seeded with the same three shows them; a note
+-- without a school form or subject holds for all of them in its land. The
 -- rule stays ours: official sources first, an archive as one, a mirror marked; a technical
 -- barrier is never got round. A note's key is the SHA-256 of its row: a second import adds nothing.
 CREATE TABLE access_note (

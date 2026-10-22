@@ -126,7 +126,8 @@ async def seed_of(
     connection: psycopg.AsyncConnection, source_id: UUID
 ) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
     """What a seed or research row said of the entry, and the access notes of its land, school
-    form and subject (migrations 0008, 0009); nothing for an entry no dataset seeded."""
+    form and subject (migrations 0008, 0009); nothing for an entry no dataset seeded. A note
+    that names no school form or no subject holds for all of them in its land."""
     cursor = connection.cursor(row_factory=dict_row)
     await cursor.execute(
         "SELECT dataset, school_form, stage, subject_key, subject, grade_from, grade_to, binding,"
@@ -139,7 +140,8 @@ async def seed_of(
     await cursor.execute(
         "SELECT n.categories, n.field, n.text, n.url, n.origin FROM access_note n"
         " JOIN source s ON s.id = %s JOIN source_seed x ON x.source_id = s.id"
-        " WHERE n.country = s.country AND n.school_form = x.school_form AND n.subject = x.subject"
+        " WHERE n.country = s.country AND (n.school_form IS NULL OR n.school_form = x.school_form)"
+        " AND (n.subject IS NULL OR n.subject = x.subject)"
         " ORDER BY n.text",
         (source_id,),
     )

@@ -1,8 +1,10 @@
 """The comparison dataset's notes on blocked portals and detours, as access notes (plan M1, 2.3).
 
 Each note belongs to a land, school form and subject; an entry seeded with the same three shows
-it (app/db/source_queries.notes_for). Taken as published (CC0), its categories split; an empty
-note is left out, an address that is none ("lokal") is no address.
+it (app/db/source_queries.seed_of), and a note that names no school form or no subject holds for
+all of them in its land. A note no entry matches is kept all the same: it shows once one does.
+Taken as published (CC0), its categories split; an empty note is left out, an address that is
+none ("lokal") is no address.
 """
 
 import csv

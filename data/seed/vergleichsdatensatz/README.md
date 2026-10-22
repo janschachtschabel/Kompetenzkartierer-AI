@@ -17,8 +17,8 @@ nicht enthalten.
   Quelltyp.
 - **Nicht übernommen:** Titel, Beschreibungen, Themen, Knotenzahlen und Verifikationsangaben.
 - **Ausgelassen:** ESA-Ableitungen und „kanonisch“ modellierte Zeilen.
-- **Zugangsnotizen:** Die Umgehungshinweise werden Zugangsnotizen je Land, Schulform und Fach.
-  Technische Sperren umgehen wir nicht.
+- **Zugangsnotizen:** Die Umgehungshinweise werden Zugangsnotizen je Land, Schulform und Fach;
+  ohne Schulform oder Fach gelten sie für alle des Landes. Technische Sperren umgehen wir nicht.
 
 Die Dateien bleiben byte-gleich (`.gitattributes`: `-text`). Ein Test vergleicht sie mit dieser
 Tabelle (`backend/tests/sources/test_seed_files.py`).

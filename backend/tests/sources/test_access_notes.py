@@ -1,8 +1,9 @@
 """The dataset's notes on blocked portals and detours become access notes (plan M1, 2.3).
 
 A note belongs to a land, school form and subject; a register entry seeded with the same three
-shows it. The rule stays ours (Gesamtplan §7.5): official sources first, an archive as one,
-a mirror marked; a technical barrier is never got round.
+shows it, and a note naming no school form or no subject holds for all of them. The rule stays
+ours (Gesamtplan §7.5): official sources first, an archive as one, a mirror marked; a technical
+barrier is never got round.
 """
 
 import asyncio
@@ -144,6 +145,85 @@ def test_an_entry_shows_the_notes_of_its_land_school_form_and_subject(
     assert (detail["seed"]["grade_from"], detail["seed"]["grade_to"]) == (7, 10)
     # no note names its subject: it shows none, though notes on its land and school form exist
     assert other["access_notes"] == []
+
+
+# The notes file's columns, in its order
+NOTE_COLUMNS = [
+    "Land_Kuerzel",
+    "Land",
+    "Schulform",
+    "Fach",
+    "Kategorien",
+    "Feld",
+    "Hinweis",
+    "URL_im_Text",
+    "Herkunft",
+]
+
+
+def write_notes(path: Path, *rows: dict[str, str]) -> Path:
+    """A notes file as the dataset writes it (BOM, semicolons, CRLF), with these rows."""
+    with path.open("w", encoding="utf-8-sig", newline="") as handle:
+        writer = csv.DictWriter(handle, NOTE_COLUMNS, delimiter=";", lineterminator="\r\n")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({column: row.get(column, "") for column in NOTE_COLUMNS})
+    return path
+
+
+def note(land: str, school_form: str, subject: str, text: str) -> dict[str, str]:
+    return {"Land_Kuerzel": land, "Schulform": school_form, "Fach": subject, "Hinweis": text}
+
+
+def notes_shown(client: TestClient, migrated: str, documents: Path, notes: Path) -> set[str]:
+    """The texts of the notes the one entry of ``documents`` shows."""
+    run(lambda connection: seed_register(connection, read_documents(documents).rows), migrated)
+    run(lambda connection: record_notes(connection, read_notes(notes).notes), migrated)
+    _, header = seed_account(migrated, "Lehrkraft", ["nutzer"])
+    (entry,) = client.get("/api/v1/sources", headers=header).json()["entries"]
+    detail = client.get(f"/api/v1/sources/{entry['id']}", headers=header).json()
+    return {found["text"] for found in detail["access_notes"]}
+
+
+@pytest.mark.pg
+def test_a_note_without_a_school_form_or_subject_holds_for_all_of_them_in_its_land(
+    client: TestClient, migrated: str, tmp_path: Path
+) -> None:
+    notes = write_notes(
+        tmp_path / "n.csv",
+        note("BY", "", "", "ganz Bayern"),
+        note("BY", "Gymnasium", "", "jedes Gymnasium"),
+        note("BY", "Gymnasium", "Physik", "Physik am Gymnasium"),
+        note("BY", "Gymnasium", "Chemie", "Chemie am Gymnasium"),
+        note("BY", "Realschule", "", "jede Realschule"),
+        note("HE", "", "", "ganz Hessen"),
+    )
+    documents = write_documents(tmp_path / "d.csv", document("BY.GYM.PH"))
+
+    shown = notes_shown(client, migrated, documents, notes)
+
+    assert shown == {"ganz Bayern", "jedes Gymnasium", "Physik am Gymnasium"}
+
+
+@pytest.mark.pg
+def test_thuringia_s_blocked_portal_shows_on_its_esa_entries(
+    client: TestClient, migrated: str, tmp_path: Path
+) -> None:
+    # the published notes on Thuringia's ESA name no subject: they hold for every subject of it
+    scope = {"Land_Kuerzel": "TH", "Land": "Thüringen", "Schulform": "Erster Schulabschluss (ESA)"}
+    documents = write_documents(tmp_path / "d.csv", document("TH.ESA.MA", **scope, Fach="Mathematik"))
+
+    shown = notes_shown(client, migrated, documents, NOTES)
+
+    assert any(text.startswith("schulportal-thueringen.de sperrt automatisierte Abrufe") for text in shown)
+    expected = {
+        " ".join(row["Hinweis"].split())
+        for row in published_notes()
+        if (row["Land_Kuerzel"], row["Schulform"]) == ("TH", scope["Schulform"])
+        and row["Fach"] in ("", "Mathematik")
+        and row["Hinweis"].strip()
+    }
+    assert shown == expected
 
 
 @pytest.mark.pg
