@@ -20,6 +20,7 @@ export const messages = {
       start: "Start",
       login: "Anmeldung",
       sources: "Quellen",
+      source: "Registereintrag",
     },
     roles: {
       admin: "Administration",
@@ -117,7 +118,26 @@ export const messages = {
       },
     },
     jobs: {
-      heading: "Abrufe",
+      // the fetches and checks started on the page
+      heading: "Aufträge",
+    },
+    // The check of the seed, an admin's (CheckStart.vue)
+    check: {
+      heading: "Saat prüfen",
+      intro:
+        "Fragt die Adresse jedes Kandidaten einmal ab: ob sie erreichbar ist, was dort liegt und wie groß es ist. " +
+        "Gespeichert wird nur das Ergebnis. Die Prüfung beachtet robots.txt, fragt jeden Server höchstens alle " +
+        "paar Sekunden und umgeht keine Sperre; bei vielen Adressen dauert sie eine Stunde und länger.",
+      start: "Prüfung starten",
+      confirmTitle: "Prüfung der Saat starten?",
+      confirmMessage:
+        "Der Server fragt jetzt die Adressen aller Kandidaten bei fremden Servern ab. Die Prüfung läuft im " +
+        "Hintergrund weiter, auch wenn du die Seite verlässt; eine spätere Prüfung fragt nur, was noch offen ist.",
+      confirm: "Prüfung starten",
+      started: "Die Prüfung läuft; wie weit sie ist, zeigt die Liste der Aufträge.",
+      running: "Eine Prüfung lief schon; wie weit sie ist, zeigt die Liste der Aufträge.",
+      failed: "Die Prüfung wurde nicht gestartet.",
+      jobLabel: "Prüfung der Saat",
     },
     register: {
       heading: "Register",
@@ -139,6 +159,19 @@ export const messages = {
       more: "Weitere laden",
       moreFailed: "Weitere Einträge wurden nicht geladen.",
       reloadFailed: "Das Register wurde nicht neu geladen; es zeigt den Stand von vorher.",
+    },
+    // What the register shows (RegisterFilter.vue)
+    filter: {
+      legend: "Anzeigen",
+      candidates: "Nur Kandidaten",
+      candidatesHint:
+        "Einträge aus Vergleichsdatensatz und Länderrecherche, deren Datei noch fehlt – das, was die " +
+        "Prüfung der Saat ansieht.",
+      status: "Stand",
+      anyStatus: "jeder Stand",
+      none: "Kein Eintrag passt zu diesem Filter.",
+      emptyTitle: "Kein Eintrag passt",
+      emptyBody: "Nimm „Nur Kandidaten“ zurück oder wähle einen anderen Stand.",
     },
     // Where an entry comes from (backend app/sources/register.py, Provenance). Read
     // as messages.sources.provenance[value], not by t(): a value holds a dot.
@@ -166,6 +199,83 @@ export const messages = {
       unklar: "ungeklärt",
     },
   },
+  // One register entry's page (SourceDetailView.vue)
+  entryPage: {
+    // the page's heading until the entry names it
+    heading: "Registereintrag",
+    back: "Zurück zum Register",
+    loadFailed: "Der Eintrag wurde nicht geladen.",
+    notFoundTitle: "Diesen Eintrag gibt es nicht",
+    notFoundBody: "Oder dein Konto sieht ihn nicht. Das Register zeigt alle Einträge, die du sehen darfst.",
+    facts: {
+      heading: "Eintrag",
+      provenance: "Herkunft",
+      status: "Stand",
+      rights: "Rechte",
+      sourceType: "Art der Quelle",
+      country: "Land",
+      address: "Adresse",
+      file: "Datei",
+    },
+    // Who publishes the copy (SourceType)
+    sourceType: {
+      amtlich: "amtliche Stelle",
+      archiv: "Archivkopie",
+      spiegel: "Spiegel, gekennzeichnet",
+      sekundaer: "Sekundärquelle",
+    },
+    seed: {
+      heading: "Aus der Saat",
+      dataset: "Datensatz",
+      schoolForm: "Schulform",
+      stage: "Bildungsstufe",
+      subject: "Fach",
+      grades: "Jahrgänge",
+      gradeRange: "{from}–{to}",
+      binding: "Verbindlichkeit",
+      archive: "Archivkopie",
+      archiveOpen: "Archivkopie öffnen",
+      evidence: "Beleg",
+    },
+    // Where a land's research read the row (Evidence)
+    evidence: {
+      E: "im Dokument selbst gefunden",
+      S: "aus einer zweiten Quelle",
+    },
+    check: {
+      heading: "Prüfung der Adresse",
+      none: "Die Adresse wurde noch nicht geprüft.",
+      outcome: "Ergebnis",
+      statusCode: "Antwort des Servers",
+      kind: "Art der Datei",
+      size: "Größe",
+      checkedAt: "Geprüft",
+    },
+    // What the check found (CheckOutcome)
+    outcome: {
+      reachable: "erreichbar",
+      too_large: "erreichbar, aber größer, als ein Upload sein darf",
+      refused: "vom Server verweigert",
+      throttled: "der Server bat um eine Pause; eine spätere Prüfung fragt noch einmal",
+      server_error: "Fehler beim Server",
+      unreachable: "nicht erreichbar",
+      robots: "laut robots.txt nicht abzurufen",
+    },
+    // What lies at the address (DetectedKind)
+    kind: {
+      pdf: "PDF",
+      docx: "Word (DOCX)",
+      rtf: "RTF",
+      html: "Webseite (HTML)",
+      other: "andere Datei",
+    },
+    notes: {
+      heading: "Zugangsnotizen",
+      intro: "Hinweise des Vergleichsdatensatzes zu Land, Schulform und Fach: gesperrte Portale und Umwege.",
+      none: "Keine Zugangsnotiz für Land, Schulform und Fach dieses Eintrags.",
+      origin: "Herkunft des Hinweises: {origin}",
+    },
+  },
   // A job the page follows (jobWatch.ts), and why one failed (jobMessages.ts).
   jobs: {
     status: {
@@ -177,6 +287,10 @@ export const messages = {
     },
     // what a screen reader hears on each change
     announce: "{label}: {status}",
+    // how far a job has come, as it reports it (JobProgress.vue, PROGRESS)
+    progress: {
+      checking: "{done} von {total} {total|Adresse|Adressen} angesehen",
+    },
     trouble: "Der Server antwortet gerade nicht; der Stand wird weiter abgefragt.",
     // why there is nothing left to ask (jobWatch.ts, JobGone)
     goneReasons: {

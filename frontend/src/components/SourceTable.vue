@@ -5,9 +5,11 @@
  * many of all there are it shows, with the way to the next page.
  */
 import { ref } from "vue";
+import { RouterLink } from "vue-router";
 
 import type { RegisterStatus, SourceEntry } from "@/api";
 import { LOCALE, messages, t } from "@/i18n/de";
+import { word } from "@/registerWords";
 
 defineProps<{ entries: SourceEntry[]; total: number; loadingMore?: boolean }>();
 defineEmits<{ more: [] }>();
@@ -24,11 +26,6 @@ function row(index: number): HTMLTableRowElement | undefined {
 }
 
 defineExpose({ row });
-
-/** The words for a register value; the value itself where the page has none yet (tests/registerLabels.test.ts). */
-function word(words: Readonly<Record<string, string>>, value: string): string {
-  return words[value] ?? value;
-}
 
 // The pill by what the state means (style.css, .status-badge); the word in it carries the meaning
 const TONE: Record<RegisterStatus, string> = {
@@ -62,7 +59,9 @@ const dateFormat = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium" });
           <tr v-for="entry in entries" :key="entry.id" tabindex="-1">
             <td>
               <!-- an import is titled by its file's name, once the fetch has the file -->
-              <bdi class="register__title">{{ entry.title || entry.url }}</bdi>
+              <RouterLink class="register__title" :to="{ name: 'source', params: { id: entry.id } }">
+                <bdi>{{ entry.title || entry.url }}</bdi>
+              </RouterLink>
               <span class="register__aside">
                 <bdi v-if="entry.file">{{ entry.file.name }}</bdi>
                 <template v-else>{{ t("sources.register.noFile") }}</template>

@@ -14,6 +14,7 @@ import { router } from "@/router";
 import { clearSession, setSession } from "@/session";
 
 import { describeViolations, pageViolations } from "./axe";
+import { detail } from "./registerEntries";
 
 let shown: VueWrapper | null = null;
 
@@ -164,6 +165,48 @@ describe("accessibility of the pages", () => {
     vi.spyOn(api, "listSources").mockRejectedValue(new api.ApiError("server", 503, "service_unavailable"));
     const wrapper = await show("/quellen");
     expect(wrapper.find("[role=alert]").exists()).toBe(true);
+
+    const found = await pageViolations();
+
+    expect(found, describeViolations(found)).toEqual([]);
+  });
+
+  it("the register of an admin, filtered to nothing, with the check's question open, has none", async () => {
+    api.setToken("kka_token");
+    setSession({ id: "0190-a", name: "Erste Admin", roles: ["admin"] });
+    vi.spyOn(api, "listSources")
+      .mockResolvedValueOnce({ entries: [ENTRY], total: 1, limit: 50, offset: 0 })
+      .mockResolvedValue({ entries: [], total: 0, limit: 50, offset: 0 });
+    const wrapper = await show("/quellen");
+    await wrapper.get("#register-candidates").setValue(true);
+    await flushPromises();
+    await wrapper.get("[data-test=check-start]").trigger("click");
+    expect(wrapper.text()).toContain(t("sources.filter.emptyTitle"));
+    expect(wrapper.find("[role=dialog]").exists()).toBe(true);
+
+    const found = await pageViolations();
+
+    expect(found, describeViolations(found)).toEqual([]);
+  });
+
+  it("an entry's page with what the seed said, the check found and the notes tell has none", async () => {
+    api.setToken("kka_token");
+    setSession({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
+    vi.spyOn(api, "getSource").mockResolvedValue(detail());
+    const wrapper = await show("/quellen/s1");
+    expect(wrapper.find("#source-notes").exists()).toBe(true);
+
+    const found = await pageViolations();
+
+    expect(found, describeViolations(found)).toEqual([]);
+  });
+
+  it("an entry's page for an entry that is not there has none", async () => {
+    api.setToken("kka_token");
+    setSession({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
+    vi.spyOn(api, "getSource").mockRejectedValue(new api.ApiError("server", 404, "not_found"));
+    const wrapper = await show("/quellen/s1");
+    expect(wrapper.text()).toContain(t("entryPage.notFoundTitle"));
 
     const found = await pageViolations();
 

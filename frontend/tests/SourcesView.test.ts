@@ -2,49 +2,13 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as api from "@/api";
-import { ApiError, type Job, type SourceEntry, type SourcePage } from "@/api";
+import { ApiError, type SourceEntry, type SourcePage } from "@/api";
 import { t } from "@/i18n/de";
+import { router } from "@/router";
 import UploadForm from "@/components/UploadForm.vue";
 import SourcesView from "@/views/SourcesView.vue";
 
-function entry(id: string, title: string, overrides: Partial<SourceEntry> = {}): SourceEntry {
-  return {
-    id,
-    title,
-    provenance: "upload",
-    rights_status: "unklar",
-    source_type: null,
-    register_status: "acquired",
-    country: null,
-    sector: null,
-    url: null,
-    file: { name: `${title}.pdf`, mime: "application/pdf", size: 8, sha256: "ab" },
-    mine: true,
-    created_at: "2026-10-22T10:00:00Z",
-    updated_at: "2026-10-22T10:00:00Z",
-    ...overrides,
-  };
-}
-
-function page(entries: SourceEntry[], total = entries.length, offset = 0): SourcePage {
-  return { entries, total, limit: 50, offset };
-}
-
-function job(status: Job["status"]): Job {
-  return {
-    id: "j1",
-    kind: "source.fetch",
-    status,
-    progress: null,
-    error_code: null,
-    cancel_requested: false,
-    attempts: 1,
-    max_attempts: 3,
-    created_at: "2026-10-22T10:00:00Z",
-    started_at: null,
-    finished_at: null,
-  };
-}
+import { entry, job, page } from "./registerEntries";
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -65,7 +29,7 @@ describe("the register page", () => {
     vi.spyOn(api, "listSources").mockResolvedValue(
       page([entry("a", "Lehrplan Physik"), entry("b", "Lehrplan Chemie", { provenance: "url", register_status: "unchecked", file: null })]),
     );
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
     expect(wrapper.text()).toContain(t("states.loading"));
 
     await flushPromises();
@@ -81,11 +45,22 @@ describe("the register page", () => {
     expect(rows[1].text()).toContain(t("sources.register.noFile"));
   });
 
+  it("leads from each entry to its page", async () => {
+    vi.spyOn(api, "listSources").mockResolvedValue(page([entry("0190-a", "Lehrplan Physik")]));
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+
+    await flushPromises();
+
+    const link = wrapper.get("tbody tr a");
+    expect(link.attributes("href")).toBe("/quellen/0190-a");
+    expect(link.text()).toBe("Lehrplan Physik");
+  });
+
   it("names an entry whose file has not come yet by its address", async () => {
     // an import's title is the file's name, once the fetch has the file
     const address = "https://example.org/lehrplan.pdf";
     vi.spyOn(api, "listSources").mockResolvedValue(page([entry("a", "", { provenance: "url", url: address, file: null })]));
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
 
     await flushPromises();
 
@@ -94,7 +69,7 @@ describe("the register page", () => {
 
   it("says the register is empty, and how to fill it", async () => {
     vi.spyOn(api, "listSources").mockResolvedValue(page([]));
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
 
     await flushPromises();
 
@@ -107,7 +82,7 @@ describe("the register page", () => {
       .spyOn(api, "listSources")
       .mockRejectedValueOnce(new ApiError("server", 503, "service_unavailable"))
       .mockResolvedValue(page([entry("a", "Lehrplan Physik")]));
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
     await flushPromises();
     expect(wrapper.get("[role=alert]").text()).toContain(t("sources.register.loadFailed"));
     expect(wrapper.get("[role=alert]").text()).toContain(t("refusals.service_unavailable"));
@@ -125,7 +100,7 @@ describe("the register page", () => {
       .spyOn(api, "listSources")
       .mockResolvedValueOnce(page(first, 51))
       .mockResolvedValue(page([entry("z", "Der letzte")], 51, 50));
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
     await flushPromises();
     expect(wrapper.text()).toContain(t("sources.register.shown", { shown: 50, total: 51 }));
 
@@ -141,7 +116,7 @@ describe("the register page", () => {
     vi.spyOn(api, "listSources")
       .mockResolvedValueOnce(page([entry("a", "Plan")], 2))
       .mockRejectedValueOnce(new ApiError("network", 0));
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
     await flushPromises();
 
     await wrapper.get("[data-test=more]").trigger("click");
@@ -161,7 +136,7 @@ describe("the register page", () => {
       register_status: "acquired",
       file: null,
     });
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
     await flushPromises();
     const input = wrapper.get("#upload-file");
     Object.defineProperty(input.element, "files", { value: [new File(["%PDF"], "a.pdf")], configurable: true });
@@ -188,7 +163,7 @@ describe("the register page", () => {
       job_id: "j1",
     });
     vi.spyOn(api, "getJob").mockResolvedValue(job("done"));
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
     await vi.advanceTimersByTimeAsync(0);
     await wrapper.get("#import-url").setValue("https://example.org/lehrplan.pdf");
 
@@ -206,7 +181,7 @@ describe("the register page", () => {
   it("lets an upload through without the limit where the service's facts did not load", async () => {
     vi.spyOn(api, "getInfo").mockRejectedValue(new ApiError("network", 0));
     vi.spyOn(api, "listSources").mockResolvedValue(page([]));
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
 
     await flushPromises();
 
@@ -217,7 +192,7 @@ describe("the register page", () => {
   it("shows a value the page has no word for as it is, rather than an empty cell", async () => {
     const unknown = entry("a", "Plan", { provenance: "neu-v1" as SourceEntry["provenance"] });
     vi.spyOn(api, "listSources").mockResolvedValue(page([unknown]));
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
 
     await flushPromises();
 
@@ -267,7 +242,7 @@ describe("paging through the register", () => {
       .mockResolvedValueOnce(page(FIFTY, 51))
       .mockImplementationOnce(() => reload.promise)
       .mockResolvedValue(page([entry("a49", "Plan 49"), entry("a50", "Plan 50")], 52, 50));
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
     await flushPromises();
 
     await upload(wrapper);
@@ -285,7 +260,7 @@ describe("paging through the register", () => {
     vi.spyOn(api, "listSources")
       .mockResolvedValueOnce(page(FIFTY, 51))
       .mockResolvedValue(page([entry("z", "Der letzte")], 51, 50));
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
     await flushPromises();
     const count = wrapper.get(".register__count");
     expect(count.attributes("role")).toBe("status");
@@ -300,7 +275,7 @@ describe("paging through the register", () => {
     vi.spyOn(api, "listSources")
       .mockResolvedValueOnce(page(FIFTY, 51))
       .mockResolvedValue(page([entry("z", "Der letzte")], 51, 50));
-    const wrapper = mount(SourcesView, { attachTo: document.body });
+    const wrapper = mount(SourcesView, { global: { plugins: [router] }, attachTo: document.body });
     await flushPromises();
 
     await wrapper.get("[data-test=more]").trigger("click");
@@ -319,7 +294,7 @@ describe("paging through the register", () => {
       .mockResolvedValueOnce(page(FIFTY, 51))
       .mockResolvedValueOnce(page([entry("a49", "Plan 49"), entry("a50", "Plan 50")], 52, 50))
       .mockResolvedValue(page([entry("x", "Dazwischen"), ...FIFTY.slice(0, 49)], 52));
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
     await flushPromises();
 
     await wrapper.get("[data-test=more]").trigger("click");
@@ -337,7 +312,7 @@ describe("paging through the register", () => {
       .mockResolvedValueOnce(page([entry("a", "Plan")]))
       .mockRejectedValueOnce(new ApiError("network", 0))
       .mockResolvedValue(page([entry("new", "Neu"), entry("a", "Plan")]));
-    const wrapper = mount(SourcesView, { attachTo: document.body });
+    const wrapper = mount(SourcesView, { global: { plugins: [router] }, attachTo: document.body });
     await flushPromises();
 
     await upload(wrapper);
@@ -360,7 +335,7 @@ describe("paging through the register", () => {
       .mockResolvedValueOnce(page([entry("a", "Plan")], 2))
       .mockRejectedValueOnce(new ApiError("network", 0))
       .mockImplementationOnce(() => retry.promise);
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
     await flushPromises();
     const region = wrapper.get(".sources__partial");
     expect(region.attributes("role")).toBe("status");
@@ -382,7 +357,7 @@ describe("paging through the register", () => {
     vi.spyOn(api, "listSources")
       .mockResolvedValueOnce(page(FIFTY, 51))
       .mockImplementationOnce(() => next.promise);
-    const wrapper = mount(SourcesView, { attachTo: document.body });
+    const wrapper = mount(SourcesView, { global: { plugins: [router] }, attachTo: document.body });
     await flushPromises();
     const button = wrapper.get("[data-test=more]");
     (button.element as HTMLElement).focus();
@@ -403,7 +378,7 @@ describe("paging through the register", () => {
       .mockResolvedValueOnce(page(FIFTY, 60))
       .mockResolvedValueOnce(page(Array.from({ length: 10 }, (_, index) => entry(`b${index}`, `Mehr ${index}`)), 60, 50))
       .mockResolvedValue(page([...FIFTY, ...Array.from({ length: 10 }, (_, index) => entry(`b${index}`, `Mehr ${index}`))], 60));
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
     await flushPromises();
     await wrapper.get("[data-test=more]").trigger("click");
     await flushPromises();
@@ -422,7 +397,7 @@ describe("paging through the register", () => {
       .mockResolvedValueOnce(page([entry("a", "Plan")]))
       .mockImplementationOnce(() => older.promise)
       .mockImplementationOnce(() => newer.promise);
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
     await flushPromises();
     const form = wrapper.findComponent(UploadForm);
 
@@ -441,7 +416,7 @@ describe("paging through the register", () => {
     vi.spyOn(api, "listSources")
       .mockResolvedValueOnce(page(FIFTY, 51))
       .mockImplementationOnce(() => reload.promise);
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
     await flushPromises();
 
     wrapper.findComponent(UploadForm).vm.$emit("uploaded", { id: "x" });
@@ -454,7 +429,7 @@ describe("paging through the register", () => {
     vi.spyOn(api, "listSources")
       .mockResolvedValueOnce(page([entry("a", "Plan")], 2))
       .mockRejectedValue(new ApiError("network", 0));
-    const wrapper = mount(SourcesView);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
     await flushPromises();
     await wrapper.get("[data-test=more]").trigger("click");
     await flushPromises();
@@ -474,7 +449,7 @@ describe("paging through the register", () => {
       .mockResolvedValueOnce(page(FIFTY, 51))
       .mockImplementationOnce(() => next.promise)
       .mockResolvedValue(page([entry("x", "Dazwischen"), ...FIFTY, entry("a50", "Plan 50")], 52));
-    const wrapper = mount(SourcesView, { attachTo: document.body });
+    const wrapper = mount(SourcesView, { global: { plugins: [router] }, attachTo: document.body });
     await flushPromises();
     const button = wrapper.get("[data-test=more]");
     (button.element as HTMLElement).focus();
@@ -493,7 +468,7 @@ describe("paging through the register", () => {
       .mockResolvedValueOnce(page(FIFTY, 51))
       .mockResolvedValueOnce(page([entry("a49", "Plan 49"), entry("a50", "Plan 50")], 52, 50))
       .mockResolvedValue(page([entry("x", "Dazwischen"), ...FIFTY, entry("a50", "Plan 50")], 52));
-    const wrapper = mount(SourcesView, { attachTo: document.body });
+    const wrapper = mount(SourcesView, { global: { plugins: [router] }, attachTo: document.body });
     await flushPromises();
 
     await wrapper.get("[data-test=more]").trigger("click");

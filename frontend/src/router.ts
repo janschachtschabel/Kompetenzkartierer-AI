@@ -6,6 +6,7 @@ import { t } from "@/i18n/de";
 import { RETURN_PARAM } from "@/returnTarget";
 import { clearSession, ensureSession, hasRole } from "@/session";
 import LoginView from "@/views/LoginView.vue";
+import SourceDetailView from "@/views/SourceDetailView.vue";
 import SourcesView from "@/views/SourcesView.vue";
 import StartView from "@/views/StartView.vue";
 
@@ -36,6 +37,13 @@ export const router = createRouter({
       name: "sources",
       component: SourcesView,
       meta: { title: "app.titles.sources", requiresAuth: true },
+    },
+    {
+      path: "/quellen/:id",
+      name: "source",
+      component: SourceDetailView,
+      props: true,
+      meta: { title: "app.titles.source", requiresAuth: true },
     },
     { path: "/:rest(.*)*", redirect: { name: "start" } },
   ],

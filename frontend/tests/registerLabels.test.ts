@@ -22,6 +22,10 @@ describe("the register's words", () => {
     ["Provenance", messages.sources.provenance],
     ["RegisterStatus", messages.sources.status],
     ["RightsStatus", messages.sources.rights],
+    ["SourceType", messages.entryPage.sourceType],
+    ["CheckOutcome", messages.entryPage.outcome],
+    ["DetectedKind", messages.entryPage.kind],
+    ["Evidence", messages.entryPage.evidence],
   ])("name every value of %s, and no other", (name, words) => {
     // a value without words showed an empty cell; words for no value are read by nobody
     expect(Object.keys(words).sort()).toEqual(backendValues(name));

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getJob, getSource, importSource, listSources, uploadSource } from "@/api";
+import { getJob, getSource, importSource, listSources, startCheck, uploadSource } from "@/api";
 
 function answer(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -58,6 +58,27 @@ describe("the register's requests", () => {
     await listSources({ status: "acquired", q: "Physik & Chemie" });
 
     expect(call()[0]).toBe("/api/v1/sources?status=acquired&q=Physik+%26+Chemie&limit=50&offset=0");
+  });
+
+  it("ask for the candidates alone only when the filter says so", async () => {
+    vi.mocked(fetch).mockImplementation(() => Promise.resolve(answer(200, { entries: [], total: 0, limit: 50, offset: 0 })));
+
+    await listSources({ candidates: true, status: "unreachable" });
+    await listSources({ candidates: false });
+
+    expect(call(0)[0]).toBe("/api/v1/sources?candidates=true&status=unreachable&limit=50&offset=0");
+    expect(call(1)[0]).toBe("/api/v1/sources?limit=50&offset=0");
+  });
+
+  it("start the check of the seed and give back its job", async () => {
+    vi.mocked(fetch).mockResolvedValue(answer(202, { job_id: "j" }));
+
+    const started = await startCheck();
+
+    const [path, init] = call();
+    expect(path).toBe("/api/v1/sources/checks");
+    expect(init.method).toBe("POST");
+    expect(started.job_id).toBe("j");
   });
 
   it("put an id into the path as one segment", async () => {

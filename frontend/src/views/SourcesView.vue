@@ -2,23 +2,34 @@
 /**
  * The source register: adding a document - a file, or an address the server
  * fetches - following the fetches started here, and the entries the account
- * sees, a page at a time.
+ * sees, a page at a time, as far as the filter lets them through.
  */
 import { onMounted, ref, watch } from "vue";
 
-import { getInfo, listSources, MAX_PAGE_SIZE, PAGE_SIZE, type ImportStarted, type SourcePage } from "@/api";
+import {
+  getInfo,
+  listSources,
+  MAX_PAGE_SIZE,
+  PAGE_SIZE,
+  type ImportStarted,
+  type SourceFilters,
+  type SourcePage,
+} from "@/api";
+import CheckStart from "@/components/CheckStart.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import ImportForm from "@/components/ImportForm.vue";
 import JobProgress from "@/components/JobProgress.vue";
 import LoadingState from "@/components/LoadingState.vue";
 import PartialState from "@/components/PartialState.vue";
+import RegisterFilter, { type RegisterFilters } from "@/components/RegisterFilter.vue";
 import SourceTable from "@/components/SourceTable.vue";
 import UploadForm from "@/components/UploadForm.vue";
 import { focusIsFree } from "@/focusRescue";
 import { t } from "@/i18n/de";
 import { sayAnew } from "@/liveRegion";
 import { failureNotice, type Notice } from "@/notice";
+import { hasRole } from "@/session";
 
 interface Followed {
   jobId: string;
@@ -39,9 +50,12 @@ const failure = ref<Notice | null>(null);
 /** A reload or a further page did not, and what to try again; it stays until a try succeeds. */
 const partial = ref<{ notice: Notice; retry: () => void } | null>(null);
 const maxUploadMb = ref<number | undefined>(undefined);
-/** The fetches started on this page, newest first; they stay with how they ended. */
+/** The fetches and checks started on this page, newest first; they stay with how they ended. */
 const followed = ref<Followed[]>([]);
 const table = ref<InstanceType<typeof SourceTable> | null>(null);
+const filters = ref<RegisterFilters>({ candidates: false, status: "" });
+/** Said aloud when the filter lets nothing through: the table, and its count, went with it. */
+const filterNotice = ref("");
 // Each first page read counts: a further page asked for before it belongs to an older list.
 let generation = 0;
 let focusRequest: FocusRequest | null = null;
@@ -58,6 +72,18 @@ watch(
   },
   { flush: "post" },
 );
+
+/** What the filter asks of the server: only what it sets. */
+function asked(): SourceFilters {
+  const query: SourceFilters = {};
+  if (filters.value.candidates) query.candidates = true;
+  if (filters.value.status) query.status = filters.value.status;
+  return query;
+}
+
+function filtered(): boolean {
+  return Object.keys(asked()).length > 0;
+}
 
 function registerHeading(): HTMLElement | null {
   return document.getElementById("sources-register");
@@ -79,22 +105,27 @@ function fallShort(notice: Notice, retry: () => void): void {
  * focus in it stay, and `extra` more. `focus` is where the focus goes once it shows them - the
  * register's heading after the notice's retry button went with the notice. `from` is where the
  * action began - the press of "Weitere laden", when a further page turned into this reading.
+ * `fromStart`: one page only, for a new filter - what it showed was another filter's.
  */
 async function load({
   extra = 0,
   focus,
   from = document.activeElement,
-}: { extra?: number; focus?: FocusRequest["target"]; from?: Element | null } = {}): Promise<void> {
+  fromStart = false,
+}: { extra?: number; focus?: FocusRequest["target"]; from?: Element | null; fromStart?: boolean } = {}): Promise<void> {
   const mine = ++generation;
-  const limit = Math.min(MAX_PAGE_SIZE, Math.max(PAGE_SIZE, (page.value?.entries.length ?? 0) + extra));
+  const shown = fromStart ? 0 : (page.value?.entries.length ?? 0);
+  const limit = Math.min(MAX_PAGE_SIZE, Math.max(PAGE_SIZE, shown + extra));
   loading.value = true;
   failure.value = null;
   try {
-    const first = await listSources({}, { limit });
+    const first = await listSources(asked(), { limit });
     if (mine !== generation) return;
     if (focus) focusRequest = { target: focus, from };
     page.value = first;
     partial.value = null;
+    const none = filtered() && first.entries.length === 0;
+    filterNotice.value = none ? sayAnew(filterNotice.value, t("sources.filter.none")) : "";
   } catch (error) {
     if (mine !== generation) return;
     if (page.value) {
@@ -118,7 +149,7 @@ async function more(): Promise<void> {
   const firstAddedRow = () => rowAfter(lastShown);
   loadingMore.value = true;
   try {
-    const next = await listSources({}, { offset: current.entries.length });
+    const next = await listSources(asked(), { offset: current.entries.length });
     if (mine !== generation || page.value !== current) return;
     // newest first: an entry added meanwhile pushed one already shown onto this page, and itself
     // lies before the first - read the register from its start, a page more than it showed
@@ -136,10 +167,18 @@ async function more(): Promise<void> {
   }
 }
 
+watch(filters, () => void load({ fromStart: true }));
+
 function follow(started: ImportStarted, address: string): void {
   const label = started.source.title || address; // its title waits for the file
   followed.value = [{ jobId: started.job_id, label }, ...followed.value];
   void load(); // the new entry, before its file arrives
+}
+
+/** The check of the seed, once: a press that found it running already hands on the same job. */
+function followCheck(jobId: string): void {
+  if (followed.value.some((item) => item.jobId === jobId)) return;
+  followed.value = [{ jobId, label: t("sources.check.jobLabel") }, ...followed.value];
 }
 
 onMounted(async () => {
@@ -165,6 +204,10 @@ onMounted(async () => {
       </div>
     </section>
 
+    <div v-if="hasRole('admin')" class="sources__section">
+      <CheckStart @started="followCheck" />
+    </div>
+
     <section v-if="followed.length" class="sources__section" aria-labelledby="sources-jobs">
       <h2 id="sources-jobs">{{ t("sources.jobs.heading") }}</h2>
       <ul class="sources__jobs">
@@ -174,9 +217,12 @@ onMounted(async () => {
       </ul>
     </section>
 
-    <section class="sources__section" aria-labelledby="sources-register">
+    <section class="sources__section" aria-labelledby="sources-register" :aria-busy="loading || undefined">
       <!-- tabindex -1: where the focus goes when the notice's retry button goes with the notice -->
       <h2 id="sources-register" tabindex="-1">{{ t("sources.register.heading") }}</h2>
+      <RegisterFilter v-model="filters" />
+      <!-- always in the page, so the first "nothing matches" is read out -->
+      <p class="visually-hidden" role="status" data-test="filter-status">{{ filterNotice }}</p>
       <LoadingState v-if="loading && !page" />
       <ErrorState
         v-else-if="failure"
@@ -184,6 +230,12 @@ onMounted(async () => {
         :reason="failure.reason"
         :explanation="failure.explanation"
         @retry="load()"
+      />
+      <EmptyState
+        v-else-if="page && page.entries.length === 0 && filtered()"
+        :level="3"
+        :title="t('sources.filter.emptyTitle')"
+        :body="t('sources.filter.emptyBody')"
       />
       <EmptyState
         v-else-if="page && page.entries.length === 0"

@@ -132,4 +132,37 @@ describe("a job's progress", () => {
 
     expect(asked).toHaveBeenCalledTimes(1);
   });
+
+  it("shows how far a check has come, without reading out every address", async () => {
+    const checking = (done: number): Job => ({
+      ...job("running"),
+      kind: "source.check",
+      progress: { code: "checking", params: { done, total: 1871 } },
+    });
+    vi.spyOn(api, "getJob").mockResolvedValueOnce(checking(12)).mockResolvedValue(checking(13));
+    const wrapper = shown("Prüfung der Saat");
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(wrapper.get(".job__progress").text()).toBe(t("jobs.progress.checking", { done: 12, total: 1871 }));
+    const heard = wrapper.get("[role=status]").text();
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(wrapper.get(".job__progress").text()).toBe(t("jobs.progress.checking", { done: 13, total: 1871 }));
+    // the region says the state; the count only shows, or every address would be read out
+    expect(wrapper.get("[role=status]").text()).toBe(heard);
+    expect(heard).not.toContain("12");
+  });
+
+  it("shows no progress it has no words for, nor one whose numbers are missing", async () => {
+    vi.spyOn(api, "getJob")
+      .mockResolvedValueOnce({ ...job("running"), progress: { code: "converting", params: { page: 3 } } })
+      .mockResolvedValue({ ...job("running"), progress: { code: "checking", params: { done: "viele" } } });
+    const wrapper = shown();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(wrapper.find(".job__progress").exists()).toBe(false);
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(wrapper.find(".job__progress").exists()).toBe(false);
+  });
 });
