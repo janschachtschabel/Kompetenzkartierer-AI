@@ -158,6 +158,15 @@ def test_an_import_s_title_is_kept_trimmed_in_one_spelling(
     assert rows(migrated, "SELECT title FROM source") == [(kept,)]
 
 
+def test_the_spec_names_the_import_s_limit_beside_the_sign_in_one() -> None:
+    # a 429 of the import is its account's imports of the minute, or the address's failed sign-ins
+    operation = create_app(make_settings()).openapi()["paths"]["/api/v1/sources/import"]["post"]
+
+    said = operation["responses"]["429"]["description"]
+
+    assert "too_many_imports" in said and "failed sign-ins" in said
+
+
 def test_a_visitor_cannot_import(client: TestClient) -> None:
     assert client.post("/api/v1/sources/import", json={"url": URL}).status_code == 401
 

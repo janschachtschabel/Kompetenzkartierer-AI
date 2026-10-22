@@ -413,6 +413,8 @@ def test_the_spec_names_the_download_and_its_refusals() -> None:
     assert "no_file" in responses["404"]["description"] and "file_gone" in responses["404"]["description"]
     refused = responses["404"]["content"]
     assert refused == {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorBody"}}}
+    # no limit of its own: a download's 429 is the failed sign-ins of the caller's address
+    assert responses["429"]["description"] == "Too many failed sign-ins from this address"
 
 
 def test_a_download_s_name_shows_what_it_is(client: TestClient, migrated: str, world: dict[str, Any]) -> None:

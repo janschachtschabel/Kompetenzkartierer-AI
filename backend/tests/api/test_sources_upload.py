@@ -309,7 +309,9 @@ def test_the_spec_names_the_upload_form_and_its_refusals() -> None:
     assert form["properties"]["file"]["format"] == "binary"
     assert form["properties"]["title"]["maxLength"] == 500
     responses = operation["responses"]
-    assert "upload" in responses["429"]["description"].lower()
+    # its account's uploads of the minute, or the address's failed sign-ins
+    assert "too_many_uploads" in responses["429"]["description"]
+    assert "failed sign-ins" in responses["429"]["description"]
     assert {"400", "413", "415", "422"} <= set(responses)
 
 

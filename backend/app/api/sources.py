@@ -44,11 +44,22 @@ router = APIRouter(prefix="/api/v1", tags=["sources"], responses=AUTH_RESPONSES)
 Account = Annotated[Principal, Depends(require_account)]
 UPLOAD_PATH = "/api/v1/sources"
 MAX_TITLE_SIGNS = 500
+
+
+def _limit_refusal(code: str, actions: str) -> dict[str, Any]:
+    """The 429 of a route with a limit per account, beside the sign-in limit every route has."""
+    description = (
+        f"{code}: the account's {actions} of the minute are used up (Retry-After);"
+        " too_many_requests: too many failed sign-ins from this address"
+    )
+    return {"model": ErrorBody, "description": description}
+
+
 UPLOAD_REFUSALS: dict[int | str, dict[str, Any]] = {
     400: {"model": ErrorBody, "description": "The form cannot be read, or holds more than one file"},
     413: {"model": ErrorBody, "description": "The file, or the archive it is, is too large"},
     415: {"model": ErrorBody, "description": "No type a conversion reads"},
-    429: {"model": ErrorBody, "description": "The account's uploads of the minute are used up"},
+    429: _limit_refusal("too_many_uploads", "uploads"),
 }
 # The form as the route reads it itself: a body parameter would be read before the token check
 UPLOAD_FORM = {
@@ -163,7 +174,12 @@ async def upload_source(request: Request, who: Account) -> SourceOut:
     )
 
 
-@router.post("/sources/import", status_code=202, summary="Import a curriculum document by its URL")
+@router.post(
+    "/sources/import",
+    status_code=202,
+    summary="Import a curriculum document by its URL",
+    responses={429: _limit_refusal("too_many_imports", "imports")},
+)
 async def import_source(body: ImportIn, request: Request, who: Account) -> ImportOut:
     """The register entry now, unchecked; its fetch as a job (``GET /api/v1/jobs/{id}``)."""
     try:
