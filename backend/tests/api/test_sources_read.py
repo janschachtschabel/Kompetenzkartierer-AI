@@ -132,11 +132,42 @@ def test_the_register_comes_in_pages(client: TestClient, world: dict[str, Any]) 
     assert {entry["id"] for entry in first["entries"]}.isdisjoint(entry["id"] for entry in rest["entries"])
 
 
-@pytest.mark.parametrize("query", [{"status": "invented"}, {"limit": 0}, {"limit": 201}, {"offset": -1}])
+@pytest.mark.parametrize(
+    "query",
+    [
+        {"status": "invented"},
+        {"limit": 0},
+        {"limit": 201},
+        {"offset": -1},
+        {"offset": 1_000_001},  # 10**20 ended in NumericValueOutOfRange, a 500
+        {"q": "Physik\x00"},  # a NUL ended in a DataError, a 500
+        {"q": "Physik\N{RIGHT-TO-LEFT OVERRIDE}"},
+        {"q": "x" * 201},
+    ],
+    ids=["status", "limit-0", "limit-201", "offset-negative", "offset-huge", "q-nul", "q-bidi", "q-long"],
+)
 def test_an_unknown_filter_value_is_refused(
     client: TestClient, world: dict[str, Any], query: dict[str, Any]
 ) -> None:
     assert client.get("/api/v1/sources", headers=world["mine"], params=query).status_code == 422
+
+
+def test_a_search_term_is_matched_in_one_spelling(
+    client: TestClient, migrated: str, world: dict[str, Any]
+) -> None:
+    with psycopg.connect(migrated, autocommit=True) as connection:
+        entry = new_id()
+        connection.execute("INSERT INTO entity (id, kind) VALUES (%s, 'source')", (entry,))
+        connection.execute(
+            "INSERT INTO source (id, provenance, title) VALUES (%s, 'recherche', %s)",
+            (entry, "Lehrplan Caf\N{LATIN SMALL LETTER E WITH ACUTE}"),
+        )
+
+    query = {"q": "Cafe\N{COMBINING ACUTE ACCENT}"}
+
+    assert titles(client.get("/api/v1/sources", headers=world["mine"], params=query)) == [
+        "Lehrplan Caf\N{LATIN SMALL LETTER E WITH ACUTE}"
+    ]
 
 
 def test_an_entry_shows_its_terms_and_how_its_file_came(client: TestClient, world: dict[str, Any]) -> None:

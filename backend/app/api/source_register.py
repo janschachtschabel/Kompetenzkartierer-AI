@@ -48,6 +48,9 @@ LicenseText = Annotated[
 EvidenceText = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000), OneSpelling, ShowsWhole
 ]
+SearchText = Annotated[str, StringConstraints(max_length=200), OneSpelling, ShowsWhole]
+# Past this a page is no page of a register: a larger offset only makes the database count
+MAX_OFFSET = 1_000_000
 
 
 class SourceEntry(BaseModel):
@@ -107,9 +110,9 @@ async def list_register(
     status: Annotated[RegisterStatus | None, Query()] = None,
     provenance: Annotated[Provenance | None, Query()] = None,
     country: Annotated[Country | None, Query()] = None,
-    q: Annotated[str | None, Query(max_length=200, description="in the title or the address")] = None,
+    q: Annotated[SearchText | None, Query(description="in the title or the address")] = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    offset: Annotated[int, Query(ge=0, le=MAX_OFFSET)] = 0,
 ) -> SourcePage:
     filters = Filters(status=status, provenance=provenance, country=country, text=q)
     async with request.app.state.pool.connection() as connection:
