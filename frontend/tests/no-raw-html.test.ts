@@ -16,8 +16,14 @@ const FORBIDDEN = [
   /\binnerHTML\b/,
   /\bouterHTML\b/,
   /\binsertAdjacentHTML\b/,
-  /\bdocument\.write\b/,
+  /\bdocument\.write(?:ln)?\b/,
   /\bdangerouslySetInnerHTML\b/,
+  // markup parsed into nodes, to be inserted
+  /\bcreateContextualFragment\b/,
+  /\bsetHTML(?:Unsafe)?\b/,
+  /\bparseFromString\b/,
+  // a whole document handed to a frame
+  /\bsrcdoc\b/,
 ];
 
 describe("raw HTML rendering", () => {
@@ -48,6 +54,12 @@ describe("raw HTML in its other forms", () => {
     'node.insertAdjacentHTML("beforeend", text)',
     "node.outerHTML = text;",
     "document.write(text)",
+    "document.writeln(text)",
+    "range.createContextualFragment(text)",
+    "node.setHTMLUnsafe(text)",
+    "node.setHTML(text)",
+    'new DOMParser().parseFromString(text, "text/html")',
+    '<iframe :srcdoc="text" />',
   ])("is recognised: %s", (source) => {
     expect(FORBIDDEN.some((pattern) => pattern.test(source))).toBe(true);
   });
