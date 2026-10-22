@@ -15,13 +15,13 @@ from uuid import UUID
 
 import psycopg
 from fastapi import APIRouter, Depends, Request
-from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, StringConstraints
+from pydantic import BaseModel, ConfigDict, StringConstraints
 from starlette.datastructures import UploadFile
 
 from app.api.body_limit import MIB
 from app.api.deps import require_account
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
-from app.core.auth import Principal, one_spelling, plain_text, shows_whole
+from app.core.auth import Principal, plain_text
 from app.core.logging import current_request_id
 from app.db.accounts import record_audit
 from app.db.rate_limits import RateLimited, take
@@ -70,12 +70,8 @@ class ImportIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     url: Annotated[str, StringConstraints(min_length=1, max_length=2000)]
-    title: Annotated[
-        str,
-        BeforeValidator(one_spelling),
-        StringConstraints(strip_whitespace=True, max_length=MAX_TITLE_SIGNS),
-        AfterValidator(shows_whole),
-    ] = ""
+    # checked as the upload form's is, with the same codes (_checked_title)
+    title: str = ""
 
 
 class ImportOut(BaseModel):
@@ -144,6 +140,7 @@ async def import_source(body: ImportIn, request: Request, who: Account) -> Impor
         url = check_url(body.url)
     except UrlNotAllowed as error:
         raise Refusal(422, "url_invalid", str(error)) from None
+    title = _checked_title(body.title)
     settings = request.app.state.settings
     assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
     async with request.app.state.pool.connection() as connection:
@@ -152,7 +149,7 @@ async def import_source(body: ImportIn, request: Request, who: Account) -> Impor
         )
         # one transaction: never an entry without its job, nor a job without its entry
         async with connection.transaction():
-            source_id = await record_url_source(connection, owner=who.account_id, url=url, title=body.title)
+            source_id = await record_url_source(connection, owner=who.account_id, url=url, title=title)
             job_id = await enqueue(
                 connection, fetch_job.KIND, account_lane(who.account_id), {"source_id": str(source_id)}
             )
@@ -169,7 +166,7 @@ async def import_source(body: ImportIn, request: Request, who: Account) -> Impor
             )
     source = SourceOut(
         id=source_id,
-        title=body.title,
+        title=title,
         provenance="url",
         rights_status="unklar",
         register_status="unchecked",
@@ -215,9 +212,16 @@ def _examine(name: str, data: bytes) -> tuple[DetectedType, bytes]:
 
 
 def _title(given: str | None, file_name: str) -> str:
+    """The upload's title: the one given, else the file's name without its ending."""
     if given is None or not given.strip():
         # the stem trimmed ("Lehrplan .pdf"); should nothing be left, the whole name
         return PurePosixPath(file_name).stem[:MAX_TITLE_SIGNS].strip() or file_name[:MAX_TITLE_SIGNS]
+    return _checked_title(given)
+
+
+def _checked_title(given: str) -> str:
+    """A title as a caller gave it (upload form, import), trimmed and in one spelling; refused
+    with a code of its own when it hides signs or is too long. Empty stays empty."""
     try:
         title = plain_text(given.strip())
     except ValueError:

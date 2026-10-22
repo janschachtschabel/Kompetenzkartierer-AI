@@ -126,6 +126,33 @@ def test_a_title_with_hidden_signs_is_refused(client: TestClient, owner: tuple[U
     assert answer.status_code == 422
 
 
+@pytest.mark.parametrize(
+    ("title", "code"),
+    [("Physik‮", "title_invalid"), ("Physik\x00", "title_invalid"), ("x" * 501, "title_too_long")],
+    ids=["bidi", "nul", "too-long"],
+)
+def test_an_import_s_title_is_refused_as_an_upload_s_is(
+    client: TestClient, migrated: str, owner: tuple[UUID, dict[str, str]], title: str, code: str
+) -> None:
+    # the same codes as the upload form, so the page words both alike
+    answer = client.post("/api/v1/sources/import", headers=owner[1], json={"url": URL, "title": title})
+
+    assert answer.status_code == 422
+    assert answer.json()["code"] == code
+    assert rows(migrated, "SELECT (SELECT count(*) FROM source), (SELECT count(*) FROM job)") == [(0, 0)]
+
+
+def test_an_import_s_title_is_kept_trimmed_in_one_spelling(
+    client: TestClient, migrated: str, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    answer = client.post(
+        "/api/v1/sources/import", headers=owner[1], json={"url": URL, "title": "  Physik Café "}
+    )
+
+    assert answer.json()["source"]["title"] == "Physik Café"
+    assert rows(migrated, "SELECT title FROM source") == [("Physik Café",)]
+
+
 def test_a_visitor_cannot_import(client: TestClient) -> None:
     assert client.post("/api/v1/sources/import", json={"url": URL}).status_code == 401
 
