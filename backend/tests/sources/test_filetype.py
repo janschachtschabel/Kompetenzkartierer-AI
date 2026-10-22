@@ -120,6 +120,9 @@ def test_a_long_name_is_cut_to_what_a_file_system_holds_keeping_its_ending() -> 
         ("tabelle.xlsm", "tabelle.xlsm"),
         ("lehrplan.odt", "lehrplan.odt"),
         ("vorlage.dotx", "vorlage.dotx"),
+        ("skizze.otg", "skizze.otg"),
+        ("formel.odf", "formel.odf"),
+        ("sammlung.odm", "sammlung.odm"),
         # a dot in a name is no ending: by its length these kept it and went to the engines so
         ("lehrplan-v2.1", "lehrplan-v2.1.docx"),
         ("Lehrplan.Klasse 5", "Lehrplan.Klasse 5.docx"),

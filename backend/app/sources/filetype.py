@@ -23,7 +23,7 @@ PACKAGE_ENDINGS = frozenset(
         ".docx", ".docm", ".dotx", ".dotm",
         ".xlsx", ".xlsm", ".xltx", ".xltm",
         ".pptx", ".pptm", ".potx", ".potm", ".ppsx", ".ppsm",
-        ".odt", ".ott", ".ods", ".ots", ".odp", ".otp", ".odg",
+        ".odt", ".ott", ".ods", ".ots", ".odp", ".otp", ".odg", ".otg", ".odf", ".odm",
     }
 )  # fmt: skip
 DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
