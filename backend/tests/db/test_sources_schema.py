@@ -107,7 +107,7 @@ def test_every_value_the_code_knows_is_held_and_no_other(
     connection: psycopg.Connection, column: str, known: Any
 ) -> None:
     for value in get_args(known):
-        held = {column: value, "rights_evidence": "Amtsblatt 2023"}
+        held = {column: value, "rights_evidence": "Amtsblatt 2023", "license": "CC BY 4.0"}
         if value == "acquired":
             held |= filed(another_file(connection))
         add_source(connection, **held)
@@ -192,6 +192,30 @@ def test_a_rights_status_other_than_unclear_holds_its_evidence(
 
     with pytest.raises(errors.CheckViolation):
         add_source(connection, rights_status="amtlich", rights_evidence=evidence)
+
+
+# Every sign Python's str.strip() takes for space - what the API counts as no text
+SPACES = [chr(code) for code in range(0x110000) if chr(code).isspace()]
+
+
+def test_the_database_takes_for_no_text_what_the_api_does(connection: psycopg.Connection) -> None:
+    # [[:space:]] follows the database's locale: under en_US.utf8 it holds no no-break space nor
+    # U+001C-U+001F and U+0085, all space to str.strip(). A row written past the API (the seed)
+    # with such a "text" would stand in the database, and every later edit would be refused
+    refused = []
+    for sign in SPACES:
+        for columns in (
+            {"rights_status": "amtlich", "rights_evidence": sign * 2},
+            {"rights_status": "offen_lizenziert", "rights_evidence": "Impressum", "license": sign * 2},
+        ):
+            try:
+                add_source(connection, **columns)
+            except errors.CheckViolation:
+                refused.append(sign)
+
+    assert refused == [sign for sign in SPACES for _ in range(2)]
+    # a sign that hides but is no space is text to both (the API refuses it on input)
+    add_source(connection, rights_status="amtlich", rights_evidence="\N{ZERO WIDTH SPACE}")
 
 
 def test_a_source_s_id_is_an_entity_of_kind_source(connection: psycopg.Connection) -> None:
@@ -291,6 +315,7 @@ def an_acquisition(**columns: Any) -> Callable[[psycopg.Connection], object]:
     return write
 
 
+OPEN = {"rights_status": "offen_lizenziert", "rights_evidence": "Impressum des Portals"}
 BROKEN = {
     "file-hash-not-sha256": a_file(sha256=b"\x02" * 31),
     "file-size-negative": a_file(size_bytes=-1),
@@ -303,6 +328,9 @@ BROKEN = {
     "source-sector-iri-without-scheme": a_source(sector_iri=SECTOR),
     "source-evidence-too-long": a_source(rights_evidence="x" * 2001),
     "source-license-too-long": a_source(license="x" * 201),
+    "source-open-licence-without-licence": a_source(**OPEN),
+    "source-open-licence-of-spaces": a_source(**OPEN, license="  "),
+    "source-evidence-of-no-break-spaces": a_source(rights_status="amtlich", rights_evidence="\xa0\xa0"),
     "source-file-name-empty": a_filed_source(file_name=""),
     "source-file-name-too-long": a_filed_source(file_name="x" * 256),
     "source-file-without-name": a_filed_source(file_name=None),
@@ -319,6 +347,7 @@ def test_a_row_of_the_register_cases_build_is_held_as_it_stands(connection: psyc
     # the rows the cases below break, unbroken: each case then fails on its own change alone
     a_file()(connection)
     a_source(title="x" * 500, url="https://example.org/" + "a" * 1980, rights_evidence="x" * 2000)(connection)
+    a_source(rights_status="offen_lizenziert", rights_evidence="x", license="CC BY 4.0")(connection)
     a_filed_source(file_name="x" * 255)(connection)
     an_acquisition(chain=Jsonb([]), received_name="x" * 255)(connection)
 

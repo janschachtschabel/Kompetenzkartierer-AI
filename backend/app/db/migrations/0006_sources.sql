@@ -48,8 +48,12 @@ CREATE TABLE source (
     CHECK ((register_status = 'acquired') = (file_id IS NOT NULL)),
     CHECK ((file_id IS NULL) = (file_name IS NULL)),
     CHECK ((file_id IS NULL) = (mime IS NULL)),
-    -- a rights status the editors set stands on its evidence (coalesce: a CHECK passes on NULL)
-    CHECK (rights_status = 'unklar' OR length(btrim(coalesce(rights_evidence, ''))) > 0)
+    -- A rights status the editors set stands on its evidence, an open licence names its licence
+    -- (as app/api/source_register.py checks). No text is what Python's str.strip() leaves empty:
+    -- its 29 signs of space, written out, as [[:space:]] follows the locale and leaves out the
+    -- no-break spaces. coalesce: a CHECK passes on NULL
+    CHECK (rights_status = 'unklar' OR btrim(coalesce(rights_evidence, ''), U&'!0009!000A!000B!000C!000D!001C!001D!001E!001F!0020!0085!00A0!1680!2000!2001!2002!2003!2004!2005!2006!2007!2008!2009!200A!2028!2029!202F!205F!3000' UESCAPE '!') <> ''),
+    CHECK (rights_status <> 'offen_lizenziert' OR btrim(coalesce(license, ''), U&'!0009!000A!000B!000C!000D!001C!001D!001E!001F!0020!0085!00A0!1680!2000!2001!2002!2003!2004!2005!2006!2007!2008!2009!200A!2028!2029!202F!205F!3000' UESCAPE '!') <> '')
 );
 CREATE INDEX source_owner ON source (owner_id);
 CREATE INDEX source_file_ref ON source (file_id);
