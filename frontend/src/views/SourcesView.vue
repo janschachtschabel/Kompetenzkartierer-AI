@@ -264,7 +264,7 @@ onMounted(async () => {
           :message="failure.text"
           :reason="failure.reason"
           :explanation="failure.explanation"
-          @retry="load()"
+          @retry="load({ focus: registerHeading })"
         />
         <EmptyState
           v-else-if="page && page.entries.length === 0 && pageFiltered"

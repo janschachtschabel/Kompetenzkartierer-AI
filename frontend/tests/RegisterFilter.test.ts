@@ -267,6 +267,35 @@ describe("the register page's filter", () => {
   });
 });
 
+describe("the register page after a reading that failed", () => {
+  it.each([
+    ["the filter's reading", true],
+    ["the first reading", false],
+  ])("hands the keyboard to the register's heading once %s is tried again", async (_what, filtered) => {
+    const listed = vi.spyOn(api, "listSources");
+    if (filtered) listed.mockResolvedValueOnce(page([entry("a", "Lehrplan Physik")]));
+    listed.mockRejectedValueOnce(new ApiError("network", 0)).mockResolvedValue(page([entry("c", "Kandidat")]));
+    try {
+      const wrapper = mount(SourcesView, { global: { plugins: [router] }, attachTo: document.body });
+      await flushPromises();
+      if (filtered) {
+        await wrapper.get("input[type=checkbox]").setValue(true);
+        await flushPromises();
+      }
+      const retry = wrapper.get<HTMLButtonElement>("[role=alert] button");
+      retry.element.focus();
+
+      await retry.trigger("click");
+      await flushPromises();
+
+      // the button went with the notice: the next Tab goes on from the register, not from the page's top
+      expect(document.activeElement?.id).toBe("sources-register");
+    } finally {
+      document.body.innerHTML = "";
+    }
+  });
+});
+
 describe("the register page's filter in the address", () => {
   it("is read on arrival, so the way back finds the register as it was filtered", async () => {
     await router.replace({ query: { kandidaten: "1", stand: "unreachable" } });
