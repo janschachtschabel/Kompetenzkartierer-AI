@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, sep } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { SRC, VUE_ANCHORS, scanned, sourceFiles } from "./sources";
+import { SRC, VUE_ANCHORS, cssRules, scanned, sourceFiles, stylesOf } from "./sources";
 
 /**
  * Every page sits in the one frame, and every button is drawn by the shared
@@ -12,12 +12,9 @@ import { SRC, VUE_ANCHORS, scanned, sourceFiles } from "./sources";
  * components, and element rules restyled every button in one.
  */
 const components = sourceFiles(SRC, /\.vue$/);
-/** The pages drawn in the frame; the sign-in is a centred card, not a framed page. */
-const FRAMED = ["StartView.vue"];
-
-function stylesOf(source: string): string {
-  return [...source.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(([, css]) => css).join("\n");
-}
+/** The sign-in is a centred card, not a framed page; every other view is framed. */
+const UNFRAMED = ["LoginView.vue"];
+const framed = components.filter((path) => path.includes(`${sep}views${sep}`) && !UNFRAMED.includes(basename(path)));
 
 /** The classes on the root element of a component's template. */
 function rootClasses(source: string): string[] {
@@ -26,29 +23,55 @@ function rootClasses(source: string): string[] {
   return /\sclass="([^"]*)"/.exec(root?.[2] ?? "")?.[1].split(/\s+/).filter(Boolean) ?? [];
 }
 
-/** Rules that give one of `classes` - the root itself, not what is inside it - a width or margin of its own. */
+/** A selector for one element itself - `.page.start`, `div.start:hover` - not for something inside it. */
+const COMPOUND = /^[a-z]*(?:\.[\w-]+|:[\w-]+(?:\([^)]*\))?)+$/i;
+
+/** Selectors that give the root itself - one of `classes`, the shared `page` too - a width or margin of its own. */
 function frameOverrides(source: string, classes: string[]): string[] {
-  const own = classes.filter((name) => name !== "page");
-  return [...stylesOf(source).matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-    .filter(([, selector]) => own.some((name) => new RegExp(`^\\s*\\.${name}\\s*$`).test(selector)))
-    .filter(([, , body]) => /(?:^|;)\s*(?:max-|min-)?(?:width|inline-size)\s*:|(?:^|;)\s*margin(?:-inline)?\s*:/.test(body))
-    .map(([, selector]) => selector.trim());
+  return cssRules(stylesOf(source))
+    .filter(({ body }) => /(?:^|;)\s*(?:max-|min-)?(?:width|inline-size)\s*:|(?:^|;)\s*margin(?:-inline)?\s*:/.test(body))
+    .flatMap(({ selectors }) =>
+      selectors.filter(
+        (selector) =>
+          COMPOUND.test(selector) && [...selector.matchAll(/\.([\w-]+)/g)].some(([, name]) => classes.includes(name)),
+      ),
+    );
 }
 
-it("scans the components", () => {
-  scanned(components, ...VUE_ANCHORS, ...FRAMED);
+/** Selectors that reach `pattern` anywhere in them: `.toolbar .btn-sm`, `button:hover`. */
+function selectorsReaching(source: string, pattern: RegExp): string[] {
+  return cssRules(stylesOf(source)).flatMap(({ selectors }) => selectors.filter((selector) => pattern.test(selector)));
+}
+
+/** `.btn-sm`, as a class anywhere in a selector. */
+const SMALL_BUTTON = /\.btn-sm(?![\w-])/;
+/** `button`, as an element anywhere in a selector - not `.button-row` or `[type=button]`. */
+const BUTTON_ELEMENT = /(?:^|[\s>+~(])button(?![\w-])/;
+
+it("scans the components and the framed pages", () => {
+  scanned(components, ...VUE_ANCHORS);
+  scanned(framed, "StartView.vue");
 });
 
 describe("a framed page", () => {
-  it("recognises a page that narrows or moves its own frame", () => {
-    const sample = '<template><div class="page start"></div></template>\n<style>\n.start {\n  max-width: 54rem;\n}\n</style>';
-    expect(rootClasses(sample)).toEqual(["page", "start"]);
-    expect(frameOverrides(sample, rootClasses(sample))).toEqual([".start"]);
-    expect(frameOverrides("<style>\n.start p {\n  max-width: 54rem;\n}\n</style>", ["page", "start"])).toEqual([]);
+  it("recognises a page that narrows or moves its own frame, in every way it is written", () => {
+    const page = '<template><div class="page start"></div></template>\n';
+    const styled = (css: string) => `${page}<style>\n${css}\n</style>`;
+    const classes = rootClasses(page);
+
+    expect(classes).toEqual(["page", "start"]);
+    expect(frameOverrides(styled(".start {\n  max-width: 54rem;\n}"), classes)).toEqual([".start"]);
+    // the narrowing of round 1, word for word: a token passes the token guard
+    expect(frameOverrides(styled(".page.start {\n  max-width: var(--reading-width);\n}"), classes)).toEqual([".page.start"]);
+    // a comment before the rule is no part of its selector
+    expect(frameOverrides(styled("/* the reading width */\n.start {\n  max-width: 54rem;\n}"), classes)).toEqual([".start"]);
+    expect(frameOverrides(styled(".page {\n  margin: 0;\n}"), classes)).toEqual([".page"]);
+    expect(frameOverrides(styled("div.start, .other {\n  width: 50%;\n}"), classes)).toEqual(["div.start"]);
+    // what sits inside the page is its own business
+    expect(frameOverrides(styled(".start p {\n  max-width: 54rem;\n}"), classes)).toEqual([]);
   });
 
-  it.each(FRAMED)("%s sits in the shared frame and keeps it", (name) => {
-    const path = components.find((file) => basename(file) === name) ?? "";
+  it.each(framed.map((path) => [basename(path), path]))("%s sits in the shared frame and keeps it", (_name, path) => {
     const source = readFileSync(path, "utf8");
 
     expect(rootClasses(source)).toContain("page");
@@ -57,26 +80,34 @@ describe("a framed page", () => {
 });
 
 describe("buttons", () => {
+  it("are recognised as restyled wherever a selector reaches them", () => {
+    const styled = (css: string) => `<style>\n${css} {\n  color: red;\n}\n</style>`;
+    for (const selector of [".btn-sm", ".btn.btn-sm", ".toolbar .btn-sm", "button.btn-sm"]) {
+      expect(selectorsReaching(styled(selector), SMALL_BUTTON), selector).toHaveLength(1);
+    }
+    for (const selector of ["button", "button:hover", ".toolbar button", "button, a", "li > button"]) {
+      expect(selectorsReaching(styled(selector), BUTTON_ELEMENT), selector).toHaveLength(1);
+    }
+    for (const selector of [".button-row", "[type=button]", ".btn-small"]) {
+      const reached = [...selectorsReaching(styled(selector), SMALL_BUTTON), ...selectorsReaching(styled(selector), BUTTON_ELEMENT)];
+      expect(reached, selector).toEqual([]);
+    }
+  });
+
   it("take their small size from style.css alone", () => {
-    expect(readFileSync(join(SRC, "style.css"), "utf8")).toMatch(/^\.btn-sm \{/m);
-    const offenders = components.filter((path) => /^\s*\.btn-sm\b[^{]*\{/m.test(stylesOf(readFileSync(path, "utf8"))));
+    expect(cssRules(readFileSync(`${SRC}${sep}style.css`, "utf8")).some(({ selectors }) => selectors.includes(".btn-sm"))).toBe(true);
+    const offenders = components.flatMap((path) =>
+      selectorsReaching(readFileSync(path, "utf8"), SMALL_BUTTON).map((selector) => `${path}: ${selector}`),
+    );
 
     expect(offenders).toEqual([]);
   });
 
-  it("drawn as a link keep the link's underline and the line's height (WCAG 1.4.1)", () => {
-    // `.btn` takes the underline away and sets a button's height; a link-styled
-    // one in running text would be told apart by colour alone, in a box of its own
-    const rule = /^\.btn\.link \{([^}]*)\}/m.exec(readFileSync(join(SRC, "style.css"), "utf8"))?.[1] ?? "";
-
-    expect(rule).toMatch(/text-decoration:\s*underline/);
-    expect(rule).toMatch(/min-height:\s*auto/);
-  });
-
   it("are not restyled all at once by a component", () => {
     // a component's own buttons get a class; an element rule reaches every button it renders
-    expect(/^\s*button\s*\{/m.test(stylesOf("<style>\nbutton {\n  color: red;\n}\n</style>"))).toBe(true);
-    const offenders = components.filter((path) => /^\s*button\s*\{/m.test(stylesOf(readFileSync(path, "utf8"))));
+    const offenders = components.flatMap((path) =>
+      selectorsReaching(readFileSync(path, "utf8"), BUTTON_ELEMENT).map((selector) => `${path}: ${selector}`),
+    );
 
     expect(offenders).toEqual([]);
   });

@@ -146,6 +146,21 @@ describe("shared component classes", () => {
     expect(formControlRules(sample)).toEqual(["\n  color: var(--text);\n"]);
   });
 
+  it("reads the static classes however the tag is written, and nothing it should not", () => {
+    const rules = (tag: string, css: string) => formControlRules(`${tag}\n<style>\n${css} {\n  color: red;\n}\n</style>`);
+
+    // a bound class before the static one, its expression no class names
+    expect(rules('<input :class="{ wide: open }" class="token-field" />', ".token-field")).toHaveLength(1);
+    // a ternary in a bound class is no pattern to build a regex from
+    expect(rules(`<input :class="error ? 'token-field' : ''" class="x" />`, ".x")).toHaveLength(1);
+    // an arrow function in a handler does not end the tag
+    expect(rules('<input @input="(e) => (typed = e)" class="token-field" />', ".token-field")).toHaveLength(1);
+    // the class anywhere in a selector
+    expect(rules('<input class="token-field" />', ".login .token-field")).toHaveLength(1);
+    // a class is a whole name: `token` is not `.token-list`
+    expect(rules('<input class="token" />', ".token-list")).toEqual([]);
+  });
+
   it("does not restate that shell on a form control", () => {
     const offenders = sourceFiles().filter((path) =>
       formControlRules(readFileSync(path, "utf8")).some((body) =>
@@ -168,5 +183,13 @@ describe("a link drawn as a button", () => {
 
     expect(shared).toContain("text-decoration: none");
     expect(shared).toContain("min-height: 40px");
+  });
+
+  it("and a button drawn as a link keeps the link's underline and the line's height (WCAG 1.4.1)", () => {
+    // in running text, a link-styled control without them is told apart by colour alone, in a box of its own
+    const shared = sharedDeclarations(".btn.link");
+
+    expect(shared).toContain("text-decoration: underline");
+    expect(shared).toContain("min-height: auto");
   });
 });

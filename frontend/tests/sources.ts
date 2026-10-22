@@ -22,15 +22,54 @@ export const ANCHORS = ["App.vue", "main.ts", "LoginView.vue", "ModalShell.vue",
 /** The same for a walk of the .vue files alone. */
 export const VUE_ANCHORS = ["App.vue", "LoginView.vue", "ModalShell.vue"];
 
-/** The style rules for the classes a file puts on an `<input>`, `<select>` or `<textarea>`, read from its template. */
+/** What a component's `<style>` blocks hold, joined. */
+export function stylesOf(source: string): string {
+  return [...source.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(([, css]) => css).join("\n");
+}
+
+/** A style rule: its selectors, split at the commas, and its declarations. */
+export interface CssRule {
+  selectors: string[];
+  body: string;
+}
+
+/**
+ * The rules of a stylesheet, comments gone - a comment before a rule is no part
+ * of its selector. A rule inside `@media` is read as a rule; the at-rule around
+ * it is not.
+ */
+export function cssRules(css: string): CssRule[] {
+  return [...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({
+    selectors: selector
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean),
+    body,
+  }));
+}
+
+/** A class name as CSS writes it; anything else in a class attribute is no name. */
+const CLASS_NAME = /^[A-Za-z_-][\w-]*$/;
+
+/**
+ * The style rules for the classes a file puts on an `<input>`, `<select>` or
+ * `<textarea>`: the static classes of its template, wherever a selector names them.
+ * A bound `:class` is an expression, not names.
+ */
 export function formControlRules(source: string): string[] {
   const classes = new Set<string>();
-  for (const [, attributes] of source.matchAll(/<(?:input|select|textarea)\s([^>]*)>/g)) {
-    for (const name of /class="([^"]*)"/.exec(attributes)?.[1].split(/\s+/) ?? []) if (name) classes.add(name);
+  // quoted values may hold a `>`, as an arrow function in a handler does
+  for (const [, attributes] of source.matchAll(/<(?:input|select|textarea)\b((?:[^>"]|"[^"]*")*)>/g)) {
+    for (const [, list] of attributes.matchAll(/(?<![:\w-])class="([^"]*)"/g)) {
+      for (const name of list.split(/\s+/)) if (CLASS_NAME.test(name)) classes.add(name);
+    }
   }
   if (classes.size === 0) return [];
-  const rule = new RegExp(`^[ \\t]*\\.(?:${[...classes].join("|")})[^{]*\\{([^}]*)\\}`, "gm");
-  return [...source.matchAll(rule)].map((match) => match[1]);
+  // the names hold letters, digits, `_` and `-` alone: nothing a pattern reads as syntax
+  const named = new RegExp(`\\.(?:${[...classes].join("|")})(?![\\w-])`);
+  return cssRules(stylesOf(source))
+    .filter(({ selectors }) => selectors.some((selector) => named.test(selector)))
+    .map(({ body }) => body);
 }
 
 /**
