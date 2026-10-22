@@ -204,6 +204,27 @@ export const messages = {
       geschuetzt: "geschützt",
       unklar: "ungeklärt",
     },
+    // Whose curriculum it is, by the code of ISO 3166-2:DE the seeds give. Read as
+    // messages.sources.countries[value], not by t(): a code holds a hyphen.
+    countries: {
+      DE: "Bund",
+      "DE-BB": "Brandenburg",
+      "DE-BE": "Berlin",
+      "DE-BW": "Baden-Württemberg",
+      "DE-BY": "Bayern",
+      "DE-HB": "Bremen",
+      "DE-HE": "Hessen",
+      "DE-HH": "Hamburg",
+      "DE-MV": "Mecklenburg-Vorpommern",
+      "DE-NI": "Niedersachsen",
+      "DE-NW": "Nordrhein-Westfalen",
+      "DE-RP": "Rheinland-Pfalz",
+      "DE-SH": "Schleswig-Holstein",
+      "DE-SL": "Saarland",
+      "DE-SN": "Sachsen",
+      "DE-ST": "Sachsen-Anhalt",
+      "DE-TH": "Thüringen",
+    },
   },
   // One register entry's page (SourceDetailView.vue)
   entryPage: {

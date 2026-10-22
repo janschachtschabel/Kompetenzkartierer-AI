@@ -30,4 +30,11 @@ describe("the register's words", () => {
     // a value without words showed an empty cell; words for no value are read by nobody
     expect(Object.keys(words).sort()).toEqual(backendValues(name));
   });
+
+  it("name the federation and the sixteen Länder, by the codes of ISO 3166-2:DE the seeds give", () => {
+    // the backend checks only a code's form (source_register.py, Country): the list is the standard's
+    const codes = ["BB", "BE", "BW", "BY", "HB", "HE", "HH", "MV", "NI", "NW", "RP", "SH", "SL", "SN", "ST", "TH"];
+
+    expect(Object.keys(messages.sources.countries).sort()).toEqual(["DE", ...codes.map((code) => `DE-${code}`)]);
+  });
 });

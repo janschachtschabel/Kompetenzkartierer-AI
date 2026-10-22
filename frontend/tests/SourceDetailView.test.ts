@@ -46,12 +46,24 @@ describe("a register entry's page", () => {
     expect(described(wrapper, "source-facts", t("entryPage.facts.provenance"))).toBe(messages.sources.provenance["vergleichsdatensatz-v62.493"]);
     expect(described(wrapper, "source-facts", t("entryPage.facts.status"))).toBe(t("sources.status.reachable"));
     expect(described(wrapper, "source-facts", t("entryPage.facts.rights"))).toBe(t("sources.rights.unklar"));
-    expect(described(wrapper, "source-facts", t("entryPage.facts.country"))).toBe("DE-RP");
+    expect(described(wrapper, "source-facts", t("entryPage.facts.country"))).toBe("Rheinland-Pfalz");
     expect(described(wrapper, "source-facts", t("entryPage.facts.file"))).toBe(t("sources.register.noFile"));
     const address = wrapper.get<HTMLAnchorElement>("[aria-labelledby=source-facts] a");
     expect(address.attributes("href")).toBe("https://lehrplaene.bildung-rp.de/physik.pdf");
     // the app's own address goes to no foreign server
     expect(address.attributes("rel")).toBe("noreferrer");
+  });
+
+  it.each([
+    ["DE", "Bund"],
+    ["DE-TH", "Thüringen"],
+    // a code the catalogue has no name for yet, as it came
+    ["AT-9", "AT-9"],
+  ])("names the land %s by its name", async (country, name) => {
+    vi.spyOn(api, "getSource").mockResolvedValue(detail({ country }));
+    const wrapper = await open();
+
+    expect(described(wrapper, "source-facts", t("entryPage.facts.country"))).toBe(name);
   });
 
   it("shows what the seed said of the curriculum", async () => {

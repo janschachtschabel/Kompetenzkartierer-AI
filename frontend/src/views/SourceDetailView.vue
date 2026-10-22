@@ -119,7 +119,7 @@ function isWebAddress(address: string | null): address is string {
           </template>
           <template v-if="source.country">
             <dt>{{ t("entryPage.facts.country") }}</dt>
-            <dd>{{ source.country }}</dd>
+            <dd>{{ word(messages.sources.countries, source.country) }}</dd>
           </template>
           <template v-if="source.url">
             <dt>{{ t("entryPage.facts.address") }}</dt>
