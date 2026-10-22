@@ -136,6 +136,22 @@ def test_only_cr_and_lf_end_a_line(sign: str) -> None:
     assert not allows(text, "/intern/lp.pdf")
 
 
+@pytest.mark.parametrize(
+    "sign", ["\x0b", "\x0c", "\x1c", "\x85", "\xa0", "\N{LINE SEPARATOR}", "\N{IDEOGRAPHIC SPACE}"]
+)
+def test_only_space_and_tab_surround_a_value(sign: str) -> None:
+    # RFC 9309 2.2: WS is SP or HTAB; stripped of any other sign, "Allow: /intern/<sign>" became
+    # "Allow: /intern/" and won the tie
+    text = f"User-agent: *\nDisallow: /intern/\nAllow: /intern/{sign}\n"
+
+    assert not allows(text, "/intern/lp.pdf")
+
+
+def test_a_file_whose_lines_no_cr_or_lf_ends_holds_no_rules() -> None:
+    # as RFC 9309 and Google's parser read it: one line, of no rule - not a reading by mistake
+    assert allows("User-agent: *\x0bDisallow: /intern/\x0b", "/intern/lp.pdf")
+
+
 def test_a_rule_before_any_robot_is_named_counts_for_none() -> None:
     assert allows("Disallow: /\nUser-agent: *\nDisallow: /intern\n", "/lp.pdf")
 
@@ -159,7 +175,7 @@ def test_stars_without_end_match_in_no_time() -> None:
     assert time.perf_counter() - started < 1.0
 
 
-@pytest.mark.parametrize("run", [MAX_RULE_SIGNS - 3, 240], ids=["one-long-run", "runs-str-find-walks"])
+@pytest.mark.parametrize("run", [MAX_RULE_SIGNS - 5, 240], ids=["one-long-run", "runs-str-find-walks"])
 def test_a_file_full_of_star_rules_matches_the_longest_address_in_bounded_time(run: int) -> None:
     # a star tried at each sign of the address, the run after it compared sign by sign each time:
     # the rules of 500 KiB took minutes. str.find walks a short run sign by sign too, below 2500

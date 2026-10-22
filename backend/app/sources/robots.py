@@ -48,6 +48,7 @@ MAX_RULES = 2000
 MAX_RULE_SIGNS = 2000
 MAX_ADDRESS_SIGNS = 2000
 _LINE_END = re.compile(r"\r\n|\r|\n")  # RFC 9309 2.2: no other sign ends a line
+_WHITESPACE = " \t"  # and no other is space
 _ASKED_TO_WAIT = frozenset({429, 503})  # the answers whose Retry-After says how long
 _KEY = re.compile(r"[A-Za-z-]+")
 _ESCAPE = re.compile(r"%[0-9a-fA-F]{2}")
@@ -105,12 +106,15 @@ def parse_robots(text: str, product: str) -> Rules:
     named_us = False
     agents: list[str] = []
     in_rules = False  # the group's rules have begun: the next user-agent starts a group
+    # Lines end at CR and LF alone, and only space and tab surround a key and a value (RFC 9309
+    # 2.2): any other sign ending a value is part of its path. A file that ends no line with CR or
+    # LF is one line, and holds no rule.
     for raw in _LINE_END.split(text.lstrip(_BYTE_ORDER_MARK)):
         key, colon, value = raw.split("#", 1)[0].partition(":")
-        key = key.strip()
+        key = key.strip(_WHITESPACE)
         if not colon or not _KEY.fullmatch(key):
             continue
-        key, value = key.lower(), value.strip()
+        key, value = key.lower(), value.strip(_WHITESPACE)
         if key == "user-agent":
             if in_rules:
                 agents, in_rules = [], False
