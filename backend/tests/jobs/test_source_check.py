@@ -631,16 +631,25 @@ async def test_robots_txt_is_read_once_per_origin_however_its_host_is_written(co
     assert network.paths().count("www.lehrplaene.example/robots.txt") == 1
 
 
-async def test_a_redirect_past_what_the_register_holds_is_unreachable_unasked(context: JobContext) -> None:
-    # the server sets the address; matched against robots.txt, an address of any length costs
+@pytest.mark.parametrize(("signs", "asked"), [(2_000, True), (2_001, False)])
+async def test_a_redirect_is_asked_up_to_what_the_register_holds(
+    context: JobContext, signs: int, asked: bool
+) -> None:
+    # the server sets the address; matched against robots.txt, an address of any length costs,
+    # and url_check.final_url holds 2000 signs
     await add_entry(context, A + "/start")
-    far = "/" + "x" * 2_000
-    network = Network({**SITE_A, "a.example/start": reply(302, location=far)})
+    target = "/" + "x" * (signs - len(A) - 1)
+    network = Network(
+        {**SITE_A, "a.example/start": reply(302, location=target), f"a.example{target}": reply(200, PDF)}
+    )
 
     await run(context, network)
 
-    assert network.paths() == ["a.example/robots.txt", "a.example/start"]
-    assert (await checks(context))[A + "/start"]["outcome"] == "unreachable"
+    found = (await checks(context))[A + "/start"]
+    assert (f"a.example{target}" in network.paths()) is asked
+    assert (found["outcome"], found["final_url"]) == (
+        ("reachable", A + target) if asked else ("unreachable", None)
+    )
 
 
 def resolving(names: dict[str, int]) -> httpx2.AsyncBaseTransport:

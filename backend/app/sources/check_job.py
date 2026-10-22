@@ -38,7 +38,7 @@ from app.db.url_checks import UrlCheck, catch_up, record_check, unchecked_addres
 from app.jobs.context import JobContext
 from app.jobs.queue import Job, enqueue, report_progress
 from app.sources.register import CheckOutcome, RegisterStatus
-from app.sources.robots import HostDeferred, Rules, product_token, read_robots
+from app.sources.robots import MAX_ADDRESS_SIGNS, HostDeferred, Rules, product_token, read_robots
 from app.sources.throttle import hold_host, wait_turn
 from app.sources.url_fetch import BadAnswer, DownloadError, HostNotResolved, TooManyRedirects, UrlNotAllowed
 from app.sources.url_probe import Probe, probe
@@ -46,7 +46,9 @@ from app.sources.url_probe import Probe, probe
 KIND = "source.check"
 MIB = 2**20
 MAX_HOST_SIGNS = 253  # what DNS holds: a longer name resolves nowhere (and host_throttle refuses it)
-MAX_URL_SIGNS = 2000  # what url_check.final_url holds
+# What url_check.final_url holds - one number with the longest address robots.txt is matched
+# against: a longer one would be asked and its answer not kept, a shorter one forbid seeds
+MAX_URL_SIGNS = MAX_ADDRESS_SIGNS
 # What the candidates at an address become; a request to wait leaves them as they were
 REGISTER_STATUS: dict[CheckOutcome, RegisterStatus | None] = {
     "reachable": "reachable",
@@ -226,7 +228,8 @@ class _Look:
         """The origin's rules, robots.txt asked as a document is: each hop of its way in its
         host's turn, no host that waits asked. None: the origin waits for a later check, as does
         the host on the way asked last where robots.txt could not be had - the one that asked to
-        wait, gave no answer now or sent it on to where no request may go."""
+        wait or gave no answer now, the one refused where a redirect led, or, where the
+        redirect's address may not be asked at all, the one that sent it on."""
         settings = self.context.settings
         asked = ""  # the host robots.txt was asked of last, its redirects followed
 
