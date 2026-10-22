@@ -38,6 +38,7 @@ pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 PDF = b"%PDF-1.7 " + b"Lehrplan " * 500
 HTML = b"<!DOCTYPE html><html><body>Lehrplan</body></html>"
 SEED = "vergleichsdatensatz-v62.493"
+FAR_YEAR = "Mon, 01 Jan 99999999999 00:00:00 GMT"  # a date email.utils reads into an overflow
 Answer = Callable[[httpx2.Request], httpx2.Response]
 
 
@@ -529,6 +530,39 @@ async def test_a_robots_txt_that_asks_to_wait_holds_its_host_off_as_long(context
     assert result == {"checked": 0, "deferred": 1, "deferred_hosts": ["b.example"]}
 
 
+async def test_the_host_robots_txt_was_led_to_is_held_off_where_it_asked_to_wait(context: JobContext) -> None:
+    await add_entry(context, A + "/lp.pdf")
+    network = Network(
+        {
+            "a.example/robots.txt": reply(301, location="https://z.example/robots.txt"),
+            "z.example/robots.txt": reply(429, **{"retry-after": "3600"}),
+        }
+    )
+
+    await run(context, network)
+
+    async with context.pool.connection() as connection:
+        cursor = await connection.execute(
+            "SELECT host, extract(epoch FROM next_at - now()) FROM host_throttle ORDER BY host"
+        )
+        ahead = {host: float(seconds) for host, seconds in await cursor.fetchall()}
+    # z.example for the hour it asked; a.example, which only sent us on, for its next turn
+    assert 3500 < ahead["z.example"] <= 3600
+    assert ahead["a.example"] < 60
+
+
+@pytest.mark.parametrize("asked_of", ["robots.txt", "lp.pdf"])
+async def test_a_wait_until_a_date_past_any_ends_no_check(context: JobContext, asked_of: str) -> None:
+    await add_entry(context, "https://b.example/lp.pdf")
+    await add_entry(context, A + "/lp.pdf")
+    waiting = reply(503 if asked_of == "robots.txt" else 429, **{"retry-after": FAR_YEAR})
+
+    result = await run(context, Network({**SITE_A, f"b.example/{asked_of}": waiting}))
+
+    assert (await checks(context))[A + "/lp.pdf"]["outcome"] == "reachable"
+    assert result["deferred_hosts"] == ["b.example"]
+
+
 async def test_a_host_robots_txt_led_to_that_gave_no_answer_now_waits_too(context: JobContext) -> None:
     await add_entry(context, A + "/lp.pdf")
     await add_entry(context, "https://z.example/lp.pdf")
@@ -765,6 +799,9 @@ def test_a_wait_is_read_in_seconds_or_as_a_date_within_a_day() -> None:
     # digits to str.isdigit, none to float()
     assert _retry_after_s("²") is None
     assert _retry_after_s("\N{ETHIOPIC DIGIT ONE}") is None
+    # dates past what a datetime holds
+    assert _retry_after_s(FAR_YEAR) is None
+    assert _retry_after_s("Mon, 01 Jan 2026 00:00:00 +99999999999999999999") is None
 
 
 @pytest.mark.parametrize(("transient", "outcome"), [(True, None), (False, "unreachable")])

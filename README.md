@@ -109,8 +109,9 @@ ungültig.
   vorübergehend nicht erreichbar. Diese beiden fragt eine spätere Prüfung erneut, und der Host
   wartet bis dahin: seine übrigen Adressen und jede Weiterleitung zu ihm. Ebenso wartet ein
   Host, dessen Name gerade nicht aufgelöst wird oder dessen robots.txt gerade nicht zu haben
-  ist; seine Adressen bleiben ungeprüft. Eine Adresse über 2.000 Zeichen (auch ein
-  Weiterleitungsziel) wird nicht gefragt. Ein neuer Start prüft nur, was noch offen ist; ein
+  ist; seine Adressen bleiben ungeprüft. Ein Weiterleitungsziel über 2.000 Zeichen wird nicht
+  gefragt; die Adresse, die dorthin führt, gilt als nicht erreichbar (endgültig, ohne Status).
+  Ein neuer Start prüft nur, was noch offen ist; ein
   Kandidat, der später mit einer schon geprüften Adresse dazukommt, übernimmt deren Ergebnis.
   Ein zweiter Start, solange einer wartet oder läuft, gibt 409 `check_running` mit der Job-ID.
   Der Lauf dauert Stunden (allein ein Host trägt 400 Adressen) und belegt einen Worker; dafür

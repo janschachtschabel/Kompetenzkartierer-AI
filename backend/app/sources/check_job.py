@@ -194,8 +194,10 @@ class _Look:
 
     async def _hop(self, address: str) -> None:
         """Before each address the way asks: whether its host waits, its origin's robots.txt, then
-        its host's turn. An address longer than the register holds is not asked: its server set
-        it, and the rules of robots.txt are matched against all of it."""
+        its host's turn. An address longer than the register holds (a redirect's: the seed's are
+        no longer) is not asked, and the address it came from is unreachable: its server set it,
+        and the rules of robots.txt are matched against all of it. No address of the way is
+        longer than url_check.final_url holds, then."""
         parts = urlsplit(address)
         host = parts.hostname or ""
         self.host_asked = host
@@ -223,7 +225,8 @@ class _Look:
     async def _read_rules(self, origin: str) -> Rules | _NoHost | None:
         """The origin's rules, robots.txt asked as a document is: each hop of its way in its
         host's turn, no host that waits asked. None: the origin waits for a later check, as does
-        a host on the way that asked to wait or gave no answer now."""
+        the host on the way asked last where robots.txt could not be had - the one that asked to
+        wait, gave no answer now or sent it on to where no request may go."""
         settings = self.context.settings
         asked = ""  # the host robots.txt was asked of last, its redirects followed
 
@@ -271,7 +274,7 @@ def _found(url: str, found: Probe) -> UrlCheck:
         url,
         "refused",
         status_code=found.status_code,
-        final_url=last if len(found.chain) > 1 and len(last) <= MAX_URL_SIGNS else None,
+        final_url=last if len(found.chain) > 1 else None,
         content_type=found.content_type,
         last_modified=found.last_modified,
     )
@@ -300,7 +303,7 @@ def _retry_after_s(value: str | None) -> float | None:
     else:
         try:
             until = parsedate_to_datetime(value)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):  # OverflowError: a year past any datetime
             return None
         until = until if until.tzinfo else until.replace(tzinfo=UTC)
         seconds = (until - datetime.now(UTC)).total_seconds()
