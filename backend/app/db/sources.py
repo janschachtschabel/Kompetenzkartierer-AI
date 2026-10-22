@@ -96,16 +96,25 @@ async def update_source(
 
 @dataclass(frozen=True)
 class FetchTarget:
-    """What source.fetch needs of an entry."""
+    """What source.fetch needs of an entry; ``stored`` is the file it holds already, if any."""
 
     url: str | None
     owner_id: UUID | None
+    stored: StoredFile | None
 
 
 async def fetch_target(connection: psycopg.AsyncConnection, source_id: UUID) -> FetchTarget | None:
-    cursor = await connection.execute("SELECT url, owner_id FROM source WHERE id = %s", (source_id,))
+    cursor = await connection.execute(
+        "SELECT s.url, s.owner_id, f.sha256, f.size_bytes, f.mime, f.storage_key"
+        " FROM source s LEFT JOIN source_file f ON f.id = s.file_id WHERE s.id = %s",
+        (source_id,),
+    )
     found = await cursor.fetchone()
-    return None if found is None else FetchTarget(url=found[0], owner_id=found[1])
+    if found is None:
+        return None
+    url, owner_id, sha256, size, mime, storage_key = found
+    stored = None if sha256 is None else StoredFile(bytes(sha256), size, mime, storage_key)
+    return FetchTarget(url=url, owner_id=owner_id, stored=stored)
 
 
 async def set_register_status(connection: psycopg.AsyncConnection, source_id: UUID, status: str) -> None:

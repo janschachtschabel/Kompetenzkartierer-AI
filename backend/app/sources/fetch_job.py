@@ -47,6 +47,8 @@ async def fetch_source(
         target = await fetch_target(connection, source_id)
     if target is None or target.url is None:
         raise PermanentError("source_missing", "The register entry has no address to fetch.")
+    if target.stored is not None:  # a run again after the entry got its file: nothing to fetch
+        return _result(source_id, target.stored)
     fetched = await _fetched(
         context, source_id, target.url, transport, last_attempt=job.attempts >= job.max_attempts
     )
@@ -78,7 +80,11 @@ async def fetch_source(
             chain=fetched.chain,
             title=PurePosixPath(file_name).stem[:MAX_TITLE_SIGNS],
         )
-    return {"source_id": str(source_id), "sha256": digest.hex(), "size": stored.size}
+    return _result(source_id, stored)
+
+
+def _result(source_id: UUID, stored: StoredFile) -> dict[str, Any]:
+    return {"source_id": str(source_id), "sha256": stored.sha256.hex(), "size": stored.size}
 
 
 async def _fetched(

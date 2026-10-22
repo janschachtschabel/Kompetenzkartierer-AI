@@ -254,6 +254,28 @@ async def test_the_worker_runs_source_fetch(context: JobContext) -> None:
     assert "source.fetch" in make_handlers(context)
 
 
+async def test_an_entry_acquired_already_is_not_fetched_again(context: JobContext) -> None:
+    # the job runs again when its outcome was lost after the entry got its file
+    source_id, job = await add_source(context)
+    first = await fetch_source(context, job, transport=serving(pdf_answer))
+    asked: list[httpx2.Request] = []
+
+    def counting(request: httpx2.Request) -> httpx2.Response:
+        asked.append(request)
+        return pdf_answer(request)
+
+    again = await fetch_source(context, job, transport=serving(counting))
+
+    async with context.pool.connection() as connection:
+        cursor = await connection.execute(
+            "SELECT count(*) FROM acquisition WHERE source_id = %s", (source_id,)
+        )
+        acquisitions = await cursor.fetchone()
+    assert again == first
+    assert asked == []
+    assert acquisitions == (1,)
+
+
 async def test_two_entries_with_the_same_file_share_it(context: JobContext) -> None:
     first, first_job = await add_source(context)
     await fetch_source(context, first_job, transport=serving(pdf_answer))
