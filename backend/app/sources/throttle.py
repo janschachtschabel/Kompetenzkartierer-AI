@@ -22,9 +22,6 @@ _TAKE = """
         SET next_at = greatest(throttle.next_at, clock_timestamp()) + make_interval(secs => %(interval)s)
     RETURNING extract(epoch FROM throttle.next_at - make_interval(secs => %(interval)s) - clock_timestamp())
 """
-_AHEAD = (
-    "SELECT extract(epoch FROM next_at - clock_timestamp()) FROM host_throttle WHERE host = %s FOR UPDATE"
-)
 _HOLD = """
     INSERT INTO host_throttle AS throttle (host, next_at)
     VALUES (%(host)s, clock_timestamp() + make_interval(secs => %(seconds)s))
@@ -37,16 +34,26 @@ async def take_turn(
 ) -> float | None:
     """The seconds until the slot now taken for ``host``; none or less: now. None, and no slot taken,
     where the host's next turn lies further off than ``max_wait_s``. The slot holds once the
-    connection's transaction is committed."""
-    async with connection.transaction():
-        cursor = await connection.execute(_AHEAD, (host,))
-        ahead = await cursor.fetchone()
-        if ahead is not None and float(ahead[0]) > max_wait_s:
-            return None
-        cursor = await connection.execute(_TAKE, {"host": host, "interval": interval_s})
-        found = await cursor.fetchone()
-    assert found is not None  # noqa: S101 - an upsert returns its row
-    return float(found[0])
+    connection's transaction is committed.
+
+    The slot is taken first and given back where it lies too far off: a turn read before it is
+    taken may be held off meanwhile by another worker (hold_host), on a row the read found none of
+    to lock."""
+    try:
+        async with connection.transaction():
+            cursor = await connection.execute(_TAKE, {"host": host, "interval": interval_s})
+            found = await cursor.fetchone()
+            assert found is not None  # noqa: S101 - an upsert returns its row
+            wait = float(found[0])
+            if wait > max_wait_s:
+                raise _TooFar
+    except _TooFar:
+        return None
+    return wait
+
+
+class _TooFar(Exception):
+    """The host's next turn lies further off than the worker waits: the slot is given back."""
 
 
 async def hold_host(connection: psycopg.AsyncConnection, host: str, seconds: float) -> None:
