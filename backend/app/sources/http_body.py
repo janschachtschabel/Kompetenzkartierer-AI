@@ -11,6 +11,7 @@ Taken over from curriculum-extractor (services/http_body.py), async only.
 """
 
 import zlib
+from collections.abc import Callable
 
 import httpx2
 
@@ -51,9 +52,13 @@ class LimitedBody:
     limit (or the packed ones pass what the limit could weigh packed), BrokenCompression for a
     compressed stream zlib cannot unpack, and httpx2.DecodingError for one that ended before its
     end (at ``result``): a transfer cut short. A gzip body of several members is unpacked whole.
+    A ``sink`` takes each unpacked piece instead, and nothing is kept (the check job hashes a
+    body as it streams).
     """
 
-    def __init__(self, content_encoding: str | None, limit: int) -> None:
+    def __init__(
+        self, content_encoding: str | None, limit: int, sink: Callable[[bytes], None] | None = None
+    ) -> None:
         encoding = (content_encoding or "").strip().lower()
         # stacked encodings are comma-separated; so are two header lines, which httpx2 joins
         if "," in encoding or encoding not in ("", "identity", *_WBITS):
@@ -74,6 +79,7 @@ class LimitedBody:
         self._packed = 0
         self._size = 0
         self._pieces: list[bytes] = []
+        self._sink = sink or self._pieces.append
 
     def feed(self, chunk: bytes) -> None:
         """Take the next raw chunk of the body."""
@@ -144,7 +150,7 @@ class LimitedBody:
     def _keep(self, piece: bytes) -> None:
         self._count(len(piece))
         if piece:
-            self._pieces.append(piece)
+            self._sink(piece)
 
     def _count(self, size: int) -> None:
         self._size += size
@@ -152,9 +158,12 @@ class LimitedBody:
             raise BodyTooLarge(self._limit)
 
 
-async def aread_body(response: httpx2.Response, limit: int) -> bytes:
-    """The body of a streamed ``response``, or BodyTooLarge past ``limit`` unpacked bytes."""
-    body = LimitedBody(response.headers.get("content-encoding"), limit)
+async def aread_body(
+    response: httpx2.Response, limit: int, sink: Callable[[bytes], None] | None = None
+) -> bytes:
+    """The body of a streamed ``response``, or BodyTooLarge past ``limit`` unpacked bytes; with a
+    ``sink``, handed to it a piece at a time and nothing returned."""
+    body = LimitedBody(response.headers.get("content-encoding"), limit, sink)
     if response.is_stream_consumed:
         body.feed_unpacked(response.content)
     else:

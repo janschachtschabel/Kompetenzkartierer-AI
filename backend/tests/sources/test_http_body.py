@@ -6,6 +6,7 @@ is read raw and unpacked a piece at a time; one layer of gzip or deflate, nothin
 from curriculum-extractor (tests/test_http_body.py), for the async reader.
 """
 
+import hashlib
 import random
 import tracemalloc
 import zlib
@@ -26,7 +27,9 @@ TEXT = ("Die Lernenden beschreiben Zusammenhänge zwischen Ursache und Wirkung. 
 Headers = Mapping[str, str] | Sequence[tuple[str, str]]
 
 
-async def read(content: list[bytes] | bytes, headers: Headers, limit: int) -> bytes:
+async def read(
+    content: list[bytes] | bytes, headers: Headers, limit: int, sink: Callable[[bytes], None] | None = None
+) -> bytes:
     def handler(request: httpx2.Request) -> httpx2.Response:
         body = content if isinstance(content, bytes) else arriving(content)
         return httpx2.Response(200, content=body, headers=headers)
@@ -35,7 +38,7 @@ async def read(content: list[bytes] | bytes, headers: Headers, limit: int) -> by
         httpx2.AsyncClient(transport=httpx2.MockTransport(handler)) as client,
         client.stream("GET", BASE) as response,
     ):
-        return await aread_body(response, limit)
+        return await aread_body(response, limit, sink)
 
 
 async def test_an_answer_unpacking_far_past_the_limit_is_stopped_holding_no_more_than_the_limit() -> None:
@@ -214,3 +217,31 @@ async def test_a_later_gzip_member_is_held_to_the_limit_with_the_first() -> None
         tracemalloc.stop()
 
     assert peak < LIMIT + 8 * CHUNK, f"{peak / MIB:.1f} MiB held for a limit of {LIMIT / MIB:.0f} MiB"
+
+
+async def test_a_body_handed_to_a_sink_reaches_it_whole_and_is_kept_nowhere() -> None:
+    # the check job's way (plan M1, 2.5): hashed as it streams, never held
+    text = TEXT * 40
+    wire = in_chunks(packed(text, "gzip"))
+    seen = hashlib.sha256()
+    sizes: list[int] = []
+
+    def take(piece: bytes) -> None:
+        seen.update(piece)
+        sizes.append(len(piece))
+
+    tracemalloc.start()
+    try:
+        kept = await read(wire, {"Content-Encoding": "gzip"}, 64 * MIB, take)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+
+    assert kept == b""
+    assert (sum(sizes), seen.digest()) == (len(text), hashlib.sha256(text).digest())
+    assert peak < 16 * CHUNK, f"{peak / MIB:.1f} MiB held for a body of {len(text) / MIB:.0f} MiB"
+
+
+async def test_a_sink_s_body_past_the_limit_is_stopped_all_the_same() -> None:
+    with pytest.raises(BodyTooLarge):
+        await read(in_chunks(TEXT, 1_000), {}, len(TEXT) - 1, lambda piece: None)

@@ -15,7 +15,7 @@ import ipaddress
 import logging
 import socket
 import unicodedata
-from collections.abc import Callable, Iterable
+from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import Any
@@ -213,6 +213,37 @@ async def fetch(
     that failed - FileTooLarge past ``max_bytes``, TooManyRedirects past ``max_redirects``,
     BadAnswer for an answer no attempt can use. The request carries the trace of the one being
     served."""
+
+    async def read(response: httpx2.Response) -> tuple[bytes, str]:
+        return await _body(response, max_bytes), response.headers.get("content-type", "")
+
+    (content, content_type), chain = await follow(
+        url,
+        read,
+        transport=transport,
+        user_agent=user_agent,
+        timeout=timeout,
+        total_timeout=total_timeout,
+        max_redirects=max_redirects,
+    )
+    return Fetched(content, content_type, chain)
+
+
+async def follow[T](
+    url: str,
+    read: Callable[[httpx2.Response], Awaitable[T]],
+    *,
+    transport: httpx2.AsyncBaseTransport | None = None,
+    user_agent: str = "Kompetenzkartierer-AI",
+    timeout: float = PHASE_TIMEOUT_S,
+    total_timeout: float = TOTAL_TIMEOUT_S,
+    max_redirects: int = MAX_REDIRECTS,
+) -> tuple[T, list[str]]:
+    """GET ``url``, its redirects followed by hand, each address checked where it connects;
+    ``read`` takes the answer that is no redirect, still streaming, and what it returns comes
+    back with every address asked. UrlNotAllowed, DownloadError, TooManyRedirects and BadAnswer
+    as for ``fetch``; a transport failure or the deadline while ``read`` reads is a DownloadError
+    too."""
     chain: list[str] = []
     current = url
     headers = {**outgoing_headers(), "Accept-Encoding": ACCEPT_ENCODING, "User-Agent": user_agent}
@@ -232,8 +263,7 @@ async def fetch(
                 chain.append(current)
                 try:
                     async with client.stream("GET", current, headers=headers) as response:
-                        content = await _body(response, max_bytes)
-                        return Fetched(content, response.headers.get("content-type", ""), chain)
+                        return await read(response), chain
                 except _Redirect as redirect:
                     current = _redirect_target(current, redirect.location)
     except TimeoutError:
