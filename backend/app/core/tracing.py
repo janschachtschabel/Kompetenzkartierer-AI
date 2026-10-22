@@ -8,7 +8,7 @@ changed trace id joins nothing. Ported from compendious-text-fastapi (D108).
 
 import re
 from collections.abc import Iterable
-from contextvars import ContextVar
+from contextvars import ContextVar, Token
 
 REQUEST_ID = "X-Request-ID"
 CLIENT_TRACE = "x-client-trace-id"
@@ -74,6 +74,16 @@ def trace_id() -> str | None:
         parent[1] if len(parent) >= 4 else "",
     )
     return next((candidate for candidate in candidates if _B3_ID.fullmatch(candidate)), None)
+
+
+def continue_trace(trace: str | None) -> Token[dict[str, str]]:
+    """Carry a stored trace id on in this context, as a worker does for a job: its log lines and
+    its outgoing calls name it (as ``x-client-trace-id``). Hand the token to ``end_trace``."""
+    return _trace.set({CLIENT_TRACE: trace} if trace else {})
+
+
+def end_trace(token: Token[dict[str, str]]) -> None:
+    _trace.reset(token)
 
 
 def outgoing_headers() -> dict[str, str]:

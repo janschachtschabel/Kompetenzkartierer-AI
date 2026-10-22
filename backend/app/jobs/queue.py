@@ -7,9 +7,10 @@ jobs does not hold back the others, with one worker or many. The claim sets a le
 token of its own; the worker renews it with ``heartbeat`` and learns there of a requested
 cancel. Only the claim holding the lease can finish a job: a worker that lost its lease (too
 slow, cut off) gets ``LeaseLost`` and must drop its result, another worker has the job by then.
-``requeue_expired`` hands expired leases back to the queue while attempts remain. Each function
-is one statement, or one transaction (``claim``), so it holds on any connection; every time is
-the database's ``now()``.
+``requeue_expired`` hands expired leases back to the queue while attempts remain. A job keeps
+the trace id of the request that enqueued it and reports its progress under its lease
+(``report_progress``). Each function is one statement, or one transaction (``claim``), so it
+holds on any connection; every time is the database's ``now()``.
 """
 
 from collections.abc import Collection
@@ -22,6 +23,7 @@ from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
 from app.core.ids import new_id
+from app.core.tracing import trace_id
 
 # Wait before the next attempt: 10 s, 20 s, 40 s, ... at most 10 min. The exponent stops at 6,
 # past the cap anyway: a large one overflowed and failed the sweep for every job
@@ -65,7 +67,7 @@ _TAKE = """
         attempts = job.attempts + 1, started_at = coalesce(job.started_at, now())
     FROM chosen WHERE job.id = chosen.id
     RETURNING job.id, job.kind, job.lane, job.payload, job.attempts, job.max_attempts,
-        job.lease_owner, job.lease_token
+        job.lease_owner, job.lease_token, job.trace_id
 """
 
 
@@ -83,6 +85,7 @@ class Job:
     max_attempts: int
     lease_owner: str
     lease_token: UUID
+    trace_id: str | None  # of the request that made the job
 
 
 async def enqueue(
@@ -94,7 +97,8 @@ async def enqueue(
     max_attempts: int = 3,
     run_after_s: float = 0,
 ) -> UUID:
-    """A new waiting job; ``max_attempts`` is 1 to 100."""
+    """A new waiting job; ``max_attempts`` is 1 to 100. It keeps the trace id of the request
+    being served, if any: the worker writes the job's lines with it."""
     job_id = new_id()
     await connection.execute(
         """
@@ -104,9 +108,9 @@ async def enqueue(
             WHERE NOT EXISTS (SELECT 1 FROM job_lane WHERE lane = %(lane)s)
             ON CONFLICT DO NOTHING
         )
-        INSERT INTO job (id, kind, lane, payload, max_attempts, run_after)
+        INSERT INTO job (id, kind, lane, payload, max_attempts, run_after, trace_id)
         VALUES (%(id)s, %(kind)s, %(lane)s, %(payload)s, %(attempts)s,
-            now() + make_interval(secs => %(after)s))
+            now() + make_interval(secs => %(after)s), %(trace)s)
         """,
         {
             "id": job_id,
@@ -115,6 +119,7 @@ async def enqueue(
             "payload": Jsonb(payload or {}),
             "attempts": max_attempts,
             "after": run_after_s,
+            "trace": trace_id(),
         },
     )
     return job_id
@@ -154,6 +159,19 @@ async def heartbeat(connection: psycopg.AsyncConnection, job: Job, lease_s: floa
     if found is None:
         raise LeaseLost(str(job.id))
     return bool(found[0])
+
+
+async def report_progress(
+    connection: psycopg.AsyncConnection, job: Job, code: str, params: dict[str, Any]
+) -> None:
+    """Note how far the job has come (a code the interface words, and its parameters). Raises
+    ``LeaseLost`` when the lease is no longer this worker's: the job is another's by then."""
+    cursor = await connection.execute(
+        "UPDATE job SET progress = %s WHERE id = %s AND lease_token = %s AND status = 'running' RETURNING id",
+        (Jsonb({"code": code, "params": params}), job.id, job.lease_token),
+    )
+    if await cursor.fetchone() is None:
+        raise LeaseLost(str(job.id))
 
 
 async def complete(connection: psycopg.AsyncConnection, job: Job, result: dict[str, Any] | None) -> None:

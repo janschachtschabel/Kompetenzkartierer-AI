@@ -1,5 +1,26 @@
-"""The job kinds the worker runs, each with its handler; the pipeline stages register here (M1)."""
+"""The job kinds the worker runs, each with its handler bound to the job context; the pipeline
+stages register in ``make_handlers`` (M1)."""
 
+from collections.abc import Collection, Mapping
+
+from app.jobs.context import JobContext
 from app.jobs.worker import Handler
 
-HANDLERS: dict[str, Handler] = {}
+
+class UnknownJobKind(ValueError):
+    """WORKER_KINDS names a kind no handler has."""
+
+
+def make_handlers(context: JobContext) -> dict[str, Handler]:
+    return {}
+
+
+def select_handlers(handlers: Mapping[str, Handler], kinds: Collection[str]) -> dict[str, Handler]:
+    """The handlers of ``kinds``, or all of them for none. A kind without a handler stops the start:
+    a typo would leave a pod idle that looks busy in the deployment."""
+    if not kinds:
+        return dict(handlers)
+    unknown = sorted(set(kinds) - set(handlers))
+    if unknown:
+        raise UnknownJobKind(f"WORKER_KINDS names kinds no handler has: {', '.join(unknown)}")
+    return {kind: handler for kind, handler in handlers.items() if kind in kinds}

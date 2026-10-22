@@ -22,6 +22,8 @@ from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, Settings
 REPOSITORY_ONTOLOGY = Path(__file__).resolve().parents[3] / "ontology"
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 Port = Annotated[int, Field(ge=1, le=65535)]
+# A job kind as the job table takes it (0003_job.sql): source.fetch, extract.run
+_JOB_KIND = r"[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*"
 # A DNS label as botocore takes it: letters, digits and "-", not at either end
 _HOST_LABEL = re.compile(r"(?!-)[A-Za-z0-9-]{1,63}(?<!-)")
 # The address of a service the process calls: the language model, the object store
@@ -148,6 +150,9 @@ class Settings(BaseSettings):
     # How long a stopping worker lets its job run before it hands it back unspent; keep it below
     # the deployment's termination grace period (Kubernetes: 30 s), or the job waits for its lease
     job_shutdown_grace_s: Annotated[float, Field(ge=0, le=3600)] = 20.0
+    # The job kinds this worker takes, comma-separated (the conversion pods: source.convert);
+    # empty for every kind it knows
+    worker_kinds: Annotated[str, Field(pattern=rf"^({_JOB_KIND}(,{_JOB_KIND})*)?$")] = ""
     ontology_dir: Path = REPOSITORY_ONTOLOGY
     log_format: Literal["text", "json"] = "text"
     # Where objects go: a folder (development, one node) or an S3-compatible service (a cluster)
@@ -221,6 +226,10 @@ class Settings(BaseSettings):
         if not _s3_host(urlsplit(plain_endpoint(value)).hostname or ""):
             raise ValueError("must name a host of letters, digits, dots and hyphens, or an IP address")
         return value
+
+    @property
+    def worker_kind_list(self) -> tuple[str, ...]:
+        return tuple(self.worker_kinds.split(",")) if self.worker_kinds else ()
 
     @field_validator("log_level", mode="before")
     @classmethod

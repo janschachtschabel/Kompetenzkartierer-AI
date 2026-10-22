@@ -1,5 +1,5 @@
 """``python -m app.jobs.worker`` as the deployment starts it: it comes up, says what it takes, and
-stops cleanly on SIGTERM."""
+stops cleanly on SIGTERM; without its store, or told a kind it has no handler for, it does not."""
 
 import os
 import queue
@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 from app.db.migrate import migrate
-from tests.support import without_settings_variables
+from tests.support import throwaway_store, without_settings_variables
 
 pytestmark = pytest.mark.pg
 
@@ -22,10 +22,16 @@ BACKEND = Path(__file__).resolve().parents[2]
 START_S = 30.0
 
 
-def start_worker(database_url: str) -> subprocess.Popen[str]:
+def start_worker(database_url: str, **settings: str) -> subprocess.Popen[str]:
+    """The worker process with these settings; a throwaway store unless ``settings`` say otherwise."""
     with without_settings_variables():
         environment = {**os.environ}
-    environment.update(DATABASE_URL=database_url, JOB_POLL_S="0.1", PYTHONUNBUFFERED="1")
+    environment.update(
+        DATABASE_URL=database_url, JOB_POLL_S="0.1", PYTHONUNBUFFERED="1", STORAGE_DIR=str(throwaway_store())
+    )
+    environment.update(settings)
+    for name in [name for name, value in settings.items() if value == ""]:
+        del environment[name]
     return subprocess.Popen(
         [sys.executable, "-m", "app.jobs.worker"],
         cwd=BACKEND,
@@ -91,3 +97,23 @@ def test_sigterm_stops_the_worker_cleanly(database_url: str) -> None:
         process.kill()
 
     assert code == 0
+
+
+def ended_with(process: subprocess.Popen[str]) -> tuple[int, str]:
+    output, _ = process.communicate(timeout=START_S)
+    return process.returncode, output
+
+
+def test_without_its_store_the_worker_does_not_start(database_url: str) -> None:
+    # its jobs read and write objects; failing at the first job would cost an attempt each
+    code, output = ended_with(start_worker(database_url, STORAGE_DIR=""))
+
+    assert code == 1
+    assert "STORAGE_DIR" in output
+
+
+def test_a_kind_without_a_handler_stops_the_worker(database_url: str) -> None:
+    code, output = ended_with(start_worker(database_url, WORKER_KINDS="test.nothing"))
+
+    assert code == 1
+    assert "test.nothing" in output

@@ -27,6 +27,7 @@ from typing import Any
 import psycopg
 from psycopg_pool import AsyncConnectionPool, PoolTimeout
 
+from app.core.tracing import continue_trace, end_trace
 from app.jobs.outcome import Ending, Outcome, PermanentError, Result, one_line, write_outcome
 from app.jobs.queue import Job, LeaseLost, claim, heartbeat, requeue_expired
 
@@ -94,6 +95,14 @@ class Worker:
         return True
 
     async def _run(self, job: Job) -> None:
+        # the job's lines, the handler's and this worker's, carry the trace of its request
+        trace = continue_trace(job.trace_id)
+        try:
+            await self._run_traced(job)
+        finally:
+            end_trace(trace)
+
+    async def _run_traced(self, job: Job) -> None:
         task: asyncio.Task[Result] = asyncio.create_task(self.handlers[job.kind](job))
         try:
             ending = await self._keep_alive(job, task)
@@ -207,27 +216,35 @@ def _report_unwinding(job: Job, handler: asyncio.Task[Any]) -> None:
 
 async def _serve() -> int:
     from app.core.settings import Settings
+    from app.core.storage import open_storage
+    from app.core.storage_async import AsyncStorage
     from app.db.pool import create_pool
-    from app.jobs.handlers import HANDLERS
+    from app.jobs.context import JobContext
+    from app.jobs.handlers import make_handlers, select_handlers
 
     settings = Settings()
     stop = asyncio.Event()
     _stop_on_signals(stop)
-    if not HANDLERS:
-        log.warning("no job handlers are registered: the worker idles")
+    # Its jobs read and write objects: without its store the worker does not start (the error
+    # names the setting), rather than spend an attempt of each job. Opening may ask the service.
+    storage = AsyncStorage(await asyncio.to_thread(open_storage, settings))
     pool = create_pool(settings)
     await pool.open(wait=False)
     try:
+        context = JobContext(pool=pool, storage=storage, settings=settings)
+        handlers = select_handlers(make_handlers(context), settings.worker_kind_list)
+        if not handlers:
+            log.warning("no job handlers are registered: the worker idles")
         owner = f"{socket.gethostname()}:{os.getpid()}"
         worker = Worker(
             pool,
-            HANDLERS,
+            handlers,
             owner=owner,
             lease_s=settings.job_lease_s,
             poll_s=settings.job_poll_s,
             grace_s=settings.job_shutdown_grace_s,
         )
-        log.info("worker %s takes %s", owner, sorted(HANDLERS) or "nothing")
+        log.info("worker %s takes %s", owner, sorted(handlers) or "nothing")
         await worker.run(stop)
     finally:
         await pool.close()
@@ -250,6 +267,8 @@ def _stop_on_signals(stop: asyncio.Event) -> None:
 def main() -> int:
     from app.core.logging import configure_logging
     from app.core.settings import Settings
+    from app.core.storage import StorageNotConfigured
+    from app.jobs.handlers import UnknownJobKind
     from app.llm.client import check_reasoning_effort
     from app.llm.settings import LLMSettings
 
@@ -261,8 +280,12 @@ def main() -> int:
     except ValueError as error:
         log.error("%s", error)
         return 1
-    # psycopg's async mode needs a selector loop; Windows' default is the proactor
-    return asyncio.run(_serve(), loop_factory=asyncio.SelectorEventLoop)
+    try:
+        # psycopg's async mode needs a selector loop; Windows' default is the proactor
+        return asyncio.run(_serve(), loop_factory=asyncio.SelectorEventLoop)
+    except (StorageNotConfigured, UnknownJobKind) as error:
+        log.error("%s", error)
+        return 1
 
 
 if __name__ == "__main__":

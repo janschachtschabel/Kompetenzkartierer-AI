@@ -34,6 +34,7 @@ ein Test schlägt an, wenn sie veraltet.
 | `JOB_LEASE_S` | Zahl ≥ 3, ≤ 3600 | 60 | – | Dienst |
 | `JOB_POLL_S` | Zahl > 0, ≤ 60 | 1 | – | Dienst |
 | `JOB_SHUTDOWN_GRACE_S` | Zahl ≥ 0, ≤ 3600 | 20 | – | Dienst |
+| `WORKER_KINDS` | Text nach Muster `^([a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*(,[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*)*)?$` | leer | – | Dienst |
 | `ONTOLOGY_DIR` | Pfad | `ontology/` des Repositorys | – | Dienst |
 | `LOG_FORMAT` | `text` \| `json` | `text` | – | Dienst |
 | `STORAGE_BACKEND` | `fs` \| `s3` | `fs` | – | Dienst |
@@ -57,8 +58,12 @@ ein Test schlägt an, wenn sie veraltet.
 - `HOST` setzt das Image auf `0.0.0.0`; außerhalb des Images bleibt der Dienst auf Loopback.
 - `STORAGE_BACKEND=s3` mit `S3_BUCKET`; für einen eigenen S3-Dienst dazu `S3_ENDPOINT_URL` und
   `S3_REGION`. Ein leerer oder fehlender `S3_ENDPOINT_URL` heißt AWS selbst; ohne `S3_REGION` gilt
-  `us-east-1` (leer wird es abgewiesen). Der Bucket muss bestehen: Die API öffnet den Speicher beim
-  Start und fragt ihn dabei ab; ohne Bucket (bzw. ohne `STORAGE_DIR`) startet sie nicht.
+  `us-east-1` (leer wird es abgewiesen). Der Bucket muss bestehen: API und Worker öffnen den
+  Speicher beim Start und fragen ihn dabei ab; ohne Bucket (bzw. ohne `STORAGE_DIR`) starten sie
+  nicht.
+- `WORKER_KINDS` beschränkt einen Worker auf Job-Arten (kommagetrennt), etwa eigene Pods für die
+  Konvertierung mit einem Job je Pod; leer nimmt er alle, die er kennt. Eine Art ohne Handler
+  beendet den Start mit Code 1.
 - Schlüssel: `S3_ACCESS_KEY_FILE` und `S3_SECRET_KEY_FILE`, beide oder keiner. Ohne sie nimmt
   boto3 seine Standardkette (`AWS_*`-Variablen, Web-Identity/IRSA, die Rolle der Instanz). Wohin
   der Dienst geht, sagt nur `S3_ENDPOINT_URL`: `AWS_ENDPOINT_URL` und ein `endpoint_url` in
