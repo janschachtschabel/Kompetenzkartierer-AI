@@ -127,7 +127,9 @@ async def test_a_worker_that_lost_its_lease_stops_and_writes_nothing(pool: Async
     await asyncio.wait_for(started.wait(), 5)
     async with pool.connection() as connection:
         # another worker took the job over after the lease ran out
-        await connection.execute("UPDATE job SET lease_owner = 'w2' WHERE id = %s", (job_id,))
+        await connection.execute(
+            "UPDATE job SET lease_owner = 'w2', lease_token = gen_random_uuid() WHERE id = %s", (job_id,)
+        )
 
     await asyncio.wait_for(running, 5)
 
@@ -154,7 +156,7 @@ async def test_an_idle_worker_hands_expired_leases_back(pool: AsyncConnectionPoo
     job_id = await add(pool)
     async with await psycopg.AsyncConnection.connect(database_url, autocommit=True) as connection:
         await connection.execute(
-            "UPDATE job SET status = 'running', lease_owner = 'gone',"
+            "UPDATE job SET status = 'running', lease_owner = 'gone', lease_token = gen_random_uuid(),"
             " lease_expires_at = now() - interval '1 s', attempts = 1 WHERE id = %s",
             (job_id,),
         )

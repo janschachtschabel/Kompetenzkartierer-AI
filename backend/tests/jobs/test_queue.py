@@ -7,6 +7,7 @@ from typing import Any
 import psycopg
 import pytest
 
+from app.core.ids import new_id
 from app.db.migrate import migrate
 from app.jobs.queue import (
     LeaseLost,
@@ -91,6 +92,22 @@ async def test_the_lane_with_fewer_running_jobs_goes_first(connect: Any) -> None
     assert order == [first_a, only_b, second_a]
 
 
+async def test_lanes_take_turns_when_each_job_ends_before_the_next_claim(connect: Any) -> None:
+    # one worker, nothing left running: the lane served longest ago comes next, not the oldest job
+    db = await connect()
+    a0, a1, _ = [await enqueue(db, "test.work", "account-a") for _ in range(3)]
+    b0 = await enqueue(db, "test.work", "account-b")
+
+    order = []
+    for _ in range(3):
+        job = await claim(db, "worker-1", KINDS, LEASE_S)
+        assert job is not None
+        order.append(job.id)
+        await complete(db, job, None)
+
+    assert order == [a0, b0, a1]
+
+
 async def test_a_claim_passes_over_a_job_another_claim_is_taking(connect: Any, database_url: str) -> None:
     db = await connect()
     taking = await enqueue(db, "test.work", "account-a")
@@ -112,7 +129,7 @@ async def test_the_owner_completes_a_job_and_a_stranger_cannot(connect: Any) -> 
     assert job is not None
 
     assert await heartbeat(db, job, LEASE_S) is False
-    stranger = job.__class__(**{**job.__dict__, "lease_owner": "worker-2"})
+    stranger = job.__class__(**{**job.__dict__, "lease_token": new_id()})
     with pytest.raises(LeaseLost):
         await heartbeat(db, stranger, LEASE_S)
     with pytest.raises(LeaseLost):
@@ -140,6 +157,69 @@ async def test_an_expired_lease_goes_back_to_the_queue_and_the_old_owner_is_refu
     assert (taken.id, taken.attempts) == (job_id, 2)
     with pytest.raises(LeaseLost):
         await complete(db, lost, {})
+
+
+async def test_a_heartbeat_moves_the_lease_on(connect: Any) -> None:
+    db = await connect()
+    job_id = await enqueue(db, "test.work", "account-a")
+    job = await claim(db, "worker-1", KINDS, LEASE_S)
+    assert job is not None
+
+    await heartbeat(db, job, 600)
+
+    cursor = await db.execute(
+        "SELECT lease_expires_at - now() > interval '500 s' FROM job WHERE id = %s", (job_id,)
+    )
+    assert await cursor.fetchone() == (True,)
+
+
+async def test_a_claim_under_a_reused_owner_name_is_not_the_old_one(connect: Any) -> None:
+    # host:pid repeats after a restart; the lease is told apart by its token, not the name
+    db = await connect()
+    job_id = await enqueue(db, "test.work", "account-a")
+    old = await claim(db, "host:1", KINDS, 0.2)
+    assert old is not None
+    await asyncio.sleep(0.5)
+    await requeue_expired(db)
+    await db.execute("UPDATE job SET run_after = now() WHERE id = %s", (job_id,))
+    new = await claim(db, "host:1", KINDS, LEASE_S)
+    assert new is not None
+
+    with pytest.raises(LeaseLost):
+        await complete(db, old, {"stale": True})
+    await complete(db, new, {"fresh": True})
+
+    assert (await row(db, job_id))["result"] == {"fresh": True}
+
+
+async def test_attempts_are_bounded(connect: Any) -> None:
+    db = await connect()
+
+    with pytest.raises(psycopg.errors.CheckViolation):
+        await enqueue(db, "test.work", "account-a", max_attempts=101)
+
+
+async def test_a_job_with_very_many_attempts_does_not_break_the_backoff(connect: Any) -> None:
+    # 10 * 2^attempts overflowed past some 1,020 attempts, and the sweep failed for every job
+    db = await connect()
+    job_id = await enqueue(db, "test.work", "account-a")
+    assert await claim(db, "worker-1", KINDS, 0.2) is not None
+    await db.execute("UPDATE job SET attempts = 2000 WHERE id = %s", (job_id,))
+    await asyncio.sleep(0.5)
+
+    assert await requeue_expired(db) == 1
+    assert (await row(db, job_id))["status"] == "failed"
+
+
+async def test_a_failure_after_a_cancel_request_ends_cancelled(connect: Any) -> None:
+    db = await connect()
+    job_id = await enqueue(db, "test.work", "account-a", max_attempts=3)
+    job = await claim(db, "worker-1", KINDS, LEASE_S)
+    assert job is not None
+    await request_cancel(db, job_id)
+
+    assert await fail(db, job, "converter_down", "the converter did not answer", retry=True) == "cancelled"
+    assert (await row(db, job_id))["status"] == "cancelled"
 
 
 async def test_an_expired_lease_on_the_last_attempt_fails_the_job(connect: Any) -> None:
