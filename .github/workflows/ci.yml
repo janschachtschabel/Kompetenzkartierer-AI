@@ -1,0 +1,118 @@
+# Every check of the repository on each push to main and each pull request: the ontology, the
+# backend (lint, types, tests against PostgreSQL and MinIO), the frontend (tests, lint, types,
+# build) and both images, with a smoke test of the whole service in Compose.
+# Actions are pinned by commit (a tag can be moved); the comment names the version.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f
+        env:
+          POSTGRES_USER: kka
+          POSTGRES_PASSWORD: kka-test
+          POSTGRES_DB: kka
+        ports: ["55432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U kka -d kka" --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      # invented credentials of the test services; CI=true makes their tests required
+      KKA_TEST_DATABASE_URL: postgresql://kka:kka-test@127.0.0.1:55432/kka
+      KKA_TEST_S3_URL: http://127.0.0.1:59000
+      KKA_TEST_S3_ACCESS_KEY: kka-test
+      KKA_TEST_S3_SECRET_KEY: kka-test-secret
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: "0.7.13"   # the version that wrote uv.lock
+          python-version: "3.13"
+          enable-cache: true
+      # MinIO publishes no community images since October 2025: Chainguard's build, as in Compose.
+      # A step, not a service: a service container cannot be given its command (server /data).
+      - name: Start the test object store
+        run: >-
+          docker run -d --name kka-test-minio -p 127.0.0.1:59000:9000
+          -e MINIO_ROOT_USER=kka-test -e MINIO_ROOT_PASSWORD=kka-test-secret
+          --tmpfs /data:rw,uid=65532,gid=65532
+          cgr.dev/chainguard/minio@sha256:fe57367a6bfc78779367b86ad0cdd3d5df32965b7cb3c000c94032f138627c41
+          server /data
+      - run: uv sync --frozen
+      - name: Ontology check
+        run: .venv/bin/python -I ../ontology/pruefung/pruefe.py
+      - run: .venv/bin/python -m ruff check app tests
+      - run: .venv/bin/python -m ruff format --check app tests
+      - run: .venv/bin/python -m mypy
+      - name: Wait for the test object store
+        run: for i in $(seq 1 30); do curl -sf http://127.0.0.1:59000/minio/health/ready && exit 0; sleep 1; done; exit 1
+      - run: .venv/bin/python -m pytest
+
+  frontend:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+      - run: npm run build   # vue-tsc -b, then vite build
+
+  images:
+    needs: [backend, frontend]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build the SPA for the web image
+        run: cd frontend && npm ci && npm run build
+      - name: Build the images
+        run: |
+          docker build -f deploy/api.Dockerfile -t kka-api:local .
+          docker build -f deploy/web.Dockerfile -t kka-web:local .
+          docker image ls kka-api:local --format 'api {{.Size}}'
+          docker image ls kka-web:local --format 'web {{.Size}}'
+      - name: Smoke test of the whole service
+        run: |
+          python3 deploy/make-secrets.py
+          docker compose -f deploy/docker-compose.yml up -d
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:18080/api/v1/info; then echo; ok=1; break; fi
+            sleep 2
+          done
+          docker compose -f deploy/docker-compose.yml ps -a
+          test "${ok:-0}" = 1
+          test "$(docker compose -f deploy/docker-compose.yml ps -a migrate --format '{{.ExitCode}}')" = 0
+      - name: Logs of the smoke test
+        if: always()
+        run: docker compose -f deploy/docker-compose.yml logs --no-color | tail -200
+      - name: Stop the smoke test
+        if: always()
+        run: docker compose -f deploy/docker-compose.yml down -v
