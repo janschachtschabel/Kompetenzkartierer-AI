@@ -3,7 +3,8 @@
 Who sees which entry is decided in SQL (app/db/source_queries.py): another account's upload is the
 404 of an entry that does not exist. Visitors read no register. Editors set an entry's terms of use;
 its owner describes it. The file of an entry of no account goes, beside its editors, to whom
-THIRD_PARTY_MARKDOWN names; it goes out as a download, never to be shown in the browser.
+THIRD_PARTY_MARKDOWN names (visitors only where PUBLIC_ACCESS is not off); it goes out as a
+download in pieces, never to be shown in the browser.
 """
 
 import logging

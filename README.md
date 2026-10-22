@@ -88,6 +88,16 @@ ungültig.
   kann; 1: Fehler. Weitere Konten und Tokens legt ein Admin über `/api/v1/accounts` an.
 - `PUBLIC_ACCESS` (`off` | `lookup` | `search`, Standard `off`): was Besucher ohne Token dürfen.
   Das Sprachmodell braucht immer ein Token.
+- `MAX_UPLOAD_MB` (Standard 50, höchstens 500): die größte Datei, die ein Upload oder ein
+  URL-Import annimmt; größere weist der Upload mit 413 `file_too_large` ab. Ein DOCX darf
+  entpackt höchstens 256 MiB in 5.000 Teilen halten (`archive_too_large`). Was ein Upload in
+  `/tmp` und im Arbeitsspeicher braucht, steht in `docs/uebergabe/konfiguration.md`.
+- `UPLOADS_PER_MINUTE` und `URL_IMPORTS_PER_MINUTE` (Standard je 20): Uploads bzw. URL-Importe
+  je Konto und Minute, gezählt in PostgreSQL für alle Replicas; darüber 429 mit `Retry-After`.
+- `THIRD_PARTY_MARKDOWN` (`hidden` | `accounts` | `public`, Standard `hidden`): wer außer
+  Redaktion und Admin die Datei eines Registereintrags ohne Eigentümer (Saat, Recherche)
+  bekommt, später auch seine Blöcke und sein Markdown: niemand, jedes Konto oder auch Besucher,
+  diese nur bei `PUBLIC_ACCESS` ≠ `off`. Ein Upload bleibt bei seinem Konto.
 - `FORWARDED_ALLOW_IPS` (Standard `127.0.0.1,::1`): Adressen oder Netze der Proxys, deren
   `X-Forwarded-For` die Client-Adresse nennt; nie `*`, sonst wählt jeder Client seine Adresse
   selbst und umgeht das Limit. Aus demselben Grund wird ein Netz `/0` abgewiesen, und ein Netz

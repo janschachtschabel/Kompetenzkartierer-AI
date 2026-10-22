@@ -155,7 +155,8 @@ class Settings(BaseSettings):
     # Uploads an account may make per minute; more are answered 429
     uploads_per_minute: Annotated[int, Field(ge=1)] = 20
     # Who gets the file (and later the blocks and Markdown) of an entry of no account - seed,
-    # research: its owner's and the editors' always; beside them nobody, every account, or anyone
+    # research - beside the editors and admins: nobody, every account, or anyone (visitors only
+    # where PUBLIC_ACCESS is not off)
     third_party_markdown: Literal["hidden", "accounts", "public"] = "hidden"
     # Imports by URL an account may start per minute; more are answered 429
     url_imports_per_minute: Annotated[int, Field(ge=1)] = 20

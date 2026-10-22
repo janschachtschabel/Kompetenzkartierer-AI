@@ -1,5 +1,5 @@
 """The source register: what an account brings in - uploads (plan M1, 1.7) and imports by URL
-(1.8); reading and editing the register follow (1.9, 1.10).
+(1.8); reading and keeping the register are app/api/source_register.py (1.9, 1.10).
 
 The upload route has no body parameter on purpose: FastAPI reads such a body before it checks
 the token, so the form is read here, after it. BodyLimit (app/api/body_limit.py) bounds the body
