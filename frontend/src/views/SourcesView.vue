@@ -216,40 +216,44 @@ onMounted(async () => {
       </ul>
     </section>
 
-    <section class="sources__section" aria-labelledby="sources-register" :aria-busy="loading || undefined">
+    <section class="sources__section" aria-labelledby="sources-register">
       <!-- tabindex -1: where the focus goes when the notice's retry button goes with the notice -->
       <h2 id="sources-register" tabindex="-1">{{ t("sources.register.heading") }}</h2>
       <RegisterFilter v-model="filters" />
       <!-- always in the page, so the first "nothing matches" is read out -->
       <p class="visually-hidden" role="status" data-test="filter-status">{{ filterNotice }}</p>
       <LoadingState v-if="loading && !page" />
-      <ErrorState
-        v-else-if="failure"
-        :message="failure.text"
-        :reason="failure.reason"
-        :explanation="failure.explanation"
-        @retry="load()"
-      />
-      <EmptyState
-        v-else-if="page && page.entries.length === 0 && pageFiltered"
-        :level="3"
-        :title="t('sources.filter.emptyTitle')"
-        :body="t('sources.filter.emptyBody')"
-      />
-      <EmptyState
-        v-else-if="page && page.entries.length === 0"
-        :level="3"
-        :title="t('sources.register.emptyTitle')"
-        :body="t('sources.register.emptyBody')"
-      />
-      <SourceTable
-        v-else-if="page"
-        ref="table"
-        :entries="page.entries"
-        :total="page.total"
-        :loading-more="loadingMore || loading"
-        @more="more"
-      />
+      <!-- busy while what it shows is read again; the controls and the regions that speak stay
+           outside, as a busy region's changes wait to be read -->
+      <div v-else class="sources__results" :aria-busy="loading || undefined">
+        <ErrorState
+          v-if="failure"
+          :message="failure.text"
+          :reason="failure.reason"
+          :explanation="failure.explanation"
+          @retry="load()"
+        />
+        <EmptyState
+          v-else-if="page && page.entries.length === 0 && pageFiltered"
+          :level="3"
+          :title="t('sources.filter.emptyTitle')"
+          :body="t('sources.filter.emptyBody')"
+        />
+        <EmptyState
+          v-else-if="page && page.entries.length === 0"
+          :level="3"
+          :title="t('sources.register.emptyTitle')"
+          :body="t('sources.register.emptyBody')"
+        />
+        <SourceTable
+          v-else-if="page"
+          ref="table"
+          :entries="page.entries"
+          :total="page.total"
+          :loading-more="loadingMore || loading"
+          @more="more"
+        />
+      </div>
       <!-- always in the page, so its first notice is read out -->
       <PartialState
         class="sources__partial"
@@ -292,6 +296,17 @@ onMounted(async () => {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* Read again, what the register shows fades a little and the pointer says it is busy; the
+   reading's end restores it. No motion where the system asked for none (style.css). */
+.sources__results {
+  transition: opacity var(--dur-2) var(--ease);
+}
+
+.sources__results[aria-busy="true"] {
+  opacity: var(--busy-opacity);
+  cursor: progress;
 }
 
 /* Room only once it says something; empty, it waits in the page without a gap. */

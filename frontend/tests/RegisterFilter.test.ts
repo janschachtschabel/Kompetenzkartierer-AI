@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -10,6 +13,7 @@ import { router } from "@/router";
 import SourcesView from "@/views/SourcesView.vue";
 
 import { deferred, entry, page } from "./registerEntries";
+import { SRC, cssRules, stylesOf } from "./sources";
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -186,7 +190,7 @@ describe("the register page's filter", () => {
     expect(wrapper.get("tbody").text()).toContain("Kandidat");
   });
 
-  it("keeps the shown entries busy-marked while the filter's reading is under way", async () => {
+  it("keeps the shown entries busy-marked while the filter's reading is under way, and only them", async () => {
     let answer: (value: api.SourcePage) => void = () => undefined;
     vi.spyOn(api, "listSources")
       .mockResolvedValueOnce(page([entry("a", "Lehrplan Physik")]))
@@ -196,12 +200,27 @@ describe("the register page's filter", () => {
 
     await wrapper.get("input[type=checkbox]").setValue(true);
     await flushPromises();
-    const register = wrapper.get("[aria-labelledby=sources-register]");
-    expect(register.attributes("aria-busy")).toBe("true");
+    const results = wrapper.get(".sources__results");
+    expect(results.attributes("aria-busy")).toBe("true");
+    expect(results.find("table").exists()).toBe(true);
+    // the controls and the regions that speak stay outside: a busy region's changes wait to be read
+    for (const outside of ["fieldset", "[data-test=filter-status]", ".sources__partial"]) {
+      expect(wrapper.get(outside).element.closest("[aria-busy]"), outside).toBeNull();
+    }
     answer(page([entry("b", "Kandidat")]));
     await flushPromises();
 
-    expect(register.attributes("aria-busy")).toBeUndefined();
+    expect(results.attributes("aria-busy")).toBeUndefined();
     expect(wrapper.get("tbody").text()).toContain("Kandidat");
+  });
+
+  it("shows the reading too: the busy results fade by the token the contrast check holds", () => {
+    const source = readFileSync(join(SRC, "views", "SourcesView.vue"), "utf8");
+
+    const busy = cssRules(stylesOf(source)).filter(({ selectors }) =>
+      selectors.includes('.sources__results[aria-busy="true"]'),
+    );
+
+    expect(busy.map(({ body }) => body).join("")).toMatch(/opacity:\s*var\(--busy-opacity\)/);
   });
 });

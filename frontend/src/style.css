@@ -73,6 +73,10 @@
   --dur-2: 200ms;
   /* Fast out of the gate, settling gently: the shape of something that obeyed. */
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* How far what is shown fades while it is read again: no further than its text,
+     links and pills still clear 4.5:1 in both themes, which tests/contrast.test.ts
+     computes. The fade shows the reading; it never hides what is there. */
+  --busy-opacity: 0.9;
 
   /* Colour. Warm paper rather than the blue-grey every framework ships, and a
      petrol accent rather than the default web blue. Petrol also stays clear of

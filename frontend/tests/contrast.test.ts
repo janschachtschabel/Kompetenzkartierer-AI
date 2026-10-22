@@ -114,6 +114,42 @@ describe.each(["light", "dark"] as const)("%s theme contrast", (theme) => {
   });
 });
 
+/** `front` drawn at `alpha` over `back`, as the browser blends an element's opacity: per channel. */
+function blend(front: string, back: string, alpha: number): string {
+  const channels = (hex: string) => (hex.replace("#", "").match(/../g) ?? []).map((pair) => parseInt(pair, 16));
+  const [f, b] = [channels(front), channels(back)];
+  return `#${f.map((value, i) => Math.round(alpha * value + (1 - alpha) * b[i]).toString(16).padStart(2, "0")).join("")}`;
+}
+
+/** [what it is, foreground token, background token]: what the register shows while it is read again. */
+const FADED: [string, string, string][] = [
+  ["an entry's text", "--text", "--surface"],
+  ["an entry's aside", "--text-muted", "--surface"],
+  ["an entry's link", "--accent", "--surface"],
+  ["the count, and an empty state's words", "--text-muted", "--bg"],
+  ["an empty state's heading", "--text", "--bg"],
+  ["a neutral pill", "--text-muted", "--surface-subtle"],
+  ["a success pill", "--status-success-ink", "--status-success-bg"],
+  ["an error pill", "--status-error-ink", "--status-error-bg"],
+  ["a warning pill", "--status-warning-ink", "--status-warning-bg"],
+];
+
+describe.each(["light", "dark"] as const)("%s theme, results faded while they are read again", (theme) => {
+  const tokens = themes()[theme];
+  const alpha = Number(tokens["--busy-opacity"]);
+
+  it("fade by a token, and visibly", () => {
+    expect(alpha).toBeGreaterThan(0);
+    expect(alpha).toBeLessThan(1);
+  });
+
+  // the whole results fade over the page: each colour is blended with the page behind it
+  it.each(FADED)("%s still reaches 4.5:1", (_what, foreground, background) => {
+    const page = tokens["--bg"];
+    expect(contrast(blend(tokens[foreground], page, alpha), blend(tokens[background], page, alpha))).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
 /**
  * The pairs hold `--control-border` to 3:1; this holds a component to using it.
  * In the old app the user administration drew its fields with the quiet
