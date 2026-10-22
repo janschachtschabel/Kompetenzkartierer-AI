@@ -27,7 +27,7 @@ from app.jobs.handlers import make_handlers
 from app.jobs.outcome import PermanentError
 from app.jobs.queue import Job, account_lane, claim, enqueue
 from app.sources.fetch_job import fetch_source
-from app.sources.url_fetch import PinnedBackend, pinned_transport
+from app.sources.url_fetch import DownloadError, PinnedBackend, pinned_transport
 from tests.sources.compressed import MIB, arriving
 from tests.support import make_settings
 
@@ -201,6 +201,17 @@ async def test_a_server_away_for_a_moment_is_tried_again(context: JobContext) ->
 
     assert not isinstance(failed.value, PermanentError)
     assert (await source_row(context, source_id))["register_status"] == "unchecked"
+
+
+async def test_a_server_away_at_the_last_attempt_makes_the_entry_unreachable(context: JobContext) -> None:
+    # no attempt is left: the entry must not stay unchecked once the job has failed
+    source_id, job = await add_source(context)
+    last = replace(job, attempts=job.max_attempts)
+
+    with pytest.raises(DownloadError):
+        await fetch_source(context, last, transport=serving(lambda request: httpx2.Response(503)))
+
+    assert (await source_row(context, source_id))["register_status"] == "unreachable"
 
 
 async def test_the_worker_runs_source_fetch(context: JobContext) -> None:

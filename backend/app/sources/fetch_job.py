@@ -46,7 +46,9 @@ async def fetch_source(
         target = await fetch_target(connection, source_id)
     if target is None or target.url is None:
         raise PermanentError("source_missing", "The register entry has no address to fetch.")
-    fetched = await _fetched(context, source_id, target.url, transport)
+    fetched = await _fetched(
+        context, source_id, target.url, transport, last_attempt=job.attempts >= job.max_attempts
+    )
     name = filename_from_url(fetched.chain[-1]) or filename_from_url(target.url) or ""
     try:
         detected, digest = await asyncio.to_thread(examine, name, fetched.content)
@@ -79,10 +81,16 @@ async def fetch_source(
 
 
 async def _fetched(
-    context: JobContext, source_id: UUID, url: str, transport: httpx2.AsyncBaseTransport | None
+    context: JobContext,
+    source_id: UUID,
+    url: str,
+    transport: httpx2.AsyncBaseTransport | None,
+    *,
+    last_attempt: bool,
 ) -> Fetched:
     """The file at ``url``, or PermanentError for a failure another attempt would meet again,
-    the entry's status noting what was found; any other DownloadError is tried again."""
+    the entry's status noting what was found; any other DownloadError is tried again, and at the
+    ``last_attempt`` leaves the entry unreachable."""
     try:
         return await fetch(url, max_bytes=context.settings.max_upload_mb * MIB, transport=transport)
     except UrlNotAllowed as error:
@@ -101,6 +109,8 @@ async def _fetched(
         if error.status is not None and 400 <= error.status < 500 and error.status != 429:
             await _note(context, source_id, "unreachable")
             raise PermanentError("download_refused", str(error)) from None
+        if last_attempt:  # the queue fails the job: the entry must not stay unchecked
+            await _note(context, source_id, "unreachable")
         raise  # away for a moment: another attempt
 
 
