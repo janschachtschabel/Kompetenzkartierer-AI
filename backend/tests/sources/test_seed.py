@@ -11,14 +11,16 @@ import os
 import re
 import subprocess
 import sys
+import time
 from collections import Counter
-from collections.abc import Iterator
+from collections.abc import Awaitable, Callable, Iterator, Sequence
 from pathlib import Path
 from typing import Any, get_args
 from urllib.parse import urlsplit
 
 import psycopg
 import pytest
+from psycopg import sql
 from psycopg.rows import dict_row
 
 from app.db.migrate import migrate
@@ -309,6 +311,61 @@ def test_a_second_run_changes_nothing(seeded: str) -> None:
 
     assert (report.added, report.present) == (0, 1498)
     assert entries(seeded) == before
+
+
+async def run_twice_at_once(
+    url: str, table: str, work: Callable[[psycopg.AsyncConnection], Awaitable[Any]]
+) -> list[Any]:
+    """Two runs of ``work`` at once, each on a connection of its own: each run's result or error.
+
+    They are made to meet. A third connection holds ``table`` in SHARE mode, which lets them read
+    it but not write to it, until both wait on a lock (on the table, or one on the other's
+    advisory lock); only then it lets go. Left to chance, the second run would mostly start after
+    the first ended, and prove nothing."""
+
+    async def one() -> Any:
+        async with await psycopg.AsyncConnection.connect(url) as connection:
+            return await work(connection)
+
+    async with await psycopg.AsyncConnection.connect(url) as holder:
+        async with holder.transaction():
+            await holder.execute(sql.SQL("LOCK TABLE {} IN SHARE MODE").format(sql.Identifier(table)))
+            runs = [asyncio.ensure_future(one()) for _ in range(2)]
+            met = await _both_wait(holder, runs)
+        results = await asyncio.gather(*runs, return_exceptions=True)
+    assert met, f"the two runs did not meet at a lock: {results}"
+    return results
+
+
+async def _both_wait(holder: psycopg.AsyncConnection, runs: Sequence[asyncio.Future[Any]]) -> bool:
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline and not any(run.done() for run in runs):
+        cursor = await holder.execute(
+            "SELECT count(*) FROM pg_locks l JOIN pg_database d ON d.oid = l.database"
+            " WHERE NOT l.granted AND d.datname = current_database()"
+        )
+        waiting = await cursor.fetchone()
+        if waiting is not None and waiting[0] >= 2:
+            return True
+        await asyncio.sleep(0.02)
+    return False
+
+
+@pytest.mark.pg
+def test_two_seeds_at_once_add_the_dataset_once_and_both_end_well(seeded: str) -> None:
+    rows = read_documents(DOCUMENTS).rows
+
+    reports = asyncio.run(
+        run_twice_at_once(seeded, "source_seed", lambda connection: seed_register(connection, rows)),
+        loop_factory=asyncio.SelectorEventLoop,
+    )
+
+    assert not [report for report in reports if isinstance(report, BaseException)], reports
+    assert sum(report.added for report in reports) == 1498
+    with psycopg.connect(seeded) as connection:
+        seeds = connection.execute("SELECT count(*), count(DISTINCT seed_key) FROM source_seed").fetchone()
+        sources = connection.execute("SELECT count(*) FROM source").fetchone()
+    assert (seeds, sources) == ((1498, 1498), (1498,))
 
 
 @pytest.mark.pg

@@ -54,7 +54,8 @@ _KINDS: dict[str, SourceType] = {
     "GEI-Depot": "archiv",
     "Drittquelle/Spiegel": "spiegel",
 }
-# One seed at a time: two runs at once would each find a row absent and add it twice
+# One seed at a time. Two runs at once would each find the rows absent, and the second would
+# fail on source_seed's UNIQUE key once the first commits; held, it waits and adds nothing
 _SEED_LOCK = int.from_bytes(b"kka-seed", "big")
 # An address with a note for its readers after it: "https://… (Sidebar, PK-Katalog)" (BW.MA.PK)
 _NOTED = re.compile(r"(\S+)\s+\([^()]*\)")
