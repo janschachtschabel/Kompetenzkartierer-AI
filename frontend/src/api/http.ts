@@ -4,6 +4,13 @@
 // Per tab: a reload keeps it, closing the tab ends the session. The account
 // itself (`Me`) stays in memory (session.ts), never in storage.
 const TOKEN_STORAGE = "kka_token";
+// What an admin hands out (backend app/core/tokens.py): kka_ and 43 signs of base64url
+const TOKEN_FORMAT = /^kka_[A-Za-z0-9_-]{43}$/;
+
+/** Whether `candidate` has the form of a token: checked before it is sent, so a typo costs no failed sign-in. */
+export function looksLikeToken(candidate: string): boolean {
+  return TOKEN_FORMAT.test(candidate);
+}
 
 /** network: no answer; unauthorized: no valid token (401); forbidden: the account lacks the role (403). */
 export type ApiErrorKind = "network" | "unauthorized" | "forbidden" | "server";
@@ -118,7 +125,8 @@ export async function send(
   if (response.ok) return response;
 
   const error = failedAnswer(response, await bodyOf(response));
-  if (response.status === 401 && token) {
+  // only the token this request carried: one kept meanwhile (a new sign-in) is not this answer's
+  if (response.status === 401 && token && getToken() === token) {
     // The token is no longer good. Keeping it made every view show the same
     // error with no way back but a reload. A 403 is different: the token is
     // fine, this route is not for this account, and the view says so.
@@ -141,9 +149,11 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
  * Every refusal counts against the address's failure limit (429 after it).
  */
 export async function verifyToken<T>(candidate: string, path = "/api/v1/me"): Promise<T | null> {
+  // built before the request: a header it cannot carry is the caller's fault, not the network's
+  const headers = new Headers({ Authorization: `Bearer ${candidate}` });
   let response: Response;
   try {
-    response = await fetch(path, { headers: { Authorization: `Bearer ${candidate}` } });
+    response = await fetch(path, { headers });
   } catch {
     throw new ApiError("network", 0);
   }

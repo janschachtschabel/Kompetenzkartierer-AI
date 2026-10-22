@@ -22,6 +22,8 @@ describe("the way back after signing in", () => {
     ["/anmelden"],
     ["/anmelden?ziel=/konto"],
     ["/anmelden#x"],
+    ["/ANMELDEN"],
+    ["/Anmelden?x=1"],
   ])("is nothing else, and never the sign-in: %s", (value) => {
     // the value comes from the address, which anybody can write: forwarding to
     // another site would be an open redirect

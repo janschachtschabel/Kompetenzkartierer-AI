@@ -2,11 +2,12 @@ import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 
+import * as api from "@/api";
 import { clearToken, send, setToken } from "@/api";
 import { t } from "@/i18n/de";
 import { RETURN_PARAM } from "@/returnTarget";
 import { router } from "@/router";
-import { clearSession, setSession } from "@/session";
+import { clearSession, sessionState, setSession } from "@/session";
 
 const BLANK = { template: "<div></div>" };
 
@@ -101,5 +102,63 @@ describe("a token the server stops accepting", () => {
 
     expect(router.currentRoute.value.name).toBe("login");
     expect(router.currentRoute.value.query[RETURN_PARAM]).toBeUndefined();
+  });
+});
+
+
+describe("a page for a role, opened straight from a bookmark", () => {
+  beforeEach(() => {
+    router.addRoute({ path: "/nur-admin", name: "nur-admin", component: BLANK, meta: { requiresRole: "admin" } });
+    setToken("kka_token");
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("loads the account first, and lets the role in", async () => {
+    vi.spyOn(api, "getMe").mockResolvedValue({ id: "0190-a", name: "Erste Admin", roles: ["admin"] });
+
+    await router.push("/nur-admin");
+
+    expect(router.currentRoute.value.name).toBe("nur-admin");
+  });
+
+  it("keeps another role out", async () => {
+    vi.spyOn(api, "getMe").mockResolvedValue({ id: "0190-b", name: "Lehrkraft", roles: ["nutzer"] });
+
+    await router.push("/nur-admin");
+
+    expect(router.currentRoute.value.name).toBe("start");
+  });
+
+  it("leads to the sign-in, with the way back, when the token turns out stale", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
+
+    await router.push("/nur-admin");
+    await flushPromises();
+
+    expect(router.currentRoute.value.name).toBe("login");
+    expect(router.currentRoute.value.query[RETURN_PARAM]).toBe("/nur-admin");
+  });
+
+  it("goes to the start, where the failure is said, when the account cannot be loaded", async () => {
+    vi.spyOn(api, "getMe").mockRejectedValue(new api.ApiError("server", 503, "service_unavailable"));
+
+    await router.push("/nur-admin");
+
+    expect(router.currentRoute.value.name).toBe("start");
+    expect(sessionState.value).toBe("failed");
+  });
+});
+
+describe("scrolling", () => {
+  it("opens a new page at its top, and a page met again where it was left", () => {
+    const behave = router.options.scrollBehavior;
+    expect(behave).toBeDefined();
+    const route = router.currentRoute.value;
+
+    expect(behave?.(route, route, null)).toEqual({ top: 0 });
+    expect(behave?.(route, route, { left: 0, top: 480 })).toEqual({ left: 0, top: 480 });
   });
 });

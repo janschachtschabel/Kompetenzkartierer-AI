@@ -101,7 +101,7 @@ describe("signing in", () => {
     expect(failed.get("[role=alert]").text()).toContain(t("login.errors.server"));
   });
 
-  it("shows that it is checking, and takes no second press meanwhile", async () => {
+  it("shows that it is checking", async () => {
     let answer: (me: api.Me | null) => void = () => undefined;
     vi.spyOn(api, "checkToken").mockReturnValue(new Promise((resolve) => (answer = resolve)));
     await router.push({ name: "login" });
@@ -112,9 +112,59 @@ describe("signing in", () => {
 
     const button = wrapper.get("button[type=submit]");
     expect(button.text()).toBe(t("login.checking"));
-    expect(button.attributes("disabled")).toBeDefined();
     answer(null);
     await flushPromises();
     expect(button.text()).toBe(t("login.submit"));
+  });
+});
+
+
+describe("the token's form", () => {
+  it.each([["kka_" + "t".repeat(42)], ["kka_" + "t".repeat(42) + String.fromCodePoint(0x2013)], ["mein-token"]])(
+    "is checked before anything is sent: %s",
+    async (typed) => {
+      // a typo would cost a failed sign-in against the address's limit, shared behind a school's NAT
+      const check = vi.spyOn(api, "checkToken");
+
+      const wrapper = await signIn(typed);
+
+      expect(wrapper.get("[role=alert]").text()).toContain(t("login.errors.malformed"));
+      expect(check).not.toHaveBeenCalled();
+    },
+  );
+});
+
+describe("the button while the token is checked", () => {
+  it("stays focusable, says it is busy, and takes no second press", async () => {
+    // disabled, it would drop the focus it holds, and the keyboard would land on main
+    let answer: (me: api.Me | null) => void = () => undefined;
+    const check = vi.spyOn(api, "checkToken").mockReturnValue(new Promise((resolve) => (answer = resolve)));
+    await router.push({ name: "login" });
+    const wrapper = mount(LoginView, { global: { plugins: [router] } });
+    await wrapper.get("input").setValue(TOKEN);
+
+    await wrapper.get("form").trigger("submit");
+    await wrapper.get("form").trigger("submit");
+
+    const button = wrapper.get("button[type=submit]");
+    expect(button.attributes("disabled")).toBeUndefined();
+    expect(button.attributes("aria-disabled")).toBe("true");
+    expect(check).toHaveBeenCalledTimes(1);
+    answer(null);
+    await flushPromises();
+  });
+});
+
+describe("the same refusal twice", () => {
+  it("changes what the alert holds, so it is read out again", async () => {
+    vi.spyOn(api, "checkToken").mockResolvedValue(null);
+    const wrapper = await signIn(TOKEN);
+    const first = wrapper.get("#login-error").element.textContent;
+
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(wrapper.get("#login-error").element.textContent).not.toBe(first);
+    expect(wrapper.get("#login-error").text()).toContain(t("login.errors.invalid"));
   });
 });

@@ -7,7 +7,7 @@
 import { computed, onMounted, onUnmounted } from "vue";
 import { RouterLink, RouterView, useRoute, useRouter } from "vue-router";
 
-import { clearToken } from "@/api";
+import { clearToken, getToken } from "@/api";
 import AppIcon from "@/components/AppIcon.vue";
 import BrandMark from "@/components/BrandMark.vue";
 import { keepFocusInPage } from "@/focusRescue";
@@ -67,7 +67,12 @@ async function signOut(): Promise<void> {
           {{ t("app.signOut") }}
         </button>
       </template>
-      <RouterLink v-else-if="route.name !== 'login'" class="btn primary btn-sm" :to="{ name: 'login' }">
+      <!-- Not while a token is held and its account loads or failed to: that is no visitor -->
+      <RouterLink
+        v-else-if="route.name !== 'login' && !getToken()"
+        class="btn primary btn-sm"
+        :to="{ name: 'login' }"
+      >
         {{ t("app.signIn") }}
       </RouterLink>
     </div>

@@ -12,6 +12,7 @@ export const RETURN_PARAM = "ziel";
 export function returnTarget(value: unknown): string | null {
   if (typeof value !== "string") return null;
   if (!value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) return null;
-  if (/^\/anmelden(?:[/?#]|$)/.test(value)) return null;
+  // in any case, as the router matches paths
+  if (/^\/anmelden(?:[/?#]|$)/i.test(value)) return null;
   return value;
 }

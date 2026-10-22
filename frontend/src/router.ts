@@ -4,7 +4,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import { getToken, onUnauthorized, type Role } from "@/api";
 import { t } from "@/i18n/de";
 import { RETURN_PARAM } from "@/returnTarget";
-import { clearSession, ensureSession, hasRole } from "@/session";
+import { clearSession, ensureSession, hasRole, sessionState } from "@/session";
 import LoginView from "@/views/LoginView.vue";
 import StartView from "@/views/StartView.vue";
 
@@ -21,6 +21,8 @@ declare module "vue-router" {
 
 export const router = createRouter({
   history: createWebHistory(),
+  // A new page opens at its top; back and forward return to where the reader was.
+  scrollBehavior: (_to, _from, saved) => saved ?? { top: 0 },
   routes: [
     // Open: a visitor sees what PUBLIC_ACCESS opens, an account its start.
     { path: "/", name: "start", component: StartView, meta: { title: "app.titles.start" } },
@@ -39,6 +41,10 @@ router.beforeEach(async (to) => {
     // Loaded here rather than read from the shell: a bookmark runs this before
     // App.vue has mounted, and an empty session would bounce the right account.
     await ensureSession();
+    // the token turned out stale: the sign-in, with the way back
+    if (!getToken()) return { name: "login", query: { [RETURN_PARAM]: to.fullPath } };
+    // the account could not be loaded: the start says why, with a retry
+    if (sessionState.value === "failed") return { name: "start" };
     if (!hasRole(to.meta.requiresRole)) return { name: "start" };
   }
   return true;

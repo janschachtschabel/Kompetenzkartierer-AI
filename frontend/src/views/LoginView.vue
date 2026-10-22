@@ -2,9 +2,10 @@
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import { ApiError, checkToken, setToken } from "@/api";
+import { ApiError, checkToken, looksLikeToken, setToken } from "@/api";
 import AppIcon from "@/components/AppIcon.vue";
 import { t } from "@/i18n/de";
+import { sayAnew } from "@/liveRegion";
 import { RETURN_PARAM, returnTarget } from "@/returnTarget";
 import { setSession } from "@/session";
 
@@ -25,27 +26,29 @@ function signInFailure(failure: unknown): string {
     : t("login.errors.locked", { count: Math.max(1, Math.ceil(failure.retryAfter / 60)) });
 }
 
+/** The refusal to show; the same one again is read out again (liveRegion.ts). */
+function refuse(message: string): void {
+  error.value = sayAnew(error.value, message);
+}
+
 async function onSubmit(): Promise<void> {
-  error.value = "";
+  if (checking.value) return; // the button stays focusable while busy, so it can be pressed again
   const candidate = token.value.trim();
-  if (!candidate) {
-    error.value = t("login.errors.empty");
-    return;
-  }
+  if (!candidate) return refuse(t("login.errors.empty"));
+  // a typo is said here: sent, it would count against the address's failure limit
+  if (!looksLikeToken(candidate)) return refuse(t("login.errors.malformed"));
 
   checking.value = true;
   try {
     const me = await checkToken(candidate);
-    if (!me) {
-      error.value = t("login.errors.invalid");
-      return;
-    }
+    if (!me) return refuse(t("login.errors.invalid"));
+    error.value = "";
     setToken(candidate);
     // the check answered with the account: the shell needs not ask again
     setSession(me);
     await router.push(returnTarget(route.query[RETURN_PARAM]) ?? { name: "start" });
   } catch (failure) {
-    error.value = signInFailure(failure);
+    refuse(signInFailure(failure));
   } finally {
     checking.value = false;
   }
@@ -63,6 +66,8 @@ async function onSubmit(): Promise<void> {
       <form class="login__form" novalidate @submit.prevent="onSubmit">
         <div class="field">
           <label for="token">{{ t("login.tokenLabel") }}</label>
+          <!-- autocomplete off: on a school's shared computers no password manager is to offer
+               the token to the next person; pasting it stays possible (WCAG 3.3.8) -->
           <input
             id="token"
             v-model="token"
@@ -74,11 +79,12 @@ async function onSubmit(): Promise<void> {
           />
         </div>
 
-        <p v-if="error" id="login-error" class="login__error" role="alert">
+        <p v-if="error" id="login-error" class="field__error login__error" role="alert">
           <AppIcon name="warning" /> {{ error }}
         </p>
 
-        <button type="submit" class="btn primary login__submit" :disabled="checking">
+        <!-- aria-disabled, not disabled: a disabled button drops the focus it holds -->
+        <button type="submit" class="btn primary login__submit" :aria-disabled="checking || undefined">
           {{ checking ? t("login.checking") : t("login.submit") }}
         </button>
       </form>
@@ -131,8 +137,5 @@ async function onSubmit(): Promise<void> {
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  margin: 0;
-  color: var(--danger);
-  font-size: var(--step--1);
 }
 </style>

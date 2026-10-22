@@ -1,6 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, apiFetch, clearToken, getMe, getToken, onUnauthorized, send, setToken, verifyToken } from "@/api";
+import {
+  ApiError,
+  apiFetch,
+  clearToken,
+  getMe,
+  getToken,
+  looksLikeToken,
+  onUnauthorized,
+  send,
+  setToken,
+  verifyToken,
+} from "@/api";
 
 const TOKEN = "kka_" + "t".repeat(43);
 
@@ -226,3 +237,44 @@ describe("checking a token before it is kept", () => {
     await expect(verifyToken(TOKEN)).rejects.toMatchObject({ kind: "network" });
   });
 });
+
+
+describe("a late 401", () => {
+  it("drops only the token it was sent with, not one kept meanwhile", async () => {
+    // a request with the old token is still out when the sign-in keeps a new one
+    setToken(TOKEN);
+    const handler = vi.fn();
+    onUnauthorized(handler);
+    let answer: (response: Response) => void = () => undefined;
+    vi.mocked(fetch).mockReturnValue(new Promise((resolve) => (answer = resolve)));
+    const asked = send("/api/v1/me").catch(() => undefined);
+
+    const fresh = "kka_" + "n".repeat(43);
+    setToken(fresh);
+    answer(answer401());
+    await asked;
+
+    expect(getToken()).toBe(fresh);
+    expect(handler).not.toHaveBeenCalled();
+  });
+});
+
+function answer401(): Response {
+  return new Response(JSON.stringify({ code: "unauthorized", message: "The token is not valid." }), { status: 401 });
+}
+
+describe("the token's form", () => {
+  it.each([
+    ["kka_" + "t".repeat(43), true],
+    ["kka_" + "t".repeat(42), false],
+    ["KKA_" + "t".repeat(43), false],
+    ["kka_" + "t".repeat(42) + chr(0x2013), false],
+    [" kka_" + "t".repeat(43), false],
+  ])("is checked before anything is sent: %s", (candidate, valid) => {
+    expect(looksLikeToken(candidate)).toBe(valid);
+  });
+});
+
+function chr(code: number): string {
+  return String.fromCodePoint(code);
+}

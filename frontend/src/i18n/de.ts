@@ -37,6 +37,7 @@ export const messages = {
     checking: "Wird geprüft …",
     errors: {
       empty: "Gib ein Zugangstoken ein.",
+      malformed: "Das ist kein Zugangstoken: Es beginnt mit kka_ und hat danach 43 Zeichen.",
       invalid: "Dieses Zugangstoken gilt nicht. Prüfe es, oder bitte die Administration um ein neues.",
       network: "Der Server ist nicht erreichbar. Versuch es gleich noch einmal.",
       server: "Der Server hat unerwartet geantwortet. Versuch es später noch einmal.",
@@ -60,6 +61,7 @@ export const messages = {
     },
     signIn: "Zur Anmeldung",
     infoFailed: "Die Startseite konnte nicht geladen werden.",
+    accountFailed: "Dein Konto konnte nicht geladen werden.",
   },
   dialog: {
     // The confirm dialog's default: it asks before something is removed.
@@ -79,7 +81,8 @@ export const messages = {
   // (REFUSAL_CODES in refusals.ts), each saying why and what to do next.
   refusals: {
     forbidden: "Dafür fehlt deinem Konto die nötige Rolle. Rollen vergibt die Administration.",
-    service_unavailable: "Die Datenbank antwortet gerade nicht. Versuch es in ein paar Sekunden noch einmal.",
+    // the backend's code for every 503, not only the database's
+    service_unavailable: "Der Dienst antwortet gerade nicht. Versuch es in ein paar Sekunden noch einmal.",
     validation_failed: "Die Eingabe ist so nicht gültig. Prüfe sie und versuch es noch einmal.",
   },
 } as const;

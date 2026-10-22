@@ -5,6 +5,7 @@ import * as api from "@/api";
 import { t } from "@/i18n/de";
 import { router } from "@/router";
 import { clearSession, setSession } from "@/session";
+import { refusalText } from "@/refusals";
 import StartView from "@/views/StartView.vue";
 
 function info(publicAccess: api.Info["public_access"]): api.Info {
@@ -19,6 +20,7 @@ async function render() {
 
 beforeEach(async () => {
   vi.restoreAllMocks();
+  api.clearToken();
   clearSession();
   await router.push("/");
 });
@@ -76,3 +78,43 @@ describe("the start page for an account", () => {
     expect(asked).not.toHaveBeenCalled();
   });
 });
+
+
+describe("the start page for an account whose load fails", () => {
+  beforeEach(() => {
+    api.setToken("kka_token");
+  });
+
+  it("says so, with a retry - never the visitor's page", async () => {
+    // the database away: /me answers 503, /info would still answer
+    const info = vi.spyOn(api, "getInfo").mockResolvedValue(infoOf("lookup"));
+    const me = vi.spyOn(api, "getMe").mockRejectedValueOnce(new api.ApiError("server", 503, "service_unavailable"));
+    me.mockResolvedValueOnce({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
+
+    const wrapper = await render();
+
+    expect(wrapper.get("[role=alert]").text()).toContain(refusalText("service_unavailable") ?? "");
+    expect(wrapper.text()).not.toContain(t("start.visitor.lookup"));
+    expect(info).not.toHaveBeenCalled();
+
+    await wrapper.get("[role=alert] button").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get("h1").text()).toBe(t("start.welcome", { name: "Lehrkraft" }));
+  });
+
+  it("shows only that it is loading while the account is asked for", async () => {
+    vi.spyOn(api, "getMe").mockReturnValue(new Promise(() => undefined));
+    vi.spyOn(api, "getInfo").mockResolvedValue(infoOf("lookup"));
+
+    const wrapper = await render();
+
+    expect(wrapper.get("[role=status]").text()).toBe(t("states.loading"));
+    expect(wrapper.text()).not.toContain(t("start.about"));
+    expect(wrapper.find("a[href='/anmelden']").exists()).toBe(false);
+  });
+});
+
+function infoOf(publicAccess: api.Info["public_access"]): api.Info {
+  return { name: "Kompetenzkartierer-AI", version: "0.1.0", public_access: publicAccess };
+}

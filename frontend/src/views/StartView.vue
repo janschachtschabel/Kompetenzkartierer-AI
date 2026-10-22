@@ -6,12 +6,12 @@
 import { onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 
-import { getInfo, type Info } from "@/api";
+import { getInfo, getToken, type Info } from "@/api";
 import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
 import { t } from "@/i18n/de";
 import { failureNotice, type Notice } from "@/notice";
-import { ensureSession, session } from "@/session";
+import { ensureSession, session, sessionFailure } from "@/session";
 
 const info = ref<Info | null>(null);
 const failure = ref<Notice | null>(null);
@@ -23,7 +23,13 @@ async function load(): Promise<void> {
   try {
     // an account's own start needs no word about visitors
     await ensureSession();
-    if (!session.value) info.value = await getInfo();
+    if (session.value) return;
+    if (getToken()) {
+      // a token is held and its account did not load: that is no visitor
+      failure.value = failureNotice(sessionFailure.value, t("start.accountFailed"));
+      return;
+    }
+    info.value = await getInfo();
   } catch (error) {
     failure.value = failureNotice(error, t("start.infoFailed"));
   } finally {
@@ -42,7 +48,6 @@ onMounted(load);
     </template>
     <template v-else>
       <h1>{{ t("app.title") }}</h1>
-      <p class="start__lead">{{ t("start.about") }}</p>
       <LoadingState v-if="loading" />
       <ErrorState
         v-else-if="failure"
@@ -52,6 +57,7 @@ onMounted(load);
         @retry="load"
       />
       <template v-else-if="info">
+        <p class="start__lead">{{ t("start.about") }}</p>
         <p v-if="info.public_access === 'off'">{{ t("start.visitor.off") }}</p>
         <p v-else class="page-notice start__open">{{ t(`start.visitor.${info.public_access}`) }}</p>
         <p>

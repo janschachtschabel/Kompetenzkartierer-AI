@@ -76,3 +76,15 @@ describe("the shell for an account", () => {
     expect(push).toHaveBeenCalledWith({ name: "login" });
   });
 });
+
+
+describe("the shell while an account is held but not loaded", () => {
+  it("offers no sign-in, as if nobody were signed in", async () => {
+    api.setToken("kka_token");
+    vi.spyOn(api, "getMe").mockReturnValue(new Promise(() => undefined));
+
+    const wrapper = await render();
+
+    expect(wrapper.find("header a[href='/anmelden']").exists()).toBe(false);
+  });
+});
