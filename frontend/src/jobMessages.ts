@@ -10,6 +10,10 @@ export const JOB_FAILURE_CODES = [
   "unsupported_type",
   "archive_too_large",
   "source_missing",
+  "file_too_large",
+  "too_many_redirects",
+  "bad_answer",
+  "download_throttled",
   // any job (app/jobs/outcome.py, app/jobs/queue.py)
   "handler_error",
   "result_not_storable",

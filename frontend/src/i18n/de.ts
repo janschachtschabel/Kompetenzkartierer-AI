@@ -195,6 +195,18 @@ export const messages = {
         "Die Datei unter der Adresse ist ein Archiv, das ausgepackt zu groß wird. Prüfe, ob es wirklich ein " +
         "Word-Dokument ist.",
       source_missing: "Der Registereintrag hat keine Adresse, die abgerufen werden könnte. Lege ihn mit der Adresse neu an.",
+      file_too_large:
+        "Die Datei unter der Adresse ist größer, als ein Upload sein darf. Lade eine kleinere Fassung herunter " +
+        "und lade sie hoch, oder teile sie auf.",
+      too_many_redirects:
+        "Die Adresse leitet immer weiter, ohne bei einer Datei anzukommen. Öffne sie im Browser und nimm die " +
+        "Adresse, bei der das Dokument erscheint.",
+      bad_answer:
+        "Der fremde Server hat so geantwortet, dass sich keine Datei daraus lesen ließ. Lade das Dokument im " +
+        "Browser herunter und lade es hoch.",
+      download_throttled:
+        "Der fremde Server bittet, ihn seltener anzufragen. Versuch es später noch einmal, oder lade das " +
+        "Dokument im Browser herunter und lade es hoch.",
       handler_error:
         "Der Auftrag ist mehrmals gescheitert, etwa weil ein fremder Server nicht antwortete. " +
         "Versuch es später noch einmal.",
