@@ -353,6 +353,19 @@ def test_the_owner_gets_its_file_as_a_download(client: TestClient, world: dict[s
     assert answer.headers["cache-control"] == "private, no-store"
 
 
+def test_the_spec_names_the_download_and_its_refusals() -> None:
+    spec = create_app(make_settings()).openapi()
+    responses = spec["paths"]["/api/v1/sources/{source_id}/file"]["get"]["responses"]
+
+    assert responses["200"]["content"] == {
+        "application/octet-stream": {"schema": {"type": "string", "format": "binary"}}
+    }
+    assert "file_hidden" in responses["403"]["description"]
+    assert "no_file" in responses["404"]["description"] and "file_gone" in responses["404"]["description"]
+    refused = responses["404"]["content"]
+    assert refused == {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorBody"}}}
+
+
 def test_a_download_s_name_shows_what_it_is(client: TestClient, migrated: str, world: dict[str, Any]) -> None:
     # a right-to-left override in the name made "lehrplan<RLO>fdp.exe" read as a PDF; a "%" in
     # the plain name reads as an escape to some clients

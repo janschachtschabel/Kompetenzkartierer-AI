@@ -17,7 +17,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, StringConstraints
 
 from app.api.deps import principal, require_account
-from app.api.errors import AUTH_RESPONSES, Refusal
+from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.api.sources import MAX_TITLE_SIGNS, SourceFileOut
 from app.core.auth import Principal, one_spelling, shows_whole, visible_only
 from app.core.logging import current_request_id
@@ -227,7 +227,27 @@ def _check_terms(given: dict[str, Any], row: dict[str, Any]) -> None:
         raise Refusal(422, "license_missing", "An open licence names the licence.")
 
 
-@router.get("/sources/{source_id}/file", summary="The entry's file, as a download")
+# A response class of no type of its own: each answer names the file's, and the refusals stay JSON
+DOWNLOAD_RESPONSES: dict[int | str, dict[str, Any]] = {
+    200: {
+        "description": "The file, as a download; Content-Type is its own type",
+        "content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}}},
+    },
+    403: {"model": ErrorBody, "description": "file_hidden: the file of this entry is for its editors only"},
+    404: {
+        "model": ErrorBody,
+        "description": "No such entry for the caller; no_file: it has no file yet; file_gone: the store"
+        " lacks it",
+    },
+}
+
+
+@router.get(
+    "/sources/{source_id}/file",
+    summary="The entry's file, as a download",
+    response_class=StreamingResponse,
+    responses=DOWNLOAD_RESPONSES,
+)
 async def get_register_file(
     source_id: UUID, request: Request, who: Annotated[Principal, Depends(principal)]
 ) -> StreamingResponse:
