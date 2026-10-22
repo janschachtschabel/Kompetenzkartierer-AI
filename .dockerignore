@@ -1,0 +1,19 @@
+# The build context is the repository root; the images take backend/app, ontology/,
+# deploy/ and frontend/dist. Everything below never goes in: history, environments,
+# caches, tests, local data and secrets.
+.git
+.worktrees
+**/.venv
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.mypy_cache
+**/.ruff_cache
+**/.pytest_cache
+backend/tests
+docs
+data
+deploy/secrets
+**/.env*
+**/*.pem
+**/*.key
