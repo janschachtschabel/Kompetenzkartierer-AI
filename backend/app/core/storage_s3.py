@@ -21,7 +21,7 @@ from botocore.config import Config  # type: ignore[import-untyped]
 from botocore.exceptions import ClientError  # type: ignore[import-untyped]
 
 from app.core.settings import Settings
-from app.core.storage import ObjectNotFound, StorageNotConfigured, check_key
+from app.core.storage import CHUNK_BYTES, ObjectNotFound, ObjectStream, StorageNotConfigured, check_key
 
 # The codes S3 and MinIO answer a missing object with: get_object names it, head_object has no
 # body and carries the status only
@@ -53,17 +53,26 @@ class S3Storage:
         self.client.put_object(Bucket=self.bucket, Key=check_key(key), Body=data)
 
     def get(self, key: str) -> bytes:
-        try:
-            answer = self.client.get_object(Bucket=self.bucket, Key=check_key(key))
-        except ClientError as error:
-            if _missing(error):
-                raise ObjectNotFound(key) from None
-            raise
-        body = answer["Body"]
+        body = self._object(key)["Body"]
         try:
             return bytes(body.read())
         finally:
             body.close()
+
+    def open_stream(self, key: str) -> ObjectStream:
+        answer = self._object(key)
+        body = answer["Body"]
+        size = answer.get("ContentLength")
+        return ObjectStream(None if size is None else int(size), body.iter_chunks(CHUNK_BYTES), body.close)
+
+    def _object(self, key: str) -> Any:
+        """The service's answer to reading the object, its body still to read and to close."""
+        try:
+            return self.client.get_object(Bucket=self.bucket, Key=check_key(key))
+        except ClientError as error:
+            if _missing(error):
+                raise ObjectNotFound(key) from None
+            raise
 
     def exists(self, key: str) -> bool:
         try:

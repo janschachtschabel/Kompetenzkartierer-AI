@@ -81,6 +81,20 @@ def test_bytes_come_back_as_they_went_in(storage: S3Storage) -> None:
     assert storage.get("blob.bin") == data
 
 
+def test_an_object_comes_back_in_pieces_with_its_size(storage: S3Storage) -> None:
+    data = bytes(range(256)) * (10 * 2**10)  # 2.5 MiB
+    storage.put("sources/big.pdf", data)
+
+    stream = storage.open_stream("sources/big.pdf")
+    pieces = list(stream)
+
+    assert stream.size == len(data)
+    assert max(len(piece) for piece in pieces) <= 2**20
+    assert b"".join(pieces) == data
+    with pytest.raises(ObjectNotFound):
+        storage.open_stream("sources/missing.pdf")
+
+
 def test_a_bucket_the_service_does_not_hold_stops_the_opening(service_settings: Settings) -> None:
     # on a HEAD, MinIO answers a missing bucket as it does a missing key: 404
     with pytest.raises(StorageNotConfigured, match="S3_BUCKET"):

@@ -14,6 +14,8 @@ development and a single node (a cluster uses S3).
 import os
 import re
 import tempfile
+from collections.abc import Callable, Iterator
+from functools import partial
 from pathlib import Path
 from typing import Protocol
 
@@ -21,6 +23,7 @@ from app.core.settings import Settings
 
 MAX_KEY_CHARS = 512
 MAX_SEGMENT_CHARS = 255  # a file name's limit on the common file systems
+CHUNK_BYTES = 2**20  # the most a read in pieces hands out at a time
 _SEGMENT = re.compile(r"[A-Za-z0-9_-][A-Za-z0-9._-]*")
 # The names Windows takes for devices, with any extension, in any case
 _DEVICE = re.compile(r"(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?", re.IGNORECASE)
@@ -38,6 +41,35 @@ class StorageNotConfigured(ValueError):
     """The settings name no usable store; the message says which setting is missing."""
 
 
+class ObjectStream:
+    """An object read in pieces of at most CHUNK_BYTES, with its size where the store knows it.
+    Read to its end, it closes itself; a reader that stops before calls ``close``, after which
+    it yields nothing more."""
+
+    def __init__(self, size: int | None, pieces: Iterator[bytes], close: Callable[[], None]) -> None:
+        self.size = size
+        self._pieces = pieces
+        self._close = close
+        self._closed = False
+
+    def __iter__(self) -> Iterator[bytes]:
+        return self
+
+    def __next__(self) -> bytes:
+        if self._closed:
+            raise StopIteration
+        try:
+            return next(self._pieces)
+        except BaseException:  # its end (StopIteration) or a failed read: either way, let go
+            self.close()
+            raise
+
+    def close(self) -> None:
+        if not self._closed:
+            self._closed = True
+            self._close()
+
+
 class Storage(Protocol):
     def put(self, key: str, data: bytes) -> None: ...
     def get(self, key: str) -> bytes: ...
@@ -45,6 +77,10 @@ class Storage(Protocol):
     def delete(self, key: str) -> None:
         """ObjectNotFound when the object was missing as the store looked; on S3 another process
         may delete it between the look and the deletion, so treat deleting as idempotent."""
+        ...
+
+    def open_stream(self, key: str) -> ObjectStream:
+        """The object to read in pieces; ObjectNotFound as ``get`` raises it, before any piece."""
         ...
 
 
@@ -115,6 +151,15 @@ class FileSystemStorage:
 
     def exists(self, key: str) -> bool:
         return self._path(key).is_file()
+
+    def open_stream(self, key: str) -> ObjectStream:
+        path = self._object(key)
+        try:
+            file = path.open("rb")
+        except FileNotFoundError:  # deleted in between
+            raise ObjectNotFound(key) from None
+        size = os.fstat(file.fileno()).st_size
+        return ObjectStream(size, iter(partial(file.read, CHUNK_BYTES), b""), file.close)
 
     def delete(self, key: str) -> None:
         path = self._object(key)

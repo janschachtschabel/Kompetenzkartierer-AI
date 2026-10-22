@@ -35,6 +35,34 @@ def test_a_missing_object_is_not_found(storage: FileSystemStorage) -> None:
         storage.get("sources/none.pdf")
     with pytest.raises(ObjectNotFound):
         storage.delete("sources/none.pdf")
+    with pytest.raises(ObjectNotFound):  # on opening, before any piece
+        storage.open_stream("sources/none.pdf")
+
+
+def test_an_object_is_read_in_pieces_of_a_mib(storage: FileSystemStorage) -> None:
+    # a download of up to MAX_UPLOAD_MB never holds the whole file
+    data = bytes(range(256)) * (10 * 2**10)  # 2.5 MiB
+    storage.put("sources/big.pdf", data)
+
+    stream = storage.open_stream("sources/big.pdf")
+    pieces = list(stream)
+
+    assert stream.size == len(data)
+    assert [len(piece) for piece in pieces] == [2**20, 2**20, 2**19]
+    assert b"".join(pieces) == data
+    storage.delete("sources/big.pdf")  # closed at the end: Windows deletes no open file
+
+
+def test_a_stream_closed_early_lets_its_file_go(storage: FileSystemStorage) -> None:
+    storage.put("sources/big.pdf", b"x" * (2 * 2**20))
+    stream = storage.open_stream("sources/big.pdf")
+    next(stream)
+
+    stream.close()
+
+    storage.delete("sources/big.pdf")
+    with pytest.raises(StopIteration):
+        next(stream)
 
 
 @pytest.mark.parametrize(

@@ -6,13 +6,20 @@ store raised them (ObjectNotFound, InvalidKey, the service's own).
 """
 
 import asyncio
+from collections.abc import AsyncIterator
 
-from app.core.storage import Storage
+from app.core.storage import ObjectStream, Storage
 
 
 class AsyncStorage:
     def __init__(self, storage: Storage) -> None:
         self.sync = storage
+
+    async def open_stream(self, key: str) -> tuple[int | None, AsyncIterator[bytes]]:
+        """The object's size where the store knows it, and its pieces, each read in a thread;
+        ObjectNotFound before any piece. The pieces close the object when they end or stop."""
+        stream = await asyncio.to_thread(self.sync.open_stream, key)
+        return stream.size, _pieces(stream)
 
     async def put(self, key: str, data: bytes) -> None:
         await asyncio.to_thread(self.sync.put, key, data)
@@ -25,3 +32,11 @@ class AsyncStorage:
 
     async def delete(self, key: str) -> None:
         await asyncio.to_thread(self.sync.delete, key)
+
+
+async def _pieces(stream: ObjectStream) -> AsyncIterator[bytes]:
+    try:
+        while piece := await asyncio.to_thread(next, stream, b""):
+            yield piece
+    finally:  # a reader gone before the end (a client that hung up) lets the object go too
+        stream.close()

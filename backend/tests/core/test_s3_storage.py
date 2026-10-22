@@ -110,11 +110,48 @@ def test_reading_closes_the_answer_s_body(stubbed: tuple[S3Storage, Stubber]) ->
     assert body._raw_stream.closed
 
 
+def test_an_object_is_read_in_pieces_by_the_answer_s_body(stubbed: tuple[S3Storage, Stubber]) -> None:
+    storage, stubber = stubbed
+    data = b"x" * (2 * 2**20 + 5)
+    body = _body(data)
+    answer = {"Body": body, "ContentLength": len(data)}
+    stubber.add_response("get_object", answer, {"Bucket": BUCKET, "Key": "sources/big.pdf"})
+
+    stream = storage.open_stream("sources/big.pdf")
+    pieces = list(stream)
+
+    assert stream.size == len(data)
+    assert [len(piece) for piece in pieces] == [2**20, 2**20, 5]
+    assert body._raw_stream.closed  # an open body holds its pooled connection
+
+
+def test_a_missing_object_is_not_found_on_opening_a_stream(stubbed: tuple[S3Storage, Stubber]) -> None:
+    storage, stubber = stubbed
+    stubber.add_client_error("get_object", service_error_code="NoSuchKey", http_status_code=404)
+
+    with pytest.raises(ObjectNotFound):
+        storage.open_stream("sources/missing.pdf")
+
+
+def test_a_stream_closed_early_closes_the_answer_s_body(stubbed: tuple[S3Storage, Stubber]) -> None:
+    storage, stubber = stubbed
+    body = _body(b"x" * (2 * 2**20))
+    stubber.add_response("get_object", {"Body": body}, {"Bucket": BUCKET, "Key": "a.pdf"})
+
+    stream = storage.open_stream("a.pdf")
+    next(stream)
+    stream.close()
+
+    assert body._raw_stream.closed
+    assert stream.size is None  # the answer named no length
+
+
 CALLS: dict[str, Callable[[S3Storage, str], object]] = {
     "put": lambda storage, key: storage.put(key, b"data"),
     "get": lambda storage, key: storage.get(key),
     "exists": lambda storage, key: storage.exists(key),
     "delete": lambda storage, key: storage.delete(key),
+    "open_stream": lambda storage, key: storage.open_stream(key),
 }
 
 
