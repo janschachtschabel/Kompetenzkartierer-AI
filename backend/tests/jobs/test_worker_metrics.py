@@ -2,9 +2,11 @@
 on its internal port: the cluster's liveness probe and Prometheus ask there."""
 
 import asyncio
+import logging
 import socket
 from collections.abc import AsyncIterator
 from typing import Any
+from uuid import UUID
 
 import httpx2
 import pytest
@@ -13,8 +15,8 @@ from psycopg_pool import AsyncConnectionPool
 
 from app.db.migrate import migrate
 from app.jobs.probes import probe_server
-from app.jobs.queue import Job, enqueue, request_cancel
-from app.jobs.worker import Handler, PermanentError, Worker
+from app.jobs.queue import Job, enqueue, report_progress, request_cancel
+from app.jobs.worker import Handler, PermanentError, Result, Worker
 
 pytestmark = pytest.mark.anyio
 
@@ -89,6 +91,89 @@ async def test_a_cancel_and_a_lost_lease_are_counted_too(pool: AsyncConnectionPo
     await asyncio.gather(Worker(pool, {kind: waits}, owner="w1", lease_s=3).run_once(), interrupt())
 
     assert sample("kka_jobs_total", kind=kind, outcome=ending) == counted + 1
+
+
+async def steal(pool: AsyncConnectionPool, job: Job) -> None:
+    """Another worker's claim now, as after a sweep that found the lease expired."""
+    async with pool.connection() as connection:
+        await connection.execute("UPDATE job SET lease_token = gen_random_uuid() WHERE id = %s", (job.id,))
+
+
+async def job_row(pool: AsyncConnectionPool, job_id: UUID) -> tuple[Any, ...]:
+    async with pool.connection() as connection:
+        cursor = await connection.execute("SELECT status, result, error FROM job WHERE id = %s", (job_id,))
+        found = await cursor.fetchone()
+    assert found is not None
+    return tuple(found)
+
+
+def errors_of(caplog: pytest.LogCaptureFixture) -> list[str]:
+    return [record.getMessage() for record in caplog.records if record.levelno >= logging.ERROR]
+
+
+@pytest.mark.pg
+async def test_a_lease_the_handler_learns_is_lost_counts_as_lost(
+    pool: AsyncConnectionPool, caplog: pytest.LogCaptureFixture
+) -> None:
+    # the handler's progress report is the first to see it: the job is another worker's
+    kind = "test.metrics_progress_lost"
+    async with pool.connection() as connection:
+        job_id = await enqueue(connection, kind, "account-a")
+
+    async def reports(job: Job) -> dict[str, Any]:
+        await steal(pool, job)
+        async with pool.connection() as connection:
+            await report_progress(connection, job, "converting", {"page": 1})
+        return {}
+
+    before = {outcome: sample("kka_jobs_total", kind=kind, outcome=outcome) for outcome in ("lost", "error")}
+    timed = sample("kka_job_duration_seconds_count", kind=kind)
+    caplog.set_level(logging.WARNING, logger="app.jobs.worker")
+
+    await Worker(pool, {kind: reports}, owner="w1").run_once()
+
+    assert sample("kka_jobs_total", kind=kind, outcome="lost") == before["lost"] + 1
+    assert sample("kka_jobs_total", kind=kind, outcome="error") == before["error"]
+    assert sample("kka_job_duration_seconds_count", kind=kind) == timed + 1
+    assert errors_of(caplog) == []
+    assert await job_row(pool, job_id) == ("running", None, None)  # as the other worker has it
+
+
+async def returns_a_result(job: Job) -> dict[str, Any]:
+    return {"value": 1}
+
+
+async def fails(job: Job) -> None:
+    raise RuntimeError("invented")
+
+
+@pytest.mark.pg
+@pytest.mark.parametrize(
+    ("ends", "outcome"), [(returns_a_result, "done"), (fails, "error")], ids=["done", "error"]
+)
+async def test_a_lease_lost_between_two_heartbeats_counts_as_lost_at_the_end(
+    pool: AsyncConnectionPool, caplog: pytest.LogCaptureFixture, ends: Handler, outcome: str
+) -> None:
+    # the lease expired while the loop was held, a sweep handed the job on; no heartbeat saw it
+    kind = f"test.metrics_end_lost_{outcome}"
+    async with pool.connection() as connection:
+        job_id = await enqueue(connection, kind, "account-a")
+
+    async def handler(job: Job) -> Result:
+        await steal(pool, job)
+        return await ends(job)
+
+    before = {name: sample("kka_jobs_total", kind=kind, outcome=name) for name in ("lost", outcome)}
+    timed = sample("kka_job_duration_seconds_count", kind=kind)
+    caplog.set_level(logging.WARNING, logger="app.jobs.worker")
+
+    await Worker(pool, {kind: handler}, owner="w1").run_once()
+
+    assert sample("kka_jobs_total", kind=kind, outcome="lost") == before["lost"] + 1
+    assert sample("kka_jobs_total", kind=kind, outcome=outcome) == before[outcome]
+    assert sample("kka_job_duration_seconds_count", kind=kind) == timed + 1
+    assert errors_of(caplog) == []
+    assert await job_row(pool, job_id) == ("running", None, None)
 
 
 @pytest.fixture

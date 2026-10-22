@@ -29,8 +29,10 @@ HTTP_DURATION = Histogram(
 
 # Jobs run from a second to an hour (a conversion with OCR, an extraction of many units)
 JOB_DURATION_BUCKETS = (1, 5, 15, 30, 60, 120, 300, 600, 1200, 1800, 3600)
-# outcome, as the worker saw the run end: done, failed (PermanentError), error (retried while
-# attempts remain), cancelled, released (handed back at a shutdown), lost (its lease)
+# outcome, as the worker saw the run end and wrote it: done, failed (PermanentError), error
+# (retried while attempts remain), cancelled, released (handed back at a shutdown), lost (its
+# lease, seen at a heartbeat, by the handler or at the end - or an outcome that could not be
+# written: either way the job runs again once its lease expires)
 JOBS = Counter("kka_jobs_total", "Job runs by kind and how they ended", ["kind", "outcome"])
 JOB_DURATION = Histogram(
     "kka_job_duration_seconds",

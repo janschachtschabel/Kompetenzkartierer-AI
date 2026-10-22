@@ -117,16 +117,22 @@ class Worker:
             # but a failure on the way out is said, by its type - asyncio would log its words
             task.add_done_callback(lambda finished: _report_unwinding(job, finished))
             await asyncio.wait({task}, timeout=RELEASE_WAIT_S)
-            observe_job(job.kind, ending, time.perf_counter() - started)
-            await self._write(job, None, ending)
+            elapsed = time.perf_counter() - started
+            written = await self._write(job, None, ending)
+            observe_job(job.kind, ending if written else "lost", elapsed)
             return
         outcomes: tuple[Outcome] = await asyncio.gather(task, return_exceptions=True)
         [outcome] = outcomes
-        observe_job(job.kind, ending or _how_it_ended(outcome), time.perf_counter() - started)
+        elapsed = time.perf_counter() - started
+        if ending is None and isinstance(outcome, LeaseLost):
+            ending = "lost"  # the handler saw it first, writing its progress
         if ending == "lost":
             log.warning("lost the lease of job %s (%s); another worker has it", job.id, job.kind)
+            observe_job(job.kind, ending, elapsed)
             return
-        await self._write(job, outcome, ending)
+        # counted as written: an outcome the lease no longer covers is dropped, the run lost
+        written = await self._write(job, outcome, ending)
+        observe_job(job.kind, (ending or _how_it_ended(outcome)) if written else "lost", elapsed)
 
     async def _keep_alive(self, job: Job, task: asyncio.Task[Any]) -> Ending:
         """Renew the lease while the handler runs; how it was stopped, if it was.
@@ -178,8 +184,8 @@ class Worker:
             return "cancelled"
         return None
 
-    async def _write(self, job: Job, outcome: Outcome, ending: Ending) -> None:
-        await write_outcome(self.pool, job, outcome, ending, lease_s=self.lease_s)
+    async def _write(self, job: Job, outcome: Outcome, ending: Ending) -> bool:
+        return await write_outcome(self.pool, job, outcome, ending, lease_s=self.lease_s)
 
     def _stop_when_broken(self, sweeper: asyncio.Task[None]) -> None:
         """A sweeper that died of something unforeseen stops the worker: without it every dead

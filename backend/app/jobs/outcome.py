@@ -45,8 +45,12 @@ def one_line(error: BaseException) -> str:
 
 async def write_outcome(
     pool: AsyncConnectionPool, job: Job, outcome: Outcome, ending: Ending, *, lease_s: float
-) -> None:
-    """Record how the job ended; a database away for a moment gets WRITE_ATTEMPTS tries."""
+) -> bool:
+    """Record how the job ended; a database away for a moment gets WRITE_ATTEMPTS tries.
+
+    ``False`` if nothing was recorded: the lease was lost, or the database would not take it -
+    the job runs again once its lease expires.
+    """
     for attempt in range(1, WRITE_ATTEMPTS + 1):
         try:
             async with pool.connection() as connection:
@@ -54,10 +58,10 @@ async def write_outcome(
                     await release(connection, job)
                 else:
                     await _record(connection, job, outcome, cancelled=ending == "cancelled")
-            return
+            return True
         except LeaseLost:
             log.warning("lost the lease of job %s (%s) at its end; its outcome is dropped", job.id, job.kind)
-            return
+            return False
         except TRANSIENT as error:
             if attempt == WRITE_ATTEMPTS:
                 log.error(
@@ -66,7 +70,7 @@ async def write_outcome(
                     job.kind,
                     one_line(error),
                 )
-                return
+                return False
             log.warning("could not write the outcome of job %s yet: %s", job.id, one_line(error))
             await asyncio.sleep(lease_s / 9)
         except psycopg.Error as error:
@@ -78,7 +82,8 @@ async def write_outcome(
                 type(error).__name__,
                 error.sqlstate,
             )
-            return
+            return False
+    return False  # not reached: the last attempt returns
 
 
 async def _record(
@@ -89,8 +94,9 @@ async def _record(
     elif isinstance(outcome, PermanentError):
         await fail(connection, job, outcome.code, outcome.message, retry=False)
     elif isinstance(outcome, BaseException):
-        log.error("job %s (%s) failed", job.id, job.kind, exc_info=outcome)
+        # said once the failure is recorded: a job whose lease is gone is another worker's
         await fail(connection, job, "handler_error", type(outcome).__name__, retry=True)
+        log.error("job %s (%s) failed", job.id, job.kind, exc_info=outcome)
     else:
         try:
             # as the database will take it: no NaN, no type JSON does not know, not too deep
