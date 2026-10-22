@@ -122,5 +122,11 @@ describe("a late answer", () => {
     await asked;
 
     expect(session.value).toBeNull();
+    expect(sessionState.value).toBe("none");
+    // the token held now gets its own question, not the settled answer of the old one
+    vi.mocked(api.getMe).mockResolvedValue(ME);
+    await ensureSession();
+    expect(api.getMe).toHaveBeenCalledTimes(2);
+    expect(session.value).toEqual(ME);
   });
 });

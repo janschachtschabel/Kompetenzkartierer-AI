@@ -236,6 +236,14 @@ describe("checking a token before it is kept", () => {
 
     await expect(verifyToken(TOKEN)).rejects.toMatchObject({ kind: "network" });
   });
+
+  it("takes a header it cannot carry for the caller's mistake, never for a lost network", async () => {
+    // a header value is a byte string: a sign past U+00FF cannot go out at all
+    const failure: unknown = await verifyToken("kka_" + "t".repeat(42) + "–").catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(TypeError);
+    expect(fetch).not.toHaveBeenCalled();
+  });
 });
 
 

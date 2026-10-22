@@ -158,7 +158,18 @@ describe("scrolling", () => {
     expect(behave).toBeDefined();
     const route = router.currentRoute.value;
 
-    expect(behave?.(route, route, null)).toEqual({ top: 0 });
-    expect(behave?.(route, route, { left: 0, top: 480 })).toEqual({ left: 0, top: 480 });
+    const other = { ...route, path: "/anmelden", fullPath: "/anmelden" };
+
+    expect(behave?.(other, route, null)).toEqual({ top: 0 });
+    expect(behave?.(route, other, { left: 0, top: 480 })).toEqual({ left: 0, top: 480 });
+  });
+
+  it("stays put where only the query changes: the same page, as for the focus", () => {
+    const behave = router.options.scrollBehavior;
+    const route = router.currentRoute.value;
+
+    const paged = { ...route, query: { seite: "2" }, fullPath: "/?seite=2" };
+
+    expect(behave?.(paged, route, null)).toBe(false);
   });
 });

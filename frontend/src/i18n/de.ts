@@ -62,6 +62,10 @@ export const messages = {
     signIn: "Zur Anmeldung",
     infoFailed: "Die Startseite konnte nicht geladen werden.",
     accountFailed: "Dein Konto konnte nicht geladen werden.",
+    // A 429 on the account: only a refused token meets the address's lock.
+    accountRejected:
+      "Das gespeicherte Zugangstoken gilt nicht mehr. " +
+      "Melde dich ab und mit einem gültigen Zugangstoken neu an.",
   },
   dialog: {
     // The confirm dialog's default: it asks before something is removed.

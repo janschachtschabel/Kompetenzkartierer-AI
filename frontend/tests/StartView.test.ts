@@ -87,15 +87,17 @@ describe("the start page for an account whose load fails", () => {
 
   it("says so, with a retry - never the visitor's page", async () => {
     // the database away: /me answers 503, /info would still answer
-    const info = vi.spyOn(api, "getInfo").mockResolvedValue(infoOf("lookup"));
+    const asked = vi.spyOn(api, "getInfo").mockResolvedValue(info("lookup"));
     const me = vi.spyOn(api, "getMe").mockRejectedValueOnce(new api.ApiError("server", 503, "service_unavailable"));
     me.mockResolvedValueOnce({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
 
     const wrapper = await render();
 
-    expect(wrapper.get("[role=alert]").text()).toContain(refusalText("service_unavailable") ?? "");
+    const alert = wrapper.get("[role=alert]").text();
+    expect(alert).toContain(t("start.accountFailed"));
+    expect(alert).toContain(refusalText("service_unavailable")!);
     expect(wrapper.text()).not.toContain(t("start.visitor.lookup"));
-    expect(info).not.toHaveBeenCalled();
+    expect(asked).not.toHaveBeenCalled();
 
     await wrapper.get("[role=alert] button").trigger("click");
     await flushPromises();
@@ -105,7 +107,7 @@ describe("the start page for an account whose load fails", () => {
 
   it("shows only that it is loading while the account is asked for", async () => {
     vi.spyOn(api, "getMe").mockReturnValue(new Promise(() => undefined));
-    vi.spyOn(api, "getInfo").mockResolvedValue(infoOf("lookup"));
+    vi.spyOn(api, "getInfo").mockResolvedValue(info("lookup"));
 
     const wrapper = await render();
 
@@ -113,8 +115,15 @@ describe("the start page for an account whose load fails", () => {
     expect(wrapper.text()).not.toContain(t("start.about"));
     expect(wrapper.find("a[href='/anmelden']").exists()).toBe(false);
   });
-});
 
-function infoOf(publicAccess: api.Info["public_access"]): api.Info {
-  return { name: "Kompetenzkartierer-AI", version: "0.1.0", public_access: publicAccess };
-}
+  it("says that the token held no longer holds where the address is locked, not a wait in seconds", async () => {
+    // a good token never meets the lock (app/api/deps.py): a 429 on /me is a refused one
+    vi.spyOn(api, "getMe").mockRejectedValue(new api.ApiError("server", 429, undefined, "Too many", {}, 900));
+
+    const wrapper = await render();
+
+    const alert = wrapper.get("[role=alert]").text();
+    expect(alert).toContain(t("start.accountRejected"));
+    expect(alert).not.toContain("900");
+  });
+});

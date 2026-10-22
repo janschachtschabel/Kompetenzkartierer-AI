@@ -26,7 +26,10 @@ async function load(): Promise<void> {
     if (session.value) return;
     if (getToken()) {
       // a token is held and its account did not load: that is no visitor
-      failure.value = failureNotice(sessionFailure.value, t("start.accountFailed"));
+      failure.value = failureNotice(sessionFailure.value, t("start.accountFailed"), {
+        // a good token never meets the address's lock (app/api/deps.py): this one was refused
+        tooManyRequests: () => t("start.accountRejected"),
+      });
       return;
     }
     info.value = await getInfo();

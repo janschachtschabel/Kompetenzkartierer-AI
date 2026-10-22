@@ -54,7 +54,17 @@ export function ensureSession(): Promise<void> {
   if (current.value || !token) return Promise.resolve();
   if (loading) return loading;
   const asked = generation;
-  const stillAsked = () => generation === asked && getToken() === token;
+  /** True where the answer still belongs to the account held now. */
+  const stillAsked = (): boolean => {
+    // signed in, or out, meanwhile: that already settled the state
+    if (generation !== asked) return false;
+    // only the token changed: no one settled it, and the next ask must go out afresh
+    if (getToken() !== token) {
+      clearSession();
+      return false;
+    }
+    return true;
+  };
   state.value = "loading";
   failure.value = null;
   loading = getMe().then(

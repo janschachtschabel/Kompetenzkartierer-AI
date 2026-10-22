@@ -13,7 +13,7 @@ import BrandMark from "@/components/BrandMark.vue";
 import { keepFocusInPage } from "@/focusRescue";
 import { LOCALE, t } from "@/i18n/de";
 import { visibleDestinations } from "@/navigation";
-import { clearSession, ensureSession, session } from "@/session";
+import { clearSession, ensureSession, session, sessionState } from "@/session";
 
 const route = useRoute();
 const router = useRouter();
@@ -67,7 +67,17 @@ async function signOut(): Promise<void> {
           {{ t("app.signOut") }}
         </button>
       </template>
-      <!-- Not while a token is held and its account loads or failed to: that is no visitor -->
+      <!-- A token held whose account did not load: the way out, to sign in with
+           another - a refused token behind a locked address has no other -->
+      <button
+        v-else-if="sessionState === 'failed'"
+        type="button"
+        class="btn secondary btn-sm shell__sign-out"
+        @click="signOut"
+      >
+        {{ t("app.signOut") }}
+      </button>
+      <!-- Not while a token is held and its account loads: that is no visitor -->
       <RouterLink
         v-else-if="route.name !== 'login' && !getToken()"
         class="btn primary btn-sm"

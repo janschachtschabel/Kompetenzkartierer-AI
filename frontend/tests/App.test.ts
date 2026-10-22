@@ -87,4 +87,16 @@ describe("the shell while an account is held but not loaded", () => {
 
     expect(wrapper.find("header a[href='/anmelden']").exists()).toBe(false);
   });
+
+  it("offers the way out once the account cannot be loaded: a stale token is no dead end", async () => {
+    api.setToken("kka_token");
+    vi.spyOn(api, "getMe").mockRejectedValue(new api.ApiError("server", 429, undefined, undefined, {}, 900));
+    const wrapper = await render();
+    const push = vi.spyOn(router, "push");
+
+    await wrapper.get("header button.shell__sign-out").trigger("click");
+
+    expect(api.getToken()).toBeNull();
+    expect(push).toHaveBeenCalledWith({ name: "login" });
+  });
 });

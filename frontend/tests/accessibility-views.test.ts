@@ -70,6 +70,17 @@ describe("accessibility of the pages", () => {
     expect(found, describeViolations(found)).toEqual([]);
   });
 
+  it("the start page for an account whose load failed has none", async () => {
+    api.setToken("kka_token");
+    vi.spyOn(api, "getMe").mockRejectedValue(new api.ApiError("server", 503, "service_unavailable"));
+    const wrapper = await show("/");
+    expect(wrapper.find("[role=alert]").exists()).toBe(true);
+
+    const found = await pageViolations();
+
+    expect(found, describeViolations(found)).toEqual([]);
+  });
+
   it("the sign-in with a refused token on screen has none", async () => {
     vi.spyOn(api, "checkToken").mockResolvedValue(null);
     const wrapper = await show("/anmelden");
