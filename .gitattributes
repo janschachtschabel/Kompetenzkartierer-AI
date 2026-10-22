@@ -5,3 +5,5 @@
 *.jpg binary
 *.pdf binary
 *.gz binary
+# The comparison dataset as it was published: its checksums name these bytes, BOM and CRLF too
+data/seed/vergleichsdatensatz/*.csv -text

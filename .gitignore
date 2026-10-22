@@ -20,8 +20,9 @@ htmlcov/
 node_modules/
 frontend/dist/
 
-# Local data of a development run: never the repository
-/data/
+# Local data of a development run: never the repository - but for the published seed data
+/data/*
+!/data/seed/
 
 # Secrets of the local Compose setup (deploy/make-secrets.py)
 /deploy/secrets/
