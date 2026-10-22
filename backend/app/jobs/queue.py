@@ -28,8 +28,17 @@ from app.core.ids import new_id
 _BACKOFF = "make_interval(secs => least(10 * power(2, least(greatest(attempts - 1, 0), 6)), 600))"
 # How many lanes one claim tries when other claims are taking their jobs at the same moment
 LANES_PER_CLAIM = 20
+# When a claim last served the lane; skipped where another claim holds the row, which would make
+# this claim - and through it every worker - wait for that one to commit
+_STAMP = (
+    "UPDATE job_lane SET served_at = now()"
+    " WHERE lane = (SELECT lane FROM job_lane WHERE lane = %s FOR NO KEY UPDATE SKIP LOCKED)"
+)
 # The lanes with a job to take, in turn. Each lane's next job comes off the index on
-# (lane, created_at): a long queue costs no sort
+# (lane, created_at): a long queue costs no sort.
+# simplify: every lane that ever had a job is looked at, so a claim grows with the accounts that
+# ever enqueued (20,000 lanes: 53 ms); later read only lanes with waiting jobs (a skip scan over
+# job_waiting) or clear lanes that stayed empty
 _LANES_IN_TURN = """
     SELECT job_lane.lane FROM job_lane
     CROSS JOIN LATERAL (
@@ -89,7 +98,12 @@ async def enqueue(
     job_id = new_id()
     await connection.execute(
         """
-        WITH known AS (INSERT INTO job_lane (lane) VALUES (%(lane)s) ON CONFLICT DO NOTHING)
+        WITH known AS (
+            -- only a lane nobody has: ON CONFLICT alone waited on a claim stamping the lane
+            INSERT INTO job_lane (lane) SELECT %(lane)s
+            WHERE NOT EXISTS (SELECT 1 FROM job_lane WHERE lane = %(lane)s)
+            ON CONFLICT DO NOTHING
+        )
         INSERT INTO job (id, kind, lane, payload, max_attempts, run_after)
         VALUES (%(id)s, %(kind)s, %(lane)s, %(payload)s, %(attempts)s,
             now() + make_interval(secs => %(after)s))
@@ -112,7 +126,8 @@ async def claim(
     """One waiting job of ``kinds``, now running under a new lease of ``owner``; ``None`` if none waits.
 
     A lane whose waiting jobs other claims are taking at this moment is passed over; when the
-    first LANES_PER_CLAIM lanes are all taken, the claim finds nothing until the next poll.
+    first LANES_PER_CLAIM lanes are all taken, the claim finds nothing until the next poll. A
+    lane another claim is stamping keeps that claim's stamp: nothing here waits on a lock.
     """
     values = {"kinds": list(kinds), "owner": owner, "lease": lease_s, "lanes": LANES_PER_CLAIM}
     async with connection.transaction():
@@ -123,7 +138,7 @@ async def claim(
             await taking.execute(_TAKE, {**values, "lane": lane, "token": new_id()})
             found = await taking.fetchone()
             if found is not None:
-                await connection.execute("UPDATE job_lane SET served_at = now() WHERE lane = %s", (lane,))
+                await connection.execute(_STAMP, (lane,))
                 return Job(**found)
     return None
 

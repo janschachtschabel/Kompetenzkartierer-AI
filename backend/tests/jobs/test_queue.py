@@ -123,6 +123,24 @@ async def test_a_claim_passes_over_a_job_another_claim_is_taking(connect: Any, d
     assert job.id == free
 
 
+async def test_a_lane_another_claim_is_stamping_holds_up_neither_a_claim_nor_an_enqueue(
+    connect: Any, database_url: str
+) -> None:
+    # a peer stuck between its stamp and its commit (a lost node, a paused VM) held the lane for
+    # every worker and every enqueue of that account until the server noticed it gone
+    db = await connect()
+    await enqueue(db, "test.work", "account-a")
+    await enqueue(db, "test.work", "account-b")
+    async with await psycopg.AsyncConnection.connect(database_url) as stuck:
+        await stuck.execute("UPDATE job_lane SET served_at = now() WHERE lane = 'account-a'")
+
+        job = await asyncio.wait_for(claim(db, "worker-2", KINDS, LEASE_S), timeout=5)
+        added = await asyncio.wait_for(enqueue(db, "test.work", "account-a"), timeout=5)
+
+    assert job is not None
+    assert (await row(db, added))["status"] == "queued"
+
+
 async def test_the_owner_completes_a_job_and_a_stranger_cannot(connect: Any) -> None:
     db = await connect()
     job_id = await enqueue(db, "test.work", "account-a")
