@@ -1,6 +1,6 @@
 # Antworten für das IT-Team
 
-Stand 22.10.2026, Meilenstein M0 (Fundament). Diese Seite beantwortet die Vorgaben aus
+Stand M1 (Paket 1), 22.10.2026. Diese Seite beantwortet die Vorgaben aus
 „Übergaben an den Maschinenraum" (Team 6) Frage für Frage, in der Variante **ohne B-API**: Der
 Dienst prüft eigene Zugangstokens und ruft das Sprachmodell mit einem eigenen Schlüssel. Was
 noch offen ist, steht am Ende; die Antworten wachsen mit jedem Meilenstein.
