@@ -128,6 +128,10 @@ jobs:
           docker compose -f deploy/docker-compose.yml wait vocab
           test "$(docker compose -f deploy/docker-compose.yml ps -a vocab --format '{{.ExitCode}}')" = 0
           test "$(docker compose -f deploy/docker-compose.yml ps -q --status running worker | wc -l)" = 2
+          # restart: unless-stopped brings a crashing worker back: each must run without a restart
+          for worker in $(docker compose -f deploy/docker-compose.yml ps -q worker); do
+            test "$(docker inspect -f '{{.State.Status}} {{.RestartCount}}' "$worker")" = "running 0"
+          done
           # /info needs no database; /ready asks it and the migrations, on each replica's internal port
           ready="import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/ready', timeout=5)"
           docker compose -f deploy/docker-compose.yml exec -T --index 1 api python -c "$ready"

@@ -60,7 +60,7 @@ def test_no_later_step_can_read_the_checkout_s_token() -> None:
 def test_a_branch_can_be_checked_by_hand_and_main_is_never_cut_short() -> None:
     # A green run on a test branch is the milestone's proof; a push alone starts nothing there
     assert "workflow_dispatch" in TRIGGERS
-    assert "pull_request" in str(WORKFLOW["concurrency"]["cancel-in-progress"])
+    assert WORKFLOW["concurrency"]["cancel-in-progress"] == "${{ github.event_name == 'pull_request' }}"
 
 
 def test_every_job_and_every_request_has_a_deadline() -> None:
@@ -97,7 +97,11 @@ def test_the_script_ci_runs_is_linted_and_typed_as_well() -> None:
 def test_the_tests_keep_their_coverage() -> None:
     floor = PYPROJECT["tool"]["coverage"]["report"]["fail_under"]
 
-    assert "--cov=app" in _command("backend", r"-m pytest")
+    pytest = _command("backend", r"-m pytest")
+
+    assert "--cov=app" in pytest
+    # a floor given on the command line would override pyproject's
+    assert "--cov-fail-under" not in pytest
     assert floor >= 90
 
 
@@ -134,6 +138,12 @@ def test_the_smoke_test_starts_the_whole_service_and_asks_through_the_web_server
         # no service waits for the vocabulary load: up -d stays green when it fails
         ("the vocabulary load ended well", r"compose -f deploy/docker-compose\.yml wait vocab"),
         ("both workers run", r"ps -q --status running worker \| wc -l\)\" = 2"),
+        # restart: unless-stopped brings a crashing worker back, running again for a while
+        (
+            "no worker was restarted",
+            r"docker inspect -f '\{\{\.State\.Status\}\} \{\{\.RestartCount\}\}' \"\$worker\"\)\""
+            r" = \"running 0\"",
+        ),
         (
             "each API replica is ready",
             r"ready=\"[^\"]*:9000/ready'[\s\S]*"

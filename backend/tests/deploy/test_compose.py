@@ -47,6 +47,18 @@ def test_no_variable_passes_through_from_the_shell_or_a_file(name: str) -> None:
     assert all(isinstance(value, str) and value for value in environment.values()), environment
 
 
+def test_every_secret_is_a_file_of_deploy_secrets() -> None:
+    # A secret may also come from the host's environment ({environment: OPENAI_API_KEY}), with
+    # no $ and no env_file - and the developers' machines export real keys
+    assert COMPOSE["secrets"]
+    assert all(source == {"file": f"./secrets/{name}"} for name, source in COMPOSE["secrets"].items())
+
+
+@pytest.mark.parametrize("name", [name for name, service in SERVICES.items() if "build" in service])
+def test_a_build_takes_nothing_from_the_host(name: str) -> None:
+    assert not {"args", "secrets", "ssh"} & set(SERVICES[name]["build"])
+
+
 def test_only_the_web_server_is_published_and_only_on_loopback() -> None:
     published = {name: service["ports"] for name, service in SERVICES.items() if service.get("ports")}
 

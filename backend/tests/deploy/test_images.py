@@ -113,7 +113,10 @@ def test_compose_puts_the_proxy_in_place_of_the_image_s_default() -> None:
 def test_compose_asks_docker_for_the_api_s_address_at_each_request() -> None:
     assert re.search(r"(?m)^resolver 127\.0\.0\.11 ", API_PROXY)
     assert "set $api http://api:8000;" in API_PROXY
-    assert len(re.findall(r"proxy_pass \$api;", API_PROXY)) == 2
+    # every pass goes through the variable, a fixed host anywhere would be resolved at start again
+    assert re.findall(r"proxy_pass (\S+);", API_PROXY) == ["$api", "$api"]
+    assert "location /api/ {" in API_PROXY
+    assert "location = /openapi.json {" in API_PROXY
 
 
 def test_the_web_server_states_the_client_rather_than_appending_to_what_it_sent() -> None:
@@ -127,6 +130,8 @@ def test_the_proxy_headers_hold_for_both_api_locations() -> None:
     top_level = [line for line in API_PROXY.splitlines() if line.startswith("proxy_set_header ")]
 
     assert {line.split()[1] for line in top_level} == {"Host", "X-Forwarded-For", "X-Forwarded-Proto"}
+    # with its port: FastAPI's redirect for a trailing slash builds its URL from Host ($host has none)
+    assert "proxy_set_header Host $http_host;" in API_PROXY
     assert len([line for line in _directives(API_PROXY) if line.startswith("proxy_set_header")]) == 3
 
 
