@@ -108,7 +108,8 @@ class FetchTarget:
 
 async def fetch_target(connection: psycopg.AsyncConnection, source_id: UUID) -> FetchTarget | None:
     cursor = await connection.execute(
-        "SELECT s.url, s.owner_id, f.sha256, f.size_bytes, f.mime, f.storage_key"
+        # the type is the entry's (its file's bytes and name), not the bytes' alone
+        "SELECT s.url, s.owner_id, f.sha256, f.size_bytes, s.mime, f.storage_key"
         " FROM source s LEFT JOIN source_file f ON f.id = s.file_id WHERE s.id = %s",
         (source_id,),
     )
