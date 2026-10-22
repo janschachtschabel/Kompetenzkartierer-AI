@@ -32,6 +32,8 @@ dev = [
     "ruff>=0.16",
     "mypy>=2.3",
     "pyshacl>=0.40",
+    # the deployment tests read deploy/docker-compose.yml
+    "pyyaml>=6.0.3",
 ]
 
 [tool.uv]

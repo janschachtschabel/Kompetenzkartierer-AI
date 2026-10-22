@@ -1,0 +1,136 @@
+# The whole service in small, on one machine: PostgreSQL with pgvector, MinIO as the object
+# store, the migration and the vocabulary load run once, two API and two worker replicas, and
+# the web server in front. From the repository root:
+#
+#   python deploy/make-secrets.py
+#   (cd frontend && npm ci && npm run build)
+#   docker compose -f deploy/docker-compose.yml up -d --build
+#
+# Then http://127.0.0.1:18080 serves the app; nothing else is published on the host (port 8000
+# of a developer's machine may belong to another service). Secrets come as files (*_FILE), never
+# as variables: no key of the developer's environment reaches a container, as none is named here.
+# `docker compose -f deploy/docker-compose.yml down` stops it and keeps the data; `down -v` also
+# removes the volumes of this project (kka) - the database and the objects.
+name: kka
+
+x-app: &app
+  image: kka-api:local
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  secrets: [database_url, api_key_pepper, s3_access_key, s3_secret_key]
+  environment: &app-env
+    DATABASE_URL_FILE: /run/secrets/database_url
+    API_KEY_PEPPER_FILE: /run/secrets/api_key_pepper
+    STORAGE_BACKEND: s3
+    S3_ENDPOINT_URL: http://minio:9000
+    S3_BUCKET: kka
+    S3_ACCESS_KEY_FILE: /run/secrets/s3_access_key
+    S3_SECRET_KEY_FILE: /run/secrets/s3_secret_key
+    LOG_FORMAT: json
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f
+    environment:
+      POSTGRES_USER: kka
+      POSTGRES_DB: kka
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kka -d kka"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # MinIO publishes no community images since October 2025; this is Chainguard's build of it.
+  # In a cluster the object store is T6's (S3_ENDPOINT_URL, S3_BUCKET in the Helm values).
+  minio:
+    image: cgr.dev/chainguard/minio@sha256:fe57367a6bfc78779367b86ad0cdd3d5df32965b7cb3c000c94032f138627c41
+    command: [server, /data]
+    environment:
+      MINIO_ROOT_USER_FILE: /run/secrets/s3_access_key
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/s3_secret_key
+    secrets: [s3_access_key, s3_secret_key]
+    volumes: [miniodata:/data]
+
+  # One-off steps: each runs to its end, the services wait for that
+  bucket:
+    <<: *app
+    command: [python, -m, app.core.storage_bucket]
+    healthcheck: {disable: true}
+    depends_on: [minio]
+    # MinIO may still be starting on the first attempt
+    restart: on-failure:5
+
+  migrate:
+    <<: *app
+    command: [python, -m, app.db.migrate]
+    healthcheck: {disable: true}
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  vocab:
+    <<: *app
+    command: [python, -m, app.vocab.load]
+    healthcheck: {disable: true}
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+
+  api:
+    <<: *app
+    build:
+      context: ..
+      dockerfile: deploy/api.Dockerfile
+    environment:
+      <<: *app-env
+      # the web server is the only proxy; its address is in this network
+      FORWARDED_ALLOW_IPS: 172.30.123.0/24
+    deploy:
+      replicas: 2
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      bucket: {condition: service_completed_successfully}
+
+  worker:
+    <<: *app
+    command: [python, -m, app.jobs.worker]
+    # the worker serves no /health; the image's check would mark it unhealthy forever
+    healthcheck: {disable: true}
+    deploy:
+      replicas: 2
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      bucket: {condition: service_completed_successfully}
+
+  web:
+    image: kka-web:local
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    ports: ["127.0.0.1:18080:8080"]
+    depends_on:
+      api: {condition: service_healthy}
+
+volumes:
+  pgdata:
+  miniodata:
+
+secrets:
+  db_password: {file: ./secrets/db_password}
+  database_url: {file: ./secrets/database_url}
+  api_key_pepper: {file: ./secrets/api_key_pepper}
+  s3_access_key: {file: ./secrets/s3_access_key}
+  s3_secret_key: {file: ./secrets/s3_secret_key}
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.123.0/24

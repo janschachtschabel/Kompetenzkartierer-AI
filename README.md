@@ -104,3 +104,29 @@ ohne Nutzer, Query oder Fragment, `http` für ein Gateway im Cluster), `OPENAI_M
 Completions), `OPENAI_REASONING_EFFORT` und `OPENAI_TEXT_VERBOSITY` (Standard `low`). Nimmt das
 Modell den Aufwand laut seinem Profil nicht an (gpt-6-luna kein `minimal`), starten API und
 Worker nicht. Ohne Schlüssel starten beide, nur Aufrufe des Modells scheitern.
+
+Objektspeicher: `STORAGE_BACKEND` (`fs` | `s3`, Standard `fs`). Mit `fs` braucht der Speicher
+`STORAGE_DIR` (für Entwicklung und einen einzelnen Knoten); im Cluster `s3` mit `S3_BUCKET`,
+`S3_ENDPOINT_URL` (leer für AWS selbst), `S3_REGION` (Standard `us-east-1`) und den Schlüsseln
+`S3_ACCESS_KEY`/`S3_SECRET_KEY` (beide oder keiner, auch als `*_FILE`; ohne sie nimmt boto3 die
+Rolle des Pods). `python -m app.core.storage_bucket` legt den Bucket an, wo die Umgebung keinen
+mitbringt (Compose).
+
+### Compose
+
+`deploy/docker-compose.yml` startet alles auf einem Rechner: PostgreSQL mit pgvector, MinIO
+(Chainguard-Build), die einmaligen Schritte Bucket, Migration und Vokabular, je zwei API- und
+Worker-Replicas und den Webserver davor. Vom Wurzelverzeichnis aus:
+
+```bash
+python deploy/make-secrets.py
+(cd frontend && npm ci && npm run build)
+docker compose -f deploy/docker-compose.yml up -d --build
+```
+
+Die App antwortet unter `http://127.0.0.1:18080`; sonst ist nichts am Host veröffentlicht.
+`deploy/make-secrets.py` schreibt die Geheimnisse als Dateien nach `deploy/secrets/` (nicht im
+Repository, für alle Nutzer des Rechners lesbar, weil die Container unter anderen Nutzern
+laufen; nur für Entwicklung). Ein vorhandenes Geheimnis bleibt stehen. Der erste Admin:
+`docker compose -f deploy/docker-compose.yml run --rm migrate python -m app.bootstrap NAME`.
+`down` hält die Daten, `down -v` löscht Datenbank und Objekte dieses Projekts (`kka`).

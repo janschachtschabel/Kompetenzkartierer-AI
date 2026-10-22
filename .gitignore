@@ -22,3 +22,6 @@ frontend/dist/
 
 # Local data of a development run: never the repository
 /data/
+
+# Secrets of the local Compose setup (deploy/make-secrets.py)
+/deploy/secrets/
