@@ -4,9 +4,9 @@
  * fetches - following the fetches started here, and the entries the account
  * sees, a page at a time.
  */
-import { nextTick, onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 
-import { getInfo, listSources, type ImportStarted, type SourcePage } from "@/api";
+import { getInfo, listSources, MAX_PAGE_SIZE, PAGE_SIZE, type ImportStarted, type SourcePage } from "@/api";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import ImportForm from "@/components/ImportForm.vue";
@@ -15,12 +15,20 @@ import LoadingState from "@/components/LoadingState.vue";
 import PartialState from "@/components/PartialState.vue";
 import SourceTable from "@/components/SourceTable.vue";
 import UploadForm from "@/components/UploadForm.vue";
+import { focusIsFree } from "@/focusRescue";
 import { t } from "@/i18n/de";
+import { sayAnew } from "@/liveRegion";
 import { failureNotice, type Notice } from "@/notice";
 
 interface Followed {
   jobId: string;
   label: string;
+}
+
+/** Where the focus goes once the page shows what an action waited for, and where that action began. */
+interface FocusRequest {
+  target: () => HTMLElement | null | undefined;
+  from: Element | null;
 }
 
 const page = ref<SourcePage | null>(null);
@@ -36,26 +44,51 @@ const followed = ref<Followed[]>([]);
 const table = ref<InstanceType<typeof SourceTable> | null>(null);
 // Each first page read counts: a further page asked for before it belongs to an older list.
 let generation = 0;
+let focusRequest: FocusRequest | null = null;
+
+// After the render, in the same flush - before the focus rescue moves a focus the render took to
+// the main region. Only where the focus still rests where the action began, or nowhere: whoever
+// went on to type elsewhere meanwhile keeps their place.
+watch(
+  page,
+  () => {
+    const request = focusRequest;
+    focusRequest = null;
+    if (request && (document.activeElement === request.from || focusIsFree())) request.target()?.focus();
+  },
+  { flush: "post" },
+);
+
+function registerHeading(): HTMLElement | null {
+  return document.getElementById("sources-register");
+}
+
+/** The notice of a reload or a further page that did not come; the same one again is read out again. */
+function fallShort(notice: Notice, retry: () => void): void {
+  partial.value = { notice: { ...notice, text: sayAnew(partial.value?.notice.text ?? "", notice.text) }, retry };
+}
 
 /**
- * The register's first page, read again. `fromRetry`: asked for by the notice's
- * own button, which goes with the notice - the focus then goes to the register,
- * not to the page's top.
+ * The register read again from its start: as many entries as it shows, so a later page and the
+ * focus in it stay, and `extra` more. `focus` is where the focus goes once it shows them - the
+ * register's heading after the notice's retry button went with the notice.
  */
-async function load(fromRetry = false): Promise<void> {
+async function load({ extra = 0, focus }: { extra?: number; focus?: FocusRequest["target"] } = {}): Promise<void> {
   const mine = ++generation;
+  const from = document.activeElement;
+  const limit = Math.min(MAX_PAGE_SIZE, Math.max(PAGE_SIZE, (page.value?.entries.length ?? 0) + extra));
   loading.value = true;
   failure.value = null;
   try {
-    const first = await listSources();
+    const first = await listSources({}, { limit });
     if (mine !== generation) return;
+    if (focus) focusRequest = { target: focus, from };
     page.value = first;
     partial.value = null;
-    if (fromRetry) await focusRegister();
   } catch (error) {
     if (mine !== generation) return;
     if (page.value) {
-      partial.value = { notice: failureNotice(error, t("sources.register.reloadFailed")), retry: () => void load(true) };
+      fallShort(failureNotice(error, t("sources.register.reloadFailed")), () => void load({ focus: registerHeading }));
     } else {
       failure.value = failureNotice(error, t("sources.register.loadFailed"));
     }
@@ -69,29 +102,27 @@ async function more(): Promise<void> {
   // the button stays focusable while busy; while the register is read again, a further page of it is no page
   if (!current || loadingMore.value || loading.value) return;
   const mine = generation;
+  const from = document.activeElement;
+  const firstAdded = current.entries.length;
+  const firstAddedRow = () => table.value?.row(firstAdded);
   loadingMore.value = true;
   try {
-    const next = await listSources({}, { offset: current.entries.length });
+    const next = await listSources({}, { offset: firstAdded });
     if (mine !== generation || page.value !== current) return;
-    // newest first: an entry added meanwhile pushed one already shown onto this page,
-    // and itself lies before the first - read the register from its start
+    // newest first: an entry added meanwhile pushed one already shown onto this page, and itself
+    // lies before the first - read the register from its start, a page more than it showed
     const shown = new Set(current.entries.map((entry) => entry.id));
-    if (next.entries.some((entry) => shown.has(entry.id))) return void (await load());
+    if (next.entries.some((entry) => shown.has(entry.id))) {
+      return void (await load({ extra: PAGE_SIZE, focus: firstAddedRow }));
+    }
+    focusRequest = { target: firstAddedRow, from };
     page.value = { ...next, offset: 0, entries: [...current.entries, ...next.entries] };
     partial.value = null;
-    await table.value?.focusRow(current.entries.length);
   } catch (error) {
-    if (mine === generation) {
-      partial.value = { notice: failureNotice(error, t("sources.register.moreFailed")), retry: () => void more() };
-    }
+    if (mine === generation) fallShort(failureNotice(error, t("sources.register.moreFailed")), () => void more());
   } finally {
     loadingMore.value = false;
   }
-}
-
-async function focusRegister(): Promise<void> {
-  await nextTick();
-  document.getElementById("sources-register")?.focus();
 }
 
 function follow(started: ImportStarted, address: string): void {

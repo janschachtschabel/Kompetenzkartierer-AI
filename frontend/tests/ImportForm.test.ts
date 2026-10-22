@@ -111,6 +111,20 @@ describe("the import form", () => {
     expect(wrapper.get("#import-error").text()).toContain(t(key));
   });
 
+  it("says an address is too long rather than cutting it to another one", async () => {
+    // a field limit would cut a pasted address short, silently: the server fetched another
+    const start = vi.spyOn(api, "importSource");
+    const wrapper = mount(ImportForm);
+    const address = `https://example.org/${"a".repeat(2000)}.pdf`;
+    await wrapper.get("#import-url").setValue(address);
+
+    await submit(wrapper);
+
+    expect((wrapper.get("#import-url").element as HTMLInputElement).value).toBe(address);
+    expect(start).not.toHaveBeenCalled();
+    expect(wrapper.get("#import-error").text()).toContain(t("sources.import.errors.tooLong", { limit: 2000 }));
+  });
+
   it("says the server's refusal of the address at the address field", async () => {
     vi.spyOn(api, "importSource").mockRejectedValue(new ApiError("server", 422, "url_invalid", "no"));
     const wrapper = mount(ImportForm);

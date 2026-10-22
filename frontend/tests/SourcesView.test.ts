@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "@/api";
 import { ApiError, type Job, type SourceEntry, type SourcePage } from "@/api";
 import { t } from "@/i18n/de";
+import UploadForm from "@/components/UploadForm.vue";
 import SourcesView from "@/views/SourcesView.vue";
 
 function entry(id: string, title: string, overrides: Partial<SourceEntry> = {}): SourceEntry {
@@ -324,7 +325,8 @@ describe("paging through the register", () => {
     await wrapper.get("[data-test=more]").trigger("click");
     await flushPromises();
 
-    expect(listed).toHaveBeenLastCalledWith();
+    // one page more than was shown: the button still adds what it says
+    expect(listed).toHaveBeenLastCalledWith({}, { limit: 100 });
     expect(wrapper.findAll("tbody tr .register__title")[0].text()).toBe("Dazwischen");
   });
 
@@ -373,5 +375,94 @@ describe("paging through the register", () => {
     retry.resolve(page([entry("b", "Zweiter")], 2, 1));
     await flushPromises();
     expect(wrapper.findAll("tbody tr")).toHaveLength(2);
+  });
+
+  it("leaves the focus where the person went meanwhile", async () => {
+    const next = deferred<SourcePage>();
+    vi.spyOn(api, "listSources")
+      .mockResolvedValueOnce(page(FIFTY, 51))
+      .mockImplementationOnce(() => next.promise);
+    const wrapper = mount(SourcesView, { attachTo: document.body });
+    await flushPromises();
+    const button = wrapper.get("[data-test=more]");
+    (button.element as HTMLElement).focus();
+    await button.trigger("click");
+
+    // while the page is on its way, the person goes on to type an address
+    (wrapper.get("#import-url").element as HTMLElement).focus();
+    next.resolve(page([entry("z", "Der letzte")], 51, 50));
+    await flushPromises();
+
+    expect(document.activeElement?.id).toBe("import-url");
+    wrapper.unmount();
+  });
+
+  it("reads again as many entries as it shows, so a later page and its focus stay", async () => {
+    const listed = vi
+      .spyOn(api, "listSources")
+      .mockResolvedValueOnce(page(FIFTY, 60))
+      .mockResolvedValueOnce(page(Array.from({ length: 10 }, (_, index) => entry(`b${index}`, `Mehr ${index}`)), 60, 50))
+      .mockResolvedValue(page([...FIFTY, ...Array.from({ length: 10 }, (_, index) => entry(`b${index}`, `Mehr ${index}`))], 60));
+    const wrapper = mount(SourcesView);
+    await flushPromises();
+    await wrapper.get("[data-test=more]").trigger("click");
+    await flushPromises();
+
+    wrapper.findComponent(UploadForm).vm.$emit("uploaded", { id: "x" });
+    await flushPromises();
+
+    expect(listed).toHaveBeenLastCalledWith({}, { limit: 60 });
+    expect(wrapper.findAll("tbody tr")).toHaveLength(60);
+  });
+
+  it("keeps the newer of two readings, whichever answer comes last", async () => {
+    const older = deferred<SourcePage>();
+    const newer = deferred<SourcePage>();
+    vi.spyOn(api, "listSources")
+      .mockResolvedValueOnce(page([entry("a", "Plan")]))
+      .mockImplementationOnce(() => older.promise)
+      .mockImplementationOnce(() => newer.promise);
+    const wrapper = mount(SourcesView);
+    await flushPromises();
+    const form = wrapper.findComponent(UploadForm);
+
+    form.vm.$emit("uploaded", { id: "x" });
+    form.vm.$emit("uploaded", { id: "y" });
+    newer.resolve(page([entry("y", "Neuer"), entry("a", "Plan")]));
+    await flushPromises();
+    older.resolve(page([entry("x", "Älter"), entry("a", "Plan")]));
+    await flushPromises();
+
+    expect(wrapper.findAll("tbody tr .register__title")[0].text()).toBe("Neuer");
+  });
+
+  it("says the way to more is busy while the register is read again", async () => {
+    const reload = deferred<SourcePage>();
+    vi.spyOn(api, "listSources")
+      .mockResolvedValueOnce(page(FIFTY, 51))
+      .mockImplementationOnce(() => reload.promise);
+    const wrapper = mount(SourcesView);
+    await flushPromises();
+
+    wrapper.findComponent(UploadForm).vm.$emit("uploaded", { id: "x" });
+    await flushPromises();
+
+    expect(wrapper.get("[data-test=more]").attributes("aria-disabled")).toBe("true");
+  });
+
+  it("says a failure again when trying again fails again", async () => {
+    vi.spyOn(api, "listSources")
+      .mockResolvedValueOnce(page([entry("a", "Plan")], 2))
+      .mockRejectedValue(new ApiError("network", 0));
+    const wrapper = mount(SourcesView);
+    await flushPromises();
+    await wrapper.get("[data-test=more]").trigger("click");
+    await flushPromises();
+    const first = wrapper.get(".sources__partial").element.textContent;
+
+    await wrapper.get(".sources__partial button").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get(".sources__partial").element.textContent).not.toBe(first);
   });
 });

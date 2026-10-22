@@ -48,6 +48,8 @@ function fieldOf(error: unknown): Field | null {
  * request, and a password never leaves the page.
  */
 function addressFault(candidate: string): string | null {
+  // checked rather than held by a field limit, which cut a pasted address to another one silently
+  if (candidate.length > MAX_URL_SIGNS) return "sources.import.errors.tooLong";
   if (/\s/.test(candidate)) return "sources.import.errors.spaces";
   let parsed: URL;
   try {
@@ -71,7 +73,7 @@ async function onSubmit(): Promise<void> {
   const address = url.value.trim();
   if (!address) return refuse({ text: t("sources.import.errors.missing"), failed: true }, "url");
   const fault = addressFault(address);
-  if (fault) return refuse({ text: t(fault), failed: true }, "url");
+  if (fault) return refuse({ text: t(fault, { limit: MAX_URL_SIGNS }), failed: true }, "url");
   busy.value = true;
   failure.value = null;
   failedField.value = null;
@@ -100,7 +102,6 @@ async function onSubmit(): Promise<void> {
         v-model="url"
         type="url"
         inputmode="url"
-        :maxlength="MAX_URL_SIGNS"
         autocomplete="url"
         spellcheck="false"
         :aria-invalid="failedField === 'url' || undefined"

@@ -65,6 +65,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // a test that faked the clock and failed early must not leave it to the next one's axe
+  vi.useRealTimers();
   shown?.unmount();
   shown = null;
   document.body.innerHTML = "";

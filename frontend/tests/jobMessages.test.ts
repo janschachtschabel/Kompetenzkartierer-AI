@@ -37,6 +37,12 @@ describe("why a job failed, in the page's words", () => {
     expect(backendJobCodes()).toContain(code);
   });
 
+  it("has words for every code a job ends with", () => {
+    // the other way round: a new code of the backend would otherwise reach the page as the general words
+    const worded = new Set<string>(JOB_FAILURE_CODES);
+    expect([...backendJobCodes()].filter((code) => !worded.has(code))).toEqual([]);
+  });
+
   it.each(JOB_FAILURE_CODES)("%s has German words of its own", (code) => {
     const text = jobFailureText(code);
 

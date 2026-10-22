@@ -4,7 +4,7 @@
  * far the register has come with it and on what terms it may be used - and how
  * many of all there are it shows, with the way to the next page.
  */
-import { nextTick, ref } from "vue";
+import { ref } from "vue";
 
 import type { RegisterStatus, SourceEntry } from "@/api";
 import { LOCALE, messages, t } from "@/i18n/de";
@@ -15,17 +15,15 @@ defineEmits<{ more: [] }>();
 const body = ref<HTMLTableSectionElement | null>(null);
 
 /**
- * Hands the focus to the row at `index` once it is drawn: after "Weitere laden"
- * the first new entry, where reading goes on - the button may have gone, and
- * with it the focus, which would otherwise fall back to the page's top.
+ * The row at `index`, as drawn: after "Weitere laden" the page hands the focus to the first new
+ * entry, where reading goes on - the button may have gone, and with it the focus.
  */
-async function focusRow(index: number): Promise<void> {
-  await nextTick();
+function row(index: number): HTMLTableRowElement | undefined {
   // the body's own rows: refs in a v-for keep no order
-  body.value?.rows[index]?.focus();
+  return body.value?.rows[index];
 }
 
-defineExpose({ focusRow });
+defineExpose({ row });
 
 /** The words for a register value; the value itself where the page has none yet (tests/registerLabels.test.ts). */
 function word(words: Readonly<Record<string, string>>, value: string): string {
@@ -60,7 +58,7 @@ const dateFormat = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium" });
           </tr>
         </thead>
         <tbody ref="body">
-          <!-- tabindex -1: a target for focusRow, outside the tab order -->
+          <!-- tabindex -1: a target for the focus after "Weitere laden", outside the tab order -->
           <tr v-for="entry in entries" :key="entry.id" tabindex="-1">
             <td>
               <!-- an import is titled by its file's name, once the fetch has the file -->

@@ -108,6 +108,9 @@ export const messages = {
         missing: "Gib eine Adresse ein.",
         scheme: "Das ist keine Webadresse. Eine Webadresse beginnt mit https:// oder http://.",
         spaces: "Die Adresse enthält Leerzeichen. Kopiere sie noch einmal aus der Adresszeile des Browsers.",
+        tooLong:
+          "Die Adresse ist länger als {limit} {limit|Zeichen|Zeichen}. Nimm die Adresse des Dokuments selbst, oft ohne den Teil " +
+          "nach dem Fragezeichen.",
         credentials:
           "Die Adresse enthält einen Namen oder ein Kennwort. Der Server ruft nur frei zugängliche Adressen ab: " +
           "Lade die Datei stattdessen hoch.",
@@ -177,15 +180,16 @@ export const messages = {
     trouble: "Der Server antwortet gerade nicht; der Stand wird weiter abgefragt.",
     // why there is nothing left to ask (jobWatch.ts, JobGone)
     goneReasons: {
-      unauthorized: "Deine Anmeldung ist abgelaufen. Melde dich neu an, um den Auftrag weiter zu verfolgen.",
+      unauthorized: "Deine Anmeldung ist abgelaufen. Melde dich neu an; den Stand des Eintrags zeigt danach das Register.",
       forbidden: "Diesen Auftrag darf dein Konto nicht verfolgen. Rollen vergibt die Administration.",
-      not_found: "Dieser Auftrag ist nicht mehr zu finden. Lade die Seite neu, um den Stand im Register zu sehen.",
+      not_found: "Dieser Auftrag ist nicht mehr zu finden. Den Stand des Eintrags zeigt das Register unten.",
     },
     failedUnknown: "Der Auftrag ist fehlgeschlagen. Versuch es noch einmal; scheitert er wieder, melde es der Administration.",
     failures: {
+      // also a host that does not resolve: an internal name and a misspelt one answer alike
       url_not_allowed:
-        "Die Adresse führt in ein internes Netz oder ist sonst gesperrt; der Server ruft sie nicht ab. " +
-        "Lade die Datei stattdessen hoch.",
+        "Die Adresse ließ sich nicht auflösen oder führt in ein internes Netz; der Server ruft sie nicht ab. " +
+        "Prüfe sie im Browser; stimmt sie, lade die Datei stattdessen hoch.",
       download_refused:
         "Der fremde Server hat die Datei verweigert, etwa weil es sie dort nicht gibt. Prüfe die Adresse im Browser.",
       unsupported_type:
