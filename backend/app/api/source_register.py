@@ -210,12 +210,18 @@ async def edit_register_entry(
 
 
 def _check_terms(given: dict[str, Any], row: dict[str, Any]) -> None:
-    """The terms the entry would have after the change hold together: a rights status other
-    than ``unklar`` stands on its evidence, whichever of the two the change names."""
+    """The terms the entry would have after the change hold together, whichever of them the
+    change names: a rights status other than ``unklar`` stands on its evidence - a new one on
+    evidence of its own, sent with it -, and ``offen_lizenziert`` names its licence."""
     status = given.get("rights_status", row["rights_status"])
     evidence = given["rights_evidence"] if "rights_evidence" in given else row["rights_evidence"]
+    licence = given["license"] if "license" in given else row["license"]
     if status != "unklar" and not (evidence or "").strip():
         raise Refusal(422, "evidence_missing", "A rights status needs its evidence.")
+    if status not in ("unklar", row["rights_status"]) and "rights_evidence" not in given:
+        raise Refusal(422, "evidence_missing", "A new rights status needs evidence of its own.")
+    if status == "offen_lizenziert" and not (licence or "").strip():
+        raise Refusal(422, "license_missing", "An open licence names the licence.")
 
 
 @router.get("/sources/{source_id}/file", summary="The entry's file, as a download")

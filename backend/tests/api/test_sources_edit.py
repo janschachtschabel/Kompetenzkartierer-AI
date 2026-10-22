@@ -167,6 +167,37 @@ def test_a_rights_status_keeps_its_evidence(
     assert terms_of(migrated, world["seed"]) == ("amtlich", "Amtsblatt 2023")
 
 
+def test_an_open_licence_names_its_licence(client: TestClient, migrated: str, world: dict[str, Any]) -> None:
+    # Gesamtplan 7.4.2: offen_lizenziert "mit Lizenz"
+    terms = {"rights_status": "offen_lizenziert", "rights_evidence": "Impressum des Portals"}
+    url = f"/api/v1/sources/{world['seed']}"
+
+    without = client.patch(url, headers=world["editor"], json=terms)
+    with_licence = client.patch(url, headers=world["editor"], json={**terms, "license": "CC BY 4.0"})
+    removed = client.patch(url, headers=world["editor"], json={"license": None})
+
+    assert (without.status_code, without.json()["code"]) == (422, "license_missing")
+    assert with_licence.status_code == 200
+    assert (removed.status_code, removed.json()["code"]) == (422, "license_missing")
+    assert row(migrated, world["seed"])["license"] == "CC BY 4.0"
+
+
+def test_a_new_rights_status_comes_with_its_own_evidence(
+    client: TestClient, migrated: str, world: dict[str, Any]
+) -> None:
+    # the evidence for amtlich is none for geschuetzt
+    url = f"/api/v1/sources/{world['seed']}"
+    terms = {"rights_status": "amtlich", "rights_evidence": "Amtsblatt"}
+    client.patch(url, headers=world["editor"], json=terms)
+
+    changed = client.patch(url, headers=world["editor"], json={"rights_status": "geschuetzt"})
+    same = client.patch(url, headers=world["editor"], json={"rights_status": "amtlich"})
+
+    assert (changed.status_code, changed.json()["code"]) == (422, "evidence_missing")
+    assert same.status_code == 200  # the status it has is no change
+    assert terms_of(migrated, world["seed"]) == ("amtlich", "Amtsblatt")
+
+
 def test_an_owner_describes_its_entry(client: TestClient, migrated: str, world: dict[str, Any]) -> None:
     change = {"title": "Lehrplan Physik", "country": "DE-BY", "sector": "school"}
 
