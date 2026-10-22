@@ -15,6 +15,7 @@ from uuid import UUID
 
 import httpx2
 
+from app.core.auth import visible_only
 from app.db.sources import StoredFile, fetch_target, record_fetch, set_register_status
 from app.jobs.context import JobContext
 from app.jobs.outcome import PermanentError
@@ -73,7 +74,7 @@ async def fetch_source(
             account_id=target.owner_id,
             stored=stored,
             file_name=file_name,
-            received_name=name[:MAX_NAME_SIGNS],
+            received_name=visible_only(name)[:MAX_NAME_SIGNS],
             chain=fetched.chain,
             title=PurePosixPath(file_name).stem[:MAX_TITLE_SIGNS],
         )

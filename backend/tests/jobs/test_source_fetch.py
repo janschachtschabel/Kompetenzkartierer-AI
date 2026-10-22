@@ -115,6 +115,28 @@ async def test_the_acquisition_keeps_the_way_the_file_came(context: JobContext) 
     ]
 
 
+@pytest.mark.parametrize(
+    ("url", "received"),
+    [
+        ("https://lehrplaene.example/a%00b.pdf", "ab.pdf"),  # a NUL the database refuses
+        ("https://lehrplaene.example/Lehrplan%E2%80%AEfdp.pdf", "Lehrplanfdp.pdf"),  # right-to-left
+    ],
+    ids=["nul", "right-to-left-override"],
+)
+async def test_the_name_the_address_gave_is_kept_without_hidden_signs(
+    context: JobContext, url: str, received: str
+) -> None:
+    source_id, job = await add_source(context, url=url)
+
+    await fetch_source(context, job, transport=serving(pdf_answer))
+
+    async with context.pool.connection() as connection:
+        cursor = await connection.execute(
+            "SELECT received_name FROM acquisition WHERE source_id = %s", (source_id,)
+        )
+        assert await cursor.fetchall() == [(received,)]
+
+
 async def test_a_title_the_entry_has_is_kept(context: JobContext) -> None:
     source_id, job = await add_source(context, title="Kerncurriculum Physik")
 
