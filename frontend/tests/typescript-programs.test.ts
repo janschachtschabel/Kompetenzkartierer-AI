@@ -41,7 +41,8 @@ describe("the TypeScript programs", () => {
     const node = config("tsconfig.node.json");
 
     expect(node.include).toEqual(expect.arrayContaining(["tests/**/*.ts", "vite.config.ts", "build/**/*.ts"]));
-    expect(node.compilerOptions?.types).toEqual(["vitest/globals", "node"]);
+    // vite/client too: a test compiles the src files it imports, and those may read import.meta.env
+    expect(node.compilerOptions?.types).toEqual(["vite/client", "vitest/globals", "node"]);
   });
 
   it("are both checked by the build", () => {
