@@ -6,6 +6,60 @@
 export const messages = {
   app: {
     title: "Kompetenzkartierer",
+    // The way past the header for someone arriving by keyboard.
+    skipToContent: "Zum Inhalt springen",
+    nav: {
+      // Names the landmark, so a screen reader can list it and jump to it by name.
+      label: "Hauptnavigation",
+      start: "Start",
+    },
+    // What each page is called in the browser's title bar, its tabs and
+    // bookmarks - and what a screen reader announces on arrival.
+    titles: {
+      start: "Start",
+      login: "Anmeldung",
+    },
+    roles: {
+      admin: "Administration",
+      redaktion: "Redaktion",
+      nutzer: "Nutzung",
+    },
+    roleList: "Rollen: {roles}",
+    signedInAs: "Angemeldet als",
+    signIn: "Anmelden",
+    signOut: "Abmelden",
+  },
+  login: {
+    heading: "Anmeldung",
+    intro: "Gib das Zugangstoken ein, das dir die Administration gegeben hat.",
+    tokenLabel: "Zugangstoken",
+    submit: "Anmelden",
+    checking: "Wird geprüft …",
+    errors: {
+      empty: "Gib ein Zugangstoken ein.",
+      invalid: "Dieses Zugangstoken gilt nicht. Prüfe es, oder bitte die Administration um ein neues.",
+      network: "Der Server ist nicht erreichbar. Versuch es gleich noch einmal.",
+      server: "Der Server hat unerwartet geantwortet. Versuch es später noch einmal.",
+      locked:
+        "Zu viele fehlgeschlagene Anmeldungen von dieser Adresse. " +
+        "Versuch es in {count} {count|Minute|Minuten} noch einmal.",
+      lockedLater: "Zu viele fehlgeschlagene Anmeldungen von dieser Adresse. Versuch es später noch einmal.",
+    },
+  },
+  start: {
+    welcome: "Willkommen, {name}",
+    intro:
+      "Hier entsteht die Wissenslandkarte der Lehrpläne: erfassen, an Kompetenz- und " +
+      "Niveauschemata andocken, vernetzen. Die ersten Werkzeuge folgen.",
+    about: "Der Kompetenzkartierer erfasst Lehrpläne aller Bildungsbereiche und verbindet sie zu einer Wissenslandkarte.",
+    // What PUBLIC_ACCESS opens to a visitor without an account.
+    visitor: {
+      off: "Ohne Konto ist noch nichts offen. Melde dich mit deinem Zugangstoken an.",
+      lookup: "Nachschlagen ist auch ohne Konto offen. Für alles andere meldest du dich an.",
+      search: "Nachschlagen und Suchen sind auch ohne Konto offen. Für alles andere meldest du dich an.",
+    },
+    signIn: "Zur Anmeldung",
+    infoFailed: "Die Startseite konnte nicht geladen werden.",
   },
   dialog: {
     // The confirm dialog's default: it asks before something is removed.

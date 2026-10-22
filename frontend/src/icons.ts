@@ -14,6 +14,8 @@
  * is asked for.
  */
 export const GLYPHS = {
+  /* The start: the map the app draws of curricula. */
+  map: ["M3.5 6.5 9 4.5l6 2 5.5-2v13l-5.5 2-6-2-5.5 2v-13Z", "M9 4.5v13", "M15 6.5v13"],
   /* Something failed, or is only partly there. */
   warning: ["M12 4 3 20a1 1 0 0 0 .87 1.5h16.26A1 1 0 0 0 21 20L12 4Z", "M12 10v4.5", "M12 18h.01"],
 };
