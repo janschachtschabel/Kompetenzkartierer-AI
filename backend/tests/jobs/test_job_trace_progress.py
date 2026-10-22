@@ -15,7 +15,7 @@ import psycopg
 import pytest
 from psycopg_pool import AsyncConnectionPool
 
-from app.core.logging import configure_logging
+from app.core.logging import configure_logging, current_request_id
 from app.core.tracing import take_trace_headers
 from app.db.migrate import migrate
 from app.jobs.queue import Job, LeaseLost, claim, enqueue, fail, report_progress
@@ -163,3 +163,24 @@ async def test_the_worker_writes_the_job_s_lines_with_its_trace(pool: AsyncConne
     assert lines["inside the job"]["trace_id"] == TRACE
     assert lines["after the job"]["trace_id"] == "-"
     assert await column(pool, job_id, "status") == "done"
+
+
+async def test_the_worker_names_the_job_s_trace_as_the_request_of_its_lines(
+    pool: AsyncConnectionPool,
+) -> None:
+    # a text line names the request id, not the trace: the job's lines showed "-" there
+    stream = io.StringIO()
+    configure_logging("INFO", "json", stream=stream)
+    await enqueue_traced(pool)
+    take_trace_headers([], "worker")
+    before = current_request_id()
+
+    async def work(job: Job) -> None:
+        logging.getLogger("app.test").info("inside the job")
+
+    await Worker(pool, {"test.work": work}, owner="w1").run_once()
+    logging.getLogger("app.test").info("after the job")
+
+    lines = {line["message"]: line for line in map(json.loads, stream.getvalue().splitlines())}
+    assert lines["inside the job"]["request_id"] == TRACE
+    assert lines["after the job"]["request_id"] == before == current_request_id()

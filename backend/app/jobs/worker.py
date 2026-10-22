@@ -28,6 +28,7 @@ from typing import Any
 import psycopg
 from psycopg_pool import AsyncConnectionPool, PoolTimeout
 
+from app.core.logging import current_request_id, set_request_id
 from app.core.metrics import observe_expired_leases, observe_job
 from app.core.tracing import continue_trace, end_trace
 from app.jobs.outcome import Ending, Outcome, PermanentError, Result, one_line, write_outcome
@@ -97,11 +98,16 @@ class Worker:
         return True
 
     async def _run(self, job: Job) -> None:
-        # the job's lines, the handler's and this worker's, carry the trace of its request
+        # the job's lines, the handler's and this worker's, carry the trace of its request - in
+        # the request id too, the one a text line shows
         trace = continue_trace(job.trace_id)
+        request_id = current_request_id()
+        if job.trace_id:
+            set_request_id(job.trace_id)
         try:
             await self._run_traced(job)
         finally:
+            set_request_id(request_id)
             end_trace(trace)
 
     async def _run_traced(self, job: Job) -> None:
