@@ -8,7 +8,7 @@ import pytest
 from app.api.app import create_app
 from app.api.internal import READY_TIMEOUT_S
 from app.db.migrate import migrate
-from tests.support import make_settings, selector_client
+from tests.support import lock_held, make_settings, selector_client
 
 INTERNAL = "http://testserver:9000"
 
@@ -69,12 +69,14 @@ def test_a_database_that_does_not_answer_in_time_is_not_ready(database_url: str)
     # another session holds the bookkeeping table: the query waits, the probe must not
     migrate(database_url)
     app = create_app(make_settings(database_url=database_url))
-    with psycopg.connect(database_url) as holder, selector_client(app, base_url=INTERNAL) as client:
-        holder.execute("LOCK TABLE schema_migration IN ACCESS EXCLUSIVE MODE")
+    lock = "LOCK TABLE schema_migration IN ACCESS EXCLUSIVE MODE"
+    with (
+        lock_held(database_url, lock, at_most_s=READY_TIMEOUT_S + 3),
+        selector_client(app, base_url=INTERNAL) as client,
+    ):
         started = time.monotonic()
         response = client.get("/ready")
         elapsed = time.monotonic() - started
-        holder.rollback()
 
     assert response.status_code == 503
     assert elapsed < READY_TIMEOUT_S + 2

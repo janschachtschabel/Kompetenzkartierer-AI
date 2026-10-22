@@ -103,7 +103,7 @@ aufbaut. Keine Fachlogik außer dem Vokabular-Lader.
 | D2 | Compose | `deploy/docker-compose.yml` | api ×2, worker ×2, migrate, postgres, minio, valkey optional; `/ready` 200; Migration genau einmal |
 | D3 | S3-Speicher | `app/core/storage.py` | Integrationstest gegen MinIO (Marker `s3`) |
 | D4 | CI | `.github/workflows/ci.yml` | Ontologie-Prüfung, ruff, mypy, Tests mit PostgreSQL-Dienst, Image-Build; grüner Lauf erst nach Push |
-| D5 | Übergabe-Gerüst | `docs/uebergabe/anforderungen.md`, `konfiguration.md` (aus den Settings erzeugt, Test vergleicht), `deploy/helm-values.example.yaml` (Readiness-Probe `timeoutSeconds` ≥ 3: `/ready` wartet bis 2 s auf die DB; Erweiterungen `vector`, `pg_trgm`, `unaccent` legt der DBA vorher an, wenn die Migrationsrolle es nicht darf) | Test: jede Einstellung steht in `konfiguration.md` |
+| D5 | Übergabe-Gerüst | `docs/uebergabe/anforderungen.md`, `konfiguration.md` (aus den Settings erzeugt, Test vergleicht), `deploy/helm-values.example.yaml` (Readiness-Probe `timeoutSeconds` ≥ 5: `/ready` wartet bis 2 s auf eine Pool-Verbindung und bis 2 s auf die Abfrage; Erweiterungen `vector`, `pg_trgm`, `unaccent` legt der DBA vorher an, wenn die Migrationsrolle es nicht darf) | Test: jede Einstellung steht in `konfiguration.md` |
 
 ## Paket E: Frontend-Rahmen
 

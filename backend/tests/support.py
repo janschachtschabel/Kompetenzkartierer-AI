@@ -8,11 +8,13 @@ settings class reads are hidden while it is built; those of the operating system
 
 import asyncio
 import os
+import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
 from unittest import mock
 
+import psycopg
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic_settings import BaseSettings
@@ -42,6 +44,32 @@ def without_settings_variables(settings_cls: type[BaseSettings] = Settings) -> I
 def selector_client(app: FastAPI, **options: Any) -> TestClient:
     """A TestClient on a selector event loop: psycopg's async mode refuses Windows' proactor loop."""
     return TestClient(app, backend_options={"loop_factory": asyncio.SelectorEventLoop}, **options)
+
+
+@contextmanager
+def lock_held(url: str, statement: str, *, at_most_s: float) -> Iterator[None]:
+    """``statement`` (a LOCK) held by another session - for ``at_most_s`` at most.
+
+    A test of a deadline then fails when the deadline regresses, instead of waiting forever.
+    """
+    taken, done = threading.Event(), threading.Event()
+
+    def hold() -> None:
+        with psycopg.connect(url) as connection:
+            connection.execute(statement)
+            taken.set()
+            done.wait(at_most_s)
+            connection.rollback()
+
+    holder = threading.Thread(target=hold, daemon=True)
+    holder.start()
+    if not taken.wait(10):
+        raise TimeoutError(f"could not take: {statement}")
+    try:
+        yield
+    finally:
+        done.set()
+        holder.join(10)
 
 
 def make_settings(**values: object) -> Settings:
