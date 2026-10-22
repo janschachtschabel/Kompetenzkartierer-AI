@@ -315,15 +315,23 @@ async def test_each_redirect_is_checked_where_it_connects() -> None:
 @pytest.mark.anyio
 @pytest.mark.parametrize(
     "location",
-    ["file:///etc/passwd", "ftp://lehrplaene.example/a.pdf", "http://kka:geheim@lehrplaene.example/a.pdf"],
-    ids=["file", "ftp", "credentials"],
+    [
+        "file:///etc/passwd",
+        "ftp://lehrplaene.example/a.pdf",
+        "http://kka:geheim@lehrplaene.example/a.pdf",
+        # NFKC changes the user part; httpx2 percent-encodes it when it joins, so it is refused
+        # as any user part is - and for good, not tried again
+        f"http://u{chr(0x2100)}@{PUBLIC}/x",
+    ],
+    ids=["file", "ftp", "credentials", "credentials-nfkc"],
 )
 async def test_a_redirect_to_what_no_import_may_name_is_refused(location: str) -> None:
     asked: list[str] = []
 
     def redirecting(request: httpx2.Request) -> httpx2.Response:
         asked.append(str(request.url))
-        return httpx2.Response(302, headers={"location": location})
+        # in bytes, as a server sends it: httpx2 would encode a str in ASCII, in the handler
+        return httpx2.Response(302, headers={b"location": location.encode()})
 
     with pytest.raises(UrlNotAllowed):
         await fetch(f"http://{PUBLIC}/start", max_bytes=1000, transport=httpx2.MockTransport(redirecting))
