@@ -12,7 +12,7 @@ import AppIcon from "@/components/AppIcon.vue";
 import BrandMark from "@/components/BrandMark.vue";
 import { keepFocusInPage } from "@/focusRescue";
 import { LOCALE, t } from "@/i18n/de";
-import { visibleDestinations } from "@/navigation";
+import { visibleDestinations, type Destination } from "@/navigation";
 import { clearSession, ensureSession, session, sessionState } from "@/session";
 
 const route = useRoute();
@@ -22,6 +22,16 @@ const destinations = computed(() => (session.value ? visibleDestinations(session
 const roles = computed(() =>
   new Intl.ListFormat(LOCALE).format((session.value?.roles ?? []).map((role) => t(`app.roles.${role}`))),
 );
+
+/**
+ * Where the navigation says the reader is: on the destination's own page, or on a page that lies
+ * within it (route meta `section`) - an entry's page in the register's. Said for every
+ * destination, so the router link's own "page" on its exact match agrees with it.
+ */
+function current(destination: Destination): "page" | "true" | undefined {
+  if (route.name === destination.name) return "page";
+  return route.meta.section === destination.name ? "true" : undefined;
+}
 
 let stopFocusRescue: (() => void) | null = null;
 
@@ -50,7 +60,7 @@ async function signOut(): Promise<void> {
     <nav v-if="session" class="shell__nav" :aria-label="t('app.nav.label')">
       <ul class="shell__destinations">
         <li v-for="destination in destinations" :key="destination.name">
-          <RouterLink class="shell__destination" :to="{ name: destination.name }">
+          <RouterLink class="shell__destination" :to="{ name: destination.name }" :aria-current="current(destination)">
             <AppIcon :name="destination.icon" />
             {{ t(destination.label) }}
           </RouterLink>
@@ -164,8 +174,9 @@ async function signOut(): Promise<void> {
   text-decoration: none;
 }
 
-/* The page you are on: a wash and a weight, not a colour alone. */
-.shell__destination.router-link-exact-active {
+/* Where you are - the page, or the section it lies in: a wash and a weight, not a colour
+   alone. Drawn by the state the link says, so the eye sees what a screen reader hears. */
+.shell__destination[aria-current] {
   background: var(--accent-wash);
   font-weight: 600;
 }

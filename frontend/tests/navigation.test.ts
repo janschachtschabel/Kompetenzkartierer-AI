@@ -27,4 +27,11 @@ describe("the navigation", () => {
   it("leads only to pages the router has", () => {
     for (const destination of DESTINATIONS) expect(router.hasRoute(destination.name)).toBe(true);
   });
+
+  it("is the section a page says it lies in: a destination it shows", () => {
+    const sections = router.getRoutes().flatMap((route) => (route.meta.section ? [route.meta.section] : []));
+    expect(sections, "an entry's page lies in the register's section").toContain("sources");
+
+    for (const section of sections) expect(DESTINATIONS.map(({ name }) => name)).toContain(section);
+  });
 });

@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import { getToken, onUnauthorized, type Role } from "@/api";
 import { t } from "@/i18n/de";
+import { pageTitle } from "@/pageTitle";
 import { RETURN_PARAM } from "@/returnTarget";
 import { clearSession, ensureSession, hasRole } from "@/session";
 import LoginView from "@/views/LoginView.vue";
@@ -18,6 +19,8 @@ declare module "vue-router" {
     requiresAuth?: boolean;
     /** A page only for this role: an account without it goes to the start. */
     requiresRole?: Role;
+    /** The navigation's destination the page lies within: the navigation marks it as where the reader is. */
+    section?: string;
   }
 }
 
@@ -43,7 +46,8 @@ export const router = createRouter({
       name: "source",
       component: SourceDetailView,
       props: true,
-      meta: { title: "app.titles.source", requiresAuth: true },
+      // its own name once the entry is loaded (SourceDetailView)
+      meta: { title: "app.titles.source", requiresAuth: true, section: "sources" },
     },
     { path: "/:rest(.*)*", redirect: { name: "start" } },
   ],
@@ -76,7 +80,7 @@ router.beforeEach(async (to) => {
 router.afterEach((to, from, failure) => {
   if (failure) return;
   const key = to.meta.title;
-  document.title = typeof key === "string" ? `${t(key)} · ${t("app.title")}` : t("app.title");
+  document.title = pageTitle(typeof key === "string" ? t(key) : undefined);
   if (from.matched.length === 0 || to.path === from.path) return;
   void nextTick(() => document.getElementById("main")?.focus({ preventScroll: true }));
 });

@@ -122,6 +122,37 @@ describe("a register entry's page", () => {
     expect(wrapper.find("[aria-labelledby=source-acquisitions] ol").exists()).toBe(false);
   });
 
+  it("names the entry in the browser's title once it is known (WCAG 2.4.2)", async () => {
+    api.setToken("kka_token");
+    try {
+      // as in the app: the navigation is done before the page asks for its entry
+      await router.push({ name: "source", params: { id: "s1" } });
+      expect(document.title).toBe(`${t("app.titles.source")} · ${t("app.title")}`);
+      vi.spyOn(api, "getSource").mockResolvedValue(detail());
+
+      await open();
+
+      expect(document.title).toBe(`Rheinland-Pfalz · Physik · Gymnasium · ${t("app.title")}`);
+    } finally {
+      api.clearToken();
+      await router.push("/");
+    }
+  });
+
+  it("leaves the title to the page the reader went on to, when its answer comes after", async () => {
+    const late = deferred<api.SourceDetail>();
+    vi.spyOn(api, "getSource").mockImplementation(() => late.promise);
+    const wrapper = await open();
+    wrapper.unmount();
+    shown = null;
+    document.title = "Nächste Seite";
+
+    late.resolve(detail());
+    await flushPromises();
+
+    expect(document.title).toBe("Nächste Seite");
+  });
+
   it("shows what the seed said of the curriculum", async () => {
     vi.spyOn(api, "getSource").mockResolvedValue(detail());
     const wrapper = await open();

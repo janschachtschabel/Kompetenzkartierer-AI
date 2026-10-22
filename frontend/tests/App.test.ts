@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -6,6 +9,9 @@ import App from "@/App.vue";
 import { t } from "@/i18n/de";
 import { router } from "@/router";
 import { clearSession, session, setSession } from "@/session";
+
+import { detail, page } from "./registerEntries";
+import { SRC, cssRules, stylesOf } from "./sources";
 
 async function render(path = "/") {
   await router.push(path);
@@ -54,6 +60,33 @@ describe("the shell for an account", () => {
     const nav = wrapper.get("nav");
     expect(nav.attributes("aria-label")).toBe(t("app.nav.label"));
     expect(nav.get("a[href='/']").text()).toBe(t("app.nav.start"));
+  });
+
+  it("marks where the reader is: the page itself, or the section an entry's page lies in", async () => {
+    vi.spyOn(api, "listSources").mockResolvedValue(page([]));
+    vi.spyOn(api, "getSource").mockResolvedValue(detail());
+    const wrapper = await render("/quellen");
+    const link = (href: string) => wrapper.get(`nav a[href='${href}']`);
+    expect(link("/quellen").attributes("aria-current")).toBe("page");
+    expect(link("/").attributes("aria-current")).toBeUndefined();
+
+    await router.push("/quellen/s1");
+    await flushPromises();
+    expect(link("/quellen").attributes("aria-current")).toBe("true");
+    expect(link("/").attributes("aria-current")).toBeUndefined();
+
+    await router.push("/");
+    await flushPromises();
+    expect(link("/").attributes("aria-current")).toBe("page");
+    expect(link("/quellen").attributes("aria-current")).toBeUndefined();
+  });
+
+  it("draws the mark by the state it says: what the eye sees, a screen reader hears", () => {
+    const rules = cssRules(stylesOf(readFileSync(join(SRC, "App.vue"), "utf8")));
+
+    const marked = rules.filter(({ selectors }) => selectors.includes(".shell__destination[aria-current]"));
+
+    expect(marked.map(({ body }) => body).join("")).toMatch(/background:\s*var\(--accent-wash\)/);
   });
 
   it("says who is signed in, in which roles", async () => {

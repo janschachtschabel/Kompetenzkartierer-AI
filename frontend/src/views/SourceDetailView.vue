@@ -16,6 +16,7 @@ import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
 import { LOCALE, messages, t } from "@/i18n/de";
 import { failureNotice, type Notice } from "@/notice";
+import { pageTitle } from "@/pageTitle";
 import { word } from "@/registerWords";
 
 const props = defineProps<{ id: string }>();
@@ -56,6 +57,11 @@ async function load(): Promise<void> {
 }
 
 onMounted(load);
+// The tab names the entry once it is known; until then the router's name for the page stands.
+// A watcher stops with the page: an answer that comes after the reader left renames nothing.
+watch(source, (found) => {
+  if (found) document.title = pageTitle(found.title || found.url || t("app.titles.source"));
+});
 // another entry: the one before is not shown under its address while it loads
 watch(
   () => props.id,
