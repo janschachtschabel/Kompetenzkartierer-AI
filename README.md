@@ -104,6 +104,10 @@ ungültig.
   `/tmp` und im Arbeitsspeicher braucht, steht in `docs/uebergabe/konfiguration.md`.
 - `UPLOADS_PER_MINUTE` und `URL_IMPORTS_PER_MINUTE` (Standard je 20): Uploads bzw. URL-Importe
   je Konto und Minute, gezählt in PostgreSQL für alle Replicas; darüber 429 mit `Retry-After`.
+- `FETCH_USER_AGENT`: so stellen sich URL-Import und Prüfjob den Servern vor. Vorn steht das
+  Produktkürzel, unter dem robots.txt uns kennt (`Kompetenzkartierer-AI`), dahinter, wo die
+  Betreiber zu erreichen sind. `CHECK_HOST_INTERVAL_S` (Standard 2, mindestens 0,5): der
+  kleinste Abstand zweier Anfragen des Prüfjobs an einen Host, über alle Worker.
 - `THIRD_PARTY_MARKDOWN` (`hidden` | `accounts` | `public`, Standard `hidden`): wer außer
   Redaktion und Admin die Datei eines Registereintrags ohne Eigentümer (Saat, Recherche)
   bekommt, später auch seine Blöcke und sein Markdown: niemand, jedes Konto oder auch Besucher,

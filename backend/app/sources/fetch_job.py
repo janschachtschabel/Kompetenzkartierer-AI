@@ -100,7 +100,12 @@ async def _fetched(
     the entry's status noting what was found; any other DownloadError is tried again, and at the
     ``last_attempt`` leaves the entry unreachable."""
     try:
-        return await fetch(url, max_bytes=context.settings.max_upload_mb * MIB, transport=transport)
+        return await fetch(
+            url,
+            max_bytes=context.settings.max_upload_mb * MIB,
+            transport=transport,
+            user_agent=context.settings.fetch_user_agent,
+        )
     except UrlNotAllowed as error:
         await _note(context, source_id, "unreachable")
         raise PermanentError("url_not_allowed", str(error)) from None

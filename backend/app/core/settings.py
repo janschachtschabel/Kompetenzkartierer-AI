@@ -160,6 +160,13 @@ class Settings(BaseSettings):
     third_party_markdown: Literal["hidden", "accounts", "public"] = "hidden"
     # Imports by URL an account may start per minute; more are answered 429
     url_imports_per_minute: Annotated[int, Field(ge=1)] = 20
+    # Who the register's requests say they are (source.fetch, source.check): the product token
+    # robots.txt knows us by, then where to reach the operators; printable ASCII, as a header holds
+    fetch_user_agent: Annotated[
+        str, Field(pattern=r"^[A-Za-z0-9._-]+(/[!-~]+)?( [ -~]+)?$", max_length=200)
+    ] = "Kompetenzkartierer-AI (+https://github.com/janschachtschabel/Kompetenzkartierer-AI)"
+    # The least time between two requests of the check job to one host, across all workers
+    check_host_interval_s: Annotated[float, Field(ge=0.5, le=60)] = 2.0
     # The job kinds this worker takes, comma-separated (the conversion pods: source.convert);
     # empty for every kind it knows
     worker_kinds: Annotated[str, Field(pattern=rf"^({_JOB_KIND}(,{_JOB_KIND})*)?$")] = ""

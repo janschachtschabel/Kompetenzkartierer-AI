@@ -91,6 +91,23 @@ async def test_a_fetched_file_is_stored_and_the_entry_acquired(context: JobConte
     assert await context.storage.get(f"sources/{digest}") == PDF
 
 
+async def test_the_fetch_says_who_it_is_as_fetch_user_agent_has_it(context: JobContext) -> None:
+    _, job = await add_source(context)
+    asked: list[str] = []
+
+    def recording(request: httpx2.Request) -> httpx2.Response:
+        asked.append(request.headers["user-agent"])
+        return pdf_answer(request)
+
+    await fetch_source(
+        replace(context, settings=make_settings(fetch_user_agent="kka-test/2")),
+        job,
+        transport=serving(recording),
+    )
+
+    assert asked == ["kka-test/2"]
+
+
 async def test_the_acquisition_keeps_the_way_the_file_came(context: JobContext) -> None:
     source_id, job = await add_source(context, url="https://lehrplaene.example/start")
 
