@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, StringConstraints
 from starlette.datastructures import UploadFile
 
+from app.api.body_limit import MIB
 from app.api.deps import require_account
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.core.auth import Principal, one_spelling, plain_text, shows_whole
@@ -42,7 +43,6 @@ from app.sources.url_fetch import UrlNotAllowed, check_url
 router = APIRouter(prefix="/api/v1", tags=["sources"], responses=AUTH_RESPONSES)
 Account = Annotated[Principal, Depends(require_account)]
 UPLOAD_PATH = "/api/v1/sources"
-MIB = 2**20
 MAX_TITLE_SIGNS = 500
 UPLOAD_REFUSALS: dict[int | str, dict[str, Any]] = {
     413: {"model": ErrorBody, "description": "The file, or the archive it is, is too large"},
@@ -87,9 +87,11 @@ class ImportOut(BaseModel):
 async def upload_source(request: Request, who: Account) -> SourceOut:
     """A form with ``file`` and, if wished, ``title`` (else the file's name names the entry)."""
     settings = request.app.state.settings
-    async with request.app.state.pool.connection() as connection:
-        await _within_limit(connection, who, "source.upload", settings.uploads_per_minute, "too_many_uploads")
     assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
+    async with request.app.state.pool.connection() as connection:
+        await _within_limit(
+            connection, who.account_id, "source.upload", settings.uploads_per_minute, "too_many_uploads"
+        )
     async with request.form(max_files=1, max_fields=2) as form:
         upload = form.get("file")
         if not isinstance(upload, UploadFile):
@@ -143,11 +145,11 @@ async def import_source(body: ImportIn, request: Request, who: Account) -> Impor
     except UrlNotAllowed as error:
         raise Refusal(422, "url_invalid", str(error)) from None
     settings = request.app.state.settings
+    assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
     async with request.app.state.pool.connection() as connection:
         await _within_limit(
-            connection, who, "source.import", settings.url_imports_per_minute, "too_many_imports"
+            connection, who.account_id, "source.import", settings.url_imports_per_minute, "too_many_imports"
         )
-        assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
         # one transaction: never an entry without its job, nor a job without its entry
         async with connection.transaction():
             source_id = await record_url_source(connection, owner=who.account_id, url=url, title=body.title)
@@ -177,12 +179,11 @@ async def import_source(body: ImportIn, request: Request, who: Account) -> Impor
 
 
 async def _within_limit(
-    connection: psycopg.AsyncConnection, who: Principal, action: str, per_minute: int, code: str
+    connection: psycopg.AsyncConnection, account_id: UUID, action: str, per_minute: int, code: str
 ) -> None:
     """Count the action against the account's limit, or answer 429 with when to try again."""
-    assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
     try:
-        await take(connection, who.account_id, action, per_minute=per_minute)
+        await take(connection, account_id, action, per_minute=per_minute)
     except RateLimited as limited:
         retry = {"Retry-After": str(limited.retry_after_s)}
         raise Refusal(429, code, "Too many of these for now; try again later.", retry) from None
