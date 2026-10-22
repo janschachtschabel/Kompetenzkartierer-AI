@@ -83,9 +83,10 @@ def write_research(directory: Path, **rows: list[dict[str, str]]) -> Path:
 def test_the_published_research_gives_its_t1_rows_but_the_broken_ones() -> None:
     read = read_research(PUBLISHED)
 
-    # 684 rows in the five assignments' T1 tables; a semicolon in a field moved six of them
+    # 684 rows in the five assignments' T1 tables; a semicolon in a field moved six of them. Their
+    # url fields name 34 addresses beyond the first
     assert len(read.rows) == 668
-    assert read.left_out == {"shifted": 6, "no_url": 9, "no_title": 1}
+    assert read.left_out == {"shifted": 6, "no_url": 9, "no_title": 1, "further_address": 34}
     # 595 first addresses of the url fields: one the untitled row's alone, one another's with a bracket
     assert len({row.url for row in read.rows}) == 593
 
@@ -289,6 +290,27 @@ def test_the_published_research_marks_its_archives_mirrors_and_secondary_sources
 
     # five rows on the GEI's depot; mirrors in Berlin, Rhineland-Palatinate (2), Saarland, Thuringia
     assert kinds == {None: 656, "archiv": 5, "spiegel": 5, "sekundaer": 2}
+
+
+def test_the_further_addresses_of_an_entry_s_field_are_counted(tmp_path: Path) -> None:
+    # an entry takes the first address alone; the others are left out, not lost unseen
+    twice = row("Plan", "https://a.example/1 | https://a.example/2")
+    directory = write_research(
+        tmp_path / "r",
+        schule=[
+            row("Drei", "https://b.example/1 | https://b.example/2 | Kopie https://b.example/3"),
+            row("Kopie", "https://c.example/1 (gelesen als Kopie https://c.example/2)"),
+            twice,
+            twice,
+            row("", "https://d.example/1 | https://d.example/2"),
+        ],
+    )
+
+    read = read_research(directory)
+
+    assert len(read.rows) == 3
+    # of the rows that are entries: not of the duplicate, nor of the row without a title
+    assert read.left_out == {"further_address": 4, "duplicate": 1, "no_title": 1}
 
 
 def test_a_row_without_an_address_or_a_title_is_left_out_and_counted(tmp_path: Path) -> None:
@@ -546,8 +568,8 @@ def test_the_command_seeds_the_research_and_compares_it_with_the_dataset(sectore
 
     assert done.returncode == 0, done.stderr
     assert (
-        "668 entries added, 0 in the register already; left out: no_title 1, no_url 9, shifted 6"
-        in done.stderr
+        "668 entries added, 0 in the register already;"
+        " left out: further_address 34, no_title 1, no_url 9, shifted 6" in done.stderr
     )
     # the dataset's 1,278 addresses and the research's 593
     assert (

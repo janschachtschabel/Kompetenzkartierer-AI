@@ -9,7 +9,8 @@ addresses); who publishes the copy there, as its host or the field's note on it 
 a mirror, a secondary source: §7.5 has mirrors marked); its land; the sector of its assignment;
 its evidence, E from the primary document or S from a secondary source (A, an assumption, is
 none). A row whose fields a semicolon moved, or
-without a title or an address, is left out and counted. A second run adds nothing: a row's key
+without a title or an address, is left out and counted, and so is each address an entry's url
+field names beyond the first ("further_address"). A second run adds nothing: a row's key
 is its report, land, title and address.
 
 The comparison then counts the addresses of the register only the comparison dataset holds,
@@ -97,16 +98,20 @@ def read_research(directory: Path) -> Documents:
         if not reports:
             raise SeedError(f"no reports of the assignment {name} in {directory}: is ONTOLOGY_DIR right?")
         for path in reports:
-            for row in _rows(path, assignment, left_out):
+            for row, further in _rows(path, assignment, left_out):
                 if row.key in keys:
                     left_out["duplicate"] += 1
                 else:
                     keys.add(row.key)
                     rows.append(row)
+                    if further:
+                        left_out["further_address"] += further
     return Documents(rows, left_out)
 
 
-def _rows(path: Path, assignment: Assignment, left_out: Counter[str]) -> Iterator[SeedRow]:
+def _rows(path: Path, assignment: Assignment, left_out: Counter[str]) -> Iterator[tuple[SeedRow, int]]:
+    """The candidates of a report's table T1, each with how many addresses its url field names
+    beyond the first."""
     reader = csv.DictReader(io.StringIO("\n".join(_t1(path))), delimiter=";")
     missing = [
         column
@@ -134,7 +139,7 @@ def _rows(path: Path, assignment: Assignment, left_out: Counter[str]) -> Iterato
             left_out["url_invalid"] += 1
             continue
         land = raw["land"].strip()
-        yield SeedRow(
+        found = SeedRow(
             key=hashlib.sha256("\x1f".join((path.name, land, title, url)).encode()).hexdigest(),
             title=title,
             url=url,
@@ -143,6 +148,7 @@ def _rows(path: Path, assignment: Assignment, left_out: Counter[str]) -> Iterato
             sector=assignment.sector,
             evidence=_evidence(raw["beleg"]),
         )
+        yield found, len(_ADDRESS.findall(raw["url"])) - 1
 
 
 def _t1(path: Path) -> list[str]:
