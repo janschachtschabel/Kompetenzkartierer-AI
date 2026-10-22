@@ -108,7 +108,8 @@ class Settings(BaseSettings):
     # The proxies (ingress, web server) whose X-Forwarded-For names the client: addresses or
     # networks, never "*" - with it every client could name its own address and dodge the limit
     forwarded_allow_ips: str = "127.0.0.1,::1"
-    # Failed sign-ins per client address before it is refused for the window
+    # Failed sign-ins per source (address, IPv6 /64) before its further failures get 429 for
+    # the window; a valid token always passes
     auth_failure_limit: Annotated[int, Field(ge=1)] = 10
     auth_failure_window_s: Annotated[float, Field(gt=0)] = 900.0
     # A job's lease; the worker renews it at a third. A worker gone silent loses its job after this
@@ -155,10 +156,13 @@ class Settings(BaseSettings):
     def _proxy_networks(cls, value: str) -> str:
         entries = [entry.strip() for entry in value.split(",")]
         try:
-            networks = [ipaddress.ip_network(entry, strict=False) for entry in entries]
+            # strict: 10.42.1.5/16 is no network, and taking it as 10.42.0.0/16 would trust more
+            networks = [ipaddress.ip_network(entry, strict=True) for entry in entries]
         except ValueError:
             raise ValueError("must list proxy addresses or networks, comma-separated, never *") from None
-        # a single address as it was written, a network with its prefix
+        if any(net.prefixlen == 0 for net in networks):
+            raise ValueError("must not trust every address (/0): every client could name its own")
+        # a single address without its /32 or /128, a network with its prefix
         return ",".join(str(net.network_address) if net.num_addresses == 1 else str(net) for net in networks)
 
     @field_validator("log_level", mode="before")

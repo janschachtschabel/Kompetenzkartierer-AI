@@ -3,8 +3,10 @@
 import time
 from typing import Any
 
+import psycopg
 import pytest
 from fastapi.routing import APIRoute, iter_route_contexts
+from psycopg_pool import PoolTimeout
 
 from app.api.app import create_app
 from app.api.deps import principal
@@ -63,8 +65,28 @@ def test_a_database_away_answers_503_soon(restore_logging: None) -> None:
 @pytest.mark.pg
 @pytest.mark.parametrize(
     "name",
-    ["Admin" + chr(0x00), "Ad" + chr(0x200B) + "min", "Admin" + chr(0x202E), "Lehr" + chr(0x0A) + "kraft"],
-    ids=["nul", "zero-width", "bidi", "newline"],
+    [
+        "Admin" + chr(0x00),
+        "Ad" + chr(0x200B) + "min",
+        "Admin" + chr(0x202E),
+        "Lehr" + chr(0x0A) + "kraft",
+        "Admin" + chr(0xFE0F),
+        "Ad" + chr(0xA0) + "min",
+        chr(0x3164) + "Admin",
+        "Ad" + chr(0x34F) + "min",
+        "Admin" + chr(0x2800),
+    ],
+    ids=[
+        "nul",
+        "zero-width",
+        "bidi",
+        "newline",
+        "variation-selector",
+        "no-break-space",
+        "hangul-filler",
+        "grapheme-joiner",
+        "braille-blank",
+    ],
 )
 def test_an_account_name_with_hidden_signs_is_refused(database_url: str, name: str) -> None:
     migrate(database_url)
@@ -91,3 +113,51 @@ def test_a_name_written_two_ways_is_one_name(database_url: str) -> None:
 
     assert composed.status_code == 201
     assert decomposed.status_code == 409
+
+
+@pytest.mark.pg
+def test_a_name_that_grows_past_the_limit_in_its_one_spelling_is_refused(database_url: str) -> None:
+    # NFC can lengthen a text (U+FB2C is three signs in it): counted before, it reached the
+    # database's CHECK as 600 signs and answered 500
+    migrate(database_url)
+    app = create_app(make_settings(database_url=database_url))
+    long = chr(0xFB2C) * 200
+    with selector_client(app, base_url=PUBLIC) as client:
+        admin = seed_admin(database_url)
+        account = client.post("/api/v1/accounts", json={"name": long, "roles": ["nutzer"]}, headers=admin)
+        created = client.post(
+            "/api/v1/accounts", json={"name": "Lehrkraft", "roles": ["nutzer"]}, headers=admin
+        )
+        key = client.post(
+            f"/api/v1/accounts/{created.json()['id']}/keys", json={"label": long}, headers=admin
+        )
+
+    assert (account.status_code, key.status_code) == (422, 422)
+
+
+@pytest.mark.parametrize(
+    ("error", "status"),
+    [
+        (psycopg.OperationalError("the server closed the connection"), 503),
+        (psycopg.errors.lookup("08006")("connection failure"), 503),
+        (psycopg.errors.lookup("57P01")("terminating connection due to administrator command"), 503),
+        (PoolTimeout("couldn't get a connection after 5.00 sec"), 503),
+        (psycopg.errors.lookup("40P01")("deadlock detected"), 500),
+        (psycopg.errors.lookup("57014")("canceling statement due to statement timeout"), 500),
+        (psycopg.errors.lookup("54000")("program limit exceeded"), 500),
+    ],
+    ids=["closed", "connection-failure", "admin-shutdown", "pool-timeout", "deadlock", "canceled", "limit"],
+)
+def test_only_a_database_away_answers_503(restore_logging: None, error: Exception, status: int) -> None:
+    # a deadlock or a statement too big is a fault to see in the log, not a reason to try again
+    app = create_app(make_settings())
+
+    async def failing() -> None:
+        raise error
+
+    app.add_api_route("/probe/database", failing)
+    with selector_client(app, base_url=PUBLIC, raise_server_exceptions=False) as client:
+        response = client.get("/probe/database")
+
+    assert response.status_code == status
+    assert ("Retry-After" in response.headers) is (status == 503)

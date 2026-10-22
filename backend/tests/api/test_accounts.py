@@ -5,6 +5,7 @@ import io
 from collections.abc import Iterator
 from typing import Any
 
+import httpx2
 import psycopg
 import pytest
 from fastapi.testclient import TestClient
@@ -178,3 +179,23 @@ def test_with_a_second_admin_the_first_one_may_go(client: TestClient, admin: dic
     blocked = client.patch(f"/api/v1/accounts/{me_id(client, admin)}", json={"disabled": True}, headers=admin)
 
     assert blocked.status_code == 200
+
+
+@pytest.mark.anyio
+async def test_two_admins_blocking_each_other_at_once_leave_one(migrated: str) -> None:
+    # each would see the other still active and pass; the lock lets one through, then refuses
+    app = create_app(make_settings(database_url=migrated, db_pool_min_size=4, db_pool_max_size=4))
+    first, second = await seed(migrated, "Erste", ["admin"]), await seed(migrated, "Zweite", ["admin"])
+    ids = {name: account for account, name in fetch(migrated, "SELECT id, name FROM account")}
+    transport = httpx2.ASGITransport(app=app)
+    async with (
+        app.router.lifespan_context(app),
+        httpx2.AsyncClient(transport=transport, base_url=PUBLIC) as client,
+    ):
+        await app.state.pool.wait(timeout=10)
+        answers = await asyncio.gather(
+            client.patch(f"/api/v1/accounts/{ids['Zweite']}", json={"disabled": True}, headers=bearer(first)),
+            client.patch(f"/api/v1/accounts/{ids['Erste']}", json={"disabled": True}, headers=bearer(second)),
+        )
+
+    assert sorted(answer.status_code for answer in answers) == [200, 409]

@@ -76,6 +76,7 @@ class FileSystemStorage:
         """Raises InvalidKey for a key below an object or one that holds other keys: S3 keeps
         ``a`` and ``a/b`` side by side, a file system cannot."""
         path = self._path(key)
+        made = [folder for folder in (path.parent, *path.parent.parents) if not folder.exists()]
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
         except (FileExistsError, NotADirectoryError):
@@ -92,7 +93,9 @@ class FileSystemStorage:
         except BaseException:
             Path(temporary).unlink(missing_ok=True)
             raise
-        _sync_folder(path.parent)
+        # the object's entry, and the entry of each folder made for it, in the folder above
+        for folder in [path.parent, *(made_folder.parent for made_folder in made)]:
+            _sync_folder(folder)
 
     def get(self, key: str) -> bytes:
         path = self._object(key)

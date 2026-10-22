@@ -6,20 +6,40 @@ from typing import Literal
 from uuid import UUID
 
 Role = Literal["admin", "redaktion", "nutzer"]
+# The longest account name and key label, in the one spelling the database keeps
+MAX_NAME_SIGNS = 200
 # Control and format signs (NUL, zero-width space, right-to-left override) and line separators
 _HIDDEN = frozenset({"Cc", "Cf", "Zl", "Zp"})
+# Signs that show nothing and are neither: the combining grapheme joiner, the Hangul fillers, the
+# blank braille pattern, the variation selectors (Unicode's default-ignorable code points)
+_INVISIBLE = frozenset(
+    {0x034F, 0x115F, 0x1160, 0x17B4, 0x17B5, 0x2800, 0x3164, 0xFFA0}
+    | set(range(0x180B, 0x1810))
+    | set(range(0xFE00, 0xFE10))
+    | set(range(0xE0100, 0xE01F0))
+)
+
+
+def one_spelling(value: object) -> object:
+    """``value`` in NFC where it is text: one name has one spelling for its unique index. Before
+    any length is counted - NFC can lengthen a text (U+FB2C is three signs in it)."""
+    return unicodedata.normalize("NFC", value) if isinstance(value, str) else value
+
+
+def shows_whole(value: str) -> str:
+    """``value``, or ValueError if a part of it shows nothing: a control or format sign, a line
+    separator, a space other than the plain one, or another invisible sign. No name or key label
+    then hides a part from the admin who reads the list."""
+    for sign in value:
+        category = unicodedata.category(sign)
+        if category in _HIDDEN or (category == "Zs" and sign != " ") or ord(sign) in _INVISIBLE:
+            raise ValueError("must not hold control, invisible or unusual space signs")
+    return value
 
 
 def plain_text(value: str) -> str:
-    """``value`` in NFC, or ValueError if it holds a control, format or line-separator sign.
-
-    An account name then has one spelling for its unique index, and no name or key label hides
-    a part from the admin who reads the list.
-    """
-    value = unicodedata.normalize("NFC", value)
-    if any(unicodedata.category(sign) in _HIDDEN for sign in value):
-        raise ValueError("must not hold control or invisible formatting signs")
-    return value
+    """``value`` in one spelling, showing whole (see both); ValueError otherwise."""
+    return shows_whole(str(one_spelling(value)))
 
 
 @dataclass(frozen=True)

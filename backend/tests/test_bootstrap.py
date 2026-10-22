@@ -101,3 +101,17 @@ def test_a_bootstrap_name_with_a_hidden_sign_is_refused(database_url: str) -> No
     refused = bootstrap(database_url, "Ad" + chr(0x200B) + "min")
 
     assert (refused.returncode, refused.stdout) == (1, "")
+
+
+def test_a_bootstrap_name_an_account_has_says_so(database_url: str) -> None:
+    # the way back when no admin has a live key any more: the old account keeps its name
+    migrate(database_url)
+    bootstrap(database_url, "Admin")
+    with psycopg.connect(database_url) as connection:
+        connection.execute("UPDATE api_key SET revoked_at = now()")
+
+    again = bootstrap(database_url, "Admin")
+
+    assert (again.returncode, again.stdout) == (1, "")
+    assert "an account of this name exists" in again.stderr
+    assert "Traceback" not in again.stderr

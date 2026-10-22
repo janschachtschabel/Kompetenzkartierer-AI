@@ -156,3 +156,25 @@ def test_a_failed_write_leaves_the_old_object_and_no_stray_file(
 
     assert storage.get("runs/1.json") == b"old"
     assert [path.name for path in (storage.root / "runs").iterdir()] == ["1.json"]
+
+
+@pytest.mark.skipif(
+    not Path("/proc/self/fd").is_dir(), reason="names a descriptor's path through /proc (Linux)"
+)
+def test_a_write_syncs_every_folder_it_made(
+    storage: FileSystemStorage, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # a new folder is durable once its own entry is on disk, in the folder above it
+    synced: list[str] = []
+    real_fsync = os.fsync
+
+    def recording_fsync(descriptor: int) -> None:
+        if stat.S_ISDIR(os.fstat(descriptor).st_mode):
+            synced.append(os.readlink(f"/proc/self/fd/{descriptor}"))
+        real_fsync(descriptor)
+
+    monkeypatch.setattr("app.core.storage.os.fsync", recording_fsync)
+    storage.put("a/b/c.json", b"{}")
+
+    root = storage.root
+    assert set(synced) >= {str(tmp_path.resolve()), str(root), str(root / "a"), str(root / "a" / "b")}

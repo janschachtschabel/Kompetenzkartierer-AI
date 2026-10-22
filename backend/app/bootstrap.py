@@ -13,7 +13,7 @@ import sys
 
 import psycopg
 
-from app.core.auth import plain_text
+from app.core.auth import MAX_NAME_SIGNS, plain_text
 from app.core.logging import configure_logging
 from app.core.settings import Settings
 from app.db import accounts as store
@@ -25,7 +25,10 @@ DONE_ALREADY = 2
 
 
 async def make_first_admin(settings: Settings, name: str) -> str | None:
-    """The new admin's token, or ``None`` if an admin exists."""
+    """The new admin's token, or ``None`` if an admin who can sign in exists.
+
+    Raises AccountExists if an account has the name.
+    """
     assert settings.api_key_pepper is not None  # noqa: S101 - checked by main
     url = settings.database_url.get_secret_value()
     connection = await psycopg.AsyncConnection.connect(url, **CONNECTION_OPTIONS)
@@ -61,8 +64,15 @@ def main(arguments: list[str]) -> int:
     except ValueError as error:
         log.error("NAME %s", error)
         return 1
+    if len(name) > MAX_NAME_SIGNS:
+        log.error("NAME must not be longer than %d signs", MAX_NAME_SIGNS)
+        return 1
     try:
         token = asyncio.run(make_first_admin(settings, name), loop_factory=asyncio.SelectorEventLoop)
+    except store.AccountExists:
+        # the way back when no admin can sign in any more: that account keeps its name
+        log.error("an account of this name exists; choose another NAME")
+        return 1
     except psycopg.Error as error:
         log.error("no admin made: %s", " ".join(str(error).split()))
         return 1

@@ -395,7 +395,9 @@ def test_only_the_local_proxy_is_trusted_by_default(monkeypatch: pytest.MonkeyPa
     assert Settings().forwarded_allow_ips == "127.0.0.1,::1"
 
 
-@pytest.mark.parametrize("value", ["*", "10.0.0.0/8,*", "not-an-address", ""])
+@pytest.mark.parametrize(
+    "value", ["*", "10.0.0.0/8,*", "not-an-address", "", "0.0.0.0/0", "::/0", "10.42.1.5/16"]
+)
 def test_trusting_every_proxy_or_a_wrong_address_is_refused(
     monkeypatch: pytest.MonkeyPatch, value: str
 ) -> None:

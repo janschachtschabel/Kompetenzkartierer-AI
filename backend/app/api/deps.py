@@ -13,6 +13,7 @@ of FORWARDED_ALLOW_IPS, whose X-Forwarded-For uvicorn reads instead. Routes then
 """
 
 import hashlib
+import hmac
 import ipaddress
 import logging
 from collections.abc import Awaitable, Callable
@@ -66,7 +67,8 @@ async def principal(
         if failures < settings.auth_failure_limit:
             await record_failure(connection, source)
             if failures + 1 == settings.auth_failure_limit:
-                log.warning("sign-in failures reached the limit for source %s", _anonymous(source))
+                pepper = settings.api_key_pepper.get_secret_value() if settings.api_key_pepper else ""
+                log.warning("sign-in failures reached the limit for source %s", _anonymous(source, pepper))
     # raised outside the block: an exception inside would roll the failure back
     if failures >= settings.auth_failure_limit:
         retry = str(int(settings.auth_failure_window_s))
@@ -82,12 +84,14 @@ def failure_source(host: str | None) -> str:
         return UNKNOWN_SOURCE
     if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is None:
         return str(ipaddress.IPv6Network(f"{address}/64", strict=False))
-    return str(address.ipv4_mapped or address) if isinstance(address, ipaddress.IPv6Address) else str(address)
+    return str(address.ipv4_mapped) if isinstance(address, ipaddress.IPv6Address) else str(address)
 
 
-def _anonymous(source: str) -> str:
-    """The source as a log line may hold it: an address is personal data."""
-    return hashlib.sha256(source.encode()).hexdigest()[:12]
+def _anonymous(source: str, pepper: str) -> str:
+    """The source as a log line may hold it: an address is personal data, and every IPv4
+    address hashes in minutes, so the hash is keyed - with the pepper, the same on every replica,
+    so one source keeps one name across the cluster's logs."""
+    return hmac.new(pepper.encode(), source.encode(), hashlib.sha256).hexdigest()[:12]
 
 
 async def require_account(who: Annotated[Principal, Depends(principal)]) -> Principal:

@@ -115,7 +115,7 @@ async def lock_admins(connection: psycopg.AsyncConnection) -> None:
 
 
 async def record_failure(connection: psycopg.AsyncConnection, source: str) -> None:
-    """Note a failed sign-in from ``source``; rows older than a day go with it."""
+    """Note a failed sign-in from ``source``, and sweep up to SWEEP_BATCH rows older than a day."""
     await connection.execute("INSERT INTO auth_failure (source) VALUES (%s)", (source,))
     # at most a batch per failure, over the index on at: an attack costs no full-table scan
     await connection.execute(

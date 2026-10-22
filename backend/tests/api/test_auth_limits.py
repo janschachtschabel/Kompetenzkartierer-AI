@@ -1,6 +1,9 @@
 """The failure limit behind proxies and NAT: it slows guessing and locks out no one with a token."""
 
 import asyncio
+import hashlib
+import hmac
+import logging
 from collections.abc import Coroutine
 from typing import Annotated, Any
 
@@ -107,3 +110,21 @@ async def test_old_failures_are_swept_in_bounded_batches(database_url: str) -> N
     # each failure sweeps at most a batch of old rows: an attack costs no full-table scan
     assert after_one == (1500 - 1000 + 1,)
     assert after_two == (2,)
+
+
+@pytest.mark.pg
+def test_the_logged_source_is_keyed_not_a_plain_hash(
+    database_url: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    # every IPv4 address hashes in minutes: a plain SHA-256 prefix in the log is the address
+    migrate(database_url)
+    caplog.set_level(logging.WARNING, logger="app.api.deps")
+    with selector_client(
+        app_with_probe(database_url, auth_failure_limit=1), base_url=PUBLIC, client=("192.0.2.9", 5000)
+    ) as client:
+        client.post("/api/v1/t/write", headers=BAD)
+
+    [warning] = [record for record in caplog.records if "reached the limit" in record.getMessage()]
+    [logged] = warning.args or ()
+    assert logged != hashlib.sha256(b"192.0.2.9").hexdigest()[:12]
+    assert logged == hmac.new(FAKE_PEPPER.encode(), b"192.0.2.9", hashlib.sha256).hexdigest()[:12]

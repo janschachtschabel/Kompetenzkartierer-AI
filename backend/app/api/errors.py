@@ -120,11 +120,25 @@ def _location(fault: Mapping[str, Any]) -> list[Any]:
     return location
 
 
+# The states of a database that is away: no connection (class 08), shut down or starting
+# (57P01-57P03). A deadlock, a cancelled statement, a full disk is a fault, not a reason to retry
+_AWAY_STATES = ("57P01", "57P02", "57P03")
+
+
+def _database_is_away(error: OperationalError) -> bool:
+    # PoolTimeout and a connection the client could not make carry no state
+    state = error.sqlstate
+    return state is None or state.startswith("08") or state in _AWAY_STATES
+
+
 async def _database_away(request: Request, error: Exception) -> Response:
-    """No pool connection in time (PoolTimeout is one), or the database cut it: try again soon."""
-    log.warning(
-        "the database did not answer %s %s: %s", request.method, request.url.path, type(error).__name__
-    )
+    """No pool connection in time, or the database cut it: try again soon. Any other operational
+    error goes on to the 500 answer and its traceback in the log."""
+    assert isinstance(error, OperationalError)  # noqa: S101 - registered for this type only
+    if not _database_is_away(error):
+        raise error
+    # the class and the state only: a path is the request log's, and quotes the client
+    log.warning("the database did not answer: %s %s", type(error).__name__, error.sqlstate)
     retry = {"Retry-After": str(DATABASE_RETRY_S)}
     return error_response(503, "The database does not answer; try again shortly.", headers=retry)
 
