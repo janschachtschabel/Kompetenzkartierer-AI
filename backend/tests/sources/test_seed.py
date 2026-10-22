@@ -220,6 +220,25 @@ def test_a_row_whose_address_cannot_be_fetched_is_left_out_and_counted(tmp_path:
     assert read.left_out == {"url_invalid": 2}
 
 
+def append_line(path: Path, *values: str) -> Path:
+    """One more line of these fields, however many the header names."""
+    with path.open("a", encoding="utf-8", newline="") as handle:
+        csv.writer(handle, delimiter=";", lineterminator="\r\n").writerow(values)
+    return path
+
+
+def test_a_row_of_more_or_fewer_fields_than_the_header_is_left_out_and_counted(tmp_path: Path) -> None:
+    path = write_documents(tmp_path / "d.csv", document("BY.GYM.PH"))
+    longer = document("BY.GYM.CH")
+    append_line(path, *(longer.get(column, "") for column in COLUMNS), "ein Feld zu viel")
+    append_line(path, "nur", "zwei Felder")
+
+    read = read_documents(path)
+
+    assert [row.key for row in read.rows] == ["BY.GYM.PH"]
+    assert read.left_out == {"shifted": 2}
+
+
 @pytest.mark.parametrize(("land", "country"), [("SH", "DE-SH"), ("DE", "DE"), ("", None), ("Bayern", None)])
 def test_the_land_is_the_country(tmp_path: Path, land: str, country: str | None) -> None:
     # "DE": the dataset's rows of the federation (KMK), the country itself
@@ -438,3 +457,16 @@ def test_the_command_ends_with_1_where_the_register_cannot_take_the_seed(
 
     assert done.returncode == 1
     assert "app.vocab.load" in done.stderr
+
+
+@pytest.mark.pg
+def test_the_command_ends_with_1_where_the_file_is_no_utf_8(migrated: str, tmp_path: Path) -> None:
+    path = write_documents(tmp_path / "d.csv", document("BY.GYM.PH"))
+    # "ä" as Latin-1 writes it: no byte of UTF-8 alone
+    path.write_bytes(path.read_bytes().replace(b"Physik", b"Physik \xe4"))
+
+    done = run_command(migrated, str(path))
+
+    assert done.returncode == 1
+    assert "register not seeded" in done.stderr
+    assert "Traceback" not in done.stderr

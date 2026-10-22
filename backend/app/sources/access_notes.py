@@ -56,6 +56,10 @@ def read_notes(path: Path) -> Notes:
     left_out: Counter[str] = Counter()
     with path.open(encoding="utf-8-sig", newline="") as handle:
         for raw in csv.DictReader(handle, delimiter=";"):
+            if None in raw or None in raw.values():
+                # more or fewer fields than the header: whatever they mean, not what the header says
+                left_out["shifted"] += 1
+                continue
             text = _text(raw["Hinweis"], 4000)
             if text is None:
                 left_out["empty"] += 1

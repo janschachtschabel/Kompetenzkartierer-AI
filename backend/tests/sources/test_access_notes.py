@@ -21,7 +21,7 @@ from app.db.migrate import migrate
 from app.sources.access_notes import NOTES, read_notes, record_notes
 from app.sources.register import EDUCATION_SECTORS
 from app.sources.seed import read_documents, seed_register
-from tests.sources.test_seed import SCHOOL, document, run_twice_at_once, write_documents
+from tests.sources.test_seed import SCHOOL, append_line, document, run_twice_at_once, write_documents
 from tests.support import make_settings, seed_account, selector_client
 
 PUBLIC = "http://testserver:8000"
@@ -214,6 +214,18 @@ def write_notes(path: Path, *rows: dict[str, str]) -> Path:
 
 def note(land: str, school_form: str, subject: str, text: str) -> dict[str, str]:
     return {"Land_Kuerzel": land, "Schulform": school_form, "Fach": subject, "Hinweis": text}
+
+
+def test_a_note_of_more_or_fewer_fields_than_the_header_is_left_out_and_counted(tmp_path: Path) -> None:
+    path = write_notes(tmp_path / "n.csv", note("BY", "Gymnasium", "", "gilt"))
+    longer = note("BY", "Gymnasium", "", "verschoben")
+    append_line(path, *(longer.get(column, "") for column in NOTE_COLUMNS), "ein Feld zu viel")
+    append_line(path, "BY", "Bayern")
+
+    read = read_notes(path)
+
+    assert [found.text for found in read.notes] == ["gilt"]
+    assert read.left_out == {"shifted": 2}
 
 
 def notes_shown(client: TestClient, migrated: str, documents: Path, notes: Path) -> list[dict[str, Any]]:

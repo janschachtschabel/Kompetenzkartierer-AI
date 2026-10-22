@@ -90,7 +90,7 @@ class SeedRow:
 @dataclass(frozen=True)
 class Documents:
     rows: list[SeedRow]
-    # why rows were left out: esa, kanonisch, url_invalid
+    # why rows were left out: esa, kanonisch, url_invalid, shifted
     left_out: Counter[str] = field(default_factory=Counter)
 
 
@@ -106,7 +106,10 @@ def read_documents(path: Path) -> Documents:
     left_out: Counter[str] = Counter()
     with path.open(encoding="utf-8-sig", newline="") as handle:
         for raw in csv.DictReader(handle, delimiter=";"):
-            if raw["ESA-Ableitung"].strip() == "ja":
+            if None in raw or None in raw.values():
+                # more or fewer fields than the header: whatever they mean, not what the header says
+                left_out["shifted"] += 1
+            elif raw["ESA-Ableitung"].strip() == "ja":
                 left_out["esa"] += 1
             elif raw["Verifikation"].strip() == "kanonisch":
                 left_out["kanonisch"] += 1
@@ -244,7 +247,7 @@ def main(arguments: list[str]) -> int:
     try:
         documents, notes = read_documents(documents_path), read_notes(notes_path)
         seeded, noted = asyncio.run(_seed(settings, documents, notes), loop_factory=asyncio.SelectorEventLoop)
-    except (SeedError, OSError, csv.Error, KeyError, psycopg.Error) as error:
+    except (SeedError, OSError, UnicodeDecodeError, csv.Error, KeyError, psycopg.Error) as error:
         log.error("register not seeded: %s", " ".join(str(error).split()))
         return 1
     for what, report, left_out in (
