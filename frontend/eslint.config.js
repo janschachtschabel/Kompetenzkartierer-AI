@@ -38,11 +38,12 @@ export default defineConfigWithVueTs(
     },
   },
   {
-    // Build config lives outside tsconfig's program, so the type-aware rules
-    // have no types for it. Linted for syntax rather than excluded: a mistake
-    // in the build config breaks everything downstream of it.
-    name: "app/build-config",
-    files: ["vite.config.ts", "eslint.config.js"],
+    // This file lives outside both TypeScript programs (tsconfig.app.json,
+    // tsconfig.node.json), so the type-aware rules have no types for it.
+    // Linted for syntax rather than excluded: a mistake here switches off every
+    // rule downstream of it.
+    name: "app/lint-config",
+    files: ["eslint.config.js"],
     extends: [vueTsConfigs.disableTypeChecked],
   },
   // `essential`, not `recommended`: the difference between them is almost
