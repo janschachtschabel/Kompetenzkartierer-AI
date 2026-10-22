@@ -4,6 +4,7 @@ Taken over from curriculum-extractor (tests/test_filetype.py), with its findings
 over names, text only as UTF-8, a ZIP held to bounds before anything unpacks it.
 """
 
+import time
 import tracemalloc
 import zipfile
 
@@ -12,7 +13,7 @@ import pytest
 from app.sources import archives
 from app.sources.archives import ArchiveTooLarge, ArchiveUnreadable, check_archive
 from app.sources.filetype import DOCX_MIME, UnsupportedType, accepted_type, detect_type, stored_name
-from tests.sources.zip_helpers import directory_says, make_zip
+from tests.sources.zip_helpers import directory_only, directory_says, make_zip
 
 # --- the type, by content
 
@@ -131,6 +132,25 @@ def test_an_archive_that_expands_a_thousandfold_is_refused() -> None:
 def test_an_archive_of_too_many_parts_is_refused() -> None:
     with pytest.raises(ArchiveTooLarge):
         check_archive(make_zip({f"word/part{index}.xml": b"x" for index in range(5001)}))
+
+
+def test_an_archive_of_too_many_parts_is_refused_before_its_directory_is_read() -> None:
+    # zipfile reads the whole central directory into objects first: 50 MiB naming 1.1 million
+    # parts took 4.3 s and 330 MiB before the count refused them (review M1 package 1, B3)
+    many = directory_only(100_000)
+
+    tracemalloc.start()
+    started = time.process_time()
+    try:
+        with pytest.raises(ArchiveTooLarge):
+            check_archive(many)
+        spent = time.process_time() - started
+        peak = tracemalloc.get_traced_memory()[1]
+    finally:
+        tracemalloc.stop()
+
+    assert peak < 4 * 2**20
+    assert spent < 0.5
 
 
 def test_an_archive_too_large_in_sum_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:

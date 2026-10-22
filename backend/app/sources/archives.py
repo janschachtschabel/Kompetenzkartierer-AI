@@ -22,6 +22,7 @@ _BOMB_RATIO = 100
 _PACKED_WITH = frozenset({zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED})
 _ENCRYPTED = 0x1  # general-purpose bit 0
 _MEASURING_BLOCK = 2**16
+_DIRECTORY_ENTRY = b"PK\x01\x02"  # the signature each part's entry in the central directory starts with
 
 
 class ArchiveUnreadable(ValueError):
@@ -42,7 +43,13 @@ def check_archive(data: bytes) -> None:
     states is refused here, so nothing that reads the archive after unpacks more than the
     stated sizes allow. That unpacks up to the bound on the sum - 1.3 s of CPU for 256 MiB of
     text, measured: a caller on the event loop runs it in a thread.
+
+    Before all that, the parts are counted by their signature in the bytes: zipfile reads the
+    whole directory into objects first, and 50 MiB naming 1.1 million parts took 4.3 s and
+    330 MiB. The count is at least the true one, as packed bytes may hold the signature too.
     """
+    if data.count(_DIRECTORY_ENTRY) > MAX_ARCHIVE_ENTRIES:
+        raise ArchiveTooLarge(f"more than {MAX_ARCHIVE_ENTRIES} parts")
     try:
         archive = zipfile.ZipFile(io.BytesIO(data))
     except (zipfile.BadZipFile, ValueError) as error:

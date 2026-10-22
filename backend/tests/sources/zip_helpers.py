@@ -17,6 +17,26 @@ def make_zip(entries: dict[str, bytes], method: int = zipfile.ZIP_DEFLATED) -> b
     return buffer.getvalue()
 
 
+def directory_only(entries: int) -> bytes:
+    """A ZIP whose central directory holds ``entries`` parts that all point at one empty local
+    header: 47 bytes a part, so a few MB name a million of them."""
+    local = b"PK\x03\x04" + b"\0" * 26
+    entry = struct.pack("<4s6H3I5H2I", _DIRECTORY_ENTRY, 20, 20, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0)
+    directory = entry + b"a"
+    end = struct.pack(
+        "<4s4H2IH",
+        b"PK\x05\x06",
+        0,
+        0,
+        min(entries, 0xFFFF),
+        min(entries, 0xFFFF),
+        len(directory) * entries,
+        len(local),
+        0,
+    )
+    return local + directory * entries + end
+
+
 def directory_says(data: bytes, *, size: int | None = None, flags: int | None = None) -> bytes:
     """``data`` with every part's entry in the central directory stating ``size`` unpacked bytes
     and ``flags`` as its general-purpose bits, where given. The archive carries no comment, as
