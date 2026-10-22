@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, join, sep } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { ANCHORS, COLOUR_VALUE, SRC, scanned, sourceFiles, tokenBlocks } from "./sources";
+import { ANCHORS, COLOUR_VALUE, SRC, scanned, sourceFiles, tokenBlocks, withoutComments } from "./sources";
 
 /**
  * The layer below `shared-styles.test.ts`: that one keeps a shared *rule* from
@@ -23,34 +23,38 @@ it("scans the component sources", () => {
 
 // A declaration of a property that carries colour - or of a custom property, whose value a
 // component would hand on - wherever it starts: a line, after `{` or `;`, and in a bound
-// style after `,` or a quote. Shorthands that may hold a colour count too.
+// style after `,` or a quote. Shorthands that may hold a colour count too. The value ends
+// with its line: the next one belongs to another declaration, or to no CSS at all.
 const COLOUR_DECLARATION =
-  /(?:^|[{;,'"`])\s*((?:[\w-]*color|background[\w-]*|border[\w-]*|outline[\w-]*|fill|stroke|box-shadow|text-shadow|text-decoration[\w-]*|filter|column-rule[\w-]*|--[\w-]+)\s*:([^;{}]*))/gim;
+  /(?:^|[{;,'"`])\s*((?:[\w-]*color|background[\w-]*|border[\w-]*|outline[\w-]*|fill|stroke|box-shadow|text-shadow|text-decoration[\w-]*|filter|column-rule[\w-]*|--[\w-]+)\s*:([^;{}\n]*))/gim;
 // In a template: a style attribute, and SVG's fill and stroke - written out or bound, in either quotes.
 const COLOUR_ATTRIBUTE = /\s(?::|v-bind:)?(?:style|fill|stroke)=(["'])([\s\S]*?)\1/g;
 
 /** A value with its `url(...)` gone: a file's name - `icon-red.svg` - is no colour. */
 const colourOf = (value: string) => COLOUR_VALUE.test(value.replace(/url\([^)]*\)/gi, ""));
 
-/** The colour literals in `source`, CSS or template. */
+/** The colour literals in `source`, CSS or template; what a comment says is not drawn. */
 function colourLiterals(source: string): string[] {
-  const declared = [...source.matchAll(COLOUR_DECLARATION)]
+  const code = withoutComments(source);
+  const declared = [...code.matchAll(COLOUR_DECLARATION)]
     .filter(([, , value]) => colourOf(value))
     .map(([, declaration]) => declaration.trim());
-  const attributed = [...source.matchAll(COLOUR_ATTRIBUTE)]
+  const attributed = [...code.matchAll(COLOUR_ATTRIBUTE)]
     .filter(([, , value]) => colourOf(value))
     .map(([attribute]) => attribute.trim());
   return [...declared, ...attributed];
 }
 
-/** Where a width counts as a page's: 40rem, as many em, 640px, 80 characters. */
-const PAGE_WIDTH_FROM: Record<string, number> = { rem: 40, em: 40, px: 640, ch: 80 };
+/** Past these a width is a page's: 40rem, as many em, 640px, 80 characters - a dialog's sits on the line. */
+const PAGE_WIDTH_ABOVE: Record<string, number> = { rem: 40, em: 40, px: 640, ch: 80 };
 
-/** Widths of a page - fixed or a cap, also as `min(..., 100%)` - which is a token. */
+/** Widths of a page - fixed or a cap, the length anywhere in min(), clamp() or calc() - which is a token. */
 function pageWidths(source: string): string[] {
-  return [...source.matchAll(/(?:^|[\s{;])((?:max-)?(?:width|inline-size):\s*(?:min\(\s*)?([\d.]+)(rem|em|px|ch)\b)/g)]
-    .filter(([, , value, unit]) => Number(value) >= PAGE_WIDTH_FROM[unit])
-    .map(([, width]) => width);
+  return [...source.matchAll(/(?:^|[\s{;])((?:max-)?(?:width|inline-size)\s*:([^;{}\n]*))/g)]
+    .filter(([, , value]) =>
+      [...value.matchAll(/([\d.]+)(rem|em|px|ch)\b/g)].some(([, length, unit]) => Number(length) > PAGE_WIDTH_ABOVE[unit]),
+    )
+    .map(([, width]) => width.trim());
 }
 
 describe("page width", () => {
@@ -103,8 +107,10 @@ describe("colour", () => {
 
   it("is never written as a literal in a component", () => {
     // A colour named in style.css can be checked, changed and themed; one typed
-    // into a component can be none of those.
-    const offenders = sourceFiles().flatMap((path) =>
+    // into a component can be none of those. The catalogue holds words, not styles.
+    const offenders = sourceFiles()
+      .filter((path) => !path.includes(`${sep}i18n${sep}`))
+      .flatMap((path) =>
       colourLiterals(readFileSync(path, "utf8")).map((literal) => `${path}: ${literal}`),
     );
 
@@ -225,6 +231,11 @@ describe("a colour the token check must see", () => {
     "  background: url(icon-red.svg);",
     "  background-image: url(red-dot.png);",
     `<p :style="{ width: redWidth }">`,
+    // a comment says what was, not what is
+    "  /* background: red; */",
+    "<!-- color: red -->",
+    // a value ends with its line: the next one is someone else's
+    '  filter: "Filter",\n  medal: "Gold, Silber oder Bronze",',
   ])("is not invented: %s", (source) => {
     expect(colourLiterals(source)).toEqual([]);
   });
@@ -241,11 +252,24 @@ describe("a page width the width check must see", () => {
     "width: 60rem;",
     "max-width: 50em;",
     "max-width: 90ch;",
+    // wherever the length stands in the value
+    "max-width: min(100%, 60rem);",
+    "width: clamp(20rem, 80vw, 60rem);",
+    "max-width: calc(60rem - 2rem);",
   ])("is found: %s", (source) => {
     expect(pageWidths(source)).not.toEqual([]);
   });
 
-  it.each(["max-width: 36rem;", "max-inline-size: 26rem;", "max-width: 320px;", "width: 20rem;", "max-width: 65ch;"])(
+  it.each([
+    "max-width: 36rem;",
+    "max-inline-size: 26rem;",
+    "max-width: 320px;",
+    "width: 20rem;",
+    "max-width: 65ch;",
+    // a dialog's width sits on the line, not past it
+    "width: min(40rem, 100%);",
+    "width: 640px;",
+  ])(
     "is a component's own: %s",
     (source) => {
       expect(pageWidths(source)).toEqual([]);

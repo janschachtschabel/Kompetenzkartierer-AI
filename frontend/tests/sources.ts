@@ -30,6 +30,21 @@ export function stylesOf(source: string): string {
   return [...source.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(([, css]) => css).join("\n");
 }
 
+/** `source` without its comments: HTML, block and line ones - not the "//" of an address. */
+export function withoutComments(source: string): string {
+  return (
+    withoutCssComments(source)
+      .replace(/<!--[\s\S]*?-->/g, "")
+      // a line comment, not the "//" of a URL - after a scheme, a quote, `url(` or `=`
+      .replace(/(^|[^:"'`(=])\/\/[^\n]*/g, "$1")
+  );
+}
+
+/** CSS without its comments: a comment before a rule is no part of its selector, a `}` in one ends no block. */
+function withoutCssComments(css: string): string {
+  return css.replace(/\/\*[\s\S]*?\*\//g, "");
+}
+
 /** A style rule: its selectors, split at the commas, and its declarations. */
 export interface CssRule {
   selectors: string[];
@@ -37,12 +52,39 @@ export interface CssRule {
 }
 
 /**
- * The rules of a stylesheet, comments gone - a comment before a rule is no part
- * of its selector. A rule inside `@media` is read as a rule; the at-rule around
- * it is not.
+ * Throws on a style rule nested in a style rule: the reader below would take the
+ * inner one's selector and lose the outer one, and a guard would fall silent.
+ * Inside an at-rule - `@media`, `@supports` - rules are where they belong.
+ */
+function refuseNesting(css: string): void {
+  const atRule: boolean[] = [];
+  let prelude = "";
+  for (const sign of css) {
+    if (sign === "{") {
+      if (atRule.length > 0 && !atRule[atRule.length - 1]) {
+        throw new Error(`a nested CSS rule, which the guards cannot read: ${prelude.trim()}`);
+      }
+      atRule.push(prelude.trim().startsWith("@"));
+      prelude = "";
+    } else if (sign === "}") {
+      atRule.pop();
+      prelude = "";
+    } else if (sign === ";") {
+      prelude = "";
+    } else {
+      prelude += sign;
+    }
+  }
+}
+
+/**
+ * The rules of a stylesheet, comments gone. A rule inside `@media` is read as a
+ * rule; the at-rule around it is not. A nested style rule throws.
  */
 export function cssRules(css: string): CssRule[] {
-  return [...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({
+  const plain = withoutCssComments(css);
+  refuseNesting(plain);
+  return [...plain.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({
     selectors: selector
       .split(",")
       .map((part) => part.trim())
@@ -81,7 +123,7 @@ export const COLOUR_VALUE = new RegExp(
  * every token after it - checked against its light value, and passing.
  */
 export function tokenBlocks(stylesheet: string): { light: string; dark: string } {
-  const css = stylesheet.replace(/\/\*[\s\S]*?\*\//g, "");
+  const css = withoutCssComments(stylesheet);
   return {
     light: /^:root \{([\s\S]*?)\}/m.exec(css)?.[1] ?? "",
     dark: /@media \(prefers-color-scheme: dark\) \{\s*:root \{([\s\S]*?)\}/.exec(css)?.[1] ?? "",
@@ -98,9 +140,9 @@ const CLASS_NAME = /^[A-Za-z_-][\w-]*$/;
  */
 export function formControlRules(source: string): string[] {
   const classes = new Set<string>();
-  // quoted values may hold a `>`, as an arrow function in a handler does
-  for (const [, attributes] of source.matchAll(/<(?:input|select|textarea)\b((?:[^>"]|"[^"]*")*)>/g)) {
-    for (const [, list] of attributes.matchAll(/(?<![:\w-])class="([^"]*)"/g)) {
+  // quoted values may hold a `>`, as an arrow function in a handler does; `<select-field>` is no control
+  for (const [, attributes] of source.matchAll(/<(?:input|select|textarea)(?![\w-])((?:[^>"']|"[^"]*"|'[^']*')*)>/g)) {
+    for (const [, , list] of attributes.matchAll(/(?<![:\w-])class=(["'])(.*?)\1/g)) {
       for (const name of list.split(/\s+/)) if (CLASS_NAME.test(name)) classes.add(name);
     }
   }

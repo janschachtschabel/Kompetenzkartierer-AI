@@ -3,7 +3,17 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { COLOUR_VALUE, SRC, VUE_ANCHORS, formControlRules, scanned, sourceFiles, tokenBlocks } from "./sources";
+import {
+  COLOUR_VALUE,
+  SRC,
+  VUE_ANCHORS,
+  cssRules,
+  formControlRules,
+  scanned,
+  sourceFiles,
+  stylesOf,
+  tokenBlocks,
+} from "./sources";
 
 /**
  * WCAG 2.2 AA contrast, checked against the design tokens rather than against a
@@ -116,9 +126,11 @@ it("draws no form control's outline with the decorative border token", () => {
   const decorative = /border[\w-]*\s*:[^;]*var\(--border\)/;
   const offenders = files.flatMap((path) => {
     const source = readFileSync(path, "utf8");
-    const byElement = [...source.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-      .filter(([, selector, body]) => /\b(input|select|textarea)\b/.test(selector) && decorative.test(body))
-      .map(([, selector]) => `${path}: ${selector.trim()}`);
+    const byElement = cssRules(stylesOf(source)).flatMap(({ selectors, body }) =>
+      decorative.test(body)
+        ? selectors.filter((selector) => /\b(input|select|textarea)\b/.test(selector)).map((selector) => `${path}: ${selector}`)
+        : [],
+    );
     // and by a class the template puts on the control
     const byClass = formControlRules(source)
       .filter((body) => decorative.test(body))
@@ -137,11 +149,11 @@ it("draws no form control's outline with the decorative border token", () => {
 
 
 /**
- * The dark theme inherits every token it does not restate, so a colour given
- * only a light value - or a dark block cut short by a `}` in a comment - would
- * be checked in the dark theme with its light value, and pass.
+ * The colour tokens of the light block, and those of them the dark block does
+ * not restate. The dark theme inherits every token it does not restate, so a
+ * colour given only a light value would be checked in the dark theme with its
+ * light value, and pass.
  */
-/** The colour tokens of the light block, and those of them the dark block does not restate. */
 function darkGaps(stylesheet: string): { colours: string[]; missing: string[] } {
   const blocks = tokenBlocks(stylesheet);
   const light = declarations(blocks.light);

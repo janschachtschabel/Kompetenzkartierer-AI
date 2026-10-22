@@ -22,6 +22,7 @@ const FORBIDDEN = [
   /\bcreateContextualFragment\b/,
   /\bsetHTML(?:Unsafe)?\b/,
   /\bparseFromString\b/,
+  /\bparseHTML(?:Unsafe)?\b/,
   // a whole document handed to a frame
   /\bsrcdoc\b/,
 ];
@@ -60,6 +61,7 @@ describe("raw HTML in its other forms", () => {
     "node.setHTML(text)",
     'new DOMParser().parseFromString(text, "text/html")',
     '<iframe :srcdoc="text" />',
+    "Document.parseHTMLUnsafe(text)",
   ])("is recognised: %s", (source) => {
     expect(FORBIDDEN.some((pattern) => pattern.test(source))).toBe(true);
   });

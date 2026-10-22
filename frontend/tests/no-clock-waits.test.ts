@@ -9,13 +9,16 @@ import { TESTS, scanned, sourceFiles } from "./sources";
 // up to the timer, before the statement ends.
 const SLEEP = new RegExp(
   [
-    "new Promise\\s*(?:<[^>]*>)?\\(\\s*(?:async\\s+)?(?:\\([^)]*\\)|\\w+|function\\s*\\([^)]*\\))",
-    "\\s*(?:=>)?\\s*\\{?[^;}]*?\\b(?:\\w+\\.)?",
+    "new Promise\\s*(?:<(?:[^<>]|<[^<>]*>)*>)?\\(\\s*(?:async\\s+)?(?:\\([^)]*\\)|\\w+|function\\s*\\([^)]*\\))",
+    "\\s*(?:=>)?\\s*(?:\\{[^}]*?|[^;}]*?)\\b(?:\\w+\\.)?",
     "setTimeout\\(",
   ].join(""),
 );
-/** Node's promised timers: a sleep in one word. */
-const PROMISED_TIMERS = new RegExp(["timers", "\\/promises"].join(""));
+/** The other ways to a sleep: Node's promised timers, the timer promisified. */
+const OTHER_SLEEPS = [
+  new RegExp(["timers", "\\/promises"].join("")),
+  new RegExp(["promisify\\(\\s*(?:\\w+\\.)?", "setTimeout\\b"].join("")),
+];
 
 /** The timer the cases below write; split, so that this file holds none. */
 const TIMER = ["set", "Timeout("].join("");
@@ -36,13 +39,14 @@ it("waits on the work, not on the clock", () => {
   scanned(files, "no-clock-waits.test.ts", "contrast.test.ts");
 
   expect(files.filter((path) => SLEEP.test(readFileSync(path, "utf8")))).toEqual([]);
-  expect(files.filter((path) => PROMISED_TIMERS.test(readFileSync(path, "utf8")))).toEqual([]);
+  expect(files.filter((path) => OTHER_SLEEPS.some((pattern) => pattern.test(readFileSync(path, "utf8"))))).toEqual([]);
 });
 
-it("recognises the promised timers imported", () => {
-  const imported = 'import { setTimeout as sleep } from "node:' + ["timers", "promises"].join("/") + '";';
-
-  expect(PROMISED_TIMERS.test(imported)).toBe(true);
+it.each([
+  'import { setTimeout as sleep } from "node:' + ["timers", "promises"].join("/") + '";',
+  "const sleep = " + ["promisify(", "set", "Timeout);"].join(""),
+])("recognises a sleep made of the timer otherwise: %s", (source) => {
+  expect(OTHER_SLEEPS.some((pattern) => pattern.test(source))).toBe(true);
 });
 
 
@@ -57,6 +61,10 @@ it.each([
   "await new Promise((r) => window.WAIT(r, 50));",
   "await new Promise((r) => void WAIT(r, 50));",
   "await new Promise(function (r) { WAIT(r, 50); });",
+  // a block with a statement before the timer
+  "await new Promise((resolve) => {\n  const later = 20;\n  WAIT(resolve, later);\n});",
+  // a type with a type inside
+  "await new Promise<Map<string, number>>((r) => WAIT(r, 5));",
 ])("recognises a sleep however it is spelt: %s", (source) => {
   expect(SLEEP.test(spelt(source))).toBe(true);
 });

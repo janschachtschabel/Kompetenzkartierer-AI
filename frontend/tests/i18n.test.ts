@@ -10,11 +10,12 @@ const COUNTING = /^(?:count|total|n|\w+Count)$/;
 
 /**
  * `{x} Noun` without a plural form for x: "in {count} Sekunden" reads wrong for
- * one. Any space between, a protected one too; for a count also an adjective -
- * "{count} offene Fragen" - which after a name would be a verb ("{name} hat").
+ * one. Any space between (`\s` takes a protected one too); for a count also up
+ * to two adjectives - "{count} neue offene Fragen" - which after a name would be
+ * a verb ("{name} hat"). A noun has a small letter: ECTS and MB are units.
  */
 function countsWithoutPlural(text: string): string[] {
-  return [...text.matchAll(/\{(\w+)\}[\s ]+(?!\{\1\|)((?:[a-zäöüß]+[\s ]+)?)[A-ZÄÖÜ][\wÄÖÜäöüß-]*/g)]
+  return [...text.matchAll(/\{(\w+)\}\s+(?!\{\1\|)((?:[a-zäöüß]+\s+){0,2})[A-ZÄÖÜ](?=[\wÄÖÜäöüß-]*[a-zäöüß])[\wÄÖÜäöüß-]*/g)]
     .filter(([, name, between]) => !between || COUNTING.test(name))
     .map(([match]) => match);
 }
@@ -118,11 +119,19 @@ describe("a count before its noun", () => {
     ["{total} neue Lehrpläne erfasst.", "{total} neue Lehrpläne"],
     ["in {count} Sekunden", "{count} Sekunden"],
     ["{count} KMK-Standards", "{count} KMK-Standards"],
+    ["{count} neue offene Fragen", "{count} neue offene Fragen"],
   ])("finds a count without its plural however it is written: %s", (text, found) => {
     expect(countsWithoutPlural(text)).toEqual([found]);
   });
 
-  it.each(["{count} offene {count|Frage|Fragen}", "{name} hat Lehrpläne", "Anteil {part}"])(
+  it.each([
+    "{count} offene {count|Frage|Fragen}",
+    "{name} hat Lehrpläne",
+    "Anteil {part}",
+    // a unit without a plural of its own
+    "{credits} ECTS",
+    "{size} MB",
+  ])(
     "leaves alone what is no count without a plural: %s",
     (text) => {
       expect(countsWithoutPlural(text)).toEqual([]);

@@ -26,10 +26,14 @@ function rootClasses(source: string): string[] {
 /** A selector for one element itself - `.page.start`, `div.start:hover` - not for something inside it. */
 const COMPOUND = /^[a-z]*(?:\.[\w-]+|:[\w-]+(?:\([^)]*\))?)+$/i;
 
+/** A width, a margin, or a padding to the sides: what the shared frame decides for a page. */
+const FRAME_DECLARATION =
+  /(?:^|;)\s*(?:(?:max-|min-)?(?:width|inline-size)|margin(?:-[\w-]+)?|padding(?:-(?:inline(?:-start|-end)?|left|right))?)\s*:/;
+
 /** Selectors that give the root itself - one of `classes`, the shared `page` too - a width or margin of its own. */
 function frameOverrides(source: string, classes: string[]): string[] {
   return cssRules(stylesOf(source))
-    .filter(({ body }) => /(?:^|;)\s*(?:max-|min-)?(?:width|inline-size)\s*:|(?:^|;)\s*margin(?:-inline)?\s*:/.test(body))
+    .filter(({ body }) => FRAME_DECLARATION.test(body))
     .flatMap(({ selectors }) =>
       selectors.filter(
         (selector) =>
@@ -38,15 +42,17 @@ function frameOverrides(source: string, classes: string[]): string[] {
     );
 }
 
-/** Selectors that reach `pattern` anywhere in them: `.toolbar .btn-sm`, `button:hover`. */
+/** Selectors that reach `pattern` anywhere in them: `.toolbar .btn-sm`, `button:hover`. What `:not()` rules out reaches nothing. */
 function selectorsReaching(source: string, pattern: RegExp): string[] {
-  return cssRules(stylesOf(source)).flatMap(({ selectors }) => selectors.filter((selector) => pattern.test(selector)));
+  return cssRules(stylesOf(source)).flatMap(({ selectors }) =>
+    selectors.filter((selector) => pattern.test(selector.replace(/:not\([^)]*\)/g, ""))),
+  );
 }
 
 /** `.btn-sm`, as a class anywhere in a selector. */
 const SMALL_BUTTON = /\.btn-sm(?![\w-])/;
 /** `button`, as an element anywhere in a selector - not `.button-row` or `[type=button]`. */
-const BUTTON_ELEMENT = /(?:^|[\s>+~(])button(?![\w-])/;
+const BUTTON_ELEMENT = /(?:^|[\s>+~])button(?![\w-])/;
 
 it("scans the components and the framed pages", () => {
   scanned(components, ...VUE_ANCHORS);
@@ -69,6 +75,11 @@ describe("a framed page", () => {
     expect(frameOverrides(styled("div.start, .other {\n  width: 50%;\n}"), classes)).toEqual(["div.start"]);
     // what sits inside the page is its own business
     expect(frameOverrides(styled(".start p {\n  max-width: 54rem;\n}"), classes)).toEqual([]);
+    // moved or padded on one side only, the page leaves the frame as well
+    for (const declaration of ["margin-left: 2rem", "margin-inline-start: 0", "padding-inline: 1rem", "padding: 0 2rem"]) {
+      expect(frameOverrides(styled(`.start {\n  ${declaration};\n}`), classes), declaration).toEqual([".start"]);
+    }
+    expect(frameOverrides(styled(".start {\n  padding-top: 1rem;\n}"), classes)).toEqual([]);
   });
 
   it.each(framed.map((path) => [basename(path), path]))("%s sits in the shared frame and keeps it", (_name, path) => {
@@ -76,6 +87,15 @@ describe("a framed page", () => {
 
     expect(rootClasses(source)).toContain("page");
     expect(frameOverrides(source, rootClasses(source))).toEqual([]);
+  });
+});
+
+describe("the rule reader", () => {
+  it("refuses a nested rule rather than read it wrong: the outer one would be lost", () => {
+    expect(() => cssRules(".page {\n  color: red;\n  .start {\n    margin: 0;\n  }\n}")).toThrow(/nested/);
+    expect(() => cssRules(".page {\n  .start {\n    margin: 0;\n  }\n}")).toThrow(/nested/);
+    // an at-rule holds rules, as it should
+    expect(cssRules("@media (max-width: 40rem) {\n  .start {\n    margin: 0;\n  }\n}")).toHaveLength(1);
   });
 });
 
@@ -88,7 +108,8 @@ describe("buttons", () => {
     for (const selector of ["button", "button:hover", ".toolbar button", "button, a", "li > button"]) {
       expect(selectorsReaching(styled(selector), BUTTON_ELEMENT), selector).toHaveLength(1);
     }
-    for (const selector of [".button-row", "[type=button]", ".btn-small"]) {
+    // what a selector rules out or looks for inside reaches no button
+    for (const selector of [".button-row", "[type=button]", ".btn-small", "a:not(button)", ".btn:not(.btn-sm)", ".row:has(button)"]) {
       const reached = [...selectorsReaching(styled(selector), SMALL_BUTTON), ...selectorsReaching(styled(selector), BUTTON_ELEMENT)];
       expect(reached, selector).toEqual([]);
     }

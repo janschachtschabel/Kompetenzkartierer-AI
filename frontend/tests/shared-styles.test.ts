@@ -57,7 +57,8 @@ function declarationsOf(body: string): string[] {
 
 /** Every declaration the shared rules for `selector` make, read out of style.css. */
 function sharedDeclarations(selector: string): Set<string> {
-  const rule = new RegExp(`^\\${selector}(?![\\w-])[^{]*\\{([^}]*)\\}`, "gm");
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const rule = new RegExp(`^${escaped}(?![\\w-])[^{]*\\{([^}]*)\\}`, "gm");
   return new Set([...STYLESHEET.matchAll(rule)].flatMap((match) => declarationsOf(match[1])));
 }
 
@@ -159,6 +160,10 @@ describe("shared component classes", () => {
     expect(rules('<input class="token-field" />', ".login .token-field")).toHaveLength(1);
     // a class is a whole name: `token` is not `.token-list`
     expect(rules('<input class="token" />', ".token-list")).toEqual([]);
+    // single quotes are quotes too
+    expect(rules("<input class='token-field' />", ".token-field")).toHaveLength(1);
+    // a component named like a control is none
+    expect(rules('<select-field class="token-field" />', ".token-field")).toEqual([]);
   });
 
   it("does not restate that shell on a form control", () => {

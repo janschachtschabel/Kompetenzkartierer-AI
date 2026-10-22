@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { ANCHORS, SRC, scanned, sourceFiles } from "./sources";
+import { ANCHORS, SRC, scanned, sourceFiles, withoutComments } from "./sources";
 
 /**
  * The rules with legal weight (GDPR; see main.ts on the fonts): no request to a
@@ -14,18 +14,11 @@ import { ANCHORS, SRC, scanned, sourceFiles } from "./sources";
 const files = [...sourceFiles(SRC, /\.(vue|ts|css)$/), join(process.cwd(), "index.html")];
 
 /** Where the app could keep something past the tab's session, or write it where devtools show it. */
-const STORE_OR_CONSOLE = /\blocalStorage\b|\bconsole\.|\bdocument\.cookie\b|\bindexedDB\b|\bcaches\./;
+const STORE_OR_CONSOLE =
+  /\blocalStorage\b|\bconsole\s*(?:\.|\[)|\bdocument\.cookie\b|\bcookieStore\b|\bindexedDB\b|\bcaches\.(?:open|match)\(/;
 
 /** URLs that name a namespace, never fetched. */
 const NAMESPACES = /^(?:https?:)?\/\/www\.w3\.org\//i;
-
-function withoutComments(source: string): string {
-  return source
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    // a line comment, not the "//" of a URL - after a scheme, a quote, `url(` or `=`
-    .replace(/(^|[^:"'`(=])\/\/[^\n]*/g, "$1");
-}
 
 /** The addresses `source` would fetch from elsewhere: with a scheme or protocol-relative, in any case. */
 function foreignAddresses(source: string): string[] {
@@ -63,7 +56,11 @@ describe("a third party", () => {
   });
 
   it("is asked for nothing at all", () => {
-    const offenders = files.flatMap((path) => foreignAddresses(readFileSync(path, "utf8")).map((url) => `${path}: ${url}`));
+    // the catalogue's words are shown, never fetched: an address in a sentence is no request
+    const fetching = files.filter((path) => !path.includes(`${sep}i18n${sep}`));
+    const offenders = fetching.flatMap((path) =>
+      foreignAddresses(readFileSync(path, "utf8")).map((url) => `${path}: ${url}`),
+    );
 
     expect(offenders).toEqual([]);
   });
@@ -76,12 +73,18 @@ describe("the browser's own stores and console", () => {
     'document.cookie = "kka_token=" + token',
     'indexedDB.open("kka")',
     'caches.open("kka")',
+    'cookieStore.set("kka_token", token)',
+    'console["log"](input)',
   ])("are recognised: %s", (source) => {
     expect(STORE_OR_CONSOLE.test(withoutComments(source))).toBe(true);
   });
 
-  it("leave the tab's session alone, where the token is kept", () => {
-    expect(STORE_OR_CONSOLE.test('sessionStorage.setItem("kka_token", token)')).toBe(false);
+  it.each([
+    'sessionStorage.setItem("kka_token", token)',
+    // a map of the page's own, named like the browser's store
+    "const caches = new Map(); caches.get(key); caches.has(key);",
+  ])("leave alone what is no store: %s", (source) => {
+    expect(STORE_OR_CONSOLE.test(source)).toBe(false);
   });
 
   it("hold nothing of the app's but the token in the tab's session", () => {
