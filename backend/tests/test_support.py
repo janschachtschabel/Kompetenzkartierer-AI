@@ -1,13 +1,15 @@
 """The test helpers build settings from invented values only, whatever the environment holds."""
 
+import asyncio
 import io
 import logging
 import os
+import time
 
 import pytest
 
 from app.core.logging import configure_logging
-from tests.support import kept_logging, make_settings, without_settings_variables
+from tests.support import kept_logging, loop_watch, make_settings, without_settings_variables
 
 
 def test_test_settings_ignore_the_environment(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -55,3 +57,14 @@ def test_kept_logging_undoes_what_configure_logging_does() -> None:
         assert lasting in root.handlers
     finally:
         root.removeHandler(lasting)
+
+
+def test_the_loop_watch_sees_a_block_that_holds_the_loop_from_its_first_line() -> None:
+    # a watcher that first turned at the block's first suspension saw nothing of a call that
+    # blocked before it: a store opened, or a put made, in the loop
+    async def held() -> float:
+        async with loop_watch() as longest:
+            time.sleep(0.3)  # the blocking call the watch must see
+        return longest[0]
+
+    assert asyncio.run(held(), loop_factory=asyncio.SelectorEventLoop) >= 0.3

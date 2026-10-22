@@ -133,13 +133,15 @@ async def loop_watch(tick_s: float = 0.01) -> AsyncIterator[list[float]]:
 
     A coroutine that wakes every ``tick_s`` notes the gap between its wakes; a call that holds
     the loop (a blocking read, a sleep in a coroutine) shows as a gap that long. The list holds
-    one number, the longest gap, once the block has ended.
+    one number, the longest gap, once the block has ended. The watcher has turned once before
+    the block starts, so a call that holds the loop from the block's first line shows too.
     """
     longest = [0.0]
-    done = asyncio.Event()
+    ready, done = asyncio.Event(), asyncio.Event()
 
     async def tick() -> None:
         last = time.perf_counter()
+        ready.set()
         while not done.is_set():
             await asyncio.sleep(tick_s)
             now = time.perf_counter()
@@ -147,6 +149,7 @@ async def loop_watch(tick_s: float = 0.01) -> AsyncIterator[list[float]]:
             last = now
 
     watcher = asyncio.create_task(tick())
+    await ready.wait()
     try:
         yield longest
     finally:
