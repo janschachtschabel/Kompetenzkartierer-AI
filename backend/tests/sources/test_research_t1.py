@@ -19,7 +19,7 @@ import pytest
 from app.core.settings import REPOSITORY_ONTOLOGY
 from app.db.migrate import migrate
 from app.sources.register import EDUCATION_SECTORS, Evidence
-from app.sources.research_t1 import ASSIGNMENTS, DATASET, RESEARCH, compare_addresses, read_research
+from app.sources.research_t1 import ASSIGNMENTS, DATASET, RESEARCH, _rows, compare_addresses, read_research
 from app.sources.seed import SeedError, read_documents, seed_register
 from tests.sources.test_seed import DOCUMENTS, document, entries, run_command, write_documents
 
@@ -324,10 +324,25 @@ def test_the_published_research_marks_its_archives_mirrors_and_secondary_sources
     assert kinds == {None: 644, "archiv": 5, "spiegel": 7, "sekundaer": 12}
 
 
-def test_no_address_of_the_published_research_is_of_two_kinds() -> None:
-    kinds: dict[str, set[str | None]] = {}
-    for found in read_research(PUBLISHED).rows:
-        kinds.setdefault(found.url, set()).add(found.source_type)
+def test_where_notes_differ_on_an_address_the_first_row_s_counts(tmp_path: Path) -> None:
+    copy = "https://kopie.example/lp.pdf"
+    directory = write_research(
+        tmp_path / "r",
+        schule=[row("Plan", f"{copy} (Spiegelkopie)")],
+        elementar=[row("Plan", f"{copy} (Sekundärquelle)")],
+    )
+
+    assert [found.source_type for found in read_research(directory).rows] == ["spiegel", "spiegel"]
+
+
+def test_no_two_rows_of_the_published_research_note_one_address_as_two_kinds() -> None:
+    # read row by row, before an address takes its kind to all its rows: no choice is made today
+    kinds: dict[str, set[str]] = {}
+    for name, assignment in ASSIGNMENTS.items():
+        for path in sorted(PUBLISHED.glob(assignment.reports)):
+            for found, _further in _rows(path, name, assignment, Counter()):
+                if found.source_type is not None:
+                    kinds.setdefault(found.url, set()).add(found.source_type)
 
     assert {url: found for url, found in kinds.items() if len(found) > 1} == {}
 
