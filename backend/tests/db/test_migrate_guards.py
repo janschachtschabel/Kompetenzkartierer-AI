@@ -130,6 +130,7 @@ def test_a_database_the_command_cannot_reach_ends_in_one_log_line(
 SLEEPING = (
     "SELECT count(*) FROM pg_stat_activity"
     " WHERE query LIKE 'SELECT pg_sleep(30)%' AND pid <> pg_backend_pid()"
+    " AND datname = current_database()"  # other worktrees' suites share the test server
 )
 
 
@@ -154,6 +155,7 @@ def test_a_connection_lost_mid_run_names_its_cause(database_url: str, tmp_path: 
         admin.execute(
             "SELECT pg_terminate_backend(pid) FROM pg_stat_activity"
             " WHERE query LIKE 'SELECT pg_sleep(30)%' AND pid <> pg_backend_pid()"
+            " AND datname = current_database()"
         )
     thread.join(timeout=30)
 
