@@ -14,6 +14,7 @@ import asyncio
 import ipaddress
 import logging
 import socket
+import unicodedata
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import PurePosixPath
@@ -74,13 +75,20 @@ def is_public(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     return address.is_global and not (address.is_reserved or address.is_multicast)
 
 
-def check_url(url: str) -> None:
-    """UrlNotAllowed unless ``url`` is http(s) with a host."""
+def check_url(url: str) -> str:
+    """``url`` with its scheme in small letters, or UrlNotAllowed unless it is http(s) with a host,
+    without a user or password (the register would show them) and without spaces or control
+    signs."""
+    if any(sign.isspace() or unicodedata.category(sign) == "Cc" for sign in url):
+        raise UrlNotAllowed("the address holds spaces or control signs")
     parts = urlsplit(url)
     if parts.scheme not in ("http", "https"):
-        raise UrlNotAllowed(f"only http and https addresses are fetched, not {parts.scheme or 'none'!r}")
+        raise UrlNotAllowed(f"only http and https addresses are fetched, not {parts.scheme[:20] or 'none'!r}")
     if not parts.hostname:
         raise UrlNotAllowed("the address names no host")
+    if "@" in parts.netloc:
+        raise UrlNotAllowed("the address must not hold a user or a password")
+    return parts.geturl()
 
 
 def public_address(host: str, resolve: ResolveHost) -> str:

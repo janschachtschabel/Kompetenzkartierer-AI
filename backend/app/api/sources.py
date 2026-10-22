@@ -1,4 +1,5 @@
-"""The source register: an account's uploads (plan M1, 1.7); reading and editing follow.
+"""The source register: what an account brings in - uploads (plan M1, 1.7) and imports by URL
+(1.8); reading and editing the register follow (1.9, 1.10).
 
 The upload route has no body parameter on purpose: FastAPI reads such a body before it checks
 the token, so the form is read here, after it. BodyLimit (app/api/body_limit.py) bounds the body
@@ -8,22 +9,27 @@ before anything reads it; the file is counted again as it is read, in pieces of 
 import asyncio
 from pathlib import PurePosixPath
 from typing import Annotated, Any
+from urllib.parse import urlsplit
 from uuid import UUID
 
+import psycopg
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel
+from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, StringConstraints
 from starlette.datastructures import UploadFile
 
 from app.api.deps import require_account
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
-from app.core.auth import Principal, plain_text, visible_only
+from app.core.auth import Principal, one_spelling, plain_text, shows_whole, visible_only
 from app.core.logging import current_request_id
 from app.db.accounts import record_audit
 from app.db.rate_limits import RateLimited, take
-from app.db.sources import StoredFile, record_upload
+from app.db.sources import StoredFile, record_upload, record_url_source
+from app.jobs.queue import account_lane, enqueue
+from app.sources import fetch_job
 from app.sources.archives import ArchiveTooLarge, ArchiveUnreadable
 from app.sources.filetype import MAX_NAME_SIGNS, DetectedType, UnsupportedType, examine, stored_name
 from app.sources.register import Provenance, RegisterStatus, RightsStatus
+from app.sources.url_fetch import UrlNotAllowed, check_url
 
 router = APIRouter(prefix="/api/v1", tags=["sources"], responses=AUTH_RESPONSES)
 Account = Annotated[Principal, Depends(require_account)]
@@ -52,17 +58,30 @@ class SourceOut(BaseModel):
     file: SourceFileOut | None
 
 
+class ImportIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    url: Annotated[str, StringConstraints(min_length=1, max_length=2000)]
+    title: Annotated[
+        str,
+        BeforeValidator(one_spelling),
+        StringConstraints(strip_whitespace=True, max_length=MAX_TITLE_SIGNS),
+        AfterValidator(shows_whole),
+    ] = ""
+
+
+class ImportOut(BaseModel):
+    source: SourceOut
+    job_id: UUID
+
+
 @router.post("/sources", status_code=201, summary="Upload a curriculum document", responses=UPLOAD_REFUSALS)
 async def upload_source(request: Request, who: Account) -> SourceOut:
     """A form with ``file`` and, if wished, ``title`` (else the file's name names the entry)."""
     settings = request.app.state.settings
-    assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
     async with request.app.state.pool.connection() as connection:
-        try:
-            await take(connection, who.account_id, "source.upload", per_minute=settings.uploads_per_minute)
-        except RateLimited as limited:
-            retry = {"Retry-After": str(limited.retry_after_s)}
-            raise Refusal(429, "too_many_uploads", "Too many uploads; try again later.", retry) from None
+        await _within_limit(connection, who, "source.upload", settings.uploads_per_minute, "too_many_uploads")
+    assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
     async with request.form(max_files=1, max_fields=2) as form:
         upload = form.get("file")
         if not isinstance(upload, UploadFile):
@@ -106,6 +125,59 @@ async def upload_source(request: Request, who: Account) -> SourceOut:
         register_status="acquired",
         file=SourceFileOut(name=file_name, mime=detected.mime, size=len(data), sha256=digest.hex()),
     )
+
+
+@router.post("/sources/import", status_code=202, summary="Import a curriculum document by its URL")
+async def import_source(body: ImportIn, request: Request, who: Account) -> ImportOut:
+    """The register entry now, unchecked; its fetch as a job (``GET /api/v1/jobs/{id}``)."""
+    try:
+        url = check_url(body.url)
+    except UrlNotAllowed as error:
+        raise Refusal(422, "url_invalid", str(error)) from None
+    settings = request.app.state.settings
+    async with request.app.state.pool.connection() as connection:
+        await _within_limit(
+            connection, who, "source.import", settings.url_imports_per_minute, "too_many_imports"
+        )
+        assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
+        # one transaction: never an entry without its job, nor a job without its entry
+        async with connection.transaction():
+            source_id = await record_url_source(connection, owner=who.account_id, url=url, title=body.title)
+            job_id = await enqueue(
+                connection, fetch_job.KIND, account_lane(who.account_id), {"source_id": str(source_id)}
+            )
+            # the host only: a query may carry a token of the portal's
+            details = {"host": urlsplit(url).hostname, "job": str(job_id)}
+            await record_audit(
+                connection,
+                who.account_id,
+                who.name,
+                "source.import",
+                f"source:{source_id}",
+                details,
+                current_request_id(),
+            )
+    source = SourceOut(
+        id=source_id,
+        title=body.title,
+        provenance="url",
+        rights_status="unklar",
+        register_status="unchecked",
+        file=None,
+    )
+    return ImportOut(source=source, job_id=job_id)
+
+
+async def _within_limit(
+    connection: psycopg.AsyncConnection, who: Principal, action: str, per_minute: int, code: str
+) -> None:
+    """Count the action against the account's limit, or answer 429 with when to try again."""
+    assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
+    try:
+        await take(connection, who.account_id, action, per_minute=per_minute)
+    except RateLimited as limited:
+        retry = {"Retry-After": str(limited.retry_after_s)}
+        raise Refusal(429, code, "Too many of these for now; try again later.", retry) from None
 
 
 async def _read(upload: UploadFile, limit: int) -> bytes:

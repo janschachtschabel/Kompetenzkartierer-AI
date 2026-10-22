@@ -41,11 +41,26 @@ def answering(address: str) -> Callable[[str], list[str]]:
 
 
 @pytest.mark.parametrize(
-    "url", ["file:///etc/passwd", "ftp://example.org/x", "http:///no-host", "lehrplan.pdf"]
+    "url",
+    [
+        "file:///etc/passwd",
+        "ftp://example.org/x",
+        "http:///no-host",
+        "lehrplan.pdf",
+        "javascript:alert(1)",
+        "http://kka:geheim@example.org/lehrplan.pdf",  # a password the register would show
+        "http://example.org/lehr plan.pdf",
+        "http://example.org/lehrplan.pdf\n",
+    ],
 )
-def test_only_http_with_a_host_is_fetched(url: str) -> None:
+def test_only_http_with_a_host_and_nothing_hidden_is_fetched(url: str) -> None:
     with pytest.raises(UrlNotAllowed):
         check_url(url)
+
+
+def test_a_url_is_kept_with_its_scheme_in_small_letters() -> None:
+    # the register holds http(s) only; "HTTPS://" is the same address
+    assert check_url("HTTPS://Lehrplaene.example/A.pdf?x=1") == "https://Lehrplaene.example/A.pdf?x=1"
 
 
 @pytest.mark.parametrize(

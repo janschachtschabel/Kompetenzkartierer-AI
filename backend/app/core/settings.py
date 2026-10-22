@@ -154,6 +154,8 @@ class Settings(BaseSettings):
     max_upload_mb: Annotated[int, Field(ge=1, le=500)] = 50
     # Uploads an account may make per minute; more are answered 429
     uploads_per_minute: Annotated[int, Field(ge=1)] = 20
+    # Imports by URL an account may start per minute; more are answered 429
+    url_imports_per_minute: Annotated[int, Field(ge=1)] = 20
     # The job kinds this worker takes, comma-separated (the conversion pods: source.convert);
     # empty for every kind it knows
     worker_kinds: Annotated[str, Field(pattern=rf"^({_JOB_KIND}(,{_JOB_KIND})*)?$")] = ""

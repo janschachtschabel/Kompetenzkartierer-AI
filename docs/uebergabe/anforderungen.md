@@ -83,7 +83,7 @@ S3-Objektspeicher.
 |---|---|
 | Laufende Kosten? | Das Sprachmodell je Aufruf (Kontingente je Konto ab M1); sonst CPU, Speicher, PostgreSQL und Objektspeicher. Keine GPU |
 | Wartung? | Abhängigkeiten über `uv.lock`, Basis-Images über ihren Digest; ein Update ist ein eigener, geprüfter Commit |
-| Dritte zur Anfragezeit? | Keine. Fremddaten kommen ab M3 als lokale Abzüge; live bleibt nur das Sprachmodell in Jobs |
+| Dritte zur Anfragezeit? | Keine in der API. Live nur in Jobs des Workers: das Sprachmodell und der Abruf von Quell-URLs, die ein Konto nennt (`source.fetch`). Abgerufen wird nur von öffentlichen Adressen (kein privates, Loopback-, Link-Local-, CGNAT-, Multicast- oder NAT64-Netz), verbunden genau zur geprüften Adresse, ohne Proxy der Umgebung; die NetworkPolicy des Workers erlaubt dafür 80/443 nach außen, nicht die Netze des Clusters. Fremddaten kommen ab M3 als lokale Abzüge |
 
 ## Offene Punkte
 

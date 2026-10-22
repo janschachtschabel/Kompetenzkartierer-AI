@@ -40,6 +40,19 @@ async def file_row(connection: psycopg.AsyncConnection, stored: StoredFile) -> U
     return UUID(str(found[0]))
 
 
+async def record_url_source(
+    connection: psycopg.AsyncConnection, *, owner: UUID, url: str, title: str
+) -> UUID:
+    """A new source of ``owner`` by its URL, unchecked until source.fetch has it; its id."""
+    source_id = new_id()
+    await connection.execute("INSERT INTO entity (id, kind) VALUES (%s, 'source')", (source_id,))
+    await connection.execute(
+        "INSERT INTO source (id, owner_id, provenance, url, title) VALUES (%s, %s, 'url', %s, %s)",
+        (source_id, owner, url, title),
+    )
+    return source_id
+
+
 @dataclass(frozen=True)
 class FetchTarget:
     """What source.fetch needs of an entry."""
