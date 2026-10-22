@@ -2,12 +2,14 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as api from "@/api";
+import { ApiError } from "@/api";
 import RegisterFilter from "@/components/RegisterFilter.vue";
+import UploadForm from "@/components/UploadForm.vue";
 import { t } from "@/i18n/de";
 import { router } from "@/router";
 import SourcesView from "@/views/SourcesView.vue";
 
-import { entry, page } from "./registerEntries";
+import { deferred, entry, page } from "./registerEntries";
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -113,6 +115,75 @@ describe("the register page's filter", () => {
     expect(wrapper.get("[data-test=filter-status]").text()).toBe(t("sources.filter.none"));
     // the filter stays, so it can be taken back
     expect(wrapper.get<HTMLInputElement>("input[type=checkbox]").element.checked).toBe(true);
+  });
+
+  it("drops another filter's page when the filter's reading fails, and reads the filter again on request", async () => {
+    const uploads = Array.from({ length: 50 }, (_, index) => entry(`u${index}`, `Upload ${index}`));
+    const candidates = Array.from({ length: 10 }, (_, index) => entry(`c${index}`, `Kandidat ${index}`));
+    const listed = vi
+      .spyOn(api, "listSources")
+      .mockResolvedValueOnce(page(uploads, 100))
+      .mockRejectedValueOnce(new ApiError("network", 0))
+      .mockResolvedValue(page(candidates, 10));
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+    await flushPromises();
+
+    await wrapper.get("input[type=checkbox]").setValue(true);
+    await flushPromises();
+    // no rows of the unfiltered register under the filter's controls, and no further page of them
+    expect(wrapper.find("tbody tr").exists()).toBe(false);
+    expect(wrapper.find("[data-test=more]").exists()).toBe(false);
+    expect(wrapper.get("[role=alert]").text()).toContain(t("sources.register.loadFailed"));
+    expect(wrapper.get(".sources__partial").text()).toBe("");
+
+    await wrapper.get("[role=alert] button").trigger("click");
+    await flushPromises();
+
+    expect(listed).toHaveBeenLastCalledWith({ candidates: true }, { limit: 50 });
+    expect(wrapper.findAll("tbody tr .register__title").map((title) => title.text())).toEqual(
+      candidates.map((candidate) => candidate.title),
+    );
+  });
+
+  it("says the register is empty, not that nothing matches, until the filter's answer is in", async () => {
+    const answer = deferred<api.SourcePage>();
+    vi.spyOn(api, "listSources")
+      .mockResolvedValueOnce(page([]))
+      .mockImplementationOnce(() => answer.promise);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+    await flushPromises();
+
+    await wrapper.get("input[type=checkbox]").setValue(true);
+    await flushPromises();
+    expect(wrapper.text()).toContain(t("sources.register.emptyTitle"));
+    expect(wrapper.text()).not.toContain(t("sources.filter.emptyTitle"));
+    answer.resolve(page([]));
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(t("sources.filter.emptyTitle"));
+  });
+
+  it("reads one page when a reload overtakes the filter's reading: what it showed was another filter's", async () => {
+    const first = page(Array.from({ length: 50 }, (_, index) => entry(`e${index}`, `Plan ${index}`)), 100);
+    const second = page(Array.from({ length: 50 }, (_, index) => entry(`f${index}`, `Plan ${50 + index}`)), 100, 50);
+    const listed = vi
+      .spyOn(api, "listSources")
+      .mockResolvedValueOnce(first)
+      .mockResolvedValueOnce(second)
+      .mockImplementationOnce(() => new Promise(() => undefined))
+      .mockResolvedValue(page([entry("c", "Kandidat")]));
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+    await flushPromises();
+    await wrapper.get("[data-test=more]").trigger("click");
+    await flushPromises();
+    expect(wrapper.findAll("tbody tr")).toHaveLength(100);
+
+    await wrapper.get("input[type=checkbox]").setValue(true);
+    wrapper.findComponent(UploadForm).vm.$emit("uploaded", { id: "x" });
+    await flushPromises();
+
+    expect(listed).toHaveBeenLastCalledWith({ candidates: true }, { limit: 50 });
+    expect(wrapper.get("tbody").text()).toContain("Kandidat");
   });
 
   it("keeps the shown entries busy-marked while the filter's reading is under way", async () => {

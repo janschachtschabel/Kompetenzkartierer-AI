@@ -9,16 +9,9 @@ import { computed } from "vue";
 
 import type { RegisterStatus } from "@/api";
 import { messages, t } from "@/i18n/de";
-
-export interface RegisterFilters {
-  candidates: boolean;
-  /** Empty for every status. */
-  status: RegisterStatus | "";
-}
+import { STATUSES, type RegisterFilters } from "@/registerFilters";
 
 const model = defineModel<RegisterFilters>({ required: true });
-
-const STATUSES: readonly RegisterStatus[] = ["unchecked", "reachable", "unreachable", "acquired"];
 
 const candidates = computed({
   get: () => model.value.candidates,

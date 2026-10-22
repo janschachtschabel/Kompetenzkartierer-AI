@@ -4,7 +4,7 @@
  * fetches - following the fetches started here, and the entries the account
  * sees, a page at a time, as far as the filter lets them through.
  */
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 import {
   getInfo,
@@ -22,13 +22,14 @@ import ImportForm from "@/components/ImportForm.vue";
 import JobProgress from "@/components/JobProgress.vue";
 import LoadingState from "@/components/LoadingState.vue";
 import PartialState from "@/components/PartialState.vue";
-import RegisterFilter, { type RegisterFilters } from "@/components/RegisterFilter.vue";
+import RegisterFilter from "@/components/RegisterFilter.vue";
 import SourceTable from "@/components/SourceTable.vue";
 import UploadForm from "@/components/UploadForm.vue";
 import { focusIsFree } from "@/focusRescue";
 import { t } from "@/i18n/de";
 import { sayAnew } from "@/liveRegion";
 import { failureNotice, type Notice } from "@/notice";
+import { askedOf, sameAsked, type RegisterFilters } from "@/registerFilters";
 import { hasRole } from "@/session";
 
 interface Followed {
@@ -54,6 +55,9 @@ const maxUploadMb = ref<number | undefined>(undefined);
 const followed = ref<Followed[]>([]);
 const table = ref<InstanceType<typeof SourceTable> | null>(null);
 const filters = ref<RegisterFilters>({ candidates: false, status: "" });
+/** What the shown page was read with: a further page asks with it, its empty state speaks of it. */
+const readWith = ref<SourceFilters>({});
+const pageFiltered = computed(() => Object.keys(readWith.value).length > 0);
 /** Said aloud when the filter lets nothing through: the table, and its count, went with it. */
 const filterNotice = ref("");
 // Each first page read counts: a further page asked for before it belongs to an older list.
@@ -72,18 +76,6 @@ watch(
   },
   { flush: "post" },
 );
-
-/** What the filter asks of the server: only what it sets. */
-function asked(): SourceFilters {
-  const query: SourceFilters = {};
-  if (filters.value.candidates) query.candidates = true;
-  if (filters.value.status) query.status = filters.value.status;
-  return query;
-}
-
-function filtered(): boolean {
-  return Object.keys(asked()).length > 0;
-}
 
 function registerHeading(): HTMLElement | null {
   return document.getElementById("sources-register");
@@ -105,32 +97,39 @@ function fallShort(notice: Notice, retry: () => void): void {
  * focus in it stay, and `extra` more. `focus` is where the focus goes once it shows them - the
  * register's heading after the notice's retry button went with the notice. `from` is where the
  * action began - the press of "Weitere laden", when a further page turned into this reading.
- * `fromStart`: one page only, for a new filter - what it showed was another filter's.
+ *
+ * A page read with another filter than the one now set is no part of this filter's, whichever
+ * reading asks - a new filter's, or a reload that overtakes it: the reading is one page, and
+ * where it fails, that page goes rather than stand under this filter's controls.
  */
 async function load({
   extra = 0,
   focus,
   from = document.activeElement,
-  fromStart = false,
-}: { extra?: number; focus?: FocusRequest["target"]; from?: Element | null; fromStart?: boolean } = {}): Promise<void> {
+}: { extra?: number; focus?: FocusRequest["target"]; from?: Element | null } = {}): Promise<void> {
   const mine = ++generation;
-  const shown = fromStart ? 0 : (page.value?.entries.length ?? 0);
-  const limit = Math.min(MAX_PAGE_SIZE, Math.max(PAGE_SIZE, shown + extra));
+  const query = askedOf(filters.value);
+  const kept = page.value && sameAsked(readWith.value, query) ? page.value : null;
+  const limit = Math.min(MAX_PAGE_SIZE, Math.max(PAGE_SIZE, (kept?.entries.length ?? 0) + extra));
   loading.value = true;
   failure.value = null;
   try {
-    const first = await listSources(asked(), { limit });
+    const first = await listSources(query, { limit });
     if (mine !== generation) return;
     if (focus) focusRequest = { target: focus, from };
     page.value = first;
+    readWith.value = query;
     partial.value = null;
-    const none = filtered() && first.entries.length === 0;
+    const none = Object.keys(query).length > 0 && first.entries.length === 0;
     filterNotice.value = none ? sayAnew(filterNotice.value, t("sources.filter.none")) : "";
   } catch (error) {
     if (mine !== generation) return;
-    if (page.value) {
+    if (kept) {
       fallShort(failureNotice(error, t("sources.register.reloadFailed")), () => void load({ focus: registerHeading }));
     } else {
+      page.value = null;
+      partial.value = null; // a notice of the page that went, and its retry, went with it
+      filterNotice.value = "";
       failure.value = failureNotice(error, t("sources.register.loadFailed"));
     }
   } finally {
@@ -149,7 +148,7 @@ async function more(): Promise<void> {
   const firstAddedRow = () => rowAfter(lastShown);
   loadingMore.value = true;
   try {
-    const next = await listSources(asked(), { offset: current.entries.length });
+    const next = await listSources(readWith.value, { offset: current.entries.length });
     if (mine !== generation || page.value !== current) return;
     // newest first: an entry added meanwhile pushed one already shown onto this page, and itself
     // lies before the first - read the register from its start, a page more than it showed
@@ -167,7 +166,7 @@ async function more(): Promise<void> {
   }
 }
 
-watch(filters, () => void load({ fromStart: true }));
+watch(filters, () => void load());
 
 function follow(started: ImportStarted, address: string): void {
   const label = started.source.title || address; // its title waits for the file
@@ -232,7 +231,7 @@ onMounted(async () => {
         @retry="load()"
       />
       <EmptyState
-        v-else-if="page && page.entries.length === 0 && filtered()"
+        v-else-if="page && page.entries.length === 0 && pageFiltered"
         :level="3"
         :title="t('sources.filter.emptyTitle')"
         :body="t('sources.filter.emptyBody')"
