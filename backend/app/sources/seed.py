@@ -90,7 +90,8 @@ class SeedRow:
 @dataclass(frozen=True)
 class Documents:
     rows: list[SeedRow]
-    # why rows were left out: esa, kanonisch, url_invalid, shifted
+    # what was left out, by why: rows (the dataset: esa, kanonisch, url_invalid, shifted; the
+    # research besides: no_title, no_url, duplicate) and, as further_address, addresses
     left_out: Counter[str] = field(default_factory=Counter)
 
 
@@ -154,7 +155,8 @@ def _text(value: str, limit: int) -> str | None:
 
 def _grade(value: str) -> int | None:
     value = value.strip()
-    return int(value) if value.isdigit() and int(value) <= 13 else None
+    # isdigit alone takes "²", which int() refuses, and digits of other scripts
+    return int(value) if value.isascii() and value.isdigit() and int(value) <= 13 else None
 
 
 def _archive(value: str) -> str | None:
@@ -230,7 +232,7 @@ def _seed_values(id_: Any, dataset: SeedDataset, row: SeedRow) -> tuple[Any, ...
 
 
 def reasons(left_out: Counter[str]) -> str:
-    """Why rows were left out, as the commands log it: "esa 90, kanonisch 243" or "none"."""
+    """What was left out, by why, as the commands log it: "esa 90, kanonisch 243" or "none"."""
     return ", ".join(f"{reason} {count}" for reason, count in sorted(left_out.items())) or "none"
 
 

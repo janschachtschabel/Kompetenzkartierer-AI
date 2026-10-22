@@ -254,8 +254,10 @@ def test_the_federation_s_rows_of_the_published_file_are_germany_s() -> None:
     assert "DE-DE" not in countries
 
 
-def test_grades_that_are_no_numbers_stay_unknown(tmp_path: Path) -> None:
-    path = write_documents(tmp_path / "d.csv", document("BY.GYM.PH", Jahrgang_von="", Jahrgang_bis="Q2"))
+# a superscript two and an Arabic-Indic ten are digits to str.isdigit, the first none to int()
+@pytest.mark.parametrize("grade", ["Q2", "²", "\N{ARABIC-INDIC DIGIT ONE}\N{ARABIC-INDIC DIGIT ZERO}"])
+def test_grades_that_are_no_numbers_stay_unknown(tmp_path: Path, grade: str) -> None:
+    path = write_documents(tmp_path / "d.csv", document("BY.GYM.PH", Jahrgang_von="", Jahrgang_bis=grade))
 
     (row,) = read_documents(path).rows
 
@@ -486,5 +488,5 @@ def test_the_command_ends_with_1_where_the_file_is_no_utf_8(migrated: str, tmp_p
     done = run_command(migrated, str(path))
 
     assert done.returncode == 1
-    assert "register not seeded" in done.stderr
+    assert "register not seeded: 'utf-8' codec can't decode byte 0xe4" in done.stderr
     assert "Traceback" not in done.stderr

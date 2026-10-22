@@ -16,7 +16,8 @@ nicht enthalten.
 - **Übernommene Felder:** URL, Archiv-URL, Land, Schulform, Fach, Jahrgänge, Verbindlichkeit und
   Quelltyp, dazu Bildungsstufe, Fach-Schlüssel und Wayback-Zeitstempel der Archivkopie.
 - **Nicht übernommen:** Titel, Beschreibungen, Themen, Knotenzahlen und Verifikationsangaben.
-- **Ausgelassen:** ESA-Ableitungen und „kanonisch“ modellierte Zeilen.
+- **Ausgelassen:** ESA-Ableitungen und „kanonisch“ modellierte Zeilen, außerdem Zeilen mit
+  falscher Feldzahl oder unbrauchbarer Adresse (in v62.493 keine); der Befehl zählt sie.
 - **Zugangsnotizen:** Die Umgehungshinweise werden Zugangsnotizen je Land, Schulform und Fach;
   ohne Schulform oder Fach gelten sie für alle des Landes. Technische Sperren umgehen wir nicht.
 
