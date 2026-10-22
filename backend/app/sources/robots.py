@@ -4,15 +4,20 @@ urllib.robotparser takes the first rule that matches; RFC 9309 the longest, an a
 tie: after "Allow: /", "Disallow: /intern" says no to /intern/lp.pdf, which robotparser allows.
 So the rules are read here: the groups naming our product token (case-insensitive, combined),
 else those of "*"; patterns with * for any run of signs and a closing $ for the end; rule and
-address compared with their signs beyond ASCII percent-encoded and every escape in capitals.
+address compared alike - signs beyond ASCII percent-encoded, the escape of an unreserved sign
+decoded (RFC 9309 2.2.2), every other escape in capitals. A line is split at its first colon:
+no pattern backtracks over a line of space. A group with more rules, or longer ones, than the
+matching holds forbids everything: what is not read is not taken to allow.
 
-Fetched once per origin the way fetch goes (url_fetch.follow), five redirects deep: 2xx gives the
-rules of the first 500 KiB; 4xx says there are none (the file is unavailable, RFC 9309 2.3.1.3),
-and so does a file that cannot be read or found past five redirects; 429, 5xx or no answer leave
-the host for a later check (HostDeferred) - RFC 9309 has a crawler assume complete disallow then.
+Fetched once per origin the way fetch goes (url_fetch.follow), five redirects deep, with no trace
+of ours: 2xx gives the rules of the first 500 KiB, a line the cut went through counting for
+nothing; 4xx says there are none (the file is unavailable, RFC 9309 2.3.1.3), as does a file not
+found within five redirects or behind a redirect that cannot be read. 429, 5xx, no answer, a
+file that cannot be unpacked, or a redirect to where no request may go leave the host for a
+later check (HostDeferred) - RFC 9309 has a crawler assume complete disallow then. A host that
+is not to be asked at all is refused as such (url_fetch.HostRefused).
 """
 
-import contextlib
 import re
 from dataclasses import dataclass
 from urllib.parse import quote, urlsplit
@@ -25,24 +30,29 @@ from app.sources.url_fetch import (
     TOTAL_TIMEOUT_S,
     BadAnswer,
     DownloadError,
+    HostRefused,
     TooManyRedirects,
+    UrlNotAllowed,
     follow,
 )
 
 ROBOTS_BYTES = 500 * 1024  # what a crawler must read at least (RFC 9309 2.5)
 ROBOTS_REDIRECTS = 5  # what it must follow at least (2.3.1.2)
-# simplify: a file of more rules, or longer ones, is cut there - the matching of every address
-# against every rule must stay cheap; no host we seed from comes near
-MAX_RULES = 1000
-MAX_RULE_SIGNS = 500
-_LINE = re.compile(r"\s*([A-Za-z-]+)\s*:\s*(.*?)\s*")
+# What the matching of every address against every rule holds: 2000 rules of 2000 signs against
+# the longest address of the seed take well under a second
+MAX_RULES = 2000
+MAX_RULE_SIGNS = 2000
+_KEY = re.compile(r"[A-Za-z-]+")
 _ESCAPE = re.compile(r"%[0-9a-fA-F]{2}")
 # Every sign of ASCII but the space and controls stands as it is; anything else is percent-encoded
 _AS_IT_IS = "".join(chr(code) for code in range(0x21, 0x7F))
+_UNRESERVED = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+_BYTE_ORDER_MARK = chr(0xFEFF)
 
 
 class HostDeferred(Exception):
-    """The host's robots.txt could not be had now (``status`` 429 or 5xx, or none: no answer)."""
+    """The host's robots.txt could not be had now (``status`` 429 or 5xx, or none: no answer, or
+    none that could be read)."""
 
     def __init__(self, status: int | None) -> None:
         super().__init__(f"robots.txt not to be had now ({status or 'no answer'})")
@@ -66,6 +76,13 @@ class Rules:
         return allowed >= denied
 
 
+EVERYTHING_FORBIDDEN = Rules(disallow=("/",))
+
+
+class _Enough(Exception):
+    """The first 500 KiB are in: what follows is no part of the rules."""
+
+
 def product_token(user_agent: str) -> str:
     """The name a robots.txt knows us by: the user agent's first word, without its version."""
     return user_agent.split()[0].split("/")[0] if user_agent.split() else user_agent
@@ -77,11 +94,12 @@ def parse_robots(text: str, product: str) -> Rules:
     named_us = False
     agents: list[str] = []
     in_rules = False  # the group's rules have begun: the next user-agent starts a group
-    for raw in text.lstrip("\ufeff").splitlines():
-        found = _LINE.fullmatch(raw.split("#", 1)[0])
-        if found is None:
+    for raw in text.lstrip(_BYTE_ORDER_MARK).splitlines():
+        key, colon, value = raw.split("#", 1)[0].partition(":")
+        key = key.strip()
+        if not colon or not _KEY.fullmatch(key):
             continue
-        key, value = found.group(1).lower(), found.group(2)
+        key, value = key.lower(), value.strip()
         if key == "user-agent":
             if in_rules:
                 agents, in_rules = [], False
@@ -92,14 +110,17 @@ def parse_robots(text: str, product: str) -> Rules:
             in_rules = True
             if not value or not agents:  # an empty rule says nothing; one of no group counts for none
                 continue
-            rule = _spelled(value)[:MAX_RULE_SIGNS]
+            rule = _spelled(value)
             index = 0 if key == "allow" else 1
             if product.lower() in agents:
                 ours[index].append(rule)
             if "*" in agents:
                 everyone[index].append(rule)
     allow, disallow = ours if named_us else everyone
-    return Rules(tuple(allow[:MAX_RULES]), tuple(disallow[:MAX_RULES]))
+    rules = (*allow, *disallow)
+    if len(rules) > MAX_RULES or any(len(rule) > MAX_RULE_SIGNS for rule in rules):
+        return EVERYTHING_FORBIDDEN
+    return Rules(tuple(allow), tuple(disallow))
 
 
 async def read_robots(
@@ -112,7 +133,7 @@ async def read_robots(
     total_timeout: float = TOTAL_TIMEOUT_S,
 ) -> Rules:
     """The rules of ``origin``'s robots.txt for ``product``; HostDeferred when it cannot be had
-    now, UrlNotAllowed for a host that is not public."""
+    now, HostRefused (a UrlNotAllowed) for a host of the origin's that is not to be asked."""
 
     async def read(response: httpx2.Response) -> tuple[int, bytes]:
         if not 200 <= response.status_code < 300:
@@ -120,12 +141,16 @@ async def read_robots(
         kept = bytearray()
 
         def take(piece: bytes) -> None:
-            kept.extend(piece[: ROBOTS_BYTES - len(kept)])
+            room = ROBOTS_BYTES - len(kept)
+            kept.extend(piece[:room])
+            if len(piece) > room:
+                raise _Enough
 
-        # read on past the first 500 KiB a little, so a piece across the line is kept; what
-        # follows is no part of the rules
-        with contextlib.suppress(BodyTooLarge):
+        try:
             await aread_body(response, 2 * ROBOTS_BYTES, take)
+        except (_Enough, BodyTooLarge):
+            # cut at 500 KiB: the line the cut went through counts for nothing
+            return response.status_code, bytes(kept[: kept.rfind(b"\n") + 1])
         return response.status_code, bytes(kept)
 
     try:
@@ -137,9 +162,16 @@ async def read_robots(
             timeout=timeout,
             total_timeout=total_timeout,
             max_redirects=ROBOTS_REDIRECTS,
+            trace=False,
         )
-    except (TooManyRedirects, BadAnswer, UnsupportedEncoding, BrokenCompression):
-        return Rules()  # a file that cannot be read, or found within five redirects, is none
+    except (TooManyRedirects, BadAnswer):
+        return Rules()  # not found within five redirects, or behind one that cannot be read
+    except (UnsupportedEncoding, BrokenCompression):
+        raise HostDeferred(None) from None  # there, with rules we cannot read
+    except UrlNotAllowed as error:
+        if isinstance(error, HostRefused) and error.host == httpx2.URL(origin).raw_host.decode("ascii"):
+            raise
+        raise HostDeferred(None) from None  # a redirect led where no request may go
     except DownloadError:
         raise HostDeferred(None) from None
     if 200 <= status < 300:
@@ -150,7 +182,14 @@ async def read_robots(
 
 
 def _spelled(text: str) -> str:
-    return _ESCAPE.sub(lambda escape: escape.group(0).upper(), quote(text, safe=_AS_IT_IS))
+    """``text`` as RFC 9309 2.2.2 compares it: signs beyond ASCII and the space percent-encoded,
+    the escape of an unreserved sign decoded, every other escape in capitals."""
+    return _ESCAPE.sub(_escape, quote(text, safe=_AS_IT_IS))
+
+
+def _escape(found: re.Match[str]) -> str:
+    sign = chr(int(found.group(0)[1:], 16))
+    return sign if sign in _UNRESERVED else found.group(0).upper()
 
 
 def _matches(rule: str, target: str) -> bool:

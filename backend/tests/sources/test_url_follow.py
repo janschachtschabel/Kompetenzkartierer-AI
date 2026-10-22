@@ -15,6 +15,7 @@ from app.sources.url_fetch import (
     NOT_PUBLIC,
     DownloadError,
     HostNotResolved,
+    HostRefused,
     UrlNotAllowed,
     follow,
     public_address,
@@ -156,8 +157,10 @@ def test_a_name_that_does_not_resolve_now_is_told_from_one_that_never_will() -> 
     assert {str(error) for error in found.values()} == {NOT_PUBLIC}
 
 
-def test_an_inside_address_is_no_name_that_did_not_resolve() -> None:
-    with pytest.raises(UrlNotAllowed) as inside:
+def test_an_inside_address_is_a_host_refused_by_name_not_one_that_did_not_resolve() -> None:
+    with pytest.raises(HostRefused) as inside:
         public_address("intern.example", lambda host: ["10.1.2.3"])
 
+    assert inside.value.host == "intern.example"
     assert not isinstance(inside.value, HostNotResolved)
+    assert isinstance(inside.value, UrlNotAllowed)

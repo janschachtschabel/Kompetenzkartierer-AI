@@ -3,13 +3,15 @@ an allow a tie; our own group, else that of "*"; and what to do when the file ca
 
 import asyncio
 import time
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from typing import Any
 
 import httpx2
 import pytest
 
+from app.core.tracing import take_trace_headers
 from app.sources.robots import (
+    MAX_RULE_SIGNS,
     MAX_RULES,
     ROBOTS_BYTES,
     HostDeferred,
@@ -18,7 +20,8 @@ from app.sources.robots import (
     product_token,
     read_robots,
 )
-from tests.sources.compressed import arriving, in_chunks
+from app.sources.url_fetch import UrlNotAllowed
+from tests.sources.compressed import CHUNK, MIB, arriving, in_chunks
 
 PRODUCT = "Kompetenzkartierer-AI"
 SITE = "https://lehrplaene.example"
@@ -138,13 +141,47 @@ def test_stars_without_end_match_in_no_time() -> None:
     assert time.perf_counter() - started < 1.0
 
 
-def test_rules_past_the_thousandth_and_signs_past_the_five_hundredth_are_cut() -> None:
-    # the matching of every address against every rule stays cheap
-    many = "".join(f"Disallow: /a{number}\n" for number in range(MAX_RULES))
-    long_rule = "/" + "x" * 600 + "y"
+def test_more_rules_than_are_matched_or_a_rule_too_long_forbid_everything() -> None:
+    # what is not read is not taken to allow what it may forbid
+    enough = "".join(f"Disallow: /a{number}\n" for number in range(MAX_RULES))
+    too_many = enough + "Disallow: /b\n"
+    too_long = "/" + "x" * MAX_RULE_SIGNS
 
-    assert allows(f"User-agent: *\n{many}Disallow: /\n", "/lp.pdf")
-    assert not allows(f"User-agent: *\nDisallow: {long_rule}\n", "/" + "x" * 499 + "z")
+    assert allows(f"User-agent: *\n{enough}", "/lp.pdf")
+    assert not allows(f"User-agent: *\n{too_many}", "/lp.pdf")
+    assert not allows(f"User-agent: *\nDisallow: {too_long}\n", "/lp.pdf")
+    # another robot's long list is none of ours
+    assert allows(f"User-agent: Googlebot\n{too_many}", "/lp.pdf")
+
+
+def test_a_line_of_much_space_is_read_in_no_time() -> None:
+    # a pattern that backtracked over the space took minutes on a line of 500 KiB
+    spaces = " " * 400_000
+    started = time.perf_counter()
+
+    rules = parse_robots(f"User-agent:{spaces}*\nDisallow:{spaces}/intern{spaces}\n", PRODUCT)
+
+    assert time.perf_counter() - started < 1.0
+    assert not rules.allows(f"{SITE}/intern/lp.pdf")
+    assert rules.allows(f"{SITE}/lp.pdf")
+
+
+@pytest.mark.parametrize(
+    ("rule", "path", "allowed"),
+    [
+        # RFC 9309 2.2.2: an unreserved sign matches however it is spelled
+        ("/foo/bar/baz", "/foo/bar/%62%61%7A", False),
+        ("/foo/bar/%62%61%7A", "/foo/bar/baz", False),
+        ("/~lehrer/", "/%7Elehrer/lp.pdf", False),
+        ("/%7elehrer/", "/~lehrer/lp.pdf", False),
+        # a reserved one stays what it is: an encoded slash is no slash
+        ("/a%2Fb", "/a/b", True),
+        ("/a/b", "/a%2Fb", True),
+        ("/foo/bar?baz=https%3A%2F%2Ffoo.bar", "/foo/bar?baz=https%3a%2f%2ffoo.bar", False),
+    ],
+)
+def test_an_escape_is_compared_as_rfc_9309_says(rule: str, path: str, allowed: bool) -> None:
+    assert allows(f"User-agent: *\nDisallow: {rule}\n", path) is allowed
 
 
 def test_the_product_token_is_the_user_agent_s_first_word() -> None:
@@ -240,10 +277,68 @@ async def test_the_rules_of_a_robots_txt_past_500_kib_are_its_first_500_kib() ->
 
 
 @pytest.mark.anyio
-async def test_a_robots_txt_that_cannot_be_read_sets_no_rules() -> None:
+async def test_a_line_cut_at_500_kib_counts_for_nothing() -> None:
+    # "Allow: /intern/geheim/oeffentlich" cut to "Allow: /intern/ge" allowed /intern/gesperrt/
+    start = b"User-agent: *\nDisallow: /intern/\n#"
+    head = start + b"x" * (ROBOTS_BYTES - len("Allow: /intern/ge") - len(start) - 1) + b"\n"
+    body = head + b"Allow: /intern/geheim/oeffentlich\n"
+    streaming = mock(lambda request: httpx2.Response(200, content=arriving(in_chunks(body, 1000))))
+
+    rules = await read_robots(SITE, PRODUCT, transport=streaming)
+
+    assert not rules.allows(f"{SITE}/intern/gesperrt/lp.pdf")
+
+
+@pytest.mark.anyio
+async def test_robots_txt_is_read_no_further_than_its_rules_count() -> None:
+    handed: list[bytes] = []
+
+    async def body() -> AsyncIterator[bytes]:
+        for chunk in in_chunks(b"User-agent: *\nDisallow: /intern\n" + b"#" * (4 * MIB)):
+            handed.append(chunk)
+            yield chunk
+
+    await read_robots(SITE, PRODUCT, transport=mock(lambda request: httpx2.Response(200, content=body())))
+
+    assert len(handed) <= ROBOTS_BYTES // CHUNK + 2
+
+
+@pytest.mark.anyio
+async def test_a_robots_txt_there_but_unreadable_waits_for_a_later_check() -> None:
+    # it has rules we cannot read: no rules is no answer to that (RFC 9309 2.3.1.3: only 4xx)
     def packed_unknown(request: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(200, content=b"\x00\x01", headers={"content-encoding": "br"})
 
-    rules = await read_robots(SITE, PRODUCT, transport=mock(packed_unknown))
+    with pytest.raises(HostDeferred):
+        await read_robots(SITE, PRODUCT, transport=mock(packed_unknown))
 
-    assert rules.allows(f"{SITE}/lp.pdf")
+
+@pytest.mark.anyio
+async def test_a_robots_txt_led_somewhere_not_to_be_asked_waits_for_a_later_check() -> None:
+    # the host itself is public: its addresses are no unreachable ones for that
+    def away(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(301, headers={"location": "ftp://files.example/robots.txt"})
+
+    with pytest.raises(HostDeferred):
+        await read_robots(SITE, PRODUCT, transport=mock(away))
+
+
+@pytest.mark.anyio
+async def test_a_host_not_to_be_asked_at_all_is_refused_as_such() -> None:
+    # without a transport: the pinned one, which refuses a literal inside the network
+    with pytest.raises(UrlNotAllowed):
+        await read_robots("http://127.0.0.1", PRODUCT)
+
+
+@pytest.mark.anyio
+async def test_robots_txt_is_asked_for_without_a_trace_of_ours() -> None:
+    asked: list[httpx2.Headers] = []
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        asked.append(request.headers)
+        return httpx2.Response(404)
+
+    take_trace_headers([(b"x-client-trace-id", b"trace-of-the-check")], "request-1")
+    await read_robots(SITE, PRODUCT, transport=mock(handler))
+
+    assert "x-client-trace-id" not in asked[0]

@@ -57,14 +57,22 @@ class UrlNotAllowed(ValueError):
     """The URL is no http(s) address of a public host."""
 
 
-class HostNotResolved(UrlNotAllowed):
-    """The host's name resolved to no address: ``transient`` unless the resolver said the name does
-    not exist (or it cannot be spelled), so that a later try may fare better. Worded as any host
-    that is not public: an account must not tell unknown names from those inside the network."""
+class HostRefused(UrlNotAllowed):
+    """The host ``host`` (as connected to: an IDN in its xn-- spelling) is not asked: its name
+    resolves inside a network. Worded as any host that is not public: an account must not tell
+    unknown names from those inside the network."""
 
-    def __init__(self, host: str, *, transient: bool) -> None:
+    def __init__(self, host: str) -> None:
         super().__init__(NOT_PUBLIC)
         self.host = host
+
+
+class HostNotResolved(HostRefused):
+    """The host's name resolved to no address: ``transient`` unless the resolver said the name does
+    not exist (or it cannot be spelled), so that a later try may fare better."""
+
+    def __init__(self, host: str, *, transient: bool) -> None:
+        super().__init__(host)
         self.transient = transient
 
 
@@ -166,7 +174,7 @@ def public_address(host: str, resolve: ResolveHost) -> str:
     for address in addresses:
         if not is_public(ipaddress.ip_address(address)):
             log.info("the host %s resolves to the non-public address %s", host, address)
-            raise UrlNotAllowed(NOT_PUBLIC)
+            raise HostRefused(host)
     return addresses[0]
 
 
