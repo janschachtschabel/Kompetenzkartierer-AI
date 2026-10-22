@@ -18,7 +18,7 @@ from psycopg_pool import AsyncConnectionPool
 from app.core.logging import configure_logging
 from app.core.tracing import take_trace_headers
 from app.db.migrate import migrate
-from app.jobs.queue import Job, LeaseLost, claim, enqueue, report_progress
+from app.jobs.queue import Job, LeaseLost, claim, enqueue, fail, report_progress
 from app.jobs.worker import Worker
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio, pytest.mark.usefixtures("restore_logging")]
@@ -129,6 +129,22 @@ async def test_a_worker_without_the_lease_writes_no_progress(pool: AsyncConnecti
             await report_progress(connection, job, "converting", {"page": 1})
 
     assert await column(pool, job.id, "progress") == {"code": "started", "params": {}}
+
+
+async def test_a_new_attempt_starts_without_the_progress_of_the_last(pool: AsyncConnectionPool) -> None:
+    # page 39 of 40 from a failed attempt is not where the next one stands
+    await enqueue_traced(pool)
+    async with pool.connection() as connection:
+        job = await claim(connection, "w1", ["test.work"], 60)
+        assert job is not None
+        await report_progress(connection, job, "converting", {"page": 39, "pages": 40})
+        assert await fail(connection, job, "converter_down", "no answer", retry=True) == "queued"
+        await connection.execute("UPDATE job SET run_after = now() WHERE id = %s", (job.id,))
+
+        again = await claim(connection, "w2", ["test.work"], 60)
+
+    assert again is not None and again.id == job.id
+    assert await column(pool, job.id, "progress") is None
 
 
 async def test_the_worker_writes_the_job_s_lines_with_its_trace(pool: AsyncConnectionPool) -> None:

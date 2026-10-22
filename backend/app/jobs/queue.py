@@ -59,6 +59,7 @@ _LANES_IN_TURN = """
     ORDER BY running.jobs, job_lane.served_at NULLS FIRST, next.created_at
     LIMIT %(lanes)s
 """
+# The lane's oldest waiting job, now running; each attempt starts without the last one's progress
 _TAKE = """
     WITH chosen AS (
         SELECT id FROM job
@@ -68,7 +69,8 @@ _TAKE = """
     )
     UPDATE job SET status = 'running', lease_owner = %(owner)s, lease_token = %(token)s,
         lease_expires_at = now() + make_interval(secs => %(lease)s),
-        attempts = job.attempts + 1, started_at = coalesce(job.started_at, now())
+        attempts = job.attempts + 1, started_at = coalesce(job.started_at, now()),
+        progress = NULL
     FROM chosen WHERE job.id = chosen.id
     RETURNING job.id, job.kind, job.lane, job.payload, job.attempts, job.max_attempts,
         job.lease_owner, job.lease_token, job.trace_id
