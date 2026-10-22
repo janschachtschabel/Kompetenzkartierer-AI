@@ -65,6 +65,32 @@ describe("the register page", () => {
     await flushPromises();
 
     expect(wrapper.get("tbody tr .register__title").text()).toBe(address);
+    // said once: the title is the address already
+    expect(wrapper.find("tbody tr [data-test=address]").exists()).toBe(false);
+  });
+
+  it("tells candidates of one title apart by their address, as text and not as a second link", async () => {
+    const title = "Bayern · Biologie · Erster Schulabschluss (ESA)";
+    const candidate = (id: string, grade: number) =>
+      entry(id, title, {
+        provenance: "vergleichsdatensatz-v62.493",
+        register_status: "unchecked",
+        file: null,
+        mine: false,
+        url: `https://www.lehrplanplus.bayern.de/fachlehrplan/realschule/${grade}/biologie`,
+      });
+    vi.spyOn(api, "listSources").mockResolvedValue(page([candidate("a", 5), candidate("b", 6)]));
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+
+    await flushPromises();
+
+    const rows = wrapper.findAll("tbody tr");
+    expect(rows.map((row) => row.get("[data-test=address] bdi").text())).toEqual([
+      "www.lehrplanplus.bayern.de/fachlehrplan/realschule/5/biologie",
+      "www.lehrplanplus.bayern.de/fachlehrplan/realschule/6/biologie",
+    ]);
+    expect(rows[0].text()).toContain(t("sources.register.noFile"));
+    expect(rows[0].findAll("a")).toHaveLength(1);
   });
 
   it("says the register is empty, and how to fill it", async () => {

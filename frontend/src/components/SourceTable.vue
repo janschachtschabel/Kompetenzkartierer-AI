@@ -9,6 +9,7 @@ import { RouterLink } from "vue-router";
 
 import type { RegisterStatus, SourceEntry } from "@/api";
 import { LOCALE, messages, t } from "@/i18n/de";
+import { readableAddress } from "@/readableAddress";
 import { word } from "@/registerWords";
 
 defineProps<{ entries: SourceEntry[]; total: number; loadingMore?: boolean }>();
@@ -65,6 +66,11 @@ const dateFormat = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium" });
               <span class="register__aside">
                 <bdi v-if="entry.file">{{ entry.file.name }}</bdi>
                 <template v-else>{{ t("sources.register.noFile") }}</template>
+              </span>
+              <!-- the seed's candidates share their titles: until a file names one, its address tells
+                   it from the others - as text, the row has its one link already -->
+              <span v-if="!entry.file && entry.title && entry.url" class="register__aside" data-test="address">
+                <bdi>{{ readableAddress(entry.url) }}</bdi>
               </span>
             </td>
             <td>
