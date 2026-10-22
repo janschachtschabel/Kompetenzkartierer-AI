@@ -2,8 +2,10 @@
 gives the candidates there: the entries of no account with that address and no file yet."""
 
 from dataclasses import dataclass
+from typing import Any
 
 import psycopg
+from psycopg.rows import dict_row
 
 from app.sources.register import CheckOutcome, DetectedKind, RegisterStatus
 
@@ -46,6 +48,19 @@ class UrlCheck:
     size: int | None = None
     sha256: bytes | None = None
     last_modified: str | None = None
+
+
+async def check_of(connection: psycopg.AsyncConnection, url: str | None) -> dict[str, Any] | None:
+    """What the check found at ``url``; none before a check, or for an entry without an address."""
+    if url is None:
+        return None
+    cursor = connection.cursor(row_factory=dict_row)
+    await cursor.execute(
+        "SELECT outcome, status_code, detected_type, size_bytes AS size, checked_at FROM url_check"
+        " WHERE url_sha256 = sha256(convert_to(%s, 'UTF8'))",
+        (url,),
+    )
+    return await cursor.fetchone()
 
 
 async def unchecked_addresses(connection: psycopg.AsyncConnection) -> list[str]:

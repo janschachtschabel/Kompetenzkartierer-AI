@@ -20,6 +20,7 @@ from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, Str
 from app.api.deps import principal, require_account
 from app.api.downloads import ObjectDownload
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
+from app.api.source_checks import CheckOut
 from app.api.sources import MAX_TITLE_SIGNS, SourceFileOut
 from app.core.auth import Principal, one_spelling, shows_whole, visible_only
 from app.core.logging import current_request_id
@@ -27,6 +28,7 @@ from app.core.storage import ObjectNotFound
 from app.db.accounts import record_audit
 from app.db.source_queries import Filters, Reader, get_source, list_sources, ownerless_source, seed_of
 from app.db.sources import sector_by_notation, update_source
+from app.db.url_checks import check_of
 from app.sources.register import (
     EDUCATION_SECTORS,
     Evidence,
@@ -134,6 +136,7 @@ class SourceDetail(SourceEntry):
     acquisitions: list[AcquisitionOut]
     seed: SeedOut | None
     access_notes: list[AccessNoteOut]
+    check: CheckOut | None  # what the check job found at the address
 
 
 class SourcePage(BaseModel):
@@ -196,6 +199,7 @@ async def _detail(
             "acquisitions": [acquisition.__dict__ for acquisition in acquisitions],
             "seed": seed,
             "access_notes": notes,
+            "check": await check_of(connection, row["url"]),
         }
     )
 

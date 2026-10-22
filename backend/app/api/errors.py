@@ -48,11 +48,20 @@ CODES = {
 
 class Refusal(HTTPException):
     """A refusal with a code of its own, for one the frontend words apart from others of its
-    status (``file_too_large`` beside a body cut at the limit)."""
+    status (``file_too_large`` beside a body cut at the limit); ``details`` what the page needs
+    to go on (the check that runs already)."""
 
-    def __init__(self, status_code: int, code: str, message: str, headers: Mapping[str, str] | None = None):
+    def __init__(
+        self,
+        status_code: int,
+        code: str,
+        message: str,
+        headers: Mapping[str, str] | None = None,
+        details: Mapping[str, Any] | None = None,
+    ):
         super().__init__(status_code, message, dict(headers) if headers else None)
         self.code = code
+        self.details = dict(details or {})
 
 
 class ErrorBody(BaseModel):
@@ -110,8 +119,10 @@ async def _http_error(request: Request, error: Exception) -> Response:
     assert isinstance(error, HTTPException)  # noqa: S101 - registered for this type only
     detail = error.detail
     message = detail if isinstance(detail, str) else None
-    details = detail if isinstance(detail, Mapping) else None
+    details: Mapping[str, Any] | None = detail if isinstance(detail, Mapping) else None
     code = error.code if isinstance(error, Refusal) else None
+    if isinstance(error, Refusal) and error.details:
+        details = error.details
     return error_response(error.status_code, message, code=code, details=details, headers=error.headers)
 
 

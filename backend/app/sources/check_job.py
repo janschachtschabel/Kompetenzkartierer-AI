@@ -24,12 +24,14 @@ from dataclasses import dataclass, field, replace
 from itertools import zip_longest
 from typing import Any
 from urllib.parse import urlsplit
+from uuid import UUID
 
 import httpx2
+import psycopg
 
 from app.db.url_checks import UrlCheck, record_check, unchecked_addresses
 from app.jobs.context import JobContext
-from app.jobs.queue import Job, report_progress
+from app.jobs.queue import Job, enqueue, report_progress
 from app.sources.register import CheckOutcome, RegisterStatus
 from app.sources.robots import HostDeferred, Rules, product_token, read_robots
 from app.sources.throttle import wait_turn
@@ -51,6 +53,22 @@ REGISTER_STATUS: dict[CheckOutcome, RegisterStatus | None] = {
     "robots": "unreachable",
 }
 Sleep = Callable[[float], Awaitable[None]]
+# One check at a time: two starts at once would each find none waiting and enqueue one
+_START_LOCK = int.from_bytes(b"kka-chk", "big")
+
+
+async def enqueue_check(connection: psycopg.AsyncConnection, lane: str) -> tuple[UUID | None, UUID | None]:
+    """A new check of ``lane``, unless one waits or runs: (the new one, the one there). Called in a
+    transaction, whose end releases the lock."""
+    await connection.execute("SELECT pg_advisory_xact_lock(%s)", (_START_LOCK,))
+    cursor = await connection.execute(
+        "SELECT id FROM job WHERE kind = %s AND status IN ('queued', 'running') ORDER BY created_at LIMIT 1",
+        (KIND,),
+    )
+    found = await cursor.fetchone()
+    if found is not None:
+        return None, found[0]
+    return await enqueue(connection, KIND, lane, {}), None
 
 
 async def check_sources(
