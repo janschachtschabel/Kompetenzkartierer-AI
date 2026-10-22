@@ -46,7 +46,26 @@ def test_the_defaults_follow_the_old_app() -> None:
         ("OPENAI_REASONING_EFFORT", "extreme"),
         ("OPENAI_TEXT_VERBOSITY", "chatty"),
         ("OPENAI_BASE_URL", "api.openai.com/v1"),
+        ("OPENAI_BASE_URL", "ftp://gateway.example.invalid/v1"),
+        ("OPENAI_BASE_URL", "https://user:invented-password@gateway.example.invalid/v1"),
+        ("OPENAI_BASE_URL", "https://gateway.example.invalid/v1?key=invented-query"),
+        ("OPENAI_BASE_URL", "https://gateway.example.invalid/v1#invented-part"),
+        ("OPENAI_BASE_URL", "https://gateway.example.invalid:99999/v1"),
+        ("OPENAI_BASE_URL", "https:///v1"),
         ("LLM_CONTEXT_TOKENS", "100"),
+    ],
+    ids=[
+        "provider",
+        "effort",
+        "verbosity",
+        "no-scheme",
+        "ftp",
+        "userinfo",
+        "query",
+        "fragment",
+        "port",
+        "no-host",
+        "context",
     ],
 )
 def test_a_value_the_endpoint_cannot_take_stops_the_start(
@@ -58,6 +77,47 @@ def test_a_value_the_endpoint_cannot_take_stops_the_start(
         LLMSettings()
 
     assert value not in str(caught.value)
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["https://gateway.example.invalid", "http://127.0.0.1:8080/v1", "https://gateway.example.invalid/a/v1"],
+)
+def test_a_plain_endpoint_is_taken_as_written(monkeypatch: pytest.MonkeyPatch, url: str) -> None:
+    # http too: a gateway inside the cluster may speak it
+    monkeypatch.setenv("OPENAI_BASE_URL", url)
+
+    assert LLMSettings().openai_base_url == url
+
+
+# A sign that is no visible ASCII character makes the HTTP library fail on the header and quote
+# it whole in the traceback: a space, a tab, a line end, a no-break space, an umlaut
+UNSENDABLE = [" ", chr(0x09), chr(0x0A), chr(0xA0), chr(0xE4)]
+
+
+@pytest.mark.parametrize("sign", UNSENDABLE, ids=["space", "tab", "newline", "nbsp", "umlaut"])
+def test_a_key_that_cannot_be_sent_stops_the_start(monkeypatch: pytest.MonkeyPatch, sign: str) -> None:
+    key = INVENTED_KEY[:10] + sign + INVENTED_KEY[10:]
+    monkeypatch.setenv("OPENAI_API_KEY", key)
+
+    with pytest.raises(ValidationError, match="openai_api_key") as caught:
+        LLMSettings()
+
+    assert INVENTED_KEY[10:] not in str(caught.value)
+
+
+def test_a_key_file_with_a_trailing_space_stops_the_start(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # only the final line end is not part of the secret
+    secret = tmp_path / "openai_api_key"
+    secret.write_text(INVENTED_KEY + " \n", encoding="utf-8")
+    monkeypatch.setenv("OPENAI_API_KEY_FILE", str(secret))
+
+    with pytest.raises(ValidationError, match="openai_api_key") as caught:
+        LLMSettings()
+
+    assert INVENTED_KEY not in str(caught.value)
 
 
 @pytest.mark.parametrize(

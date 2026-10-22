@@ -17,6 +17,7 @@ from pydantic_ai.models.openai import (
     OpenAIResponsesModel,
     OpenAIResponsesModelSettings,
 )
+from pydantic_ai.profiles import merge_profile
 from pydantic_ai.profiles.openai import OpenAIModelProfile
 from pydantic_ai.providers.openai import OpenAIProvider
 
@@ -52,7 +53,11 @@ class LLMNotConfigured(Exception):
 def build_model(
     settings: LLMSettings, *, transport: httpx2.AsyncBaseTransport | None = None
 ) -> OpenAIResponsesModel | OpenAIChatModel:
-    """The configured model; ``transport`` stands in for the network in a test."""
+    """The configured model; ``transport`` stands in for the network in a test.
+
+    Build one per process and keep it: it holds an HTTP client with its connection pool, which
+    ``await model.client.close()`` releases when the process ends.
+    """
     if settings.openai_api_key is None:
         raise LLMNotConfigured("OPENAI_API_KEY is not set: the language model cannot be asked")
     provider = OpenAIProvider(
@@ -80,10 +85,12 @@ def check_reasoning_effort(settings: LLMSettings) -> None:
     """ValueError where the model's profile says it does not take the configured effort.
 
     pydantic-ai sends whatever effort it is given, and gpt-6-luna answers ``minimal`` with a
-    400 in the middle of a paid job (old app, audit E-84). A model nobody measured is not
-    refused what nobody knows.
+    400 in the middle of a paid job (old app, audit E-84). The profile is the one the model
+    gets - the library's, with what was measured laid over it - and only what it says against
+    an effort refuses it: a model the library does not describe, a gateway's, is not refused
+    what nobody knows. No key is needed, so the start checks it before the key is set.
     """
-    profile = _measured_profile(settings.openai_model) or {}
+    profile = _profile(settings.openai_model)
     effort = settings.openai_reasoning_effort
     refused = (effort == "minimal" and profile.get("openai_supports_minimal_reasoning_effort") is False) or (
         effort == "none"
@@ -112,6 +119,12 @@ def _known[T](table: dict[str, T], model_name: str) -> T | None:
         ),
         None,
     )
+
+
+def _profile(model_name: str) -> OpenAIModelProfile:
+    """As pydantic-ai resolves it for the model, for the keys the library and we set."""
+    library = OpenAIProvider.model_profile(model_name)
+    return cast(OpenAIModelProfile, merge_profile(library, _measured_profile(model_name)))
 
 
 def _measured_profile(model_name: str) -> OpenAIModelProfile | None:

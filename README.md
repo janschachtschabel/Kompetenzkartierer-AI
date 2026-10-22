@@ -63,3 +63,11 @@ ungültig.
   `AUTH_FAILURE_WINDOW_S` (Standard 900 s), danach 429. Ein gültiges Token kommt immer durch.
 - `DB_POOL_TIMEOUT_S` (Standard 5 s): so lange wartet eine Anfrage auf eine Verbindung, dann
   antwortet sie 503 mit `Retry-After`.
+
+Sprachmodell (OpenAI-kompatibel): `OPENAI_API_KEY` (auch `OPENAI_API_KEY_FILE`; nur sichtbare
+ASCII-Zeichen), `OPENAI_BASE_URL` (Standard `https://api.openai.com/v1`; `http(s)://Host[:Port][/Pfad]`
+ohne Nutzer, Query oder Fragment, `http` für ein Gateway im Cluster), `OPENAI_MODEL` (Standard
+`gpt-6-luna`), `LLM_PROVIDER` (`openai` spricht die Responses-API, `openai-compatible` Chat
+Completions), `OPENAI_REASONING_EFFORT` und `OPENAI_TEXT_VERBOSITY` (Standard `low`). Nimmt das
+Modell den Aufwand laut seinem Profil nicht an (gpt-6-luna kein `minimal`), starten API und
+Worker nicht. Ohne Schlüssel starten beide, nur Aufrufe des Modells scheitern.

@@ -1,5 +1,7 @@
 """Object storage on the file system: keys stay inside its root, writes are whole or not at all."""
 
+import os
+import stat
 from pathlib import Path
 
 import pytest
@@ -71,6 +73,73 @@ def test_a_key_that_could_leave_the_root_is_refused(
         storage.put(key, b"x")
 
     assert not (tmp_path / "outside.txt").exists()
+
+
+@pytest.mark.parametrize(
+    "key",
+    ["runs/" + "a" * 256, "runs/name.", "CON", "runs/con.json", "nul", "runs/COM1", "LPT9.txt", "aux/x.json"],
+    ids=["long-segment", "trailing-dot", "con", "con-ext", "nul", "com1", "lpt9-ext", "aux-folder"],
+)
+def test_a_key_a_file_system_cannot_hold_as_written_is_refused(storage: FileSystemStorage, key: str) -> None:
+    # Windows drops a trailing dot and maps device names to devices; segments past 255 fail
+    with pytest.raises(InvalidKey):
+        storage.put(key, b"x")
+
+
+def test_a_key_that_names_a_folder_of_other_keys_holds_no_object(storage: FileSystemStorage) -> None:
+    storage.put("runs/1/answer.json", b"{}")
+
+    assert storage.exists("runs/1") is False
+    with pytest.raises(ObjectNotFound):
+        storage.get("runs/1")
+    with pytest.raises(ObjectNotFound):
+        storage.delete("runs/1")
+    with pytest.raises(InvalidKey):
+        storage.put("runs/1", b"{}")
+
+
+def test_a_key_below_an_object_holds_no_object(storage: FileSystemStorage) -> None:
+    storage.put("runs/1.json", b"{}")
+
+    with pytest.raises(ObjectNotFound):
+        storage.get("runs/1.json/more")
+    with pytest.raises(ObjectNotFound):
+        storage.delete("runs/1.json/more")
+    with pytest.raises(InvalidKey):
+        storage.put("runs/1.json/more", b"{}")
+
+
+def test_a_link_inside_the_root_does_not_lead_out_of_it(storage: FileSystemStorage, tmp_path: Path) -> None:
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    storage.root.mkdir(parents=True)
+    try:
+        (storage.root / "linked").symlink_to(outside, target_is_directory=True)
+    except OSError:
+        pytest.skip("this system makes no symbolic links for this user")
+
+    with pytest.raises(InvalidKey):
+        storage.put("linked/x.json", b"{}")
+
+    assert list(outside.iterdir()) == []
+
+
+@pytest.mark.skipif(os.name != "posix", reason="a folder is synced on POSIX systems only")
+def test_a_write_syncs_the_folder_it_renamed_in(
+    storage: FileSystemStorage, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # the rename is only durable once the folder's entry is on disk
+    synced: list[bool] = []
+    real_fsync = os.fsync
+
+    def recording_fsync(descriptor: int) -> None:
+        synced.append(stat.S_ISDIR(os.fstat(descriptor).st_mode))
+        real_fsync(descriptor)
+
+    monkeypatch.setattr("app.core.storage.os.fsync", recording_fsync)
+    storage.put("runs/1.json", b"{}")
+
+    assert synced == [False, True]
 
 
 def test_a_failed_write_leaves_the_old_object_and_no_stray_file(

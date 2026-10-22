@@ -173,9 +173,17 @@ def _stop_on_signals(stop: asyncio.Event) -> None:
 def main() -> int:
     from app.core.logging import configure_logging
     from app.core.settings import Settings
+    from app.llm.client import check_reasoning_effort
+    from app.llm.settings import LLMSettings
 
     settings = Settings()
+    llm = LLMSettings()
     configure_logging(settings.log_level, settings.log_format, stream=sys.stdout)
+    try:
+        check_reasoning_effort(llm)
+    except ValueError as error:
+        log.error("%s", error)
+        return 1
     # psycopg's async mode needs a selector loop; Windows' default is the proactor
     return asyncio.run(_serve(), loop_factory=asyncio.SelectorEventLoop)
 

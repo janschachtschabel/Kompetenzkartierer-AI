@@ -18,14 +18,15 @@ dependencies = [
     # does not know gpt-6-luna, app/llm/client.py describes it as measured)
     "openai>=3.25",
     "pydantic-ai-slim[openai]>=2.42",
+    # the HTTP client app/llm/client.py hands the SDK, and the one starlette's TestClient takes
+    # (with plain httpx it warns that support ends)
+    "httpx2>=2.13",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=9.1",
     "pytest-cov>=7.1",
-    # the client starlette's TestClient takes; with plain httpx it warns that support ends
-    "httpx2>=2.13",
     "ruff>=0.16",
     "mypy>=2.3",
     "pyshacl>=0.40",

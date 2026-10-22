@@ -7,6 +7,7 @@ settings class reads are hidden while it is built; those of the operating system
 """
 
 import asyncio
+import logging
 import os
 import threading
 from collections.abc import Iterator
@@ -19,8 +20,11 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic_settings import BaseSettings
 
+from app.core.logging import QUIET_LOGGERS
 from app.core.settings import Settings
+from app.llm.settings import LLMSettings
 
+TOUCHED_LOGGERS = ("", "uvicorn", "uvicorn.error", "uvicorn.access", "py.warnings", *QUIET_LOGGERS)
 # A closed port: an app under test that opens its pool reaches no server, and no real one
 FAKE_DATABASE_URL = "postgresql://kka:fake@127.0.0.1:1/kka"
 FAKE_PEPPER = "invented-pepper-for-tests-0123456789abcdef"
@@ -33,13 +37,34 @@ def settings_variables(settings_cls: type[BaseSettings]) -> set[str]:
 
 
 @contextmanager
-def without_settings_variables(settings_cls: type[BaseSettings] = Settings) -> Iterator[None]:
-    """The environment without any variable ``settings_cls`` reads, in any case; restored after."""
-    hidden = settings_variables(settings_cls)
+def without_settings_variables(*settings_classes: type[BaseSettings]) -> Iterator[None]:
+    """The environment without any variable the classes read (by default every settings class of
+    the app: a process's main builds them all), in any case; restored after."""
+    hidden = set().union(*(settings_variables(cls) for cls in settings_classes or (Settings, LLMSettings)))
     with mock.patch.dict(os.environ):
         for key in [key for key in os.environ if key.upper() in hidden]:
             del os.environ[key]
         yield
+
+
+@contextmanager
+def kept_logging() -> Iterator[None]:
+    """The process-wide loggers as they were before, whatever configure_logging did meanwhile."""
+    loggers = {name: logging.getLogger(name) for name in TOUCHED_LOGGERS}
+    saved = {name: (logger.handlers[:], logger.level, logger.propagate) for name, logger in loggers.items()}
+    # configure_logging filters every root handler, pytest's own too, which outlive the test
+    filters = {handler: handler.filters[:] for handler in logging.getLogger().handlers}
+    try:
+        yield
+    finally:
+        logging.captureWarnings(False)
+        for name, (handlers, level, propagate) in saved.items():
+            logger = logging.getLogger(name)
+            logger.handlers[:] = handlers
+            logger.setLevel(level)
+            logger.propagate = propagate
+        for handler, kept in filters.items():
+            handler.filters[:] = kept
 
 
 def selector_client(app: FastAPI, **options: Any) -> TestClient:

@@ -7,9 +7,11 @@ The key may come from OPENAI_API_KEY_FILE; without one the app starts, its model
 """
 
 import os
+import re
 from typing import Annotated, Literal, Self
+from urllib.parse import urlsplit
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 
 from app.core.settings import SecretFileSource
@@ -41,6 +43,31 @@ class LLMSettings(BaseSettings):
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         return init_settings, SecretFileSource(settings_cls), env_settings
+
+    @field_validator("openai_api_key")
+    @classmethod
+    def _sendable_key(cls, value: SecretStr | None) -> SecretStr | None:
+        # The key goes into a header as it is: a space, a line end or a sign outside ASCII makes
+        # the HTTP library fail on it and quote the header - the key - in its traceback
+        if value is not None and not re.fullmatch(r"[!-~]+", value.get_secret_value()):
+            raise ValueError("must be visible ASCII characters only, without spaces or line ends")
+        return value
+
+    @field_validator("openai_base_url")
+    @classmethod
+    def _plain_endpoint(cls, value: str) -> str:
+        """http(s)://host[:port][/path]; http for a gateway inside the cluster.
+
+        A user, a query or a fragment would ride along on every request and into logs.
+        """
+        parts = urlsplit(value)
+        try:
+            port_valid = parts.port is None or parts.port > 0
+        except ValueError:  # out of range
+            port_valid = False
+        if not parts.hostname or "@" in parts.netloc or "?" in value or "#" in value or not port_valid:
+            raise ValueError("must be http(s)://host[:port][/path], without user, query or fragment")
+        return value
 
     @model_validator(mode="after")
     def _no_sdk_request_log(self) -> Self:

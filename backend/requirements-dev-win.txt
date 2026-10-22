@@ -39,7 +39,7 @@ httpcore2==2.13.1
     # via httpx2
 httpx2==2.13.1
     # via
-    #   kompetenzkartierer-ai (pyproject.toml:dev)
+    #   kompetenzkartierer-ai (pyproject.toml)
     #   genai-prices
     #   openai
     #   pydantic-ai-slim

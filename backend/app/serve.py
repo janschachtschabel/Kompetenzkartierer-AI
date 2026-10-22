@@ -10,6 +10,7 @@ takes whole.
 """
 
 import contextlib
+import logging
 import socket
 import sys
 
@@ -20,6 +21,10 @@ from uvicorn.config import STARTUP_FAILURE
 from app.api.app import create_app
 from app.core.logging import configure_logging
 from app.core.settings import Settings
+from app.llm.client import check_reasoning_effort
+from app.llm.settings import LLMSettings
+
+log = logging.getLogger("app.serve")  # also when run as __main__
 
 
 def build_server(settings: Settings) -> tuple[uvicorn.Server, list[socket.socket]]:
@@ -57,7 +62,13 @@ def _config(app: FastAPI, settings: Settings, port: int) -> uvicorn.Config:
 
 def main() -> None:
     settings = Settings()
+    llm = LLMSettings()
     configure_logging(settings.log_level, settings.log_format, stream=sys.stdout)
+    try:
+        check_reasoning_effort(llm)
+    except ValueError as error:
+        log.error("%s", error)
+        raise SystemExit(STARTUP_FAILURE) from None
     server, sockets = build_server(settings)
     # as uvicorn.main.run: Ctrl+C ends without a traceback
     with contextlib.suppress(KeyboardInterrupt):

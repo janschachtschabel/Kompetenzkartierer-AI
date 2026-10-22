@@ -1,6 +1,5 @@
 """The model the app talks to: the configured endpoint, the measured profile, no key in sight."""
 
-import io
 import json
 import logging
 from typing import Any
@@ -9,8 +8,10 @@ import httpx2
 import pytest
 from pydantic_ai import Agent
 from pydantic_ai.exceptions import ModelHTTPError
+from pydantic_ai.models.openai import OpenAIResponsesModel
+from pydantic_ai.profiles.openai import openai_model_profile
+from pydantic_ai.providers.openai import OpenAIProvider
 
-from app.core.logging import configure_logging
 from app.llm.client import (
     DEFAULT_CONTEXT_TOKENS,
     LLMNotConfigured,
@@ -83,38 +84,94 @@ async def test_a_chat_gateway_gets_the_effort(restore_logging: None) -> None:
     assert json.loads(recorder.requests[0].content)["reasoning_effort"] == "medium"
 
 
-async def test_the_key_shows_in_no_error_and_no_log_line(restore_logging: None) -> None:
-    log = io.StringIO()
-    configure_logging("DEBUG", "json", stream=log)
-    logging.getLogger("httpx2").setLevel(logging.DEBUG)
+async def test_the_key_shows_in_no_error_and_no_log_line(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.DEBUG)
+    for name in ("openai", "httpx2", "pydantic_ai"):
+        caplog.set_level(logging.DEBUG, logger=name)
 
     _, error = await ask(llm_settings())
 
     assert INVENTED_KEY not in str(error)
     assert INVENTED_KEY not in repr(error)
-    assert INVENTED_KEY not in log.getvalue()
+    assert caplog.records, "nothing was logged: the check would prove nothing"
+    assert INVENTED_KEY not in caplog.text
+    assert all(INVENTED_KEY not in repr(record.args) for record in caplog.records)
 
 
+# Laid over the library's profile, so a misspelt flag would go unnoticed: every one is read back
+MEASURED_FLAGS = {
+    "supports_thinking": True,
+    "thinking_always_enabled": False,
+    "openai_supports_reasoning": True,
+    "openai_reasoning_enabled_by_default": True,
+    "openai_supports_reasoning_effort_none": True,
+    "openai_supports_minimal_reasoning_effort": False,
+    "openai_responses_supports_reasoning_mode": True,
+    "openai_responses_supports_reasoning_context": True,
+    "openai_supports_encrypted_reasoning_content": True,
+    "openai_supports_prompt_cache_breakpoints": True,
+}
+
+
+@pytest.mark.parametrize("provider", ["openai", "openai-compatible"])
 @pytest.mark.parametrize("name", ["gpt-6-luna", "gpt-6-luna-2026-09-01"])
-def test_gpt_6_luna_is_described_as_measured(name: str) -> None:
-    profile = build_model(llm_settings(openai_model=name)).profile
+def test_gpt_6_luna_is_described_as_measured(provider: str, name: str) -> None:
+    profile = build_model(llm_settings(llm_provider=provider, openai_model=name)).profile
 
-    assert profile.get("openai_supports_prompt_cache_breakpoints") is True
-    assert profile.get("openai_supports_encrypted_reasoning_content") is True
-    assert profile.get("openai_supports_minimal_reasoning_effort") is False
+    assert {flag: profile.get(flag) for flag in MEASURED_FLAGS} == MEASURED_FLAGS
 
 
-def test_another_model_keeps_the_library_s_profile() -> None:
-    profile = build_model(llm_settings(openai_model="gpt-6-luna-mini")).profile
+@pytest.mark.parametrize("name", ["gpt-5.4-mini", "gpt-6-luna-mini", "gpt-6-luna-pro"])
+def test_a_model_outside_the_measured_ones_keeps_the_library_s_own_profile(name: str) -> None:
+    # not a variant of the measured model either: the library lists variants apart, they differ
+    built = build_model(llm_settings(openai_model=name))
+    plain = OpenAIResponsesModel(name, provider=OpenAIProvider(api_key=INVENTED_KEY))
 
-    assert profile.get("openai_supports_prompt_cache_breakpoints") is not True
+    assert built.profile == plain.profile
 
 
-def test_an_effort_the_model_does_not_take_stops_the_start() -> None:
-    with pytest.raises(ValueError, match="OPENAI_REASONING_EFFORT=minimal"):
-        check_reasoning_effort(llm_settings(openai_reasoning_effort="minimal"))
-    check_reasoning_effort(llm_settings(openai_reasoning_effort="none"))
-    check_reasoning_effort(llm_settings(openai_model="some-gateway-model", openai_reasoning_effort="minimal"))
+def test_the_library_does_not_know_gpt_6_luna_yet() -> None:
+    # the day it does, the measured entry has done its job: drop it, let the library speak
+    assert not openai_model_profile("gpt-6-luna").get("openai_supports_prompt_cache_breakpoints")
+
+
+@pytest.mark.parametrize(
+    ("provider", "model", "effort"),
+    [
+        ("openai", "gpt-6-luna", "minimal"),
+        ("openai-compatible", "gpt-6-luna", "minimal"),
+        ("openai", "gpt-5", "none"),
+        ("openai-compatible", "gpt-5", "none"),
+    ],
+)
+def test_an_effort_the_model_s_profile_rules_out_stops_the_start(
+    provider: str, model: str, effort: str
+) -> None:
+    # gpt-6-luna reasons from none to max, not at minimal (measured); gpt-5 at every effort but
+    # none (the library's profile) - on a gateway's route as on OpenAI's
+    settings = llm_settings(llm_provider=provider, openai_model=model, openai_reasoning_effort=effort)
+
+    with pytest.raises(ValueError, match=f"OPENAI_REASONING_EFFORT={effort}"):
+        check_reasoning_effort(settings)
+
+
+@pytest.mark.parametrize(
+    ("model", "effort"),
+    [
+        ("gpt-6-luna", "none"),
+        ("gpt-6-luna", "max"),
+        ("some-gateway-model", "minimal"),
+        ("some-gateway-model", "none"),
+    ],
+)
+def test_an_effort_the_profile_allows_or_does_not_speak_to_is_taken(model: str, effort: str) -> None:
+    check_reasoning_effort(llm_settings(openai_model=model, openai_reasoning_effort=effort))
+
+
+def test_the_effort_is_checked_without_a_key() -> None:
+    # the start refuses a wrong effort even before the key is set
+    with pytest.raises(ValueError, match="OPENAI_REASONING_EFFORT"):
+        check_reasoning_effort(llm_settings(openai_api_key=None, openai_reasoning_effort="minimal"))
 
 
 def test_the_context_window_is_the_setting_else_the_model_s_else_the_default() -> None:
