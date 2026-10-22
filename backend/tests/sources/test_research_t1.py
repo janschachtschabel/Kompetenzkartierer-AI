@@ -179,6 +179,118 @@ def test_the_first_address_of_the_field_is_the_entry_s(tmp_path: Path, field: st
     assert found.url == url
 
 
+# The url fields as the published research has them, by report
+@pytest.mark.parametrize(
+    ("field", "source_type"),
+    [
+        pytest.param(
+            "https://www.lsvd.de/media/doc/3972/2015_thueringen_bildungsplan_18.pdf (Spiegelkopie)"
+            " | https://bildung.thueringen.de/bildung/bildungsplan/ (Original-Portal wegen Captcha"
+            " nicht lesbar)",
+            "spiegel",
+            id="02-elementar-DE-TH-spiegelkopie",
+        ),
+        pytest.param(
+            "https://dms.nuw.rptu.de/geogebrainstitut/images/f/f4/Mathematik_RahmenLP_SekI.pdf"
+            " (Spiegel RPTU, Landesserver-URL nicht gefunden)",
+            "spiegel",
+            id="01-schule-DE-RP-spiegel",
+        ),
+        pytest.param(
+            "https://www.kita-saar.de/export/sites/kitas/katholische-kita-ggmbh-saarland/.galleries/"
+            "dokumente/Bildungsprogramm_mit_Handreichungen_2018_August.pdf"
+            " (Spiegel - Ministeriumsseite saarland.de HTTP 403)",
+            "spiegel",
+            id="02-elementar-DE-SL-spiegel",
+        ),
+        pytest.param(
+            "https://hcg-berlin.de/wp-content/uploads/rahmenlehrplan-teil-c_mathe-1-10.pdf"
+            " (Schulkopie, Original-Pfad des Bildungsservers nicht ermittelt)",
+            "spiegel",
+            id="01-schule-DE-BE-schulkopie",
+        ),
+        pytest.param(
+            "https://reposit.haw-hamburg.de/bitstream/20.500.12738/9601/1/sp_d.08.1543.pdf (Sekundärquelle)",
+            "sekundaer",
+            id="02-elementar-DE-HH-sekundaerquelle",
+        ),
+        pytest.param(
+            "https://edumedia-depot.gei.de/server/api/core/bitstreams/6208b92d-6433-4dc8-a541-948e39cac45a"
+            "/content (Archivkopie)",
+            "archiv",
+            id="01-schule-DE-SL-gei-archivkopie",
+        ),
+        # the GEI's depot of curricula is an archive, whatever the note calls it
+        pytest.param(
+            "https://edumedia-depot.gei.de/bitstreams/1fccfa22-b21a-4d8e-a074-3f55476f8f1b/download"
+            " (Spiegel GEI, Scan ohne Textlayer)",
+            "archiv",
+            id="01-schule-DE-RP-gei-spiegel",
+        ),
+        pytest.param(
+            "https://edumedia-depot.gei.de/bitstreams/b92c434c-bf9f-4674-ae16-4e9f908b945d/download",
+            "archiv",
+            id="gei-without-a-note",
+        ),
+        pytest.param(
+            "https://web.archive.org/web/2023id_/https://www.schulportal-thueringen.de/lp.pdf",
+            "archiv",
+            id="wayback",
+        ),
+        pytest.param("https://a.example/lp.pdf (Archivkopie)", "archiv", id="archivkopie-elsewhere"),
+        # the copy the research read is another address, not the land's own
+        pytest.param(
+            "https://www.schleswig-holstein.de/mm/downloads/SOZMI/bildungsleitlinien.pdf (gelesen als Kopie"
+            " https://www.partizipation-und-bildung.de/wp-content/uploads/2026/02/bildungsleitlinien.pdf)",
+            None,
+            id="02-elementar-DE-SH-gelesen-als-kopie",
+        ),
+        # a note after "|" is the further address's
+        pytest.param(
+            "https://www.saarland.de/SharedDocs/Downloads/DE/mbk/Lehrpl%C3%A4ne/Lehrplaene_Grundschule/"
+            "GS_Kernlehrplan_Sachunterricht.pdf?__blob=publicationFile&v=3 | gelesen als Archivkopie"
+            " https://edumedia-depot.gei.de/bitstreams/b92c434c-bf9f-4674-ae16-4e9f908b945d/download",
+            None,
+            id="01-schule-DE-SL-archivkopie-of-the-further",
+        ),
+        pytest.param(
+            "https://www.schulportal-thueringen.de/media/detail?tspi=2279 | Kopie"
+            " https://www.schule-am-kiliansberg.de/app/download/5818961109/Physik_RS_Nov_2012_7_10.pdf",
+            None,
+            id="01-schule-DE-TH-kopie-of-the-further",
+        ),
+        pytest.param(
+            "https://epub.sub.uni-hamburg.de/epub/volltexte/2014/34356/pdf/bildungsempfehlungen.pdf"
+            " (nicht abrufbar \N{EN DASH} HTTP 403)",
+            None,
+            id="02-elementar-DE-HH-other-note",
+        ),
+        pytest.param(
+            "https://www.lsvd.de/media/doc/3972/2015_thueringen_bildungsplan_18.pdf S. 8 und 18",
+            None,
+            id="02-elementar-DE-TH-pages",
+        ),
+        pytest.param("https://a.example/lp.pdf", None, id="no-note"),
+    ],
+)
+def test_who_publishes_the_copy_is_as_the_field_notes_it_at_the_first_address(
+    tmp_path: Path, field: str, source_type: str | None
+) -> None:
+    # Gesamtplan §7.5: an archive is a source of its own kind, a mirror is marked
+    directory = write_research(tmp_path / "r", schule=[row("Plan", field)])
+
+    (found,) = read_research(directory).rows
+
+    assert found.source_type == source_type
+
+
+def test_the_published_research_marks_its_archives_mirrors_and_secondary_sources() -> None:
+    kinds = Counter(row.source_type for row in read_research(PUBLISHED).rows)
+
+    # five rows on the GEI's depot; mirrors in Berlin, Rhineland-Palatinate (2), Saarland, Thuringia
+    assert kinds == {None: 656, "archiv": 5, "spiegel": 5, "sekundaer": 2}
+
+
 def test_a_row_without_an_address_or_a_title_is_left_out_and_counted(tmp_path: Path) -> None:
     directory = write_research(
         tmp_path / "r",

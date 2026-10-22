@@ -5,8 +5,10 @@ table T1 (plan M1, 2.4; Gesamtplan §7.5): Schule, Elementar and Beruf one repor
 Hochschule and Erwachsenenbildung one for all lands. Each row becomes a candidate of no account,
 unchecked, beside the comparison dataset's: the title the research read off the document, word
 for word; the first address of its url field (which also holds notes for its readers and further
-addresses); its land; the sector of its assignment; its evidence, E from the primary document or
-S from a secondary source (A, an assumption, is none). A row whose fields a semicolon moved, or
+addresses); who publishes the copy there, as its host or the field's note on it says (an archive,
+a mirror, a secondary source: §7.5 has mirrors marked); its land; the sector of its assignment;
+its evidence, E from the primary document or S from a secondary source (A, an assumption, is
+none). A row whose fields a semicolon moved, or
 without a title or an address, is left out and counted. A second run adds nothing: a row's key
 is its report, land, title and address.
 
@@ -28,13 +30,14 @@ from collections import Counter
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import psycopg
 
 from app.core.logging import configure_logging
 from app.core.settings import Settings
 from app.db.pool import CONNECTION_OPTIONS
-from app.sources.register import COMPARISON_DATASET, Evidence, SeedDataset
+from app.sources.register import COMPARISON_DATASET, Evidence, SeedDataset, SourceType
 from app.sources.seed import Documents, SeedError, SeedReport, SeedRow, reasons, seed_register
 from app.sources.url_fetch import UrlNotAllowed, check_url
 
@@ -66,6 +69,14 @@ _T1_HEADING = re.compile(r"#.*\bT1\b")
 _ADDRESS = re.compile(r"https?://[^\s|]+", re.IGNORECASE)
 _LAND = re.compile(r"DE(-[A-Z]{2})?")  # DE: the federation's own row of Erwachsenenbildung
 _EVIDENCE = re.compile(r"([ES])\b")  # "E", "S (Portalseite)", "E (Titel) | S (Portal)"
+# Hosts that keep what others published: the Wayback Machine, the GEI's depot of curricula
+_ARCHIVES = frozenset({"web.archive.org", "edumedia-depot.gei.de"})
+# What a note says of the copy at its address, as the research words it, in this order
+_COPY_NOTES: tuple[tuple[re.Pattern[str], SourceType], ...] = (
+    (re.compile(r"archivkopie", re.IGNORECASE), "archiv"),
+    (re.compile(r"\bspiegel|kopie\b", re.IGNORECASE), "spiegel"),  # Spiegelkopie, Schulkopie
+    (re.compile(r"sekund(ä|ae)rquelle", re.IGNORECASE), "sekundaer"),
+)
 
 
 @dataclass(frozen=True)
@@ -128,6 +139,7 @@ def _rows(path: Path, assignment: Assignment, left_out: Counter[str]) -> Iterato
             title=title,
             url=url,
             country=land if _LAND.fullmatch(land) else None,
+            source_type=_source_type(raw["url"], url),
             sector=assignment.sector,
             evidence=_evidence(raw["beleg"]),
         )
@@ -157,6 +169,20 @@ def _address(field: str) -> str | None:
     while address.endswith(")") and address.count(")") > address.count("("):
         address = address[:-1].rstrip(".,:")
     return address
+
+
+def _source_type(field: str, url: str) -> SourceType | None:
+    """Who publishes the copy at the field's first address: an archive by its host, else as the
+    research noted it there. The note runs from the address to the field's next "|"; one that
+    names a further address speaks of that one ("(gelesen als Kopie https://…)"), not of the
+    first, and counts for nothing."""
+    if urlsplit(url).hostname in _ARCHIVES:
+        return "archiv"
+    found = _ADDRESS.search(field)
+    note = field[found.end() :].split("|", 1)[0] if found else ""
+    if _ADDRESS.search(note):
+        return None
+    return next((kind for pattern, kind in _COPY_NOTES if pattern.search(note)), None)
 
 
 def _evidence(field: str) -> Evidence | None:
