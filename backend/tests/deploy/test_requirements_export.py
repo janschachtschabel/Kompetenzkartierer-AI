@@ -8,6 +8,7 @@ versions than the tests ran with; this keeps the two equal.
 import re
 import tomllib
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[3]
 LOCK = ROOT / "backend" / "uv.lock"
@@ -19,13 +20,12 @@ def _normal(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
-def runtime_closure(lock: dict[str, object]) -> dict[str, str]:
+def runtime_closure(lock: dict[str, Any]) -> dict[str, str]:
     """Name -> version of every package the project needs at runtime, extras followed."""
-    packages = {_normal(p["name"]): p for p in lock["package"]}  # type: ignore[index, union-attr]
+    packages = {_normal(p["name"]): p for p in lock["package"]}
     wanted: dict[str, str] = {}
     pending: list[tuple[str, tuple[str, ...]]] = [
-        (_normal(dep["name"]), tuple(dep.get("extra", ())))
-        for dep in packages[PROJECT]["dependencies"]  # type: ignore[index]
+        (_normal(dep["name"]), tuple(dep.get("extra", ()))) for dep in packages[PROJECT]["dependencies"]
     ]
     seen: set[tuple[str, tuple[str, ...]]] = set()
     while pending:
@@ -34,10 +34,10 @@ def runtime_closure(lock: dict[str, object]) -> dict[str, str]:
             continue
         seen.add((name, extras))
         package = packages[name]
-        wanted[name] = package["version"]  # type: ignore[index]
-        deps = list(package.get("dependencies", []))  # type: ignore[union-attr]
+        wanted[name] = package["version"]
+        deps = list(package.get("dependencies", []))
         for extra in extras:
-            deps += package.get("optional-dependencies", {}).get(extra, [])  # type: ignore[union-attr]
+            deps += package.get("optional-dependencies", {}).get(extra, [])
         pending += [(_normal(dep["name"]), tuple(dep.get("extra", ()))) for dep in deps]
     return wanted
 
