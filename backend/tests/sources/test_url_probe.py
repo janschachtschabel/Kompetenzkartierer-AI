@@ -200,3 +200,11 @@ async def test_a_long_header_is_cut_to_what_the_register_holds() -> None:
 
     assert found.content_type is not None and len(found.content_type) == 200
     assert found.last_modified is not None and len(found.last_modified) == 100
+
+
+async def test_a_server_that_asks_to_wait_says_how_long() -> None:
+    found = await probe(
+        URL, max_bytes=1_000, transport=answer(429, body=b"", headers={"retry-after": " 120 "})
+    )
+
+    assert (found.status_code, found.retry_after) == (429, "120")

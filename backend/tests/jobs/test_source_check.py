@@ -5,8 +5,11 @@ must stay empty. Waiting for a host's turn is recorded, not slept.
 """
 
 import hashlib
+import socket
 from collections.abc import AsyncIterator, Callable
 from dataclasses import replace
+from datetime import UTC, datetime, timedelta
+from email.utils import format_datetime
 from pathlib import Path
 from typing import Any, get_args
 from uuid import UUID
@@ -24,9 +27,9 @@ from app.db.migrate import migrate
 from app.jobs.context import JobContext
 from app.jobs.handlers import make_handlers
 from app.jobs.queue import Job, claim, enqueue
-from app.sources.check_job import KIND, REGISTER_STATUS, check_sources
+from app.sources.check_job import KIND, MAX_RETRY_AFTER_S, REGISTER_STATUS, _retry_after_s, check_sources
 from app.sources.register import CheckOutcome
-from app.sources.url_fetch import HostRefused
+from app.sources.url_fetch import HostNotResolved, HostRefused, PinnedBackend, pinned_transport
 from tests.sources.compressed import MIB, arriving, in_chunks
 from tests.support import make_settings
 
@@ -232,7 +235,7 @@ async def test_a_server_that_asks_to_wait_is_noted_not_got_round(context: JobCon
     assert {request.url.host for request in network.asked} == {"a.example", "b.example"}
     assert {request.headers["user-agent"] for request in network.asked} == {context.settings.fetch_user_agent}
     assert (await status_of(context, waiting), await status_of(context, later)) == ("unchecked", "unchecked")
-    assert result == {"checked": 2, "deferred": 1, "deferred_hosts": ["b.example"]}
+    assert result == {"checked": 1, "deferred": 2, "deferred_hosts": ["b.example"]}
 
 
 async def test_a_job_run_again_asks_only_what_is_unchecked_and_where_it_was_asked_to_wait(
@@ -292,10 +295,9 @@ async def test_a_host_not_publicly_reachable_is_unreachable_and_asked_no_more(co
     assert [await status_of(context, entry) for entry in entries] == ["unreachable", "unreachable"]
 
 
-async def test_an_address_that_gives_no_answer_is_unreachable(context: JobContext) -> None:
-    entries = [
-        await add_entry(context, f"https://e.example/{path}") for path in ("lp.pdf", "slow.pdf", "loop")
-    ]
+async def test_no_answer_for_now_is_unavailable_and_a_redirect_loop_unreachable(context: JobContext) -> None:
+    urls = ["https://e1.example/lp.pdf", "https://e2.example/slow.pdf", "https://e3.example/loop"]
+    entries = [await add_entry(context, url) for url in urls]
 
     def refusing(request: httpx2.Request) -> httpx2.Response:
         raise httpx2.ConnectError("refused")
@@ -305,21 +307,232 @@ async def test_an_address_that_gives_no_answer_is_unreachable(context: JobContex
 
     network = Network(
         {
-            "e.example/lp.pdf": refusing,
-            "e.example/slow.pdf": slow,
-            "e.example/loop": reply(302, location="/loop"),
+            "e1.example/lp.pdf": refusing,
+            "e2.example/slow.pdf": slow,
+            "e3.example/loop": reply(302, location="/loop"),
+        }
+    )
+
+    result = await run(context, network)
+
+    found = await checks(context)
+    assert {url: (row["outcome"], row["status_code"]) for url, row in found.items()} == {
+        "https://e1.example/lp.pdf": ("unavailable", None),
+        "https://e2.example/slow.pdf": ("unavailable", None),
+        "https://e3.example/loop": ("unreachable", None),
+    }
+    # unreachable for now; a later check asks again
+    assert [await status_of(context, entry) for entry in entries] == ["unreachable"] * 3
+    assert result == {"checked": 1, "deferred": 2, "deferred_hosts": ["e1.example", "e2.example"]}
+
+
+@pytest.mark.parametrize(
+    ("status", "outcome"), [(503, "throttled"), (502, "unavailable"), (504, "unavailable")]
+)
+async def test_a_host_that_asks_to_wait_or_gives_no_answer_now_is_asked_no_more_this_time(
+    context: JobContext, status: int, outcome: str
+) -> None:
+    first, later = (
+        await add_entry(context, "https://b.example/x"),
+        await add_entry(context, "https://b.example/y"),
+    )
+    network = Network({"b.example/x": reply(status), "b.example/y": reply(200, PDF)})
+
+    result = await run(context, network)
+
+    found = await checks(context)
+    assert (found["https://b.example/x"]["outcome"], found["https://b.example/x"]["status_code"]) == (
+        outcome,
+        status,
+    )
+    assert "b.example/y" not in network.paths()
+    assert (await status_of(context, first), await status_of(context, later)) == (
+        "unchecked" if outcome == "throttled" else "unreachable",
+        "unchecked",
+    )
+    assert result == {"checked": 0, "deferred": 2, "deferred_hosts": ["b.example"]}
+
+
+async def test_a_host_whose_server_asked_for_an_hour_is_not_asked_by_a_check_within_it(
+    context: JobContext,
+) -> None:
+    await add_entry(context, "https://b.example/x")
+    await add_entry(context, A + "/lp.pdf")
+    await run(context, Network({**SITE_A, "b.example/x": reply(429, **{"retry-after": "3600"})}))
+    network = Network({**SITE_A, "b.example/x": reply(200, PDF)})
+
+    result = await run(context, network)
+
+    assert [path for path in network.paths() if path.startswith("b.")] == []
+    assert result == {"checked": 0, "deferred": 1, "deferred_hosts": ["b.example"]}
+
+
+async def test_an_address_given_no_answer_for_now_is_asked_again_by_the_next_check(
+    context: JobContext,
+) -> None:
+    entry = await add_entry(context, "https://e.example/lp.pdf")
+
+    def refusing(request: httpx2.Request) -> httpx2.Response:
+        raise httpx2.ConnectError("refused")
+
+    await run(context, Network({"e.example/lp.pdf": refusing}))
+    result = await run(context, Network({"e.example/lp.pdf": reply(200, PDF)}))
+
+    assert (await checks(context))["https://e.example/lp.pdf"]["outcome"] == "reachable"
+    assert await status_of(context, entry) == "reachable"
+    assert result == {"checked": 1, "deferred": 0, "deferred_hosts": []}
+
+
+async def test_an_answer_with_no_http_status_is_unreachable_and_ends_no_check(context: JobContext) -> None:
+    await add_entry(context, "https://b.example/odd")
+    await add_entry(context, A + "/lp.pdf")
+
+    def odd(request: httpx2.Request) -> httpx2.Response:
+        response = httpx2.Response(200, content=PDF)
+        response.status_code = 999  # as h11 takes it, LinkedIn's answer to a robot
+        return response
+
+    await run(context, Network({**SITE_A, "b.example/odd": odd}))
+
+    found = await checks(context)
+    assert (found["https://b.example/odd"]["outcome"], found["https://b.example/odd"]["status_code"]) == (
+        "unreachable",
+        None,
+    )
+    assert found[A + "/lp.pdf"]["outcome"] == "reachable"
+
+
+async def test_a_redirect_to_what_robots_txt_forbids_on_the_same_host_is_not_followed(
+    context: JobContext,
+) -> None:
+    entry = await add_entry(context, "https://c.example/start")
+    network = Network(
+        {
+            "c.example/robots.txt": reply(200, b"User-agent: *\nDisallow: /intern/\n"),
+            "c.example/start": reply(302, location="/intern/lp.pdf"),
+            "c.example/intern/lp.pdf": reply(200, PDF),
         }
     )
 
     await run(context, network)
 
+    assert network.paths() == ["c.example/robots.txt", "c.example/start"]
+    assert (await checks(context))["https://c.example/start"]["outcome"] == "robots"
+    assert await status_of(context, entry) == "unreachable"
+
+
+async def test_a_redirect_to_another_host_asks_its_robots_txt_first(context: JobContext) -> None:
+    await add_entry(context, "https://a.example/start")
+    network = Network(
+        {
+            "a.example/start": reply(302, location="https://z.example/privat/lp.pdf"),
+            "z.example/robots.txt": reply(200, b"User-agent: *\nDisallow: /privat/\n"),
+            "z.example/privat/lp.pdf": reply(200, PDF),
+        }
+    )
+
+    await run(context, network)
+
+    assert network.paths() == ["a.example/robots.txt", "a.example/start", "z.example/robots.txt"]
+    assert (await checks(context))["https://a.example/start"]["outcome"] == "robots"
+
+
+async def test_each_hop_takes_its_host_s_turn(context: JobContext) -> None:
+    await add_entry(context, "https://a.example/1")
+    hops = {f"a.example/{step}": reply(302, location=f"/{step + 1}") for step in (1, 2, 3)}
+    network = Network({**hops, "a.example/4": reply(200, PDF)})
+    sleeps = Sleeps()
+
+    await run(context, network, sleeps)
+
+    assert network.paths() == [
+        "a.example/robots.txt",
+        "a.example/1",
+        "a.example/2",
+        "a.example/3",
+        "a.example/4",
+    ]
+    # robots.txt takes the first turn; each hop the next, CHECK_HOST_INTERVAL_S (2 s) apart
+    assert [round(wait) for wait in sleeps.waits] == [2, 4, 6, 8]
+
+
+async def test_a_redirect_to_a_host_that_waits_defers_that_host_not_the_first(context: JobContext) -> None:
+    await add_entry(context, "https://a.example/start")
+    await add_entry(context, A + "/lp.pdf")
+    await add_entry(context, "https://z.example/other.pdf")
+    network = Network(
+        {
+            **SITE_A,
+            "a.example/start": reply(302, location="https://z.example/lp.pdf"),
+            "z.example/robots.txt": reply(503),
+        }
+    )
+
+    result = await run(context, network)
+
+    assert (await checks(context))[A + "/lp.pdf"]["outcome"] == "reachable"
+    assert "https://a.example/start" not in await checks(context)
+    assert result["deferred_hosts"] == ["z.example"]
+
+
+def resolving(names: dict[str, int]) -> httpx2.AsyncBaseTransport:
+    """The pinned transport over a resolver that fails each name with its error, connecting nowhere."""
+
+    def resolve(host: str) -> list[str]:
+        raise socket.gaierror(names[host], "no address")
+
+    return pinned_transport(PinnedBackend(resolve))
+
+
+async def test_a_name_that_does_not_resolve_now_waits_and_one_that_never_will_is_unreachable(
+    context: JobContext,
+) -> None:
+    again = await add_entry(context, "https://again.example/lp.pdf")
+    nowhere = await add_entry(context, "https://nowhere.example/lp.pdf")
+
+    result = await check_sources(
+        context,
+        await a_job(context),
+        transport=resolving({"again.example": socket.EAI_AGAIN, "nowhere.example": socket.EAI_NONAME}),
+        sleep=Sleeps(),
+    )
+
     found = await checks(context)
-    assert {url: (row["outcome"], row["status_code"]) for url, row in found.items()} == {
-        "https://e.example/lp.pdf": ("unreachable", None),
-        "https://e.example/slow.pdf": ("unreachable", None),
-        "https://e.example/loop": ("unreachable", None),
-    }
-    assert [await status_of(context, entry) for entry in entries] == ["unreachable"] * 3
+    assert "https://again.example/lp.pdf" not in found
+    assert found["https://nowhere.example/lp.pdf"]["outcome"] == "unreachable"
+    assert (await status_of(context, again), await status_of(context, nowhere)) == (
+        "unchecked",
+        "unreachable",
+    )
+    assert result["deferred_hosts"] == ["again.example"]
+
+
+async def test_a_candidate_seeded_after_its_address_was_checked_follows_what_was_found(
+    context: JobContext,
+) -> None:
+    await add_entry(context, A + "/lp.pdf")
+    await run(context, Network(SITE_A))
+    later = await add_entry(context, A + "/lp.pdf")
+    network = Network(SITE_A)
+
+    result = await run(context, network)
+
+    assert await status_of(context, later) == "reachable"
+    assert network.asked == []
+    assert result == {"checked": 0, "deferred": 0, "deferred_hosts": []}
+
+
+async def test_what_was_found_stays_when_the_run_breaks_off(context: JobContext) -> None:
+    await add_entry(context, A + "/lp.pdf")
+    await add_entry(context, "https://b.example/x")
+
+    def breaking(request: httpx2.Request) -> httpx2.Response:
+        raise RuntimeError("the worker went down")
+
+    with pytest.raises(RuntimeError):
+        await run(context, Network({**SITE_A, "b.example/x": breaking}))
+
+    assert (await checks(context))[A + "/lp.pdf"]["outcome"] == "reachable"
 
 
 async def test_a_file_past_the_upload_limit_is_reachable_and_unhashed(context: JobContext) -> None:
@@ -403,3 +616,48 @@ def test_every_outcome_says_what_becomes_of_the_register() -> None:
     assert set(REGISTER_STATUS) == set(get_args(CheckOutcome))
     # what is asked again by a later check leaves the register or marks it for now, never acquired
     assert REGISTER_STATUS["unavailable"] == "unreachable"
+
+
+def test_a_wait_is_read_in_seconds_or_as_a_date_within_a_day() -> None:
+    in_an_hour = format_datetime(datetime.now(UTC) + timedelta(hours=1), usegmt=True)
+    gone = format_datetime(datetime.now(UTC) - timedelta(hours=1), usegmt=True)
+
+    assert _retry_after_s("120") == 120
+    assert 3500 < (_retry_after_s(in_an_hour) or 0) <= 3600
+    assert _retry_after_s(gone) == 0
+    assert _retry_after_s(str(10 * 86_400)) == MAX_RETRY_AFTER_S
+    assert _retry_after_s("bald") is None
+    assert _retry_after_s(None) is None
+
+
+@pytest.mark.parametrize(("transient", "outcome"), [(True, None), (False, "unreachable")])
+async def test_a_document_whose_host_stops_resolving_waits_or_is_unreachable(
+    context: JobContext, transient: bool, outcome: str | None
+) -> None:
+    # robots.txt came; the document's own connection finds the name gone, as the pinned transport would
+    await add_entry(context, "https://b.example/lp.pdf")
+
+    def gone(request: httpx2.Request) -> httpx2.Response:
+        raise HostNotResolved("b.example", transient=transient)
+
+    result = await run(context, Network({"b.example/lp.pdf": gone}))
+
+    found = await checks(context)
+    assert (found["https://b.example/lp.pdf"]["outcome"] if found else None) == outcome
+    assert result["deferred_hosts"] == (["b.example"] if transient else [])
+
+
+async def test_what_the_register_reached_otherwise_is_not_overwritten_by_an_older_check(
+    context: JobContext,
+) -> None:
+    entry = await add_entry(context, A + "/lp.pdf", register_status="reachable")
+    async with context.pool.connection() as connection:
+        await connection.execute(
+            "INSERT INTO url_check (url_sha256, url, outcome, status_code)"
+            " VALUES (sha256(convert_to(%(url)s, 'UTF8')), %(url)s, 'refused', 404)",
+            {"url": A + "/lp.pdf"},
+        )
+
+    await run(context, Network({}))
+
+    assert await status_of(context, entry) == "reachable"

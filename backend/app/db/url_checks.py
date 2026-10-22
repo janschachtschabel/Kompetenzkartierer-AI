@@ -1,6 +1,7 @@
 """What the check job found at each address (migration 0010_url_check), and the register status it
 gives the candidates there: the entries of no account with that address and no file yet."""
 
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -9,14 +10,13 @@ from psycopg.rows import dict_row
 
 from app.sources.register import CheckOutcome, DetectedKind, RegisterStatus
 
-# The candidates' addresses no check has found out about yet; one a server asked to wait (429)
-# is asked again
+# The candidates' addresses no check has found out about for good yet
 _UNCHECKED = """
     SELECT DISTINCT s.url FROM source s
     WHERE s.owner_id IS NULL AND s.url IS NOT NULL AND s.file_id IS NULL
         AND NOT EXISTS (
             SELECT 1 FROM url_check c
-            WHERE c.url_sha256 = sha256(convert_to(s.url, 'UTF8')) AND c.outcome <> 'throttled'
+            WHERE c.url_sha256 = sha256(convert_to(s.url, 'UTF8')) AND c.outcome <> ALL(%(again)s::text[])
         )
     ORDER BY s.url
 """
@@ -34,6 +34,16 @@ _RECORD = """
 _FOLLOW = """
     UPDATE source SET register_status = %(status)s, updated_at = now()
     WHERE owner_id IS NULL AND url = %(url)s AND file_id IS NULL AND register_status <> %(status)s
+"""
+
+
+# What a check found before, given to the candidates seeded since at the same address
+_CATCH_UP = """
+    UPDATE source s SET register_status = given.status, updated_at = now()
+    FROM url_check c JOIN unnest(%(outcomes)s::text[], %(statuses)s::text[]) AS given (outcome, status)
+        ON given.outcome = c.outcome
+    WHERE c.url_sha256 = sha256(convert_to(s.url, 'UTF8'))
+        AND s.owner_id IS NULL AND s.file_id IS NULL AND s.register_status = 'unchecked'
 """
 
 
@@ -63,8 +73,21 @@ async def check_of(connection: psycopg.AsyncConnection, url: str | None) -> dict
     return await cursor.fetchone()
 
 
-async def unchecked_addresses(connection: psycopg.AsyncConnection) -> list[str]:
-    cursor = await connection.execute(_UNCHECKED)
+async def catch_up(
+    connection: psycopg.AsyncConnection, statuses: Mapping[CheckOutcome, RegisterStatus | None]
+) -> None:
+    """Give the unchecked candidates at an address a check found out about what it found: one seeded
+    after the check of its address would stay unchecked, its address being asked no more."""
+    given = [(outcome, status) for outcome, status in statuses.items() if status is not None]
+    await connection.execute(
+        _CATCH_UP,
+        {"outcomes": [outcome for outcome, _ in given], "statuses": [status for _, status in given]},
+    )
+
+
+async def unchecked_addresses(connection: psycopg.AsyncConnection, asked_again: Collection[str]) -> list[str]:
+    """The candidates' addresses with no check yet, or one whose outcome is ``asked_again``."""
+    cursor = await connection.execute(_UNCHECKED, {"again": list(asked_again)})
     return [url for (url,) in await cursor.fetchall()]
 
 

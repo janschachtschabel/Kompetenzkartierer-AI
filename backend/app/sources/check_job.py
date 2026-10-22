@@ -4,23 +4,27 @@ Gesamtplan §7.5).
 The candidates are the entries of no account - the seeds - with an address and no file yet. Each
 address is asked once, however many entries hold it, unless a check found it out before: what
 was found goes to url_check at once (app/db/url_checks.py), so a job run again - another attempt,
-a later start - goes on where the last stopped. The addresses are taken host by host in turn,
-each request in the host's slot (CHECK_HOST_INTERVAL_S across all workers, app/sources/throttle.py),
-after the origin's robots.txt (app/sources/robots.py): what it forbids is not fetched. A 429 is
-noted, not got round - no other user agent, no archive or mirror instead -: the address is asked
-again by a later check, and so are the host's others; as are a host's whose robots.txt cannot be
-had now. Nothing is stored but what was found: the body is streamed and hashed
-(app/sources/url_probe.py). The candidates at the address follow: reachable for an answer of 2xx,
-unreachable for any other or none, unchanged for a 429.
+a later start - goes on where the last stopped, and a candidate seeded since at an address
+checked before takes what was found there. The addresses are taken host by host in turn. Every
+address asked, each redirect's too, first passes its origin's robots.txt (app/sources/robots.py)
+- what it forbids is not fetched - and then waits for its host's turn (CHECK_HOST_INTERVAL_S across
+all workers, app/sources/throttle.py). Nothing of a body is stored: it is streamed and hashed
+(app/sources/url_probe.py).
 
-simplify: robots.txt and the slots are the first address's host's; a redirect to another host is
-followed without asking its robots.txt or waiting its turn - a curriculum portal's download link
-rarely leaves the portal, and a later check could ask every host on the way.
+Nothing is got round: no other user agent, no archive or mirror instead. A server that asks to
+wait (429, 503) is noted and holds its host off for as long as it says (Retry-After, a day at
+most); no answer for now (502, 504, a timeout, a broken connection, a name that does not resolve
+now) is noted as unavailable. Both are asked again by a later check, and the host's other
+addresses wait for it, as do a host's whose robots.txt cannot be had now. The candidates at the
+address follow: reachable for an answer of 2xx, unreachable for any other or none, unchanged for
+a request to wait.
 """
 
 import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field, replace
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
 from itertools import zip_longest
 from typing import Any
 from urllib.parse import urlsplit
@@ -29,20 +33,20 @@ from uuid import UUID
 import httpx2
 import psycopg
 
-from app.db.url_checks import UrlCheck, record_check, unchecked_addresses
+from app.db.url_checks import UrlCheck, catch_up, record_check, unchecked_addresses
 from app.jobs.context import JobContext
 from app.jobs.queue import Job, enqueue, report_progress
 from app.sources.register import CheckOutcome, RegisterStatus
 from app.sources.robots import HostDeferred, Rules, product_token, read_robots
-from app.sources.throttle import wait_turn
-from app.sources.url_fetch import DownloadError, UrlNotAllowed
+from app.sources.throttle import hold_host, wait_turn
+from app.sources.url_fetch import BadAnswer, DownloadError, HostNotResolved, TooManyRedirects, UrlNotAllowed
 from app.sources.url_probe import Probe, probe
 
 KIND = "source.check"
 MIB = 2**20
 MAX_HOST_SIGNS = 253  # what DNS holds: a longer name resolves nowhere (and host_throttle refuses it)
 MAX_URL_SIGNS = 2000  # what url_check.final_url holds
-# What the candidates at an address become; a 429 leaves them as they were
+# What the candidates at an address become; a request to wait leaves them as they were
 REGISTER_STATUS: dict[CheckOutcome, RegisterStatus | None] = {
     "reachable": "reachable",
     "too_large": "reachable",
@@ -53,6 +57,14 @@ REGISTER_STATUS: dict[CheckOutcome, RegisterStatus | None] = {
     "unreachable": "unreachable",
     "robots": "unreachable",
 }
+# What a later check asks again; the host's other addresses wait for it
+ASKED_AGAIN: frozenset[CheckOutcome] = frozenset({"throttled", "unavailable"})
+_ASKED_TO_WAIT = frozenset({429, 503})
+_NO_ANSWER_NOW = frozenset({502, 504})
+# A server's Retry-After holds its host off this long at most; a host whose next turn lies further
+# off than HOST_WAIT_S gives no turn, its addresses waiting for a later check
+MAX_RETRY_AFTER_S = 86_400.0
+HOST_WAIT_S = 120.0
 Sleep = Callable[[float], Awaitable[None]]
 # One check at a time: two starts at once would each find none waiting and enqueue one
 _START_LOCK = int.from_bytes(b"kka-chk", "big")
@@ -72,6 +84,13 @@ async def enqueue_check(connection: psycopg.AsyncConnection, lane: str) -> tuple
     return await enqueue(connection, KIND, lane, {}), None
 
 
+@dataclass(frozen=True)
+class Deferral:
+    """The address waits for a later check, and so do the other addresses of ``host``."""
+
+    host: str
+
+
 async def check_sources(
     context: JobContext,
     job: Job,
@@ -79,26 +98,29 @@ async def check_sources(
     transport: httpx2.AsyncBaseTransport | None = None,
     sleep: Sleep = asyncio.sleep,
 ) -> dict[str, Any]:
-    """Look at every unchecked address; ``transport`` is the network and ``sleep`` the wait for a
-    host's turn (tests)."""
+    """Look at every address not checked for good; ``transport`` is the network and ``sleep`` the
+    wait for a host's turn (tests). ``checked`` counts what was found for good, ``deferred`` what
+    a later check asks again."""
     async with context.pool.connection() as connection:
-        addresses = in_turn(await unchecked_addresses(connection))
+        await catch_up(connection, REGISTER_STATUS)
+        addresses = in_turn(await unchecked_addresses(connection, ASKED_AGAIN))
     look = _Look(context, transport, sleep)
     deferred_hosts: set[str] = set()
     checked = deferred = 0
     for done, url in enumerate(addresses, start=1):
         host = urlsplit(url).hostname or ""
-        found = None if host in deferred_hosts else await look.at(url, host)
-        if found is None:  # the host waits for a later check
-            deferred_hosts.add(host)
-            deferred += 1
-        else:
-            async with context.pool.connection() as connection:
-                await record_check(connection, found, REGISTER_STATUS[found.outcome])
-            checked += 1
-            if found.outcome == "throttled":
-                deferred_hosts.add(host)
+        found = Deferral(host) if host in deferred_hosts else await look.at(url, host)
         async with context.pool.connection() as connection:
+            if isinstance(found, Deferral):
+                deferred_hosts.add(found.host)
+                deferred += 1
+            else:
+                await record_check(connection, found, REGISTER_STATUS[found.outcome])
+                if found.outcome in ASKED_AGAIN:
+                    deferred_hosts.add(look.host_asked)
+                    deferred += 1
+                else:
+                    checked += 1
             await report_progress(connection, job, "checking", {"done": done, "total": len(addresses)})
     return {"checked": checked, "deferred": deferred, "deferred_hosts": sorted(deferred_hosts)}
 
@@ -112,7 +134,23 @@ def in_turn(addresses: list[str]) -> list[str]:
 
 
 class _NoHost:
-    """An origin whose host is not publicly reachable: none of its addresses is asked."""
+    """An origin whose host is not to be asked at all: none of its addresses is."""
+
+
+class _Forbidden(Exception):
+    """robots.txt forbids the address the way leads to."""
+
+
+class _NotToBeAsked(Exception):
+    """The way leads to a host that is not to be asked."""
+
+
+class _Wait(Exception):
+    """The way leads to a host that waits for a later check."""
+
+    def __init__(self, host: str) -> None:
+        super().__init__(host)
+        self.host = host
 
 
 @dataclass
@@ -121,51 +159,84 @@ class _Look:
     transport: httpx2.AsyncBaseTransport | None
     sleep: Sleep
     robots: dict[str, Rules | _NoHost | None] = field(default_factory=dict)  # None: deferred
+    host_asked: str = ""  # the host of the address asked last, redirects followed
 
-    async def at(self, url: str, host: str) -> UrlCheck | None:
-        """What was found at ``url``; None when its host waits for a later check."""
+    async def at(self, url: str, host: str) -> UrlCheck | Deferral:
+        """What was found at ``url``, or that it waits for a later check."""
+        self.host_asked = host
         if not host or len(host) > MAX_HOST_SIGNS:
             return UrlCheck(url, "unreachable")
-        parts = urlsplit(url)
-        rules = await self._rules(f"{parts.scheme}://{parts.netloc}", host)
-        if rules is None:
-            return None
-        if isinstance(rules, _NoHost):
-            return UrlCheck(url, "unreachable")
-        if not rules.allows(url):
-            return UrlCheck(url, "robots")
-        await self._turn(host)
         try:
             found = await probe(
                 url,
                 max_bytes=self.context.settings.max_upload_mb * MIB,
                 transport=self.transport,
                 user_agent=self.context.settings.fetch_user_agent,
+                before_hop=self._hop,
             )
-        except (UrlNotAllowed, DownloadError):  # no answer, none in time, none that can be used
-            return UrlCheck(url, "unreachable")
-        return _found(url, found)
+        except _Forbidden:
+            return UrlCheck(url, "robots")
+        except _Wait as waiting:
+            return Deferral(waiting.host)
+        except HostNotResolved as error:
+            return Deferral(self.host_asked) if error.transient else UrlCheck(url, "unreachable")
+        except (_NotToBeAsked, UrlNotAllowed, BadAnswer, TooManyRedirects):
+            return UrlCheck(url, "unreachable")  # no answer there can be, or none that can be used
+        except DownloadError:
+            return UrlCheck(url, "unavailable")  # no answer for now: a timeout, a broken connection
+        checked = _found(url, found)
+        if checked.outcome == "throttled" and (seconds := _retry_after_s(found.retry_after)) is not None:
+            async with self.context.pool.connection() as connection:
+                await hold_host(connection, self.host_asked, seconds)
+        return checked
+
+    async def _hop(self, address: str) -> None:
+        """Before each address the way asks: its origin's robots.txt, then its host's turn."""
+        parts = urlsplit(address)
+        host = parts.hostname or ""
+        self.host_asked = host
+        if not host or len(host) > MAX_HOST_SIGNS:
+            raise _NotToBeAsked
+        rules = await self._rules(f"{parts.scheme}://{parts.netloc}", host)
+        if rules is None:
+            raise _Wait(host)
+        if isinstance(rules, _NoHost):
+            raise _NotToBeAsked
+        if not rules.allows(address):
+            raise _Forbidden
+        if not await self._turn(host):
+            raise _Wait(host)
 
     async def _rules(self, origin: str, host: str) -> Rules | _NoHost | None:
         if origin not in self.robots:
-            await self._turn(host)
-            settings = self.context.settings
-            try:
-                self.robots[origin] = await read_robots(
-                    origin,
-                    product_token(settings.fetch_user_agent),
-                    transport=self.transport,
-                    user_agent=settings.fetch_user_agent,
-                )
-            except HostDeferred:
-                self.robots[origin] = None
-            except UrlNotAllowed:
-                self.robots[origin] = _NoHost()
+            self.robots[origin] = await self._read_rules(origin, host)
         return self.robots[origin]
 
-    async def _turn(self, host: str) -> None:
-        await wait_turn(
-            self.context.pool, host, self.context.settings.check_host_interval_s, sleep=self.sleep
+    async def _read_rules(self, origin: str, host: str) -> Rules | _NoHost | None:
+        if not await self._turn(host):
+            return None
+        settings = self.context.settings
+        try:
+            return await read_robots(
+                origin,
+                product_token(settings.fetch_user_agent),
+                transport=self.transport,
+                user_agent=settings.fetch_user_agent,
+            )
+        except HostDeferred:
+            return None
+        except HostNotResolved as error:
+            return None if error.transient else _NoHost()
+        except UrlNotAllowed:
+            return _NoHost()
+
+    async def _turn(self, host: str) -> bool:
+        return await wait_turn(
+            self.context.pool,
+            host,
+            self.context.settings.check_host_interval_s,
+            sleep=self.sleep,
+            max_wait_s=HOST_WAIT_S,
         )
 
 
@@ -185,8 +256,27 @@ def _found(url: str, found: Probe) -> UrlCheck:
         return replace(
             answered, outcome="reachable", detected_type=found.kind, size=found.size, sha256=found.sha256
         )
-    if found.status_code == 429:
+    if found.status_code in _ASKED_TO_WAIT:
         return replace(answered, outcome="throttled")
+    if found.status_code in _NO_ANSWER_NOW:
+        return replace(answered, outcome="unavailable")
     if found.status_code >= 500:
         return replace(answered, outcome="server_error")
-    return answered  # 4xx, or a 1xx or 3xx no redirect: the server answered, with no document
+    return answered  # 4xx, or a 1xx: the server answered, with no document
+
+
+def _retry_after_s(value: str | None) -> float | None:
+    """How long the server asked to wait (seconds, or a date), within a day; None if it said nothing
+    that reads as either."""
+    if value is None:
+        return None
+    if value.isdigit():
+        seconds = float(value)
+    else:
+        try:
+            until = parsedate_to_datetime(value)
+        except (TypeError, ValueError):
+            return None
+        until = until if until.tzinfo else until.replace(tzinfo=UTC)
+        seconds = (until - datetime.now(UTC)).total_seconds()
+    return min(max(seconds, 0.0), MAX_RETRY_AFTER_S)

@@ -28,6 +28,7 @@ HTTP_STATUSES = range(100, 600)  # what url_check holds
 # What url_check holds of the server's headers
 CONTENT_TYPE_SIGNS = 200
 LAST_MODIFIED_SIGNS = 100
+RETRY_AFTER_SIGNS = 100
 _KIND_OF_TYPE: dict[str, DetectedKind] = {
     "application/pdf": "pdf",
     DOCX_MIME: "docx",
@@ -47,6 +48,7 @@ class Probe:
     too_large: bool  # a body of 2xx past the limit: no size, no hash
     size: int | None  # of a body read to its end
     sha256: bytes | None
+    retry_after: str | None = None  # as the server said how long to wait, if it did
 
 
 async def probe(
@@ -86,7 +88,10 @@ async def _look(response: httpx2.Response, max_bytes: int) -> Probe:
         raise BadAnswer("an answer with no HTTP status")
     content_type = _header(response, "content-type", CONTENT_TYPE_SIGNS)
     last_modified = _header(response, "last-modified", LAST_MODIFIED_SIGNS)
-    answered = Probe(response.status_code, [], content_type, last_modified, None, False, None, None)
+    retry_after = _header(response, "retry-after", RETRY_AFTER_SIGNS)
+    answered = Probe(
+        response.status_code, [], content_type, last_modified, None, False, None, None, retry_after
+    )
     if not 200 <= response.status_code < 300:
         return answered
     digest = hashlib.sha256()
