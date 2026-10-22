@@ -17,7 +17,10 @@ export function sourceFiles(dir: string = SRC, pattern: RegExp = /\.(vue|ts)$/):
   });
 }
 
-/** One file from each folder of src, so a walk that stopped at the top shows. */
+/**
+ * A file from the top of src and from views, components and api, so a walk that
+ * stopped at the top shows. Not from i18n: the catalogue scans leave it out.
+ */
 export const ANCHORS = ["App.vue", "main.ts", "LoginView.vue", "ModalShell.vue", "http.ts"];
 /** The same for a walk of the .vue files alone. */
 export const VUE_ANCHORS = ["App.vue", "LoginView.vue", "ModalShell.vue"];

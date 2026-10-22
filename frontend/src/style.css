@@ -7,7 +7,12 @@
    The measurements are tokens rather than literals because, in the old app,
    they drifted where nobody looks for drift: five page widths at once, so the
    navigation and the page under it sat 32px apart. `tests/design-tokens.test.ts`
-   keeps the shared values shared. */
+   keeps the shared values shared.
+
+   One file on purpose: it has one job - the design system every page shares -
+   and the guards (contrast, design-tokens, shared-styles, page-frame) read it
+   by this name. Split it at about 600 lines or with a second theme, and point
+   the guards at the new files in the same change. */
 :root {
   /* The browser's own parts - autofill, a checkbox's inside, a select's popup -
      are drawn for the theme in use, not for light alone. */
