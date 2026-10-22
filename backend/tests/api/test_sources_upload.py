@@ -239,11 +239,42 @@ def test_a_title_over_500_signs_is_refused(client: TestClient, owner: tuple[UUID
     answer = upload(client, owner[1], title="x" * 501)
 
     assert answer.status_code == 422
+    assert answer.json()["code"] == "title_too_long"
+
+
+@pytest.mark.parametrize("title", ["Physik‮", "Physik\x00", "Physik​"], ids=["bidi", "nul", "zwsp"])
+def test_a_title_with_hidden_signs_is_refused(
+    client: TestClient, migrated: str, store: Path, owner: tuple[UUID, dict[str, str]], title: str
+) -> None:
+    answer = upload(client, owner[1], title=title)
+
+    assert answer.status_code == 422
+    assert answer.json()["code"] == "title_invalid"
+    assert nothing_was_kept(migrated, store)
 
 
 def test_a_visitor_cannot_upload(client: TestClient, migrated: str, store: Path) -> None:
     assert upload(client, {}).status_code == 401
     assert nothing_was_kept(migrated, store)
+
+
+def test_the_body_is_read_only_after_the_token_is_checked(client: TestClient) -> None:
+    # A body parameter on the route would make FastAPI read and parse the form before the token
+    # check (the old app's audit, E-01): a visitor's upload then cost the API its whole body
+    pulled: list[bytes] = []
+
+    def body() -> Iterator[bytes]:
+        for piece in (b'--kka\r\nContent-Disposition: form-data; name="file"; filename="a.pdf"\r\n\r\n', PDF):
+            pulled.append(piece)
+            yield piece
+        yield b"\r\n--kka--\r\n"
+
+    answer = client.post(
+        "/api/v1/sources", content=body(), headers={"Content-Type": "multipart/form-data; boundary=kka"}
+    )
+
+    assert answer.status_code == 401
+    assert pulled == []
 
 
 def test_uploads_past_the_account_s_limit_wait(
