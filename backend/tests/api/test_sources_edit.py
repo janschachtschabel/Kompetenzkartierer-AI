@@ -18,7 +18,7 @@ from app.core.storage import FileSystemStorage
 from app.db.migrate import migrate
 from app.db.sources import StoredFile, record_upload
 from app.sources.register import EDUCATION_SECTORS
-from tests.support import make_settings, seed_account, selector_client
+from tests.support import make_settings, seed_account, seed_admin, selector_client
 
 pytestmark = pytest.mark.pg
 
@@ -178,15 +178,38 @@ def test_an_owner_describes_its_entry(client: TestClient, migrated: str, world: 
     assert (stored["title"], stored["country"], stored["sector_iri"]) == ("Lehrplan Physik", "DE-BY", SECTOR)
 
 
-@pytest.mark.parametrize(
-    "field", [{"rights_status": "amtlich", "rights_evidence": "x"}, {"license": "CC BY"}]
-)
+# Each of the terms of use alone, written out: taken from TERMS, a field left out of it would
+# leave its test out too
+TERMS_ALONE = {
+    "rights_status": "unklar",
+    "rights_evidence": "Amtsblatt 2023",
+    "source_type": "amtlich",
+    "license": "CC BY 4.0",
+}
+
+
+@pytest.mark.parametrize(("field", "value"), TERMS_ALONE.items(), ids=TERMS_ALONE.keys())
 def test_an_owner_does_not_set_the_terms_of_use(
-    client: TestClient, world: dict[str, Any], field: dict[str, str]
+    client: TestClient, migrated: str, world: dict[str, Any], field: str, value: str
 ) -> None:
-    assert (
-        client.patch(f"/api/v1/sources/{world['own']}", headers=world["owner"], json=field).status_code == 403
-    )
+    before = row(migrated, world["own"])
+
+    answer = client.patch(f"/api/v1/sources/{world['own']}", headers=world["owner"], json={field: value})
+
+    assert answer.status_code == 403
+    assert row(migrated, world["own"]) == before
+
+
+def test_an_admin_keeps_the_register_as_the_editors_do(
+    client: TestClient, migrated: str, world: dict[str, Any]
+) -> None:
+    admin = seed_admin(migrated)
+    terms = {"rights_status": "geschuetzt", "rights_evidence": "Verlag, alle Rechte", "license": "proprietär"}
+
+    answer = client.patch(f"/api/v1/sources/{world['own']}", headers=admin, json=terms)
+
+    assert answer.status_code == 200
+    assert terms_of(migrated, world["own"]) == ("geschuetzt", "Verlag, alle Rechte")
 
 
 def test_an_account_does_not_edit_an_entry_it_only_reads(client: TestClient, world: dict[str, Any]) -> None:
@@ -242,6 +265,14 @@ def test_a_file_of_no_account_is_hidden_from_accounts_by_default(
 ) -> None:
     assert client.get(f"/api/v1/sources/{world['seed']}/file", headers=world["other"]).status_code == 403
     assert client.get(f"/api/v1/sources/{world['seed']}/file", headers=world["editor"]).status_code == 200
+
+
+def test_an_admin_gets_every_file(client: TestClient, migrated: str, world: dict[str, Any]) -> None:
+    admin = seed_admin(migrated)
+
+    for entry in ("seed", "own"):
+        answer = client.get(f"/api/v1/sources/{world[entry]}/file", headers=admin)
+        assert (answer.status_code, answer.content) == (200, PDF)
 
 
 def test_third_party_files_may_be_opened_to_accounts(

@@ -18,7 +18,7 @@ from app.api.app import create_app
 from app.core.ids import new_id
 from app.db.migrate import migrate
 from app.db.sources import StoredFile, record_upload
-from tests.support import make_settings, seed_account, selector_client
+from tests.support import make_settings, seed_account, seed_admin, selector_client
 
 pytestmark = pytest.mark.pg
 
@@ -92,6 +92,18 @@ def test_an_editor_sees_every_entry(client: TestClient, world: dict[str, Any]) -
         "Lehrplan Chemie",
         "Lehrplan Physik",
     ]
+
+
+def test_an_admin_sees_every_entry_as_the_editors_do(
+    client: TestClient, migrated: str, world: dict[str, Any]
+) -> None:
+    admin = seed_admin(migrated)
+
+    listed = client.get("/api/v1/sources", headers=admin).json()
+    foreign = client.get(f"/api/v1/sources/{world['foreign']}", headers=admin).json()
+
+    assert listed["total"] == 3
+    assert foreign["title"] == "Lehrplan Chemie"
 
 
 @pytest.mark.parametrize(
