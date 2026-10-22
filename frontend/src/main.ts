@@ -9,6 +9,8 @@ import "@fontsource-variable/roboto/wght.css";
 import "@fontsource-variable/roboto-mono/wght.css";
 
 import App from "./App.vue";
+import { t } from "./i18n/de";
 import "./style.css";
 
+document.title = t("app.title");
 createApp(App).mount("#app");
