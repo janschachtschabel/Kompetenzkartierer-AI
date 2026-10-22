@@ -19,7 +19,7 @@ from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, Str
 from app.api.deps import principal, require_account
 from app.api.errors import AUTH_RESPONSES, Refusal
 from app.api.sources import MAX_TITLE_SIGNS, SourceFileOut
-from app.core.auth import Principal, one_spelling, shows_whole
+from app.core.auth import Principal, one_spelling, shows_whole, visible_only
 from app.core.logging import current_request_id
 from app.core.storage import ObjectNotFound
 from app.db.accounts import record_audit
@@ -274,6 +274,10 @@ async def _sector(connection: Any, notation: str | None) -> dict[str, str | None
 
 
 def _attachment(name: str) -> str:
-    """A download under ``name``: a plain ASCII name for old clients, the whole name in UTF-8."""
-    plain = "".join(sign if 32 <= ord(sign) < 127 and sign not in '"\\' else "_" for sign in name)
-    return f"attachment; filename=\"{plain}\"; filename*=UTF-8''{quote(name, safe='')}"
+    """A download under ``name``: a plain ASCII name for old clients, the whole name in UTF-8.
+
+    Without the signs that hide what it is (a right-to-left override), and with no ``%`` in the
+    plain name, which some clients read as an escape."""
+    shown = visible_only(name)
+    plain = "".join(sign if 32 <= ord(sign) < 127 and sign not in '"\\%' else "_" for sign in shown)
+    return f"attachment; filename=\"{plain}\"; filename*=UTF-8''{quote(shown, safe='')}"

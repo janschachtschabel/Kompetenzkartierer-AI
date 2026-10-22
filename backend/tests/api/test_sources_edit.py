@@ -353,6 +353,20 @@ def test_the_owner_gets_its_file_as_a_download(client: TestClient, world: dict[s
     assert answer.headers["cache-control"] == "private, no-store"
 
 
+def test_a_download_s_name_shows_what_it_is(client: TestClient, migrated: str, world: dict[str, Any]) -> None:
+    # a right-to-left override in the name made "lehrplan<RLO>fdp.exe" read as a PDF; a "%" in
+    # the plain name reads as an escape to some clients
+    name = 'Lehr"plan\\\N{RIGHT-TO-LEFT OVERRIDE}%41.pdf'
+    with psycopg.connect(migrated, autocommit=True) as connection:
+        connection.execute("UPDATE source SET file_name = %s WHERE id = %s", (name, world["own"]))
+
+    answer = client.get(f"/api/v1/sources/{world['own']}/file", headers=world["owner"])
+
+    assert answer.headers["content-disposition"] == (
+        "attachment; filename=\"Lehr_plan__41.pdf\"; filename*=UTF-8''Lehr%22plan%5C%2541.pdf"
+    )
+
+
 def test_a_file_goes_out_in_pieces_with_its_length(
     client: TestClient, world: dict[str, Any], monkeypatch: pytest.MonkeyPatch
 ) -> None:
