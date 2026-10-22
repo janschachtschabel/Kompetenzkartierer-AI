@@ -78,6 +78,11 @@ def test_a_url_is_kept_with_its_scheme_in_small_letters() -> None:
     [
         "127.0.0.1",
         "::1",
+        "0.0.0.0",  # noqa: S104 - this host, on most systems: an address refused, not bound
+        "::",
+        "::ffff:127.0.0.1",  # IPv4-mapped: the loopback
+        "2002:a00:1::1",  # 6to4 with 10.0.0.1 inside
+        "2001:0:4136:e378:8000:63bf:f5ff:fffe",  # Teredo with the client 10.0.0.1 inside
         "10.0.0.5",
         "192.168.1.1",
         "172.16.0.1",
@@ -148,6 +153,7 @@ class RecordingStream(httpcore2.AsyncMockStream):
         self, ssl_context: ssl.SSLContext, server_hostname: str | None = None, timeout: float | None = None
     ) -> httpcore2.AsyncNetworkStream:
         self.record["tls_name"] = server_hostname
+        self.record["tls_checks"] = (ssl_context.check_hostname, ssl_context.verify_mode)
         return self
 
 
@@ -217,6 +223,27 @@ async def test_tls_checks_the_certificate_of_the_host_name_not_of_the_address() 
 
     assert network.connections[0]["host"] == PUBLIC
     assert network.connections[0]["tls_name"] == "lehrplaene.example"
+    # an unverified context would hand the name over and check nothing
+    assert network.connections[0]["tls_checks"] == (True, ssl.CERT_REQUIRED)
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("scheme", ["http", "https"])
+async def test_a_proxy_of_the_environment_is_not_used(scheme: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    # a proxy would connect wherever the host resolves for it, inside the network too
+    for variable in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"):
+        monkeypatch.setenv(variable, "http://10.9.9.9:3128")
+    network = RecordingBackend([http_answer()])
+    port = 80 if scheme == "http" else 443
+
+    await fetch(
+        f"{scheme}://lehrplaene.example/lp.pdf",
+        max_bytes=1000,
+        transport=pinned_transport(PinnedBackend(answering(PUBLIC), network)),
+    )
+
+    assert [(c["host"], c["port"]) for c in network.connections] == [(PUBLIC, port)]
+    assert network.connections[0]["sent"].startswith(b"GET /lp.pdf HTTP/1.1")  # not as to a proxy
 
 
 @pytest.mark.anyio
@@ -245,6 +272,25 @@ async def test_each_redirect_is_checked_where_it_connects() -> None:
         )
 
     assert [c["host"] for c in network.connections] == [PUBLIC]
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "location",
+    ["file:///etc/passwd", "ftp://lehrplaene.example/a.pdf", "http://kka:geheim@lehrplaene.example/a.pdf"],
+    ids=["file", "ftp", "credentials"],
+)
+async def test_a_redirect_to_what_no_import_may_name_is_refused(location: str) -> None:
+    asked: list[str] = []
+
+    def redirecting(request: httpx2.Request) -> httpx2.Response:
+        asked.append(str(request.url))
+        return httpx2.Response(302, headers={"location": location})
+
+    with pytest.raises(UrlNotAllowed):
+        await fetch(f"http://{PUBLIC}/start", max_bytes=1000, transport=httpx2.MockTransport(redirecting))
+
+    assert asked == [f"http://{PUBLIC}/start"]
 
 
 # --- HTTP, through a mock transport

@@ -93,12 +93,11 @@ def test_the_job_carries_the_trace_of_the_request(
 
 
 def test_the_import_is_audited(client: TestClient, migrated: str, owner: tuple[UUID, dict[str, str]]) -> None:
-    source_id = client.post("/api/v1/sources/import", headers=owner[1], json={"url": URL}).json()["source"][
-        "id"
-    ]
+    body = client.post("/api/v1/sources/import", headers=owner[1], json={"url": URL}).json()
 
-    assert rows(migrated, "SELECT subject FROM audit_log WHERE action = 'source.import'") == [
-        (f"source:{source_id}",)
+    # the host and the job only: a download link's query may carry a token
+    assert rows(migrated, "SELECT subject, details FROM audit_log WHERE action = 'source.import'") == [
+        (f"source:{body['source']['id']}", {"host": "lehrplaene.example", "job": body["job_id"]})
     ]
 
 
