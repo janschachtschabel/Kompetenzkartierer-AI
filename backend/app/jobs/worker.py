@@ -50,6 +50,12 @@ Outcome = Result | BaseException
 Ending = Literal["cancelled", "lost", "released"] | None
 # Tries to write an outcome while the database is away, within a third of the lease
 WRITE_ATTEMPTS = 3
+# How long a cancelled handler may take to unwind before its job goes back anyway: the deployment
+# kills the pod at the end of its grace, and a kill would count the attempt after all
+RELEASE_WAIT_S = 2.0
+# What a database away for a moment raises (PoolTimeout is an OperationalError); anything else -
+# a value the database refuses, a fault in a query - would only fail the same way again
+TRANSIENT = (psycopg.OperationalError, psycopg.InterfaceError)
 
 
 class PermanentError(Exception):
@@ -84,6 +90,7 @@ class Worker:
         """Work until ``stop`` is set; the job running then gets ``grace_s`` to finish."""
         self._stop = stop
         sweeper = asyncio.create_task(self._sweep_until(stop))
+        sweeper.add_done_callback(lambda task: _stop_when_broken(task, stop))
         try:
             while not stop.is_set():
                 try:
@@ -99,10 +106,15 @@ class Worker:
 
     async def run_once(self) -> bool:
         """Claim and run one job; ``False`` if none waited."""
+        if not self.handlers:  # nothing to take: an empty list of kinds still read the queue
+            return False
         async with self.pool.connection() as connection:
             job = await claim(connection, self.owner, list(self.handlers), self.lease_s)
         if job is None:
             return False
+        if self._stop.is_set():  # told to stop while the claim was on its way: not started, back
+            await self._write(job, None, "released")
+            return True
         await self._run(job)
         return True
 
@@ -113,6 +125,11 @@ class Worker:
         finally:
             if not task.done():  # this worker itself is being cancelled
                 task.cancel()
+        if ending == "released":
+            # handed back whatever the handler does with its cancel; its outcome is not wanted
+            await asyncio.wait({task}, timeout=RELEASE_WAIT_S)
+            await self._write(job, None, ending)
+            return
         outcomes: tuple[Outcome] = await asyncio.gather(task, return_exceptions=True)
         [outcome] = outcomes
         if ending == "lost":
@@ -188,7 +205,7 @@ class Worker:
                     "lost the lease of job %s (%s) at its end; its outcome is dropped", job.id, job.kind
                 )
                 return
-            except (psycopg.Error, PoolTimeout) as error:
+            except TRANSIENT as error:
                 if attempt == WRITE_ATTEMPTS:
                     log.error(
                         "could not write the outcome of job %s (%s): %s; it runs again after its lease",
@@ -199,6 +216,16 @@ class Worker:
                     return
                 log.warning("could not write the outcome of job %s yet: %s", job.id, _one_line(error))
                 await asyncio.sleep(self.lease_s / 9)
+            except psycopg.Error as error:
+                # the type and state only: the database's message may quote the result
+                log.error(
+                    "could not write the outcome of job %s (%s): %s %s; it runs again after its lease",
+                    job.id,
+                    job.kind,
+                    type(error).__name__,
+                    error.sqlstate,
+                )
+                return
 
     async def _record(
         self, connection: psycopg.AsyncConnection, job: Job, outcome: Outcome, *, cancelled: bool
@@ -212,13 +239,31 @@ class Worker:
             await fail(connection, job, "handler_error", type(outcome).__name__, retry=True)
         else:
             try:
-                # as the database will take it: no NaN, no type JSON does not know
+                # as the database will take it: no NaN, no type JSON does not know, not too deep
                 json.dumps(outcome, allow_nan=False)
-            except (TypeError, ValueError) as error:
-                log.error("job %s (%s) returned a result that is no JSON: %s", job.id, job.kind, error)
-                await fail(connection, job, "result_not_storable", str(error), retry=False)
+            except (TypeError, ValueError, RecursionError) as error:
+                log.error(
+                    "job %s (%s) returned a result that is no JSON: %s",
+                    job.id,
+                    job.kind,
+                    type(error).__name__,
+                )
+                await fail(connection, job, "result_not_storable", type(error).__name__, retry=False)
                 return
-            await complete(connection, job, outcome)
+            try:
+                # in a savepoint, so the transaction lives on to record the failure
+                async with connection.transaction():
+                    await complete(connection, job, outcome)
+            except psycopg.DataError as error:
+                # JSON the database refuses: a NUL, a lone surrogate. Another attempt would
+                # return the same; the type only, the message quotes the result
+                log.error(
+                    "job %s (%s) returned a result the database refuses: %s",
+                    job.id,
+                    job.kind,
+                    type(error).__name__,
+                )
+                await fail(connection, job, "result_not_storable", type(error).__name__, retry=False)
 
     async def _sweep_until(self, stop: asyncio.Event) -> None:
         """Hand expired leases back every third of a lease, whether this worker is busy or not."""
@@ -240,6 +285,15 @@ class Worker:
 
 def _one_line(error: BaseException) -> str:
     return " ".join(str(error).split())
+
+
+def _stop_when_broken(sweeper: asyncio.Task[None], stop: asyncio.Event) -> None:
+    """A sweeper that died of something unforeseen stops the worker: without it every dead
+    worker's job would stay stranded, and a restarted pod sweeps again."""
+    if sweeper.cancelled() or sweeper.exception() is None:
+        return
+    log.error("the sweep of expired leases broke; the worker stops", exc_info=sweeper.exception())
+    stop.set()
 
 
 async def _serve() -> int:

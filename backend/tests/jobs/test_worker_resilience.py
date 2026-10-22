@@ -1,5 +1,5 @@
-"""The worker keeps going: it sweeps on time, rides out database gaps and bad results, and hands
-its job back unspent when it has to stop."""
+"""The worker keeps going: it sweeps on time and rides out database gaps and bad results.
+Stopping is in test_worker_shutdown.py."""
 
 import asyncio
 import uuid
@@ -45,6 +45,15 @@ async def add(
         return await enqueue(connection, kind, "account-a", payload or {})
 
 
+def deeply_nested(depth: int) -> dict[str, Any]:
+    root: dict[str, Any] = {}
+    level = root
+    for _ in range(depth):
+        level["x"] = {}
+        level = level["x"]
+    return root
+
+
 async def until(check: Callable[[], Awaitable[bool]]) -> None:
     deadline = asyncio.get_running_loop().time() + DEADLINE_S
     while not await check():
@@ -63,9 +72,10 @@ async def test_expired_leases_go_back_while_the_worker_is_busy(pool: AsyncConnec
 
     stranded = await add(pool, kind="test.other")
     async with pool.connection() as connection:
+        # it expires while the worker is busy: a sweep at the start alone would miss it
         await connection.execute(
             "UPDATE job SET status = 'running', lease_owner = 'gone', lease_token = gen_random_uuid(),"
-            " lease_expires_at = now() - interval '1 s', attempts = 1 WHERE id = %s",
+            " lease_expires_at = now() + interval '0.3 s', attempts = 1 WHERE id = %s",
             (stranded,),
         )
     await add(pool)
@@ -88,8 +98,9 @@ async def test_expired_leases_go_back_while_the_worker_is_busy(pool: AsyncConnec
 
 @pytest.mark.pg
 async def test_a_job_three_leases_long_keeps_its_lease_and_ends_done(pool: AsyncConnectionPool) -> None:
-    # the worker's own sweep runs every third of a lease: without renewal it would take the job
-    lease_s = 0.6
+    # the worker's own sweep runs every third of a lease: without renewal it would take the job.
+    # 1.2 s, so a loop or database stalled for a moment under load does not lose the lease
+    lease_s = 1.2
     returned = asyncio.Event()
 
     async def long_job(job: Job) -> dict[str, Any]:
@@ -117,7 +128,12 @@ async def test_a_job_three_leases_long_keeps_its_lease_and_ends_done(pool: Async
 
 
 @pytest.mark.pg
-@pytest.mark.parametrize("bad", [uuid.uuid4(), float("nan")], ids=["uuid", "nan"])
+@pytest.mark.parametrize(
+    "bad",
+    # no JSON (a UUID, NaN, too deep to write), or JSON the database refuses (NUL, a lone surrogate)
+    [uuid.uuid4(), float("nan"), deeply_nested(5000), "a" + chr(0) + "b", "a" + chr(0xD800) + "b"],
+    ids=["uuid", "nan", "too-deep", "nul", "surrogate"],
+)
 async def test_a_result_that_is_no_json_fails_its_job_and_the_worker_goes_on(
     pool: AsyncConnectionPool, bad: object
 ) -> None:
@@ -132,7 +148,12 @@ async def test_a_result_that_is_no_json_fails_its_job_and_the_worker_goes_on(
     assert await worker.run_once() is True
 
     found = await job_row(pool, broken)
-    assert (found["status"], found["error"]["code"]) == ("failed", "result_not_storable")
+    # failed at once, not run again: another attempt would return the same result
+    assert (found["status"], found["attempts"], found["error"]["code"]) == (
+        "failed",
+        1,
+        "result_not_storable",
+    )
     assert (await job_row(pool, fine))["status"] == "done"
 
 
@@ -148,10 +169,12 @@ async def test_the_worker_rides_out_a_database_that_is_away(caplog: pytest.LogCa
             Worker(away, {"test.work": anything}, owner="w1", poll_s=0.05).run(stop)
         )
         await asyncio.sleep(1.0)
+        still_working = not running.done()
         stop.set()
         await asyncio.wait_for(running, DEADLINE_S)
 
-    assert any("could not claim" in record.getMessage() for record in caplog.records)
+    assert still_working
+    assert sum("could not claim" in record.getMessage() for record in caplog.records) >= 2
 
 
 @pytest.mark.pg
@@ -179,31 +202,30 @@ async def test_an_outcome_is_written_after_a_brief_database_error(
 
 
 @pytest.mark.pg
-async def test_a_job_past_the_shutdown_grace_goes_back_unspent(pool: AsyncConnectionPool) -> None:
-    started, cancelled = asyncio.Event(), asyncio.Event()
+async def test_a_sweeper_that_breaks_stops_the_worker_and_says_why(
+    pool: AsyncConnectionPool, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    # a worker that went on without its sweep would strand every dead worker's job
+    async def broken_sweep(connection: Any) -> int:
+        raise RuntimeError("invented")
 
-    async def endless(job: Job) -> None:
-        started.set()
-        try:
-            await asyncio.sleep(3600)
-        except asyncio.CancelledError:
-            cancelled.set()
-            raise
+    async def anything(job: Job) -> None:
+        return None
 
-    job_id = await add(pool)
+    monkeypatch.setattr(worker_module, "requeue_expired", broken_sweep)
     stop = asyncio.Event()
-    worker = Worker(pool, {"test.work": endless}, owner="w1", lease_s=3, poll_s=0.05, grace_s=0.3)
-    running = asyncio.create_task(worker.run(stop))
-    await asyncio.wait_for(started.wait(), DEADLINE_S)
+    running = asyncio.create_task(Worker(pool, {"test.work": anything}, owner="w1", poll_s=0.05).run(stop))
 
-    stop.set()
-    await asyncio.wait_for(running, DEADLINE_S)
+    done, _ = await asyncio.wait({running}, timeout=DEADLINE_S)
 
-    assert cancelled.is_set()
-    assert await job_row(pool, job_id) == {
-        "status": "queued",
-        "attempts": 0,
-        "error": None,
-        "owner": None,
-        "later": False,
-    }
+    assert running in done
+    assert stop.is_set()
+    assert any(record.levelname == "ERROR" and "sweep" in record.getMessage() for record in caplog.records)
+
+
+async def test_a_worker_without_handlers_asks_the_database_nothing() -> None:
+    # M0 has no handlers yet: polling with an empty list of kinds read every waiting job
+    async with AsyncConnectionPool(
+        FAKE_DATABASE_URL, min_size=0, max_size=1, timeout=0.2, open=False
+    ) as away:
+        assert await Worker(away, {}, owner="w1").run_once() is False
