@@ -140,7 +140,7 @@ const dateFormat = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium" });
   border-bottom: 0;
 }
 
-/* A row takes focus only from focusRow; it shows where reading goes on. */
+/* A row takes focus only after "Weitere laden" (SourcesView); it shows where reading goes on. */
 .register__table tbody tr:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: -3px;

@@ -63,6 +63,12 @@ function registerHeading(): HTMLElement | null {
   return document.getElementById("sources-register");
 }
 
+/** The row after the entry `id`, as the page shows it then: an entry added above moves it down. */
+function rowAfter(id: string): HTMLElement | undefined {
+  const index = page.value?.entries.findIndex((entry) => entry.id === id) ?? -1;
+  return index < 0 ? undefined : table.value?.row(index + 1);
+}
+
 /** The notice of a reload or a further page that did not come; the same one again is read out again. */
 function fallShort(notice: Notice, retry: () => void): void {
   partial.value = { notice: { ...notice, text: sayAnew(partial.value?.notice.text ?? "", notice.text) }, retry };
@@ -71,11 +77,15 @@ function fallShort(notice: Notice, retry: () => void): void {
 /**
  * The register read again from its start: as many entries as it shows, so a later page and the
  * focus in it stay, and `extra` more. `focus` is where the focus goes once it shows them - the
- * register's heading after the notice's retry button went with the notice.
+ * register's heading after the notice's retry button went with the notice. `from` is where the
+ * action began - the press of "Weitere laden", when a further page turned into this reading.
  */
-async function load({ extra = 0, focus }: { extra?: number; focus?: FocusRequest["target"] } = {}): Promise<void> {
+async function load({
+  extra = 0,
+  focus,
+  from = document.activeElement,
+}: { extra?: number; focus?: FocusRequest["target"]; from?: Element | null } = {}): Promise<void> {
   const mine = ++generation;
-  const from = document.activeElement;
   const limit = Math.min(MAX_PAGE_SIZE, Math.max(PAGE_SIZE, (page.value?.entries.length ?? 0) + extra));
   loading.value = true;
   failure.value = null;
@@ -103,17 +113,18 @@ async function more(): Promise<void> {
   if (!current || loadingMore.value || loading.value) return;
   const mine = generation;
   const from = document.activeElement;
-  const firstAdded = current.entries.length;
-  const firstAddedRow = () => table.value?.row(firstAdded);
+  // the first entry not read before follows the last one shown, wherever that one is by then
+  const lastShown = current.entries[current.entries.length - 1]?.id ?? "";
+  const firstAddedRow = () => rowAfter(lastShown);
   loadingMore.value = true;
   try {
-    const next = await listSources({}, { offset: firstAdded });
+    const next = await listSources({}, { offset: current.entries.length });
     if (mine !== generation || page.value !== current) return;
     // newest first: an entry added meanwhile pushed one already shown onto this page, and itself
     // lies before the first - read the register from its start, a page more than it showed
     const shown = new Set(current.entries.map((entry) => entry.id));
     if (next.entries.some((entry) => shown.has(entry.id))) {
-      return void (await load({ extra: PAGE_SIZE, focus: firstAddedRow }));
+      return void (await load({ extra: PAGE_SIZE, focus: firstAddedRow, from }));
     }
     focusRequest = { target: firstAddedRow, from };
     page.value = { ...next, offset: 0, entries: [...current.entries, ...next.entries] };

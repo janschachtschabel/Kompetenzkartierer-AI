@@ -465,4 +465,44 @@ describe("paging through the register", () => {
 
     expect(wrapper.get(".sources__partial").element.textContent).not.toBe(first);
   });
+
+  it("keeps the focus where the person went when entries moved between the pages", async () => {
+    // the person goes on to type while the next page is on its way; it overlaps, and the
+    // register is read again - the focus is judged against where the press began
+    const next = deferred<SourcePage>();
+    vi.spyOn(api, "listSources")
+      .mockResolvedValueOnce(page(FIFTY, 51))
+      .mockImplementationOnce(() => next.promise)
+      .mockResolvedValue(page([entry("x", "Dazwischen"), ...FIFTY, entry("a50", "Plan 50")], 52));
+    const wrapper = mount(SourcesView, { attachTo: document.body });
+    await flushPromises();
+    const button = wrapper.get("[data-test=more]");
+    (button.element as HTMLElement).focus();
+    await button.trigger("click");
+
+    (wrapper.get("#import-url").element as HTMLElement).focus();
+    next.resolve(page([entry("a49", "Plan 49"), entry("a50", "Plan 50")], 52, 50));
+    await flushPromises();
+
+    expect(document.activeElement?.id).toBe("import-url");
+    wrapper.unmount();
+  });
+
+  it("hands the focus to the entry after the last one shown when entries moved between the pages", async () => {
+    vi.spyOn(api, "listSources")
+      .mockResolvedValueOnce(page(FIFTY, 51))
+      .mockResolvedValueOnce(page([entry("a49", "Plan 49"), entry("a50", "Plan 50")], 52, 50))
+      .mockResolvedValue(page([entry("x", "Dazwischen"), ...FIFTY, entry("a50", "Plan 50")], 52));
+    const wrapper = mount(SourcesView, { attachTo: document.body });
+    await flushPromises();
+
+    await wrapper.get("[data-test=more]").trigger("click");
+    await flushPromises();
+
+    // the first one not read before - not the one at the old count, which the new entry pushed down
+    expect(document.activeElement?.tagName).toBe("TR");
+    expect(document.activeElement?.textContent).toContain("Plan 50");
+    wrapper.unmount();
+  });
 });
+
