@@ -3,8 +3,9 @@ holds it to; one file shared by its SHA-256, a source an entity of its own kind.
 
 import asyncio
 import os
+import re
 import uuid
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Any, get_args
 
 import psycopg
@@ -63,25 +64,53 @@ def add_file(
     return file_id
 
 
+def another_file(connection: psycopg.Connection) -> uuid.UUID:
+    """A file of bytes no other file of the test holds."""
+    return add_file(connection, digest=new_id().bytes * 2)
+
+
 def filed(file_id: uuid.UUID, name: str = "a.pdf", status: str = "acquired") -> dict[str, Any]:
     """The columns of a source that holds the file: its name and type beside it."""
     return {"file_id": file_id, "file_name": name, "mime": "application/pdf", "register_status": status}
 
 
-@pytest.mark.parametrize(
-    ("column", "values"),
-    [
-        ("provenance", get_args(Provenance)),
-        ("rights_status", get_args(RightsStatus)),
-        ("source_type", get_args(SourceType)),
-        ("register_status", tuple(value for value in get_args(RegisterStatus) if value != "acquired")),
-    ],
-)
-def test_every_value_the_code_knows_is_held_and_no_other(
-    connection: psycopg.Connection, column: str, values: tuple[str, ...]
+# The columns whose CHECK lists the values of a Literal in app/sources/register.py
+LISTS: list[tuple[str, Any]] = [
+    ("provenance", Provenance),
+    ("rights_status", RightsStatus),
+    ("source_type", SourceType),
+    ("register_status", RegisterStatus),
+]
+
+
+def listed_values(connection: psycopg.Connection, column: str) -> set[str]:
+    """The values the CHECK of a column of ``source`` lists, as the database reads it back."""
+    found = connection.execute(
+        "SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid = 'source'::regclass"
+        " AND conname = %s",
+        (f"source_{column}_check",),
+    ).fetchone()
+    assert found is not None, f"no CHECK on source.{column}"
+    return set(re.findall(r"'([^']*)'::text", found[0]))
+
+
+@pytest.mark.parametrize(("column", "known"), LISTS, ids=[column for column, _ in LISTS])
+def test_the_database_lists_exactly_the_values_the_code_knows(
+    connection: psycopg.Connection, column: str, known: Any
 ) -> None:
-    for value in values:
-        add_source(connection, **{column: value, "rights_evidence": "Amtsblatt 2023"})
+    # both ways: a value the code knows that the database refuses, or one only the database takes
+    assert listed_values(connection, column) == set(get_args(known))
+
+
+@pytest.mark.parametrize(("column", "known"), LISTS, ids=[column for column, _ in LISTS])
+def test_every_value_the_code_knows_is_held_and_no_other(
+    connection: psycopg.Connection, column: str, known: Any
+) -> None:
+    for value in get_args(known):
+        held = {column: value, "rights_evidence": "Amtsblatt 2023"}
+        if value == "acquired":
+            held |= filed(another_file(connection))
+        add_source(connection, **held)
 
     with pytest.raises(errors.CheckViolation):
         add_source(connection, **{column: "invented"})
@@ -223,3 +252,80 @@ def test_an_acquisition_names_the_source_and_the_file_it_brought(connection: psy
             "INSERT INTO acquisition (id, source_id, file_id, method) VALUES (%s, %s, %s, 'mail')",
             (new_id(), source_id, file_id),
         )
+
+
+# --- each other CHECK of the register, by a row that breaks it and nothing else
+
+
+def a_file(**columns: Any) -> Callable[[psycopg.Connection], object]:
+    def write(connection: psycopg.Connection) -> object:
+        values = {"id": new_id(), "sha256": b"\x02" * 32, "size_bytes": 4, "storage_key": "sources/02"}
+        values |= columns
+        names, marks = ", ".join(values), ", ".join(["%s"] * len(values))
+        return connection.execute(
+            f"INSERT INTO source_file ({names}) VALUES ({marks})",  # noqa: S608 - the test's own names
+            tuple(values.values()),
+        )
+
+    return write
+
+
+def a_source(**columns: Any) -> Callable[[psycopg.Connection], object]:
+    return lambda connection: add_source(connection, **columns)
+
+
+def a_filed_source(**columns: Any) -> Callable[[psycopg.Connection], object]:
+    return lambda connection: add_source(connection, **{**filed(another_file(connection)), **columns})
+
+
+def an_acquisition(**columns: Any) -> Callable[[psycopg.Connection], object]:
+    def write(connection: psycopg.Connection) -> object:
+        file_id = another_file(connection)
+        values = {"source_id": add_source(connection, **filed(file_id)), "file_id": file_id, **columns}
+        names, marks = ", ".join(values), ", ".join(["%s"] * len(values))
+        return connection.execute(
+            f"INSERT INTO acquisition (id, method, {names}) VALUES (%s, 'upload', {marks})",  # noqa: S608
+            (new_id(), *values.values()),
+        )
+
+    return write
+
+
+BROKEN = {
+    "file-hash-not-sha256": a_file(sha256=b"\x02" * 31),
+    "file-size-negative": a_file(size_bytes=-1),
+    "file-key-empty": a_file(storage_key=""),
+    "file-key-too-long": a_file(storage_key="sources/" + "a" * 505),
+    "source-kind": a_source(kind="node"),
+    "source-title-too-long": a_source(title="x" * 501),
+    "source-url-not-http": a_source(url="ftp://example.org/a.pdf"),
+    "source-url-too-long": a_source(url="https://example.org/" + "a" * 1981),
+    "source-sector-iri-without-scheme": a_source(sector_iri=SECTOR),
+    "source-evidence-too-long": a_source(rights_evidence="x" * 2001),
+    "source-license-too-long": a_source(license="x" * 201),
+    "source-file-name-empty": a_filed_source(file_name=""),
+    "source-file-name-too-long": a_filed_source(file_name="x" * 256),
+    "source-file-without-name": a_filed_source(file_name=None),
+    "source-name-without-file": a_source(file_name="a.pdf"),
+    "source-mime-not-a-type": a_filed_source(mime="PDF"),
+    "source-file-without-mime": a_filed_source(mime=None),
+    "source-mime-without-file": a_source(mime="application/pdf"),
+    "acquisition-chain-not-a-list": an_acquisition(chain=Jsonb({"url": "https://example.org/a"})),
+    "acquisition-received-name-too-long": an_acquisition(received_name="x" * 256),
+}
+
+
+def test_a_row_of_the_register_cases_build_is_held_as_it_stands(connection: psycopg.Connection) -> None:
+    # the rows the cases below break, unbroken: each case then fails on its own change alone
+    a_file()(connection)
+    a_source(title="x" * 500, url="https://example.org/" + "a" * 1980, rights_evidence="x" * 2000)(connection)
+    a_filed_source(file_name="x" * 255)(connection)
+    an_acquisition(chain=Jsonb([]), received_name="x" * 255)(connection)
+
+
+@pytest.mark.parametrize("write", BROKEN.values(), ids=BROKEN.keys())
+def test_a_row_that_breaks_a_check_is_refused(
+    connection: psycopg.Connection, write: Callable[[psycopg.Connection], object]
+) -> None:
+    with pytest.raises(errors.CheckViolation):
+        write(connection)
