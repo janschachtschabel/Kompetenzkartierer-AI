@@ -69,6 +69,10 @@ class ObjectStream:
             self._closed = True
             self._close()
 
+    @property
+    def closed(self) -> bool:
+        return self._closed
+
 
 class Storage(Protocol):
     def put(self, key: str, data: bytes) -> None: ...

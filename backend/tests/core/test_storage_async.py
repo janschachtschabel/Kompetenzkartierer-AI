@@ -52,6 +52,7 @@ class ThreadNotingStore(FileSystemStorage):
     def __init__(self, root: Path) -> None:
         super().__init__(root)
         self.threads: list[int] = []
+        self.closed_in: list[int] = []
 
     def open_stream(self, key: str) -> ObjectStream:
         self.threads.append(threading.get_ident())
@@ -62,7 +63,11 @@ class ThreadNotingStore(FileSystemStorage):
                 self.threads.append(threading.get_ident())
                 yield piece
 
-        return ObjectStream(stream.size, noted(), stream.close)
+        def close() -> None:
+            self.closed_in.append(threading.get_ident())
+            stream.close()
+
+        return ObjectStream(stream.size, noted(), close)
 
 
 def test_an_object_is_streamed_each_piece_in_a_thread(tmp_path: Path) -> None:
@@ -71,14 +76,33 @@ def test_an_object_is_streamed_each_piece_in_a_thread(tmp_path: Path) -> None:
     store.put("sources/big.pdf", data)
 
     async def streamed() -> tuple[int | None, bytes, int]:
-        size, pieces = await AsyncStorage(store).open_stream("sources/big.pdf")
-        return size, b"".join([piece async for piece in pieces]), threading.get_ident()
+        stream = await AsyncStorage(store).open_stream("sources/big.pdf")
+        return stream.size, b"".join([piece async for piece in stream]), threading.get_ident()
 
     size, read, loop_thread = run(streamed())
 
     assert (size, read) == (len(data), data)
     assert len(store.threads) == 1 + 3 and loop_thread not in store.threads
     store.delete("sources/big.pdf")  # closed at the end: Windows deletes no open file
+
+
+def test_a_stream_let_go_early_closes_its_object_in_a_thread(tmp_path: Path) -> None:
+    # closing an S3 body may wait on its connection: not in the loop
+    store = ThreadNotingStore(tmp_path)
+    store.put("sources/big.pdf", b"x" * (2 * 2**20))
+
+    async def one_piece() -> int:
+        stream = await AsyncStorage(store).open_stream("sources/big.pdf")
+        async for _ in stream:
+            break
+        await stream.aclose()
+        await stream.aclose()  # once is enough, twice does no harm
+        return threading.get_ident()
+
+    loop_thread = run(one_piece())
+
+    assert len(store.closed_in) == 1 and loop_thread not in store.closed_in
+    store.delete("sources/big.pdf")  # Windows deletes no open file
 
 
 def test_a_missing_object_is_not_found_before_its_stream(tmp_path: Path) -> None:

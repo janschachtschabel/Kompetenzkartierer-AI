@@ -14,10 +14,10 @@ from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import StreamingResponse
 from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, StringConstraints
 
 from app.api.deps import principal, require_account
+from app.api.downloads import ObjectDownload
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.api.sources import MAX_TITLE_SIGNS, SourceFileOut
 from app.core.auth import Principal, one_spelling, shows_whole, visible_only
@@ -247,12 +247,13 @@ DOWNLOAD_RESPONSES: dict[int | str, dict[str, Any]] = {
 @router.get(
     "/sources/{source_id}/file",
     summary="The entry's file, as a download",
-    response_class=StreamingResponse,
+    status_code=200,  # FastAPI reads it from the response class's signature otherwise
+    response_class=ObjectDownload,
     responses=DOWNLOAD_RESPONSES,
 )
 async def get_register_file(
     source_id: UUID, request: Request, who: Annotated[Principal, Depends(principal)]
-) -> StreamingResponse:
+) -> ObjectDownload:
     """Its owner and the editors get it; the file of an entry of no account goes, beside them, to
     whom THIRD_PARTY_MARKDOWN names (``hidden``: nobody, ``accounts``, ``public``: visitors too).
     Visitors only where PUBLIC_ACCESS lets them in at all: the stricter rule holds."""
@@ -275,15 +276,15 @@ async def get_register_file(
     if row["storage_key"] is None:
         raise Refusal(404, "no_file", "The entry has no file yet.")
     try:
-        size, pieces = await request.app.state.storage.open_stream(row["storage_key"])
+        stream = await request.app.state.storage.open_stream(row["storage_key"])
     except ObjectNotFound:
         # the register names a file the store does not hold: lost, or removed by hand
         log.warning("the file of source %s is not in the store: %s", source_id, row["storage_key"])
         raise Refusal(404, "file_gone", "The entry's file is missing from the store.") from None
     headers = {"Content-Disposition": _attachment(row["file_name"]), "Cache-Control": "private, no-store"}
-    if size is not None:
-        headers["Content-Length"] = str(size)
-    return StreamingResponse(pieces, media_type=row["mime"], headers=headers)
+    if stream.size is not None:
+        headers["Content-Length"] = str(stream.size)
+    return ObjectDownload(stream, media_type=row["mime"], headers=headers)
 
 
 async def _sector(connection: Any, notation: str | None) -> dict[str, str | None]:
