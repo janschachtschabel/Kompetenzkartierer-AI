@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app import __version__
-from app.api import accounts, internal, system
+from app.api import accounts, internal, jobs, system
 from app.api.errors import ERROR_RESPONSES, install_error_handlers
 from app.api.request_log import RequestLog
 from app.api.security_headers import SecurityHeaders
@@ -31,6 +31,7 @@ not part of this specification.
 TAGS = [
     {"name": "system", "description": "Facts about the running service."},
     {"name": "accounts", "description": "Accounts, roles and API tokens; managed by admins."},
+    {"name": "jobs", "description": "Fetching, converting, extracting run as jobs: their state, a cancel."},
 ]
 
 
@@ -73,6 +74,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(internal.router)
     app.include_router(system.router)
     app.include_router(accounts.router)
+    app.include_router(jobs.router)
     app.add_middleware(internal.InternalOnly, port=settings.internal_port)
     # Added after InternalOnly, so it runs before: every answer, the refused internal ones too, is
     # named and logged

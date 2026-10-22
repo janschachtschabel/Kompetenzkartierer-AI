@@ -20,6 +20,7 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 from unittest import mock
+from uuid import UUID
 
 import psycopg
 from fastapi import FastAPI
@@ -164,6 +165,20 @@ def seed_token(url: str, name: str, roles: list[str]) -> str:
         return token
 
     return asyncio.run(seed(), loop_factory=asyncio.SelectorEventLoop)
+
+
+def seed_account(url: str, name: str, roles: list[str]) -> tuple[UUID, dict[str, str]]:
+    """A new account with ``roles`` in a migrated test database: its id and Authorization header."""
+    from app.db.accounts import create_account, issue_key
+
+    async def seed() -> tuple[UUID, str]:
+        async with await psycopg.AsyncConnection.connect(url, autocommit=True) as connection:
+            account = await create_account(connection, name, roles)
+            _, token = await issue_key(connection, account, "seed", FAKE_PEPPER)
+        return account, token
+
+    account, token = asyncio.run(seed(), loop_factory=asyncio.SelectorEventLoop)
+    return account, {"Authorization": f"Bearer {token}"}
 
 
 def seed_admin(url: str) -> dict[str, str]:
