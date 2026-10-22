@@ -41,6 +41,10 @@ async def ready(request: Request) -> JSONResponse:
     pool: AsyncConnectionPool = request.app.state.pool
     try:
         async with pool.connection(timeout=READY_TIMEOUT_S) as connection:
+            # The query has a deadline of its own, local to its transaction: a locked or busy
+            # database must not hold the probe, nor a pool connection per waiting probe
+            deadline = f"{int(READY_TIMEOUT_S * 1000)}ms"
+            await connection.execute("SELECT set_config('statement_timeout', %s, true)", (deadline,))
             applied = await applied_versions(connection)
     except (PoolTimeout, psycopg.Error):
         return _unavailable("database")
