@@ -292,31 +292,33 @@ async def test_a_host_not_publicly_reachable_is_unreachable_and_asked_no_more(co
 
 
 async def test_an_address_that_gives_no_answer_is_unreachable(context: JobContext) -> None:
-    silent, looping = (
-        await add_entry(context, "https://e.example/lp.pdf"),
-        await add_entry(context, "https://e.example/loop"),
-    )
+    entries = [
+        await add_entry(context, f"https://e.example/{path}") for path in ("lp.pdf", "slow.pdf", "loop")
+    ]
 
     def refusing(request: httpx2.Request) -> httpx2.Response:
         raise httpx2.ConnectError("refused")
 
-    network = Network({"e.example/lp.pdf": refusing, "e.example/loop": reply(302, location="/loop")})
+    def slow(request: httpx2.Request) -> httpx2.Response:
+        raise httpx2.ReadTimeout("timed out")
+
+    network = Network(
+        {
+            "e.example/lp.pdf": refusing,
+            "e.example/slow.pdf": slow,
+            "e.example/loop": reply(302, location="/loop"),
+        }
+    )
 
     await run(context, network)
 
     found = await checks(context)
-    assert (
-        found["https://e.example/lp.pdf"]["outcome"],
-        found["https://e.example/lp.pdf"]["status_code"],
-    ) == (
-        "unreachable",
-        None,
-    )
-    assert found["https://e.example/loop"]["outcome"] == "unreachable"
-    assert (await status_of(context, silent), await status_of(context, looping)) == (
-        "unreachable",
-        "unreachable",
-    )
+    assert {url: (row["outcome"], row["status_code"]) for url, row in found.items()} == {
+        "https://e.example/lp.pdf": ("unreachable", None),
+        "https://e.example/slow.pdf": ("unreachable", None),
+        "https://e.example/loop": ("unreachable", None),
+    }
+    assert [await status_of(context, entry) for entry in entries] == ["unreachable"] * 3
 
 
 async def test_a_file_past_the_upload_limit_is_reachable_and_unhashed(context: JobContext) -> None:
