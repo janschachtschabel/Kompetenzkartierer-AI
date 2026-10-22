@@ -168,10 +168,13 @@ async def list_register(
     provenance: Annotated[Provenance | None, Query()] = None,
     country: Annotated[Country | None, Query()] = None,
     q: Annotated[SearchText | None, Query(description="in the title or the address")] = None,
+    candidates: Annotated[
+        bool, Query(description="only entries of no account still without their file")
+    ] = False,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0, le=MAX_OFFSET)] = 0,
 ) -> SourcePage:
-    filters = Filters(status=status, provenance=provenance, country=country, text=q)
+    filters = Filters(status=status, provenance=provenance, country=country, text=q, candidates=candidates)
     async with request.app.state.pool.connection() as connection:
         rows, total = await list_sources(connection, _reader(who), filters, limit=limit, offset=offset)
     entries = [SourceEntry.model_validate(_fields(row, who)) for row in rows]

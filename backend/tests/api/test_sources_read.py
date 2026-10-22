@@ -17,7 +17,7 @@ from fastapi.testclient import TestClient
 from app.api.app import create_app
 from app.core.ids import new_id
 from app.db.migrate import migrate
-from app.db.sources import StoredFile, record_upload
+from app.db.sources import StoredFile, file_row, record_upload, record_url_source
 from tests.support import make_settings, seed_account, seed_admin, selector_client
 
 pytestmark = pytest.mark.pg
@@ -112,6 +112,9 @@ def test_an_admin_sees_every_entry_as_the_editors_do(
         ({"status": "acquired"}, ["Lehrplan Physik"]),
         ({"provenance": "vergleichsdatensatz-v62.493"}, ["Kerncurriculum Physik Bayern"]),
         ({"country": "DE-BY"}, ["Kerncurriculum Physik Bayern"]),
+        # the candidates: entries of no account still without their file
+        ({"candidates": "true"}, ["Kerncurriculum Physik Bayern"]),
+        ({"candidates": "false"}, ["Kerncurriculum Physik Bayern", "Lehrplan Physik"]),
         ({"q": "physik"}, ["Kerncurriculum Physik Bayern", "Lehrplan Physik"]),
         ({"q": "isb.bayern"}, ["Kerncurriculum Physik Bayern"]),  # the address counts too
         # a search term's wildcards are signs, not patterns: as patterns each matched entries
@@ -134,6 +137,48 @@ def test_the_register_is_filtered(
     client: TestClient, world: dict[str, Any], query: dict[str, str], expected: list[str]
 ) -> None:
     assert titles(client.get("/api/v1/sources", headers=world["mine"], params=query)) == expected
+
+
+def test_a_seed_entry_with_its_file_is_no_candidate_any_more(
+    client: TestClient, migrated: str, world: dict[str, Any]
+) -> None:
+    stored = StoredFile(sha256=bytes([3]) * 32, size=4, mime="application/pdf", storage_key="sources/03")
+
+    async def acquire() -> None:
+        async with await psycopg.AsyncConnection.connect(migrated, autocommit=True) as connection:
+            file_id = await file_row(connection, stored)
+            await connection.execute(
+                "UPDATE source SET file_id = %s, file_name = 'lp.pdf', mime = 'application/pdf',"
+                " register_status = 'acquired' WHERE id = %s",
+                (file_id, world["seed"]),
+            )
+
+    asyncio.run(acquire(), loop_factory=asyncio.SelectorEventLoop)
+
+    assert titles(client.get("/api/v1/sources", headers=world["editor"], params={"candidates": "true"})) == []
+
+
+def test_an_account_s_import_waiting_for_its_file_is_no_candidate(
+    client: TestClient, migrated: str, world: dict[str, Any]
+) -> None:
+    owner = asyncio.run(account_of(migrated, "Lehrkraft"), loop_factory=asyncio.SelectorEventLoop)
+
+    async def import_one() -> None:
+        async with await psycopg.AsyncConnection.connect(migrated, autocommit=True) as connection:
+            await record_url_source(connection, owner=owner, url="https://example.org/a.pdf", title="Import")
+
+    asyncio.run(import_one(), loop_factory=asyncio.SelectorEventLoop)
+
+    listed = titles(client.get("/api/v1/sources", headers=world["mine"], params={"candidates": "true"}))
+    assert listed == ["Kerncurriculum Physik Bayern"]
+
+
+async def account_of(url: str, name: str) -> UUID:
+    async with await psycopg.AsyncConnection.connect(url) as connection:
+        cursor = await connection.execute("SELECT id FROM account WHERE name = %s", (name,))
+        found = await cursor.fetchone()
+    assert found is not None
+    return UUID(str(found[0]))
 
 
 def test_the_total_counts_what_the_filter_lets_through(client: TestClient, world: dict[str, Any]) -> None:

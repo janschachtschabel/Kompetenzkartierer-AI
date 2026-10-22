@@ -33,6 +33,7 @@ class Filters:
     provenance: str | None = None
     country: str | None = None
     text: str | None = None
+    candidates: bool = False  # only entries of no account still without their file: the seeds' candidates
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,8 @@ async def list_sources(
     if filters.country is not None:
         where.append("s.country = %(country)s")
         values["country"] = filters.country
+    if filters.candidates:
+        where.append("s.owner_id IS NULL AND s.file_id IS NULL")
     if filters.text:
         where.append("(s.title ILIKE %(pattern)s OR s.url ILIKE %(pattern)s)")
         values["pattern"] = _like(filters.text)
