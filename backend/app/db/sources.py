@@ -27,10 +27,12 @@ class StoredFile:
 
 async def file_row(connection: psycopg.AsyncConnection, stored: StoredFile) -> UUID:
     """The ``source_file`` of these bytes, made if none is. Two uploads of the same bytes at once:
-    the second insert waits for the first and does nothing, then finds its row."""
+    the second insert waits for the first and does nothing, then finds its row. No conflict
+    target: the storage key is unique too, and a conflict on a column that is not the target
+    fails instead of doing nothing."""
     cursor = await connection.execute(
         "INSERT INTO source_file (id, sha256, size_bytes, mime, storage_key) VALUES (%s, %s, %s, %s, %s)"
-        " ON CONFLICT (sha256) DO NOTHING RETURNING id",
+        " ON CONFLICT DO NOTHING RETURNING id",
         (new_id(), stored.sha256, stored.size, stored.mime, stored.storage_key),
     )
     made = await cursor.fetchone()

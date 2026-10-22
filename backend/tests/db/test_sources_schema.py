@@ -1,6 +1,8 @@
 """The register's tables (migration sources): what the code says a source may be, the database
 holds it to; one file shared by its SHA-256, a source an entity of its own kind."""
 
+import asyncio
+import os
 import uuid
 from collections.abc import Iterator
 from typing import Any, get_args
@@ -12,6 +14,7 @@ from psycopg.types.json import Jsonb
 
 from app.core.ids import new_id
 from app.db.migrate import migrate
+from app.db.sources import StoredFile, file_row
 from app.sources.register import EDUCATION_SECTORS, Provenance, RegisterStatus, RightsStatus, SourceType
 
 pytestmark = pytest.mark.pg
@@ -99,6 +102,44 @@ def test_one_file_is_held_once_and_shared_by_its_sources(connection: psycopg.Con
         add_file(connection, key="sources/elsewhere.pdf")
     sharing = connection.execute("SELECT count(*) FROM source WHERE file_id = %s", (file_id,)).fetchone()
     assert first != second and sharing == (2,)
+
+
+async def file_at_the_gate(
+    connection: psycopg.AsyncConnection, stored: StoredFile, gate: asyncio.Event
+) -> uuid.UUID:
+    async with connection.transaction():
+        await connection.execute("SELECT 1")  # in its transaction before the gate opens
+        await gate.wait()
+        return await file_row(connection, stored)
+
+
+@pytest.mark.anyio
+async def test_the_same_bytes_filed_at_the_same_moment_are_one_file_without_an_error(
+    database_url: str,
+) -> None:
+    # Uploads of the same bytes at once: both inserts may pass the first look for the SHA-256
+    # together, and a conflict on any other unique column then fails instead of doing nothing
+    # (the review's probe: 229 of 1200). Rounds, for the moment is a matter of luck.
+    migrate(database_url)
+    connections = [await psycopg.AsyncConnection.connect(database_url) for _ in range(4)]
+    try:
+        for _ in range(100):
+            digest = os.urandom(32)
+            stored = StoredFile(
+                sha256=digest, size=4, mime="application/pdf", storage_key=f"sources/{digest.hex()}"
+            )
+            gate = asyncio.Event()
+            filing = [asyncio.create_task(file_at_the_gate(opened, stored, gate)) for opened in connections]
+            await asyncio.sleep(0.01)
+            gate.set()
+
+            outcomes = await asyncio.gather(*filing, return_exceptions=True)
+
+            assert [repr(outcome) for outcome in outcomes if isinstance(outcome, BaseException)] == []
+            assert len(set(outcomes)) == 1
+    finally:
+        for opened in connections:
+            await opened.close()
 
 
 def test_a_source_is_acquired_exactly_when_its_file_is_here(connection: psycopg.Connection) -> None:
