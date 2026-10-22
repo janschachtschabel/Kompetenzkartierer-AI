@@ -1,6 +1,6 @@
 # Konfiguration
 
-[Antworten für das IT-Team](anforderungen.md) · Stand M0
+[Antworten für das IT-Team](anforderungen.md) · Stand M1 (Paket 1)
 
 Der Dienst liest seine Einstellungen beim Start aus Umgebungsvariablen; API und Worker lesen
 dieselben. Ein Geheimnis kann stattdessen aus der Datei kommen, die `<NAME>_FILE` nennt
