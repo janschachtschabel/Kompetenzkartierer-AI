@@ -54,6 +54,14 @@ def test_a_note_keeps_its_scope_categories_and_address() -> None:
     assert note.url == raw["URL_im_Text"]
 
 
+def test_the_federation_s_notes_are_germany_s() -> None:
+    # "DE": the dataset's notes on the federation's (KMK) documents
+    countries = [found.country for found in read_notes(NOTES).notes]
+
+    assert countries.count("DE") == 2
+    assert "DE-DE" not in countries
+
+
 def test_a_local_address_is_none() -> None:
     assert any(row["URL_im_Text"] == "lokal" for row in published_notes())
 

@@ -9,7 +9,6 @@ none ("lokal") is no address.
 
 import csv
 import hashlib
-import re
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -18,11 +17,10 @@ import psycopg
 
 from app.core.ids import new_id
 from app.sources.register import COMPARISON_DATASET as DATASET
-from app.sources.register import SEED_DIR
+from app.sources.register import SEED_DIR, land_country
 from app.sources.url_fetch import UrlNotAllowed, check_url
 
 NOTES = SEED_DIR / "umgehungshinweise_de.csv"
-_LAND = re.compile(r"[A-Z]{2}")
 
 
 @dataclass(frozen=True)
@@ -59,11 +57,10 @@ def read_notes(path: Path) -> Notes:
             if text is None:
                 left_out["empty"] += 1
                 continue
-            land = raw["Land_Kuerzel"].strip()
             notes.append(
                 AccessNote(
                     key=hashlib.sha256("\x1f".join(raw.values()).encode()).hexdigest(),
-                    country=f"DE-{land}" if _LAND.fullmatch(land) else None,
+                    country=land_country(raw["Land_Kuerzel"]),
                     school_form=_text(raw["Schulform"], 200),
                     subject=_text(raw["Fach"], 200),
                     categories=[

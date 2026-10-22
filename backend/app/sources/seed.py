@@ -38,6 +38,7 @@ from app.sources.register import (
     Evidence,
     SeedDataset,
     SourceType,
+    land_country,
 )
 from app.sources.url_fetch import UrlNotAllowed, check_url
 
@@ -55,7 +56,6 @@ _KINDS: dict[str, SourceType] = {
 }
 # One seed at a time: two runs at once would each find a row absent and add it twice
 _SEED_LOCK = int.from_bytes(b"kka-seed", "big")
-_LAND = re.compile(r"[A-Z]{2}")
 # An address with a note for its readers after it: "https://… (Sidebar, PK-Katalog)" (BW.MA.PK)
 _NOTED = re.compile(r"(\S+)\s+\([^()]*\)")
 
@@ -120,13 +120,12 @@ def read_documents(path: Path) -> Documents:
 def _row(raw: dict[str, str]) -> SeedRow:
     address = (raw["URL_Original"] if raw["URL"].strip() == "lokal" else raw["URL"]).strip()
     noted = _NOTED.fullmatch(address)
-    land = raw["Land_Kuerzel"].strip()
     parts = (_text(raw["Land"], 80), _text(raw["Fach"], 200), _text(raw["Schulform"], 200))
     return SeedRow(
         key=raw["Beispiel_ID"].strip(),
         title=" · ".join(part for part in parts if part),
         url=check_url(noted.group(1) if noted else address),
-        country=f"DE-{land}" if _LAND.fullmatch(land) else None,
+        country=land_country(raw["Land_Kuerzel"]),
         school_form=_text(raw["Schulform"], 200),
         stage=_text(raw["Bildungsstufe"], 200),
         subject_key=_text(raw["Fach_Schluessel"], 100),

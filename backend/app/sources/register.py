@@ -4,6 +4,7 @@ The database holds the same lists as CHECKs (migration 0006_sources); tests/db/t
 writes every value named here, so the two cannot drift. In the interface: "ungeprüft" etc.
 """
 
+import re
 from pathlib import Path
 from typing import Literal
 
@@ -37,3 +38,14 @@ SEED_DIR = Path(__file__).resolve().parents[3] / "data" / "seed" / "vergleichsda
 
 # The concept scheme the sector of a source belongs to (cur-vokabular.ttl)
 EDUCATION_SECTORS = "https://w3id.org/wlo/curriculum/vocab#EducationSectors"
+
+_LAND = re.compile(r"[A-Z]{2}")
+
+
+def land_country(code: str) -> str | None:
+    """The country of a land's code as the comparison dataset writes it: "BY" is DE-BY (ISO
+    3166-2), "DE" (the federation's rows, KMK) Germany itself; anything else is none."""
+    code = code.strip()
+    if code == "DE":
+        return "DE"
+    return f"DE-{code}" if _LAND.fullmatch(code) else None

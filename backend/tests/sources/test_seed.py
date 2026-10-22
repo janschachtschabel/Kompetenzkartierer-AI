@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import sys
+from collections import Counter
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, get_args
@@ -215,6 +216,21 @@ def test_a_row_whose_address_cannot_be_fetched_is_left_out_and_counted(tmp_path:
 
     assert [row.key for row in read.rows] == ["BY.GYM.PH"]
     assert read.left_out == {"url_invalid": 2}
+
+
+@pytest.mark.parametrize(("land", "country"), [("SH", "DE-SH"), ("DE", "DE"), ("", None), ("Bayern", None)])
+def test_the_land_is_the_country(tmp_path: Path, land: str, country: str | None) -> None:
+    # "DE": the dataset's rows of the federation (KMK), the country itself
+    (row,) = read_documents(write_documents(tmp_path / "d.csv", document("X.1", Land_Kuerzel=land))).rows
+
+    assert row.country == country
+
+
+def test_the_federation_s_rows_of_the_published_file_are_germany_s() -> None:
+    countries = Counter(row.country for row in read_documents(DOCUMENTS).rows)
+
+    assert countries["DE"] == 20
+    assert "DE-DE" not in countries
 
 
 def test_grades_that_are_no_numbers_stay_unknown(tmp_path: Path) -> None:
