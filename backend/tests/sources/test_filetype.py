@@ -114,18 +114,36 @@ def test_a_long_name_is_cut_to_what_a_file_system_holds_keeping_its_ending() -> 
 
 
 @pytest.mark.parametrize(
-    ("ending", "kept"), [("d" * 15, True), ("d" * 16, False), ("d" * 300, False)], ids=["16", "17", "301"]
+    ("name", "stored"),
+    [
+        ("folien.PPTX", "folien.PPTX"),
+        ("tabelle.xlsm", "tabelle.xlsm"),
+        ("lehrplan.odt", "lehrplan.odt"),
+        ("vorlage.dotx", "vorlage.dotx"),
+        # a dot in a name is no ending: by its length these kept it and went to the engines so
+        ("lehrplan-v2.1", "lehrplan-v2.1.docx"),
+        ("Lehrplan.Klasse 5", "Lehrplan.Klasse 5.docx"),
+        ("lehrplan.pdf", "lehrplan.pdf.docx"),  # a ZIP is no PDF, whatever its name says
+    ],
 )
-def test_a_zip_keeps_an_ending_only_as_long_as_one_is(ending: str, kept: bool) -> None:
-    # a ZIP keeps its own ending, up to 16 signs with its dot; one of 301 cut the name with a
-    # negative index, doubled it past 255 signs, and the database refused the entry
+def test_a_zip_keeps_its_ending_only_if_it_names_a_package_type(name: str, stored: str) -> None:
+    # the ZIP signature is every OOXML and ODF type's: their endings stay, any other gets .docx
     detected = detect_type("x.docx", b"PK\x03\x04")
     assert detected is not None
 
-    stored = stored_name(f"lehrplan.{ending}", detected)
+    assert stored_name(name, detected) == stored
 
-    assert len(stored) <= 255
-    assert stored.endswith(f".{ending}" if kept else ".docx")
+
+def test_a_zip_with_an_ending_longer_than_a_name_is_filed_within_one() -> None:
+    # one of 301 signs cut the name with a negative index, doubled it past 255 signs, and the
+    # database refused the entry after its file was stored
+    detected = detect_type("x.docx", b"PK\x03\x04")
+    assert detected is not None
+
+    stored = stored_name("lehrplan." + "d" * 300, detected)
+
+    assert len(stored) == 255
+    assert stored.endswith(".docx")
 
 
 # --- archives that expand past what a conversion may hold (old app audit 2026-09-26, E-05)
