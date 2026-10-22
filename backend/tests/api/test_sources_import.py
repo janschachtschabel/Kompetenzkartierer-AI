@@ -167,6 +167,13 @@ def test_the_spec_names_the_import_s_limit_beside_the_sign_in_one() -> None:
     assert "too_many_imports" in said and "failed sign-ins" in said
 
 
+def test_the_spec_names_how_long_an_import_s_title_may_be() -> None:
+    # the route checks the title itself (title_too_long), the spec says so beforehand
+    schemas = create_app(make_settings()).openapi()["components"]["schemas"]
+
+    assert schemas["ImportIn"]["properties"]["title"]["maxLength"] == 500
+
+
 def test_a_visitor_cannot_import(client: TestClient) -> None:
     assert client.post("/api/v1/sources/import", json={"url": URL}).status_code == 401
 

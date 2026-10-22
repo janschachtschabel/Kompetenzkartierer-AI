@@ -15,7 +15,7 @@ from uuid import UUID
 
 import psycopg
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel, ConfigDict, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from starlette.datastructures import UploadFile
 
 from app.api.body_limit import MIB
@@ -105,8 +105,8 @@ class ImportIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     url: Annotated[str, StringConstraints(min_length=1, max_length=2000)]
-    # checked as the upload form's is, with the same codes (_checked_title)
-    title: str = ""
+    # checked as the upload form's is, with the same codes (_checked_title); the spec names the bound
+    title: Annotated[str, Field(json_schema_extra={"maxLength": MAX_TITLE_SIGNS})] = ""
 
 
 class ImportOut(BaseModel):
