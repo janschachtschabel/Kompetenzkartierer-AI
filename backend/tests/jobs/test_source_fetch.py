@@ -6,6 +6,7 @@ store are real.
 
 import hashlib
 from collections.abc import AsyncIterator, Callable
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -27,6 +28,7 @@ from app.jobs.outcome import PermanentError
 from app.jobs.queue import Job, account_lane, claim, enqueue
 from app.sources.fetch_job import fetch_source
 from app.sources.url_fetch import PinnedBackend, pinned_transport
+from tests.sources.compressed import MIB, arriving
 from tests.support import make_settings
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
@@ -157,6 +159,37 @@ async def test_a_file_of_no_type_a_conversion_reads_is_not_acquired(context: Job
     assert failed.value.code == "unsupported_type"
     assert row["register_status"] == "reachable"  # it answered; its file is of no use here
     assert row["file_id"] is None
+
+
+@pytest.mark.parametrize(
+    ("answer", "code"),
+    [
+        (lambda request: httpx2.Response(200, content=bytes(MIB + 1)), "file_too_large"),
+        (lambda request: httpx2.Response(302, headers={"location": "/loop"}), "too_many_redirects"),
+        (lambda request: httpx2.Response(302), "bad_answer"),
+        (
+            lambda request: httpx2.Response(200, content=arriving([PDF]), headers={"content-encoding": "br"}),
+            "bad_answer",
+        ),
+        (
+            lambda request: httpx2.Response(302, headers={"location": "https://lehrplaene.example:8o80/"}),
+            "bad_answer",
+        ),
+    ],
+    ids=["too-large", "redirect-loop", "redirect-without-address", "unknown-encoding", "unreadable-redirect"],
+)
+async def test_an_answer_no_attempt_can_use_ends_the_job_and_the_entry_is_reachable(
+    context: JobContext, answer: Callable[[httpx2.Request], httpx2.Response], code: str
+) -> None:
+    # another attempt meets the same answer: three fetches of up to the limit each, for nothing
+    source_id, job = await add_source(context)
+    one_mib = replace(context, settings=context.settings.model_copy(update={"max_upload_mb": 1}))
+
+    with pytest.raises(PermanentError) as failed:
+        await fetch_source(one_mib, job, transport=serving(answer))
+
+    assert failed.value.code == code
+    assert (await source_row(context, source_id))["register_status"] == "reachable"
 
 
 async def test_a_server_away_for_a_moment_is_tried_again(context: JobContext) -> None:

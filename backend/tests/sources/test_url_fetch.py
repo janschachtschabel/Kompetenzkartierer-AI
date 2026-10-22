@@ -18,8 +18,11 @@ import pytest
 
 from app.core.tracing import take_trace_headers
 from app.sources.url_fetch import (
+    BadAnswer,
     DownloadError,
+    FileTooLarge,
     PinnedBackend,
+    TooManyRedirects,
     UrlNotAllowed,
     check_url,
     fetch,
@@ -274,7 +277,8 @@ async def test_a_fetch_carries_the_trace_of_the_request_that_asked_for_it() -> N
 
 @pytest.mark.anyio
 async def test_an_answer_over_the_limit_is_refused() -> None:
-    with pytest.raises(DownloadError, match="size limit"):
+    # FileTooLarge: another attempt meets the same file
+    with pytest.raises(FileTooLarge, match="size limit"):
         await fetch(
             f"http://{PUBLIC}/big",
             max_bytes=10,
@@ -317,8 +321,34 @@ async def test_a_redirect_to_an_address_that_cannot_be_spelled_is_a_download_err
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize(
+    "location",
+    [f"http://{PUBLIC}:8o80/x".encode(), f"http://a{chr(0x200D)}b.example/x".encode()],
+    ids=["port-of-letters", "host-idna-refuses"],
+)
+async def test_a_redirect_to_an_address_that_cannot_be_read_is_a_bad_answer(location: bytes) -> None:
+    # a port of letters, a host IDNA refuses (sent as a server sends it, in bytes): the same again
+    with pytest.raises(BadAnswer, match="cannot be read"):
+        await fetch(
+            f"http://{PUBLIC}/start",
+            max_bytes=1000,
+            transport=mock(lambda request: httpx2.Response(302, headers={b"location": location})),
+        )
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("status", [302, 304])
+async def test_a_redirect_without_an_address_is_a_bad_answer(status: int) -> None:
+    # httpx2 calls every 3xx a redirect, 304 too
+    with pytest.raises(BadAnswer, match="without an address"):
+        await fetch(
+            f"http://{PUBLIC}/x", max_bytes=1000, transport=mock(lambda request: httpx2.Response(status))
+        )
+
+
+@pytest.mark.anyio
 async def test_too_many_redirects_end_the_fetch() -> None:
-    with pytest.raises(DownloadError, match="redirects"):
+    with pytest.raises(TooManyRedirects, match="redirects"):
         await fetch(
             f"http://{PUBLIC}/loop",
             max_bytes=1000,
@@ -378,7 +408,7 @@ async def test_a_fetch_packed_twice_or_in_an_unknown_way_is_refused(encoding: st
         wire = [packed(packed(PDF, "gzip"), "gzip")]
         return httpx2.Response(200, content=arriving(wire), headers={"Content-Encoding": encoding})
 
-    with pytest.raises(DownloadError, match="encoding"):
+    with pytest.raises(BadAnswer, match="encoding"):
         await fetch(f"http://{PUBLIC}/lp.pdf", max_bytes=len(PDF), transport=mock(handler))
 
     assert asked == ["gzip, deflate"]  # asked for only what the reader unpacks

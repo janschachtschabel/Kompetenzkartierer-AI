@@ -47,11 +47,25 @@ class UrlNotAllowed(ValueError):
 
 class DownloadError(ValueError):
     """The fetch failed, in our words; what the transport said is the operator's, in the log.
-    ``status`` is the HTTP status of an answer that refused, if one did."""
+    ``status`` is the HTTP status of an answer that refused, if one did. Another attempt may
+    fare better, unless the error is one of the kinds below."""
 
     def __init__(self, message: str, status: int | None = None) -> None:
         super().__init__(message)
         self.status = status
+
+
+class FileTooLarge(DownloadError):
+    """The file passed the limit: another attempt meets the same file."""
+
+
+class TooManyRedirects(DownloadError):
+    """The redirects went on past the limit."""
+
+
+class BadAnswer(DownloadError):
+    """An answer no attempt can use: a redirect without an address or to one that cannot be
+    read, a body packed in a way not unpacked here."""
 
 
 @dataclass(frozen=True)
@@ -169,7 +183,9 @@ async def fetch(
     max_redirects: int = MAX_REDIRECTS,
 ) -> Fetched:
     """Fetch ``url``; UrlNotAllowed for an address that is not public, DownloadError for a fetch
-    that failed or passed ``max_bytes``. The request carries the trace of the one being served."""
+    that failed - FileTooLarge past ``max_bytes``, TooManyRedirects past ``max_redirects``,
+    BadAnswer for an answer no attempt can use. The request carries the trace of the one being
+    served."""
     chain: list[str] = []
     current = url
     headers = {**outgoing_headers(), "Accept-Encoding": ACCEPT_ENCODING, "User-Agent": user_agent}
@@ -181,38 +197,62 @@ async def fetch(
                 follow_redirects=False,
                 timeout=timeout,
                 trust_env=False,
+                event_hooks={"response": [_stop_at_redirect]},
             ) as client,
         ):
             for _ in range(max_redirects + 1):
                 check_url(current)
                 chain.append(current)
-                async with client.stream("GET", current, headers=headers) as response:
-                    if response.is_redirect:
-                        location = response.headers.get("location")
-                        if not location:
-                            raise DownloadError("a redirect without an address")
-                        current = str(httpx2.URL(current).join(location))
-                        continue
-                    if response.status_code >= 400:
-                        raise DownloadError(
-                            f"the server answered {response.status_code}", response.status_code
-                        )
-                    try:
-                        content = await aread_body(response, max_bytes)
-                    except BodyTooLarge:
-                        raise DownloadError("the file exceeds the size limit") from None
-                    except UnsupportedEncoding as error:
-                        raise DownloadError(str(error)) from None
-                    return Fetched(content, response.headers.get("content-type", ""), chain)
+                try:
+                    async with client.stream("GET", current, headers=headers) as response:
+                        content = await _body(response, max_bytes)
+                        return Fetched(content, response.headers.get("content-type", ""), chain)
+                except _Redirect as redirect:
+                    current = _redirect_target(current, redirect.location)
     except TimeoutError:
         log.warning("the fetch of %s ran past %.0f s", current, total_timeout)
         raise DownloadError("the fetch took too long") from None
-    # InvalidURL is no HTTPError: a redirect to "host:8o80" escaped; nor is idna's IDNAError, a
-    # UnicodeError, which a redirect to a broken xn-- label raises
+    # InvalidURL is no HTTPError: the entry's own address may hold a port of letters; nor is
+    # idna's IDNAError, a UnicodeError, which a broken xn-- label raises
     except (httpx2.HTTPError, httpx2.InvalidURL, UnicodeError) as error:
         log.warning("the fetch of %s failed: %s", current, error)
         raise DownloadError("the server could not be reached, or the transfer broke off") from None
-    raise DownloadError("too many redirects")
+    raise TooManyRedirects("too many redirects")
+
+
+class _Redirect(Exception):
+    """An answer of 3xx, stopped before httpx2 reads its Location: httpx2 builds a request of its
+    own from it even when it does not follow, and an address it cannot read became a
+    RemoteProtocolError, as a broken connection does, or a bare ValueError."""
+
+    def __init__(self, location: str | None) -> None:
+        super().__init__(location)
+        self.location = location
+
+
+async def _stop_at_redirect(response: httpx2.Response) -> None:
+    if response.is_redirect:  # every 3xx, 304 too
+        raise _Redirect(response.headers.get("location"))
+
+
+def _redirect_target(current: str, location: str | None) -> str:
+    if not location:
+        raise BadAnswer("a redirect without an address")
+    try:
+        return str(httpx2.URL(current).join(location))
+    except httpx2.InvalidURL:
+        raise BadAnswer("a redirect to an address that cannot be read") from None
+
+
+async def _body(response: httpx2.Response, max_bytes: int) -> bytes:
+    if response.status_code >= 400:
+        raise DownloadError(f"the server answered {response.status_code}", response.status_code)
+    try:
+        return await aread_body(response, max_bytes)
+    except BodyTooLarge:
+        raise FileTooLarge("the file exceeds the size limit") from None
+    except UnsupportedEncoding as error:
+        raise BadAnswer(str(error)) from None
 
 
 def filename_from_url(url: str) -> str | None:
