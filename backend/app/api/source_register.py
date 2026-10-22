@@ -34,6 +34,8 @@ Country = Annotated[str, StringConstraints(pattern=r"^[A-Z]{2}(-[A-Z0-9]{1,3})?$
 EDITORS = frozenset({"redaktion", "admin"})
 # What only editors set: on what terms the document may be used, and who publishes it
 TERMS = frozenset({"rights_status", "rights_evidence", "source_type", "license"})
+# The terms whose new values the audit log keeps
+AUDITED_VALUES = ("rights_status", "source_type", "license")
 
 
 # Text in one spelling, showing whole (no control or hidden signs), within its length. Named
@@ -194,7 +196,8 @@ async def edit_register_entry(
         if "sector" in given:
             changes |= await _sector(connection, given["sector"])
         await update_source(connection, source_id, changes)
-        details = {"fields": sorted(given)}
+        # the new terms by value, the evidence by name only: its text may quote anyone
+        details = {"fields": sorted(given), **{name: given[name] for name in AUDITED_VALUES if name in given}}
         await record_audit(
             connection,
             who.account_id,

@@ -300,6 +300,29 @@ def test_an_edit_is_audited(client: TestClient, migrated: str, world: dict[str, 
     assert audited == [(f"source:{world['own']}", {"fields": ["title"]})]
 
 
+def test_an_edit_of_the_terms_is_audited_with_their_new_values(
+    client: TestClient, migrated: str, world: dict[str, Any]
+) -> None:
+    # who set which status is the audit's to say; the evidence is the entry's, it may quote anyone
+    change = {
+        "rights_status": "amtlich",
+        "rights_evidence": "Amtsblatt 2023, S. 12",
+        "source_type": "amtlich",
+        "license": "amtliches Werk",
+    }
+    client.patch(f"/api/v1/sources/{world['seed']}", headers=world["editor"], json=change)
+
+    with psycopg.connect(migrated) as connection:
+        found = connection.execute("SELECT details FROM audit_log WHERE action = 'source.edit'").fetchone()
+    assert found is not None
+    assert found[0] == {
+        "fields": ["license", "rights_evidence", "rights_status", "source_type"],
+        "rights_status": "amtlich",
+        "source_type": "amtlich",
+        "license": "amtliches Werk",
+    }
+
+
 # --- the file
 
 
