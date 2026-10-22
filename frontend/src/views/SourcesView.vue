@@ -29,7 +29,7 @@ import { focusIsFree } from "@/focusRescue";
 import { t } from "@/i18n/de";
 import { sayAnew } from "@/liveRegion";
 import { failureNotice, type Notice } from "@/notice";
-import { askedOf, sameAsked, type RegisterFilters } from "@/registerFilters";
+import { askedOf, emptyAdvice, sameAsked, type RegisterFilters } from "@/registerFilters";
 import { hasRole } from "@/session";
 
 interface Followed {
@@ -243,7 +243,7 @@ onMounted(async () => {
           v-else-if="page && page.entries.length === 0 && pageFiltered"
           :level="3"
           :title="t('sources.filter.emptyTitle')"
-          :body="t('sources.filter.emptyBody')"
+          :body="emptyAdvice(readWith)"
         />
         <EmptyState
           v-else-if="page && page.entries.length === 0"

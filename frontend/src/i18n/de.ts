@@ -171,7 +171,12 @@ export const messages = {
       anyStatus: "jeder Stand",
       none: "Kein Eintrag passt zu diesem Filter.",
       emptyTitle: "Kein Eintrag passt",
-      emptyBody: "Nimm „Nur Kandidaten“ zurück oder wähle einen anderen Stand.",
+      // by what is set; {label} is the checkbox's own label, {any} the status list's first choice
+      emptyBody: {
+        candidates: "Nimm „{label}“ zurück, um alle Einträge zu sehen.",
+        status: "Wähle einen anderen Stand oder „{any}“.",
+        both: "Nimm „{label}“ zurück oder wähle einen anderen Stand.",
+      },
     },
     // Where an entry comes from (backend app/sources/register.py, Provenance). Read
     // as messages.sources.provenance[value], not by t(): a value holds a dot.

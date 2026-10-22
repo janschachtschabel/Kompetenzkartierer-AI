@@ -121,6 +121,24 @@ describe("the register page's filter", () => {
     expect(wrapper.get<HTMLInputElement>("input[type=checkbox]").element.checked).toBe(true);
   });
 
+  it.each([
+    ["the candidates alone", true, "", t("sources.filter.emptyBody.candidates", { label: t("sources.filter.candidates") })],
+    ["a status alone", false, "acquired", t("sources.filter.emptyBody.status", { any: t("sources.filter.anyStatus") })],
+    ["both", true, "acquired", t("sources.filter.emptyBody.both", { label: t("sources.filter.candidates") })],
+  ])("advises taking back what is set when %s let nothing through", async (_what, candidates, status, advice) => {
+    vi.spyOn(api, "listSources").mockResolvedValueOnce(page([entry("a", "Lehrplan Physik")])).mockResolvedValue(page([]));
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+    await flushPromises();
+
+    if (candidates) await wrapper.get("input[type=checkbox]").setValue(true);
+    if (status) await wrapper.get("select").setValue(status);
+    await flushPromises();
+
+    expect(wrapper.get(".empty__body").text()).toBe(advice);
+    // the control's own label, not a copy of it
+    if (candidates) expect(advice).toContain(`„${t("sources.filter.candidates")}“`);
+  });
+
   it("says how many it shows once a filter that let nothing through is taken back", async () => {
     const both = page([entry("a", "Lehrplan Physik"), entry("b", "Lehrplan Chemie")], 2);
     vi.spyOn(api, "listSources").mockResolvedValueOnce(both).mockResolvedValueOnce(page([])).mockResolvedValue(both);
