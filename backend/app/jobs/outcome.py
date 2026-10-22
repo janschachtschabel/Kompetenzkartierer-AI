@@ -47,8 +47,11 @@ def say_failure(job: Job, outcome: Outcome, ending: Ending) -> None:
     """Log a handler's own failure with its traceback, once and before any write - with the
     database away its cause would be lost: an error when it ended the run, a warning when a
     cancel or a lost lease did. A PermanentError that ended the run is its answer, not a fault;
-    a CancelledError or LeaseLost is how the run was stopped."""
-    if not isinstance(outcome, BaseException) or isinstance(outcome, asyncio.CancelledError | LeaseLost):
+    a LeaseLost is how the run was stopped, and so is a CancelledError where the worker stopped it
+    (an ending) - without one the handler's own code raised it, and that is a failure."""
+    if not isinstance(outcome, BaseException) or isinstance(outcome, LeaseLost):
+        return
+    if isinstance(outcome, asyncio.CancelledError) and ending is not None:
         return
     if ending is None:
         if not isinstance(outcome, PermanentError):
