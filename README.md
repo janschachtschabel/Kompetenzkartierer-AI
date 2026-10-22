@@ -106,8 +106,11 @@ ungültig.
   es geben kann, und ein Verbot laut robots.txt nicht erreichbar; 429 und 503 („später“)
   lassen den Eintrag ungeprüft und halten den Host für die verlangte Zeit (`Retry-After`,
   höchstens ein Tag) zurück; 502, 504, Zeitüberschreitung und Verbindungsabbruch gelten als
-  vorübergehend nicht erreichbar. Diese beiden fragt eine spätere Prüfung erneut, und die
-  übrigen Adressen des Hosts warten mit. Ein neuer Start prüft nur, was noch offen ist; ein
+  vorübergehend nicht erreichbar. Diese beiden fragt eine spätere Prüfung erneut, und der Host
+  wartet bis dahin: seine übrigen Adressen und jede Weiterleitung zu ihm. Ebenso wartet ein
+  Host, dessen Name gerade nicht aufgelöst wird oder dessen robots.txt gerade nicht zu haben
+  ist; seine Adressen bleiben ungeprüft. Eine Adresse über 2.000 Zeichen (auch ein
+  Weiterleitungsziel) wird nicht gefragt. Ein neuer Start prüft nur, was noch offen ist; ein
   Kandidat, der später mit einer schon geprüften Adresse dazukommt, übernimmt deren Ergebnis.
   Ein zweiter Start, solange einer wartet oder läuft, gibt 409 `check_running` mit der Job-ID.
   Der Lauf dauert Stunden (allein ein Host trägt 400 Adressen) und belegt einen Worker; dafür
