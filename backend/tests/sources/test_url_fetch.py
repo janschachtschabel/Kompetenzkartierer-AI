@@ -81,6 +81,7 @@ def test_a_url_is_kept_with_its_scheme_in_small_letters() -> None:
         "239.255.255.250",
         "ff02::1",
         "64:ff9b::7f00:1",  # NAT64: 127.0.0.1 on the far side of the translator
+        "fec0::1",  # site-local (deprecated by RFC 3879, still routed inside), which ipaddress calls global
     ],
 )
 def test_an_address_inside_any_network_is_refused(host: str) -> None:

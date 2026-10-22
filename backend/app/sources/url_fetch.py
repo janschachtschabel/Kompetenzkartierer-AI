@@ -82,10 +82,13 @@ def default_resolver(host: str) -> list[str]:
 def is_public(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     """An address the wider internet routes to. ``is_global`` comes from IANA's registry of
     special-purpose ranges (it knows 100.64.0.0/10, where Kubernetes puts services); it does not
-    exclude the NAT64 prefix (64:ff9b::7f00:1 is 127.0.0.1 beyond the translator) nor multicast."""
-    mapped = address.ipv4_mapped if isinstance(address, ipaddress.IPv6Address) else None
-    if mapped is not None:
-        return is_public(mapped)
+    exclude the NAT64 prefix (64:ff9b::7f00:1 is 127.0.0.1 beyond the translator), multicast, nor
+    the site-local fec0::/10, deprecated (RFC 3879) but still routed inside some networks."""
+    if isinstance(address, ipaddress.IPv6Address):
+        if address.ipv4_mapped is not None:
+            return is_public(address.ipv4_mapped)
+        if address.is_site_local:
+            return False
     return address.is_global and not (address.is_reserved or address.is_multicast)
 
 
