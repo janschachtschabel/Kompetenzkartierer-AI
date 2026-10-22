@@ -22,6 +22,8 @@ from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, Settings
 REPOSITORY_ONTOLOGY = Path(__file__).resolve().parents[3] / "ontology"
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 Port = Annotated[int, Field(ge=1, le=65535)]
+# A DNS label as botocore takes it: letters, digits and "-", not at either end
+_HOST_LABEL = re.compile(r"(?!-)[A-Za-z0-9-]{1,63}(?<!-)")
 # The address of a service the process calls: the language model, the object store
 EndpointUrl = Annotated[str, Field(pattern=r"^https?://[^\s/]+(/\S*)?$")]
 
@@ -93,6 +95,15 @@ def plain_endpoint(value: str) -> str:
     if not parts.hostname or "@" in parts.netloc or "?" in value or "#" in value or not port_valid:
         raise ValueError("must be http(s)://host[:port][/path], without user, query or fragment")
     return value
+
+
+def _s3_host(hostname: str) -> bool:
+    try:
+        ipaddress.ip_address(hostname)
+    except ValueError:
+        labels = hostname.rstrip(".").split(".")
+        return len(hostname) <= 255 and all(_HOST_LABEL.fullmatch(label) for label in labels)
+    return True
 
 
 def _environment_value(name: str, environment: Mapping[str, str] = os.environ) -> str | None:
@@ -203,7 +214,13 @@ class Settings(BaseSettings):
     @field_validator("s3_endpoint_url")
     @classmethod
     def _plain_s3_endpoint(cls, value: str | None) -> str | None:
-        return None if value is None else plain_endpoint(value)
+        if value is None:
+            return None
+        # boto3 refuses a host name with "_" (a Compose service name may have one) only as it
+        # builds the client, quoting the address; here the start stops, naming the setting
+        if not _s3_host(urlsplit(plain_endpoint(value)).hostname or ""):
+            raise ValueError("must name a host of letters, digits, dots and hyphens, or an IP address")
+        return value
 
     @field_validator("log_level", mode="before")
     @classmethod

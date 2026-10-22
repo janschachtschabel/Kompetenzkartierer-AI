@@ -1,6 +1,6 @@
 """The object store on an S3-compatible service: AWS, or MinIO in Compose and the tests.
 
-It keeps the file system store's contract, so no caller can tell them apart: a key is checked
+It keeps the file system store's contract, with the two exceptions below: a key is checked
 before anything is sent, a missing object raises ObjectNotFound - on deleting too, where S3
 itself would answer success - and any other refusal of the service is raised as it came.
 S3 holds ``a`` and ``a/b`` side by side, which the file system store refuses; keys that never

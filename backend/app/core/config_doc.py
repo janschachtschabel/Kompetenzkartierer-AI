@@ -89,7 +89,7 @@ def _allowed(field: FieldInfo) -> str:
     not as a plain "Text" that hides what the code enforces."""
     annotation, constraints = _type_and_constraints(field)
     if get_origin(annotation) is Literal:
-        return _OR.join(f"`{value}`" for value in get_args(annotation))
+        return _OR.join(f"`{_cell(str(value))}`" for value in get_args(annotation))
     if annotation is bool:
         return f"`true`{_OR}`false`"
     if annotation in (int, float):
@@ -109,14 +109,13 @@ def _allowed(field: FieldInfo) -> str:
 
 def _text(constraints: list[Any]) -> str:
     patterns = [_cell(c.pattern) for c in constraints if getattr(c, "pattern", None)]
-    if patterns:
-        return f"Text nach Muster `{patterns[0]}`"
     minimum, maximum = annotated_types.MinLen, annotated_types.MaxLen
     # min_length=1 only says "not empty"
     shortest = [c.min_length for c in constraints if isinstance(c, minimum) and c.min_length > 1]
     longest = [c.max_length for c in constraints if isinstance(c, maximum)]
     lengths = [f"mindestens {n}" for n in shortest] + [f"höchstens {n}" for n in longest]
-    return f"Text, {', '.join(lengths)} Zeichen" if lengths else "Text"
+    text = f"Text nach Muster `{patterns[0]}`" if patterns else "Text"
+    return f"{text}, {', '.join(lengths)} Zeichen" if lengths else text
 
 
 def _default(field: FieldInfo) -> str:

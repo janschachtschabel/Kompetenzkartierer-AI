@@ -113,12 +113,33 @@ def test_an_empty_endpoint_means_aws_itself() -> None:
         "minio:9000",
         "http://minio:70000",
         "http:///kka",
+        # host names boto3 refuses as it builds the client, with the value in its error
+        "http://object_store:9000",
+        "http://-minio:9000",
+        "http://minio-.example:9000",
     ],
 )
 def test_an_endpoint_is_a_plain_http_address(url: str) -> None:
     # a user or a query would ride along on every request and into the logs
-    with pytest.raises(ValidationError, match="s3_endpoint_url"):
+    with pytest.raises(ValidationError, match="s3_endpoint_url") as raised:
         make_settings(**{**S3, "s3_endpoint_url": url})
+
+    assert url not in str(raised.value)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://minio:9000",
+        "http://127.0.0.1:59000",
+        "http://[::1]:9000",
+        "https://s3.eu-central-1.amazonaws.com",
+    ],
+)
+def test_an_endpoint_boto3_takes_passes(url: str) -> None:
+    settings = make_settings(**{**S3, "s3_endpoint_url": url})
+
+    assert s3_client(settings).meta.endpoint_url == url
 
 
 def test_a_refused_endpoint_is_not_quoted() -> None:

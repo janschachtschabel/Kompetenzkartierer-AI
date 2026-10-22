@@ -5,7 +5,7 @@ without regenerating it fails here, so the operators never miss one.
 """
 
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 import pytest
 from pydantic import BaseModel, Field
@@ -26,6 +26,8 @@ class Invented(BaseModel):
     choice: str = "a|b"
     named: Annotated[str, Field(pattern=r"^[a-z]+$")] = "abc"
     short: Annotated[str, Field(min_length=3, max_length=8)] = "abcd"
+    coded: Annotated[str, Field(pattern=r"^[a-z]+$", max_length=8)] = "abc"
+    mode: Literal["a|b", "c"] = "c"
     mixed: int | str = 1
 
 
@@ -89,6 +91,8 @@ def test_every_condition_names_a_setting_that_exists() -> None:
         ("choice", "Text", "`a\\|b`"),  # a bare | would split the row
         ("named", "Text nach Muster `^[a-z]+$`", "`abc`"),
         ("short", "Text, mindestens 3, höchstens 8 Zeichen", "`abcd`"),
+        ("coded", "Text nach Muster `^[a-z]+$`, höchstens 8 Zeichen", "`abc`"),
+        ("mode", "`a\\|b` \\| `c`", "`c`"),
     ],
 )
 def test_a_field_of_a_later_kind_renders_as_meant(name: str, allowed: str, default: str) -> None:

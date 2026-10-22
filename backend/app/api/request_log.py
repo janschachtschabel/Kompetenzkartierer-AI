@@ -1,10 +1,11 @@
 """Every request named by ``X-Request-ID`` and written once to the log when it ends.
 
-``RequestLog`` is the outermost middleware: it takes the caller's request id (or makes one) and
-the trace headers, adds ``X-Request-ID`` to every answer, and writes one line with method, path,
-route template, status and duration. Query values and the client's address stay out of the line:
-a search term or a token in a query is the caller's, an address is personal data; of the query
-only the names the route declares are written, any other item as ``_``. A probe that answers
+``RequestLog`` is the outermost middleware but SecurityHeaders: it takes the caller's request
+id (or makes one) and the trace headers, adds ``X-Request-ID`` to every answer, and writes one
+line with method, path, route template, status and duration. Query values and the client's
+address stay out of the line: a search term or a token in a query is the caller's, an address is
+personal data; of the query only the names the route declares are written, any other item as
+``_``. A probe that answers
 writes no line. An error nothing else handled is logged once with its traceback and
 answered with a 500 naming the request id. Each request but a scrape is counted for /metrics.
 

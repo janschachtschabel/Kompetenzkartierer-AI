@@ -14,7 +14,6 @@ from botocore.exceptions import BotoCoreError, ClientError  # type: ignore[impor
 
 from app.core.logging import configure_logging
 from app.core.settings import Settings
-from app.core.storage_s3 import NO_BUCKET, error_code, s3_client
 
 log = logging.getLogger("app.core.storage_bucket")  # also when run as __main__
 
@@ -22,6 +21,8 @@ log = logging.getLogger("app.core.storage_bucket")  # also when run as __main__
 def ensure_bucket(client: Any, bucket: str) -> bool:
     """Make ``bucket`` in the client's region unless it exists; True when it was made. Any refusal
     other than "no such bucket" is raised: a 403 may mean the bucket exists under another owner."""
+    from app.core.storage_s3 import NO_BUCKET, error_code  # the client has loaded boto3 already
+
     try:
         client.head_bucket(Bucket=bucket)
     except ClientError as error:
@@ -47,11 +48,13 @@ def main() -> int:
     if settings.storage_backend != "s3":
         log.info("the file system store needs no bucket")
         return 0
+    # Only now: boto3 takes half a second to import, and the file system store needs none of it
+    from app.core import storage_s3
+
     assert settings.s3_bucket is not None  # noqa: S101 - the settings refuse s3 without a bucket
     try:
-        made = ensure_bucket(s3_client(settings), settings.s3_bucket)
-    # ValueError: an address boto3 takes for no host name ("object_store", with "_")
-    except (ClientError, BotoCoreError, ValueError) as error:
+        made = ensure_bucket(storage_s3.s3_client(settings), settings.s3_bucket)
+    except (ClientError, BotoCoreError) as error:
         log.error("bucket not ready: %s", " ".join(str(error).split()))
         return 1
     log.info("bucket %s %s", settings.s3_bucket, "made" if made else "exists")

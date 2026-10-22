@@ -3,7 +3,10 @@ provide one (Compose with MinIO); T6's object store comes with its bucket, and t
 changes nothing."""
 
 import os
+import subprocess
+import sys
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 from unittest import mock
 
@@ -12,9 +15,11 @@ import pytest
 from botocore.exceptions import ClientError  # type: ignore[import-untyped]
 from botocore.stub import Stubber  # type: ignore[import-untyped]
 
-from app.core import storage_bucket
+from app.core import storage_bucket, storage_s3
 from app.core.storage_bucket import ensure_bucket
 from tests.support import FAKE_DATABASE_URL, without_settings_variables
+
+BACKEND = Path(__file__).resolve().parents[2]
 
 
 def _stubbed(region: str) -> tuple[Any, Stubber]:
@@ -111,7 +116,7 @@ def test_a_refusal_ends_with_1_and_one_line_without_a_key(
 ) -> None:
     client, stubber = _stubbed("us-east-1")
     stubber.add_client_error("head_bucket", service_error_code="403", http_status_code=403)
-    monkeypatch.setattr(storage_bucket, "s3_client", lambda settings: client)
+    monkeypatch.setattr(storage_s3, "s3_client", lambda settings: client)
 
     with stubber:
         code = _main(S3_ENVIRONMENT)
@@ -122,11 +127,10 @@ def test_a_refusal_ends_with_1_and_one_line_without_a_key(
     assert "invented-access-key" not in lines[0] and "invented-secret-key" not in lines[0]
 
 
-@pytest.mark.usefixtures("restore_logging")
-def test_an_address_boto3_cannot_use_ends_with_1_not_a_traceback(capsys: pytest.CaptureFixture[str]) -> None:
-    # a Compose service name with "_" passes the settings, but boto3 takes no such host name
-    code = _main({**S3_ENVIRONMENT, "S3_ENDPOINT_URL": "http://object_store:9000"})
+def test_the_file_system_store_does_not_wait_for_boto3_to_load() -> None:
+    # boto3 takes half a second to import; the step ends at once without S3
+    check = "import sys, app.core.storage_bucket; sys.exit(1 if 'boto3' in sys.modules else 0)"
 
-    lines = capsys.readouterr().err.strip().splitlines()
-    assert code == 1
-    assert len(lines) == 1 and "bucket not ready" in lines[0]
+    result = subprocess.run([sys.executable, "-c", check], cwd=BACKEND, check=False)  # noqa: S603 - fixed code
+
+    assert result.returncode == 0
