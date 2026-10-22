@@ -59,6 +59,23 @@ def _is_secret(annotation: object) -> bool:
     return any(_is_secret(argument) for argument in get_args(annotation))
 
 
+def _split_by_the_password(parts: dict[str, Any]) -> bool:
+    """Whether an unencoded @, / or : in the password split the URL into wrong parts.
+
+    The signs: an @ inside the host (a leading one names an abstract socket); an @ in the
+    database name of a URL that kept no user or password (one with them is a name libpq read
+    as written); a port that is no number (padding is fine, libpq strips it).
+    """
+    host = str(parts.get("host", ""))
+    database = str(parts.get("dbname", ""))
+    ports = str(parts.get("port", "")).split(",")
+    return (
+        "@" in host[1:]
+        or ("@" in database and not (parts.get("user") or parts.get("password")))
+        or not all(re.fullmatch(r"[0-9]*", port.strip()) for port in ports)
+    )
+
+
 def _environment_value(name: str, environment: Mapping[str, str] = os.environ) -> str | None:
     """``name`` in the environment in any case, as pydantic matches the plain variables."""
     if name in environment:
@@ -109,11 +126,7 @@ class Settings(BaseSettings):
             raise ValueError("is not a valid PostgreSQL connection string") from None
         # An unencoded @, / or : in the password splits the URL anew without an error: its rest
         # would be taken for the host, the port or the database name
-        if (
-            "@" in str(parts.get("host", ""))
-            or "@" in str(parts.get("dbname", ""))
-            or not re.fullmatch(r"[0-9,]*", str(parts.get("port", "")))
-        ):
+        if _split_by_the_password(parts):
             raise ValueError("does not parse as meant; write @, / and : in the password as %40, %2F and %3A")
         return value
 

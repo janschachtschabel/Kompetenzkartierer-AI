@@ -301,3 +301,32 @@ def test_a_connection_string_with_an_undecodable_byte_is_refused_without_it() ->
 
     assert "position" not in str(caught.value)
     assert "dcff" not in str(caught.value).lower()
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["postgresql://kka:12/cinvented@db/kka", "postgresql://kka:x/?sslmode=invented@db/kka"],
+    ids=["database-name-check", "port-check"],
+)
+def test_each_split_url_check_holds_alone(monkeypatch: pytest.MonkeyPatch, url: str) -> None:
+    monkeypatch.setenv("DATABASE_URL", url)
+
+    with pytest.raises(ValidationError, match="database_url"):
+        Settings()
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "postgresql://kka:pw@db/my%40db",
+        "host=db port=' 5432' dbname=kka",
+        "postgresql:///kka?host=@abstract-socket",
+        "postgresql://kka:pw@host1:5432,host2:5433/kka",
+        "postgresql://kka:pw@[::1]:5432/kka",
+    ],
+    ids=["at-in-database-name", "padded-port", "abstract-socket", "two-hosts", "ipv6"],
+)
+def test_urls_libpq_reads_as_meant_are_taken(monkeypatch: pytest.MonkeyPatch, url: str) -> None:
+    monkeypatch.setenv("DATABASE_URL", url)
+
+    assert Settings().database_url.get_secret_value() == url
