@@ -29,7 +29,7 @@ def test_every_api_operation_but_the_open_ones_asks_who_calls() -> None:
         path = context.path or ""
         if not isinstance(route, APIRoute) or not path.startswith("/api/v1"):
             continue
-        for method in sorted(route.methods):
+        for method in sorted(route.methods or ()):
             if (method, path) not in OPEN_OPERATIONS and not depends_on(route.dependant, principal):
                 unguarded.append(f"{method} {path}")
 

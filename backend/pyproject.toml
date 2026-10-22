@@ -62,5 +62,7 @@ select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
 [tool.mypy]
 python_version = "3.13"
 strict = true
-packages = ["app"]
+# the tests too: a helper they share is typed like the code it serves
+files = ["app", "tests"]
+explicit_package_bases = true
 plugins = ["pydantic.mypy"]

@@ -136,7 +136,7 @@ def test_a_mapping_detail_lands_in_the_details(client: TestClient) -> None:
     ],
 )
 def test_the_codes_are_fixed_whatever_the_python_version_calls_the_status(status: int, code: str) -> None:
-    assert json.loads(error_response(status).body)["code"] == code
+    assert json.loads(bytes(error_response(status).body))["code"] == code
 
 
 def test_an_unknown_key_in_a_body_is_not_echoed(client: TestClient) -> None:

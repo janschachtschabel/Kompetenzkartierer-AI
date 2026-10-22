@@ -50,7 +50,7 @@ def independent_level_counts() -> tuple[int, int]:
         }
     """
     [row] = list(graph.query(query, initBindings={"prefix": Literal(LEVEL)}))
-    return int(row[0]), int(row[1])  # type: ignore[index]
+    return int(row[0]), int(row[1])  # type: ignore[index, arg-type]
 
 
 def test_the_ontology_has_the_level_schemes_and_levels_the_plan_counts() -> None:
