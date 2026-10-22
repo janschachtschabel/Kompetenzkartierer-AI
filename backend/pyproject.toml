@@ -14,6 +14,10 @@ dependencies = [
     "psycopg[binary,pool]>=3.3",
     "prometheus-client>=0.26",
     "rdflib>=7.6",
+    # the language model, OpenAI-compatible; the same versions the old app runs (pydantic-ai 2.42
+    # does not know gpt-6-luna, app/llm/client.py describes it as measured)
+    "openai>=3.25",
+    "pydantic-ai-slim[openai]>=2.42",
 ]
 
 [dependency-groups]
