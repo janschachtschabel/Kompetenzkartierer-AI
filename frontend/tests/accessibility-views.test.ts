@@ -189,12 +189,20 @@ describe("accessibility of the pages", () => {
     expect(found, describeViolations(found)).toEqual([]);
   });
 
-  it("an entry's page with what the seed said, the check found and the notes tell has none", async () => {
+  it("an entry's page with its rights, its file's fetch, what the seed said, the check found and the notes tell has none", async () => {
     api.setToken("kka_token");
     setSession({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
-    vi.spyOn(api, "getSource").mockResolvedValue(detail());
+    const chain = ["https://lehrplaene.bildung-rp.de/physik", "https://lehrplaene.bildung-rp.de/dateien/physik.pdf"];
+    vi.spyOn(api, "getSource").mockResolvedValue(
+      detail({
+        license: "CC BY 4.0",
+        rights_evidence: "Lizenzhinweis auf der Portalseite",
+        acquisitions: [{ method: "url", acquired_at: "2026-10-22T11:00:00Z", chain, received_name: "physik.pdf" }],
+      }),
+    );
     const wrapper = await show("/quellen/s1");
     expect(wrapper.find("#source-notes").exists()).toBe(true);
+    expect(wrapper.find("#source-acquisitions").exists()).toBe(true);
 
     const found = await pageViolations();
 

@@ -239,10 +239,25 @@ export const messages = {
       provenance: "Herkunft",
       status: "Stand",
       rights: "Rechte",
+      license: "Lizenz",
+      rightsEvidence: "Rechtebeleg",
       sourceType: "Art der Quelle",
       country: "Land",
       address: "Adresse",
       file: "Datei",
+    },
+    // How the entry's file came into the register, each time it came (Acquisition)
+    acquisitions: {
+      heading: "Erwerb der Datei",
+      method: "Art",
+      acquiredAt: "Zeitpunkt",
+      receivedName: "Angekommen als",
+      // the address asked first, then each one it led on to
+      chain: "Adressen des Abrufs",
+    },
+    acquisitionMethod: {
+      upload: "hochgeladen",
+      url: "von einer Adresse abgerufen",
     },
     // Who publishes the copy (SourceType)
     sourceType: {

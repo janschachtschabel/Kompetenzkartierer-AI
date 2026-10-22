@@ -1,9 +1,11 @@
 <script setup lang="ts">
 /**
- * One register entry with all the register knows of it: what it is and where
- * it comes from; for a seed's candidate what the dataset or the land's research
- * said of the curriculum, what the check found at its address, and the access
- * notes of its land, school form and subject.
+ * One register entry with all the register knows of it: what it is, where it
+ * comes from and on what terms it may be used - its licence and the evidence
+ * where the register has them - and how its file came, each time it came; for a
+ * seed's candidate what the dataset or the land's research said of the
+ * curriculum, what the check found at its address, and the access notes of its
+ * land, school form and subject.
  */
 import { onMounted, ref, watch } from "vue";
 import { RouterLink, useRouter, type RouteLocationRaw } from "vue-router";
@@ -113,6 +115,14 @@ function isWebAddress(address: string | null): address is string {
           <dd>{{ word(messages.sources.status, source.register_status) }}</dd>
           <dt>{{ t("entryPage.facts.rights") }}</dt>
           <dd>{{ word(messages.sources.rights, source.rights_status) }}</dd>
+          <template v-if="source.license">
+            <dt>{{ t("entryPage.facts.license") }}</dt>
+            <dd><bdi>{{ source.license }}</bdi></dd>
+          </template>
+          <template v-if="source.rights_evidence">
+            <dt>{{ t("entryPage.facts.rightsEvidence") }}</dt>
+            <dd><bdi>{{ source.rights_evidence }}</bdi></dd>
+          </template>
           <template v-if="source.source_type">
             <dt>{{ t("entryPage.facts.sourceType") }}</dt>
             <dd>{{ word(messages.entryPage.sourceType, source.source_type) }}</dd>
@@ -137,6 +147,39 @@ function isWebAddress(address: string | null): address is string {
             <template v-else>{{ t("sources.register.noFile") }}</template>
           </dd>
         </dl>
+      </section>
+
+      <section v-if="source.acquisitions.length" class="source__section" aria-labelledby="source-acquisitions">
+        <h2 id="source-acquisitions">{{ t("entryPage.acquisitions.heading") }}</h2>
+        <ul class="acquisitions">
+          <li v-for="(acquisition, index) in source.acquisitions" :key="index" class="card acquisition">
+            <dl class="facts">
+              <dt>{{ t("entryPage.acquisitions.method") }}</dt>
+              <dd>{{ word(messages.entryPage.acquisitionMethod, acquisition.method) }}</dd>
+              <dt>{{ t("entryPage.acquisitions.acquiredAt") }}</dt>
+              <dd>
+                <time :datetime="acquisition.acquired_at">{{ dateTime.format(new Date(acquisition.acquired_at)) }}</time>
+              </dd>
+              <template v-if="acquisition.received_name">
+                <dt>{{ t("entryPage.acquisitions.receivedName") }}</dt>
+                <dd><bdi>{{ acquisition.received_name }}</bdi></dd>
+              </template>
+              <template v-if="acquisition.chain.length">
+                <dt>{{ t("entryPage.acquisitions.chain") }}</dt>
+                <dd>
+                  <ol class="acquisition__chain">
+                    <li v-for="(address, step) in acquisition.chain" :key="step">
+                      <a v-if="isWebAddress(address)" class="facts__address" :href="address" rel="noreferrer">
+                        <bdi>{{ address }}</bdi>
+                      </a>
+                      <bdi v-else class="facts__address">{{ address }}</bdi>
+                    </li>
+                  </ol>
+                </dd>
+              </template>
+            </dl>
+          </li>
+        </ul>
       </section>
 
       <section v-if="source.seed" class="source__section" aria-labelledby="source-seed">
@@ -274,7 +317,8 @@ function isWebAddress(address: string | null): address is string {
   }
 }
 
-.notes {
+.notes,
+.acquisitions {
   display: grid;
   gap: var(--space-1);
   margin: 0;
@@ -282,8 +326,14 @@ function isWebAddress(address: string | null): address is string {
   list-style: none;
 }
 
-.note {
+.note,
+.acquisition {
   margin: 0;
+}
+
+.acquisition__chain {
+  margin: 0;
+  padding-inline-start: var(--space-3);
 }
 
 .note__text {

@@ -66,6 +66,62 @@ describe("a register entry's page", () => {
     expect(described(wrapper, "source-facts", t("entryPage.facts.country"))).toBe(name);
   });
 
+  it("shows on what terms it may be used, and the evidence for it, where the register has them", async () => {
+    vi.spyOn(api, "getSource").mockResolvedValue(
+      detail({ rights_status: "offen_lizenziert", license: "CC BY 4.0", rights_evidence: "Lizenzhinweis auf der Portalseite" }),
+    );
+    const wrapper = await open();
+
+    expect(described(wrapper, "source-facts", t("entryPage.facts.license"))).toBe("CC BY 4.0");
+    expect(described(wrapper, "source-facts", t("entryPage.facts.rightsEvidence"))).toBe("Lizenzhinweis auf der Portalseite");
+  });
+
+  it("leaves out a licence and evidence the register does not have", async () => {
+    vi.spyOn(api, "getSource").mockResolvedValue(detail());
+    const wrapper = await open();
+
+    const terms = wrapper.get("[aria-labelledby=source-facts]").findAll("dt").map((dt) => dt.text());
+    expect(terms).not.toContain(t("entryPage.facts.license"));
+    expect(terms).not.toContain(t("entryPage.facts.rightsEvidence"));
+    expect(wrapper.find("#source-acquisitions").exists()).toBe(false);
+  });
+
+  it("shows how its file came: fetched, when, under which name, by which addresses in turn", async () => {
+    const chain = ["https://lehrplaene.bildung-rp.de/physik", "https://lehrplaene.bildung-rp.de/dateien/physik.pdf"];
+    vi.spyOn(api, "getSource").mockResolvedValue(
+      detail({
+        register_status: "acquired",
+        file: { name: "physik.pdf", mime: "application/pdf", size: 8, sha256: "ab" },
+        acquisitions: [{ method: "url", acquired_at: "2026-10-22T11:00:00Z", chain, received_name: "physik.pdf" }],
+      }),
+    );
+    const wrapper = await open();
+
+    const acquired = wrapper.get("[aria-labelledby=source-acquisitions]");
+    expect(acquired.get("h2").text()).toBe(t("entryPage.acquisitions.heading"));
+    expect(described(wrapper, "source-acquisitions", t("entryPage.acquisitions.method"))).toBe(t("entryPage.acquisitionMethod.url"));
+    expect(described(wrapper, "source-acquisitions", t("entryPage.acquisitions.acquiredAt"))).toContain("22.10.2026");
+    expect(described(wrapper, "source-acquisitions", t("entryPage.acquisitions.receivedName"))).toBe("physik.pdf");
+    const addresses = acquired.findAll("ol li a");
+    expect(addresses.map((link) => link.attributes("href"))).toEqual(chain);
+    expect(addresses.every((link) => link.attributes("rel") === "noreferrer")).toBe(true);
+  });
+
+  it("says an upload came as one, with no addresses to show", async () => {
+    vi.spyOn(api, "getSource").mockResolvedValue(
+      detail({
+        provenance: "upload",
+        seed: null,
+        url: null,
+        acquisitions: [{ method: "upload", acquired_at: "2026-10-22T11:00:00Z", chain: [], received_name: "plan.pdf" }],
+      }),
+    );
+    const wrapper = await open();
+
+    expect(described(wrapper, "source-acquisitions", t("entryPage.acquisitions.method"))).toBe(t("entryPage.acquisitionMethod.upload"));
+    expect(wrapper.find("[aria-labelledby=source-acquisitions] ol").exists()).toBe(false);
+  });
+
   it("shows what the seed said of the curriculum", async () => {
     vi.spyOn(api, "getSource").mockResolvedValue(detail());
     const wrapper = await open();
