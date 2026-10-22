@@ -7,6 +7,20 @@ export const messages = {
   app: {
     title: "Kompetenzkartierer",
   },
+  states: {
+    // A sentence, with its full stop: a failure's reason may follow it.
+    errorTitle: "Etwas ist schiefgelaufen.",
+    offline: "Der Server ist nicht erreichbar. Prüfe die Verbindung und versuch es noch einmal.",
+    tooManyRequests:
+      "Zu viele Anfragen in kurzer Zeit. Versuch es in {count} {count|Sekunde|Sekunden} noch einmal.",
+  },
+  // The page's own words for the refusals the server names by a code
+  // (REFUSAL_CODES in refusals.ts), each saying why and what to do next.
+  refusals: {
+    forbidden: "Dafür fehlt deinem Konto die nötige Rolle. Rollen vergibt die Administration.",
+    service_unavailable: "Die Datenbank antwortet gerade nicht. Versuch es in ein paar Sekunden noch einmal.",
+    validation_failed: "Die Eingabe ist so nicht gültig. Prüfe sie und versuch es noch einmal.",
+  },
 } as const;
 
 type Messages = typeof messages;
