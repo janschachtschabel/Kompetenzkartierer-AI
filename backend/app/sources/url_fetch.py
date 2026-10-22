@@ -96,9 +96,16 @@ def check_url(url: str) -> str:
     """``url`` with its scheme in small letters, or UrlNotAllowed unless it is http(s) with a host,
     without a user or password (the register would show them) and without spaces, control or
     format signs (a right-to-left override, a zero-width space: the address is an entry's title
-    until it has one)."""
+    until it has one), and only as httpx2 reads it, with a port from 1 to 65535: one it cannot
+    read failed the fetch job at every attempt."""
     if any(sign.isspace() or unicodedata.category(sign) in ("Cc", "Cf") for sign in url):
         raise UrlNotAllowed("the address holds spaces, control or format signs")
+    try:
+        port = httpx2.URL(url).port  # None for the scheme's own
+    except httpx2.InvalidURL:
+        raise UrlNotAllowed("the address cannot be read") from None
+    if port is not None and not 1 <= port <= 65535:
+        raise UrlNotAllowed("the address names no port there can be")
     parts = urlsplit(url)
     if parts.scheme not in ("http", "https"):
         raise UrlNotAllowed(f"only http and https addresses are fetched, not {parts.scheme[:20] or 'none'!r}")

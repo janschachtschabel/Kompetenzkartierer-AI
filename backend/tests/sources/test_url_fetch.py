@@ -68,6 +68,28 @@ def test_a_url_with_a_format_sign_is_refused(sign: int) -> None:
         check_url(f"https://lehrplaene.example/Lehrplan{chr(sign)}fdp.exe")
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://lehrplaene.example:8o80/a.pdf",
+        "https://lehrplaene.example:99999/a.pdf",
+        "https://lehrplaene.example:0/a.pdf",
+        "http://[::1/a.pdf",  # a bracket that closes no IPv6 address
+        f"http://{chr(0x2488)}.example/a.pdf",  # a host IDNA refuses
+    ],
+    ids=["port-of-letters", "port-past-65535", "port-0", "open-bracket", "host-idna-refuses"],
+)
+def test_an_address_httpx2_cannot_read_or_whose_port_is_none_is_refused(url: str) -> None:
+    # passed at the import, it made the job fail three times, or connect to no port at all
+    with pytest.raises(UrlNotAllowed):
+        check_url(url)
+
+
+@pytest.mark.parametrize("port", [1, 65535])
+def test_a_port_within_its_range_passes(port: int) -> None:
+    assert check_url(f"https://lehrplaene.example:{port}/a.pdf") == f"https://lehrplaene.example:{port}/a.pdf"
+
+
 def test_a_url_is_kept_with_its_scheme_in_small_letters() -> None:
     # the register holds http(s) only; "HTTPS://" is the same address
     assert check_url("HTTPS://Lehrplaene.example/A.pdf?x=1") == "https://Lehrplaene.example/A.pdf?x=1"

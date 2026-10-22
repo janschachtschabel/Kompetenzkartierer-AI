@@ -141,3 +141,19 @@ def test_imports_past_the_account_s_limit_wait(
     assert [answer.status_code for answer in answers] == [202, 429]
     assert answers[1].json()["code"] == "too_many_imports"
     assert 1 <= int(answers[1].headers["Retry-After"]) <= 60
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["https://lehrplaene.example:8o80/a.pdf", "https://lehrplaene.example:99999/a.pdf", "http://[::1/a.pdf"],
+    ids=["port-of-letters", "port-past-65535", "open-bracket"],
+)
+def test_an_address_httpx2_cannot_read_is_refused_at_the_import(
+    client: TestClient, migrated: str, owner: tuple[UUID, dict[str, str]], url: str
+) -> None:
+    # accepted, it became a job that failed three times without ever reaching a server
+    answer = client.post("/api/v1/sources/import", headers=owner[1], json={"url": url})
+
+    assert answer.status_code == 422
+    assert answer.json()["code"] == "url_invalid"
+    assert rows(migrated, "SELECT (SELECT count(*) FROM source), (SELECT count(*) FROM job)") == [(0, 0)]
