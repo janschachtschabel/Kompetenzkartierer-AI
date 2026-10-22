@@ -136,23 +136,51 @@ def _check(applied: dict[int, str], migrations: list[Migration]) -> None:
 
 
 def _apply(connection: psycopg.Connection, migration: Migration) -> None:
+    """Run one file and record it, in one transaction - or report that the file broke it.
+
+    The last guard, should the scanner miss a COMMIT: the transaction's id is taken before
+    the file and compared after it (COMMIT AND CHAIN or COMMIT; BEGIN leave a transaction
+    open, but another one), and a failed file is asked whether its transaction committed
+    before the failure. What a file committed itself is not recorded; a person has to look.
+    """
+    started: str | None = None
     try:
         with connection.transaction():
+            started = _transaction_id(connection)
             connection.execute(migration.sql.encode("utf-8"))  # bytes: the file as it is, several statements
-            if connection.info.transaction_status != psycopg.pq.TransactionStatus.INTRANS:
-                # the last guard, should the scanner miss a COMMIT: what came before it is
-                # committed, so nothing is recorded and a person has to look
-                raise MigrationError(
-                    f"{migration.filename} ended the runner's transaction itself; "
-                    "what it did before that is committed and needs repair by hand"
-                )
+            if _transaction_id(connection) != started:
+                raise MigrationError(_ended_itself(migration))
             connection.execute(
                 "INSERT INTO schema_migration (version, name, checksum) VALUES (%s, %s, %s)",
                 (migration.version, migration.filename, migration.checksum),
             )
     except psycopg.Error as error:
+        if started is not None and _committed(connection, started):
+            raise MigrationError(_ended_itself(migration)) from error
         raise MigrationError(f"{migration.filename} failed: {error}") from error
     log.info("applied %s", migration.filename)
+
+
+def _transaction_id(connection: psycopg.Connection) -> str:
+    row = connection.execute("SELECT pg_current_xact_id()::text").fetchone()
+    return str(row[0]) if row else ""
+
+
+def _committed(connection: psycopg.Connection, transaction_id: str) -> bool:
+    if connection.closed:
+        return False
+    try:
+        row = connection.execute("SELECT pg_xact_status(%s::xid8)", (transaction_id,)).fetchone()
+    except psycopg.Error:
+        return False
+    return bool(row and row[0] == "committed")
+
+
+def _ended_itself(migration: Migration) -> str:
+    return (
+        f"{migration.filename} ended the runner's transaction itself; "
+        "what it did before that is committed and needs repair by hand"
+    )
 
 
 async def applied_versions(connection: psycopg.AsyncConnection) -> frozenset[int]:
