@@ -403,6 +403,29 @@ def test_a_row_keeps_its_key_when_rows_before_it_change(tmp_path: Path) -> None:
     assert first.rows[0].key in {found.key for found in later.rows}
 
 
+def test_a_row_keeps_its_key_when_its_report_is_renamed(tmp_path: Path) -> None:
+    same = row("Plan", "https://a.example/")
+    first = read_research(write_research(tmp_path / "a", schule=[same]))
+    renamed = write_research(tmp_path / "b", schule=[same])
+    (renamed / "01-schule-DE-BY.md").rename(renamed / "01-schule-DE-BY-fassung-2.md")
+
+    (later,) = read_research(renamed).rows
+
+    assert later.key == first.rows[0].key
+
+
+def test_a_corrected_title_is_a_new_candidate(tmp_path: Path) -> None:
+    # the editors clear away the old one: the register keeps what it was seeded with
+    first = read_research(
+        write_research(tmp_path / "a", schule=[row("Lehrplan Phsyik", "https://a.example/")])
+    )
+    later = read_research(
+        write_research(tmp_path / "b", schule=[row("Lehrplan Physik", "https://a.example/")])
+    )
+
+    assert first.rows[0].key != later.rows[0].key
+
+
 def test_the_same_title_and_address_of_two_assignments_are_two_entries(tmp_path: Path) -> None:
     same = row("Gesetz", "https://a.example/")
     directory = write_research(tmp_path / "r", schule=[same], beruf=[same])

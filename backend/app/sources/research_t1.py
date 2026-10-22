@@ -11,7 +11,8 @@ its evidence, E from the primary document or S from a secondary source (A, an as
 none). A row whose fields a semicolon moved, or
 without a title or an address, is left out and counted, and so is each address an entry's url
 field names beyond the first ("further_address"). A second run adds nothing: a row's key
-is its report, land, title and address.
+is its assignment, land, title and address; a title the research corrects later is a new
+candidate beside the old one, which the editors clear away.
 
 The comparison then counts the addresses of the register only the comparison dataset holds,
 only the research, or both.
@@ -98,7 +99,7 @@ def read_research(directory: Path) -> Documents:
         if not reports:
             raise SeedError(f"no reports of the assignment {name} in {directory}: is ONTOLOGY_DIR right?")
         for path in reports:
-            for row, further in _rows(path, assignment, left_out):
+            for row, further in _rows(path, name, assignment, left_out):
                 if row.key in keys:
                     left_out["duplicate"] += 1
                 else:
@@ -109,9 +110,13 @@ def read_research(directory: Path) -> Documents:
     return Documents(rows, left_out)
 
 
-def _rows(path: Path, assignment: Assignment, left_out: Counter[str]) -> Iterator[tuple[SeedRow, int]]:
+def _rows(
+    path: Path, name: str, assignment: Assignment, left_out: Counter[str]
+) -> Iterator[tuple[SeedRow, int]]:
     """The candidates of a report's table T1, each with how many addresses its url field names
-    beyond the first."""
+    beyond the first. A candidate's key is its assignment, land, title and address, not its
+    report: a report renamed keeps its candidates, but a title corrected or an address changed
+    makes a new one, and the old one stays in the register for the editors to clear away."""
     reader = csv.DictReader(io.StringIO("\n".join(_t1(path))), delimiter=";")
     missing = [
         column
@@ -140,7 +145,7 @@ def _rows(path: Path, assignment: Assignment, left_out: Counter[str]) -> Iterato
             continue
         land = raw["land"].strip()
         found = SeedRow(
-            key=hashlib.sha256("\x1f".join((path.name, land, title, url)).encode()).hexdigest(),
+            key=hashlib.sha256("\x1f".join((name, land, title, url)).encode()).hexdigest(),
             title=title,
             url=url,
             country=land if _LAND.fullmatch(land) else None,
