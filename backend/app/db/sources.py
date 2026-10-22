@@ -5,12 +5,14 @@ who may see what is decided at ``source``.
 """
 
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID
 
 import psycopg
 from psycopg.types.json import Jsonb
 
 from app.core.ids import new_id
+from app.sources.register import EDUCATION_SECTORS
 
 
 @dataclass(frozen=True)
@@ -51,6 +53,45 @@ async def record_url_source(
         (source_id, owner, url, title),
     )
     return source_id
+
+
+# What PATCH /api/v1/sources/{id} may change, by column
+EDITABLE = frozenset(
+    {
+        "title",
+        "country",
+        "sector_scheme",
+        "sector_iri",
+        "license",
+        "source_type",
+        "rights_status",
+        "rights_evidence",
+    }
+)
+
+
+async def sector_by_notation(connection: psycopg.AsyncConnection, notation: str) -> str | None:
+    """The active concept of cv:EducationSectors with this notation (``school``, ``vocational``)."""
+    cursor = await connection.execute(
+        "SELECT iri FROM vocab_concept WHERE scheme_iri = %s AND notation = %s AND retired_in IS NULL",
+        (EDUCATION_SECTORS, notation),
+    )
+    found = await cursor.fetchone()
+    return None if found is None else str(found[0])
+
+
+async def update_source(
+    connection: psycopg.AsyncConnection, source_id: UUID, changes: dict[str, Any]
+) -> None:
+    """Set the given columns of the entry; only those in EDITABLE."""
+    unknown = set(changes) - EDITABLE
+    if unknown:
+        raise ValueError(f"not editable: {sorted(unknown)}")
+    assignments = ", ".join(f"{column} = %({column})s" for column in sorted(changes))
+    await connection.execute(
+        f"UPDATE source SET {assignments}, updated_at = now() WHERE id = %(id)s",  # noqa: S608 - columns of EDITABLE
+        {**changes, "id": source_id},
+    )
 
 
 @dataclass(frozen=True)

@@ -154,6 +154,9 @@ class Settings(BaseSettings):
     max_upload_mb: Annotated[int, Field(ge=1, le=500)] = 50
     # Uploads an account may make per minute; more are answered 429
     uploads_per_minute: Annotated[int, Field(ge=1)] = 20
+    # Who gets the file (and later the blocks and Markdown) of an entry of no account - seed,
+    # research: its owner's and the editors' always; beside them nobody, every account, or anyone
+    third_party_markdown: Literal["hidden", "accounts", "public"] = "hidden"
     # Imports by URL an account may start per minute; more are answered 429
     url_imports_per_minute: Annotated[int, Field(ge=1)] = 20
     # The job kinds this worker takes, comma-separated (the conversion pods: source.convert);

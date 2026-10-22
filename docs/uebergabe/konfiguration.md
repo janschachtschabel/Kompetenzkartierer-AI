@@ -36,6 +36,7 @@ ein Test schlägt an, wenn sie veraltet.
 | `JOB_SHUTDOWN_GRACE_S` | Zahl ≥ 0, ≤ 3600 | 20 | – | Dienst |
 | `MAX_UPLOAD_MB` | Zahl ≥ 1, ≤ 500 | 50 | – | Dienst |
 | `UPLOADS_PER_MINUTE` | Zahl ≥ 1 | 20 | – | Dienst |
+| `THIRD_PARTY_MARKDOWN` | `hidden` \| `accounts` \| `public` | `hidden` | – | Dienst |
 | `URL_IMPORTS_PER_MINUTE` | Zahl ≥ 1 | 20 | – | Dienst |
 | `WORKER_KINDS` | Text nach Muster `^([a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*(,[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*)*)?$` | leer | – | Dienst |
 | `ONTOLOGY_DIR` | Pfad | `ontology/` des Repositorys | – | Dienst |

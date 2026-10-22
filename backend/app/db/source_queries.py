@@ -17,7 +17,7 @@ _VISIBLE = "(s.owner_id = %(me)s OR s.owner_id IS NULL OR %(all)s)"
 _COLUMNS = """
     s.id, s.title, s.provenance, s.rights_status, s.source_type, s.register_status, s.country,
     s.sector_iri, s.url, s.license, s.rights_evidence, s.owner_id, s.created_at, s.updated_at,
-    s.file_name, f.mime, f.size_bytes, f.sha256
+    s.file_name, f.mime, f.size_bytes, f.sha256, f.storage_key
 """
 
 
@@ -82,6 +82,17 @@ async def list_sources(
     counted = await connection.execute(f"SELECT count(*) FROM source s WHERE {condition}", values)  # noqa: S608
     found = await counted.fetchone()
     return entries, int(found[0]) if found else 0
+
+
+async def ownerless_source(connection: psycopg.AsyncConnection, source_id: UUID) -> dict[str, Any] | None:
+    """The entry, if it is of no account (seed, research): what a visitor may get at most."""
+    cursor = connection.cursor(row_factory=dict_row)
+    await cursor.execute(
+        f"SELECT {_COLUMNS} FROM source s LEFT JOIN source_file f ON f.id = s.file_id"  # noqa: S608 - fixed parts
+        " WHERE s.id = %s AND s.owner_id IS NULL",
+        (source_id,),
+    )
+    return await cursor.fetchone()
 
 
 async def get_source(
