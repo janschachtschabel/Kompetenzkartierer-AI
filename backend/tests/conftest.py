@@ -1,5 +1,6 @@
 """Fixtures shared by the backend tests."""
 
+import asyncio
 import logging
 import os
 import uuid
@@ -51,3 +52,9 @@ def database_url() -> Iterator[str]:
     finally:
         with psycopg.connect(admin, autocommit=True) as connection:
             connection.execute(sql.SQL("DROP DATABASE {} WITH (FORCE)").format(sql.Identifier(name)))
+
+
+@pytest.fixture
+def anyio_backend() -> tuple[str, dict[str, object]]:
+    """Async tests run on asyncio's selector loop: psycopg's async mode refuses Windows' proactor."""
+    return "asyncio", {"loop_factory": asyncio.SelectorEventLoop}
