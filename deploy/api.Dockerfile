@@ -19,9 +19,12 @@ FROM python:3.13-slim@sha256:27b7c9d4f13ca20bb1170148f02095d50a5dfce1f7f2dabf5ca
 RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin kka
 COPY --from=build /opt/venv /opt/venv
 # The repository's layout: settings find ontology/ two folders above app/ by default; ONTOLOGY_DIR
-# says it as well, for whoever reads the environment
+# says it as well, for whoever reads the environment. Of ontology/ only what the service reads
+# (MODEL_DIRS in app/vocab/loader.py), not the research notes, examples and tools beside it.
 COPY backend/app /srv/backend/app
-COPY ontology /srv/ontology
+COPY ontology/ontologie /srv/ontology/ontologie
+COPY ontology/vokabulare /srv/ontology/vokabulare
+COPY ontology/profile /srv/ontology/profile
 RUN python -m compileall -q /srv/backend/app
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \

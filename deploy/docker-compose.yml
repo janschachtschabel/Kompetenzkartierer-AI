@@ -10,7 +10,8 @@
 # of a developer's machine may belong to another service). Secrets come as files (*_FILE), never
 # as variables: no key of the developer's environment reaches a container, as none is named here.
 # `docker compose -f deploy/docker-compose.yml down` stops it and keeps the data; `down -v` also
-# removes the volumes of this project (kka) - the database and the objects.
+# removes the volumes of this project (kka) - the database and the objects. Valkey, which the plan
+# lists as optional, joins with M1, when rate limits are shared across the API replicas.
 name: kka
 
 x-app: &app
@@ -39,8 +40,11 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     secrets: [db_password]
     volumes: [pgdata:/var/lib/postgresql/data]
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kka -d kka"]
+      # over TCP: on the first start the entrypoint makes the database on a socket-only server,
+      # and pg_isready over the socket would say healthy while port 5432 is still closed
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U kka -d kka"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -55,6 +59,7 @@ services:
       MINIO_ROOT_PASSWORD_FILE: /run/secrets/s3_secret_key
     secrets: [s3_access_key, s3_secret_key]
     volumes: [miniodata:/data]
+    restart: unless-stopped
 
   # One-off steps: each runs to its end, the services wait for that
   bucket:
@@ -86,10 +91,15 @@ services:
       dockerfile: deploy/api.Dockerfile
     environment:
       <<: *app-env
-      # the web server is the only proxy; its address is in this network
-      FORWARDED_ALLOW_IPS: 172.30.123.0/24
+      # the web server is the only proxy: its address alone, not the network, which holds the
+      # gateway every connection to the published port comes from
+      FORWARDED_ALLOW_IPS: 172.30.123.10
     deploy:
       replicas: 2
+    restart: unless-stopped
+    # the image's check, asked more often: the web server waits for the first healthy one
+    healthcheck:
+      interval: 5s
     depends_on:
       migrate: {condition: service_completed_successfully}
       bucket: {condition: service_completed_successfully}
@@ -101,6 +111,11 @@ services:
     healthcheck: {disable: true}
     deploy:
       replicas: 2
+    # it ends with an error when its sweeper breaks, for a supervisor to start it again
+    restart: unless-stopped
+    # JOB_SHUTDOWN_GRACE_S (20 s) for the job, then the hand-back; Docker's default of 10 s would
+    # kill a busy worker, and its job would wait for the lease to end
+    stop_grace_period: 30s
     depends_on:
       migrate: {condition: service_completed_successfully}
       bucket: {condition: service_completed_successfully}
@@ -115,6 +130,12 @@ services:
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     ports: ["127.0.0.1:18080:8080"]
+    # the proxy to the API, in place of the image's 404 for /api
+    volumes: ["./nginx-api.conf:/etc/nginx/kka/api.conf:ro"]
+    restart: unless-stopped
+    networks:
+      # a fixed address: the API trusts it alone to name the client (FORWARDED_ALLOW_IPS)
+      default: {ipv4_address: 172.30.123.10}
     depends_on:
       api: {condition: service_healthy}
 
@@ -134,3 +155,5 @@ networks:
     ipam:
       config:
         - subnet: 172.30.123.0/24
+          # the addresses Docker hands out, apart from the web server's fixed one below .128
+          ip_range: 172.30.123.128/25
