@@ -114,7 +114,9 @@ def test_a_drain_of_nodes_leaves_one_pod_serving(part: str) -> None:
 
 
 PRIVATE_V4 = {"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10", "169.254.0.0/16"}
-PRIVATE_V6 = {"fc00::/7", "fe80::/10", "fec0::/10"}
+# with the prefixes that carry IPv4 inside IPv6 (NAT64, 6to4, Teredo): through them an IPv4
+# address the first block refuses is reached all the same
+PRIVATE_V6 = {"fc00::/7", "fe80::/10", "fec0::/10", "64:ff9b::/96", "2002::/16", "2001::/32"}
 
 
 def test_the_worker_reaches_the_public_web_on_80_and_443_and_nothing_private() -> None:
