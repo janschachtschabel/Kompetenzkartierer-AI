@@ -38,6 +38,19 @@ KKA_TEST_DATABASE_URL=postgresql://kka:kka-test@127.0.0.1:55432/kka .venv/Script
 Ohne `KKA_TEST_DATABASE_URL` werden die Datenbank-Tests übersprungen; mit `KKA_REQUIRE_PG=1`
 (oder in CI) scheitern sie stattdessen.
 
+Frontend (Vite, Vue 3, TypeScript; Node 22.22 oder 24.15 und neuer):
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+`npm run dev` dient unter `http://localhost:5173` und reicht `/api` an das Backend auf Port
+8000 weiter. `npm test` startet die Tests, `npm run lint` ESLint, `npm run build` prüft die
+Typen und baut nach `dist/`, mit den Lizenzen der Schriften und Bibliotheken in
+`dist/licenses.txt`.
+
 ## Betrieb
 
 `python -m app.db.migrate` wendet die Migrationen an (einmal je Release, nie aus API
