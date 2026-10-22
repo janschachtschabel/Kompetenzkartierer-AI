@@ -253,6 +253,20 @@ def test_an_account_does_not_edit_an_entry_it_only_reads(client: TestClient, wor
     assert foreign.status_code == 404
 
 
+def test_an_owner_clears_the_sector_and_the_country(
+    client: TestClient, migrated: str, world: dict[str, Any]
+) -> None:
+    url = f"/api/v1/sources/{world['own']}"
+    client.patch(url, headers=world["owner"], json={"sector": "school", "country": "DE-BY"})
+
+    answer = client.patch(url, headers=world["owner"], json={"sector": None, "country": None})
+
+    assert answer.status_code == 200
+    assert (answer.json()["sector"], answer.json()["country"]) == (None, None)
+    stored = row(migrated, world["own"])
+    assert (stored["sector_scheme"], stored["sector_iri"], stored["country"]) == (None, None, None)
+
+
 @pytest.mark.parametrize(
     "change",
     [{}, {"sector": "invented"}, {"country": "Bayern"}, {"title": "Physik‮"}, {"provenance": "upload"}],
@@ -332,9 +346,11 @@ def test_the_owner_gets_its_file_as_a_download(client: TestClient, world: dict[s
     assert answer.status_code == 200
     assert answer.content == PDF
     assert answer.headers["content-type"] == "application/pdf"
-    assert answer.headers["content-disposition"].startswith("attachment;")
-    assert "filename*=UTF-8''Lehrplan%20%C3%84.pdf" in answer.headers["content-disposition"]
+    assert answer.headers["content-disposition"] == (
+        "attachment; filename=\"Lehrplan _.pdf\"; filename*=UTF-8''Lehrplan%20%C3%84.pdf"
+    )  # a plain ASCII name for old clients beside the whole one
     assert answer.headers["x-content-type-options"] == "nosniff"
+    assert answer.headers["cache-control"] == "private, no-store"
 
 
 def test_a_file_goes_out_in_pieces_with_its_length(

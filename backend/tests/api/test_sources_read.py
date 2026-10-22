@@ -114,13 +114,45 @@ def test_an_admin_sees_every_entry_as_the_editors_do(
         ({"country": "DE-BY"}, ["Kerncurriculum Physik Bayern"]),
         ({"q": "physik"}, ["Kerncurriculum Physik Bayern", "Lehrplan Physik"]),
         ({"q": "isb.bayern"}, ["Kerncurriculum Physik Bayern"]),  # the address counts too
-        ({"q": "100%_"}, []),  # a search term's wildcards are signs, not patterns
+        # a search term's wildcards are signs, not patterns: as patterns each matched entries
+        ({"q": "100%_"}, []),
+        ({"q": "%"}, []),
+        ({"q": "_"}, []),
+        ({"q": "Lehrplan_"}, []),
     ],
 )
 def test_the_register_is_filtered(
     client: TestClient, world: dict[str, Any], query: dict[str, str], expected: list[str]
 ) -> None:
     assert titles(client.get("/api/v1/sources", headers=world["mine"], params=query)) == expected
+
+
+def test_the_total_counts_what_the_filter_lets_through(client: TestClient, world: dict[str, Any]) -> None:
+    page = client.get("/api/v1/sources", headers=world["editor"], params={"q": "physik", "limit": 1}).json()
+
+    assert page["total"] == 2
+    assert len(page["entries"]) == 1
+
+
+def test_the_newest_entry_comes_first(client: TestClient, world: dict[str, Any]) -> None:
+    entries = client.get("/api/v1/sources", headers=world["editor"]).json()["entries"]
+
+    assert [entry["title"] for entry in entries] == [
+        "Kerncurriculum Physik Bayern",
+        "Lehrplan Chemie",
+        "Lehrplan Physik",
+    ]
+
+
+def test_an_entry_says_whether_it_is_the_caller_s(client: TestClient, world: dict[str, Any]) -> None:
+    entries = client.get("/api/v1/sources", headers=world["mine"]).json()["entries"]
+    own = client.get(f"/api/v1/sources/{world['own']}", headers=world["mine"]).json()
+
+    assert {entry["title"]: entry["mine"] for entry in entries} == {
+        "Kerncurriculum Physik Bayern": False,
+        "Lehrplan Physik": True,
+    }
+    assert own["mine"] is True
 
 
 def test_the_register_comes_in_pages(client: TestClient, world: dict[str, Any]) -> None:
