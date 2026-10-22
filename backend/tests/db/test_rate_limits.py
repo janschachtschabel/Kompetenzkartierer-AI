@@ -56,6 +56,24 @@ async def test_what_was_taken_a_minute_ago_counts_no_more(connection: psycopg.As
     await take(connection, who, "source.upload", per_minute=1)
 
 
+async def test_inside_a_long_transaction_the_minute_is_the_clock_s(database_url: str) -> None:
+    # now() is when the caller's transaction began: half a second into it, a take that came
+    # 59.8 s before it still counted, though 60.3 s had passed
+    migrate(database_url)
+    async with await psycopg.AsyncConnection.connect(database_url) as connection:
+        who = await account(connection)
+        await connection.execute(
+            "INSERT INTO rate_event (account_id, action, at)"
+            " VALUES (%s, 'source.upload', clock_timestamp() - interval '59.8 seconds')",
+            (who,),
+        )
+        await connection.commit()
+        async with connection.transaction():
+            await connection.execute("SELECT pg_sleep(0.5)")
+
+            await take(connection, who, "source.upload", per_minute=1)
+
+
 async def test_requests_at_the_same_moment_do_not_slip_past_together(database_url: str) -> None:
     migrate(database_url)
     async with await psycopg.AsyncConnection.connect(database_url, autocommit=True) as setup:

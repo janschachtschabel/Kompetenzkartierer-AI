@@ -2,7 +2,8 @@
 
 ``take`` counts one action or refuses it. One transaction under an advisory lock per account and
 action: requests at the same moment queue for it instead of all seeing the same count and
-slipping past together. Every time is the database's.
+slipping past together. Every time is the database's clock: clock_timestamp(), not now(), which
+is when the caller's transaction began.
 """
 
 from uuid import UUID
@@ -10,13 +11,16 @@ from uuid import UUID
 import psycopg
 
 _LOCK = "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))"
-_FORGET = "DELETE FROM rate_event WHERE account_id = %s AND action = %s AND at <= now() - interval '1 minute'"
+_FORGET = (
+    "DELETE FROM rate_event WHERE account_id = %s AND action = %s"
+    " AND at <= clock_timestamp() - interval '1 minute'"
+)
 # how many were taken in the minute, and in how many seconds the oldest of them frees its place
 _COUNT = (
-    "SELECT count(*), ceil(extract(epoch FROM min(at) + interval '1 minute' - now()))"
+    "SELECT count(*), ceil(extract(epoch FROM min(at) + interval '1 minute' - clock_timestamp()))"
     " FROM rate_event WHERE account_id = %s AND action = %s"
 )
-_NOTE = "INSERT INTO rate_event (account_id, action) VALUES (%s, %s)"
+_NOTE = "INSERT INTO rate_event (account_id, action, at) VALUES (%s, %s, clock_timestamp())"
 
 
 class RateLimited(Exception):
