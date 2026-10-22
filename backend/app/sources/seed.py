@@ -125,6 +125,10 @@ def _row(raw: dict[str, str]) -> SeedRow:
     address = (raw["URL_Original"] if raw["URL"].strip() == "lokal" else raw["URL"]).strip()
     noted = _NOTED.fullmatch(address)
     parts = (_text(raw["Land"], 80), _text(raw["Fach"], 200), _text(raw["Schulform"], 200))
+    grade_from, grade_to = _grade(raw["Jahrgang_von"]), _grade(raw["Jahrgang_bis"])
+    if grade_from is not None and grade_to is not None and grade_from > grade_to:
+        # grades the wrong way round are no grades: the CHECK would refuse the whole seed
+        grade_from = grade_to = None
     return SeedRow(
         key=raw["Beispiel_ID"].strip(),
         title=" · ".join(part for part in parts if part),
@@ -134,8 +138,8 @@ def _row(raw: dict[str, str]) -> SeedRow:
         stage=_text(raw["Bildungsstufe"], 200),
         subject_key=_text(raw["Fach_Schluessel"], 100),
         subject=_text(raw["Fach"], 200),
-        grade_from=_grade(raw["Jahrgang_von"]),
-        grade_to=_grade(raw["Jahrgang_bis"]),
+        grade_from=grade_from,
+        grade_to=grade_to,
         binding=_text(raw["Verbindlichkeit"], 500),
         source_type=_KINDS.get(raw["Quelltyp"].strip()),
         archive_url=_archive(raw["URL_Archiv"]),
@@ -208,10 +212,6 @@ async def seed_register(
 
 
 def _seed_values(id_: Any, dataset: SeedDataset, row: SeedRow) -> tuple[Any, ...]:
-    # grades the wrong way round are no grades: the CHECK would refuse the whole seed
-    grades = (row.grade_from, row.grade_to)
-    if None not in grades and grades[0] > grades[1]:  # type: ignore[operator]
-        grades = (None, None)
     return (
         id_,
         dataset,
@@ -220,7 +220,8 @@ def _seed_values(id_: Any, dataset: SeedDataset, row: SeedRow) -> tuple[Any, ...
         row.stage,
         row.subject_key,
         row.subject,
-        *grades,
+        row.grade_from,
+        row.grade_to,
         row.binding,
         row.archive_url,
         row.archived_at,

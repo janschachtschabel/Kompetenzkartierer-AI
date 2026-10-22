@@ -262,6 +262,24 @@ def test_grades_that_are_no_numbers_stay_unknown(tmp_path: Path) -> None:
     assert (row.grade_from, row.grade_to) == (None, None)
 
 
+def test_grades_the_wrong_way_round_are_no_grades(tmp_path: Path) -> None:
+    # the register's CHECK would refuse them, and with them the whole seed
+    path = write_documents(tmp_path / "d.csv", document("BY.GYM.PH", Jahrgang_von="10", Jahrgang_bis="7"))
+
+    (row,) = read_documents(path).rows
+
+    assert (row.grade_from, row.grade_to) == (None, None)
+
+
+@pytest.mark.parametrize(("grade", "kept"), [("13", 13), ("14", None), ("0", 0)])
+def test_a_grade_is_13_at_most(tmp_path: Path, grade: str, kept: int | None) -> None:
+    path = write_documents(tmp_path / "d.csv", document("BY.GYM.PH", Jahrgang_von="0", Jahrgang_bis=grade))
+
+    (row,) = read_documents(path).rows
+
+    assert row.grade_to == kept
+
+
 # --- into the register
 
 
