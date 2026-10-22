@@ -19,6 +19,8 @@ SourceType = Literal["amtlich", "archiv", "spiegel", "sekundaer"]
 RegisterStatus = Literal["unchecked", "reachable", "unreachable", "acquired"]
 # The datasets whose rows source_seed keeps beside an entry (migration 0008_source_seed)
 SeedDataset = Literal["vergleichsdatensatz-v62.493", "laenderrecherche"]
+# Where a land's research read a document's row: in the primary document (E) or a secondary source
+Evidence = Literal["E", "S"]
 # The comparison dataset and where its published files lie: data/seed/ of the repository, or
 # /srv/data/seed in the API image
 COMPARISON_DATASET: SeedDataset = "vergleichsdatensatz-v62.493"

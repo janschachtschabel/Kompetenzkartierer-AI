@@ -29,6 +29,7 @@ from app.db.source_queries import Filters, Reader, get_source, list_sources, own
 from app.db.sources import sector_by_notation, update_source
 from app.sources.register import (
     EDUCATION_SECTORS,
+    Evidence,
     Provenance,
     RegisterStatus,
     RightsStatus,
@@ -114,7 +115,7 @@ class SeedOut(BaseModel):
     binding: str | None
     archive_url: str | None
     archived_at: str | None
-    evidence: Literal["E", "S"] | None
+    evidence: Evidence | None
 
 
 class AccessNoteOut(BaseModel):

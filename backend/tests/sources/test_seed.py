@@ -327,11 +327,13 @@ def test_the_datasets_the_table_holds_are_the_code_s(migrated: str) -> None:
     assert DATASET in get_args(SeedDataset)
 
 
-def run_command(url: str, *arguments: str) -> subprocess.CompletedProcess[str]:
+def run_command(
+    url: str, *arguments: str, module: str = "app.sources.seed"
+) -> subprocess.CompletedProcess[str]:
     with without_settings_variables():
         environment = {**os.environ, "DATABASE_URL": url, "LOG_FORMAT": "text"}
     return subprocess.run(  # noqa: S603 - this interpreter and a fixed module
-        [sys.executable, "-m", "app.sources.seed", *arguments],
+        [sys.executable, "-m", module, *arguments],
         cwd=BACKEND,
         env=environment,
         capture_output=True,

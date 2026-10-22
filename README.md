@@ -87,6 +87,10 @@ ungültig.
   und ungeprüft, dazu 353 Zugangsnotizen zu gesperrten Portalen und Umwegen (je Land, Schulform
   und Fach; die Einzelansicht eines Eintrags nennt sie). Ein zweiter Lauf ändert nichts. Vorher muss das Vokabular geladen sein. In
   Compose: `docker compose -f deploy/docker-compose.yml run --rm migrate python -m app.sources.seed`.
+- Zweite Saat aus der eigenen Länderrecherche: `python -m app.sources.research_t1` legt die
+  668 Dokumente der T1-Tabellen an (`ontology/recherche-ergebnisse/`, auch im API-Image), mit
+  Bildungsbereich je Auftrag und Beleg E/S. Danach meldet der Befehl, wie viele Adressen nur
+  der Vergleichsdatensatz kennt, nur die Recherche oder beide. Ein zweiter Lauf ändert nichts.
 - Erster Admin: `python -m app.bootstrap NAME` gibt das Token einmal auf stdout aus. Interaktiv
   ausführen (`docker compose run`, `kubectl exec -it`), nicht als Job, dessen Ausgabe ein
   Log-System sammelt. Exit-Code 0: angelegt; 2: es gibt schon einen Admin, der sich anmelden

@@ -13,6 +13,7 @@ import pytest
 import yaml  # type: ignore[import-untyped]
 
 from app.api.security_headers import SECURITY_HEADERS
+from app.sources.research_t1 import RESEARCH
 from app.vocab.loader import MODEL_DIRS
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -73,12 +74,13 @@ def test_the_api_installs_only_hashed_wheels_from_the_lock_export() -> None:
 
 
 def test_the_api_carries_its_code_and_the_ontology_it_reads_nothing_else() -> None:
-    # ontology/ also holds research notes and examples (3 MB); the service reads MODEL_DIRS
+    # ontology/ also holds examples, tools and the research assignments; the service reads MODEL_DIRS,
+    # the register is seeded from the lands' research (python -m app.sources.research_t1)
     copies = re.findall(r"(?m)^COPY (?:--\S+ )*(\S+)", _final_stage(API))
     ontology = sorted(source.removeprefix("ontology/") for source in copies if source.startswith("ontology"))
 
     assert "backend/app" in copies
-    assert ontology == sorted(MODEL_DIRS)
+    assert ontology == sorted([*MODEL_DIRS, RESEARCH])
     # of data/ only the published seed the register is seeded from (python -m app.sources.seed),
     # where the command looks for it: /srv/data/seed beside /srv/backend
     assert [source for source in copies if source.startswith("data")] == ["data/seed"]
