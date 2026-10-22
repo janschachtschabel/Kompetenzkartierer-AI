@@ -6,7 +6,8 @@ Unpacked here rather than by httpx2, which inflates each chunk it receives in on
 bytes of gzip became 840 MiB before the limit was looked at (the old app's audit, G-01). Read
 raw and unpacked a piece at a time, reading never holds more than the limit and a chunk. One
 layer of gzip or deflate is unpacked - all a client of ours asks for (ACCEPT_ENCODING) -, anything
-else refused. Taken over from curriculum-extractor (services/http_body.py), async only.
+else refused; a compressed body that ends before its stream does is an error, not half a file.
+Taken over from curriculum-extractor (services/http_body.py), async only.
 """
 
 import zlib
@@ -18,6 +19,7 @@ ACCEPT_ENCODING = "gzip, deflate"
 # The most one call to zlib may return; unasked, it returns all it can make of its input at once
 _PIECE = 64 * 1024
 _GZIP = 16 + zlib.MAX_WBITS
+_GZIP_MAGIC = b"\x1f\x8b"
 _WBITS = {"gzip": _GZIP, "x-gzip": _GZIP, "deflate": zlib.MAX_WBITS}
 
 
@@ -42,7 +44,8 @@ class LimitedBody:
     """One answer's body, fed its raw chunks and unpacked within ``limit`` bytes.
 
     Raises UnsupportedEncoding when made, BodyTooLarge as soon as the unpacked bytes pass the
-    limit, and httpx2.DecodingError for a broken compressed stream.
+    limit, and httpx2.DecodingError for a broken compressed stream, or for one that ended before
+    its end (at ``result``). A gzip body of several members is unpacked whole.
     """
 
     def __init__(self, content_encoding: str | None, limit: int) -> None:
@@ -54,6 +57,10 @@ class LimitedBody:
         # "deflate" names a zlib stream, and some servers send the bare deflate data instead;
         # its first bytes tell which, as in httpx
         self._may_be_bare = encoding == "deflate"
+        # gzip may hold members one after another (RFC 1952), until something else follows one
+        self._members = encoding in ("gzip", "x-gzip")
+        self._after_end = b""  # what followed a member's end, too short yet to tell
+        self._received = False
         self._limit = limit
         self._size = 0
         self._pieces: list[bytes] = []
@@ -65,20 +72,10 @@ class LimitedBody:
         if self._inflater is None:
             self._keep(chunk)
             return
-        if self._inflater.eof:
-            # what follows the end of the stream is dropped, but counted: a server could go on
-            # sending it for ever
-            self._count(len(chunk))
-            return
+        self._received = True
         data = chunk
-        while not self._inflater.eof:
-            wanted = min(_PIECE, self._limit - self._size + 1)  # a byte past the limit tells
-            piece = self._inflate(data, wanted)
-            self._keep(piece)
-            # short of what was wanted, zlib has used up its input; a full piece may leave output
-            if len(piece) < wanted:
-                return
-            data = self._inflater.unconsumed_tail
+        while data:
+            data = self._after_member(data) if self._inflater.eof else self._unpack(data)
 
     def feed_unpacked(self, content: bytes) -> None:
         """Take a body httpx2 has read and unpacked already (a response built from bytes, as a
@@ -86,7 +83,38 @@ class LimitedBody:
         self._keep(content)
 
     def result(self) -> bytes:
+        if self._inflater is not None and self._received and not self._inflater.eof:
+            raise httpx2.DecodingError("the compressed answer ended before its end")
         return b"".join(self._pieces)
+
+    def _unpack(self, data: bytes) -> bytes:
+        """Unpack ``data`` a piece at a time; what followed the end of the stream, if it ended."""
+        assert self._inflater is not None  # noqa: S101 - only a compressed body is unpacked
+        while True:
+            wanted = min(_PIECE, self._limit - self._size + 1)  # a byte past the limit tells
+            piece = self._inflate(data, wanted)
+            self._keep(piece)
+            if self._inflater.eof:
+                return self._inflater.unused_data
+            # short of what was wanted, zlib has used up its input; a full piece may leave output
+            if len(piece) < wanted:
+                return b""
+            data = self._inflater.unconsumed_tail
+
+    def _after_member(self, data: bytes) -> bytes:
+        """What follows the end of a stream: the next gzip member, returned to be unpacked; else
+        dropped, but counted - a server could go on sending it for ever."""
+        rest, self._after_end = self._after_end + data, b""
+        if self._members:
+            if rest.startswith(_GZIP_MAGIC):
+                self._inflater = zlib.decompressobj(_GZIP)
+                return rest
+            if _GZIP_MAGIC.startswith(rest):  # one byte of it: the next chunk tells
+                self._after_end = rest
+                return b""
+            self._members = False  # no member follows what is none
+        self._count(len(rest))
+        return b""
 
     def _inflate(self, data: bytes, wanted: int) -> bytes:
         assert self._inflater is not None  # noqa: S101 - only a compressed body is inflated

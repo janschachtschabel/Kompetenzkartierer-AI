@@ -115,3 +115,45 @@ async def test_an_answer_packed_twice_or_in_an_unknown_way_is_refused(headers: H
 async def test_a_broken_compressed_answer_is_a_decoding_error() -> None:
     with pytest.raises(httpx2.DecodingError):
         await read([b"not gzip at all"], {"Content-Encoding": "gzip"}, LIMIT)
+
+
+@pytest.mark.parametrize(
+    ("encoding", "packing"), [("gzip", "gzip"), ("deflate", "deflate"), ("deflate", "raw deflate")]
+)
+async def test_a_compressed_answer_that_breaks_off_is_a_decoding_error(encoding: str, packing: str) -> None:
+    # half a file kept as the whole would be acquired as the document
+    wire = packed(TEXT, packing)
+
+    with pytest.raises(httpx2.DecodingError):
+        await read(in_chunks(wire[: len(wire) // 2], 1_000), {"Content-Encoding": encoding}, LIMIT)
+
+
+async def test_an_empty_compressed_answer_is_empty() -> None:
+    # nothing came that could break off
+    assert await read([], {"Content-Encoding": "gzip"}, LIMIT) == b""
+
+
+@pytest.mark.parametrize("size", [1_000, 1], ids=["chunks", "byte-by-byte-at-the-seam"])
+async def test_a_gzip_answer_of_several_members_is_unpacked_whole(size: int) -> None:
+    # gzip allows members one after another (RFC 1952); the first alone is part of the file
+    first, second = TEXT[:5_000], TEXT[5_000:]
+    wire = packed(first, "gzip") + packed(second, "gzip")
+    seam = len(packed(first, "gzip"))
+    chunks = [*in_chunks(wire[: seam - 2], 1_000), *in_chunks(wire[seam - 2 : seam + 2], size)]
+    chunks += in_chunks(wire[seam + 2 :], 1_000)
+
+    assert await read(chunks, {"Content-Encoding": "gzip"}, LIMIT) == TEXT
+
+
+async def test_a_later_gzip_member_is_held_to_the_limit_as_the_first() -> None:
+    raw = [packed(b"%PDF-1.7 ", "gzip"), *in_chunks(gzip_bomb())]
+
+    tracemalloc.start()
+    try:
+        with pytest.raises(BodyTooLarge):
+            await read(raw, {"Content-Encoding": "gzip"}, LIMIT)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+
+    assert peak < LIMIT + 8 * CHUNK, f"{peak / MIB:.1f} MiB held for a limit of {LIMIT / MIB:.0f} MiB"

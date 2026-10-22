@@ -432,6 +432,21 @@ async def test_a_fetch_packed_as_asked_is_unpacked(encoding: str) -> None:
 
 
 @pytest.mark.anyio
+async def test_a_fetch_whose_compressed_body_breaks_off_is_tried_again() -> None:
+    # a transfer cut short: another attempt may get the whole; none is kept as the file
+    wire = packed(PDF, "gzip")
+    cut = wire[: len(wire) // 2]
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, content=arriving([cut]), headers={"Content-Encoding": "gzip"})
+
+    with pytest.raises(DownloadError) as failed:
+        await fetch(f"http://{PUBLIC}/lp.pdf", max_bytes=len(PDF), transport=mock(handler))
+
+    assert not isinstance(failed.value, (FileTooLarge, TooManyRedirects, BadAnswer))
+
+
+@pytest.mark.anyio
 @pytest.mark.parametrize("encoding", ["gzip, gzip", "br", "zstd"])
 async def test_a_fetch_packed_twice_or_in_an_unknown_way_is_refused(encoding: str) -> None:
     asked: list[str | None] = []
