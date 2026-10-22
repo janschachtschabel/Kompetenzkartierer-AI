@@ -82,5 +82,12 @@ ein Test schlägt an, wenn sie veraltet.
 - Rechte der Rolle: `s3:ListBucket` auf den Bucket (ohne sie antwortet S3 auf ein fehlendes
   Objekt mit 403 statt 404), `s3:GetObject`, `s3:PutObject` und `s3:DeleteObject` auf seine Objekte.
 - `FORWARDED_ALLOW_IPS`: die Adressen oder Netze des Ingress, nie `*` und nie ein Netz `/0`.
+- Uploads: Das Formular eines Uploads liegt ab 1 MiB als temporäre Datei in `/tmp` (bzw.
+  `TMPDIR`), bis zu `MAX_UPLOAD_MB` + 1 MiB; danach hält die API die Datei einmal im
+  Arbeitsspeicher, solange sie sie prüft und ablegt. Je gleichzeitigem Upload braucht eine
+  API-Replica also bis zu `MAX_UPLOAD_MB` + 1 MiB in `/tmp` und rund `MAX_UPLOAD_MB` mehr
+  Arbeitsspeicher (bei 50 MB und vier Uploads zugleich rund 204 MiB `/tmp` und 200 MiB RAM).
+  Eine Grenze für gleichzeitige Uploads je Replica gibt es nicht; `UPLOADS_PER_MINUTE` zählt je
+  Konto.
 - `JOB_SHUTDOWN_GRACE_S` mindestens 5 s unter `terminationGracePeriodSeconds` des Workers.
 - `LOG_FORMAT=json` für die zentrale Logsammlung.

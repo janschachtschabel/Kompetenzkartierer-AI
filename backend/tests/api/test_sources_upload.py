@@ -4,7 +4,10 @@ The form is read only after the token is checked; a file too large, of no type a
 reads, or an archive bomb is refused with a code of its own, and leaves nothing behind.
 """
 
+import asyncio
 import hashlib
+import tempfile
+import tracemalloc
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -13,7 +16,9 @@ from uuid import UUID
 import psycopg
 import pytest
 from fastapi.testclient import TestClient
+from starlette.datastructures import UploadFile
 
+from app.api import sources
 from app.api.app import create_app
 from app.db.migrate import migrate
 from tests.sources.zip_helpers import make_zip
@@ -160,6 +165,45 @@ def test_a_file_over_the_limit_is_refused_and_nothing_is_kept(
     assert answer.status_code == 413
     assert answer.json()["code"] == "file_too_large"
     assert nothing_was_kept(migrated, store)
+
+
+def test_a_file_over_the_limit_is_refused_by_its_size_before_it_is_read(
+    migrated: str, store: Path, owner: tuple[UUID, dict[str, str]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # the form parser counted the file as it spooled it: nothing of it needs reading to refuse it
+    reads: list[int] = []
+    read = UploadFile.read
+
+    async def counted(self: UploadFile, size: int = -1) -> bytes:
+        reads.append(size)
+        return await read(self, size)
+
+    monkeypatch.setattr(UploadFile, "read", counted)
+    with client_for(migrated, store, max_upload_mb=1) as client:
+        answer = upload(client, owner[1], data=PDF + b"x" * 2**20)
+
+    assert answer.status_code == 413
+    assert answer.json()["code"] == "file_too_large"
+    assert reads == []
+
+
+def test_a_file_is_held_once_in_memory_as_it_is_read() -> None:
+    # read a MiB at a time into a bytearray and copied into bytes, it was held twice at the end
+    size = 8 * 2**20
+    with tempfile.SpooledTemporaryFile(max_size=2**20) as spooled:  # as the form parser spools it
+        spooled.write(b"x" * size)
+        spooled.seek(0)
+        upload_file = UploadFile(spooled, size=size, filename="lehrplan.pdf")  # type: ignore[arg-type]
+
+        tracemalloc.start()
+        try:
+            data = asyncio.run(sources._read(upload_file, 50 * 2**20))
+            peak = tracemalloc.get_traced_memory()[1]
+        finally:
+            tracemalloc.stop()
+
+    assert len(data) == size
+    assert peak < 1.5 * size
 
 
 def test_a_file_of_no_type_a_conversion_reads_is_refused(

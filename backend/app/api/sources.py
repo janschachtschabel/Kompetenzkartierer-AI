@@ -3,7 +3,8 @@
 
 The upload route has no body parameter on purpose: FastAPI reads such a body before it checks
 the token, so the form is read here, after it. BodyLimit (app/api/body_limit.py) bounds the body
-before anything reads it; the file is counted again as it is read, in pieces of a MiB.
+before anything reads it; the form parser spools the file in pieces and counts it, and a file
+past MAX_UPLOAD_MB is refused by that count before it is read into memory, once.
 """
 
 import asyncio
@@ -181,13 +182,18 @@ async def _within_limit(
 
 
 async def _read(upload: UploadFile, limit: int) -> bytes:
-    """The file's bytes, read a MiB at a time and refused once past ``limit``."""
-    received = bytearray()
-    while piece := await upload.read(MIB):
-        received += piece
-        if len(received) > limit:
-            raise Refusal(413, "file_too_large", f"The file is larger than {limit // MIB} MB.")
-    return bytes(received)
+    """The file's bytes, read at once and so held once. The form parser counted them as it
+    spooled them (to /tmp past a MiB): a file past ``limit`` is refused before any is read."""
+    if upload.size is not None and upload.size > limit:
+        raise _too_large(limit)
+    data = await upload.read()
+    if len(data) > limit:  # a file the parser did not count
+        raise _too_large(limit)
+    return data
+
+
+def _too_large(limit: int) -> Refusal:
+    return Refusal(413, "file_too_large", f"The file is larger than {limit // MIB} MB.")
 
 
 def _examine(name: str, data: bytes) -> tuple[DetectedType, bytes]:
