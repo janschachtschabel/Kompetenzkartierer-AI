@@ -69,7 +69,8 @@ Typen und baut nach `dist/`, mit den Lizenzen der Schriften und Bibliotheken in
 `python -m app.db.migrate` wendet die Migrationen an (einmal je Release, nie aus API
 oder Worker), `python -m app.vocab.load` lädt die Vokabulare aus `ONTOLOGY_DIR` (Standard:
 `ontology/` dieses Repositorys), `python -m app.serve` startet die API auf `PUBLIC_PORT` und
-`INTERNAL_PORT` (`/health`, `/ready`, `/metrics`), `python -m app.jobs.worker` den Worker.
+`INTERNAL_PORT` (`/health`, `/ready`, `/metrics`), `python -m app.jobs.worker` den Worker. Die
+API startet nur mit einem nutzbaren Objektspeicher (lokal etwa `STORAGE_DIR=../data/store`).
 
 Anmeldung: Es gibt nur API-Tokens (`kka_…`), die ein Admin ausgibt; die Datenbank hält ihren
 HMAC unter `API_KEY_PEPPER` (Geheimnis, mindestens 32 Zeichen, auch als Datei über
@@ -111,8 +112,8 @@ Objektspeicher: `STORAGE_BACKEND` (`fs` | `s3`, Standard `fs`). Mit `fs` braucht
 `S3_ACCESS_KEY`/`S3_SECRET_KEY` (beide oder keiner, auch als `*_FILE`; ohne sie nimmt boto3
 seine Standardkette: `AWS_*`-Variablen, Web-Identity, die Rolle der Instanz). Wohin der Dienst
 geht, sagt nur `S3_ENDPOINT_URL`: `AWS_ENDPOINT_URL` und ein `endpoint_url` in `~/.aws/config`
-übergeht er. Beim Öffnen (ab M1 beim Start von API und Worker) fragt der Speicher einmal nach dem
-Bucket und bricht ab, wenn es ihn nicht gibt.
+übergeht er. Beim Öffnen (beim Start der API, ab dem Job-Kontext auch des Workers) fragt der
+Speicher einmal nach dem Bucket und bricht ab, wenn es ihn nicht gibt.
 `python -m app.core.storage_bucket` legt den Bucket an, wo die Umgebung keinen mitbringt
 (Compose).
 

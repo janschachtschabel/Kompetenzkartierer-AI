@@ -7,11 +7,17 @@ settings class reads are hidden while it is built; those of the operating system
 """
 
 import asyncio
+import atexit
 import logging
 import os
+import shutil
+import tempfile
 import threading
-from collections.abc import Iterator
-from contextlib import contextmanager
+import time
+from collections.abc import AsyncIterator, Iterator
+from contextlib import asynccontextmanager, contextmanager
+from functools import cache
+from pathlib import Path
 from typing import Any
 from unittest import mock
 
@@ -98,11 +104,53 @@ def lock_held(url: str, statement: str, *, at_most_s: float) -> Iterator[None]:
         holder.join(10)
 
 
+@cache
+def throwaway_store() -> Path:
+    """One folder per test process for the apps whose objects no test looks at; removed at exit.
+    A test that reads or counts objects passes a store of its own (tmp_path)."""
+    folder = Path(tempfile.mkdtemp(prefix="kka-test-store-"))
+    atexit.register(shutil.rmtree, folder, ignore_errors=True)
+    return folder
+
+
 def make_settings(**values: object) -> Settings:
-    """Invented settings; the pool opens no connection until a test asks for one."""
-    defaults = {"database_url": FAKE_DATABASE_URL, "api_key_pepper": FAKE_PEPPER, "db_pool_min_size": 0}
+    """Invented settings; the pool opens no connection until a test asks for one, and the app
+    opens a file system store (the API needs one to start)."""
+    defaults = {
+        "database_url": FAKE_DATABASE_URL,
+        "api_key_pepper": FAKE_PEPPER,
+        "db_pool_min_size": 0,
+        "storage_dir": throwaway_store(),
+    }
     with without_settings_variables():
         return Settings(**{**defaults, **values})  # type: ignore[arg-type]
+
+
+@asynccontextmanager
+async def loop_watch(tick_s: float = 0.01) -> AsyncIterator[list[float]]:
+    """The longest the running loop went without turning, measured while the block runs.
+
+    A coroutine that wakes every ``tick_s`` notes the gap between its wakes; a call that holds
+    the loop (a blocking read, a sleep in a coroutine) shows as a gap that long. The list holds
+    one number, the longest gap, once the block has ended.
+    """
+    longest = [0.0]
+    done = asyncio.Event()
+
+    async def tick() -> None:
+        last = time.perf_counter()
+        while not done.is_set():
+            await asyncio.sleep(tick_s)
+            now = time.perf_counter()
+            longest[0] = max(longest[0], now - last)
+            last = now
+
+    watcher = asyncio.create_task(tick())
+    try:
+        yield longest
+    finally:
+        done.set()
+        await watcher
 
 
 def seed_token(url: str, name: str, roles: list[str]) -> str:

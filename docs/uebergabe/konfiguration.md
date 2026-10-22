@@ -57,8 +57,8 @@ ein Test schlägt an, wenn sie veraltet.
 - `HOST` setzt das Image auf `0.0.0.0`; außerhalb des Images bleibt der Dienst auf Loopback.
 - `STORAGE_BACKEND=s3` mit `S3_BUCKET`; für einen eigenen S3-Dienst dazu `S3_ENDPOINT_URL` und
   `S3_REGION`. Ein leerer oder fehlender `S3_ENDPOINT_URL` heißt AWS selbst; ohne `S3_REGION` gilt
-  `us-east-1` (leer wird es abgewiesen). Der Bucket muss bestehen: ab M1, wenn API und Worker den
-  Speicher öffnen, fragen sie ihn ab. In M0 öffnet ihn noch kein Teil des Dienstes.
+  `us-east-1` (leer wird es abgewiesen). Der Bucket muss bestehen: Die API öffnet den Speicher beim
+  Start und fragt ihn dabei ab; ohne Bucket (bzw. ohne `STORAGE_DIR`) startet sie nicht.
 - Schlüssel: `S3_ACCESS_KEY_FILE` und `S3_SECRET_KEY_FILE`, beide oder keiner. Ohne sie nimmt
   boto3 seine Standardkette (`AWS_*`-Variablen, Web-Identity/IRSA, die Rolle der Instanz). Wohin
   der Dienst geht, sagt nur `S3_ENDPOINT_URL`: `AWS_ENDPOINT_URL` und ein `endpoint_url` in

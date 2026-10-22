@@ -1,5 +1,6 @@
 """The ASGI application: routers and middlewares, built from the settings."""
 
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -11,6 +12,8 @@ from app.api.errors import ERROR_RESPONSES, install_error_handlers
 from app.api.request_log import RequestLog
 from app.api.security_headers import SecurityHeaders
 from app.core.settings import Settings
+from app.core.storage import open_storage
+from app.core.storage_async import AsyncStorage
 from app.db.migrate import load_migrations
 from app.db.pool import create_pool
 
@@ -37,6 +40,10 @@ def create_app(settings: Settings) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        # Without its store the API does not start (StorageNotConfigured names the setting): an
+        # upload failing later would cost the caller the file. Opening may ask the service
+        # (S3's head_bucket), so it runs in a thread
+        app.state.storage = AsyncStorage(await asyncio.to_thread(open_storage, settings))
         # Opened without waiting: the process starts and answers /health while the database
         # is away; /ready says so
         pool = create_pool(settings)

@@ -42,10 +42,9 @@ def stubbed_client(monkeypatch: pytest.MonkeyPatch) -> Iterator[Stubber]:
 
 
 def test_the_file_system_is_the_default() -> None:
-    settings = make_settings()
-
-    assert settings.storage_backend == "fs"
-    assert settings.storage_dir is None
+    # the class's defaults; make_settings gives every test app a throwaway folder
+    assert Settings.model_fields["storage_backend"].default == "fs"
+    assert Settings.model_fields["storage_dir"].default is None
 
 
 def test_the_file_system_store_opens_in_its_folder(tmp_path: Path) -> None:
@@ -57,7 +56,7 @@ def test_the_file_system_store_opens_in_its_folder(tmp_path: Path) -> None:
 
 def test_the_file_system_store_needs_its_folder() -> None:
     with pytest.raises(StorageNotConfigured, match="STORAGE_DIR"):
-        open_storage(make_settings())
+        open_storage(make_settings(storage_dir=None))
 
 
 def test_the_s3_store_opens_with_its_bucket(stubbed_client: Stubber) -> None:
