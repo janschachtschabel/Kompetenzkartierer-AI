@@ -53,6 +53,13 @@ aufbaut. Keine Fachlogik außer dem Vokabular-Lader.
 - Tabellen entstehen mit der Logik, die sie nutzt (Test treibt das Schema): B2 legt nur die
   Erweiterungen und `entity` an; `job` kommt mit C1, `account`, `role_grant`, `api_key`,
   `audit_log` mit C3, `llm_usage`, `conversion_usage`, `quota` mit der Abrechnung in M1.
+- Vokabularwerte: Domänentabellen verweisen auf `vocab_concept.iri`; ein zurückgezogener
+  Begriff bleibt gültiges Ziel für bestehende Zeilen, neue Schreibzugriffe prüfen in der App
+  `retired_in IS NULL`. Mit der ersten Domänentabelle (M1) kommt `UNIQUE (scheme_iri, iri)` für
+  zusammengesetzte Fremdschlüssel, die einen Wert an sein Schema binden.
+- Migrationsdateien steuern keine Transaktion selbst (der Läufer gibt jeder Datei eine);
+  Anweisungen, die keine Transaktion vertragen (`CREATE INDEX CONCURRENTLY`), gibt es als
+  Migration nicht.
 - Migrationen liegen im Paket (`app/db/migrations/NNNN_name.sql`, gelesen über
   `importlib.resources`), damit das Image sie ohne Zusatzpfad mitnimmt.
 
@@ -96,7 +103,7 @@ aufbaut. Keine Fachlogik außer dem Vokabular-Lader.
 | D2 | Compose | `deploy/docker-compose.yml` | api ×2, worker ×2, migrate, postgres, minio, valkey optional; `/ready` 200; Migration genau einmal |
 | D3 | S3-Speicher | `app/core/storage.py` | Integrationstest gegen MinIO (Marker `s3`) |
 | D4 | CI | `.github/workflows/ci.yml` | Ontologie-Prüfung, ruff, mypy, Tests mit PostgreSQL-Dienst, Image-Build; grüner Lauf erst nach Push |
-| D5 | Übergabe-Gerüst | `docs/uebergabe/anforderungen.md`, `konfiguration.md` (aus den Settings erzeugt, Test vergleicht), `deploy/helm-values.example.yaml` | Test: jede Einstellung steht in `konfiguration.md` |
+| D5 | Übergabe-Gerüst | `docs/uebergabe/anforderungen.md`, `konfiguration.md` (aus den Settings erzeugt, Test vergleicht), `deploy/helm-values.example.yaml` (Readiness-Probe `timeoutSeconds` ≥ 3: `/ready` wartet bis 2 s auf die DB; Erweiterungen `vector`, `pg_trgm`, `unaccent` legt der DBA vorher an, wenn die Migrationsrolle es nicht darf) | Test: jede Einstellung steht in `konfiguration.md` |
 
 ## Paket E: Frontend-Rahmen
 
