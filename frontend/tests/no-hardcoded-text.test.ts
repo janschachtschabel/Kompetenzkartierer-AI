@@ -14,7 +14,8 @@ import { ANCHORS, SRC, scanned, sourceFiles } from "./sources";
  *
  * The scan looks at the four places text escaped in the old app:
  *   1. bare text between tags
- *   2. a static placeholder / aria-label / title / alt
+ *   2. the HTML text attributes and the building blocks' text props (TEXT_ATTR),
+ *      and the value of an input drawn as a button
  *   3. string literals inside {{ }} and inside those same bound attributes
  *   4. string literals handed to alert() or confirm()
  *
@@ -26,9 +27,12 @@ import { ANCHORS, SRC, scanned, sourceFiles } from "./sources";
 const WORD = /\p{L}{2,}/u; // two letters in a row: a word, not "×", "%" or ":"
 
 /** The attributes whose value a user reads or a screen reader speaks - the HTML ones, and the
- * text props of the building blocks (ErrorState, EmptyState, LoadingState, ConfirmDialog). */
+ * text props of the building blocks (ErrorState, EmptyState, LoadingState, ConfirmDialog).
+ * Not `value`: on a radio or an option it is a word for a program, not a reader. */
 const TEXT_ATTR =
-  "placeholder|aria-label|title|alt|value|message|body|label|heading|reason|explanation|confirm-label|confirmLabel";
+  "placeholder|aria-label|title|alt|message|body|label|heading|reason|explanation|confirm-label|confirmLabel";
+/** The inputs whose value is their label. */
+const BUTTON_INPUT = /\stype="(?:submit|button|reset)"/;
 
 /** Blank a match out, keeping every offset and line break where it was. */
 const blank = (text: string) => text.replace(/[^\n]/g, " ");
@@ -67,10 +71,17 @@ function scan(source: string, isComponent: boolean): Hit[] {
   const template = code.replace(/<script[\s\S]*?<\/script>/g, blank).replace(/<style[\s\S]*?<\/style>/g, blank);
 
   // Rules 2 and 3 - the attributes a user reads, written out or bound.
-  for (const attr of template.matchAll(new RegExp(`\\s(:?)(?:${TEXT_ATTR})="([^"]*)"`, "g"))) {
-    const base = at(attr) + attr[0].indexOf('="') + 2;
+  const pushAttribute = (attr: RegExpMatchArray, offset: number) => {
+    const base = offset + at(attr) + attr[0].indexOf('="') + 2;
     if (attr[1] === ":") pushLiterals(attr[2], base);
     else push(base, attr[2]);
+  };
+  for (const attr of template.matchAll(new RegExp(`\\s(:?)(?:${TEXT_ATTR})="([^"]*)"`, "g"))) pushAttribute(attr, 0);
+  // an input drawn as a button shows its value, whichever attribute comes first
+  for (const input of template.matchAll(/<input\b((?:[^>"]|"[^"]*")*)>/g)) {
+    if (!BUTTON_INPUT.test(input[1])) continue;
+    const offset = at(input) + "<input".length;
+    for (const attr of input[1].matchAll(/\s(:?)value="([^"]*)"/g)) pushAttribute(attr, offset);
   }
 
   // Rule 3 - literals inside an interpolation, where a fallback likes to hide.
@@ -132,7 +143,17 @@ describe("the props that carry text", () => {
     '<template><ConfirmDialog confirm-label="Entfernen" /></template>',
     '<template><LoadingState label="Wird gesucht" /></template>',
     '<template><input type="submit" value="Senden" /></template>',
+    '<template><input value="Senden" type="button" /></template>',
+    "<template><input type=\"reset\" :value=\"'Leeren'\" /></template>",
   ])("are scanned: %s", (source) => {
     expect(scan(source, true)).toHaveLength(1);
+  });
+
+  it.each([
+    '<template><input type="radio" name="rolle" value="redaktion" /></template>',
+    '<template><select><option value="admin">{{ t("app.roles.admin") }}</option></select></template>',
+    "<template><input type=\"radio\" :value=\"'search'\" /></template>",
+  ])("leave a value a program reads alone: %s", (source) => {
+    expect(scan(source, true)).toEqual([]);
   });
 });

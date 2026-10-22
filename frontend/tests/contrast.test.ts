@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { SRC, VUE_ANCHORS, formControlRules, scanned, sourceFiles } from "./sources";
+import { COLOUR_VALUE, SRC, VUE_ANCHORS, formControlRules, scanned, sourceFiles, tokenBlocks } from "./sources";
 
 /**
  * WCAG 2.2 AA contrast, checked against the design tokens rather than against a
@@ -40,18 +40,14 @@ function declarations(block: string): Record<string, string> {
 }
 
 function themes(): { light: Record<string, string>; dark: Record<string, string> } {
-  // The first `:root {` at a line start up to its first `}`: a `}` in a comment
-  // inside a block would cut it short. In the light block the defined-token checks
-  // below then fail; the dark block inherits what it does not restate, so its
-  // completeness has a test of its own ("gives every colour a dark value").
-  const lightBlock = /^:root \{([\s\S]*?)\}/m.exec(STYLESHEET);
-  const darkBlock = /@media \(prefers-color-scheme: dark\) \{\s*:root \{([\s\S]*?)\}/.exec(STYLESHEET);
-  expect(lightBlock, "style.css has a :root token block").not.toBeNull();
-  expect(darkBlock, "style.css has a dark-mode :root block").not.toBeNull();
+  const blocks = tokenBlocks(STYLESHEET);
+  expect(blocks.light, "style.css has a :root token block").not.toBe("");
+  expect(blocks.dark, "style.css has a dark-mode :root block").not.toBe("");
 
-  const light = declarations(lightBlock?.[1] ?? "");
-  // Dark mode overrides a subset, so it inherits whatever it does not restate.
-  return { light, dark: { ...light, ...declarations(darkBlock?.[1] ?? "") } };
+  const light = declarations(blocks.light);
+  // Dark mode overrides a subset, so it inherits whatever it does not restate -
+  // which is why its completeness has a test of its own ("gives every colour a dark value").
+  return { light, dark: { ...light, ...declarations(blocks.dark) } };
 }
 
 /** [what it is, foreground token, background token, ratio SC 1.4.3/1.4.11 wants] */
@@ -145,13 +141,31 @@ it("draws no form control's outline with the decorative border token", () => {
  * only a light value - or a dark block cut short by a `}` in a comment - would
  * be checked in the dark theme with its light value, and pass.
  */
-it("gives every colour a dark value", () => {
-  const lightBlock = /^:root \{([\s\S]*?)\}/m.exec(STYLESHEET)?.[1] ?? "";
-  const darkBlock = /@media \(prefers-color-scheme: dark\) \{\s*:root \{([\s\S]*?)\}/.exec(STYLESHEET)?.[1] ?? "";
-  const light = declarations(lightBlock);
-  const dark = declarations(darkBlock);
-  const colours = Object.keys(light).filter((name) => /^#[0-9a-f]{6}$/i.test(light[name]));
-  expect(colours.length, "the colour tokens were read").toBeGreaterThan(15);
+/** The colour tokens of the light block, and those of them the dark block does not restate. */
+function darkGaps(stylesheet: string): { colours: string[]; missing: string[] } {
+  const blocks = tokenBlocks(stylesheet);
+  const light = declarations(blocks.light);
+  const dark = declarations(blocks.dark);
+  // any colour: a hex of any length, a translucent rgb(), a shadow that holds one
+  const colours = Object.keys(light).filter((name) => COLOUR_VALUE.test(light[name]));
+  return { colours, missing: colours.filter((name) => !(name in dark)) };
+}
 
-  expect(colours.filter((name) => !(name in dark))).toEqual([]);
+it("gives every colour a dark value", () => {
+  const { colours, missing } = darkGaps(STYLESHEET);
+  expect(colours.length, "the colour tokens were read").toBeGreaterThan(15);
+  expect(colours, "translucent colours count too").toEqual(expect.arrayContaining(["--scrim", "--shadow-1"]));
+
+  expect(missing).toEqual([]);
+});
+
+it("tells a colour without a dark value, written any way, and is not cut short by a comment", () => {
+  const sheet = (dark: string) =>
+    `:root {\n  --text: #1c1a17;\n  --overlay: rgb(255 255 255 / 80%);\n  --edge: #ccc;\n  --space-1: 0.5rem;\n}\n` +
+    `@media (prefers-color-scheme: dark) {\n  :root {\n${dark}\n  }\n}\n`;
+
+  expect(darkGaps(sheet("    --text: #f2f1ee;")).missing).toEqual(["--overlay", "--edge"]);
+  // round 1: a `}` in a comment at the head of the dark block hid everything after it
+  const commented = "    /* tokens {like this} */\n    --text: #f2f1ee;\n    --overlay: rgb(0 0 0 / 60%);\n    --edge: #444;";
+  expect(darkGaps(sheet(commented)).missing).toEqual([]);
 });

@@ -5,9 +5,18 @@ import { describe, expect, it } from "vitest";
 
 import { messages, t, translate } from "@/i18n/de";
 
-/** `{x} Noun` without a plural form for x: "in {count} Sekunden" reads wrong for one. */
+/** A placeholder that holds a number by its name: a word before a noun is an adjective there. */
+const COUNTING = /^(?:count|total|n|\w+Count)$/;
+
+/**
+ * `{x} Noun` without a plural form for x: "in {count} Sekunden" reads wrong for
+ * one. Any space between, a protected one too; for a count also an adjective -
+ * "{count} offene Fragen" - which after a name would be a verb ("{name} hat").
+ */
 function countsWithoutPlural(text: string): string[] {
-  return [...text.matchAll(/\{(\w+)\} (?!\{\1\|)[A-ZÄÖÜ][a-zäöüß]+/g)].map(([match]) => match);
+  return [...text.matchAll(/\{(\w+)\}[\s ]+(?!\{\1\|)((?:[a-zäöüß]+[\s ]+)?)[A-ZÄÖÜ][\wÄÖÜäöüß-]*/g)]
+    .filter(([, name, between]) => !between || COUNTING.test(name))
+    .map(([match]) => match);
 }
 
 const SAMPLE = {
@@ -103,6 +112,22 @@ describe("a count before its noun", () => {
     expect(countsWithoutPlural("Versuch es in {count} Sekunden noch einmal.")).toEqual(["{count} Sekunden"]);
     expect(countsWithoutPlural("in {count} {count|Sekunde|Sekunden}")).toEqual([]);
   });
+
+  it.each([
+    ["Noch {count} offene Fragen.", "{count} offene Fragen"],
+    ["{total} neue Lehrpläne erfasst.", "{total} neue Lehrpläne"],
+    ["in {count} Sekunden", "{count} Sekunden"],
+    ["{count} KMK-Standards", "{count} KMK-Standards"],
+  ])("finds a count without its plural however it is written: %s", (text, found) => {
+    expect(countsWithoutPlural(text)).toEqual([found]);
+  });
+
+  it.each(["{count} offene {count|Frage|Fragen}", "{name} hat Lehrpläne", "Anteil {part}"])(
+    "leaves alone what is no count without a plural: %s",
+    (text) => {
+      expect(countsWithoutPlural(text)).toEqual([]);
+    },
+  );
 
   it("has a plural form throughout the catalogue", () => {
     expect(countsWithoutPlural(JSON.stringify(messages))).toEqual([]);

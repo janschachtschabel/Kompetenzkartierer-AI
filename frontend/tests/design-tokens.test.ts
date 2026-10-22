@@ -3,7 +3,7 @@ import { basename, join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { ANCHORS, SRC, scanned, sourceFiles } from "./sources";
+import { ANCHORS, COLOUR_VALUE, SRC, scanned, sourceFiles, tokenBlocks } from "./sources";
 
 /**
  * The layer below `shared-styles.test.ts`: that one keeps a shared *rule* from
@@ -21,32 +21,36 @@ it("scans the component sources", () => {
   scanned(sourceFiles(), ...ANCHORS);
 });
 
-// A colour written as a value: hex, a colour function, a colour's name.
-const COLOUR_VALUE =
-  /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color-mix|color)\(|\b(?:white|black|red|green|blue|yellow|orange|purple|gr[ae]y|silver|maroon|navy|teal|olive|lime|aqua|fuchsia|pink|brown)\b/i;
 // A declaration of a property that carries colour - or of a custom property, whose value a
-// component would hand on - wherever it starts: a line, after `{`, after `;`.
+// component would hand on - wherever it starts: a line, after `{` or `;`, and in a bound
+// style after `,` or a quote. Shorthands that may hold a colour count too.
 const COLOUR_DECLARATION =
-  /(?:^|[{;])\s*((?:[\w-]*color|background[\w-]*|border[\w-]*|outline[\w-]*|fill|stroke|box-shadow|text-shadow|--[\w-]+)\s*:([^;{}]*))/gim;
-// In a template: a style attribute, and SVG's fill and stroke.
-const COLOUR_ATTRIBUTE = /\s(?:style|fill|stroke)="([^"]*)"/g;
+  /(?:^|[{;,'"`])\s*((?:[\w-]*color|background[\w-]*|border[\w-]*|outline[\w-]*|fill|stroke|box-shadow|text-shadow|text-decoration[\w-]*|filter|column-rule[\w-]*|--[\w-]+)\s*:([^;{}]*))/gim;
+// In a template: a style attribute, and SVG's fill and stroke - written out or bound, in either quotes.
+const COLOUR_ATTRIBUTE = /\s(?::|v-bind:)?(?:style|fill|stroke)=(["'])([\s\S]*?)\1/g;
+
+/** A value with its `url(...)` gone: a file's name - `icon-red.svg` - is no colour. */
+const colourOf = (value: string) => COLOUR_VALUE.test(value.replace(/url\([^)]*\)/gi, ""));
 
 /** The colour literals in `source`, CSS or template. */
 function colourLiterals(source: string): string[] {
   const declared = [...source.matchAll(COLOUR_DECLARATION)]
-    .filter(([, , value]) => COLOUR_VALUE.test(value))
+    .filter(([, , value]) => colourOf(value))
     .map(([, declaration]) => declaration.trim());
   const attributed = [...source.matchAll(COLOUR_ATTRIBUTE)]
-    .filter(([, value]) => COLOUR_VALUE.test(value))
+    .filter(([, , value]) => colourOf(value))
     .map(([attribute]) => attribute.trim());
   return [...declared, ...attributed];
 }
 
-/** Widths of 40rem or 640px and more: a page's, which is a token. */
+/** Where a width counts as a page's: 40rem, as many em, 640px, 80 characters. */
+const PAGE_WIDTH_FROM: Record<string, number> = { rem: 40, em: 40, px: 640, ch: 80 };
+
+/** Widths of a page - fixed or a cap, also as `min(..., 100%)` - which is a token. */
 function pageWidths(source: string): string[] {
-  return [...source.matchAll(/max-(?:width|inline-size):\s*([\d.]+)(rem|px)/g)]
-    .filter(([, value, unit]) => Number(value) >= (unit === "rem" ? 40 : 640))
-    .map(([match]) => match);
+  return [...source.matchAll(/(?:^|[\s{;])((?:max-)?(?:width|inline-size):\s*(?:min\(\s*)?([\d.]+)(rem|em|px|ch)\b)/g)]
+    .filter(([, , value, unit]) => Number(value) >= PAGE_WIDTH_FROM[unit])
+    .map(([, width]) => width);
 }
 
 describe("page width", () => {
@@ -174,8 +178,7 @@ describe("colour scheme", () => {
    * field, a checkbox's inside, a select's popup - for light in the dark theme.
    */
   it("is said in both themes, and in the page's head", () => {
-    const light = /^:root \{([\s\S]*?)\n\}/m.exec(STYLESHEET)?.[1] ?? "";
-    const dark = /@media \(prefers-color-scheme: dark\) \{\s*:root \{([\s\S]*?)\n {2}\}/.exec(STYLESHEET)?.[1] ?? "";
+    const { light, dark } = tokenBlocks(STYLESHEET);
     const head = readFileSync(join(process.cwd(), "index.html"), "utf8");
 
     expect(light).toMatch(/color-scheme:\s*light;/);
@@ -196,24 +199,56 @@ describe("a colour the token check must see", () => {
     '<p style="color:#fff">',
     '<path fill="#000" />',
     "  --ink: #123456;",
+    // every named colour, not a short list of them
+    "  color: darkred;",
+    "  background-color: whitesmoke;",
+    // a bound style is an object with keys after commas, or a string
+    `<p :style="{ fontWeight: 600, color: '#c00' }">`,
+    `<p :style="'color: #fff'">`,
+    `<path :fill="'#000'" />`,
+    `<p v-bind:style="{ backgroundColor: 'gold' }">`,
+    "<p style='color:#fff'>",
+    // shorthands that carry a colour
+    "  text-decoration: underline red;",
+    "  filter: drop-shadow(0 0 2px #000);",
+    "  column-rule: 1px solid #ccc;",
   ])("is found: %s", (source) => {
     expect(colourLiterals(source)).not.toEqual([]);
   });
 
-  it.each(["  color: var(--text);", "  border: 1px solid transparent;", "  stroke: currentColor;", "  white-space: nowrap;"])(
-    "is not invented: %s",
-    (source) => {
-      expect(colourLiterals(source)).toEqual([]);
-    },
-  );
+  it.each([
+    "  color: var(--text);",
+    "  border: 1px solid transparent;",
+    "  stroke: currentColor;",
+    "  white-space: nowrap;",
+    // a file's name is no colour
+    "  background: url(icon-red.svg);",
+    "  background-image: url(red-dot.png);",
+    `<p :style="{ width: redWidth }">`,
+  ])("is not invented: %s", (source) => {
+    expect(colourLiterals(source)).toEqual([]);
+  });
 });
 
 describe("a page width the width check must see", () => {
-  it.each(["max-width: 60rem;", "max-inline-size: 48rem;", "max-width: 1200px;"])("is found: %s", (source) => {
+  it.each([
+    "max-width: 60rem;",
+    "max-inline-size: 48rem;",
+    "max-width: 1200px;",
+    // the usual page width that shrinks on a small screen
+    "max-width: min(96rem, 100%);",
+    // fixed, it is a page's width and a reflow failure besides
+    "width: 60rem;",
+    "max-width: 50em;",
+    "max-width: 90ch;",
+  ])("is found: %s", (source) => {
     expect(pageWidths(source)).not.toEqual([]);
   });
 
-  it.each(["max-width: 36rem;", "max-inline-size: 26rem;", "max-width: 320px;"])("is a component's own: %s", (source) => {
-    expect(pageWidths(source)).toEqual([]);
-  });
+  it.each(["max-width: 36rem;", "max-inline-size: 26rem;", "max-width: 320px;", "width: 20rem;", "max-width: 65ch;"])(
+    "is a component's own: %s",
+    (source) => {
+      expect(pageWidths(source)).toEqual([]);
+    },
+  );
 });

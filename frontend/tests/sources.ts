@@ -48,6 +48,43 @@ export function cssRules(css: string): CssRule[] {
   }));
 }
 
+/** The 148 named colours of CSS Color 4, as mdn-data lists them (`named-color`). */
+const NAMED_COLOURS =
+  "aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet brown " +
+  "burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan " +
+  "darkgoldenrod darkgray darkgreen darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred " +
+  "darksalmon darkseagreen darkslateblue darkslategray darkslategrey darkturquoise darkviolet deeppink " +
+  "deepskyblue dimgray dimgrey dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold " +
+  "goldenrod gray green greenyellow grey honeydew hotpink indianred indigo ivory khaki lavender lavenderblush " +
+  "lawngreen lemonchiffon lightblue lightcoral lightcyan lightgoldenrodyellow lightgray lightgreen lightgrey " +
+  "lightpink lightsalmon lightseagreen lightskyblue lightslategray lightslategrey lightsteelblue lightyellow lime " +
+  "limegreen linen magenta maroon mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen " +
+  "mediumslateblue mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin " +
+  "navajowhite navy oldlace olive olivedrab orange orangered orchid palegoldenrod palegreen paleturquoise " +
+  "palevioletred papayawhip peachpuff peru pink plum powderblue purple rebeccapurple red rosybrown royalblue " +
+  "saddlebrown salmon sandybrown seagreen seashell sienna silver skyblue slateblue slategray slategrey snow " +
+  "springgreen steelblue tan teal thistle tomato turquoise violet wheat white whitesmoke yellow yellowgreen";
+
+/** A colour written as a value: hex, a colour function, a colour's name. */
+export const COLOUR_VALUE = new RegExp(
+  "#[0-9a-f]{3,8}\\b|\\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color-mix|color)\\(|" +
+    `(?<![\\w-])(?:${NAMED_COLOURS.split(" ").join("|")})(?![\\w-])`,
+  "i",
+);
+
+/**
+ * The light and the dark token block of style.css, comments gone first: a `}`
+ * in a comment would otherwise end a block early, and in the dark one hide
+ * every token after it - checked against its light value, and passing.
+ */
+export function tokenBlocks(stylesheet: string): { light: string; dark: string } {
+  const css = stylesheet.replace(/\/\*[\s\S]*?\*\//g, "");
+  return {
+    light: /^:root \{([\s\S]*?)\}/m.exec(css)?.[1] ?? "",
+    dark: /@media \(prefers-color-scheme: dark\) \{\s*:root \{([\s\S]*?)\}/.exec(css)?.[1] ?? "",
+  };
+}
+
 /** A class name as CSS writes it; anything else in a class attribute is no name. */
 const CLASS_NAME = /^[A-Za-z_-][\w-]*$/;
 

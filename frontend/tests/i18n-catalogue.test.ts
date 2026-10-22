@@ -69,10 +69,28 @@ describe("the message catalogue", () => {
 });
 
 
+/**
+ * Every literal that reads as a key - one of the catalogue's groups, a dot, a
+ * name - whether handed to t() or kept as data for it: a page's title in the
+ * router, a destination's label in the navigation.
+ */
+function keysNamedIn(source: string): string[] {
+  const groups = Object.keys(messages).join("|");
+  const literal = new RegExp(`["'\`]((?:${groups})\\.[\\w.]+)["'\`]`, "g");
+  return [...source.matchAll(literal)].map(([, key]) => key);
+}
+
 describe("a key the code asks for", () => {
+  it("is found as data too, and only where it reads as a key", () => {
+    expect(keysNamedIn('{ name: "start", meta: { title: "app.titles.missing" } }')).toEqual(["app.titles.missing"]);
+    expect(keysNamedIn('label: "app.nav.start", icon: "map"')).toEqual(["app.nav.start"]);
+    expect(keysNamedIn('const route = "start"; const file = "notes.start.md"')).toEqual([]);
+  });
+
   it("is in the catalogue: a typo shows the raw key on the one path nobody looked at", () => {
-    const asked = [...code.matchAll(/\bt\(\s*["'`]([\w.]+)["'`]/g)].map(([, key]) => key);
+    const asked = keysNamedIn(code);
     expect(asked.length, "the code asks for keys").toBeGreaterThan(10);
+    expect(asked, "the keys kept as data were read").toEqual(expect.arrayContaining(["app.nav.start", "app.titles.login"]));
 
     expect(asked.filter((key) => translate(messages, key) === key)).toEqual([]);
   });
