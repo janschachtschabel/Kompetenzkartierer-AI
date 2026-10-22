@@ -9,6 +9,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Annotated, Any, Literal, Self, get_args, get_origin
 
+import psycopg
+from psycopg.conninfo import conninfo_to_dict
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
@@ -94,9 +96,19 @@ class Settings(BaseSettings):
 
     @field_validator("database_url")
     @classmethod
-    def _not_blank(cls, value: SecretStr) -> SecretStr:
-        if not value.get_secret_value().strip():
+    def _usable_connection_string(cls, value: SecretStr) -> SecretStr:
+        """Parsed here, so a malformed one stops the start: libpq's own parse error quotes the
+        string, password included, and the pool would log it at every attempt."""
+        text = value.get_secret_value()
+        if not text.strip():
             raise ValueError("must not be blank")
+        try:
+            parts = conninfo_to_dict(text)
+        except psycopg.ProgrammingError:
+            raise ValueError("is not a valid PostgreSQL connection string") from None
+        if "@" in str(parts.get("host", "")):
+            # an unencoded @ in the password splits it; the rest would show as the host name
+            raise ValueError("has an @ in its host; write an @ in the password as %40")
         return value
 
     @field_validator("log_level", mode="before")

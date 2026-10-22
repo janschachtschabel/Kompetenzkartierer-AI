@@ -255,3 +255,25 @@ def test_the_ontology_folder_defaults_to_the_repository_copy(monkeypatch: pytest
     monkeypatch.setenv("DATABASE_URL", FAKE_URL)
 
     assert (Settings().ontology_dir / "ontologie" / "cur-kern.ttl").is_file()
+
+
+@pytest.mark.parametrize(
+    ("url", "secret"),
+    [
+        ("postgresql://kka:Fake%zzPass@127.0.0.1:1/kka", "Fake"),
+        ("postgresql://kka:Pw123invented@[::1/kka", "Pw123invented"),
+        ("postgresql://kka:ab@cdinvented@127.0.0.1:1/kka", "cdinvented"),
+        ("host=127.0.0.1 password='unclosed-invented", "unclosed-invented"),
+    ],
+    ids=["bad-percent", "bad-bracket", "unencoded-at", "unclosed-quote"],
+)
+def test_a_malformed_database_url_is_refused_without_quoting_it(
+    monkeypatch: pytest.MonkeyPatch, url: str, secret: str
+) -> None:
+    # libpq's own parse errors quote the string, password included
+    monkeypatch.setenv("DATABASE_URL", url)
+
+    with pytest.raises(ValidationError, match="database_url") as caught:
+        Settings()
+
+    assert secret not in str(caught.value)
