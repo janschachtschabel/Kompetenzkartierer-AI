@@ -55,7 +55,15 @@ LicenseText = Annotated[
 EvidenceText = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000), OneSpelling, ShowsWhole
 ]
-SearchText = Annotated[str, StringConstraints(max_length=200), OneSpelling, ShowsWhole]
+
+
+def _shown(value: object) -> object:
+    return visible_only(value) if isinstance(value, str) else value
+
+
+# A search term is cleaned, not refused, as a file's name is: pasted from a document it may hold
+# a no-break space or a soft hyphen. One spelling, no hidden signs, any space a plain one
+SearchText = Annotated[str, StringConstraints(max_length=200), BeforeValidator(_shown)]
 # Past this a page is no page of a register: a larger offset only makes the database count
 MAX_OFFSET = 1_000_000
 

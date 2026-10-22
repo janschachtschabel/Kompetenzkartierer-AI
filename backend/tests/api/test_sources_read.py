@@ -119,6 +119,12 @@ def test_an_admin_sees_every_entry_as_the_editors_do(
         ({"q": "%"}, []),
         ({"q": "_"}, []),
         ({"q": "Lehrplan_"}, []),
+        # a term pasted from a document is cleaned as a file name is, not refused: a NUL (it
+        # ended in a DataError, a 500) and a right-to-left override go, an unusual space is one
+        ({"q": "Physik\x00"}, ["Kerncurriculum Physik Bayern", "Lehrplan Physik"]),
+        ({"q": "Physik\N{RIGHT-TO-LEFT OVERRIDE}"}, ["Kerncurriculum Physik Bayern", "Lehrplan Physik"]),
+        ({"q": "Lehrplan\N{NO-BREAK SPACE}Physik"}, ["Lehrplan Physik"]),
+        ({"q": "Lehr\N{SOFT HYPHEN}plan\N{ZERO WIDTH JOINER} Physik"}, ["Lehrplan Physik"]),
     ],
 )
 def test_the_register_is_filtered(
@@ -172,11 +178,9 @@ def test_the_register_comes_in_pages(client: TestClient, world: dict[str, Any]) 
         {"limit": 201},
         {"offset": -1},
         {"offset": 1_000_001},  # 10**20 ended in NumericValueOutOfRange, a 500
-        {"q": "Physik\x00"},  # a NUL ended in a DataError, a 500
-        {"q": "Physik\N{RIGHT-TO-LEFT OVERRIDE}"},
         {"q": "x" * 201},
     ],
-    ids=["status", "limit-0", "limit-201", "offset-negative", "offset-huge", "q-nul", "q-bidi", "q-long"],
+    ids=["status", "limit-0", "limit-201", "offset-negative", "offset-huge", "q-long"],
 )
 def test_an_unknown_filter_value_is_refused(
     client: TestClient, world: dict[str, Any], query: dict[str, Any]
