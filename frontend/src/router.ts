@@ -6,6 +6,7 @@ import { t } from "@/i18n/de";
 import { RETURN_PARAM } from "@/returnTarget";
 import { clearSession, ensureSession, hasRole } from "@/session";
 import LoginView from "@/views/LoginView.vue";
+import SourcesView from "@/views/SourcesView.vue";
 import StartView from "@/views/StartView.vue";
 
 declare module "vue-router" {
@@ -30,6 +31,12 @@ export const router = createRouter({
     // Open: a visitor sees what PUBLIC_ACCESS opens, an account its start.
     { path: "/", name: "start", component: StartView, meta: { title: "app.titles.start" } },
     { path: "/anmelden", name: "login", component: LoginView, meta: { title: "app.titles.login" } },
+    {
+      path: "/quellen",
+      name: "sources",
+      component: SourcesView,
+      meta: { title: "app.titles.sources", requiresAuth: true },
+    },
     { path: "/:rest(.*)*", redirect: { name: "start" } },
   ],
 });

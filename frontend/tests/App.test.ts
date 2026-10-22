@@ -18,7 +18,7 @@ beforeEach(() => {
   vi.restoreAllMocks();
   api.clearToken();
   clearSession();
-  vi.spyOn(api, "getInfo").mockResolvedValue({ name: "Kompetenzkartierer-AI", version: "0.1.0", public_access: "off" });
+  vi.spyOn(api, "getInfo").mockResolvedValue({ name: "Kompetenzkartierer-AI", version: "0.1.0", public_access: "off", max_upload_mb: 50 });
 });
 
 afterEach(() => {

@@ -6,6 +6,8 @@ export interface Info {
   version: string;
   /** What a visitor without a token may do (PUBLIC_ACCESS). */
   public_access: "off" | "lookup" | "search";
+  /** The largest file an upload may be (MAX_UPLOAD_MB). */
+  max_upload_mb: number;
 }
 
 export async function getInfo(): Promise<Info> {

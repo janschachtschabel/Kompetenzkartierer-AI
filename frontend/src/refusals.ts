@@ -5,7 +5,22 @@
 // listed is one the backend sends.
 import { t, type MessageParams } from "@/i18n/de";
 
-export const REFUSAL_CODES = ["forbidden", "service_unavailable", "validation_failed"] as const;
+export const REFUSAL_CODES = [
+  "forbidden",
+  "service_unavailable",
+  "validation_failed",
+  // an upload or an import (backend app/api/sources.py), and a body cut at its limit
+  "file_too_large",
+  "content_too_large",
+  "archive_too_large",
+  "unsupported_type",
+  "file_missing",
+  "title_invalid",
+  "title_too_long",
+  "url_invalid",
+  "too_many_uploads",
+  "too_many_imports",
+] as const;
 
 export type RefusalCode = (typeof REFUSAL_CODES)[number];
 

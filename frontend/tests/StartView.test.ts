@@ -9,7 +9,7 @@ import { refusalText } from "@/refusals";
 import StartView from "@/views/StartView.vue";
 
 function info(publicAccess: api.Info["public_access"]): api.Info {
-  return { name: "Kompetenzkartierer-AI", version: "0.1.0", public_access: publicAccess };
+  return { name: "Kompetenzkartierer-AI", version: "0.1.0", public_access: publicAccess, max_upload_mb: 50 };
 }
 
 async function render() {

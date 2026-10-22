@@ -1,16 +1,28 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
 import { REFUSAL_CODES, refusalText } from "@/refusals";
 
-/** The codes the backend answers with (app/api/errors.py): its table and its own one. */
+const API = join(process.cwd(), "..", "backend", "app", "api");
+
+/**
+ * The codes the backend answers with: the table of app/api/errors.py and its own
+ * one, and every route's own - a Refusal's, and a rate limit's (sources.py).
+ */
 function backendCodes(): Set<string> {
-  const source = readFileSync(join(process.cwd(), "..", "backend", "app", "api", "errors.py"), "utf8");
+  const source = readFileSync(join(API, "errors.py"), "utf8");
   const table = /CODES = \{([\s\S]*?)\}/.exec(source)?.[1] ?? "";
   const own = [...source.matchAll(/^[A-Z_]+ = "([a-z_]+)"$/gm)].map(([, code]) => code);
-  return new Set([...[...table.matchAll(/:\s*"([a-z_]+)"/g)].map(([, code]) => code), ...own]);
+  const routes = readdirSync(API)
+    .filter((name) => name.endsWith(".py"))
+    .map((name) => readFileSync(join(API, name), "utf8"))
+    .join("\n");
+  const refused = [...routes.matchAll(/Refusal\(\s*\d{3},\s*"([a-z_]+)"/g)].map(([, code]) => code);
+  const limited = [...routes.matchAll(/_within_limit\([^)]*?"([a-z_]+)"\s*\)/g)].map(([, code]) => code);
+  const tabled = [...table.matchAll(/:\s*"([a-z_]+)"/g)].map(([, code]) => code);
+  return new Set([...tabled, ...own, ...refused, ...limited]);
 }
 
 describe("the refusals the page says in its own words", () => {
@@ -18,6 +30,9 @@ describe("the refusals the page says in its own words", () => {
     const codes = backendCodes();
     expect(codes).toContain("service_unavailable");
     expect(codes).toContain("validation_failed");
+    // a route's own, and a rate limit's
+    expect(codes).toContain("file_too_large");
+    expect(codes).toContain("too_many_imports");
   });
 
   it.each(REFUSAL_CODES)("%s is a code the backend sends", (code) => {

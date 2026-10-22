@@ -3,4 +3,6 @@
 // (eslint.config.js enforces it).
 export * from "./account";
 export * from "./http";
+export * from "./jobs";
 export * from "./service";
+export * from "./sources";

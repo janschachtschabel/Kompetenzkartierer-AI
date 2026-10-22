@@ -12,12 +12,14 @@ export const messages = {
       // Names the landmark, so a screen reader can list it and jump to it by name.
       label: "Hauptnavigation",
       start: "Start",
+      sources: "Quellen",
     },
     // What each page is called in the browser's title bar, its tabs and
     // bookmarks - and what a screen reader announces on arrival.
     titles: {
       start: "Start",
       login: "Anmeldung",
+      sources: "Quellen",
     },
     roles: {
       admin: "Administration",
@@ -51,7 +53,8 @@ export const messages = {
     welcome: "Willkommen, {name}",
     intro:
       "Hier entsteht die Wissenslandkarte der Lehrpläne: erfassen, an Kompetenz- und " +
-      "Niveauschemata andocken, vernetzen. Die ersten Werkzeuge folgen.",
+      "Niveauschemata andocken, vernetzen. Unter „Quellen“ legst du die Lehrplandokumente an; " +
+      "weitere Werkzeuge folgen.",
     about: "Der Kompetenzkartierer erfasst Lehrpläne aller Bildungsbereiche und verbindet sie zu einer Wissenslandkarte.",
     // What PUBLIC_ACCESS opens to a visitor without an account.
     visitor: {
@@ -66,6 +69,125 @@ export const messages = {
     accountRejected:
       "Das gespeicherte Zugangstoken gilt nicht mehr. " +
       "Melde dich ab und mit einem gültigen Zugangstoken neu an.",
+  },
+  // The source register: the curriculum documents and what may be done with them.
+  sources: {
+    heading: "Quellen",
+    intro:
+      "Das Register der Lehrplandokumente: was hochgeladen oder von einer Adresse abgerufen " +
+      "wurde, wie weit es ist und unter welchen Rechten es steht.",
+    addHeading: "Dokument hinzufügen",
+    upload: {
+      heading: "Datei hochladen",
+      fileLabel: "Datei",
+      fileHint: "PDF, Word (DOCX), RTF, HTML, Markdown, Text oder Turtle, bis {limit} MB.",
+      // where the limit did not load: the server still says it on a refusal
+      fileHintNoLimit: "PDF, Word (DOCX), RTF, HTML, Markdown, Text oder Turtle.",
+      titleLabel: "Titel (freiwillig)",
+      titleHint: "Ohne Titel trägt der Eintrag den Namen der Datei.",
+      submit: "Hochladen",
+      busy: "Wird hochgeladen …",
+      done: "„{title}“ steht jetzt im Register.",
+      failed: "Die Datei wurde nicht hochgeladen.",
+      errors: {
+        missing: "Wähle eine Datei aus.",
+        tooLarge: "Die Datei ist größer als {limit} MB. Verkleinere sie oder teile sie auf.",
+      },
+    },
+    import: {
+      heading: "Von einer Adresse abrufen",
+      urlLabel: "Adresse (URL)",
+      urlHint: "Der Server lädt das Dokument selbst herunter; das dauert meist nur einige Sekunden.",
+      titleLabel: "Titel (freiwillig)",
+      titleHint: "Ohne Titel trägt der Eintrag den Namen der Datei unter der Adresse.",
+      submit: "Abrufen",
+      busy: "Wird gestartet …",
+      started: "Der Abruf von „{title}“ läuft.",
+      failed: "Der Abruf wurde nicht gestartet.",
+      errors: {
+        missing: "Gib eine Adresse ein.",
+        scheme: "Das ist keine Webadresse. Eine Webadresse beginnt mit https:// oder http://.",
+      },
+    },
+    jobs: {
+      heading: "Abrufe",
+    },
+    register: {
+      heading: "Register",
+      columns: {
+        title: "Titel",
+        provenance: "Herkunft",
+        status: "Stand",
+        rights: "Rechte",
+        added: "Hinzugefügt",
+      },
+      // Names the scroll box a narrow screen gives the table, for whoever reaches it by keyboard.
+      scrollLabel: "Register, seitlich verschiebbar",
+      noFile: "noch keine Datei",
+      mine: "von dir",
+      emptyTitle: "Noch keine Quellen",
+      emptyBody: "Lade oben eine Datei hoch oder gib eine Adresse an. Der Eintrag erscheint dann hier.",
+      loadFailed: "Das Register wurde nicht geladen.",
+      shown: "{shown} von {total} {total|Eintrag|Einträgen}",
+      more: "Weitere laden",
+      moreFailed: "Weitere Einträge wurden nicht geladen.",
+      reloadFailed: "Das Register wurde nicht neu geladen; es zeigt den Stand von vorher.",
+    },
+    // Where an entry comes from (backend app/sources/register.py, Provenance). Read
+    // as messages.sources.provenance[value], not by t(): a value holds a dot.
+    provenance: {
+      upload: "Upload",
+      url: "Adresse",
+      "vergleichsdatensatz-v62.493": "Vergleichsdatensatz",
+      laenderrecherche: "Länderrecherche",
+      ttl: "Turtle-Import",
+      recherche: "Recherche",
+      redaktion: "Redaktion",
+    },
+    // How far the register has come with it (RegisterStatus)
+    status: {
+      unchecked: "ungeprüft",
+      reachable: "erreichbar, Datei unbrauchbar",
+      unreachable: "nicht erreichbar",
+      acquired: "Datei liegt vor",
+    },
+    // On what terms it may be used (RightsStatus)
+    rights: {
+      amtlich: "amtliches Werk",
+      offen_lizenziert: "offen lizenziert",
+      geschuetzt: "geschützt",
+      unklar: "ungeklärt",
+    },
+  },
+  // A job the page follows (jobWatch.ts), and why one failed (jobMessages.ts).
+  jobs: {
+    status: {
+      queued: "Wartet",
+      running: "Läuft",
+      done: "Fertig",
+      failed: "Fehlgeschlagen",
+      cancelled: "Abgebrochen",
+    },
+    // what a screen reader hears on each change
+    announce: "{label}: {status}",
+    trouble: "Der Server antwortet gerade nicht; der Stand wird weiter abgefragt.",
+    gone: "Dieser Auftrag ist nicht mehr zu finden.",
+    failedUnknown: "Der Auftrag ist fehlgeschlagen.",
+    failures: {
+      url_not_allowed: "Die Adresse führt in ein internes Netz oder ist sonst gesperrt; der Server ruft sie nicht ab.",
+      download_refused:
+        "Der fremde Server hat die Datei verweigert, etwa weil es sie dort nicht gibt. Prüfe die Adresse im Browser.",
+      unsupported_type:
+        "Unter der Adresse liegt keine Datei, die der Kompetenzkartierer lesen kann. Oft ist es eine Webseite, " +
+        "die erst zum Dokument verlinkt: Nimm dann die Adresse des Dokuments selbst.",
+      archive_too_large: "Die Datei unter der Adresse ist ein Archiv, das ausgepackt zu groß wird.",
+      source_missing: "Der Registereintrag hat keine Adresse, die abgerufen werden könnte.",
+      handler_error:
+        "Der Abruf ist mehrmals gescheitert, etwa weil der fremde Server nicht antwortete. " +
+        "Versuch es später noch einmal.",
+      result_not_storable: "Das Ergebnis ließ sich nicht speichern. Melde das bitte der Administration.",
+      lease_lost: "Der Auftrag wurde unterbrochen, weil sein Dienst ausfiel. Versuch es noch einmal.",
+    },
   },
   dialog: {
     // The confirm dialog's default: it asks before something is removed.
@@ -88,6 +210,21 @@ export const messages = {
     // the backend's code for every 503, not only the database's
     service_unavailable: "Der Dienst antwortet gerade nicht. Versuch es in ein paar Sekunden noch einmal.",
     validation_failed: "Die Eingabe ist so nicht gültig. Prüfe sie und versuch es noch einmal.",
+    file_too_large: "Die Datei ist größer, als ein Upload sein darf. Verkleinere sie oder teile sie auf.",
+    // a body cut at its limit before any route read it
+    content_too_large: "Das Gesendete ist größer, als der Server annimmt.",
+    archive_too_large: "Die Datei ist ein Archiv, das ausgepackt zu groß wird. Ein gewöhnliches Word-Dokument ist das nicht.",
+    unsupported_type:
+      "Diese Art Datei kann der Kompetenzkartierer nicht lesen. Möglich sind PDF, Word (DOCX), RTF, HTML, " +
+      "Markdown, Text und Turtle.",
+    file_missing: "Es kam keine Datei an. Wähle eine Datei aus und versuch es noch einmal.",
+    title_invalid: "Der Titel enthält Steuer- oder unsichtbare Zeichen. Tippe ihn neu, statt ihn einzufügen.",
+    title_too_long: "Der Titel ist zu lang. Kürze ihn auf höchstens 500 Zeichen.",
+    url_invalid:
+      "Diese Adresse ruft der Server nicht ab. Eine Webadresse beginnt mit https:// oder http:// " +
+      "und enthält keine Zugangsdaten.",
+    too_many_uploads: "Du hast gerade viele Dateien hochgeladen. Warte eine Minute und versuch es dann noch einmal.",
+    too_many_imports: "Du hast gerade viele Adressen abgerufen. Warte eine Minute und versuch es dann noch einmal.",
   },
 } as const;
 

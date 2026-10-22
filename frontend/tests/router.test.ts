@@ -67,6 +67,13 @@ describe("the guards", () => {
     expect(router.currentRoute.value.query[RETURN_PARAM]).toBe("/geschuetzt?x=1");
   });
 
+  it("keep the register for accounts: a visitor goes to the sign-in, with the way back", async () => {
+    await router.push("/quellen");
+
+    expect(router.currentRoute.value.name).toBe("login");
+    expect(router.currentRoute.value.query[RETURN_PARAM]).toBe("/quellen");
+  });
+
   it("keep an account without the role off a page, to the start", async () => {
     // hiding an entry is convenience; the server refuses the route's requests anyway
     router.addRoute({ path: "/nur-admin", name: "nur-admin", component: BLANK, meta: { requiresRole: "admin" } });

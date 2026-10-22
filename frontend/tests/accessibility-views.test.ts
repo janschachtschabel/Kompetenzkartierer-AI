@@ -16,6 +16,36 @@ import { describeViolations, pageViolations } from "./axe";
 
 let shown: VueWrapper | null = null;
 
+const ENTRY: api.SourceEntry = {
+  id: "s1",
+  title: "Lehrplan Physik",
+  provenance: "url",
+  rights_status: "unklar",
+  source_type: null,
+  register_status: "acquired",
+  country: "DE-BY",
+  sector: null,
+  url: "https://example.org/lehrplan.pdf",
+  file: { name: "lehrplan.pdf", mime: "application/pdf", size: 8, sha256: "ab" },
+  mine: true,
+  created_at: "2026-10-22T10:00:00Z",
+  updated_at: "2026-10-22T10:00:00Z",
+};
+
+const FAILED_JOB: api.Job = {
+  id: "j1",
+  kind: "source.fetch",
+  status: "failed",
+  progress: null,
+  error_code: "download_refused",
+  cancel_requested: false,
+  attempts: 1,
+  max_attempts: 3,
+  created_at: "2026-10-22T10:00:00Z",
+  started_at: null,
+  finished_at: null,
+};
+
 async function show(path: string): Promise<VueWrapper> {
   document.body.innerHTML = '<div id="app"></div>';
   await router.push(path);
@@ -30,7 +60,7 @@ beforeEach(() => {
   clearSession();
   // as index.html says it
   document.documentElement.lang = "de";
-  vi.spyOn(api, "getInfo").mockResolvedValue({ name: "Kompetenzkartierer-AI", version: "0.1.0", public_access: "lookup" });
+  vi.spyOn(api, "getInfo").mockResolvedValue({ name: "Kompetenzkartierer-AI", version: "0.1.0", public_access: "lookup", max_upload_mb: 50 });
 });
 
 afterEach(() => {
@@ -74,6 +104,52 @@ describe("accessibility of the pages", () => {
     api.setToken("kka_token");
     vi.spyOn(api, "getMe").mockRejectedValue(new api.ApiError("server", 503, "service_unavailable"));
     const wrapper = await show("/");
+    expect(wrapper.find("[role=alert]").exists()).toBe(true);
+
+    const found = await pageViolations();
+
+    expect(found, describeViolations(found)).toEqual([]);
+  });
+
+  it("the register with its entries and a fetch under way has none", async () => {
+    api.setToken("kka_token");
+    setSession({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
+    vi.spyOn(api, "listSources").mockResolvedValue({ entries: [ENTRY], total: 2, limit: 50, offset: 0 });
+    vi.spyOn(api, "importSource").mockResolvedValue({ source: { ...ENTRY, file: null }, job_id: "j1" });
+    vi.spyOn(api, "getJob").mockResolvedValue(FAILED_JOB);
+    const wrapper = await show("/quellen");
+    await wrapper.get("#import-url").setValue("https://example.org/lehrplan.pdf");
+    await wrapper.get("#import-url").trigger("submit");
+    await flushPromises();
+    expect(wrapper.find("tbody tr").exists()).toBe(true);
+    expect(wrapper.text()).toContain("Lehrplan Physik");
+
+    const found = await pageViolations();
+
+    expect(found, describeViolations(found)).toEqual([]);
+  });
+
+  it("the register with refusals in both forms and no entries has none", async () => {
+    api.setToken("kka_token");
+    setSession({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
+    vi.spyOn(api, "listSources").mockResolvedValue({ entries: [], total: 0, limit: 50, offset: 0 });
+    const wrapper = await show("/quellen");
+    await wrapper.get("#upload-file").trigger("submit");
+    await wrapper.get("#import-url").trigger("submit");
+    await flushPromises();
+    expect(wrapper.find("#upload-error").exists()).toBe(true);
+    expect(wrapper.find("#import-error").exists()).toBe(true);
+
+    const found = await pageViolations();
+
+    expect(found, describeViolations(found)).toEqual([]);
+  });
+
+  it("the register that did not load has none", async () => {
+    api.setToken("kka_token");
+    setSession({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
+    vi.spyOn(api, "listSources").mockRejectedValue(new api.ApiError("server", 503, "service_unavailable"));
+    const wrapper = await show("/quellen");
     expect(wrapper.find("[role=alert]").exists()).toBe(true);
 
     const found = await pageViolations();

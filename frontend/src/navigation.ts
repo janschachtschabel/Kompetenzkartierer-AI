@@ -13,7 +13,10 @@ export interface Destination {
   roles?: readonly Role[];
 }
 
-export const DESTINATIONS: readonly Destination[] = [{ name: "start", label: "app.nav.start", icon: "map" }];
+export const DESTINATIONS: readonly Destination[] = [
+  { name: "start", label: "app.nav.start", icon: "map" },
+  { name: "sources", label: "app.nav.sources", icon: "document" },
+];
 
 export function visibleDestinations(
   roles: readonly Role[],
