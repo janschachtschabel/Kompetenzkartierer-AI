@@ -16,6 +16,8 @@ RightsStatus = Literal["amtlich", "offen_lizenziert", "geschuetzt", "unklar"]
 SourceType = Literal["amtlich", "archiv", "spiegel", "sekundaer"]
 # How far the register has come with the entry: acquired means its file is stored
 RegisterStatus = Literal["unchecked", "reachable", "unreachable", "acquired"]
+# The datasets whose rows source_seed keeps beside an entry (migration 0008_source_seed)
+SeedDataset = Literal["vergleichsdatensatz-v62.493", "laenderrecherche"]
 
 # The concept scheme the sector of a source belongs to (cur-vokabular.ttl)
 EDUCATION_SECTORS = "https://w3id.org/wlo/curriculum/vocab#EducationSectors"
