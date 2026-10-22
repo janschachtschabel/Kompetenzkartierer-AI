@@ -360,17 +360,29 @@ describe("the register page after a reading that failed", () => {
     expect(wrapper.get("[data-test=filter-status]").text()).toBe(t("sources.register.shown", { shown: 2, total: 2 }));
   });
 
-  it("says nothing of its own when the first reading is tried again: the table comes for the first time", async () => {
+  it.each([
+    ["tried again", false],
+    ["read with a filter", true],
+  ])("says how many it shows once the first reading failed and is %s: the table takes the alert's place", async (_how, filtered) => {
     vi.spyOn(api, "listSources")
       .mockRejectedValueOnce(new ApiError("network", 0))
       .mockResolvedValue(page([entry("a", "Lehrplan Physik"), entry("b", "Lehrplan Chemie")], 2));
     const wrapper = mount(SourcesView, { global: { plugins: [router] } });
     await flushPromises();
 
-    await wrapper.get("[role=alert] button").trigger("click");
+    if (filtered) await wrapper.get("input[type=checkbox]").setValue(true);
+    else await wrapper.get("[role=alert] button").trigger("click");
     await flushPromises();
 
     expect(wrapper.findAll("tbody tr")).toHaveLength(2);
+    expect(wrapper.get("[data-test=filter-status]").text()).toBe(t("sources.register.shown", { shown: 2, total: 2 }));
+  });
+
+  it("says nothing of its own on a first reading that came: the table's count is in the table", async () => {
+    vi.spyOn(api, "listSources").mockResolvedValue(page([entry("a", "Lehrplan Physik")]));
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+    await flushPromises();
+
     expect(wrapper.get("[data-test=filter-status]").text()).toBe("");
   });
 });

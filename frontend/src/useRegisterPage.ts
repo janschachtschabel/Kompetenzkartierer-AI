@@ -42,7 +42,7 @@ export function useRegisterPage(filters: Readonly<Ref<RegisterFilters>>, { headi
   // Each first page read counts: a further page asked for before it belongs to an older list.
   let generation = 0;
   let focusRequest: FocusRequest | null = null;
-  // A failed reading took a shown page away, the table with it: the next page read brings it back.
+  // A failed reading put its alert in the table's place: the next page read brings the table back.
   let dropped = false;
 
   // After the render, in the same flush - before the focus rescue moves a focus the render took to
@@ -111,8 +111,9 @@ export function useRegisterPage(filters: Readonly<Ref<RegisterFilters>>, { headi
       if (kept) {
         fallShort(failureNotice(error, t("sources.register.reloadFailed")), () => void load({ focus: heading }));
       } else {
-        // not where the first reading failed: the table that comes then comes for the first time
-        if (page.value) dropped = true;
+        // the alert takes the table's place, a page shown or none yet: whatever brings the table
+        // back - a retry, another filter - says its count
+        dropped = true;
         page.value = null;
         partial.value = null; // a notice of the page that went, and its retry, went with it
         filterNotice.value = "";
