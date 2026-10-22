@@ -11,7 +11,9 @@ import re
 from itertools import pairwise
 
 CONTROL = frozenset({"begin", "commit", "rollback", "end", "start", "savepoint", "release", "abort"})
-_DOLLAR_TAG = re.compile(r"\$(?:[^\W\d]\w*)?\$")
+# As PostgreSQL's lexer has them: every non-ASCII sign may stand in an identifier or a tag
+_DOLLAR_TAG = re.compile(r"\$(?:[A-Za-z_\x80-\U0010ffff][A-Za-z0-9_\x80-\U0010ffff]*)?\$")
+_LINE_END = re.compile(r"[\r\n]")  # a lone carriage return ends a -- comment too
 
 
 def transaction_control(sql: str) -> str | None:
@@ -26,7 +28,7 @@ def transaction_control(sql: str) -> str | None:
             continue
         if words[0] in CONTROL:
             return " ".join(words[:2])
-        in_atomic_body = ("begin", "atomic") in pairwise(words)
+        in_atomic_body = _opens_atomic_body(words)
     return None
 
 
@@ -37,8 +39,8 @@ def visible(sql: str) -> str:
     while index < size:
         start = index
         if sql.startswith("--", index):
-            end = sql.find("\n", index)
-            index = size if end < 0 else end
+            line_end = _LINE_END.search(sql, index)
+            index = size if line_end is None else line_end.start()
         elif sql.startswith("/*", index):
             index = _after_block_comment(sql, index)
         elif sql[index] in "eE" and sql.startswith("'", index + 1) and not _inside_word(sql, index):
@@ -56,8 +58,20 @@ def visible(sql: str) -> str:
     return "".join(out)
 
 
+def _opens_atomic_body(words: list[str]) -> bool:
+    """A statement with BEGIN ATOMIC whose body goes on past it; ``BEGIN ATOMIC END`` is empty."""
+    pairs = list(pairwise(words))
+    if ("begin", "atomic") not in pairs:
+        return False
+    after = pairs.index(("begin", "atomic")) + 2
+    return words[after : after + 1] != ["end"]
+
+
 def _inside_word(sql: str, index: int) -> bool:
-    return index > 0 and (sql[index - 1].isalnum() or sql[index - 1] in "_$")
+    if index == 0:
+        return False
+    before = sql[index - 1]
+    return not before.isascii() or before.isalnum() or before in "_$"
 
 
 def _after_block_comment(sql: str, index: int) -> int:
