@@ -4,11 +4,33 @@
  * far the register has come with it and on what terms it may be used - and how
  * many of all there are it shows, with the way to the next page.
  */
+import { nextTick, ref } from "vue";
+
 import type { RegisterStatus, SourceEntry } from "@/api";
 import { LOCALE, messages, t } from "@/i18n/de";
 
 defineProps<{ entries: SourceEntry[]; total: number; loadingMore?: boolean }>();
 defineEmits<{ more: [] }>();
+
+const body = ref<HTMLTableSectionElement | null>(null);
+
+/**
+ * Hands the focus to the row at `index` once it is drawn: after "Weitere laden"
+ * the first new entry, where reading goes on - the button may have gone, and
+ * with it the focus, which would otherwise fall back to the page's top.
+ */
+async function focusRow(index: number): Promise<void> {
+  await nextTick();
+  // the body's own rows: refs in a v-for keep no order
+  body.value?.rows[index]?.focus();
+}
+
+defineExpose({ focusRow });
+
+/** The words for a register value; the value itself where the page has none yet (tests/registerLabels.test.ts). */
+function word(words: Readonly<Record<string, string>>, value: string): string {
+  return words[value] ?? value;
+}
 
 // The pill by what the state means (style.css, .status-badge); the word in it carries the meaning
 const TONE: Record<RegisterStatus, string> = {
@@ -27,6 +49,7 @@ const dateFormat = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium" });
          keyboard can only scroll what it can reach -->
     <div class="register__scroll" tabindex="0" role="region" :aria-label="t('sources.register.scrollLabel')">
       <table class="register__table">
+        <caption class="visually-hidden">{{ t("sources.register.heading") }}</caption>
         <thead>
           <tr>
             <th scope="col">{{ t("sources.register.columns.title") }}</th>
@@ -36,8 +59,9 @@ const dateFormat = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium" });
             <th scope="col">{{ t("sources.register.columns.added") }}</th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="entry in entries" :key="entry.id">
+        <tbody ref="body">
+          <!-- tabindex -1: a target for focusRow, outside the tab order -->
+          <tr v-for="entry in entries" :key="entry.id" tabindex="-1">
             <td>
               <!-- an import is titled by its file's name, once the fetch has the file -->
               <bdi class="register__title">{{ entry.title || entry.url }}</bdi>
@@ -47,15 +71,15 @@ const dateFormat = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium" });
               </span>
             </td>
             <td>
-              {{ messages.sources.provenance[entry.provenance] }}
+              {{ word(messages.sources.provenance, entry.provenance) }}
               <span v-if="entry.mine" class="register__aside">{{ t("sources.register.mine") }}</span>
             </td>
             <td>
               <span class="status-badge" :class="TONE[entry.register_status]">
-                {{ messages.sources.status[entry.register_status] }}
+                {{ word(messages.sources.status, entry.register_status) }}
               </span>
             </td>
-            <td>{{ messages.sources.rights[entry.rights_status] }}</td>
+            <td>{{ word(messages.sources.rights, entry.rights_status) }}</td>
             <td>
               <time :datetime="entry.created_at">{{ dateFormat.format(new Date(entry.created_at)) }}</time>
             </td>
@@ -64,7 +88,8 @@ const dateFormat = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium" });
       </table>
     </div>
     <div class="register__foot">
-      <p class="register__count">{{ t("sources.register.shown", { shown: entries.length, total }) }}</p>
+      <!-- a status: "Weitere laden" is heard to have worked -->
+      <p class="register__count" role="status">{{ t("sources.register.shown", { shown: entries.length, total }) }}</p>
       <!-- aria-disabled, not disabled: a disabled button drops the focus it holds -->
       <button
         v-if="entries.length < total"
@@ -115,6 +140,12 @@ const dateFormat = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium" });
 
 .register__table tbody tr:last-child td {
   border-bottom: 0;
+}
+
+/* A row takes focus only from focusRow; it shows where reading goes on. */
+.register__table tbody tr:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
 }
 
 /* The title gets the room; a long one breaks rather than widening every other column. */

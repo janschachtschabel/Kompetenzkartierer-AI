@@ -9,6 +9,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 
 import type { Job, JobStatus } from "@/api";
+import { isolate } from "@/bidi";
 import { t } from "@/i18n/de";
 import { jobFailureText } from "@/jobMessages";
 import { hasEnded, watchJob, type JobGone, type JobWatch } from "@/jobWatch";
@@ -31,16 +32,20 @@ const TONE: Record<JobStatus, string> = {
 
 const job = ref<Job | null>(null);
 const trouble = ref(false);
-const gone = ref(false);
+const gone = ref<JobGone | null>(null);
 let watch: JobWatch | null = null;
 
 // a job just started waits for a worker until the server says otherwise
 const status = computed<JobStatus>(() => job.value?.status ?? "queued");
 const failure = computed(() => (status.value === "failed" ? jobFailureText(job.value?.error_code ?? null) : ""));
+const goneText = computed(() => (gone.value ? t(`jobs.goneReasons.${gone.value}`) : ""));
+// Each change of what the page shows, and only a change: the same state again reads the same.
 const announcement = computed(() => {
-  if (gone.value) return t("jobs.announce", { label: props.label, status: t("jobs.gone") });
+  const label = isolate(props.label);
+  if (goneText.value) return t("jobs.announce", { label, status: goneText.value });
+  if (trouble.value) return t("jobs.announce", { label, status: t("jobs.trouble") });
   if (!job.value) return ""; // nothing to say before the first answer
-  const line = t("jobs.announce", { label: props.label, status: t(`jobs.status.${status.value}`) });
+  const line = t("jobs.announce", { label, status: t(`jobs.status.${status.value}`) });
   return failure.value ? `${line} ${failure.value}` : line;
 });
 
@@ -52,7 +57,7 @@ onMounted(() => {
       if (hasEnded(state.status)) emit("ended", state);
     },
     onGone: (why) => {
-      gone.value = true;
+      gone.value = why;
       trouble.value = false;
       emit("gone", why);
     },
@@ -72,7 +77,7 @@ onUnmounted(() => watch?.stop());
       <bdi class="job__label">{{ label }}</bdi>
     </p>
     <p v-if="failure" class="job__failure">{{ failure }}</p>
-    <p v-if="gone" class="job__note">{{ t("jobs.gone") }}</p>
+    <p v-if="gone" class="job__note">{{ goneText }}</p>
     <p v-else-if="trouble" class="job__note">{{ t("jobs.trouble") }}</p>
     <p class="visually-hidden" role="status">{{ announcement }}</p>
   </div>

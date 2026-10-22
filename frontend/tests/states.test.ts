@@ -52,6 +52,16 @@ describe("the partial state", () => {
     expect(wrapper.find("button").exists()).toBe(false);
   });
 
+  it("is in the page before it has anything to say, so its first word is read out", () => {
+    // a live region inserted together with its text is often not read
+    const wrapper = mount(PartialState, { props: { notice: null, retry: true } });
+
+    expect(wrapper.attributes("role")).toBe("status");
+    expect(wrapper.text()).toBe("");
+    expect(wrapper.find("button").exists()).toBe(false);
+    expect(wrapper.classes()).not.toContain("page-notice");
+  });
+
   it("offers to fetch the rest where the page can", async () => {
     const wrapper = mount(PartialState, { props: { notice: { text: "Ein Teil fehlt." }, retry: true } });
 

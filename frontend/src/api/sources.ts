@@ -68,6 +68,10 @@ export interface SourceFilters {
 
 /** The register's page size, the server's own default. */
 export const PAGE_SIZE = 50;
+/** The longest title the backend keeps (MAX_TITLE_SIGNS), and the longest address it fetches. */
+export const MAX_TITLE_SIGNS = 500;
+export const MAX_URL_SIGNS = 2000;
+export const MIB = 2 ** 20;
 
 /** Uploads `file`; a blank `title` is left out, and the entry takes the file's name. */
 export function uploadSource(file: File, title: string): Promise<SourceOut> {

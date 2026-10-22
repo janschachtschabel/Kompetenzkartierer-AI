@@ -7,7 +7,8 @@
  */
 import { ref } from "vue";
 
-import { ApiError, importSource, type ImportStarted } from "@/api";
+import { ApiError, importSource, MAX_TITLE_SIGNS, MAX_URL_SIGNS, type ImportStarted } from "@/api";
+import { isolate } from "@/bidi";
 import AppIcon from "@/components/AppIcon.vue";
 import NoticeText from "@/components/NoticeText.vue";
 import { t } from "@/i18n/de";
@@ -17,10 +18,6 @@ import { failureNotice, type Notice } from "@/notice";
 // `address` names the entry until its file arrives: an import's title is the file's name, unless one was given
 const emit = defineEmits<{ imported: [started: ImportStarted, address: string] }>();
 
-// The backend's limits on the address and the title (app/api/sources.py)
-const MAX_URL_SIGNS = 2000;
-const MAX_TITLE_SIGNS = 500;
-
 const url = ref("");
 const title = ref("");
 const busy = ref(false);
@@ -29,12 +26,21 @@ const failure = ref<Notice | null>(null);
 // a refusal of the address itself, said at its field; any other below the form
 const urlRefused = ref(false);
 
-function isWebAddress(candidate: string): boolean {
+/**
+ * Why the server would not fetch `candidate`, as a catalogue key; null for a web
+ * address it takes up. The server checks again (url_invalid): this spares the
+ * request, and a password never leaves the page.
+ */
+function addressFault(candidate: string): string | null {
+  if (/\s/.test(candidate)) return "sources.import.errors.spaces";
+  let parsed: URL;
   try {
-    return ["http:", "https:"].includes(new URL(candidate).protocol);
+    parsed = new URL(candidate);
   } catch {
-    return false; // no address at all
+    return "sources.import.errors.scheme"; // no address at all
   }
+  if (!["http:", "https:"].includes(parsed.protocol)) return "sources.import.errors.scheme";
+  return parsed.username || parsed.password ? "sources.import.errors.credentials" : null;
 }
 
 /** The refusal to show; the same one again is read out again (liveRegion.ts). */
@@ -48,14 +54,15 @@ async function onSubmit(): Promise<void> {
   if (busy.value) return; // the button stays focusable while busy, so it can be pressed again
   const address = url.value.trim();
   if (!address) return refuse({ text: t("sources.import.errors.missing"), failed: true }, true);
-  if (!isWebAddress(address)) return refuse({ text: t("sources.import.errors.scheme"), failed: true }, true);
+  const fault = addressFault(address);
+  if (fault) return refuse({ text: t(fault), failed: true }, true);
   busy.value = true;
   failure.value = null;
   urlRefused.value = false;
   status.value = t("sources.import.busy");
   try {
     const started = await importSource(address, title.value);
-    status.value = t("sources.import.started", { title: started.source.title || address });
+    status.value = t("sources.import.started", { title: isolate(started.source.title || address) });
     url.value = "";
     title.value = "";
     emit("imported", started, address);

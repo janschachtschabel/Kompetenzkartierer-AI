@@ -6,7 +6,8 @@
  */
 import { computed, ref } from "vue";
 
-import { ApiError, uploadSource, type SourceOut } from "@/api";
+import { ApiError, MAX_TITLE_SIGNS, MIB, uploadSource, type SourceOut } from "@/api";
+import { isolate } from "@/bidi";
 import AppIcon from "@/components/AppIcon.vue";
 import NoticeText from "@/components/NoticeText.vue";
 import { t } from "@/i18n/de";
@@ -21,9 +22,6 @@ const emit = defineEmits<{ uploaded: [source: SourceOut] }>();
 
 // A hint to the file picker: the server decides by the bytes (backend app/sources/filetype.py)
 const ACCEPT = ".pdf,.docx,.rtf,.html,.htm,.md,.markdown,.txt,.ttl";
-const MIB = 2 ** 20;
-// The backend's MAX_TITLE_SIGNS
-const MAX_TITLE_SIGNS = 500;
 
 type Field = "file" | "title";
 // The refusals about the title; the others about the file are told by their status
@@ -91,7 +89,7 @@ async function onSubmit(): Promise<void> {
   status.value = t("sources.upload.busy");
   try {
     const source = await uploadSource(chosen, title.value);
-    status.value = t("sources.upload.done", { title: source.title });
+    status.value = t("sources.upload.done", { title: isolate(source.title) });
     file.value = null;
     title.value = "";
     if (fileInput.value) fileInput.value.value = "";

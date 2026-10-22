@@ -80,9 +80,9 @@ export const messages = {
     upload: {
       heading: "Datei hochladen",
       fileLabel: "Datei",
-      fileHint: "PDF, Word (DOCX), RTF, HTML, Markdown, Text oder Turtle, bis {limit} MB.",
+      fileHint: "PDF, Word (DOCX), RTF, HTML, Markdown, Text (UTF-8) oder Turtle, bis {limit} MB.",
       // where the limit did not load: the server still says it on a refusal
-      fileHintNoLimit: "PDF, Word (DOCX), RTF, HTML, Markdown, Text oder Turtle.",
+      fileHintNoLimit: "PDF, Word (DOCX), RTF, HTML, Markdown, Text (UTF-8) oder Turtle.",
       titleLabel: "Titel (freiwillig)",
       titleHint: "Ohne Titel trägt der Eintrag den Namen der Datei.",
       submit: "Hochladen",
@@ -107,6 +107,10 @@ export const messages = {
       errors: {
         missing: "Gib eine Adresse ein.",
         scheme: "Das ist keine Webadresse. Eine Webadresse beginnt mit https:// oder http://.",
+        spaces: "Die Adresse enthält Leerzeichen. Kopiere sie noch einmal aus der Adresszeile des Browsers.",
+        credentials:
+          "Die Adresse enthält einen Namen oder ein Kennwort. Der Server ruft nur frei zugängliche Adressen ab: " +
+          "Lade die Datei stattdessen hoch.",
       },
     },
     jobs: {
@@ -121,8 +125,8 @@ export const messages = {
         rights: "Rechte",
         added: "Hinzugefügt",
       },
-      // Names the scroll box a narrow screen gives the table, for whoever reaches it by keyboard.
-      scrollLabel: "Register, seitlich verschiebbar",
+      // Names the box that scrolls the table on a narrow screen, for whoever reaches it by keyboard.
+      scrollLabel: "Registertabelle",
       noFile: "noch keine Datei",
       mine: "von dir",
       emptyTitle: "Noch keine Quellen",
@@ -147,7 +151,7 @@ export const messages = {
     // How far the register has come with it (RegisterStatus)
     status: {
       unchecked: "ungeprüft",
-      reachable: "erreichbar, Datei unbrauchbar",
+      reachable: "erreichbar",
       unreachable: "nicht erreichbar",
       acquired: "Datei liegt vor",
     },
@@ -171,19 +175,28 @@ export const messages = {
     // what a screen reader hears on each change
     announce: "{label}: {status}",
     trouble: "Der Server antwortet gerade nicht; der Stand wird weiter abgefragt.",
-    gone: "Dieser Auftrag ist nicht mehr zu finden.",
-    failedUnknown: "Der Auftrag ist fehlgeschlagen.",
+    // why there is nothing left to ask (jobWatch.ts, JobGone)
+    goneReasons: {
+      unauthorized: "Deine Anmeldung ist abgelaufen. Melde dich neu an, um den Auftrag weiter zu verfolgen.",
+      forbidden: "Diesen Auftrag darf dein Konto nicht verfolgen. Rollen vergibt die Administration.",
+      not_found: "Dieser Auftrag ist nicht mehr zu finden. Lade die Seite neu, um den Stand im Register zu sehen.",
+    },
+    failedUnknown: "Der Auftrag ist fehlgeschlagen. Versuch es noch einmal; scheitert er wieder, melde es der Administration.",
     failures: {
-      url_not_allowed: "Die Adresse führt in ein internes Netz oder ist sonst gesperrt; der Server ruft sie nicht ab.",
+      url_not_allowed:
+        "Die Adresse führt in ein internes Netz oder ist sonst gesperrt; der Server ruft sie nicht ab. " +
+        "Lade die Datei stattdessen hoch.",
       download_refused:
         "Der fremde Server hat die Datei verweigert, etwa weil es sie dort nicht gibt. Prüfe die Adresse im Browser.",
       unsupported_type:
         "Unter der Adresse liegt keine Datei, die der Kompetenzkartierer lesen kann. Oft ist es eine Webseite, " +
         "die erst zum Dokument verlinkt: Nimm dann die Adresse des Dokuments selbst.",
-      archive_too_large: "Die Datei unter der Adresse ist ein Archiv, das ausgepackt zu groß wird.",
-      source_missing: "Der Registereintrag hat keine Adresse, die abgerufen werden könnte.",
+      archive_too_large:
+        "Die Datei unter der Adresse ist ein Archiv, das ausgepackt zu groß wird. Prüfe, ob es wirklich ein " +
+        "Word-Dokument ist.",
+      source_missing: "Der Registereintrag hat keine Adresse, die abgerufen werden könnte. Lege ihn mit der Adresse neu an.",
       handler_error:
-        "Der Abruf ist mehrmals gescheitert, etwa weil der fremde Server nicht antwortete. " +
+        "Der Auftrag ist mehrmals gescheitert, etwa weil ein fremder Server nicht antwortete. " +
         "Versuch es später noch einmal.",
       result_not_storable: "Das Ergebnis ließ sich nicht speichern. Melde das bitte der Administration.",
       lease_lost: "Der Auftrag wurde unterbrochen, weil sein Dienst ausfiel. Versuch es noch einmal.",
@@ -212,11 +225,11 @@ export const messages = {
     validation_failed: "Die Eingabe ist so nicht gültig. Prüfe sie und versuch es noch einmal.",
     file_too_large: "Die Datei ist größer, als ein Upload sein darf. Verkleinere sie oder teile sie auf.",
     // a body cut at its limit before any route read it
-    content_too_large: "Das Gesendete ist größer, als der Server annimmt.",
+    content_too_large: "Die Datei ist größer, als der Server annimmt. Verkleinere sie oder teile sie auf.",
     archive_too_large: "Die Datei ist ein Archiv, das ausgepackt zu groß wird. Ein gewöhnliches Word-Dokument ist das nicht.",
     unsupported_type:
       "Diese Art Datei kann der Kompetenzkartierer nicht lesen. Möglich sind PDF, Word (DOCX), RTF, HTML, " +
-      "Markdown, Text und Turtle.",
+      "Markdown, Text (UTF-8) und Turtle.",
     file_missing: "Es kam keine Datei an. Wähle eine Datei aus und versuch es noch einmal.",
     title_invalid: "Der Titel enthält Steuer- oder unsichtbare Zeichen. Tippe ihn neu, statt ihn einzufügen.",
     title_too_long: "Der Titel ist zu lang. Kürze ihn auf höchstens 500 Zeichen.",

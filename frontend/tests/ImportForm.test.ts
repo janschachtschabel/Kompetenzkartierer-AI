@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "@/api";
 import { ApiError, type ImportStarted } from "@/api";
 import ImportForm from "@/components/ImportForm.vue";
+import { isolate } from "@/bidi";
 import { t } from "@/i18n/de";
 
 const STARTED: ImportStarted = {
@@ -37,7 +38,7 @@ describe("the import form", () => {
     await submit(wrapper);
 
     expect(start).toHaveBeenCalledWith("https://example.org/lehrplan.pdf", "Lehrplan");
-    expect(wrapper.get("#import-status").text()).toBe(t("sources.import.started", { title: "lehrplan" }));
+    expect(wrapper.get("#import-status").text()).toBe(t("sources.import.started", { title: isolate("lehrplan") }));
     expect(wrapper.emitted("imported")?.[0]).toEqual([STARTED, "https://example.org/lehrplan.pdf"]);
     expect((wrapper.get("#import-url").element as HTMLInputElement).value).toBe("");
   });
@@ -50,7 +51,7 @@ describe("the import form", () => {
     await submit(wrapper);
 
     expect(wrapper.get("#import-status").text()).toBe(
-      t("sources.import.started", { title: "https://example.org/lehrplan.pdf" }),
+      t("sources.import.started", { title: isolate("https://example.org/lehrplan.pdf") }),
     );
     expect(wrapper.emitted("imported")?.[0]?.[1]).toBe("https://example.org/lehrplan.pdf");
   });
@@ -91,5 +92,68 @@ describe("the import form", () => {
 
     expect(wrapper.get("#import-error").text()).toContain(t("refusals.too_many_imports"));
     expect((wrapper.get("#import-url").element as HTMLInputElement).value).toBe("https://example.org/a.pdf");
+  });
+
+  it.each([
+    ["https://example.org/mein lehrplan.pdf", "sources.import.errors.spaces"],
+    ["https://example.org/a\tb.pdf", "sources.import.errors.spaces"],
+    ["https://name:kennwort@example.org/a.pdf", "sources.import.errors.credentials"],
+    ["https://name@example.org/a.pdf", "sources.import.errors.credentials"],
+  ])("says why %s is not fetched, before sending it", async (address, key) => {
+    // the server refuses these too (url_invalid); a password is not even to reach it
+    const start = vi.spyOn(api, "importSource");
+    const wrapper = mount(ImportForm);
+    await wrapper.get("#import-url").setValue(address);
+
+    await submit(wrapper);
+
+    expect(start).not.toHaveBeenCalled();
+    expect(wrapper.get("#import-error").text()).toContain(t(key));
+  });
+
+  it("says the server's refusal of the address at the address field", async () => {
+    vi.spyOn(api, "importSource").mockRejectedValue(new ApiError("server", 422, "url_invalid", "no"));
+    const wrapper = mount(ImportForm);
+    await wrapper.get("#import-url").setValue("https://example.org/a.pdf");
+
+    await submit(wrapper);
+
+    const field = wrapper.get("#import-url");
+    expect(field.attributes("aria-invalid")).toBe("true");
+    expect(field.attributes("aria-describedby")).toContain("import-error");
+  });
+
+  it("says the same refusal again, so a screen reader reads it again", async () => {
+    const wrapper = mount(ImportForm);
+
+    await submit(wrapper);
+    const first = wrapper.get("#import-error").element.textContent;
+    await submit(wrapper);
+
+    expect(wrapper.get("#import-error").element.textContent).not.toBe(first);
+  });
+
+  it("sends once, however often the button is pressed while it sends", async () => {
+    let finish: (started: ImportStarted) => void = () => {};
+    const start = vi.spyOn(api, "importSource").mockImplementation(() => new Promise((resolve) => (finish = resolve)));
+    const wrapper = mount(ImportForm);
+    await wrapper.get("#import-url").setValue("https://example.org/a.pdf");
+
+    await wrapper.get("form").trigger("submit");
+    await wrapper.get("form").trigger("submit");
+    finish(STARTED);
+    await flushPromises();
+
+    expect(start).toHaveBeenCalledTimes(1);
+  });
+
+  it("sets a title apart from the sentence around it, whichever way it is written", async () => {
+    vi.spyOn(api, "importSource").mockResolvedValue({ ...STARTED, source: { ...STARTED.source, title: "منهج" } });
+    const wrapper = mount(ImportForm);
+    await wrapper.get("#import-url").setValue("https://example.org/a.pdf");
+
+    await submit(wrapper);
+
+    expect(wrapper.get("#import-status").text()).toContain(isolate("منهج"));
   });
 });

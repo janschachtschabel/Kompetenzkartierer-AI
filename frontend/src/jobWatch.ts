@@ -60,7 +60,7 @@ export function watchJob(id: string, handlers: JobWatchHandlers): JobWatch {
       if (gone) return handlers.onGone(gone);
       handlers.onTrouble?.(error);
     }
-    schedule();
+    if (!stopped) schedule(); // a handler may have let go of it
   }
 
   schedule();

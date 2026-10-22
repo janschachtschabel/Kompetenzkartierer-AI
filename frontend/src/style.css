@@ -370,11 +370,13 @@ input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:dis
   gap: var(--space-1);
 }
 
-/* Never `display: none` while empty: a live region that appears with its text is often not read. */
+/* Never `display: none` while empty: a live region that appears with its text is often not read.
+   A long title or address in it breaks rather than widening the page at 320px. */
 .source-form__status {
   margin: 0;
   color: var(--text-muted);
   font-size: var(--step--1);
+  overflow-wrap: anywhere;
 }
 
 /* Every page sits on the same grid: one width, one gutter, decided here so that

@@ -4,7 +4,7 @@
  * fetches - following the fetches started here, and the entries the account
  * sees, a page at a time.
  */
-import { onMounted, ref } from "vue";
+import { nextTick, onMounted, ref } from "vue";
 
 import { getInfo, listSources, type ImportStarted, type SourcePage } from "@/api";
 import EmptyState from "@/components/EmptyState.vue";
@@ -28,15 +28,21 @@ const loading = ref(true);
 const loadingMore = ref(false);
 /** The register did not load at all. */
 const failure = ref<Notice | null>(null);
-/** A reload or a further page did not, and what to try again. */
+/** A reload or a further page did not, and what to try again; it stays until a try succeeds. */
 const partial = ref<{ notice: Notice; retry: () => void } | null>(null);
 const maxUploadMb = ref<number | undefined>(undefined);
 /** The fetches started on this page, newest first; they stay with how they ended. */
 const followed = ref<Followed[]>([]);
+const table = ref<InstanceType<typeof SourceTable> | null>(null);
 // Each first page read counts: a further page asked for before it belongs to an older list.
 let generation = 0;
 
-async function load(): Promise<void> {
+/**
+ * The register's first page, read again. `fromRetry`: asked for by the notice's
+ * own button, which goes with the notice - the focus then goes to the register,
+ * not to the page's top.
+ */
+async function load(fromRetry = false): Promise<void> {
   const mine = ++generation;
   loading.value = true;
   failure.value = null;
@@ -45,10 +51,14 @@ async function load(): Promise<void> {
     if (mine !== generation) return;
     page.value = first;
     partial.value = null;
+    if (fromRetry) await focusRegister();
   } catch (error) {
     if (mine !== generation) return;
-    if (page.value) partial.value = { notice: failureNotice(error, t("sources.register.reloadFailed")), retry: () => void load() };
-    else failure.value = failureNotice(error, t("sources.register.loadFailed"));
+    if (page.value) {
+      partial.value = { notice: failureNotice(error, t("sources.register.reloadFailed")), retry: () => void load(true) };
+    } else {
+      failure.value = failureNotice(error, t("sources.register.loadFailed"));
+    }
   } finally {
     if (mine === generation) loading.value = false;
   }
@@ -56,22 +66,32 @@ async function load(): Promise<void> {
 
 async function more(): Promise<void> {
   const current = page.value;
-  if (!current || loadingMore.value) return; // the button stays focusable while busy
+  // the button stays focusable while busy; while the register is read again, a further page of it is no page
+  if (!current || loadingMore.value || loading.value) return;
   const mine = generation;
   loadingMore.value = true;
-  partial.value = null;
   try {
     const next = await listSources({}, { offset: current.entries.length });
-    if (mine !== generation) return;
-    // newest first: an entry added meanwhile pushed one of this page onto the next
+    if (mine !== generation || page.value !== current) return;
+    // newest first: an entry added meanwhile pushed one already shown onto this page,
+    // and itself lies before the first - read the register from its start
     const shown = new Set(current.entries.map((entry) => entry.id));
-    const added = next.entries.filter((entry) => !shown.has(entry.id));
-    page.value = { ...next, offset: 0, entries: [...current.entries, ...added] };
+    if (next.entries.some((entry) => shown.has(entry.id))) return void (await load());
+    page.value = { ...next, offset: 0, entries: [...current.entries, ...next.entries] };
+    partial.value = null;
+    await table.value?.focusRow(current.entries.length);
   } catch (error) {
-    if (mine === generation) partial.value = { notice: failureNotice(error, t("sources.register.moreFailed")), retry: () => void more() };
+    if (mine === generation) {
+      partial.value = { notice: failureNotice(error, t("sources.register.moreFailed")), retry: () => void more() };
+    }
   } finally {
     loadingMore.value = false;
   }
+}
+
+async function focusRegister(): Promise<void> {
+  await nextTick();
+  document.getElementById("sources-register")?.focus();
 }
 
 function follow(started: ImportStarted, address: string): void {
@@ -98,7 +118,7 @@ onMounted(async () => {
     <section class="sources__section" aria-labelledby="sources-add">
       <h2 id="sources-add">{{ t("sources.addHeading") }}</h2>
       <div class="sources__forms">
-        <div class="card"><UploadForm :max-upload-mb="maxUploadMb" @uploaded="load" /></div>
+        <div class="card"><UploadForm :max-upload-mb="maxUploadMb" @uploaded="load()" /></div>
         <div class="card"><ImportForm @imported="follow" /></div>
       </div>
     </section>
@@ -107,20 +127,21 @@ onMounted(async () => {
       <h2 id="sources-jobs">{{ t("sources.jobs.heading") }}</h2>
       <ul class="sources__jobs">
         <li v-for="item in followed" :key="item.jobId" class="card">
-          <JobProgress :job-id="item.jobId" :label="item.label" @ended="load" @gone="load" />
+          <JobProgress :job-id="item.jobId" :label="item.label" @ended="load()" @gone="load()" />
         </li>
       </ul>
     </section>
 
     <section class="sources__section" aria-labelledby="sources-register">
-      <h2 id="sources-register">{{ t("sources.register.heading") }}</h2>
+      <!-- tabindex -1: where the focus goes when the notice's retry button goes with the notice -->
+      <h2 id="sources-register" tabindex="-1">{{ t("sources.register.heading") }}</h2>
       <LoadingState v-if="loading && !page" />
       <ErrorState
         v-else-if="failure"
         :message="failure.text"
         :reason="failure.reason"
         :explanation="failure.explanation"
-        @retry="load"
+        @retry="load()"
       />
       <EmptyState
         v-else-if="page && page.entries.length === 0"
@@ -130,12 +151,19 @@ onMounted(async () => {
       />
       <SourceTable
         v-else-if="page"
+        ref="table"
         :entries="page.entries"
         :total="page.total"
-        :loading-more="loadingMore"
+        :loading-more="loadingMore || loading"
         @more="more"
       />
-      <PartialState v-if="partial" class="sources__partial" :notice="partial.notice" retry @retry="partial.retry" />
+      <!-- always in the page, so its first notice is read out -->
+      <PartialState
+        class="sources__partial"
+        :notice="partial?.notice ?? null"
+        :retry="partial !== null"
+        @retry="partial?.retry()"
+      />
     </section>
   </div>
 </template>
@@ -173,7 +201,8 @@ onMounted(async () => {
   list-style: none;
 }
 
-.sources__partial {
+/* Room only once it says something; empty, it waits in the page without a gap. */
+.sources__partial:not(:empty) {
   margin-block-start: var(--space-2);
 }
 </style>

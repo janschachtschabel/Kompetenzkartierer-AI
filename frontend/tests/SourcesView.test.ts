@@ -212,4 +212,166 @@ describe("the register page", () => {
     expect(wrapper.get("#upload-file-hint").text()).not.toContain("MB");
     expect(wrapper.find("[role=alert]").exists()).toBe(false);
   });
+
+  it("shows a value the page has no word for as it is, rather than an empty cell", async () => {
+    const unknown = entry("a", "Plan", { provenance: "neu-v1" as SourceEntry["provenance"] });
+    vi.spyOn(api, "listSources").mockResolvedValue(page([unknown]));
+    const wrapper = mount(SourcesView);
+
+    await flushPromises();
+
+    expect(wrapper.get("tbody tr").text()).toContain("neu-v1");
+  });
+});
+
+/** A promise the test settles when it chooses: the order two answers arrive in. */
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (error: unknown) => void } {
+  let resolve: (value: T) => void = () => {};
+  let reject: (error: unknown) => void = () => {};
+  const promise = new Promise<T>((settle, fail) => {
+    resolve = settle;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
+}
+
+const FIFTY = Array.from({ length: 50 }, (_, index) => entry(`a${index}`, `Plan ${index}`));
+
+function uploaded(): void {
+  vi.spyOn(api, "uploadSource").mockResolvedValue({
+    id: "new",
+    title: "Neu",
+    provenance: "upload",
+    rights_status: "unklar",
+    register_status: "acquired",
+    file: null,
+  });
+}
+
+async function upload(wrapper: ReturnType<typeof mount>): Promise<void> {
+  const input = wrapper.get("#upload-file");
+  Object.defineProperty(input.element, "files", { value: [new File(["%PDF"], "a.pdf")], configurable: true });
+  await input.trigger("change");
+  await input.trigger("submit");
+  await flushPromises();
+}
+
+describe("paging through the register", () => {
+  it("keeps what a reload brought, however a further page asked for meanwhile comes back", async () => {
+    // an upload reads the register again; "Weitere laden" pressed before that answer is in
+    uploaded();
+    const reload = deferred<SourcePage>();
+    const listed = vi
+      .spyOn(api, "listSources")
+      .mockResolvedValueOnce(page(FIFTY, 51))
+      .mockImplementationOnce(() => reload.promise)
+      .mockResolvedValue(page([entry("a49", "Plan 49"), entry("a50", "Plan 50")], 52, 50));
+    const wrapper = mount(SourcesView);
+    await flushPromises();
+
+    await upload(wrapper);
+    await wrapper.get("[data-test=more]").trigger("click");
+    reload.resolve(page([entry("new", "Neu"), ...FIFTY.slice(0, 49)], 52));
+    await flushPromises();
+
+    const titles = wrapper.findAll("tbody tr .register__title").map((cell) => cell.text());
+    expect(titles[0]).toBe("Neu");
+    expect(titles).toHaveLength(50);
+    expect(listed).toHaveBeenCalledTimes(2); // no further page asked for while the register was read again
+  });
+
+  it("says how many it shows in a region a screen reader follows", async () => {
+    vi.spyOn(api, "listSources")
+      .mockResolvedValueOnce(page(FIFTY, 51))
+      .mockResolvedValue(page([entry("z", "Der letzte")], 51, 50));
+    const wrapper = mount(SourcesView);
+    await flushPromises();
+    const count = wrapper.get(".register__count");
+    expect(count.attributes("role")).toBe("status");
+
+    await wrapper.get("[data-test=more]").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get(".register__count").text()).toBe(t("sources.register.shown", { shown: 51, total: 51 }));
+  });
+
+  it("hands the focus to the first entry it added, as the button may go", async () => {
+    vi.spyOn(api, "listSources")
+      .mockResolvedValueOnce(page(FIFTY, 51))
+      .mockResolvedValue(page([entry("z", "Der letzte")], 51, 50));
+    const wrapper = mount(SourcesView, { attachTo: document.body });
+    await flushPromises();
+
+    await wrapper.get("[data-test=more]").trigger("click");
+    await flushPromises();
+
+    // the row itself: the page's body holds the words too
+    expect(document.activeElement?.tagName).toBe("TR");
+    expect(document.activeElement?.textContent).toContain("Der letzte");
+    wrapper.unmount();
+  });
+
+  it("reads the register from the start when entries moved between its pages", async () => {
+    // someone added one meanwhile: the next page begins with one already shown
+    const listed = vi
+      .spyOn(api, "listSources")
+      .mockResolvedValueOnce(page(FIFTY, 51))
+      .mockResolvedValueOnce(page([entry("a49", "Plan 49"), entry("a50", "Plan 50")], 52, 50))
+      .mockResolvedValue(page([entry("x", "Dazwischen"), ...FIFTY.slice(0, 49)], 52));
+    const wrapper = mount(SourcesView);
+    await flushPromises();
+
+    await wrapper.get("[data-test=more]").trigger("click");
+    await flushPromises();
+
+    expect(listed).toHaveBeenLastCalledWith();
+    expect(wrapper.findAll("tbody tr .register__title")[0].text()).toBe("Dazwischen");
+  });
+
+  it("keeps the entries when a reload fails, says so, and reads again on request", async () => {
+    uploaded();
+    const listed = vi
+      .spyOn(api, "listSources")
+      .mockResolvedValueOnce(page([entry("a", "Plan")]))
+      .mockRejectedValueOnce(new ApiError("network", 0))
+      .mockResolvedValue(page([entry("new", "Neu"), entry("a", "Plan")]));
+    const wrapper = mount(SourcesView, { attachTo: document.body });
+    await flushPromises();
+
+    await upload(wrapper);
+    expect(wrapper.findAll("tbody tr")).toHaveLength(1);
+    expect(wrapper.get(".sources__partial").text()).toContain(t("sources.register.reloadFailed"));
+    await wrapper.get(".sources__partial button").trigger("click");
+    await flushPromises();
+
+    expect(listed).toHaveBeenCalledTimes(3);
+    expect(wrapper.findAll("tbody tr")).toHaveLength(2);
+    expect(wrapper.get(".sources__partial").text()).toBe("");
+    // the retry button went with the notice: the focus goes to the register, not the page's top
+    expect(document.activeElement?.id).toBe("sources-register");
+    wrapper.unmount();
+  });
+
+  it("says a failure in a region that is there before it, and keeps the way to try again while it tries", async () => {
+    const retry = deferred<SourcePage>();
+    vi.spyOn(api, "listSources")
+      .mockResolvedValueOnce(page([entry("a", "Plan")], 2))
+      .mockRejectedValueOnce(new ApiError("network", 0))
+      .mockImplementationOnce(() => retry.promise);
+    const wrapper = mount(SourcesView);
+    await flushPromises();
+    const region = wrapper.get(".sources__partial");
+    expect(region.attributes("role")).toBe("status");
+    expect(region.text()).toBe("");
+
+    await wrapper.get("[data-test=more]").trigger("click");
+    await flushPromises();
+    expect(wrapper.get(".sources__partial").text()).toContain(t("sources.register.moreFailed"));
+    await wrapper.get(".sources__partial button").trigger("click");
+
+    expect(wrapper.find(".sources__partial button").exists()).toBe(true);
+    retry.resolve(page([entry("b", "Zweiter")], 2, 1));
+    await flushPromises();
+    expect(wrapper.findAll("tbody tr")).toHaveLength(2);
+  });
 });

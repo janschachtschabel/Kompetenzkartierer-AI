@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as api from "@/api";
 import App from "@/App.vue";
+import { t } from "@/i18n/de";
 import { router } from "@/router";
 import { clearSession, setSession } from "@/session";
 
@@ -111,18 +112,28 @@ describe("accessibility of the pages", () => {
     expect(found, describeViolations(found)).toEqual([]);
   });
 
-  it("the register with its entries and a fetch under way has none", async () => {
+  it("the register with its entries, a failed fetch and a page that did not load has none", async () => {
     api.setToken("kka_token");
     setSession({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
-    vi.spyOn(api, "listSources").mockResolvedValue({ entries: [ENTRY], total: 2, limit: 50, offset: 0 });
+    vi.spyOn(api, "listSources")
+      .mockResolvedValueOnce({ entries: [ENTRY], total: 2, limit: 50, offset: 0 })
+      .mockResolvedValueOnce({ entries: [ENTRY], total: 2, limit: 50, offset: 0 })
+      .mockRejectedValue(new api.ApiError("network", 0));
     vi.spyOn(api, "importSource").mockResolvedValue({ source: { ...ENTRY, file: null }, job_id: "j1" });
     vi.spyOn(api, "getJob").mockResolvedValue(FAILED_JOB);
+    // the job's first question is a second away; flushPromises runs on setImmediate, left real
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     const wrapper = await show("/quellen");
     await wrapper.get("#import-url").setValue("https://example.org/lehrplan.pdf");
     await wrapper.get("#import-url").trigger("submit");
     await flushPromises();
+    await vi.advanceTimersByTimeAsync(1000);
+    vi.useRealTimers(); // axe keeps its own time
+    await wrapper.get("[data-test=more]").trigger("click");
+    await flushPromises();
     expect(wrapper.find("tbody tr").exists()).toBe(true);
-    expect(wrapper.text()).toContain("Lehrplan Physik");
+    expect(wrapper.text()).toContain(t("jobs.failures.download_refused"));
+    expect(wrapper.get(".sources__partial").text()).toContain(t("sources.register.moreFailed"));
 
     const found = await pageViolations();
 

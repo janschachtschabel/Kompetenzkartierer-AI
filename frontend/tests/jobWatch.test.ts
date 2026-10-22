@@ -99,6 +99,15 @@ describe("following a job", () => {
     expect(asked).toHaveBeenCalledTimes(1);
   });
 
+  it("asks no more once a handler lets go of it", async () => {
+    const asked = vi.spyOn(api, "getJob").mockResolvedValue(job("running"));
+    const watch = watchJob("j1", { onState: () => watch.stop(), onGone: () => {} });
+
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    expect(asked).toHaveBeenCalledTimes(1);
+  });
+
   it("says nothing of an answer that arrives after the page let go", async () => {
     let answer: (job: Job) => void = () => {};
     const asked = vi.spyOn(api, "getJob").mockImplementation(() => new Promise((resolve) => (answer = resolve)));

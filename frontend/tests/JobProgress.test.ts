@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "@/api";
 import { ApiError, type Job } from "@/api";
 import JobProgress from "@/components/JobProgress.vue";
+import { isolate } from "@/bidi";
 import { t } from "@/i18n/de";
 
 function job(status: Job["status"], error_code: string | null = null): Job {
@@ -66,8 +67,33 @@ describe("a job's progress", () => {
 
     await vi.advanceTimersByTimeAsync(1000);
 
-    expect(wrapper.text()).toContain(t("jobs.gone"));
+    expect(wrapper.text()).toContain(t("jobs.goneReasons.not_found"));
     expect(wrapper.emitted("gone")).toHaveLength(1);
+  });
+
+  it("says a job this account may not follow is not its to follow, not that it is gone", async () => {
+    vi.spyOn(api, "getJob").mockRejectedValue(new ApiError("forbidden", 403, "forbidden"));
+    const wrapper = shown();
+
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(wrapper.text()).toContain(t("jobs.goneReasons.forbidden"));
+    expect(wrapper.text()).not.toContain(t("jobs.goneReasons.not_found"));
+  });
+
+  it("announces that the server does not answer, and that it answers again", async () => {
+    vi.spyOn(api, "getJob")
+      .mockRejectedValueOnce(new ApiError("network", 0))
+      .mockResolvedValue(job("running"));
+    const wrapper = shown();
+    const region = wrapper.get("[role=status]");
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(region.text()).toContain(t("jobs.trouble"));
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(region.text()).not.toContain(t("jobs.trouble"));
+    expect(region.text()).toContain(t("jobs.status.running"));
   });
 
   it("says when an answer did not come, until the next one does", async () => {
@@ -92,7 +118,7 @@ describe("a job's progress", () => {
     await vi.advanceTimersByTimeAsync(1000);
 
     expect(region.text()).toContain(t("jobs.status.failed"));
-    expect(region.text()).toContain("Lehrplan Physik");
+    expect(region.text()).toContain(isolate("Lehrplan Physik"));
     expect(region.text()).toContain(t("jobs.failures.url_not_allowed"));
   });
 

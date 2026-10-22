@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "@/api";
 import { ApiError, type SourceOut } from "@/api";
 import UploadForm from "@/components/UploadForm.vue";
+import { isolate } from "@/bidi";
 import { t } from "@/i18n/de";
 
 const MIB = 2 ** 20;
@@ -51,7 +52,7 @@ describe("the upload form", () => {
     await submit(wrapper);
 
     expect(upload).toHaveBeenCalledWith(file, "Lehrplan Physik");
-    expect(wrapper.get("#upload-status").text()).toBe(t("sources.upload.done", { title: "Lehrplan Physik" }));
+    expect(wrapper.get("#upload-status").text()).toBe(t("sources.upload.done", { title: isolate("Lehrplan Physik") }));
     expect(wrapper.emitted("uploaded")?.[0]).toEqual([stored("Lehrplan Physik")]);
     // ready for the next one
     expect((wrapper.get("#upload-title").element as HTMLInputElement).value).toBe("");
@@ -138,5 +139,15 @@ describe("the upload form", () => {
     await flushPromises();
 
     expect(upload).toHaveBeenCalledTimes(1);
+  });
+
+  it("says the same refusal again, so a screen reader reads it again", async () => {
+    const wrapper = mount(UploadForm, { props: { maxUploadMb: 50 } });
+
+    await submit(wrapper);
+    const first = wrapper.get("#upload-error").element.textContent;
+    await submit(wrapper);
+
+    expect(wrapper.get("#upload-error").element.textContent).not.toBe(first);
   });
 });
