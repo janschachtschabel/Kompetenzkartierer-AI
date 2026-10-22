@@ -89,7 +89,8 @@ ungültig.
 - `PUBLIC_ACCESS` (`off` | `lookup` | `search`, Standard `off`): was Besucher ohne Token dürfen.
   Das Sprachmodell braucht immer ein Token.
 - `MAX_UPLOAD_MB` (Standard 50, höchstens 500): die größte Datei, die ein Upload oder ein
-  URL-Import annimmt; größere weist der Upload mit 413 `file_too_large` ab. Ein DOCX darf
+  URL-Import annimmt; größere weist der Upload mit 413 `file_too_large` ab, einen Body über
+  `MAX_UPLOAD_MB` + 1 MiB schon vor dem Lesen mit 413 `content_too_large`. Ein DOCX darf
   entpackt höchstens 256 MiB in 5.000 Teilen halten (`archive_too_large`). Was ein Upload in
   `/tmp` und im Arbeitsspeicher braucht, steht in `docs/uebergabe/konfiguration.md`.
 - `UPLOADS_PER_MINUTE` und `URL_IMPORTS_PER_MINUTE` (Standard je 20): Uploads bzw. URL-Importe
