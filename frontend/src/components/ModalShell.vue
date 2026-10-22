@@ -52,9 +52,10 @@ onBeforeUnmount(() => {
 /**
  * Escape, heard on the whole page while the frame is open: a control that
  * went away drops the keyboard to the page's body, and heard on the dialog
- * alone, Escape then closed nothing (old app, review A2, pre-existing). Only the top
- * frame closes; a modal question of another kind asked over it -- a
- * ConfirmDialog -- answers Escape itself.
+ * alone, Escape then closed nothing (old app, review A2, pre-existing). Only the
+ * top frame closes - every modal of the app, ConfirmDialog too, is a frame on
+ * the one stack. The check on `aria-modal` guards against a modal built without
+ * this frame: one asked over it answers Escape itself.
  */
 function onEscape(event: KeyboardEvent): void {
   if (event.key !== "Escape" || openFrames.at(-1) !== frame) return;
@@ -68,24 +69,31 @@ function onKeydown(event: KeyboardEvent): void {
   trapTab(event, dialog.value);
 }
 
-// A click whose press began inside - a text selection let go past the dialog's edge - lands on
-// the scrim as the common ancestor; only a press and a click both on the scrim close.
+// A click whose press and release fell on two elements - a text selection let go past
+// the dialog's edge, or begun beside it and ended inside - lands on the scrim as their
+// common ancestor; only a press and a release both on the scrim close.
 let pressedOnScrim = false;
+let releasedOnScrim = false;
 
 function onScrimPress(event: MouseEvent): void {
   pressedOnScrim = event.target === event.currentTarget;
 }
 
+function onScrimRelease(event: MouseEvent): void {
+  releasedOnScrim = event.target === event.currentTarget;
+}
+
 function onScrimClick(): void {
-  if (pressedOnScrim) emit("close");
+  if (pressedOnScrim && releasedOnScrim) emit("close");
   pressedOnScrim = false;
+  releasedOnScrim = false;
 }
 
 defineExpose({ dialog });
 </script>
 
 <template>
-  <div class="backdrop" @mousedown="onScrimPress" @click.self="onScrimClick">
+  <div class="backdrop" @mousedown="onScrimPress" @mouseup="onScrimRelease" @click.self="onScrimClick">
     <div
       ref="dialog"
       class="dialog"

@@ -64,6 +64,15 @@ describe("buttons", () => {
     expect(offenders).toEqual([]);
   });
 
+  it("drawn as a link keep the link's underline and the line's height (WCAG 1.4.1)", () => {
+    // `.btn` takes the underline away and sets a button's height; a link-styled
+    // one in running text would be told apart by colour alone, in a box of its own
+    const rule = /^\.btn\.link \{([^}]*)\}/m.exec(readFileSync(join(SRC, "style.css"), "utf8"))?.[1] ?? "";
+
+    expect(rule).toMatch(/text-decoration:\s*underline/);
+    expect(rule).toMatch(/min-height:\s*auto/);
+  });
+
   it("are not restyled all at once by a component", () => {
     // a component's own buttons get a class; an element rule reaches every button it renders
     expect(/^\s*button\s*\{/m.test(stylesOf("<style>\nbutton {\n  color: red;\n}\n</style>"))).toBe(true);
