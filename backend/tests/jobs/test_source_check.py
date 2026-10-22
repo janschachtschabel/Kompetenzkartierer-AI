@@ -26,7 +26,7 @@ from app.jobs.handlers import make_handlers
 from app.jobs.queue import Job, claim, enqueue
 from app.sources.check_job import KIND, REGISTER_STATUS, check_sources
 from app.sources.register import CheckOutcome
-from app.sources.url_fetch import NOT_PUBLIC, UrlNotAllowed
+from app.sources.url_fetch import HostRefused
 from tests.sources.compressed import MIB, arriving, in_chunks
 from tests.support import make_settings
 
@@ -281,7 +281,7 @@ async def test_a_host_not_publicly_reachable_is_unreachable_and_asked_no_more(co
 
     def inside(request: httpx2.Request) -> httpx2.Response:
         # as the pinned transport refuses a host that resolves inside the network
-        raise UrlNotAllowed(NOT_PUBLIC)
+        raise HostRefused("intern.example")
 
     network = Network({"intern.example/robots.txt": inside})
 
