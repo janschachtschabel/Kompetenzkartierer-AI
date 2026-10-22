@@ -383,6 +383,27 @@ input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:dis
   overflow-wrap: anywhere;
 }
 
+/* Every page sits on the same grid: one width, one gutter, decided here so that
+   moving between two menu entries does not shift the page sideways. */
+.page {
+  width: 100%;
+  max-width: var(--page-width);
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-3) var(--space-5);
+}
+
+/* Shared component classes, declared once: as per-component copies in the old
+   app they had drifted to three card paddings and two button weights. What
+   stays local is what says something the shared rule does not. */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  color: var(--text);
+}
+
 /* An entry's facts, and those of each time its file came (SourceDetailView, AcquisitionList): the
    term beside its value where there is room, above it where there is not. An address breaks
    rather than pushing the page sideways at 320px. */
@@ -415,27 +436,6 @@ input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:dis
   .facts dd {
     margin-block-end: var(--space-1);
   }
-}
-
-/* Every page sits on the same grid: one width, one gutter, decided here so that
-   moving between two menu entries does not shift the page sideways. */
-.page {
-  width: 100%;
-  max-width: var(--page-width);
-  margin: 0 auto;
-  padding: var(--space-4) var(--space-3) var(--space-5);
-}
-
-/* Shared component classes, declared once: as per-component copies in the old
-   app they had drifted to three card paddings and two button weights. What
-   stays local is what says something the shared rule does not. */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.25rem;
-  margin-bottom: 1.25rem;
-  color: var(--text);
 }
 
 .btn {

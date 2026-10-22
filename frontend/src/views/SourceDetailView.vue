@@ -15,7 +15,7 @@ import AcquisitionList from "@/components/AcquisitionList.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
-import { LOCALE, messages, t } from "@/i18n/de";
+import { LOCALE, messages, momentFormat, t } from "@/i18n/de";
 import { failureNotice, type Notice } from "@/notice";
 import { pageTitle } from "@/pageTitle";
 import { isWebAddress } from "@/readableAddress";
@@ -73,7 +73,6 @@ watch(
   },
 );
 
-const dateTime = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium", timeStyle: "short" });
 const megabytes = new Intl.NumberFormat(LOCALE, { style: "unit", unit: "megabyte", maximumFractionDigits: 1 });
 const kilobytes = new Intl.NumberFormat(LOCALE, { style: "unit", unit: "kilobyte", maximumFractionDigits: 0 });
 
@@ -214,7 +213,7 @@ function grades(seed: SeedFields): string | null {
           </template>
           <dt>{{ t("entryPage.check.checkedAt") }}</dt>
           <dd>
-            <time :datetime="source.check.checked_at">{{ dateTime.format(new Date(source.check.checked_at)) }}</time>
+            <time :datetime="source.check.checked_at">{{ momentFormat.format(new Date(source.check.checked_at)) }}</time>
           </dd>
         </dl>
         <p v-else class="source__none">{{ t("entryPage.check.none") }}</p>

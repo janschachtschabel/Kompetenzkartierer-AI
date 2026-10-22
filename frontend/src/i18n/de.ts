@@ -420,6 +420,9 @@ type Messages = typeof messages;
 /** The locale the UI formats its numbers, plural forms and dates in. */
 export const LOCALE = "de-DE";
 
+/** A moment as the pages show it, date and time ("22.10.2026, 23:07"): one format wherever it shows. */
+export const momentFormat = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium", timeStyle: "short" });
+
 /**
  * `{count|Abschnitt|Abschnitte}` - the noun in the form that agrees with
  * `count`. Per placeholder rather than per message, because one sentence can

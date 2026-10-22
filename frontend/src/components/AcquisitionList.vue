@@ -4,13 +4,11 @@
  * when, under what name the server answered, and by which addresses a fetch got there.
  */
 import type { Acquisition } from "@/api";
-import { LOCALE, messages, t } from "@/i18n/de";
+import { messages, momentFormat, t } from "@/i18n/de";
 import { isWebAddress } from "@/readableAddress";
 import { word } from "@/registerWords";
 
 defineProps<{ acquisitions: Acquisition[] }>();
-
-const dateTime = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium", timeStyle: "short" });
 </script>
 
 <template>
@@ -21,7 +19,7 @@ const dateTime = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium", timeStyl
         <dd>{{ word(messages.entryPage.acquisitionMethod, acquisition.method) }}</dd>
         <dt>{{ t("entryPage.acquisitions.acquiredAt") }}</dt>
         <dd>
-          <time :datetime="acquisition.acquired_at">{{ dateTime.format(new Date(acquisition.acquired_at)) }}</time>
+          <time :datetime="acquisition.acquired_at">{{ momentFormat.format(new Date(acquisition.acquired_at)) }}</time>
         </dd>
         <template v-if="acquisition.received_name">
           <dt>{{ t("entryPage.acquisitions.receivedName") }}</dt>
