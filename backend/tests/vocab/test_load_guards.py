@@ -143,3 +143,29 @@ def test_the_load_command_on_an_unmigrated_database_ends_with_1(database_url: st
 
     assert refused.returncode == 1
     assert "vocabulary not loaded" in refused.stderr
+
+
+GREEN_A = 'ex:a a skos:Concept ; skos:inScheme ex:colours ; skos:notation "{n}" .\n'
+GREEN_B = 'ex:b a skos:Concept ; skos:inScheme ex:colours ; skos:notation "{n}" .\n'
+
+
+def test_two_concepts_that_stay_can_swap_their_notations(migrated: str, tmp_path: Path) -> None:
+    load_vocabulary(migrated, model(tmp_path / "a", GREEN_A.format(n="R"), GREEN_B.format(n="G")))
+
+    load_vocabulary(migrated, model(tmp_path / "b", GREEN_A.format(n="G"), GREEN_B.format(n="R")))
+
+    assert fetch(migrated, "SELECT iri, notation FROM vocab_concept ORDER BY iri") == [
+        (EX + "a", "G"),
+        (EX + "b", "R"),
+    ]
+
+
+def test_a_notation_passes_to_a_concept_that_sorts_first(migrated: str, tmp_path: Path) -> None:
+    load_vocabulary(migrated, model(tmp_path / "a", GREEN_B.format(n="R")))
+
+    load_vocabulary(migrated, model(tmp_path / "b", GREEN_A.format(n="R"), GREEN_B.format(n="S")))
+
+    assert fetch(migrated, "SELECT iri, notation FROM vocab_concept ORDER BY iri") == [
+        (EX + "a", "R"),
+        (EX + "b", "S"),
+    ]

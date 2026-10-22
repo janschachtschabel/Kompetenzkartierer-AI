@@ -63,11 +63,10 @@ def _write_schemes(connection: psycopg.Connection, vocabulary: Vocabulary, relea
 
 
 def _write_concepts(connection: psycopg.Connection, vocabulary: Vocabulary, release_id: int) -> None:
-    # Retired first: a notation may pass from a concept the files dropped to a new one
-    connection.execute(
-        "UPDATE vocab_concept SET retired_in = %s WHERE retired_in IS NULL AND NOT (iri = ANY(%s))",
-        (release_id, list(vocabulary.concepts)),
-    )
+    # Every active concept is retired first and the upsert revives those the files hold: the
+    # unique index on (scheme, notation) is checked row by row, so a notation passing between
+    # two concepts that both stay (a swap) would otherwise meet its old holder still active
+    connection.execute("UPDATE vocab_concept SET retired_in = %s WHERE retired_in IS NULL", (release_id,))
     with connection.cursor() as cursor:
         cursor.executemany(
             """
