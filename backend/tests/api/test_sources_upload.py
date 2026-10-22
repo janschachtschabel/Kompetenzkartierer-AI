@@ -294,6 +294,21 @@ def test_the_body_is_read_only_after_the_token_is_checked(client: TestClient) ->
     assert pulled == []
 
 
+def test_the_spec_names_the_upload_form_and_its_refusals() -> None:
+    # the route reads its form itself (after the token check), so FastAPI cannot see it
+    operation = create_app(make_settings()).openapi()["paths"]["/api/v1/sources"]["post"]
+
+    body = operation["requestBody"]
+    form = body["content"]["multipart/form-data"]["schema"]
+    assert body["required"] is True
+    assert set(form["properties"]) == {"file", "title"} and form["required"] == ["file"]
+    assert form["properties"]["file"]["format"] == "binary"
+    assert form["properties"]["title"]["maxLength"] == 500
+    responses = operation["responses"]
+    assert "upload" in responses["429"]["description"].lower()
+    assert {"400", "413", "415", "422"} <= set(responses)
+
+
 def test_uploads_past_the_account_s_limit_wait(
     migrated: str, store: Path, owner: tuple[UUID, dict[str, str]]
 ) -> None:

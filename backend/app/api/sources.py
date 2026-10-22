@@ -45,8 +45,32 @@ Account = Annotated[Principal, Depends(require_account)]
 UPLOAD_PATH = "/api/v1/sources"
 MAX_TITLE_SIGNS = 500
 UPLOAD_REFUSALS: dict[int | str, dict[str, Any]] = {
+    400: {"model": ErrorBody, "description": "The form cannot be read, or holds more than one file"},
     413: {"model": ErrorBody, "description": "The file, or the archive it is, is too large"},
     415: {"model": ErrorBody, "description": "No type a conversion reads"},
+    429: {"model": ErrorBody, "description": "The account's uploads of the minute are used up"},
+}
+# The form as the route reads it itself: a body parameter would be read before the token check
+UPLOAD_FORM = {
+    "requestBody": {
+        "required": True,
+        "content": {
+            "multipart/form-data": {
+                "schema": {
+                    "type": "object",
+                    "required": ["file"],
+                    "properties": {
+                        "file": {"type": "string", "format": "binary", "description": "Up to MAX_UPLOAD_MB"},
+                        "title": {
+                            "type": "string",
+                            "maxLength": MAX_TITLE_SIGNS,
+                            "description": "The entry's title; else the file's name names it",
+                        },
+                    },
+                }
+            }
+        },
+    }
 }
 
 
@@ -79,7 +103,13 @@ class ImportOut(BaseModel):
     job_id: UUID
 
 
-@router.post("/sources", status_code=201, summary="Upload a curriculum document", responses=UPLOAD_REFUSALS)
+@router.post(
+    "/sources",
+    status_code=201,
+    summary="Upload a curriculum document",
+    responses=UPLOAD_REFUSALS,
+    openapi_extra=UPLOAD_FORM,
+)
 async def upload_source(request: Request, who: Account) -> SourceOut:
     """A form with ``file`` and, if wished, ``title`` (else the file's name names the entry)."""
     settings = request.app.state.settings
