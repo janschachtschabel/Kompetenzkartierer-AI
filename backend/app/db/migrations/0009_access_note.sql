@@ -4,6 +4,8 @@
 -- without a school form or subject holds for all of them in its land. The
 -- rule stays ours: official sources first, an archive as one, a mirror marked; a technical
 -- barrier is never got round. A note's key is the SHA-256 of its row: a second import adds nothing.
+-- Where the dataset kept the note (dataset_field) and whence it took it (dataset_origin) are the
+-- dataset's bookkeeping, not the Kern's origin of a value (cv:Origins), and no account sees them.
 CREATE TABLE access_note (
     id uuid PRIMARY KEY,
     dataset text NOT NULL CHECK (dataset IN ('vergleichsdatensatz-v62.493')),
@@ -12,10 +14,10 @@ CREATE TABLE access_note (
     school_form text CHECK (length(school_form) BETWEEN 1 AND 200),
     subject text CHECK (length(subject) BETWEEN 1 AND 200),
     categories text[] NOT NULL DEFAULT '{}',
-    field text CHECK (length(field) BETWEEN 1 AND 200),
+    dataset_field text CHECK (length(dataset_field) BETWEEN 1 AND 200),
     text text NOT NULL CHECK (length(text) BETWEEN 1 AND 4000),
     url text CHECK (url ~ '^https?://' AND length(url) <= 2000),
-    origin text CHECK (length(origin) BETWEEN 1 AND 200),
+    dataset_origin text CHECK (length(dataset_origin) BETWEEN 1 AND 200),
     UNIQUE (dataset, note_key)
 );
 CREATE INDEX access_note_scope ON access_note (country, school_form, subject);

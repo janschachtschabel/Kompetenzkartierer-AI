@@ -121,13 +121,12 @@ class SeedOut(BaseModel):
 
 
 class AccessNoteOut(BaseModel):
-    """How the documents of the entry's land, school form and subject can be reached (access_note)."""
+    """How the documents of the entry's land, school form and subject can be reached (access_note);
+    the dataset's bookkeeping beside a note stays in the register."""
 
     categories: list[str]
-    field: str | None
     text: str
     url: str | None
-    origin: str | None
 
 
 class SourceDetail(SourceEntry):

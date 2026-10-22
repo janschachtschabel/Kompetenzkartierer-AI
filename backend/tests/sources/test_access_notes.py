@@ -106,6 +106,26 @@ def test_the_notes_are_recorded_once(migrated: str) -> None:
     assert (first.added, second.added, second.present) == (353, 0, 353)
 
 
+@pytest.mark.pg
+def test_a_note_keeps_the_dataset_s_bookkeeping_under_the_dataset_s_name(migrated: str) -> None:
+    # "origin" is the Kern's cv:Origins of a value: the dataset's field and origin are its own
+    blocked = "schulportal-thueringen.de sperrt automatisierte Abrufe"
+    run(lambda connection: record_notes(connection, read_notes(NOTES).notes), migrated)
+
+    with psycopg.connect(migrated) as connection:
+        held = connection.execute(
+            "SELECT dataset_field, dataset_origin FROM access_note WHERE starts_with(text, %s)", (blocked,)
+        ).fetchall()
+        columns = connection.execute(
+            "SELECT column_name FROM information_schema.columns WHERE table_name = 'access_note'"
+        ).fetchall()
+
+    assert set(held) == {
+        (row["Feld"], row["Herkunft"]) for row in published_notes() if row["Hinweis"].startswith(blocked)
+    }
+    assert {"origin", "field"}.isdisjoint(name for (name,) in columns)
+
+
 @pytest.fixture
 def client(migrated: str, tmp_path: Path) -> Iterator[TestClient]:
     app = create_app(make_settings(database_url=migrated, storage_dir=tmp_path))
@@ -183,14 +203,16 @@ def note(land: str, school_form: str, subject: str, text: str) -> dict[str, str]
     return {"Land_Kuerzel": land, "Schulform": school_form, "Fach": subject, "Hinweis": text}
 
 
-def notes_shown(client: TestClient, migrated: str, documents: Path, notes: Path) -> set[str]:
-    """The texts of the notes the one entry of ``documents`` shows."""
+def notes_shown(client: TestClient, migrated: str, documents: Path, notes: Path) -> list[dict[str, Any]]:
+    """The notes the one entry of ``documents`` shows an account."""
     run(lambda connection: seed_register(connection, read_documents(documents).rows), migrated)
     run(lambda connection: record_notes(connection, read_notes(notes).notes), migrated)
     _, header = seed_account(migrated, "Lehrkraft", ["nutzer"])
     (entry,) = client.get("/api/v1/sources", headers=header).json()["entries"]
-    detail = client.get(f"/api/v1/sources/{entry['id']}", headers=header).json()
-    return {found["text"] for found in detail["access_notes"]}
+    notes_of: list[dict[str, Any]] = client.get(f"/api/v1/sources/{entry['id']}", headers=header).json()[
+        "access_notes"
+    ]
+    return notes_of
 
 
 @pytest.mark.pg
@@ -210,7 +232,7 @@ def test_a_note_without_a_school_form_or_subject_holds_for_all_of_them_in_its_la
 
     shown = notes_shown(client, migrated, documents, notes)
 
-    assert shown == {"ganz Bayern", "jedes Gymnasium", "Physik am Gymnasium"}
+    assert {found["text"] for found in shown} == {"ganz Bayern", "jedes Gymnasium", "Physik am Gymnasium"}
 
 
 @pytest.mark.pg
@@ -221,7 +243,7 @@ def test_thuringia_s_blocked_portal_shows_on_its_esa_entries(
     scope = {"Land_Kuerzel": "TH", "Land": "Thüringen", "Schulform": "Erster Schulabschluss (ESA)"}
     documents = write_documents(tmp_path / "d.csv", document("TH.ESA.MA", **scope, Fach="Mathematik"))
 
-    shown = notes_shown(client, migrated, documents, NOTES)
+    shown = {found["text"] for found in notes_shown(client, migrated, documents, NOTES)}
 
     assert any(text.startswith("schulportal-thueringen.de sperrt automatisierte Abrufe") for text in shown)
     expected = {
@@ -232,6 +254,22 @@ def test_thuringia_s_blocked_portal_shows_on_its_esa_entries(
         and row["Hinweis"].strip()
     }
     assert shown == expected
+
+
+@pytest.mark.pg
+def test_a_note_shows_an_account_what_it_says_not_the_dataset_s_bookkeeping(
+    client: TestClient, migrated: str, tmp_path: Path
+) -> None:
+    notes = write_notes(
+        tmp_path / "n.csv",
+        note("BY", "", "", "ganz Bayern")
+        | {"Kategorien": "Sperre 403/429", "Feld": "esa.hinweis", "Herkunft": "laender_meta"},
+    )
+    documents = write_documents(tmp_path / "d.csv", document("BY.GYM.PH"))
+
+    (shown,) = notes_shown(client, migrated, documents, notes)
+
+    assert shown == {"categories": ["Sperre 403/429"], "text": "ganz Bayern", "url": None}
 
 
 @pytest.mark.pg

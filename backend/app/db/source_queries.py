@@ -138,7 +138,7 @@ async def seed_of(
     if seed is None:
         return None, []
     await cursor.execute(
-        "SELECT n.categories, n.field, n.text, n.url, n.origin FROM access_note n"
+        "SELECT n.categories, n.text, n.url FROM access_note n"
         " JOIN source s ON s.id = %s JOIN source_seed x ON x.source_id = s.id"
         " WHERE n.country = s.country AND (n.school_form IS NULL OR n.school_form = x.school_form)"
         " AND (n.subject IS NULL OR n.subject = x.subject)"

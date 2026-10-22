@@ -30,10 +30,10 @@ class AccessNote:
     school_form: str | None
     subject: str | None
     categories: list[str]
-    field: str | None
+    dataset_field: str | None  # where the dataset kept the note: its bookkeeping, not shown
     text: str
     url: str | None
-    origin: str | None
+    dataset_origin: str | None  # whence the dataset took it; no origin in the Kern's sense
 
 
 @dataclass(frozen=True)
@@ -66,10 +66,10 @@ def read_notes(path: Path) -> Notes:
                     categories=[
                         part for part in (_text(item, 200) for item in raw["Kategorien"].split(";")) if part
                     ],
-                    field=_text(raw["Feld"], 200),
+                    dataset_field=_text(raw["Feld"], 200),
                     text=text,
                     url=_address(raw["URL_im_Text"]),
-                    origin=_text(raw["Herkunft"], 200),
+                    dataset_origin=_text(raw["Herkunft"], 200),
                 )
             )
     return Notes(notes, left_out)
@@ -96,8 +96,8 @@ async def record_notes(connection: psycopg.AsyncConnection, notes: list[AccessNo
         async with connection.cursor() as writer:
             await writer.executemany(
                 "INSERT INTO access_note (id, dataset, note_key, country, school_form, subject, categories,"
-                " field, text, url, origin) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-                " ON CONFLICT (dataset, note_key) DO NOTHING",
+                " dataset_field, text, url, dataset_origin) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,"
+                " %s) ON CONFLICT (dataset, note_key) DO NOTHING",
                 [
                     (
                         new_id(),
@@ -107,10 +107,10 @@ async def record_notes(connection: psycopg.AsyncConnection, notes: list[AccessNo
                         note.school_form,
                         note.subject,
                         note.categories,
-                        note.field,
+                        note.dataset_field,
                         note.text,
                         note.url,
-                        note.origin,
+                        note.dataset_origin,
                     )
                     for note in new
                 ],
