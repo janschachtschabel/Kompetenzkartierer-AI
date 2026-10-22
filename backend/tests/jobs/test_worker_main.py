@@ -24,12 +24,24 @@ BACKEND = Path(__file__).resolve().parents[2]
 START_S = 30.0
 
 
+def free_port() -> int:
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port: int = probe.getsockname()[1]
+        return port
+
+
 def start_worker(database_url: str, **settings: str) -> subprocess.Popen[str]:
-    """The worker process with these settings; a throwaway store unless ``settings`` say otherwise."""
+    """The worker process with these settings; a throwaway store and an internal port of its own
+    (not 9000, which a local API may hold) unless ``settings`` say otherwise."""
     with without_settings_variables():
         environment = {**os.environ}
     environment.update(
-        DATABASE_URL=database_url, JOB_POLL_S="0.1", PYTHONUNBUFFERED="1", STORAGE_DIR=str(throwaway_store())
+        DATABASE_URL=database_url,
+        JOB_POLL_S="0.1",
+        PYTHONUNBUFFERED="1",
+        STORAGE_DIR=str(throwaway_store()),
+        INTERNAL_PORT=str(free_port()),
     )
     environment.update(settings)
     for name in [name for name, value in settings.items() if value == ""]:
@@ -99,13 +111,6 @@ def test_sigterm_stops_the_worker_cleanly(database_url: str) -> None:
         process.kill()
 
     assert code == 0
-
-
-def free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        port: int = probe.getsockname()[1]
-        return port
 
 
 def test_the_running_worker_answers_its_liveness_probe_on_the_internal_port(database_url: str) -> None:
