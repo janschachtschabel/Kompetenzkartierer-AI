@@ -6,7 +6,8 @@ Hochschule and Erwachsenenbildung one for all lands. Each row becomes a candidat
 unchecked, beside the comparison dataset's: the title the research read off the document, word
 for word; the first address of its url field (which also holds notes for its readers and further
 addresses); who publishes the copy there, as its host or the field's note on it says (an archive,
-a mirror, a secondary source: §7.5 has mirrors marked); its land; the sector of its assignment;
+a mirror, a secondary source: §7.5 has mirrors marked), on each row of the address though one
+row alone notes it; its land; the sector of its assignment;
 its evidence, E from the primary document or S from a secondary source (A, an assumption, is
 none). A row whose fields a semicolon moved, or without a title or an address, is left out and
 counted, and so is each address an entry's url field names beyond the first ("further_address").
@@ -29,7 +30,7 @@ import re
 import sys
 from collections import Counter
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -70,13 +71,20 @@ _T1_HEADING = re.compile(r"#.*\bT1\b")
 _ADDRESS = re.compile(r"https?://[^\s|]+", re.IGNORECASE)
 _LAND = re.compile(r"DE(-[A-Z]{2})?")  # DE: the federation's own row of Erwachsenenbildung
 _EVIDENCE = re.compile(r"([ES])\b")  # "E", "S (Portalseite)", "E (Titel) | S (Portal)"
-# Hosts that keep what others published: the Wayback Machine, the GEI's depot of curricula
-_ARCHIVES = frozenset({"web.archive.org", "edumedia-depot.gei.de"})
-# What a note says of the copy at its address, as the research words it, in this order
+# Hosts that keep what others published: the Wayback Machine and the GEI's depot of curricula
+# archive it; umwelt-online collects the lands' laws, a secondary source as the research calls it
+_HOSTS: dict[str, SourceType] = {
+    "web.archive.org": "archiv",
+    "edumedia-depot.gei.de": "archiv",
+    "umwelt-online.de": "sekundaer",
+    "www.umwelt-online.de": "sekundaer",
+}
+# What a note says of the copy at its address, as the research words it: the note begins with it
+# ("(Spiegel RPTU, …)", "(Schulkopie, …)"); "(keine Kopie verfügbar)" is no mirror
 _COPY_NOTES: tuple[tuple[re.Pattern[str], SourceType], ...] = (
-    (re.compile(r"archivkopie", re.IGNORECASE), "archiv"),
-    (re.compile(r"\bspiegel|kopie\b", re.IGNORECASE), "spiegel"),  # Spiegelkopie, Schulkopie
-    (re.compile(r"sekund(ä|ae)rquelle", re.IGNORECASE), "sekundaer"),
+    (re.compile(r"\W*archivkopie\b", re.IGNORECASE), "archiv"),
+    (re.compile(r"\W*(spiegel(kopie)?|schulkopie)\b", re.IGNORECASE), "spiegel"),
+    (re.compile(r"\W*sekund(ä|ae)rquelle\b", re.IGNORECASE), "sekundaer"),
 )
 
 
@@ -93,12 +101,15 @@ def read_research(directory: Path) -> Documents:
     rows: list[SeedRow] = []
     left_out: Counter[str] = Counter()
     keys: set[str] = set()
+    marked: dict[str, SourceType] = {}  # an address by the first row saying who publishes it
     for name, assignment in ASSIGNMENTS.items():
         reports = sorted(directory.glob(assignment.reports))
         if not reports:
             raise SeedError(f"no reports of the assignment {name} in {directory}: is ONTOLOGY_DIR right?")
         for path in reports:
             for row, further in _rows(path, name, assignment, left_out):
+                if row.source_type is not None:
+                    marked.setdefault(row.url, row.source_type)
                 if row.key in keys:
                     left_out["duplicate"] += 1
                 else:
@@ -106,7 +117,8 @@ def read_research(directory: Path) -> Documents:
                     rows.append(row)
                     if further:
                         left_out["further_address"] += further
-    return Documents(rows, left_out)
+    # a copy is one on each row naming its address, though one row alone notes it
+    return Documents([replace(row, source_type=marked.get(row.url)) for row in rows], left_out)
 
 
 def _rows(
@@ -182,17 +194,18 @@ def _address(field: str) -> str | None:
 
 
 def _source_type(field: str, url: str) -> SourceType | None:
-    """Who publishes the copy at the field's first address: an archive by its host, else as the
-    research noted it there. The note runs from the address to the field's next "|"; one that
-    names a further address speaks of that one ("(gelesen als Kopie https://…)"), not of the
-    first, and counts for nothing."""
-    if urlsplit(url).hostname in _ARCHIVES:
-        return "archiv"
+    """Who publishes the copy at the field's first address: an archive or a collection of laws by
+    its host, else as the research noted it there. The note runs from the address to the
+    field's next "|"; one that names a further address speaks of that one ("(gelesen als Kopie
+    https://…)"), not of the first, and counts for nothing."""
+    host = urlsplit(url).hostname
+    if host in _HOSTS:
+        return _HOSTS[host]
     found = _ADDRESS.search(field)
     note = field[found.end() :].split("|", 1)[0] if found else ""
     if _ADDRESS.search(note):
         return None
-    return next((kind for pattern, kind in _COPY_NOTES if pattern.search(note)), None)
+    return next((kind for pattern, kind in _COPY_NOTES if pattern.match(note)), None)
 
 
 def _evidence(field: str) -> Evidence | None:

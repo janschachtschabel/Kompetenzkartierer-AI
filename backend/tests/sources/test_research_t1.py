@@ -272,6 +272,22 @@ def test_the_first_address_of_the_field_is_the_entry_s(tmp_path: Path, field: st
             id="02-elementar-DE-TH-pages",
         ),
         pytest.param("https://a.example/lp.pdf", None, id="no-note"),
+        # umwelt-online collects the lands' laws; the research calls it a secondary source
+        pytest.param(
+            "https://umwelt-online.de/recht/arbeitss/arbeitsrecht/laender/hb/wbg.htm",
+            "sekundaer",
+            id="05A-eb-DE-HB-umwelt-online",
+        ),
+        pytest.param(
+            "https://www.umwelt-online.de/recht/arbeitss/arbeitsrecht/laender/th/kitag.htm",
+            "sekundaer",
+            id="02-elementar-DE-TH-www-umwelt-online",
+        ),
+        # a note marks the copy where it begins with what the copy is, not where it names a copy
+        pytest.param("https://a.example/lp.pdf (keine Kopie verfügbar)", None, id="no-copy"),
+        pytest.param("https://a.example/lp.pdf (Original, nicht die Schulkopie)", None, id="not-school-s"),
+        pytest.param("https://a.example/lp.pdf (Spiegelstrich-Liste)", None, id="dashes"),
+        pytest.param("https://a.example/lp.pdf (Sekundärquelle, Kopie)", "sekundaer", id="secondary-copy"),
     ],
 )
 def test_who_publishes_the_copy_is_as_the_field_notes_it_at_the_first_address(
@@ -285,11 +301,35 @@ def test_who_publishes_the_copy_is_as_the_field_notes_it_at_the_first_address(
     assert found.source_type == source_type
 
 
+def test_an_address_is_the_copy_a_note_calls_it_on_each_of_its_rows(tmp_path: Path) -> None:
+    # the same address read for another passage, in another assignment's report
+    mirror = "https://www.lsvd.de/media/doc/3972/2015_thueringen_bildungsplan_18.pdf"
+    directory = write_research(
+        tmp_path / "r",
+        schule=[row("Bildungsplan bis 18", f"{mirror} S. 47 (Literatur)")],
+        elementar=[row("Bildungsplan bis 18", f"{mirror} (Spiegelkopie)"), row("Plan", f"{mirror} S. 8")],
+    )
+
+    kinds = [found.source_type for found in read_research(directory).rows]
+
+    assert kinds == ["spiegel", "spiegel", "spiegel"]
+
+
 def test_the_published_research_marks_its_archives_mirrors_and_secondary_sources() -> None:
     kinds = Counter(row.source_type for row in read_research(PUBLISHED).rows)
 
-    # five rows on the GEI's depot; mirrors in Berlin, Rhineland-Palatinate (2), Saarland, Thuringia
-    assert kinds == {None: 656, "archiv": 5, "spiegel": 5, "sekundaer": 2}
+    # five rows on the GEI's depot; mirrors in Berlin, Rhineland-Palatinate (2), Saarland and
+    # Thuringia (three rows of one address); a secondary source in Hamburg and eleven rows of
+    # umwelt-online
+    assert kinds == {None: 644, "archiv": 5, "spiegel": 7, "sekundaer": 12}
+
+
+def test_no_address_of_the_published_research_is_of_two_kinds() -> None:
+    kinds: dict[str, set[str | None]] = {}
+    for found in read_research(PUBLISHED).rows:
+        kinds.setdefault(found.url, set()).add(found.source_type)
+
+    assert {url: found for url, found in kinds.items() if len(found) > 1} == {}
 
 
 def test_the_further_addresses_of_an_entry_s_field_are_counted(tmp_path: Path) -> None:

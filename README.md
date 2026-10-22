@@ -91,8 +91,9 @@ ungültig.
 - Zweite Saat aus der eigenen Länderrecherche: `python -m app.sources.research_t1` legt die
   668 Dokumente der T1-Tabellen an (`ontology/recherche-ergebnisse/`, auch im API-Image), mit
   Bildungsbereich je Auftrag, Beleg E/S und gekennzeichneten Archiv-, Spiegel- und
-  Sekundärquellen. Danach meldet der Befehl, wie viele Adressen nur der Vergleichsdatensatz
-  kennt, nur die Recherche oder beide. Ein zweiter Lauf ändert nichts. Vorher müssen das
+  Sekundärquellen (nach Host oder Vermerk; ein Vermerk gilt für jeden Eintrag derselben
+  Adresse). Danach meldet der Befehl, wie viele Adressen nur der Vergleichsdatensatz
+  kennt, nur die Recherche oder beide. Ein zweiter Lauf ändert nichts. Vorher muss das
   Vokabular geladen sein (alle fünf Bildungsbereiche, sonst Exit-Code 1). In Compose:
   `docker compose -f deploy/docker-compose.yml run --rm migrate python -m app.sources.research_t1`.
 - Prüfung der Saat: `POST /api/v1/sources/checks` (nur Admin) startet den Job `source.check`.
