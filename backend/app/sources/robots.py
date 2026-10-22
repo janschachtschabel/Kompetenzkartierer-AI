@@ -9,16 +9,19 @@ decoded (RFC 9309 2.2.2), every other escape in capitals. A line is split at its
 no pattern backtracks over a line of space. A group with more rules, or longer ones, than the
 matching holds forbids everything: what is not read is not taken to allow.
 
-Fetched once per origin the way fetch goes (url_fetch.follow), five redirects deep, with no trace
-of ours: 2xx gives the rules of the first 500 KiB, a line the cut went through counting for
-nothing; 4xx says there are none (the file is unavailable, RFC 9309 2.3.1.3), as does a file not
-found within five redirects or behind a redirect that cannot be read. 429, 5xx, no answer, a
+Fetched once per origin the way fetch goes (url_fetch.follow), five redirects deep, each address
+heard of before it is asked, with no trace of ours: 2xx gives the rules of the first 500 KiB, a
+line the cut went through counting for nothing (500 KiB without the end of a line forbid
+everything); 4xx says there are none (the file is unavailable, RFC 9309 2.3.1.3), as does a file
+not found within five redirects or behind a redirect that cannot be read. 429, 5xx, no answer, a
 file that cannot be unpacked, or a redirect to where no request may go leave the host for a
-later check (HostDeferred) - RFC 9309 has a crawler assume complete disallow then. A host that
-is not to be asked at all is refused as such (url_fetch.HostRefused).
+later check (HostDeferred, with the Retry-After of a request to wait) - RFC 9309 has a crawler
+assume complete disallow then. A host that is not to be asked at all is refused as such
+(url_fetch.HostRefused).
 """
 
 import re
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from urllib.parse import quote, urlsplit
 
@@ -38,10 +41,10 @@ from app.sources.url_fetch import (
 
 ROBOTS_BYTES = 500 * 1024  # what a crawler must read at least (RFC 9309 2.5)
 ROBOTS_REDIRECTS = 5  # what it must follow at least (2.3.1.2)
-# What the matching of every address against every rule holds: 2000 rules of 2000 signs against
-# the longest address of the seed take well under a second
+# What the matching holds: a robots.txt that names more rules, or longer ones, forbids everything
 MAX_RULES = 2000
 MAX_RULE_SIGNS = 2000
+_ASKED_TO_WAIT = frozenset({429, 503})  # the answers whose Retry-After says how long
 _KEY = re.compile(r"[A-Za-z-]+")
 _ESCAPE = re.compile(r"%[0-9a-fA-F]{2}")
 # Every sign of ASCII but the space and controls stands as it is; anything else is percent-encoded
@@ -52,11 +55,13 @@ _BYTE_ORDER_MARK = chr(0xFEFF)
 
 class HostDeferred(Exception):
     """The host's robots.txt could not be had now (``status`` 429 or 5xx, or none: no answer, or
-    none that could be read)."""
+    none that could be read); ``retry_after`` how long a server that asked to wait said, as it
+    said it."""
 
-    def __init__(self, status: int | None) -> None:
+    def __init__(self, status: int | None, retry_after: str | None = None) -> None:
         super().__init__(f"robots.txt not to be had now ({status or 'no answer'})")
         self.status = status
+        self.retry_after = retry_after
 
 
 @dataclass(frozen=True)
@@ -131,13 +136,18 @@ async def read_robots(
     user_agent: str = "Kompetenzkartierer-AI",
     timeout: float = PHASE_TIMEOUT_S,
     total_timeout: float = TOTAL_TIMEOUT_S,
+    before_hop: Callable[[str], Awaitable[None]] | None = None,
 ) -> Rules:
     """The rules of ``origin``'s robots.txt for ``product``; HostDeferred when it cannot be had
-    now, HostRefused (a UrlNotAllowed) for a host of the origin's that is not to be asked."""
+    now, HostRefused (a UrlNotAllowed) for a host of the origin's that is not to be asked.
+    ``before_hop`` hears of each address before it is asked, as for url_fetch.follow."""
 
-    async def read(response: httpx2.Response) -> tuple[int, bytes]:
-        if not 200 <= response.status_code < 300:
-            return response.status_code, b""
+    async def read(response: httpx2.Response) -> tuple[int, bytes | None, str | None]:
+        """The answer's status, the rules' text (None: 500 KiB without the end of a line) and how
+        long a server that asked to wait said."""
+        status = response.status_code
+        if not 200 <= status < 300:
+            return status, b"", response.headers.get("retry-after") if status in _ASKED_TO_WAIT else None
         kept = bytearray()
 
         def take(piece: bytes) -> None:
@@ -149,12 +159,14 @@ async def read_robots(
         try:
             await aread_body(response, 2 * ROBOTS_BYTES, take)
         except (_Enough, BodyTooLarge):
-            # cut at 500 KiB: the line the cut went through counts for nothing
-            return response.status_code, bytes(kept[: kept.rfind(b"\n") + 1])
-        return response.status_code, bytes(kept)
+            # cut at 500 KiB: the line the cut went through counts for nothing; CR, LF or both
+            # end a line (RFC 9309 2.2)
+            cut = max(kept.rfind(b"\n"), kept.rfind(b"\r")) + 1
+            return status, bytes(kept[:cut]) if cut else None, None
+        return status, bytes(kept), None
 
     try:
-        (status, body), _ = await follow(
+        (status, body, retry_after), _ = await follow(
             f"{origin}/robots.txt",
             read,
             transport=transport,
@@ -162,6 +174,7 @@ async def read_robots(
             timeout=timeout,
             total_timeout=total_timeout,
             max_redirects=ROBOTS_REDIRECTS,
+            before_hop=before_hop,
             trace=False,
         )
     except (TooManyRedirects, BadAnswer):
@@ -174,10 +187,12 @@ async def read_robots(
         raise HostDeferred(None) from None  # a redirect led where no request may go
     except DownloadError:
         raise HostDeferred(None) from None
+    if body is None:
+        return EVERYTHING_FORBIDDEN  # what is not read is not taken to allow
     if 200 <= status < 300:
         return parse_robots(body.decode("utf-8", "replace"), product)
     if status == 429 or status >= 500:
-        raise HostDeferred(status)
+        raise HostDeferred(status, retry_after)
     return Rules()
 
 
@@ -198,23 +213,22 @@ def _matches(rule: str, target: str) -> bool:
 
 
 def _whole(pattern: str, text: str) -> bool:
-    """All of ``text`` as ``pattern`` reads it, * for any run of signs: the two-pointer walk, at
-    most len(pattern) * len(text) steps, where a regex of many stars backtracks without end."""
-    at = index = 0
-    star = -1  # where the last star stood, and up to where in the text it had taken
-    taken = 0
-    while index < len(text):
-        if at < len(pattern) and pattern[at] == "*":
-            star, taken = at, index
-            at += 1
-        elif at < len(pattern) and pattern[at] == text[index]:
-            at += 1
-            index += 1
-        elif star >= 0:
-            at, taken = star + 1, taken + 1
-            index = taken
-        else:
+    """All of ``text`` as ``pattern`` reads it, * for any run of signs: its first part begins the
+    text, its last ends it, and those between the stars follow in turn, each where it first comes
+    (no later place lets more of the rest match). str.find looks for them, in C - where a regex
+    of many stars backtracks without end, and a walk sign by sign tries a long run after a star
+    at every sign of the text."""
+    first, *rest = pattern.split("*")
+    if not rest:
+        return text == pattern
+    *between, last = rest
+    end = len(text) - len(last)
+    if end < len(first) or not text.startswith(first) or not text.endswith(last):
+        return False
+    at = len(first)
+    for part in between:
+        found = text.find(part, at, end)
+        if found < 0:
             return False
-    while at < len(pattern) and pattern[at] == "*":
-        at += 1
-    return at == len(pattern)
+        at = found + len(part)
+    return True

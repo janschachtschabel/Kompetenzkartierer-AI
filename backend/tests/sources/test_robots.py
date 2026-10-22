@@ -2,6 +2,8 @@
 an allow a tie; our own group, else that of "*"; and what to do when the file cannot be had."""
 
 import asyncio
+import random
+import re
 import time
 from collections.abc import AsyncIterator, Callable
 from typing import Any
@@ -11,11 +13,13 @@ import pytest
 
 from app.core.tracing import take_trace_headers
 from app.sources.robots import (
+    EVERYTHING_FORBIDDEN,
     MAX_RULE_SIGNS,
     MAX_RULES,
     ROBOTS_BYTES,
     HostDeferred,
     Rules,
+    _matches,
     parse_robots,
     product_token,
     read_robots,
@@ -141,6 +145,33 @@ def test_stars_without_end_match_in_no_time() -> None:
     assert time.perf_counter() - started < 1.0
 
 
+def test_a_file_full_of_star_rules_matches_a_long_address_in_no_time() -> None:
+    # a redirect's address is as long as its server likes; a star tried at each sign of it, and a
+    # long run after the star compared sign by sign each time, the rules of 500 KiB took minutes
+    rule = "/*" + "a" * (MAX_RULE_SIGNS - 3) + "b"
+    rules = Rules(disallow=(rule,) * (ROBOTS_BYTES // (len(rule) + len("Disallow: \n"))))
+    started = time.perf_counter()
+
+    assert rules.allows(f"{SITE}/" + "a" * 8_000)
+    assert time.perf_counter() - started < 1.0
+
+
+def as_rfc_9309_reads(rule: str, target: str) -> bool:
+    """The rule as a regex: * any run of signs, a closing $ the end - for short texts alone."""
+    body, end = (rule[:-1], True) if rule.endswith("$") else (rule, False)
+    pattern = ".*".join(re.escape(part) for part in body.split("*"))
+    return re.fullmatch(pattern if end else pattern + ".*", target, re.DOTALL) is not None
+
+
+def test_a_rule_matches_as_its_stars_and_dollar_say() -> None:
+    draw = random.Random(9309)  # noqa: S311 - the same draw of cases each run, no secret
+    for _ in range(5_000):
+        rule = "".join(draw.choices("ab*$/", k=draw.randrange(9)))
+        target = "".join(draw.choices("ab/$", k=draw.randrange(11)))
+
+        assert _matches(rule, target) is as_rfc_9309_reads(rule, target), (rule, target)
+
+
 def test_more_rules_than_are_matched_or_a_rule_too_long_forbid_everything() -> None:
     # what is not read is not taken to allow what it may forbid
     enough = "".join(f"Disallow: /a{number}\n" for number in range(MAX_RULES))
@@ -235,6 +266,18 @@ async def test_a_host_that_asks_to_wait_or_fails_waits_for_a_later_check(status:
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize(("status", "kept"), [(429, "3600"), (503, "3600"), (500, None)])
+async def test_a_host_that_asks_to_wait_says_how_long(status: int, kept: str | None) -> None:
+    # Retry-After counts where the server asked to wait (429, 503), not where it failed
+    transport = mock(lambda request: httpx2.Response(status, headers={"retry-after": "3600"}))
+
+    with pytest.raises(HostDeferred) as deferred:
+        await read_robots(SITE, PRODUCT, transport=transport)
+
+    assert deferred.value.retry_after == kept
+
+
+@pytest.mark.anyio
 async def test_a_host_that_does_not_answer_waits_for_a_later_check() -> None:
     def refusing(request: httpx2.Request) -> httpx2.Response:
         raise httpx2.ConnectError("refused")
@@ -265,6 +308,25 @@ async def test_robots_txt_is_followed_through_five_redirects_and_past_them_is_no
 
 
 @pytest.mark.anyio
+async def test_each_address_robots_txt_leads_to_is_heard_of_before_it_is_asked() -> None:
+    # the check job takes each host's turn there, as for a document's redirects
+    heard: list[str] = []
+
+    async def hop(address: str) -> None:
+        heard.append(address)
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        if request.url.host == "lehrplaene.example":
+            return httpx2.Response(301, headers={"location": "https://z.example/robots.txt"})
+        return httpx2.Response(200, content=b"User-agent: *\nDisallow: /intern\n")
+
+    rules = await read_robots(SITE, PRODUCT, transport=mock(handler), before_hop=hop)
+
+    assert heard == [f"{SITE}/robots.txt", "https://z.example/robots.txt"]
+    assert not rules.allows(f"{SITE}/intern/lp.pdf")
+
+
+@pytest.mark.anyio
 async def test_the_rules_of_a_robots_txt_past_500_kib_are_its_first_500_kib() -> None:
     body = b"User-agent: *\nDisallow: /intern\n" + b"# " + b"x" * ROBOTS_BYTES + b"\nDisallow: /\n"
     # in the chunks the network hands over: a body built from bytes arrives in one piece
@@ -287,6 +349,27 @@ async def test_a_line_cut_at_500_kib_counts_for_nothing() -> None:
     rules = await read_robots(SITE, PRODUCT, transport=streaming)
 
     assert not rules.allows(f"{SITE}/intern/gesperrt/lp.pdf")
+
+
+@pytest.mark.anyio
+async def test_a_line_ends_at_a_carriage_return_too_where_500_kib_are_cut() -> None:
+    # RFC 9309 2.2: CR, LF or both end a line
+    body = b"User-agent: *\rDisallow: /intern\r" + b"#\r" * ROBOTS_BYTES
+    streaming = mock(lambda request: httpx2.Response(200, content=arriving(in_chunks(body))))
+
+    rules = await read_robots(SITE, PRODUCT, transport=streaming)
+
+    assert not rules.allows(f"{SITE}/intern/lp.pdf")
+    assert rules.allows(f"{SITE}/lp.pdf")
+
+
+@pytest.mark.anyio
+async def test_500_kib_without_the_end_of_a_line_forbid_everything() -> None:
+    # nothing of it is read, and what is not read is not taken to allow
+    body = b"User-agent: * Disallow: /" + b" " * ROBOTS_BYTES
+    streaming = mock(lambda request: httpx2.Response(200, content=arriving(in_chunks(body))))
+
+    assert await read_robots(SITE, PRODUCT, transport=streaming) == EVERYTHING_FORBIDDEN
 
 
 @pytest.mark.anyio
