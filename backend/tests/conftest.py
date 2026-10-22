@@ -13,6 +13,17 @@ from psycopg.conninfo import make_conninfo
 from tests.support import kept_logging
 
 
+@pytest.fixture(autouse=True)
+def without_aws_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
+    """boto3 reads AWS_* and ~/.aws besides the settings: a developer's profile, endpoint or keys
+    would steer a test, or sign its requests. Nor does it ask the cloud's metadata address."""
+    for key in [key for key in os.environ if key.upper().startswith("AWS_")]:
+        monkeypatch.delenv(key)
+    monkeypatch.setenv("AWS_CONFIG_FILE", os.devnull)
+    monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", os.devnull)
+    monkeypatch.setenv("AWS_EC2_METADATA_DISABLED", "true")
+
+
 @pytest.fixture
 def restore_logging() -> Iterator[None]:
     """Undo what configure_logging does to the process-wide loggers."""

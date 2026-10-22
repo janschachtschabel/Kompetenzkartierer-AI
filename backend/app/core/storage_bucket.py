@@ -14,21 +14,31 @@ from botocore.exceptions import BotoCoreError, ClientError  # type: ignore[impor
 
 from app.core.logging import configure_logging
 from app.core.settings import Settings
+from app.core.storage_s3 import NO_BUCKET, error_code, s3_client
 
 log = logging.getLogger("app.core.storage_bucket")  # also when run as __main__
 
 
 def ensure_bucket(client: Any, bucket: str) -> bool:
-    """Make ``bucket`` unless it exists; True when it was made. Any refusal other than "no such
-    bucket" is raised: a 403 may mean the bucket exists under another owner."""
+    """Make ``bucket`` in the client's region unless it exists; True when it was made. Any refusal
+    other than "no such bucket" is raised: a 403 may mean the bucket exists under another owner."""
     try:
         client.head_bucket(Bucket=bucket)
     except ClientError as error:
-        if error.response.get("Error", {}).get("Code") not in {"404", "NoSuchBucket", "NotFound"}:
+        if error_code(error) not in NO_BUCKET:
             raise
-        client.create_bucket(Bucket=bucket)
-        return True
-    return False
+    else:
+        return False
+    region = client.meta.region_name
+    # AWS takes a bucket without its region in us-east-1 only
+    where = {} if region in (None, "us-east-1") else {"LocationConstraint": region}
+    try:
+        client.create_bucket(Bucket=bucket, **({"CreateBucketConfiguration": where} if where else {}))
+    except ClientError as error:
+        if error_code(error) != "BucketAlreadyOwnedByYou":  # made meanwhile by a second run
+            raise
+        return False
+    return True
 
 
 def main() -> int:
@@ -37,12 +47,11 @@ def main() -> int:
     if settings.storage_backend != "s3":
         log.info("the file system store needs no bucket")
         return 0
-    from app.core.storage_s3 import s3_client
-
     assert settings.s3_bucket is not None  # noqa: S101 - the settings refuse s3 without a bucket
     try:
         made = ensure_bucket(s3_client(settings), settings.s3_bucket)
-    except (ClientError, BotoCoreError) as error:
+    # ValueError: an address boto3 takes for no host name ("object_store", with "_")
+    except (ClientError, BotoCoreError, ValueError) as error:
         log.error("bucket not ready: %s", " ".join(str(error).split()))
         return 1
     log.info("bucket %s %s", settings.s3_bucket, "made" if made else "exists")

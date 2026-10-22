@@ -12,7 +12,8 @@ from collections.abc import Iterator
 
 import pytest
 
-from app.core.storage import ObjectNotFound
+from app.core.settings import Settings
+from app.core.storage import ObjectNotFound, StorageNotConfigured, open_storage
 from app.core.storage_s3 import S3Storage, s3_client
 from tests.support import make_settings
 
@@ -20,20 +21,27 @@ pytestmark = pytest.mark.s3
 
 
 @pytest.fixture
-def storage() -> Iterator[S3Storage]:
+def service_settings() -> Settings:
+    """Settings for the test service, with a bucket name of their own that nothing holds yet."""
     url = os.environ.get("KKA_TEST_S3_URL")
     if not url:
         if os.environ.get("KKA_REQUIRE_S3") or os.environ.get("CI"):
             pytest.fail("KKA_TEST_S3_URL is not set, but the S3 tests are required")
         pytest.skip("KKA_TEST_S3_URL is not set")
-    bucket = f"kka-t-{uuid.uuid4().hex[:12]}"
-    settings = make_settings(
+    return make_settings(
         storage_backend="s3",
         s3_endpoint_url=url,
-        s3_bucket=bucket,
+        s3_bucket=f"kka-t-{uuid.uuid4().hex[:12]}",
         s3_access_key=os.environ["KKA_TEST_S3_ACCESS_KEY"],
         s3_secret_key=os.environ["KKA_TEST_S3_SECRET_KEY"],
     )
+
+
+@pytest.fixture
+def storage(service_settings: Settings) -> Iterator[S3Storage]:
+    settings = service_settings
+    assert settings.s3_bucket is not None
+    bucket = settings.s3_bucket
     client = s3_client(settings)
     client.create_bucket(Bucket=bucket)
     try:
@@ -71,3 +79,15 @@ def test_bytes_come_back_as_they_went_in(storage: S3Storage) -> None:
     storage.put("blob.bin", data)
 
     assert storage.get("blob.bin") == data
+
+
+def test_a_bucket_the_service_does_not_hold_stops_the_opening(service_settings: Settings) -> None:
+    # on a HEAD, MinIO answers a missing bucket as it does a missing key: 404
+    with pytest.raises(StorageNotConfigured, match="S3_BUCKET"):
+        open_storage(service_settings)
+
+
+def test_the_store_opens_on_a_bucket_the_service_holds(
+    storage: S3Storage, service_settings: Settings
+) -> None:
+    assert isinstance(open_storage(service_settings), S3Storage)

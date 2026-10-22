@@ -140,12 +140,18 @@ def _sync_folder(folder: Path) -> None:
 
 
 def open_storage(settings: Settings) -> Storage:
-    """The store the settings name. S3 is imported only here: boto3 is slow to load."""
+    """The store the settings name. S3 is imported only here: boto3 is slow to load.
+
+    For S3 it asks the service once whether the bucket exists - a network call, so an async
+    caller runs it in a thread - and raises StorageNotConfigured if not.
+    """
     if settings.storage_backend == "s3":
-        from app.core.storage_s3 import S3Storage, s3_client
+        from app.core import storage_s3
 
         assert settings.s3_bucket is not None  # noqa: S101 - the settings refuse s3 without a bucket
-        return S3Storage(s3_client(settings), settings.s3_bucket)
+        storage = storage_s3.S3Storage(storage_s3.s3_client(settings), settings.s3_bucket)
+        storage.check_bucket()
+        return storage
     if settings.storage_dir is None:
         raise StorageNotConfigured("STORAGE_DIR is needed for the file system store")
     return FileSystemStorage(settings.storage_dir)

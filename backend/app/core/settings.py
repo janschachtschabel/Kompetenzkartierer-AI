@@ -10,6 +10,7 @@ import re
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Annotated, Any, Literal, Self, get_args, get_origin
+from urllib.parse import urlsplit
 
 import psycopg
 from psycopg.conninfo import conninfo_to_dict
@@ -21,6 +22,8 @@ from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, Settings
 REPOSITORY_ONTOLOGY = Path(__file__).resolve().parents[3] / "ontology"
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 Port = Annotated[int, Field(ge=1, le=65535)]
+# The address of a service the process calls: the language model, the object store
+EndpointUrl = Annotated[str, Field(pattern=r"^https?://[^\s/]+(/\S*)?$")]
 
 
 class SecretFileSource(PydanticBaseSettingsSource):
@@ -77,6 +80,21 @@ def _split_by_the_password(parts: dict[str, Any]) -> bool:
     )
 
 
+def plain_endpoint(value: str) -> str:
+    """``value`` if it is http(s)://host[:port][/path]; http for a service inside the cluster.
+
+    A user, a query or a fragment would ride along on every request and into logs.
+    """
+    parts = urlsplit(value)
+    try:
+        port_valid = parts.port is None or parts.port > 0
+    except ValueError:  # out of range
+        port_valid = False
+    if not parts.hostname or "@" in parts.netloc or "?" in value or "#" in value or not port_valid:
+        raise ValueError("must be http(s)://host[:port][/path], without user, query or fragment")
+    return value
+
+
 def _environment_value(name: str, environment: Mapping[str, str] = os.environ) -> str | None:
     """``name`` in the environment in any case, as pydantic matches the plain variables."""
     if name in environment:
@@ -127,9 +145,9 @@ class Settings(BaseSettings):
     storage_dir: Path | None = None
     # The S3 service: its address (empty for AWS itself), bucket and region; the keys come both or
     # neither - without them boto3 takes the credentials of the pod or machine
-    s3_endpoint_url: str | None = None
+    s3_endpoint_url: EndpointUrl | None = None
     s3_bucket: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$")] | None = None
-    s3_region: str = "us-east-1"
+    s3_region: Annotated[str, Field(pattern=r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")] = "us-east-1"
     s3_access_key: Annotated[SecretStr, Field(min_length=1)] | None = None
     s3_secret_key: Annotated[SecretStr, Field(min_length=1)] | None = None
 
@@ -175,6 +193,17 @@ class Settings(BaseSettings):
             raise ValueError("must not trust every address (/0): every client could name its own")
         # a single address without its /32 or /128, a network with its prefix
         return ",".join(str(net.network_address) if net.num_addresses == 1 else str(net) for net in networks)
+
+    @field_validator("s3_endpoint_url", mode="before")
+    @classmethod
+    def _empty_endpoint_is_aws(cls, value: object) -> object:
+        # The Helm values write S3_ENDPOINT_URL: "" for AWS itself; boto3 refuses "" as an address
+        return None if value == "" else value
+
+    @field_validator("s3_endpoint_url")
+    @classmethod
+    def _plain_s3_endpoint(cls, value: str | None) -> str | None:
+        return None if value is None else plain_endpoint(value)
 
     @field_validator("log_level", mode="before")
     @classmethod

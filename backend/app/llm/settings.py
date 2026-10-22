@@ -9,12 +9,11 @@ The key may come from OPENAI_API_KEY_FILE; without one the app starts, its model
 import os
 import re
 from typing import Annotated, Literal, Self
-from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 
-from app.core.settings import SecretFileSource
+from app.core.settings import EndpointUrl, SecretFileSource, plain_endpoint
 
 # The provider's value sets, compared against the library's types in tests/llm
 ReasoningEffort = Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"]
@@ -25,7 +24,7 @@ class LLMSettings(BaseSettings):
     model_config = SettingsConfigDict(hide_input_in_errors=True)
 
     openai_api_key: Annotated[SecretStr, Field(min_length=1)] | None = None
-    openai_base_url: Annotated[str, Field(pattern=r"^https?://[^\s/]+(/\S*)?$")] = "https://api.openai.com/v1"
+    openai_base_url: EndpointUrl = "https://api.openai.com/v1"
     openai_model: Annotated[str, Field(min_length=1)] = "gpt-6-luna"
     openai_reasoning_effort: ReasoningEffort = "low"
     openai_text_verbosity: TextVerbosity = "low"
@@ -56,18 +55,8 @@ class LLMSettings(BaseSettings):
     @field_validator("openai_base_url")
     @classmethod
     def _plain_endpoint(cls, value: str) -> str:
-        """http(s)://host[:port][/path]; http for a gateway inside the cluster.
-
-        A user, a query or a fragment would ride along on every request and into logs.
-        """
-        parts = urlsplit(value)
-        try:
-            port_valid = parts.port is None or parts.port > 0
-        except ValueError:  # out of range
-            port_valid = False
-        if not parts.hostname or "@" in parts.netloc or "?" in value or "#" in value or not port_valid:
-            raise ValueError("must be http(s)://host[:port][/path], without user, query or fragment")
-        return value
+        # http for a gateway inside the cluster
+        return plain_endpoint(value)
 
     @model_validator(mode="after")
     def _no_sdk_request_log(self) -> Self:
