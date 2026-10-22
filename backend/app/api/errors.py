@@ -137,8 +137,11 @@ async def _database_away(request: Request, error: Exception) -> Response:
     assert isinstance(error, OperationalError)  # noqa: S101 - registered for this type only
     if not _database_is_away(error):
         raise error
-    # the class and the state only: a path is the request log's, and quotes the client
-    log.warning("the database did not answer: %s %s", type(error).__name__, error.sqlstate)
+    # the class and the state: a path is the request log's, and quotes the client. Without a
+    # state the error is psycopg's own - a lost connection, or a refusal such as too many
+    # parameters - and its words, which quote no data, are what tells them apart
+    said = "" if error.sqlstate else " ".join(str(error).split())
+    log.warning("the database did not answer: %s %s %s", type(error).__name__, error.sqlstate, said)
     retry = {"Retry-After": str(DATABASE_RETRY_S)}
     return error_response(503, "The database does not answer; try again shortly.", headers=retry)
 

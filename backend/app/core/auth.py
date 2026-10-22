@@ -8,8 +8,9 @@ from uuid import UUID
 Role = Literal["admin", "redaktion", "nutzer"]
 # The longest account name and key label, in the one spelling the database keeps
 MAX_NAME_SIGNS = 200
-# Control and format signs (NUL, zero-width space, right-to-left override) and line separators
-_HIDDEN = frozenset({"Cc", "Cf", "Zl", "Zp"})
+# Control and format signs (NUL, zero-width space, right-to-left override), line separators,
+# and code points not assigned yet, which Unicode asks to be drawn invisibly
+_HIDDEN = frozenset({"Cc", "Cf", "Zl", "Zp", "Cn"})
 # Signs that show nothing and are neither: the combining grapheme joiner, the Hangul fillers, the
 # blank braille pattern, the variation selectors (Unicode's default-ignorable code points)
 _INVISIBLE = frozenset(

@@ -58,7 +58,8 @@ ungültig.
   Das Sprachmodell braucht immer ein Token.
 - `FORWARDED_ALLOW_IPS` (Standard `127.0.0.1,::1`): Adressen oder Netze der Proxys, deren
   `X-Forwarded-For` die Client-Adresse nennt; nie `*`, sonst wählt jeder Client seine Adresse
-  selbst und umgeht das Limit.
+  selbst und umgeht das Limit. Aus demselben Grund wird ein Netz `/0` abgewiesen, und ein Netz
+  mit gesetzten Hostbits (`10.42.1.5/16`) ebenso, statt still erweitert zu werden.
 - `AUTH_FAILURE_LIMIT` (Standard 10) Fehlversuche je IPv4-Adresse oder IPv6-/64 innerhalb
   `AUTH_FAILURE_WINDOW_S` (Standard 900 s), danach 429. Ein gültiges Token kommt immer durch.
 - `DB_POOL_TIMEOUT_S` (Standard 5 s): so lange wartet eine Anfrage auf eine Verbindung, dann
@@ -67,7 +68,8 @@ ungültig.
 Worker: `JOB_LEASE_S` (Standard 60 s; ein Worker ohne Lebenszeichen verliert seinen Job danach),
 `JOB_POLL_S` (Standard 1 s), `JOB_SHUTDOWN_GRACE_S` (Standard 20 s): Nach SIGTERM darf der
 laufende Job so lange zu Ende laufen, dann geht er unverbraucht an den nächsten Worker zurück.
-Unter der Frist des Deployments halten (Kubernetes: 30 s).
+Mindestens 5 s unter der Frist des Deployments halten (Kubernetes: 30 s): Nach der Frist bekommt
+der Handler noch bis zu 2 s zum Aufräumen, erst dann wird der Job zurückgegeben.
 
 Sprachmodell (OpenAI-kompatibel): `OPENAI_API_KEY` (auch `OPENAI_API_KEY_FILE`; nur sichtbare
 ASCII-Zeichen), `OPENAI_BASE_URL` (Standard `https://api.openai.com/v1`; `http(s)://Host[:Port][/Pfad]`

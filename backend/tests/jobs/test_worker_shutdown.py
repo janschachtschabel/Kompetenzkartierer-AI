@@ -1,6 +1,7 @@
 """A stopping worker: the running job gets its grace, then goes back unspent, for the next worker."""
 
 import asyncio
+import logging
 from collections.abc import AsyncIterator
 from typing import Any
 from uuid import UUID
@@ -115,3 +116,31 @@ async def test_a_job_claimed_as_the_worker_is_told_to_stop_goes_back_unrun(
 
     assert ran == []
     assert await job_row(pool, job_id) == UNSPENT
+
+
+async def test_a_handler_that_fails_while_it_stops_leaves_its_type_in_the_log_not_its_words(
+    pool: AsyncConnectionPool, caplog: pytest.LogCaptureFixture
+) -> None:
+    # asyncio would print "exception was never retrieved" with the whole message, input and all
+    started = asyncio.Event()
+
+    async def failing_cleanup(job: Job) -> None:
+        started.set()
+        try:
+            await asyncio.sleep(3600)
+        except asyncio.CancelledError:
+            raise ValueError("secret input text") from None
+
+    job_id = await add(pool)
+    stop = asyncio.Event()
+    worker = Worker(pool, {"test.work": failing_cleanup}, owner="w1", lease_s=3, poll_s=0.05, grace_s=0.1)
+    running = asyncio.create_task(worker.run(stop))
+    await asyncio.wait_for(started.wait(), DEADLINE_S)
+    caplog.set_level(logging.WARNING)
+
+    stop.set()
+    await asyncio.wait_for(running, DEADLINE_S)
+
+    assert await job_row(pool, job_id) == UNSPENT
+    assert any("ValueError" in record.getMessage() for record in caplog.records)
+    assert "secret input text" not in caplog.text

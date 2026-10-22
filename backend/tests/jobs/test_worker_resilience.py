@@ -215,12 +215,15 @@ async def test_a_sweeper_that_breaks_stops_the_worker_and_says_why(
 
     monkeypatch.setattr(worker_module, "requeue_expired", broken_sweep)
     stop = asyncio.Event()
-    running = asyncio.create_task(Worker(pool, {"test.work": anything}, owner="w1", poll_s=0.05).run(stop))
+    worker = Worker(pool, {"test.work": anything}, owner="w1", poll_s=0.05)
+    running = asyncio.create_task(worker.run(stop))
 
     done, _ = await asyncio.wait({running}, timeout=DEADLINE_S)
 
     assert running in done
     assert stop.is_set()
+    # the process ends with an error, so a supervisor restarts it
+    assert worker.broken
     assert any(record.levelname == "ERROR" and "sweep" in record.getMessage() for record in caplog.records)
 
 
@@ -230,3 +233,44 @@ async def test_a_worker_without_handlers_asks_the_database_nothing() -> None:
         FAKE_DATABASE_URL, min_size=0, max_size=1, timeout=0.2, open=False
     ) as away:
         assert await Worker(away, {}, owner="w1").run_once() is False
+
+
+@pytest.mark.pg
+@pytest.mark.parametrize(
+    "text", ["page 3: 'a" + chr(0) + "b'", "page 3: 'a" + chr(0xD800) + "b'"], ids=["nul", "surrogate"]
+)
+async def test_a_permanent_failure_whose_words_the_database_refuses_still_ends_the_job(
+    pool: AsyncConnectionPool, text: str
+) -> None:
+    # its message quotes the input; refused as jsonb, the job ran again and again
+    async def refuse(job: Job) -> None:
+        raise worker_module.PermanentError("bad_input", text)
+
+    job_id = await add(pool)
+
+    await Worker(pool, {"test.work": refuse}, owner="w1").run_once()
+
+    found = await job_row(pool, job_id)
+    assert (found["status"], found["attempts"], found["error"]["code"]) == ("failed", 1, "bad_input")
+    assert chr(0) not in found["error"]["message"]
+
+
+@pytest.mark.pg
+async def test_a_result_too_deep_for_the_database_s_writer_fails_its_job_and_the_worker_goes_on(
+    pool: AsyncConnectionPool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # past the JSON check but too deep for psycopg's own writer, deeper in the stack
+    async def too_deep(connection: Any, job: Job, result: Any) -> None:
+        raise RecursionError("maximum recursion depth exceeded while encoding a JSON object")
+
+    async def answer(job: Job) -> dict[str, Any]:
+        return {"value": 1}
+
+    monkeypatch.setattr(outcome_module, "complete", too_deep)
+    broken = await add(pool)
+    worker = Worker(pool, {"test.work": answer}, owner="w1")
+
+    assert await worker.run_once() is True
+
+    found = await job_row(pool, broken)
+    assert (found["status"], found["error"]["code"]) == ("failed", "result_not_storable")

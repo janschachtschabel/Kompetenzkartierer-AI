@@ -115,3 +115,12 @@ def test_a_bootstrap_name_an_account_has_says_so(database_url: str) -> None:
     assert (again.returncode, again.stdout) == (1, "")
     assert "an account of this name exists" in again.stderr
     assert "Traceback" not in again.stderr
+
+
+def test_a_bootstrap_name_too_long_in_its_one_spelling_is_refused(database_url: str) -> None:
+    migrate(database_url)
+
+    refused = bootstrap(database_url, chr(0xFB2C) * 67)  # 201 signs once in NFC
+
+    assert (refused.returncode, refused.stdout) == (1, "")
+    assert "longer than" in refused.stderr

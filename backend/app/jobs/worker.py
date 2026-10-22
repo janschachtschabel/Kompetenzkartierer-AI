@@ -58,12 +58,14 @@ class Worker:
         self.poll_s = poll_s
         self.grace_s = grace_s
         self._stop = asyncio.Event()  # run's; run_once alone never stops
+        # set when the sweep of expired leases broke: the process ends with an error then
+        self.broken = False
 
     async def run(self, stop: asyncio.Event) -> None:
         """Work until ``stop`` is set; the job running then gets ``grace_s`` to finish."""
         self._stop = stop
         sweeper = asyncio.create_task(self._sweep_until(stop))
-        sweeper.add_done_callback(lambda task: _stop_when_broken(task, stop))
+        sweeper.add_done_callback(self._stop_when_broken)
         try:
             while not stop.is_set():
                 try:
@@ -99,7 +101,9 @@ class Worker:
             if not task.done():  # this worker itself is being cancelled
                 task.cancel()
         if ending == "released":
-            # handed back whatever the handler does with its cancel; its outcome is not wanted
+            # handed back whatever the handler does with its cancel; its outcome is not wanted,
+            # but a failure on the way out is said, by its type - asyncio would log its words
+            task.add_done_callback(lambda finished: _report_unwinding(job, finished))
             await asyncio.wait({task}, timeout=RELEASE_WAIT_S)
             await self._write(job, None, ending)
             return
@@ -163,6 +167,15 @@ class Worker:
     async def _write(self, job: Job, outcome: Outcome, ending: Ending) -> None:
         await write_outcome(self.pool, job, outcome, ending, lease_s=self.lease_s)
 
+    def _stop_when_broken(self, sweeper: asyncio.Task[None]) -> None:
+        """A sweeper that died of something unforeseen stops the worker: without it every dead
+        worker's job would stay stranded, and a restarted pod sweeps again."""
+        if sweeper.cancelled() or sweeper.exception() is None:
+            return
+        log.error("the sweep of expired leases broke; the worker stops", exc_info=sweeper.exception())
+        self.broken = True
+        self._stop.set()
+
     async def _sweep_until(self, stop: asyncio.Event) -> None:
         """Hand expired leases back every third of a lease, whether this worker is busy or not."""
         while not stop.is_set():
@@ -181,13 +194,15 @@ class Worker:
             log.info("handed %d job(s) with an expired lease back", handed_back)
 
 
-def _stop_when_broken(sweeper: asyncio.Task[None], stop: asyncio.Event) -> None:
-    """A sweeper that died of something unforeseen stops the worker: without it every dead
-    worker's job would stay stranded, and a restarted pod sweeps again."""
-    if sweeper.cancelled() or sweeper.exception() is None:
+def _report_unwinding(job: Job, handler: asyncio.Task[Any]) -> None:
+    if handler.cancelled() or handler.exception() is None:
         return
-    log.error("the sweep of expired leases broke; the worker stops", exc_info=sweeper.exception())
-    stop.set()
+    log.warning(
+        "the handler of job %s (%s) failed while it stopped: %s",
+        job.id,
+        job.kind,
+        type(handler.exception()).__name__,
+    )
 
 
 async def _serve() -> int:
@@ -216,7 +231,8 @@ async def _serve() -> int:
         await worker.run(stop)
     finally:
         await pool.close()
-    return 0
+    # a supervisor restarts a worker that ended with an error
+    return 1 if worker.broken else 0
 
 
 def _stop_on_signals(stop: asyncio.Event) -> None:

@@ -75,6 +75,7 @@ def test_a_database_away_answers_503_soon(restore_logging: None) -> None:
         chr(0x3164) + "Admin",
         "Ad" + chr(0x34F) + "min",
         "Admin" + chr(0x2800),
+        "Ad" + chr(0x2065) + "min",
     ],
     ids=[
         "nul",
@@ -86,6 +87,7 @@ def test_a_database_away_answers_503_soon(restore_logging: None) -> None:
         "hangul-filler",
         "grapheme-joiner",
         "braille-blank",
+        "unassigned",
     ],
 )
 def test_an_account_name_with_hidden_signs_is_refused(database_url: str, name: str) -> None:
@@ -161,3 +163,20 @@ def test_only_a_database_away_answers_503(restore_logging: None, error: Exceptio
 
     assert response.status_code == status
     assert ("Retry-After" in response.headers) is (status == 503)
+
+
+def test_a_database_error_without_a_state_says_what_it_was(
+    restore_logging: None, caplog: pytest.LogCaptureFixture
+) -> None:
+    # psycopg's own refusals carry no state either - a query with too many parameters among
+    # them - and without the message the log said only "OperationalError None"
+    app = create_app(make_settings())
+
+    async def failing() -> None:
+        raise psycopg.OperationalError("number of parameters must be between 0 and 65535")
+
+    app.add_api_route("/probe/database", failing)
+    with selector_client(app, base_url=PUBLIC, raise_server_exceptions=False) as client:
+        client.get("/probe/database")
+
+    assert "number of parameters must be between 0 and 65535" in caplog.text

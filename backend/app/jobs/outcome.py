@@ -102,12 +102,14 @@ async def _record(
             await fail(connection, job, "result_not_storable", type(error).__name__, retry=False)
             return
         try:
-            # in a savepoint, so the transaction lives on to record the failure
+            # in a block of its own (a savepoint inside an open transaction), so the
+            # connection is still good to record the failure
             async with connection.transaction():
                 await complete(connection, job, outcome)
-        except psycopg.DataError as error:
-            # JSON the database refuses: a NUL, a lone surrogate. Another attempt would return
-            # the same; the type only, the message quotes the result
+        except (psycopg.DataError, RecursionError) as error:
+            # JSON the database refuses (a NUL, a lone surrogate), or too deep for psycopg's own
+            # writer, which runs deeper in the stack than the check above. Another attempt would
+            # return the same; the type only, the message quotes the result
             log.error(
                 "job %s (%s) returned a result the database refuses: %s",
                 job.id,

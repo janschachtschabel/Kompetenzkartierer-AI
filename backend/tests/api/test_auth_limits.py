@@ -127,4 +127,5 @@ def test_the_logged_source_is_keyed_not_a_plain_hash(
     [warning] = [record for record in caplog.records if "reached the limit" in record.getMessage()]
     [logged] = warning.args or ()
     assert logged != hashlib.sha256(b"192.0.2.9").hexdigest()[:12]
-    assert logged == hmac.new(FAKE_PEPPER.encode(), b"192.0.2.9", hashlib.sha256).hexdigest()[:12]
+    # apart from the token hashes under the same pepper
+    assert logged == hmac.new(FAKE_PEPPER.encode(), b"log-source:192.0.2.9", hashlib.sha256).hexdigest()[:12]

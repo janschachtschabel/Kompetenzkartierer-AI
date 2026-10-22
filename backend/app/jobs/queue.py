@@ -183,7 +183,7 @@ async def fail(
         RETURNING status
         """,  # noqa: S608 - _BACKOFF is a constant expression
         {
-            "error": Jsonb({"code": code, "message": message}),
+            "error": Jsonb({"code": _storable(code), "message": _storable(message)}),
             "retry": retry,
             "id": job.id,
             "token": job.lease_token,
@@ -215,6 +215,12 @@ async def release(connection: psycopg.AsyncConnection, job: Job) -> None:
     )
     if await cursor.fetchone() is None:
         raise LeaseLost(str(job.id))
+
+
+def _storable(text: str) -> str:
+    """``text`` as jsonb takes it: a NUL or a lone surrogate - a handler's message may quote
+    input - made the database refuse the failure, and the job stayed running."""
+    return text.replace("\x00", "\ufffd").encode("utf-8", "replace").decode("utf-8")
 
 
 async def request_cancel(connection: psycopg.AsyncConnection, job_id: UUID) -> bool:
