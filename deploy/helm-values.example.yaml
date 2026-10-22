@@ -17,7 +17,7 @@ env:                          # for every container of the service
 
 podSpec:
   enableServiceLinks: false   # a Service named "internal" would set INTERNAL_PORT=tcp://... in every pod
-podSecurityContext:           # Pod Security Standard "restricted"
+podSecurityContext:           # Pod Security Standard "restricted"; the API image's user (web: below)
   runAsUser: 10001
   runAsGroup: 10001
   runAsNonRoot: true
@@ -35,7 +35,7 @@ postgresql:
 objectStorage:
   env:
     STORAGE_BACKEND: s3
-    S3_ENDPOINT_URL: ""       # empty for AWS; the address of T6's S3 service otherwise
+    S3_ENDPOINT_URL: ""       # empty or left out for AWS; the address of T6's S3 service otherwise
     S3_BUCKET: kompetenzkartierer
     S3_REGION: eu-central-1
 redis:
@@ -62,7 +62,9 @@ api:
 worker:
   replicas: 2
   command: [python, -m, app.jobs.worker]
-  probes: {}                  # the worker serves no HTTP yet; a stuck worker loses its lease (JOB_LEASE_S)
+  # None yet: the worker serves no HTTP before M1 brings its internal port (/health, /metrics).
+  # Its lease protects the job, not the capacity: a stuck worker keeps running until then.
+  probes: {}
   terminationGracePeriodSeconds: 30   # JOB_SHUTDOWN_GRACE_S + 2 s to clean up + margin
   resources:
     requests: { cpu: 250m, memory: 384Mi }
@@ -73,23 +75,48 @@ worker:
     existingSecret: kompetenzkartierer-secrets
     keys: [DATABASE_URL, API_KEY_PEPPER, S3_ACCESS_KEY, S3_SECRET_KEY, OPENAI_API_KEY]
 
-# Run once per release, before the new pods: the migration, then the vocabularies
+# Run once per release, before the new pods: the migration, then the vocabularies. No retry: a
+# failed migration wants a look, not a second try. The deadline ends a stuck one (a lock the
+# database holds), and the job of the last release goes before the next one is made.
 migrate:
   hook: [pre-install, pre-upgrade]
+  hookDeletePolicy: before-hook-creation
+  backoffLimit: 0
+  activeDeadlineSeconds: 600
   command: [python, -m, app.db.migrate]
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: 500m, memory: 512Mi }
   secrets:
     existingSecret: kompetenzkartierer-secrets
     keys: [DATABASE_URL]
 vocab:
   hook: [post-install, post-upgrade]
+  hookDeletePolicy: before-hook-creation
+  backoffLimit: 0
+  activeDeadlineSeconds: 600
   command: [python, -m, app.vocab.load]
+  resources:                  # reads the vocabularies into memory before it writes them
+    requests: { cpu: 250m, memory: 384Mi }
+    limits: { cpu: "1", memory: 768Mi }
   secrets:
     existingSecret: kompetenzkartierer-secrets
     keys: [DATABASE_URL]
 
 web:
   replicas: 2
-  port: 8080                  # nginx-unprivileged, user 101; serves the SPA only, /api goes through the ingress
+  port: 8080                  # nginx-unprivileged; serves the SPA only, /api goes through the ingress
+  securityContext: { runAsUser: 101, runAsGroup: 101 }   # the image's own user, not the pod's 10001
+  probes:
+    readiness: { port: 8080, path: /healthz, periodSeconds: 10, timeoutSeconds: 2 }
+    liveness: { port: 8080, path: /healthz, periodSeconds: 30, timeoutSeconds: 2, failureThreshold: 3 }
+  resources:
+    requests: { cpu: 50m, memory: 32Mi }
+    limits: { cpu: 250m, memory: 64Mi }
+
+podDisruptionBudget:          # a drain of nodes leaves one pod of each serving
+  api: { minAvailable: 1 }
+  web: { minAvailable: 1 }
 
 service:
   ports:
@@ -97,6 +124,8 @@ service:
     - { name: internal, port: 9000 }
 
 ingress:
+  # TLS ends here, so HSTS is set here too (ingress-nginx does by default with TLS). The API sets
+  # nosniff, its CSP and frame-ancestors itself; the web image sets them for the SPA.
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: 60m       # uploads up to 50 MB (M1)
   routes:                     # never the internal port: probes and /metrics stay inside the cluster

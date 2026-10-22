@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 import yaml  # type: ignore[import-untyped]
 
+from app.api.internal import READY_TIMEOUT_S
 from app.core.settings import Settings
 
 VALUES: dict[str, Any] = yaml.safe_load(
@@ -22,9 +23,9 @@ def test_the_probes_ask_the_internal_port() -> None:
 
 
 def test_readiness_waits_longer_than_ready_itself() -> None:
-    # /ready waits up to 2 s for a pool connection and 2 s for its query; a probe that gives up
-    # sooner takes a slow database for a dead pod
-    assert VALUES["api"]["probes"]["readiness"]["timeoutSeconds"] >= 5
+    # /ready waits for a pool connection and then for its query, each up to READY_TIMEOUT_S; a
+    # probe that gives up sooner takes a slow database for a dead pod
+    assert VALUES["api"]["probes"]["readiness"]["timeoutSeconds"] >= 2 * READY_TIMEOUT_S + 1
 
 
 def test_no_container_runs_as_root_or_with_capabilities() -> None:
@@ -72,3 +73,30 @@ def test_the_migration_runs_once_per_release_before_the_pods() -> None:
 
     assert migrate["command"] == ["python", "-m", "app.db.migrate"]
     assert "pre-upgrade" in migrate["hook"] and "pre-install" in migrate["hook"]
+
+
+@pytest.mark.parametrize("part", ["migrate", "vocab"])
+def test_a_one_off_job_runs_once_ends_in_time_and_makes_room_for_the_next(part: str) -> None:
+    # A retried migration might run beside a stuck first one; a hook job left behind blocks the
+    # next release's job of the same name
+    job = VALUES[part]
+
+    assert job["backoffLimit"] == 0
+    assert job["activeDeadlineSeconds"] > 0
+    assert job["hookDeletePolicy"] == "before-hook-creation"
+    assert {"requests", "limits"} <= set(job["resources"])
+
+
+def test_the_web_server_has_its_probes_resources_and_user() -> None:
+    web = VALUES["web"]
+
+    assert {probe["path"] for probe in web["probes"].values()} == {"/healthz"}
+    assert {probe["port"] for probe in web["probes"].values()} == {8080}
+    assert {"requests", "limits"} <= set(web["resources"])
+    # the pod's 10001 is the API image's user; nginx-unprivileged runs as 101
+    assert web["securityContext"]["runAsUser"] == 101
+
+
+@pytest.mark.parametrize("part", ["api", "web"])
+def test_a_drain_of_nodes_leaves_one_pod_serving(part: str) -> None:
+    assert VALUES["podDisruptionBudget"][part] == {"minAvailable": 1}
