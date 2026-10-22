@@ -161,9 +161,10 @@ class Settings(BaseSettings):
     # Imports by URL an account may start per minute; more are answered 429
     url_imports_per_minute: Annotated[int, Field(ge=1)] = 20
     # Who the register's requests say they are (source.fetch, source.check): the product token
-    # robots.txt knows us by, then where to reach the operators; printable ASCII, as a header holds
+    # robots.txt knows us by, then where to reach the operators; printable ASCII, as a header
+    # holds it - and no space at its end, which h11 refuses in a header's value
     fetch_user_agent: Annotated[
-        str, Field(pattern=r"^[A-Za-z0-9._-]+(/[!-~]+)?( [ -~]+)?$", max_length=200)
+        str, Field(pattern=r"^[A-Za-z0-9._-]+(/[!-~]+)?( [ -~]*[!-~])?$", max_length=200)
     ] = "Kompetenzkartierer-AI (+https://github.com/janschachtschabel/Kompetenzkartierer-AI)"
     # The least time between two requests of the check job to one host, across all workers
     check_host_interval_s: Annotated[float, Field(ge=0.5, le=60)] = 2.0

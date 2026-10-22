@@ -414,3 +414,18 @@ def test_proxy_networks_are_taken(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("FORWARDED_ALLOW_IPS", "10.42.0.0/16, fd00::/8")
 
     assert Settings().forwarded_allow_ips == "10.42.0.0/16,fd00::/8"
+
+
+@pytest.mark.parametrize(
+    "agent",
+    ["Kka/1 (x) ", "Kka/1 (x)\tmore", " Kka/1", "Kka/1  ", "(no token)", "Kka/1 (Grüße)"],
+)
+def test_a_user_agent_a_header_cannot_carry_is_refused(agent: str) -> None:
+    # h11 refuses a header value ending in a space: every request of the register would fail
+    with pytest.raises(ValidationError):
+        make_settings(fetch_user_agent=agent)
+
+
+@pytest.mark.parametrize("agent", ["Kka", "Kka/1", "Kka/1 (+https://example.org/kka; mail@example.org)"])
+def test_a_user_agent_of_its_token_and_a_contact_is_taken(agent: str) -> None:
+    assert make_settings(fetch_user_agent=agent).fetch_user_agent == agent
