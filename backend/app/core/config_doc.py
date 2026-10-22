@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Annotated, Any, Literal, Union, get_args, get_origin
 
 import annotated_types
+from pydantic import SecretStr
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
@@ -29,6 +30,14 @@ _BOUNDS = (
 )
 _OR = " \\| "  # a pipe inside a Markdown table cell
 NONE = "–"  # noqa: RUF001 - the dash German tables write for "none"
+# Settings no class can require alone: a part of the service needs them, or another value does
+CONDITIONS = {
+    "API_KEY_PEPPER": "Pflicht für die API und `app.bootstrap`",
+    "STORAGE_DIR": "Pflicht bei `STORAGE_BACKEND=fs`",
+    "S3_BUCKET": "Pflicht bei `STORAGE_BACKEND=s3`",
+    "S3_ACCESS_KEY": "nur zusammen mit `S3_SECRET_KEY`",
+    "S3_SECRET_KEY": "nur zusammen mit `S3_ACCESS_KEY`",
+}
 
 
 @dataclass(frozen=True)
@@ -45,8 +54,11 @@ def setting_rows() -> list[Row]:
     rows: list[Row] = []
     for settings_class, part in ((Settings, "Dienst"), (LLMSettings, "Sprachmodell")):
         for name, field in settings_class.model_fields.items():
-            secret = _is_secret(field.annotation)
-            rows.append(Row(name.upper(), _allowed(field), _default(field), secret, part))
+            variable = name.upper()
+            default = _default(field)
+            if variable in CONDITIONS:
+                default = f"{default}; {CONDITIONS[variable]}"
+            rows.append(Row(variable, _allowed(field), default, _is_secret(field.annotation), part))
     return rows
 
 
@@ -73,9 +85,13 @@ def _type_and_constraints(field: FieldInfo) -> tuple[Any, list[Any]]:
 
 
 def _allowed(field: FieldInfo) -> str:
+    """Raises TypeError for a type without a rendering: a new kind of field shows in the tests,
+    not as a plain "Text" that hides what the code enforces."""
     annotation, constraints = _type_and_constraints(field)
     if get_origin(annotation) is Literal:
         return _OR.join(f"`{value}`" for value in get_args(annotation))
+    if annotation is bool:
+        return f"`true`{_OR}`false`"
     if annotation in (int, float):
         bounds = ", ".join(
             f"{sign} {_number(getattr(constraint, attribute))}"
@@ -86,39 +102,58 @@ def _allowed(field: FieldInfo) -> str:
         return f"Zahl {bounds}" if bounds else "Zahl"
     if annotation is Path:
         return "Pfad"
-    if annotation is bool:
-        return f"`true`{_OR}`false`"
-    shortest = [
-        c.min_length for c in constraints if isinstance(c, annotated_types.MinLen) and c.min_length > 1
-    ]
-    return f"Text, mindestens {shortest[0]} Zeichen" if shortest else "Text"
+    if annotation in (str, SecretStr):
+        return _text(constraints)
+    raise TypeError(f"no rendering for the type {annotation!r}")
+
+
+def _text(constraints: list[Any]) -> str:
+    patterns = [_cell(c.pattern) for c in constraints if getattr(c, "pattern", None)]
+    if patterns:
+        return f"Text nach Muster `{patterns[0]}`"
+    minimum, maximum = annotated_types.MinLen, annotated_types.MaxLen
+    # min_length=1 only says "not empty"
+    shortest = [c.min_length for c in constraints if isinstance(c, minimum) and c.min_length > 1]
+    longest = [c.max_length for c in constraints if isinstance(c, maximum)]
+    lengths = [f"mindestens {n}" for n in shortest] + [f"höchstens {n}" for n in longest]
+    return f"Text, {', '.join(lengths)} Zeichen" if lengths else "Text"
 
 
 def _default(field: FieldInfo) -> str:
-    value = field.default
-    if value is PydanticUndefined:
+    if field.default is PydanticUndefined and field.default_factory is None:
         return "Pflicht"
+    value = field.get_default(call_default_factory=True, validated_data={})
     if value is None:
         return NONE
     if value == REPOSITORY_ONTOLOGY:
         return "`ontology/` des Repositorys"
-    if isinstance(value, float | int) and not isinstance(value, bool):
+    if isinstance(value, bool):
+        return f"`{str(value).lower()}`"
+    if isinstance(value, float | int):
         return _number(value)
-    return f"`{value}`" if value != "" else "leer"
+    if isinstance(value, Path):
+        return f"`{value.as_posix()}`"
+    return f"`{_cell(str(value))}`" if value != "" else "leer"
+
+
+def _cell(text: str) -> str:
+    """A pipe would end the table cell, inside a code span too."""
+    return text.replace("|", "\\|")
 
 
 def _number(value: float) -> str:
     return str(int(value)) if float(value).is_integer() else str(value)
 
 
-def main() -> int:
-    text = DOCUMENT.read_text(encoding="utf-8")
-    if START not in text or END not in text:
-        print(f"{DOCUMENT} lacks the markers {START!r} and {END!r}", file=sys.stderr)
+def main(document: Path = DOCUMENT) -> int:
+    text = document.read_text(encoding="utf-8")
+    start, end = text.find(START), text.find(END)
+    if start < 0 or end < start:
+        print(f"{document} lacks the markers {START!r} and {END!r}, in this order", file=sys.stderr)
         return 1
     head, rest = text.split(START, 1)
     _, tail = rest.split(END, 1)
-    DOCUMENT.write_text(f"{head}{START}\n{render_table()}\n{END}{tail}", encoding="utf-8", newline="\n")
+    document.write_text(f"{head}{START}\n{render_table()}\n{END}{tail}", encoding="utf-8", newline="\n")
     return 0
 
 
