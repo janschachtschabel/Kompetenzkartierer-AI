@@ -39,6 +39,18 @@ KKA_TEST_DATABASE_URL=postgresql://kka:kka-test@127.0.0.1:55432/kka .venv/Script
 Ohne `KKA_TEST_DATABASE_URL` werden die Datenbank-Tests übersprungen; mit `KKA_REQUIRE_PG=1`
 (oder in CI) scheitern sie stattdessen.
 
+Die S3-Tests (Marker `s3`) laufen gegen einen MinIO-Container nur für Tests (Chainguard-Build,
+weil MinIO seit Oktober 2025 keine Community-Images mehr veröffentlicht; Zugangsdaten erfunden,
+Daten nur im Arbeitsspeicher). Unter Git Bash vorher `export MSYS_NO_PATHCONV=1`, sonst werden
+`/data` und `server /data` zu Windows-Pfaden:
+
+```bash
+docker run -d --name kka-test-minio -e MINIO_ROOT_USER=kka-test -e MINIO_ROOT_PASSWORD=kka-test-secret -p 127.0.0.1:59000:9000 --tmpfs /data:rw,uid=65532,gid=65532 cgr.dev/chainguard/minio@sha256:fe57367a6bfc78779367b86ad0cdd3d5df32965b7cb3c000c94032f138627c41 server /data
+KKA_TEST_S3_URL=http://127.0.0.1:59000 KKA_TEST_S3_ACCESS_KEY=kka-test KKA_TEST_S3_SECRET_KEY=kka-test-secret .venv/Scripts/python.exe -m pytest -m s3
+```
+
+Ohne `KKA_TEST_S3_URL` werden sie übersprungen; mit `KKA_REQUIRE_S3=1` (oder in CI) scheitern sie.
+
 Frontend (Vite, Vue 3, TypeScript; Node 22.22 oder 24.15 und neuer):
 
 ```bash

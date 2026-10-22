@@ -121,6 +121,17 @@ class Settings(BaseSettings):
     job_shutdown_grace_s: Annotated[float, Field(ge=0, le=3600)] = 20.0
     ontology_dir: Path = REPOSITORY_ONTOLOGY
     log_format: Literal["text", "json"] = "text"
+    # Where objects go: a folder (development, one node) or an S3-compatible service (a cluster)
+    storage_backend: Literal["fs", "s3"] = "fs"
+    # The folder for the file system store; the store does not open without it
+    storage_dir: Path | None = None
+    # The S3 service: its address (empty for AWS itself), bucket and region; the keys come both or
+    # neither - without them boto3 takes the credentials of the pod or machine
+    s3_endpoint_url: str | None = None
+    s3_bucket: Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$")] | None = None
+    s3_region: str = "us-east-1"
+    s3_access_key: Annotated[SecretStr, Field(min_length=1)] | None = None
+    s3_secret_key: Annotated[SecretStr, Field(min_length=1)] | None = None
 
     @classmethod
     def settings_customise_sources(
@@ -176,4 +187,8 @@ class Settings(BaseSettings):
             raise ValueError("internal_port must differ from public_port")
         if self.db_pool_max_size < self.db_pool_min_size:
             raise ValueError("db_pool_max_size must not be smaller than db_pool_min_size")
+        if self.storage_backend == "s3" and self.s3_bucket is None:
+            raise ValueError("s3_bucket is needed for storage_backend=s3")
+        if (self.s3_access_key is None) != (self.s3_secret_key is None):
+            raise ValueError("s3_access_key and s3_secret_key come both or neither")
         return self

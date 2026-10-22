@@ -1,14 +1,14 @@
 """Object storage for source files, raw model answers and exports.
 
-The interface is S3's (Paket D adds that backend): an object is bytes under a key such as
-``sources/ab/<sha256>.pdf``. A key is plain segments of letters, digits and ``._-`` joined by
-``/`` - nothing that could leave the root on a file system, whatever the caller passed in.
-The file system backend writes to a temporary file beside the target and renames it, so an
-object is either the old or the new one, never half of it.
+The interface is S3's (app/core/storage_s3.py is that backend): an object is bytes under a key
+such as ``sources/ab/<sha256>.pdf``. A key is plain segments of letters, digits and ``._-``
+joined by ``/`` - nothing that could leave the root on a file system, whatever the caller
+passed in. The file system backend writes to a temporary file beside the target and renames
+it, so an object is either the old or the new one, never half of it.
 
 simplify: a process killed between the two leaves a ``.tmp-*`` file, which no key can name and
-nothing removes yet; a sweep at start would, once the file system backend serves more than
-development (Paket D brings S3).
+nothing removes yet; a sweep at start would, should the file system backend serve more than
+development and a single node (a cluster uses S3).
 """
 
 import os
@@ -16,6 +16,8 @@ import re
 import tempfile
 from pathlib import Path
 from typing import Protocol
+
+from app.core.settings import Settings
 
 MAX_KEY_CHARS = 512
 MAX_SEGMENT_CHARS = 255  # a file name's limit on the common file systems
@@ -30,6 +32,10 @@ class InvalidKey(ValueError):
 
 class ObjectNotFound(KeyError):
     """No object under this key."""
+
+
+class StorageNotConfigured(ValueError):
+    """The settings name no usable store; the message says which setting is missing."""
 
 
 class Storage(Protocol):
@@ -131,3 +137,15 @@ def _sync_folder(folder: Path) -> None:
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
+
+
+def open_storage(settings: Settings) -> Storage:
+    """The store the settings name. S3 is imported only here: boto3 is slow to load."""
+    if settings.storage_backend == "s3":
+        from app.core.storage_s3 import S3Storage, s3_client
+
+        assert settings.s3_bucket is not None  # noqa: S101 - the settings refuse s3 without a bucket
+        return S3Storage(s3_client(settings), settings.s3_bucket)
+    if settings.storage_dir is None:
+        raise StorageNotConfigured("STORAGE_DIR is needed for the file system store")
+    return FileSystemStorage(settings.storage_dir)
