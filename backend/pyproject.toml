@@ -23,6 +23,8 @@ dependencies = [
     "httpx2>=2.13",
     # the object store in a cluster: any S3-compatible service, MinIO in Compose
     "boto3>=1.43",
+    # multipart forms: the upload of a source (starlette's request.form)
+    "python-multipart>=0.0.32",
 ]
 
 [dependency-groups]
