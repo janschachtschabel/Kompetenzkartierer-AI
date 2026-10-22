@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
-import { join, sep } from "node:path";
+import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { ANCHORS, SRC, scanned, sourceFiles, withoutComments } from "./sources";
+import { ANCHORS, SRC, inCatalogue, scanned, sourceFiles, withoutComments } from "./sources";
 
 /**
  * The rules with legal weight (GDPR; see main.ts on the fonts): no request to a
@@ -57,7 +57,8 @@ describe("a third party", () => {
 
   it("is asked for nothing at all", () => {
     // the catalogue's words are shown, never fetched: an address in a sentence is no request
-    const fetching = files.filter((path) => !path.includes(`${sep}i18n${sep}`));
+    const fetching = files.filter((path) => !inCatalogue(path));
+    scanned(fetching, ...ANCHORS, "style.css", "index.html");
     const offenders = fetching.flatMap((path) =>
       foreignAddresses(readFileSync(path, "utf8")).map((url) => `${path}: ${url}`),
     );

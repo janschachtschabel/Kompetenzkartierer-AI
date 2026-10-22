@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
-import { basename, join, sep } from "node:path";
+import { basename, join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { ANCHORS, COLOUR_VALUE, SRC, scanned, sourceFiles, tokenBlocks, withoutComments } from "./sources";
+import { ANCHORS, COLOUR_VALUE, SRC, inCatalogue, scanned, sourceFiles, tokenBlocks, withoutComments } from "./sources";
 
 /**
  * The layer below `shared-styles.test.ts`: that one keeps a shared *rule* from
@@ -21,12 +21,18 @@ it("scans the component sources", () => {
   scanned(sourceFiles(), ...ANCHORS);
 });
 
+// A declaration's value: up to `;`, `{` or `}`, over as many lines as do not begin a
+// declaration of their own - a gradient or a shadow is often written over three.
+const VALUE = String.raw`([^;{}\n]*(?:\n(?![ \t]*[\w-]+[ \t]*:)[^;{}\n]*)*)`;
+
 // A declaration of a property that carries colour - or of a custom property, whose value a
 // component would hand on - wherever it starts: a line, after `{` or `;`, and in a bound
-// style after `,` or a quote. Shorthands that may hold a colour count too. The value ends
-// with its line: the next one belongs to another declaration, or to no CSS at all.
-const COLOUR_DECLARATION =
-  /(?:^|[{;,'"`])\s*((?:[\w-]*color|background[\w-]*|border[\w-]*|outline[\w-]*|fill|stroke|box-shadow|text-shadow|text-decoration[\w-]*|filter|column-rule[\w-]*|--[\w-]+)\s*:([^;{}\n]*))/gim;
+// style after `,` or a quote. Shorthands that may hold a colour count too. The value runs
+// over its lines until one begins another declaration (VALUE).
+const COLOUR_DECLARATION = new RegExp(
+  String.raw`(?:^|[{;,'"${"`"}])\s*((?:[\w-]*color|background[\w-]*|border[\w-]*|outline[\w-]*|fill|stroke|box-shadow|text-shadow|text-decoration[\w-]*|filter|column-rule[\w-]*|--[\w-]+)\s*:${VALUE})`,
+  "gim",
+);
 // In a template: a style attribute, and SVG's fill and stroke - written out or bound, in either quotes.
 const COLOUR_ATTRIBUTE = /\s(?::|v-bind:)?(?:style|fill|stroke)=(["'])([\s\S]*?)\1/g;
 
@@ -50,7 +56,7 @@ const PAGE_WIDTH_ABOVE: Record<string, number> = { rem: 40, em: 40, px: 640, ch:
 
 /** Widths of a page - fixed or a cap, the length anywhere in min(), clamp() or calc() - which is a token. */
 function pageWidths(source: string): string[] {
-  return [...source.matchAll(/(?:^|[\s{;])((?:max-)?(?:width|inline-size)\s*:([^;{}\n]*))/g)]
+  return [...source.matchAll(new RegExp(String.raw`(?:^|[\s{;])((?:max-)?(?:width|inline-size)\s*:${VALUE})`, "g"))]
     .filter(([, , value]) =>
       [...value.matchAll(/([\d.]+)(rem|em|px|ch)\b/g)].some(([, length, unit]) => Number(length) > PAGE_WIDTH_ABOVE[unit]),
     )
@@ -108,9 +114,9 @@ describe("colour", () => {
   it("is never written as a literal in a component", () => {
     // A colour named in style.css can be checked, changed and themed; one typed
     // into a component can be none of those. The catalogue holds words, not styles.
-    const offenders = sourceFiles()
-      .filter((path) => !path.includes(`${sep}i18n${sep}`))
-      .flatMap((path) =>
+    const styled = sourceFiles().filter((path) => !inCatalogue(path));
+    scanned(styled, ...ANCHORS);
+    const offenders = styled.flatMap((path) =>
       colourLiterals(readFileSync(path, "utf8")).map((literal) => `${path}: ${literal}`),
     );
 
@@ -218,6 +224,10 @@ describe("a colour the token check must see", () => {
     "  text-decoration: underline red;",
     "  filter: drop-shadow(0 0 2px #000);",
     "  column-rule: 1px solid #ccc;",
+    // a value over more than one line
+    "  background:\n    linear-gradient(#fff, #000);",
+    "  box-shadow:\n    0 1px 2px var(--shadow-1),\n    0 0 1px #000;",
+    "  border:\n    1px solid #ccc;",
   ])("is found: %s", (source) => {
     expect(colourLiterals(source)).not.toEqual([]);
   });
@@ -232,8 +242,8 @@ describe("a colour the token check must see", () => {
     "  background-image: url(red-dot.png);",
     `<p :style="{ width: redWidth }">`,
     // a comment says what was, not what is
-    "  /* background: red; */",
-    "<!-- color: red -->",
+    "/*\n  background: red;\n*/",
+    '<!--\n<p style="color: red">\n-->',
     // a value ends with its line: the next one is someone else's
     '  filter: "Filter",\n  medal: "Gold, Silber oder Bronze",',
   ])("is not invented: %s", (source) => {
@@ -256,6 +266,7 @@ describe("a page width the width check must see", () => {
     "max-width: min(100%, 60rem);",
     "width: clamp(20rem, 80vw, 60rem);",
     "max-width: calc(60rem - 2rem);",
+    "max-width:\n  60rem;",
   ])("is found: %s", (source) => {
     expect(pageWidths(source)).not.toEqual([]);
   });

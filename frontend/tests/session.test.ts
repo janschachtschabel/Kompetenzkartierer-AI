@@ -1,3 +1,4 @@
+import { flushPromises } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Me } from "@/api";
@@ -115,18 +116,23 @@ describe("a late answer", () => {
   it("for another token than the one held now is dropped, and those waiting get the account of that token", async () => {
     const other: Me = { id: "0190-b", name: "Zweite Redaktion", roles: ["redaktion"] };
     let answer: (me: Me) => void = () => undefined;
+    let answerOther: (me: Me) => void = () => undefined;
     vi.mocked(api.getMe).mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
-    vi.mocked(api.getMe).mockResolvedValueOnce(other);
-    const asked = ensureSession();
+    vi.mocked(api.getMe).mockReturnValueOnce(new Promise((resolve) => (answerOther = resolve)));
+    let seen: unknown = null;
+    const waiting = ensureSession().then(() => (seen = { me: session.value, state: sessionState.value }));
 
     vi.mocked(api.getToken).mockReturnValue("kka_other");
     answer(ME);
-    await asked;
-
-    // the token held now got its own question, not the answer of the old one
+    await flushPromises();
+    // the token held now got its own question, not the answer of the old one ...
     expect(api.getMe).toHaveBeenCalledTimes(2);
-    expect(session.value).toEqual(other);
-    expect(sessionState.value).toBe("ready");
+    expect(seen).toBeNull();
+
+    // ... and whoever waited on the first sees the answer to it
+    answerOther(other);
+    await waiting;
+    expect(seen).toEqual({ me: other, state: "ready" });
   });
 
   it("for a token dropped meanwhile ends with no account and asks nothing more", async () => {

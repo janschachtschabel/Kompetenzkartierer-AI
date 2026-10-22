@@ -1,5 +1,5 @@
 import { readdirSync, statSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, join, relative, sep } from "node:path";
 
 import { expect } from "vitest";
 
@@ -7,6 +7,11 @@ import { expect } from "vitest";
 // under its transform; `scanned` below fails loudly if this path is wrong.
 export const SRC = join(process.cwd(), "src");
 export const TESTS = join(process.cwd(), "tests");
+
+/** The message catalogue's folder: words, which some scans leave out. */
+export function inCatalogue(path: string): boolean {
+  return relative(SRC, path).split(sep)[0] === "i18n";
+}
 
 /** Every `.vue` and `.ts` file under `dir`, recursively. */
 export function sourceFiles(dir: string = SRC, pattern: RegExp = /\.(vue|ts)$/): string[] {
@@ -59,7 +64,9 @@ export interface CssRule {
 function refuseNesting(css: string): void {
   const atRule: boolean[] = [];
   let prelude = "";
-  for (const sign of css) {
+  // a brace in a string - `content: "{"`, `[data-x="{"]` - opens nothing
+  const unquoted = css.replace(/"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g, '""');
+  for (const sign of unquoted) {
     if (sign === "{") {
       if (atRule.length > 0 && !atRule[atRule.length - 1]) {
         throw new Error(`a nested CSS rule, which the guards cannot read: ${prelude.trim()}`);
@@ -142,7 +149,7 @@ export function formControlRules(source: string): string[] {
   const classes = new Set<string>();
   // quoted values may hold a `>`, as an arrow function in a handler does; `<select-field>` is no control
   for (const [, attributes] of source.matchAll(/<(?:input|select|textarea)(?![\w-])((?:[^>"']|"[^"]*"|'[^']*')*)>/g)) {
-    for (const [, , list] of attributes.matchAll(/(?<![:\w-])class=(["'])(.*?)\1/g)) {
+    for (const [, , list] of attributes.matchAll(/(?<![:\w-])class=(["'])([\s\S]*?)\1/g)) {
       for (const name of list.split(/\s+/)) if (CLASS_NAME.test(name)) classes.add(name);
     }
   }

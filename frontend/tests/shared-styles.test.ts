@@ -162,6 +162,8 @@ describe("shared component classes", () => {
     expect(rules('<input class="token" />', ".token-list")).toEqual([]);
     // single quotes are quotes too
     expect(rules("<input class='token-field' />", ".token-field")).toHaveLength(1);
+    // a class list over two lines
+    expect(rules('<input class="wide\n  token-field" />', ".token-field")).toHaveLength(1);
     // a component named like a control is none
     expect(rules('<select-field class="token-field" />', ".token-field")).toEqual([]);
   });

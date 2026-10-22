@@ -12,10 +12,18 @@ const COUNTING = /^(?:count|total|n|\w+Count)$/;
  * `{x} Noun` without a plural form for x: "in {count} Sekunden" reads wrong for
  * one. Any space between (`\s` takes a protected one too); for a count also up
  * to two adjectives - "{count} neue offene Fragen" - which after a name would be
- * a verb ("{name} hat"). A noun has a small letter: ECTS and MB are units.
+ * a verb ("{name} hat"). An adjective before a noun ends in -e, -en, -er or -es
+ * and is no article: "{count} pro Seite", "{count} der Lehrpläne" read right for
+ * one. A noun has a small letter: ECTS and MB are units.
  */
+const ADJECTIVE = String.raw`(?!(?:der|die|das|den|dem|des)\s)[a-zäöüß]{2,}(?:e|en|er|es)\s+`;
+const COUNT_BEFORE_NOUN = new RegExp(
+  String.raw`\{(\w+)\}\s+(?!\{\1\|)((?:${ADJECTIVE}){0,2})[A-ZÄÖÜ](?=[\wÄÖÜäöüß-]*[a-zäöüß])[\wÄÖÜäöüß-]*`,
+  "g",
+);
+
 function countsWithoutPlural(text: string): string[] {
-  return [...text.matchAll(/\{(\w+)\}\s+(?!\{\1\|)((?:[a-zäöüß]+\s+){0,2})[A-ZÄÖÜ](?=[\wÄÖÜäöüß-]*[a-zäöüß])[\wÄÖÜäöüß-]*/g)]
+  return [...text.matchAll(COUNT_BEFORE_NOUN)]
     .filter(([, name, between]) => !between || COUNTING.test(name))
     .map(([match]) => match);
 }
@@ -120,6 +128,7 @@ describe("a count before its noun", () => {
     ["in {count} Sekunden", "{count} Sekunden"],
     ["{count} KMK-Standards", "{count} KMK-Standards"],
     ["{count} neue offene Fragen", "{count} neue offene Fragen"],
+    ["{count} neuen Einträge", "{count} neuen Einträge"],
   ])("finds a count without its plural however it is written: %s", (text, found) => {
     expect(countsWithoutPlural(text)).toEqual([found]);
   });
@@ -131,6 +140,13 @@ describe("a count before its noun", () => {
     // a unit without a plural of its own
     "{credits} ECTS",
     "{size} MB",
+    // words that read right for one as for many: no adjective before a noun
+    "{count} pro Seite",
+    "{count} je Seite",
+    "{count} der Lehrpläne",
+    "{count} in diesem Lehrplan",
+    "{count} aus dem Katalog",
+    "{count} von allen Ländern",
   ])(
     "leaves alone what is no count without a plural: %s",
     (text) => {

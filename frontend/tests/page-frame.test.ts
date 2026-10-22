@@ -42,17 +42,20 @@ function frameOverrides(source: string, classes: string[]): string[] {
     );
 }
 
-/** Selectors that reach `pattern` anywhere in them: `.toolbar .btn-sm`, `button:hover`. What `:not()` rules out reaches nothing. */
+/**
+ * Selectors that reach `pattern` anywhere in them: `.toolbar .btn-sm`, `button:hover`,
+ * `:is(button)`. What `:not()` rules out or `:has()` looks for inside reaches nothing.
+ */
 function selectorsReaching(source: string, pattern: RegExp): string[] {
   return cssRules(stylesOf(source)).flatMap(({ selectors }) =>
-    selectors.filter((selector) => pattern.test(selector.replace(/:not\([^)]*\)/g, ""))),
+    selectors.filter((selector) => pattern.test(selector.replace(/:(?:not|has)\([^)]*\)/g, ""))),
   );
 }
 
 /** `.btn-sm`, as a class anywhere in a selector. */
 const SMALL_BUTTON = /\.btn-sm(?![\w-])/;
 /** `button`, as an element anywhere in a selector - not `.button-row` or `[type=button]`. */
-const BUTTON_ELEMENT = /(?:^|[\s>+~])button(?![\w-])/;
+const BUTTON_ELEMENT = /(?:^|[\s>+~(])button(?![\w-])/;
 
 it("scans the components and the framed pages", () => {
   scanned(components, ...VUE_ANCHORS);
@@ -94,6 +97,9 @@ describe("the rule reader", () => {
   it("refuses a nested rule rather than read it wrong: the outer one would be lost", () => {
     expect(() => cssRules(".page {\n  color: red;\n  .start {\n    margin: 0;\n  }\n}")).toThrow(/nested/);
     expect(() => cssRules(".page {\n  .start {\n    margin: 0;\n  }\n}")).toThrow(/nested/);
+    // a brace in a string is no rule
+    expect(() => cssRules('.quote::before {\n  content: "{";\n}')).not.toThrow();
+    expect(() => cssRules('[data-x="{"] {\n  color: var(--text);\n}')).not.toThrow();
     // an at-rule holds rules, as it should
     expect(cssRules("@media (max-width: 40rem) {\n  .start {\n    margin: 0;\n  }\n}")).toHaveLength(1);
   });
@@ -105,11 +111,11 @@ describe("buttons", () => {
     for (const selector of [".btn-sm", ".btn.btn-sm", ".toolbar .btn-sm", "button.btn-sm"]) {
       expect(selectorsReaching(styled(selector), SMALL_BUTTON), selector).toHaveLength(1);
     }
-    for (const selector of ["button", "button:hover", ".toolbar button", "button, a", "li > button"]) {
+    for (const selector of ["button", "button:hover", ".toolbar button", "button, a", "li > button", ":where(button)", ".toolbar :is(button, a)", ":is(button):hover"]) {
       expect(selectorsReaching(styled(selector), BUTTON_ELEMENT), selector).toHaveLength(1);
     }
     // what a selector rules out or looks for inside reaches no button
-    for (const selector of [".button-row", "[type=button]", ".btn-small", "a:not(button)", ".btn:not(.btn-sm)", ".row:has(button)"]) {
+    for (const selector of [".button-row", "[type=button]", ".btn-small", "a:not(button)", ".btn:not(.btn-sm)", ".row:has(button)", ".card:has(.btn-sm)"]) {
       const reached = [...selectorsReaching(styled(selector), SMALL_BUTTON), ...selectorsReaching(styled(selector), BUTTON_ELEMENT)];
       expect(reached, selector).toEqual([]);
     }
