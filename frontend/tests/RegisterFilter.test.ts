@@ -121,6 +121,24 @@ describe("the register page's filter", () => {
     expect(wrapper.get<HTMLInputElement>("input[type=checkbox]").element.checked).toBe(true);
   });
 
+  it("says how many it shows once a filter that let nothing through is taken back", async () => {
+    const both = page([entry("a", "Lehrplan Physik"), entry("b", "Lehrplan Chemie")], 2);
+    vi.spyOn(api, "listSources").mockResolvedValueOnce(both).mockResolvedValueOnce(page([])).mockResolvedValue(both);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+    await flushPromises();
+    // on arrival the page says nothing of its own: the count is in the table
+    expect(wrapper.get("[data-test=filter-status]").text()).toBe("");
+    await wrapper.get("input[type=checkbox]").setValue(true);
+    await flushPromises();
+    expect(wrapper.get("[data-test=filter-status]").text()).toBe(t("sources.filter.none"));
+
+    await wrapper.get("input[type=checkbox]").setValue(false);
+    await flushPromises();
+
+    // the table and its count region come back together, and a region inserted with its words is often not read
+    expect(wrapper.get("[data-test=filter-status]").text()).toBe(t("sources.register.shown", { shown: 2, total: 2 }));
+  });
+
   it("drops another filter's page when the filter's reading fails, and reads the filter again on request", async () => {
     const uploads = Array.from({ length: 50 }, (_, index) => entry(`u${index}`, `Upload ${index}`));
     const candidates = Array.from({ length: 10 }, (_, index) => entry(`c${index}`, `Kandidat ${index}`));

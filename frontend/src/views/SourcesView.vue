@@ -117,11 +117,17 @@ async function load({
     const first = await listSources(query, { limit });
     if (mine !== generation) return;
     if (focus) focusRequest = { target: focus, from };
+    const none = Object.keys(query).length > 0 && first.entries.length === 0;
+    // the table comes back where the page showed none, its count region with it - and a region
+    // inserted with its words is often not read: the filter's status says them
+    const back = page.value?.entries.length === 0 && first.entries.length > 0;
     page.value = first;
     readWith.value = query;
     partial.value = null;
-    const none = Object.keys(query).length > 0 && first.entries.length === 0;
-    filterNotice.value = none ? sayAnew(filterNotice.value, t("sources.filter.none")) : "";
+    const count = t("sources.register.shown", { shown: first.entries.length, total: first.total });
+    if (none) filterNotice.value = sayAnew(filterNotice.value, t("sources.filter.none"));
+    else if (back) filterNotice.value = sayAnew(filterNotice.value, count);
+    else filterNotice.value = "";
   } catch (error) {
     if (mine !== generation) return;
     if (kept) {
