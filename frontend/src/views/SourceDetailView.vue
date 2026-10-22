@@ -44,8 +44,9 @@ async function load(): Promise<void> {
   } catch (error) {
     if (mine !== generation) return;
     source.value = null;
-    // another account's upload is the 404 of an entry that does not exist
-    if (error instanceof ApiError && error.status === 404) missing.value = true;
+    // another account's upload is the 404 of an entry that does not exist; an id that is no
+    // UUID (422) is no entry's at all - trying again could not help either
+    if (error instanceof ApiError && (error.status === 404 || error.status === 422)) missing.value = true;
     else failure.value = failureNotice(error, t("entryPage.loadFailed"));
   } finally {
     if (mine === generation) loading.value = false;
@@ -53,7 +54,14 @@ async function load(): Promise<void> {
 }
 
 onMounted(load);
-watch(() => props.id, load);
+// another entry: the one before is not shown under its address while it loads
+watch(
+  () => props.id,
+  () => {
+    source.value = null;
+    void load();
+  },
+);
 
 const dateTime = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium", timeStyle: "short" });
 const megabytes = new Intl.NumberFormat(LOCALE, { style: "unit", unit: "megabyte", maximumFractionDigits: 1 });

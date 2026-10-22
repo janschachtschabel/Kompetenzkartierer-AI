@@ -7,7 +7,7 @@ import { messages, t } from "@/i18n/de";
 import { router } from "@/router";
 import SourceDetailView from "@/views/SourceDetailView.vue";
 
-import { detail } from "./registerEntries";
+import { deferred, detail } from "./registerEntries";
 
 let shown: VueWrapper | null = null;
 
@@ -174,6 +174,43 @@ describe("a register entry's page", () => {
       api.clearToken();
       await router.push("/");
     }
+  });
+
+  it("says an id that is no entry's at all is not there, without a retry that could not help", async () => {
+    // the server checks the id's form first: no UUID is 422, not 404
+    vi.spyOn(api, "getSource").mockRejectedValue(new ApiError("server", 422, "validation_failed"));
+    const wrapper = await open("kein-eintrag");
+
+    expect(wrapper.text()).toContain(t("entryPage.notFoundTitle"));
+    expect(wrapper.find("[role=alert]").exists()).toBe(false);
+    expect(wrapper.find("button").exists()).toBe(false);
+  });
+
+  it("shows the entry it was moved on to, whichever answer comes last", async () => {
+    const older = deferred<api.SourceDetail>();
+    const newer = deferred<api.SourceDetail>();
+    vi.spyOn(api, "getSource").mockImplementation((id) => (id === "s1" ? older.promise : newer.promise));
+    const wrapper = await open("s1");
+
+    await wrapper.setProps({ id: "s2" });
+    newer.resolve(detail({ id: "s2", title: "Zweiter Eintrag" }));
+    await flushPromises();
+    older.resolve(detail({ id: "s1", title: "Erster Eintrag" }));
+    await flushPromises();
+
+    expect(wrapper.get("h1").text()).toBe("Zweiter Eintrag");
+  });
+
+  it("shows no longer the entry it was moved on from while the next one loads", async () => {
+    const next = deferred<api.SourceDetail>();
+    vi.spyOn(api, "getSource").mockResolvedValueOnce(detail({ title: "Erster Eintrag" })).mockImplementation(() => next.promise);
+    const wrapper = await open("s1");
+
+    await wrapper.setProps({ id: "s2" });
+
+    expect(wrapper.get("h1").text()).toBe(t("entryPage.heading"));
+    expect(wrapper.text()).toContain(t("states.loading"));
+    expect(wrapper.text()).not.toContain("Erster Eintrag");
   });
 
   it("says when the entry did not load, and loads it again on request", async () => {
