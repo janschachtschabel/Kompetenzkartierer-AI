@@ -49,6 +49,7 @@ REGISTER_STATUS: dict[CheckOutcome, RegisterStatus | None] = {
     "refused": "unreachable",
     "throttled": None,
     "server_error": "unreachable",
+    "unavailable": "unreachable",
     "unreachable": "unreachable",
     "robots": "unreachable",
 }

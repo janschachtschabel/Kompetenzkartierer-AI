@@ -5,7 +5,8 @@ CREATE TABLE url_check (
     url_sha256 bytea PRIMARY KEY CHECK (url_sha256 = sha256(convert_to(url, 'UTF8'))),
     url text NOT NULL CHECK (url ~ '^https?://' AND length(url) <= 2000),
     outcome text NOT NULL CHECK (outcome IN (
-        'reachable', 'too_large', 'refused', 'throttled', 'server_error', 'unreachable', 'robots'
+        'reachable', 'too_large', 'refused', 'throttled', 'server_error', 'unavailable', 'unreachable',
+        'robots'
     )),
     status_code smallint CHECK (status_code BETWEEN 100 AND 599),  -- of the last answer, if one came
     final_url text CHECK (final_url ~ '^https?://' AND length(final_url) <= 2000),  -- after redirects

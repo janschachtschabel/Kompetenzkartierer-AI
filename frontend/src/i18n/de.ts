@@ -258,6 +258,7 @@ export const messages = {
       refused: "vom Server verweigert",
       throttled: "der Server bat um eine Pause; eine spätere Prüfung fragt noch einmal",
       server_error: "Fehler beim Server",
+      unavailable: "gerade nicht erreichbar; eine spätere Prüfung fragt noch einmal",
       unreachable: "nicht erreichbar",
       robots: "laut robots.txt nicht abzurufen",
     },

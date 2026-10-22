@@ -8,7 +8,7 @@ import hashlib
 from collections.abc import AsyncIterator, Callable
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args
 from uuid import UUID
 
 import httpx2
@@ -24,7 +24,8 @@ from app.db.migrate import migrate
 from app.jobs.context import JobContext
 from app.jobs.handlers import make_handlers
 from app.jobs.queue import Job, claim, enqueue
-from app.sources.check_job import KIND, check_sources
+from app.sources.check_job import KIND, REGISTER_STATUS, check_sources
+from app.sources.register import CheckOutcome
 from app.sources.url_fetch import NOT_PUBLIC, UrlNotAllowed
 from tests.sources.compressed import MIB, arriving, in_chunks
 from tests.support import make_settings
@@ -396,3 +397,9 @@ async def test_the_check_reports_how_far_it_has_come(context: JobContext) -> Non
 async def test_the_worker_knows_the_check(context: JobContext) -> None:
     assert KIND == "source.check"
     assert KIND in make_handlers(context)
+
+
+def test_every_outcome_says_what_becomes_of_the_register() -> None:
+    assert set(REGISTER_STATUS) == set(get_args(CheckOutcome))
+    # what is asked again by a later check leaves the register or marks it for now, never acquired
+    assert REGISTER_STATUS["unavailable"] == "unreachable"
