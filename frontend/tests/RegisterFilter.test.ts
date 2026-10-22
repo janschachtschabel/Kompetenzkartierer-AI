@@ -439,4 +439,24 @@ describe("the register page's filter in the address", () => {
     expect(wrapper.get<HTMLInputElement>("input[type=checkbox]").element.checked).toBe(false);
     expect(listed).toHaveBeenLastCalledWith({}, { limit: 50 });
   });
+
+  it("leaves an address that is no longer its own alone where the page stays mounted after leaving", async () => {
+    // mounted without a RouterView, as a KeepAlive or a leaving Transition holds it
+    await router.replace({ query: { kandidaten: "1" } });
+    const listed = vi.spyOn(api, "listSources").mockResolvedValue(page([entry("a", "Lehrplan Physik")]));
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+    await flushPromises();
+    const replaced = vi.spyOn(router, "replace");
+    try {
+      await router.push({ name: "login" });
+      await flushPromises();
+
+      expect(listed).toHaveBeenCalledTimes(1);
+      expect(replaced).not.toHaveBeenCalled();
+      expect(wrapper.get<HTMLInputElement>("input[type=checkbox]").element.checked).toBe(true);
+    } finally {
+      await router.push("/");
+      await flushPromises();
+    }
+  });
 });
