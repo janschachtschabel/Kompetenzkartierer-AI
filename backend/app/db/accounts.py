@@ -5,6 +5,7 @@ several to hold together (creating an account with its roles) runs them in its t
 """
 
 from collections.abc import Iterable
+from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
@@ -122,3 +123,24 @@ async def record_audit(
         " VALUES (%s, %s, %s, %s, %s, %s)",
         (actor_id, actor_name, action, subject, Jsonb(details), request_id),
     )
+
+
+@dataclass(frozen=True)
+class AccountRecord:
+    id: UUID
+    name: str
+    roles: list[str]
+    disabled: bool
+
+
+async def get_account(connection: psycopg.AsyncConnection, account_id: UUID) -> AccountRecord | None:
+    cursor = await connection.execute(
+        "SELECT account.id, account.name,"
+        " array_remove(array_agg(role_grant.role ORDER BY role_grant.role), NULL),"
+        " account.disabled_at IS NOT NULL"
+        " FROM account LEFT JOIN role_grant ON role_grant.account_id = account.id"
+        " WHERE account.id = %s GROUP BY account.id",
+        (account_id,),
+    )
+    row = await cursor.fetchone()
+    return AccountRecord(row[0], row[1], list(row[2]), row[3]) if row else None
