@@ -1,0 +1,82 @@
+"""The job source.fetch: a register entry's URL fetched, its file stored, the entry acquired.
+
+A server that refuses (4xx but 429), an address inside the network or a file of no type a
+conversion reads end the job (PermanentError, with a code the interface words); a server away for
+a moment, a broken transfer or a timeout are tried again by the queue. The entry's register
+status says what was found: unreachable, reachable (it answered, its file is of no use here), or
+acquired. The file is named by the last address of the chain, or by the first.
+"""
+
+import asyncio
+from pathlib import PurePosixPath
+from typing import Any
+from uuid import UUID
+
+import httpx2
+
+from app.db.sources import StoredFile, fetch_target, record_fetch, set_register_status
+from app.jobs.context import JobContext
+from app.jobs.outcome import PermanentError
+from app.jobs.queue import Job
+from app.sources.archives import ArchiveTooLarge, ArchiveUnreadable
+from app.sources.filetype import MAX_NAME_SIGNS, UnsupportedType, examine, stored_name
+from app.sources.url_fetch import DownloadError, UrlNotAllowed, fetch, filename_from_url
+
+KIND = "source.fetch"
+MIB = 2**20
+MAX_TITLE_SIGNS = 500
+
+
+async def fetch_source(
+    context: JobContext, job: Job, *, transport: httpx2.AsyncBaseTransport | None = None
+) -> dict[str, Any]:
+    """Fetch the entry ``job.payload["source_id"]`` names; ``transport`` is the network (tests)."""
+    source_id = UUID(str(job.payload["source_id"]))
+    async with context.pool.connection() as connection:
+        target = await fetch_target(connection, source_id)
+    if target is None or target.url is None:
+        raise PermanentError("source_missing", "The register entry has no address to fetch.")
+    try:
+        fetched = await fetch(target.url, max_bytes=context.settings.max_upload_mb * MIB, transport=transport)
+    except UrlNotAllowed as error:
+        await _note(context, source_id, "unreachable")
+        raise PermanentError("url_not_allowed", str(error)) from None
+    except DownloadError as error:
+        if error.status is not None and 400 <= error.status < 500 and error.status != 429:
+            await _note(context, source_id, "unreachable")
+            raise PermanentError("download_refused", str(error)) from None
+        raise  # away for a moment: another attempt
+    name = filename_from_url(fetched.chain[-1]) or filename_from_url(target.url) or ""
+    try:
+        detected, digest = await asyncio.to_thread(examine, name, fetched.content)
+    except (UnsupportedType, ArchiveUnreadable):
+        await _note(context, source_id, "reachable")
+        raise PermanentError("unsupported_type", "The file is of no type a conversion reads.") from None
+    except ArchiveTooLarge:
+        await _note(context, source_id, "reachable")
+        raise PermanentError(
+            "archive_too_large", "The archive expands beyond what a document holds."
+        ) from None
+    file_name = stored_name(name, detected)
+    stored = StoredFile(
+        sha256=digest, size=len(fetched.content), mime=detected.mime, storage_key=f"sources/{digest.hex()}"
+    )
+    if not await context.storage.exists(stored.storage_key):
+        await context.storage.put(stored.storage_key, fetched.content)
+    async with context.pool.connection() as connection:
+        await record_fetch(
+            connection,
+            source_id=source_id,
+            account_id=target.owner_id,
+            stored=stored,
+            file_name=file_name,
+            received_name=name[:MAX_NAME_SIGNS],
+            chain=fetched.chain,
+            title=PurePosixPath(file_name).stem[:MAX_TITLE_SIGNS],
+        )
+    return {"source_id": str(source_id), "sha256": digest.hex(), "size": stored.size}
+
+
+async def _note(context: JobContext, source_id: UUID, status: str) -> None:
+    async with context.pool.connection() as connection:
+        await set_register_status(connection, source_id, status)

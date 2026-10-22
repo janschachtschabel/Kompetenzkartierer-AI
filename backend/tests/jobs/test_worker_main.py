@@ -84,7 +84,7 @@ def test_the_worker_process_comes_up_and_says_what_it_takes(database_url: str) -
         process.kill()
         process.wait(10)
 
-    assert any("no job handlers are registered" in line for line in seen)
+    assert any(" takes " in line and "source.fetch" in line for line in seen)
 
 
 @pytest.mark.skipif(os.name != "posix", reason="SIGTERM ends a Windows process without a word")

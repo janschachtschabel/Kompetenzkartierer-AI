@@ -7,6 +7,7 @@ import), so none takes another way round it. Taken over from curriculum-extracto
 (services/filetype.py).
 """
 
+import hashlib
 from dataclasses import dataclass
 from pathlib import PurePosixPath, PureWindowsPath
 
@@ -70,6 +71,12 @@ def accepted_type(filename: str | None, data: bytes) -> DetectedType:
     if detected.mime == DOCX_MIME:
         check_archive(data)
     return detected
+
+
+def examine(filename: str | None, data: bytes) -> tuple[DetectedType, bytes]:
+    """``accepted_type`` and the SHA-256 of the bytes: what every way a source comes in asks of a
+    file. Unpacks an archive and hashes up to the upload limit, so callers run it in a thread."""
+    return accepted_type(filename, data), hashlib.sha256(data).digest()
 
 
 def stored_name(filename: str | None, detected: DetectedType) -> str:

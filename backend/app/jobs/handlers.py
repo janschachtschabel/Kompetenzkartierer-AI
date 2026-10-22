@@ -2,6 +2,7 @@
 stages register in ``make_handlers`` (M1)."""
 
 from collections.abc import Collection, Mapping
+from functools import partial
 
 from app.jobs.context import JobContext
 from app.jobs.worker import Handler
@@ -12,7 +13,9 @@ class UnknownJobKind(ValueError):
 
 
 def make_handlers(context: JobContext) -> dict[str, Handler]:
-    return {}
+    from app.sources import fetch_job
+
+    return {fetch_job.KIND: partial(fetch_job.fetch_source, context)}
 
 
 def select_handlers(handlers: Mapping[str, Handler], kinds: Collection[str]) -> dict[str, Handler]:

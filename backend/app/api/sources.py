@@ -6,7 +6,6 @@ before anything reads it; the file is counted again as it is read, in pieces of 
 """
 
 import asyncio
-import hashlib
 from pathlib import PurePosixPath
 from typing import Annotated, Any
 from uuid import UUID
@@ -23,7 +22,7 @@ from app.db.accounts import record_audit
 from app.db.rate_limits import RateLimited, take
 from app.db.sources import StoredFile, record_upload
 from app.sources.archives import ArchiveTooLarge, ArchiveUnreadable
-from app.sources.filetype import MAX_NAME_SIGNS, DetectedType, UnsupportedType, accepted_type, stored_name
+from app.sources.filetype import MAX_NAME_SIGNS, DetectedType, UnsupportedType, examine, stored_name
 from app.sources.register import Provenance, RegisterStatus, RightsStatus
 
 router = APIRouter(prefix="/api/v1", tags=["sources"], responses=AUTH_RESPONSES)
@@ -120,14 +119,13 @@ async def _read(upload: UploadFile, limit: int) -> bytes:
 
 
 def _examine(name: str, data: bytes) -> tuple[DetectedType, bytes]:
-    """Its type and SHA-256; in a thread, as the archive check unpacks and hashing takes a while."""
+    """``examine``, its refusals as the API words them."""
     try:
-        detected = accepted_type(name, data)
+        return examine(name, data)
     except (UnsupportedType, ArchiveUnreadable):
         raise Refusal(415, "unsupported_type", "The file is of no type a conversion reads.") from None
     except ArchiveTooLarge:
         raise Refusal(413, "archive_too_large", "The archive expands beyond what a document holds.") from None
-    return detected, hashlib.sha256(data).digest()
 
 
 def _title(given: str | None, file_name: str) -> str:
