@@ -191,14 +191,14 @@ function isWebAddress(address: string | null): address is string {
         <p class="source__lead">{{ t("entryPage.notes.intro") }}</p>
         <ul v-if="source.access_notes.length" class="notes">
           <li v-for="(note, index) in source.access_notes" :key="index" class="note card">
-            <p class="note__text">{{ note.text }}</p>
+            <!-- a note that is its address alone (an archived copy) is said once, as the link -->
+            <p v-if="note.text !== note.url" class="note__text">{{ note.text }}</p>
             <ul v-if="note.categories.length" class="note__categories">
               <li v-for="category in note.categories" :key="category" class="status-badge neutral">{{ category }}</li>
             </ul>
             <p v-if="isWebAddress(note.url)" class="note__address">
               <a :href="note.url" rel="noreferrer"><bdi>{{ note.url }}</bdi></a>
             </p>
-            <p v-if="note.origin" class="note__origin">{{ t("entryPage.notes.origin", { origin: note.origin }) }}</p>
           </li>
         </ul>
         <p v-else class="source__none">{{ t("entryPage.notes.none") }}</p>
@@ -283,13 +283,8 @@ function isWebAddress(address: string | null): address is string {
   list-style: none;
 }
 
-.note__address,
-.note__origin {
+.note__address {
   margin: 0;
   font-size: var(--step--1);
-}
-
-.note__origin {
-  color: var(--text-muted);
 }
 </style>

@@ -273,7 +273,6 @@ export const messages = {
       heading: "Zugangsnotizen",
       intro: "Hinweise des Vergleichsdatensatzes zu Land, Schulform und Fach: gesperrte Portale und Umwege.",
       none: "Keine Zugangsnotiz für Land, Schulform und Fach dieses Eintrags.",
-      origin: "Herkunft des Hinweises: {origin}",
     },
   },
   // A job the page follows (jobWatch.ts), and why one failed (jobMessages.ts).
