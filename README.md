@@ -82,6 +82,10 @@ HMAC unter `API_KEY_PEPPER` (Geheimnis, mindestens 32 Zeichen, auch als Datei ü
 `API_KEY_PEPPER_FILE`). Ohne Pepper startet die API nicht; ein neuer Pepper macht alle Tokens
 ungültig.
 
+- Saat des Quellregisters: `python -m app.sources.seed` legt die 1.498 Kandidaten des
+  Vergleichsdatensatzes an (`data/seed/vergleichsdatensatz/`, auch im API-Image), ohne Konto
+  und ungeprüft. Ein zweiter Lauf ändert nichts. Vorher muss das Vokabular geladen sein. In
+  Compose: `docker compose -f deploy/docker-compose.yml run --rm migrate python -m app.sources.seed`.
 - Erster Admin: `python -m app.bootstrap NAME` gibt das Token einmal auf stdout aus. Interaktiv
   ausführen (`docker compose run`, `kubectl exec -it`), nicht als Job, dessen Ausgabe ein
   Log-System sammelt. Exit-Code 0: angelegt; 2: es gibt schon einen Admin, der sich anmelden

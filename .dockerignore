@@ -1,5 +1,5 @@
 # The build context is the repository root; the images take backend/app, ontology/,
-# deploy/ and frontend/dist. Everything below never goes in: history, environments,
+# data/seed, deploy/ and frontend/dist. Everything below never goes in: history, environments,
 # caches, tests, local data and secrets.
 .git
 .worktrees
@@ -13,6 +13,8 @@
 backend/tests
 docs
 data
+# but the published seed: the API image seeds the register from it
+!data/seed
 deploy/secrets
 **/.env*
 **/*.pem

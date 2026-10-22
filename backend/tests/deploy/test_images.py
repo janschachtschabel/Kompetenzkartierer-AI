@@ -79,7 +79,16 @@ def test_the_api_carries_its_code_and_the_ontology_it_reads_nothing_else() -> No
 
     assert "backend/app" in copies
     assert ontology == sorted(MODEL_DIRS)
-    assert not [source for source in copies if re.search(r"tests|data|docs|\.env", source)]
+    # of data/ only the published seed the register is seeded from (python -m app.sources.seed),
+    # where the command looks for it: /srv/data/seed beside /srv/backend
+    assert [source for source in copies if source.startswith("data")] == ["data/seed"]
+    assert re.search(r"(?m)^COPY data/seed /srv/data/seed$", _final_stage(API))
+    assert not [source for source in copies if re.search(r"tests|docs|\.env", source)]
+
+
+def test_the_build_context_lets_in_the_seed_data_alone() -> None:
+    # data/ holds local run data (the store): out; its published seed: in
+    assert IGNORED.index("!data/seed") > IGNORED.index("data")
 
 
 def test_the_web_image_serves_the_built_spa_as_its_unprivileged_user() -> None:

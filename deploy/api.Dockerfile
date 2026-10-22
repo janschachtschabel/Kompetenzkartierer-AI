@@ -25,6 +25,8 @@ COPY backend/app /srv/backend/app
 COPY ontology/ontologie /srv/ontology/ontologie
 COPY ontology/vokabulare /srv/ontology/vokabulare
 COPY ontology/profile /srv/ontology/profile
+# The published seed of the source register (python -m app.sources.seed), 2 MB
+COPY data/seed /srv/data/seed
 RUN python -m compileall -q /srv/backend/app
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
