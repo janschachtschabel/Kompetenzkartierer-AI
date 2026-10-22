@@ -255,10 +255,21 @@ def test_third_party_files_may_be_opened_to_accounts(
 def test_third_party_files_may_be_opened_to_visitors(
     migrated: str, store: Path, world: dict[str, Any]
 ) -> None:
-    with client_for(migrated, store, third_party_markdown="public") as client:
+    with client_for(migrated, store, third_party_markdown="public", public_access="lookup") as client:
         assert client.get(f"/api/v1/sources/{world['seed']}/file").status_code == 200
         # an account's own upload stays its own
         assert client.get(f"/api/v1/sources/{world['own']}/file").status_code == 401
+
+
+def test_without_public_access_visitors_get_no_file(
+    migrated: str, store: Path, world: dict[str, Any]
+) -> None:
+    # PUBLIC_ACCESS=off is "only with a token" (Gesamtplan 7.3); the stricter of the two rules holds
+    with client_for(migrated, store, third_party_markdown="public", public_access="off") as client:
+        answer = client.get(f"/api/v1/sources/{world['seed']}/file")
+
+    assert answer.status_code == 401
+    assert answer.headers["www-authenticate"] == "Bearer"
 
 
 def test_another_account_s_file_is_not_there(client: TestClient, world: dict[str, Any]) -> None:

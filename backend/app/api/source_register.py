@@ -214,11 +214,14 @@ async def get_register_file(
     source_id: UUID, request: Request, who: Annotated[Principal, Depends(principal)]
 ) -> Response:
     """Its owner and the editors get it; the file of an entry of no account goes, beside them, to
-    whom THIRD_PARTY_MARKDOWN names (``hidden``: nobody, ``accounts``, ``public``: visitors too)."""
-    opened_to = request.app.state.settings.third_party_markdown
+    whom THIRD_PARTY_MARKDOWN names (``hidden``: nobody, ``accounts``, ``public``: visitors too).
+    Visitors only where PUBLIC_ACCESS lets them in at all: the stricter rule holds."""
+    settings = request.app.state.settings
+    opened_to = settings.third_party_markdown
+    to_visitors = opened_to == "public" and settings.public_access != "off"
     async with request.app.state.pool.connection() as connection:
         if who.anonymous:
-            row = await ownerless_source(connection, source_id) if opened_to == "public" else None
+            row = await ownerless_source(connection, source_id) if to_visitors else None
             if row is None:
                 raise HTTPException(401, "A token is needed.", headers={"WWW-Authenticate": "Bearer"})
         else:
