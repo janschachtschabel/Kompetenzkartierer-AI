@@ -214,7 +214,9 @@ describe("a text selection that ends on the scrim", () => {
       attachTo: document.body,
     });
 
+    // as the browser sends it: the release past the edge lands on the scrim, the press did not
     await wrapper.get("#text").trigger("mousedown");
+    await wrapper.get(".backdrop").trigger("mouseup");
     await wrapper.get(".backdrop").trigger("click");
 
     expect(wrapper.emitted("close")).toBeUndefined();

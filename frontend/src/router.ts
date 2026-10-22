@@ -22,8 +22,10 @@ declare module "vue-router" {
 export const router = createRouter({
   history: createWebHistory(),
   // A new page opens at its top; back and forward return to where the reader
-  // was; a change of the query alone is the same page and stays put.
-  scrollBehavior: (to, from, saved) => saved ?? (to.path === from.path ? false : { top: 0 }),
+  // was; a change of the query or the fragment alone is the same page and stays
+  // put. A link to the page already open - the same address - goes to its top.
+  scrollBehavior: (to, from, saved) =>
+    saved ?? (to.path === from.path && to.fullPath !== from.fullPath ? false : { top: 0 }),
   routes: [
     // Open: a visitor sees what PUBLIC_ACCESS opens, an account its start.
     { path: "/", name: "start", component: StartView, meta: { title: "app.titles.start" } },

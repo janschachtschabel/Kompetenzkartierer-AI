@@ -54,29 +54,30 @@ export function ensureSession(): Promise<void> {
   if (current.value || !token) return Promise.resolve();
   if (loading) return loading;
   const asked = generation;
-  /** True where the answer still belongs to the account held now. */
-  const stillAsked = (): boolean => {
-    // signed in, or out, meanwhile: that already settled the state
-    if (generation !== asked) return false;
-    // only the token changed: no one settled it, and the next ask must go out afresh
+  /**
+   * Applies an answer that still belongs to the account held now. Signed in or
+   * out meanwhile, it is dropped: that settled the state already. Only the token
+   * changed, nobody settled it: the token held now is asked for, and those
+   * waiting on this answer get that one.
+   */
+  const settle = (apply: () => void): Promise<void> | undefined => {
+    if (generation !== asked) return;
     if (getToken() !== token) {
       clearSession();
-      return false;
+      return ensureSession();
     }
-    return true;
+    apply();
   };
   state.value = "loading";
   failure.value = null;
   loading = getMe().then(
-    (me) => {
-      if (stillAsked()) setSession(me);
-    },
-    (error: unknown) => {
-      if (!stillAsked()) return;
-      loading = null;
-      state.value = "failed";
-      failure.value = error;
-    },
+    (me) => settle(() => setSession(me)),
+    (error: unknown) =>
+      settle(() => {
+        loading = null;
+        state.value = "failed";
+        failure.value = error;
+      }),
   );
   return loading;
 }

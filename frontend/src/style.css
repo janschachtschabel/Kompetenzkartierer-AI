@@ -407,10 +407,12 @@ input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:dis
   border-color: transparent;
   color: var(--accent);
   padding: 0;
-  /* A link's look, whole: told apart by more than its colour, and as tall as
-     the line it may sit in. */
+  /* A link's look: told apart by more than its colour, in the size and weight
+     of the text around it, and no taller than its line. */
   text-decoration: underline;
   min-height: auto;
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 /* Destructive actions come in two weights: `.btn.danger` filled, for the main

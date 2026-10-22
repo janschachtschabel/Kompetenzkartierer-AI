@@ -112,21 +112,34 @@ describe("a late answer", () => {
     expect(sessionState.value).toBe("none");
   });
 
-  it("for another token than the one held now is dropped", async () => {
+  it("for another token than the one held now is dropped, and those waiting get the account of that token", async () => {
+    const other: Me = { id: "0190-b", name: "Zweite Redaktion", roles: ["redaktion"] };
     let answer: (me: Me) => void = () => undefined;
-    vi.mocked(api.getMe).mockReturnValue(new Promise((resolve) => (answer = resolve)));
+    vi.mocked(api.getMe).mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+    vi.mocked(api.getMe).mockResolvedValueOnce(other);
     const asked = ensureSession();
 
     vi.mocked(api.getToken).mockReturnValue("kka_other");
     answer(ME);
     await asked;
 
+    // the token held now got its own question, not the answer of the old one
+    expect(api.getMe).toHaveBeenCalledTimes(2);
+    expect(session.value).toEqual(other);
+    expect(sessionState.value).toBe("ready");
+  });
+
+  it("for a token dropped meanwhile ends with no account and asks nothing more", async () => {
+    let answer: (me: Me) => void = () => undefined;
+    vi.mocked(api.getMe).mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+    const asked = ensureSession();
+
+    vi.mocked(api.getToken).mockReturnValue(null);
+    answer(ME);
+    await asked;
+
+    expect(api.getMe).toHaveBeenCalledTimes(1);
     expect(session.value).toBeNull();
     expect(sessionState.value).toBe("none");
-    // the token held now gets its own question, not the settled answer of the old one
-    vi.mocked(api.getMe).mockResolvedValue(ME);
-    await ensureSession();
-    expect(api.getMe).toHaveBeenCalledTimes(2);
-    expect(session.value).toEqual(ME);
   });
 });

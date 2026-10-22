@@ -191,5 +191,8 @@ describe("a link drawn as a button", () => {
 
     expect(shared).toContain("text-decoration: underline");
     expect(shared).toContain("min-height: auto");
+    // and in the size and weight of the text around it, not a button's
+    expect(shared).toContain("font-size: inherit");
+    expect(shared).toContain("font-weight: inherit");
   });
 });

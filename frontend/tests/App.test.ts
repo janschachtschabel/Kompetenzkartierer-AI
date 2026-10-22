@@ -90,7 +90,7 @@ describe("the shell while an account is held but not loaded", () => {
 
   it("offers the way out once the account cannot be loaded: a stale token is no dead end", async () => {
     api.setToken("kka_token");
-    vi.spyOn(api, "getMe").mockRejectedValue(new api.ApiError("server", 429, undefined, undefined, {}, 900));
+    vi.spyOn(api, "getMe").mockRejectedValue(new api.ApiError("server", 429, "too_many_requests", "Too many failed sign-ins; try again later.", {}, 900));
     const wrapper = await render();
     const push = vi.spyOn(router, "push");
 

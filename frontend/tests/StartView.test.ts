@@ -118,7 +118,7 @@ describe("the start page for an account whose load fails", () => {
 
   it("says that the token held no longer holds where the address is locked, not a wait in seconds", async () => {
     // a good token never meets the lock (app/api/deps.py): a 429 on /me is a refused one
-    vi.spyOn(api, "getMe").mockRejectedValue(new api.ApiError("server", 429, undefined, "Too many", {}, 900));
+    vi.spyOn(api, "getMe").mockRejectedValue(new api.ApiError("server", 429, "too_many_requests", "Too many failed sign-ins; try again later.", {}, 900));
 
     const wrapper = await render();
 

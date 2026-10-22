@@ -58,19 +58,14 @@ async function signOut(): Promise<void> {
       </ul>
     </nav>
     <div class="shell__account">
-      <template v-if="session">
-        <p class="shell__who">
-          {{ t("app.signedInAs") }} <strong>{{ session.name }}</strong>
-          <span class="shell__roles">{{ t("app.roleList", { roles }) }}</span>
-        </p>
-        <button type="button" class="btn secondary btn-sm shell__sign-out" @click="signOut">
-          {{ t("app.signOut") }}
-        </button>
-      </template>
-      <!-- A token held whose account did not load: the way out, to sign in with
-           another - a refused token behind a locked address has no other -->
+      <p v-if="session" class="shell__who">
+        {{ t("app.signedInAs") }} <strong>{{ session.name }}</strong>
+        <span class="shell__roles">{{ t("app.roleList", { roles }) }}</span>
+      </p>
+      <!-- The way out - for a token held whose account did not load too: a
+           refused token behind a locked address has no other -->
       <button
-        v-else-if="sessionState === 'failed'"
+        v-if="session || sessionState === 'failed'"
         type="button"
         class="btn secondary btn-sm shell__sign-out"
         @click="signOut"

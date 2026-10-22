@@ -164,12 +164,22 @@ describe("scrolling", () => {
     expect(behave?.(route, other, { left: 0, top: 480 })).toEqual({ left: 0, top: 480 });
   });
 
-  it("stays put where only the query changes: the same page, as for the focus", () => {
+  it("goes to the top on a link to the page already open: the brand, the active destination", () => {
+    // vue-router asks with the same route twice for that click
+    const behave = router.options.scrollBehavior;
+    const route = router.currentRoute.value;
+
+    expect(behave?.(route, route, null)).toEqual({ top: 0 });
+  });
+
+  it("stays put where only the query or the fragment changes: the same page, as for the focus", () => {
     const behave = router.options.scrollBehavior;
     const route = router.currentRoute.value;
 
     const paged = { ...route, query: { seite: "2" }, fullPath: "/?seite=2" };
+    const anchored = { ...route, hash: "#main", fullPath: "/#main" };
 
     expect(behave?.(paged, route, null)).toBe(false);
+    expect(behave?.(anchored, route, null)).toBe(false);
   });
 });
