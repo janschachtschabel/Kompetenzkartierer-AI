@@ -94,10 +94,11 @@ def is_public(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
 
 def check_url(url: str) -> str:
     """``url`` with its scheme in small letters, or UrlNotAllowed unless it is http(s) with a host,
-    without a user or password (the register would show them) and without spaces or control
-    signs."""
-    if any(sign.isspace() or unicodedata.category(sign) == "Cc" for sign in url):
-        raise UrlNotAllowed("the address holds spaces or control signs")
+    without a user or password (the register would show them) and without spaces, control or
+    format signs (a right-to-left override, a zero-width space: the address is an entry's title
+    until it has one)."""
+    if any(sign.isspace() or unicodedata.category(sign) in ("Cc", "Cf") for sign in url):
+        raise UrlNotAllowed("the address holds spaces, control or format signs")
     parts = urlsplit(url)
     if parts.scheme not in ("http", "https"):
         raise UrlNotAllowed(f"only http and https addresses are fetched, not {parts.scheme[:20] or 'none'!r}")

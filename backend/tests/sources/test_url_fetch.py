@@ -61,6 +61,13 @@ def test_only_http_with_a_host_and_nothing_hidden_is_fetched(url: str) -> None:
         check_url(url)
 
 
+@pytest.mark.parametrize("sign", [0x202E, 0x200B], ids=["right-to-left-override", "zero-width-space"])
+def test_a_url_with_a_format_sign_is_refused(sign: int) -> None:
+    # the register shows the address as the title of an entry without one: it must show whole
+    with pytest.raises(UrlNotAllowed):
+        check_url(f"https://lehrplaene.example/Lehrplan{chr(sign)}fdp.exe")
+
+
 def test_a_url_is_kept_with_its_scheme_in_small_letters() -> None:
     # the register holds http(s) only; "HTTPS://" is the same address
     assert check_url("HTTPS://Lehrplaene.example/A.pdf?x=1") == "https://Lehrplaene.example/A.pdf?x=1"
