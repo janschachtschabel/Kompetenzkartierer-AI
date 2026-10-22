@@ -13,6 +13,7 @@ the trace id of the request that enqueued it and reports its progress under its 
 holds on any connection; every time is the database's ``now()``.
 """
 
+import re
 from collections.abc import Collection
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -23,7 +24,10 @@ from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
 from app.core.ids import new_id
-from app.core.tracing import trace_id
+from app.core.tracing import MAX_TRACE_CHARS, REQUEST_ID, outgoing_headers, trace_id
+
+# What the column trace_id takes (migration 0005)
+_STORABLE_TRACE = re.compile(f"[A-Za-z0-9._:@+/=,-]{{1,{MAX_TRACE_CHARS}}}")
 
 # Wait before the next attempt: 10 s, 20 s, 40 s, ... at most 10 min. The exponent stops at 6,
 # past the cap anyway: a large one overflowed and failed the sweep for every job
@@ -103,7 +107,8 @@ async def enqueue(
     run_after_s: float = 0,
 ) -> UUID:
     """A new waiting job; ``max_attempts`` is 1 to 100. It keeps the trace id of the request
-    being served, if any: the worker writes the job's lines with it."""
+    being served, if any - without a tracing header its request id: the worker writes the
+    job's lines with it."""
     job_id = new_id()
     await connection.execute(
         """
@@ -124,10 +129,17 @@ async def enqueue(
             "payload": Jsonb(payload or {}),
             "attempts": max_attempts,
             "after": run_after_s,
-            "trace": trace_id(),
+            "trace": _request_trace(),
         },
     )
     return job_id
+
+
+def _request_trace() -> str | None:
+    """The trace id of the request being served, else its request id (the SPA sends no tracing
+    header), as the column takes it; ``None`` outside a request, or for an id it would refuse."""
+    found = trace_id() or outgoing_headers().get(REQUEST_ID)
+    return found if found and _STORABLE_TRACE.fullmatch(found) else None
 
 
 async def claim(

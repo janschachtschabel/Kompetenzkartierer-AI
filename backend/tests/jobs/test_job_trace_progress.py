@@ -59,6 +59,29 @@ async def test_a_job_keeps_the_trace_of_the_request_that_made_it(pool: AsyncConn
     assert await column(pool, job_id, "trace_id") == TRACE
 
 
+async def test_a_job_from_a_request_without_trace_headers_keeps_its_request_id(
+    pool: AsyncConnectionPool,
+) -> None:
+    # the SPA and nginx send none: the request id still joins the request's lines and the job's
+    take_trace_headers([], "request-from-the-page")
+    async with pool.connection() as connection:
+        job_id = await enqueue(connection, "test.work", "account-a")
+
+    assert await column(pool, job_id, "trace_id") == "request-from-the-page"
+
+
+@pytest.mark.parametrize("request_id", ["a b", "a" * 257], ids=["sign", "length"])
+async def test_a_request_id_the_column_would_refuse_leaves_the_trace_empty(
+    pool: AsyncConnectionPool, request_id: str
+) -> None:
+    # set_request_id never makes one; the job is still made, without a trace
+    take_trace_headers([], request_id)
+    async with pool.connection() as connection:
+        job_id = await enqueue(connection, "test.work", "account-a")
+
+    assert await column(pool, job_id, "trace_id") is None
+
+
 async def test_a_job_made_outside_a_request_has_no_trace(pool: AsyncConnectionPool) -> None:
     async with pool.connection() as connection:
         job_id = await enqueue(connection, "test.work", "system")
