@@ -185,8 +185,10 @@ async def test_an_incompressible_file_at_the_limit_passes_packed() -> None:
     assert await read(in_chunks(wire), {"Content-Encoding": "gzip"}, len(data)) == data
 
 
-async def test_a_later_gzip_member_is_held_to_the_limit_as_the_first() -> None:
-    raw = [packed(b"%PDF-1.7 ", "gzip"), *in_chunks(gzip_bomb())]
+async def test_a_later_gzip_member_is_held_to_the_limit_with_the_first() -> None:
+    # each member below the limit, together past it: the count runs on across members
+    member = packed(bytes(LIMIT * 6 // 10), "gzip")
+    raw = [*in_chunks(member), *in_chunks(member)]
 
     tracemalloc.start()
     try:
