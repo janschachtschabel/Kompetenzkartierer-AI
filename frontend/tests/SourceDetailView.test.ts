@@ -156,6 +156,26 @@ describe("a register entry's page", () => {
     expect(wrapper.get("a[href='/quellen']").text()).toBe(t("entryPage.back"));
   });
 
+  it("leads back to the register as it was filtered, where the reader came from it", async () => {
+    api.setToken("kka_token");
+    try {
+      await router.push({ name: "sources", query: { kandidaten: "1", stand: "unreachable" } });
+      await router.push({ name: "source", params: { id: "s1" } });
+      vi.spyOn(api, "getSource").mockResolvedValue(detail());
+      const wrapper = await open();
+
+      expect(wrapper.get(".source__back a").attributes("href")).toBe("/quellen?kandidaten=1&stand=unreachable");
+      // arrived from elsewhere - a bookmark, another page: the register itself
+      shown?.unmount();
+      await router.push("/");
+      await router.push({ name: "source", params: { id: "s1" } });
+      expect((await open()).get(".source__back a").attributes("href")).toBe("/quellen");
+    } finally {
+      api.clearToken();
+      await router.push("/");
+    }
+  });
+
   it("says when the entry did not load, and loads it again on request", async () => {
     const asked = vi
       .spyOn(api, "getSource")

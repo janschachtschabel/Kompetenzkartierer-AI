@@ -6,7 +6,7 @@
  * notes of its land, school form and subject.
  */
 import { onMounted, ref, watch } from "vue";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRouter, type RouteLocationRaw } from "vue-router";
 
 import { ApiError, getSource, MIB, type SeedFields, type SourceDetail } from "@/api";
 import EmptyState from "@/components/EmptyState.vue";
@@ -17,6 +17,14 @@ import { failureNotice, type Notice } from "@/notice";
 import { word } from "@/registerWords";
 
 const props = defineProps<{ id: string }>();
+
+const router = useRouter();
+/** The register as the reader left it - filtered - where they came from it; else the register itself. */
+const registerBack = ((): RouteLocationRaw => {
+  const back = router.options.history.state.back;
+  const left = typeof back === "string" ? router.resolve(back) : null;
+  return left?.name === "sources" ? left.fullPath : { name: "sources" };
+})();
 
 const source = ref<SourceDetail | null>(null);
 const loading = ref(true);
@@ -73,7 +81,7 @@ function isWebAddress(address: string | null): address is string {
 <template>
   <div class="page source">
     <p class="source__back">
-      <RouterLink :to="{ name: 'sources' }">{{ t("entryPage.back") }}</RouterLink>
+      <RouterLink :to="registerBack">{{ t("entryPage.back") }}</RouterLink>
     </p>
     <h1 v-if="source"><bdi class="source__title">{{ source.title || source.url }}</bdi></h1>
     <h1 v-else>{{ t("entryPage.heading") }}</h1>

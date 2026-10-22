@@ -1,22 +1,28 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { flushPromises, mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as api from "@/api";
 import { ApiError } from "@/api";
+import App from "@/App.vue";
 import RegisterFilter from "@/components/RegisterFilter.vue";
 import UploadForm from "@/components/UploadForm.vue";
 import { t } from "@/i18n/de";
 import { router } from "@/router";
 import SourcesView from "@/views/SourcesView.vue";
 
-import { deferred, entry, page } from "./registerEntries";
+import { deferred, detail, entry, page } from "./registerEntries";
 import { SRC, cssRules, stylesOf } from "./sources";
 
-beforeEach(() => {
+// a page left mounted would follow the next test's address with its own filter, and read
+enableAutoUnmount(afterEach);
+
+beforeEach(async () => {
   vi.restoreAllMocks();
+  // the filter lives in the address: each test starts unfiltered
+  await router.replace({ query: {} });
   vi.spyOn(api, "getInfo").mockResolvedValue({
     name: "Kompetenzkartierer-AI",
     version: "0.1.0",
@@ -258,5 +264,71 @@ describe("the register page's filter", () => {
     );
 
     expect(busy.map(({ body }) => body).join("")).toMatch(/opacity:\s*var\(--busy-opacity\)/);
+  });
+});
+
+describe("the register page's filter in the address", () => {
+  it("is read on arrival, so the way back finds the register as it was filtered", async () => {
+    await router.replace({ query: { kandidaten: "1", stand: "unreachable" } });
+    const listed = vi.spyOn(api, "listSources").mockResolvedValue(page([entry("c", "Kandidat")]));
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+    await flushPromises();
+
+    expect(listed.mock.calls).toEqual([[{ candidates: true, status: "unreachable" }, { limit: 50 }]]);
+    expect(wrapper.get<HTMLInputElement>("input[type=checkbox]").element.checked).toBe(true);
+    expect(wrapper.get<HTMLSelectElement>("select").element.value).toBe("unreachable");
+  });
+
+  it("is kept in the address as it changes, without a step for the way back each time", async () => {
+    vi.spyOn(api, "listSources").mockResolvedValue(page([]));
+    const pushed = vi.spyOn(router, "push");
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+    await flushPromises();
+
+    await wrapper.get("input[type=checkbox]").setValue(true);
+    await wrapper.get("select").setValue("acquired");
+    await flushPromises();
+    expect(router.currentRoute.value.query).toEqual({ kandidaten: "1", stand: "acquired" });
+    await wrapper.get("input[type=checkbox]").setValue(false);
+    await wrapper.get("select").setValue("");
+    await flushPromises();
+
+    expect(router.currentRoute.value.query).toEqual({});
+    expect(pushed).not.toHaveBeenCalled();
+  });
+
+  it("leaves the address to the entry's page the reader goes on to", async () => {
+    api.setToken("kka_token");
+    try {
+      await router.push({ name: "sources", query: { kandidaten: "1" } });
+      vi.spyOn(api, "getMe").mockResolvedValue({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
+      const listed = vi.spyOn(api, "listSources").mockResolvedValue(page([entry("a", "Lehrplan Physik")]));
+      vi.spyOn(api, "getSource").mockResolvedValue(detail());
+      mount(App, { global: { plugins: [router] }, attachTo: document.body });
+      await flushPromises();
+
+      await router.push({ name: "source", params: { id: "a" } });
+      await flushPromises();
+
+      expect(router.currentRoute.value.fullPath).toBe("/quellen/a");
+      expect(listed).toHaveBeenCalledTimes(1);
+    } finally {
+      api.clearToken();
+      await router.push("/");
+      document.body.innerHTML = "";
+    }
+  });
+
+  it("follows the address when it changes from elsewhere: the navigation's link to the register", async () => {
+    await router.replace({ query: { kandidaten: "1" } });
+    const listed = vi.spyOn(api, "listSources").mockResolvedValue(page([entry("a", "Lehrplan Physik")]));
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+    await flushPromises();
+
+    await router.push({ query: {} });
+    await flushPromises();
+
+    expect(wrapper.get<HTMLInputElement>("input[type=checkbox]").element.checked).toBe(false);
+    expect(listed).toHaveBeenLastCalledWith({}, { limit: 50 });
   });
 });

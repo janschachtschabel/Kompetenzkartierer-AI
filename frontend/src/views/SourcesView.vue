@@ -5,6 +5,7 @@
  * sees, a page at a time, as far as the filter lets them through.
  */
 import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 import {
   getInfo,
@@ -29,7 +30,15 @@ import { focusIsFree } from "@/focusRescue";
 import { t } from "@/i18n/de";
 import { sayAnew } from "@/liveRegion";
 import { failureNotice, type Notice } from "@/notice";
-import { askedOf, emptyAdvice, sameAsked, type RegisterFilters } from "@/registerFilters";
+import {
+  askedOf,
+  emptyAdvice,
+  filtersFromQuery,
+  queryOf,
+  sameAsked,
+  sameFilters,
+  type RegisterFilters,
+} from "@/registerFilters";
 import { hasRole } from "@/session";
 
 interface Followed {
@@ -54,7 +63,10 @@ const maxUploadMb = ref<number | undefined>(undefined);
 /** The fetches and checks started on this page, newest first; they stay with how they ended. */
 const followed = ref<Followed[]>([]);
 const table = ref<InstanceType<typeof SourceTable> | null>(null);
-const filters = ref<RegisterFilters>({ candidates: false, status: "" });
+const route = useRoute();
+const router = useRouter();
+// The filter as the address holds it: the way back from an entry's page finds it again
+const filters = ref<RegisterFilters>(filtersFromQuery(route.query));
 /** What the shown page was read with: a further page asks with it, its empty state speaks of it. */
 const readWith = ref<SourceFilters>({});
 const pageFiltered = computed(() => Object.keys(readWith.value).length > 0);
@@ -172,7 +184,22 @@ async function more(): Promise<void> {
   }
 }
 
-watch(filters, () => void load());
+// replace, not push: a filter's change is no step the way back has to walk
+watch(filters, (value) => {
+  void router.replace({ query: queryOf(value) });
+  void load();
+});
+
+// The address changed from elsewhere - the navigation's link to the register, without the
+// filter: the filter follows it. Its own changes come back the same. (Leaving for an entry's
+// page, the page goes before this would run: RegisterFilter.test.ts.)
+watch(
+  () => route.query,
+  (query) => {
+    const held = filtersFromQuery(query);
+    if (!sameFilters(held, filters.value)) filters.value = held;
+  },
+);
 
 function follow(started: ImportStarted, address: string): void {
   const label = started.source.title || address; // its title waits for the file

@@ -1,4 +1,8 @@
-// What the register shows (RegisterFilter.vue), and what that asks of the server.
+// What the register shows (RegisterFilter.vue), what that asks of the server, and how the
+// page's address holds it (?kandidaten=1&stand=unreachable): a reload, a bookmark and the way
+// back from an entry's page find the register filtered as it was.
+import type { LocationQuery, LocationQueryRaw } from "vue-router";
+
 import type { RegisterStatus, SourceFilters } from "@/api";
 import { t } from "@/i18n/de";
 
@@ -10,6 +14,24 @@ export interface RegisterFilters {
 
 /** The statuses the filter offers, in the order an entry passes through them. */
 export const STATUSES: readonly RegisterStatus[] = ["unchecked", "reachable", "unreachable", "acquired"];
+
+/** The filter the address holds; what it holds that the filter does not know is left out. */
+export function filtersFromQuery(query: LocationQuery): RegisterFilters {
+  const status = STATUSES.find((value) => value === query.stand);
+  return { candidates: query.kandidaten === "1", status: status ?? "" };
+}
+
+/** The filter as the address holds it: only what it sets. */
+export function queryOf(filters: RegisterFilters): LocationQueryRaw {
+  const query: LocationQueryRaw = {};
+  if (filters.candidates) query.kandidaten = "1";
+  if (filters.status) query.stand = filters.status;
+  return query;
+}
+
+export function sameFilters(a: RegisterFilters, b: RegisterFilters): boolean {
+  return a.candidates === b.candidates && a.status === b.status;
+}
 
 /** What the filter asks of the server: only what it sets. */
 export function askedOf(filters: RegisterFilters): SourceFilters {
