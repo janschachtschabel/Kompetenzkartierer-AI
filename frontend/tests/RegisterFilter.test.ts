@@ -321,7 +321,7 @@ describe("the register page's filter", () => {
         .join("");
 
     // a delay, not a duration: the reduced-motion rule shortens durations, and this is no motion
-    expect(of(".sources__reading")).toMatch(/transition:\s*visibility\s+0s\s+linear\s+\d+ms/);
+    expect(of(".sources__reading")).toMatch(/transition:\s*visibility\s+0s\s+linear\s+[1-9]\d*ms/);
     expect(of(".sources__reading--idle")).toMatch(/transition-delay:\s*0s/);
   });
 });
