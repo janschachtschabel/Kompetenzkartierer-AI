@@ -349,7 +349,7 @@ Abhängigkeiten zeigen nach innen: `api`, `jobs`, `db`, `sources` und `exports` 
 | `psycopg[binary,pool]` 3 | PostgreSQL | Standardtreiber, Pool, Server-seitige Parameter |
 | `pgvector` (Python) | Vektor-Typ für psycopg | dünne Hülle um die Erweiterung |
 | `prometheus-client` | Metriken | Vorgabe; Muster aus compendious |
-| `boto3` oder `minio` | Objektspeicher | S3-Schnittstelle; Auswahl in M0 nach Größe und Lizenz |
+| `boto3` | Objektspeicher | S3-Schnittstelle; in M0 gewählt statt `minio` (Detailplan M0, D3): Bezugsclient mit der Anmeldekette von AWS und dem Stubber für Tests; Apache-2.0, botocore 26 MB installiert |
 | bestehend | FastAPI, pydantic-settings, pydantic-ai, rdflib, pyshacl, docling, httpx | übernommen wie im heutigen Kompetenzkartierer; das Modellprofil von pydantic-ai für `gpt-6-luna` wird in M0 geprüft |
 
 ## 7. Herkunft, Qualität, Drittanbieter, Zugang und Rechte

@@ -18,9 +18,10 @@ aufbaut. Keine Fachlogik außer dem Vokabular-Lader.
   dieselben Versionen; die Windows-Auflösung entfiel. Tests gegen PostgreSQL in
   einem eigenen Container `kka-test-pg` aus dem lokal vorhandenen Image
   `pgvector/pgvector:pg17`, Port 55432, Daten in tmpfs.
-- Downloads nur nach Freigabe. Noch nicht lokal vorhanden: Image `python:3.13-slim`,
-  `nginxinc/nginx-unprivileged`, `minio/minio`, Python-Paket `boto3`. Sie werden erst in
-  Paket D gebraucht.
+- Downloads nur nach Freigabe. Für Paket D am 22.10. freigegeben und geladen: Image
+  `python:3.13-slim`, `nginxinc/nginx-unprivileged`, MinIO als Chainguard-Build
+  (`cgr.dev/chainguard/minio`; `minio/minio` gibt es seit Oktober 2025 nicht mehr) und
+  das Python-Paket `boto3`.
 
 ## Festlegungen für M0
 
@@ -100,9 +101,9 @@ aufbaut. Keine Fachlogik außer dem Vokabular-Lader.
 | # | Aufgabe | Dateien | Nachweis |
 |---|---|---|---|
 | D1 | API-Image | `deploy/api.Dockerfile`, `.dockerignore` | Image läuft als 10001, `HOST=0.0.0.0`, HEALTHCHECK am internen Port per GET (HEAD auf `/health` gibt 405, `wget --spider` sendet HEAD), keine Daten; Größe gemessen |
-| D2 | Compose | `deploy/docker-compose.yml` | api ×2, worker ×2, migrate, postgres, minio, valkey optional; `/ready` 200; Migration genau einmal |
-| D3 | S3-Speicher | `app/core/storage.py` | Integrationstest gegen MinIO (Marker `s3`) |
-| D4 | CI | `.github/workflows/ci.yml` | Ontologie-Prüfung, ruff, mypy, Tests mit PostgreSQL-Dienst, Image-Build; grüner Lauf erst nach Push |
+| D2 | Compose | `deploy/docker-compose.yml` | api ×2, worker ×2, migrate, postgres, minio, valkey optional (kommt mit M1, wenn Ratenlimits über die API-Replicas geteilt werden); `/ready` 200; Migration genau einmal |
+| D3 | S3-Speicher | `app/core/storage_s3.py`, `app/core/storage_bucket.py` | Integrationstest gegen MinIO (Marker `s3`). Client: `boto3` statt `minio` (Gesamtplan 6.6): der Bezugsclient der S3-Schnittstelle, mit der Anmeldekette von AWS und dem Stubber für Tests ohne Netz; Apache-2.0, botocore belegt installiert 26 MB |
+| D4 | CI | `.github/workflows/ci.yml` | Ontologie-Prüfung, ruff, mypy, Tests mit PostgreSQL-Dienst und Abdeckungsgrenze (wie in der alten App), Image-Build, Rauchtest in Compose; grüner Lauf erst nach Push |
 | D5 | Übergabe-Gerüst | `docs/uebergabe/anforderungen.md`, `konfiguration.md` (aus den Settings erzeugt, Test vergleicht), `deploy/helm-values.example.yaml` (Readiness-Probe `timeoutSeconds` ≥ 5: `/ready` wartet bis 2 s auf eine Pool-Verbindung und bis 2 s auf die Abfrage; Erweiterungen `vector`, `pg_trgm`, `unaccent` legt der DBA vorher an, wenn die Migrationsrolle es nicht darf) | Test: jede Einstellung steht in `konfiguration.md` |
 
 ## Paket E: Frontend-Rahmen

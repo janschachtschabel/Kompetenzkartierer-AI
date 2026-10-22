@@ -108,9 +108,12 @@ Worker nicht. Ohne Schlüssel starten beide, nur Aufrufe des Modells scheitern.
 Objektspeicher: `STORAGE_BACKEND` (`fs` | `s3`, Standard `fs`). Mit `fs` braucht der Speicher
 `STORAGE_DIR` (für Entwicklung und einen einzelnen Knoten); im Cluster `s3` mit `S3_BUCKET`,
 `S3_ENDPOINT_URL` (leer für AWS selbst), `S3_REGION` (Standard `us-east-1`) und den Schlüsseln
-`S3_ACCESS_KEY`/`S3_SECRET_KEY` (beide oder keiner, auch als `*_FILE`; ohne sie nimmt boto3 die
-Rolle des Pods). `python -m app.core.storage_bucket` legt den Bucket an, wo die Umgebung keinen
-mitbringt (Compose).
+`S3_ACCESS_KEY`/`S3_SECRET_KEY` (beide oder keiner, auch als `*_FILE`; ohne sie nimmt boto3
+seine Standardkette: `AWS_*`-Variablen, Web-Identity, die Rolle der Instanz). Wohin der Dienst
+geht, sagt nur `S3_ENDPOINT_URL`; `AWS_ENDPOINT_URL` und `~/.aws/config` übergeht er. Beim Öffnen
+fragt der Speicher einmal nach dem Bucket und bricht ab, wenn es ihn nicht gibt.
+`python -m app.core.storage_bucket` legt den Bucket an, wo die Umgebung keinen mitbringt
+(Compose).
 
 ### Compose
 
@@ -124,7 +127,9 @@ python deploy/make-secrets.py
 docker compose -f deploy/docker-compose.yml up -d --build
 ```
 
-Die App antwortet unter `http://127.0.0.1:18080`; sonst ist nichts am Host veröffentlicht.
+Die App antwortet unter `http://127.0.0.1:18080`; sonst ist nichts am Host veröffentlicht. Der
+Webserver reicht `/api` und die Spec an die API weiter (`deploy/nginx-api.conf`, nur in Compose
+eingebunden); das Web-Image selbst antwortet dort mit 404, im Cluster routet der Ingress.
 `deploy/make-secrets.py` schreibt die Geheimnisse als Dateien nach `deploy/secrets/` (nicht im
 Repository, für alle Nutzer des Rechners lesbar, weil die Container unter anderen Nutzern
 laufen; nur für Entwicklung). Ein vorhandenes Geheimnis bleibt stehen. Der erste Admin:
