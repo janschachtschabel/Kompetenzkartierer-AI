@@ -21,6 +21,14 @@ RegisterStatus = Literal["unchecked", "reachable", "unreachable", "acquired"]
 SeedDataset = Literal["vergleichsdatensatz-v62.493", "laenderrecherche"]
 # Where a land's research read a document's row: in the primary document (E) or a secondary source
 Evidence = Literal["E", "S"]
+# What the check job found at an address (migration 0010_url_check): an answer of 2xx read to its
+# end, or one past the upload limit; a refusal (4xx), a request to slow down (429: asked again by
+# a later check), a server's error (5xx); no answer at all; or robots.txt saying no
+CheckOutcome = Literal[
+    "reachable", "too_large", "refused", "throttled", "server_error", "unreachable", "robots"
+]
+# What the bytes at an address are, as far as their first ones and the server's type tell
+DetectedKind = Literal["pdf", "docx", "rtf", "html", "other"]
 # The comparison dataset and where its published files lie: data/seed/ of the repository, or
 # /srv/data/seed in the API image
 COMPARISON_DATASET: SeedDataset = "vergleichsdatensatz-v62.493"
