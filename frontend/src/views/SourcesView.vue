@@ -75,6 +75,8 @@ const filterNotice = ref("");
 // Each first page read counts: a further page asked for before it belongs to an older list.
 let generation = 0;
 let focusRequest: FocusRequest | null = null;
+// A failed reading took a shown page away, the table with it: the next page read brings it back.
+let dropped = false;
 
 // After the render, in the same flush - before the focus rescue moves a focus the render took to
 // the main region. Only where the focus still rests where the action began, or nowhere: whoever
@@ -130,9 +132,10 @@ async function load({
     if (mine !== generation) return;
     if (focus) focusRequest = { target: focus, from };
     const none = Object.keys(query).length > 0 && first.entries.length === 0;
-    // the table comes back where the page showed none, its count region with it - and a region
-    // inserted with its words is often not read: the filter's status says them
-    const back = page.value?.entries.length === 0 && first.entries.length > 0;
+    // the table comes back where the page showed none, or none was left of it, its count region
+    // with it - and a region inserted with its words is often not read: the filter's status says them
+    const back = (page.value?.entries.length === 0 || dropped) && first.entries.length > 0;
+    dropped = false;
     page.value = first;
     readWith.value = query;
     partial.value = null;
@@ -145,6 +148,8 @@ async function load({
     if (kept) {
       fallShort(failureNotice(error, t("sources.register.reloadFailed")), () => void load({ focus: registerHeading }));
     } else {
+      // not where the first reading failed: the table that comes then comes for the first time
+      if (page.value) dropped = true;
       page.value = null;
       partial.value = null; // a notice of the page that went, and its retry, went with it
       filterNotice.value = "";

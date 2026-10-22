@@ -294,6 +294,39 @@ describe("the register page after a reading that failed", () => {
       document.body.innerHTML = "";
     }
   });
+
+  it("says how many it shows once a filter whose reading failed is taken back", async () => {
+    const both = page([entry("a", "Lehrplan Physik"), entry("b", "Lehrplan Chemie")], 2);
+    vi.spyOn(api, "listSources")
+      .mockResolvedValueOnce(both)
+      .mockRejectedValueOnce(new ApiError("network", 0))
+      .mockResolvedValue(both);
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+    await flushPromises();
+    await wrapper.get("input[type=checkbox]").setValue(true);
+    await flushPromises();
+    expect(wrapper.find("tbody tr").exists()).toBe(false);
+
+    await wrapper.get("input[type=checkbox]").setValue(false);
+    await flushPromises();
+
+    // the table went with the failure, and comes back with its count region
+    expect(wrapper.get("[data-test=filter-status]").text()).toBe(t("sources.register.shown", { shown: 2, total: 2 }));
+  });
+
+  it("says nothing of its own when the first reading is tried again: the table comes for the first time", async () => {
+    vi.spyOn(api, "listSources")
+      .mockRejectedValueOnce(new ApiError("network", 0))
+      .mockResolvedValue(page([entry("a", "Lehrplan Physik"), entry("b", "Lehrplan Chemie")], 2));
+    const wrapper = mount(SourcesView, { global: { plugins: [router] } });
+    await flushPromises();
+
+    await wrapper.get("[role=alert] button").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.findAll("tbody tr")).toHaveLength(2);
+    expect(wrapper.get("[data-test=filter-status]").text()).toBe("");
+  });
 });
 
 describe("the register page's filter in the address", () => {
