@@ -12,6 +12,7 @@ import urllib.error
 import urllib.request
 import warnings
 from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from unittest import mock
 
@@ -20,6 +21,7 @@ from uvicorn.config import STARTUP_FAILURE
 
 from app.core.logging import configure_logging
 from app.core.settings import Settings
+from app.db.migrate import migrate
 from app.serve import build_server, main
 from tests.support import FAKE_DATABASE_URL, make_settings, without_settings_variables
 
@@ -72,14 +74,9 @@ def exclusive_socket() -> socket.socket:
     return blocker
 
 
-@pytest.fixture
-def running(restore_logging: None) -> Iterator[Running]:
-    log = io.StringIO()
-    configure_logging("INFO", "json", stream=log)
-    public_port, internal_port = two_free_ports()
-    settings = make_settings(
-        host="127.0.0.1", public_port=public_port, internal_port=internal_port, root_path="/kka"
-    )
+@contextmanager
+def serving(settings: Settings) -> Iterator[None]:
+    """The real server of ``settings`` in a thread, stopped and checked afterwards."""
     server, sockets = build_server(settings)
     thread = threading.Thread(target=server.run, kwargs={"sockets": sockets}, daemon=True)
     thread.start()
@@ -88,11 +85,37 @@ def running(restore_logging: None) -> Iterator[Running]:
         while not server.started:
             assert time.monotonic() < deadline, "server did not start"
             time.sleep(0.02)
-        yield Running(settings, log)
+        yield
     finally:
         server.should_exit = True
         thread.join(timeout=START_TIMEOUT_S)
     assert not thread.is_alive(), "server did not stop"
+
+
+@pytest.fixture
+def running(restore_logging: None) -> Iterator[Running]:
+    log = io.StringIO()
+    configure_logging("INFO", "json", stream=log)
+    public_port, internal_port = two_free_ports()
+    settings = make_settings(
+        host="127.0.0.1", public_port=public_port, internal_port=internal_port, root_path="/kka"
+    )
+    with serving(settings):
+        yield Running(settings, log)
+
+
+@pytest.mark.pg
+def test_the_real_server_reaches_a_migrated_database(database_url: str, restore_logging: None) -> None:
+    # psycopg's async mode needs the selector loop the server sets; Windows' default refuses it
+    migrate(database_url)
+    configure_logging("INFO", "json", stream=io.StringIO())
+    public_port, internal_port = two_free_ports()
+    settings = make_settings(
+        host="127.0.0.1", public_port=public_port, internal_port=internal_port, database_url=database_url
+    )
+
+    with serving(settings):
+        assert status_of(f"http://127.0.0.1:{internal_port}/ready") == 200
 
 
 def test_both_sockets_answer_and_only_the_internal_one_has_health(running: Running) -> None:

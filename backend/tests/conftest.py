@@ -31,7 +31,8 @@ def restore_logging() -> Iterator[None]:
 
 # A fresh PostgreSQL database per test, in the server KKA_TEST_DATABASE_URL names: an account
 # that may create databases, on a server for tests only (locally the container kka-test-pg, in
-# CI a service). Without it the database tests are skipped.
+# CI a service). Without it the database tests are skipped - unless KKA_REQUIRE_PG or CI is set:
+# a CI job that lost the variable would otherwise pass with no database test run.
 ADMIN_URL_VARIABLE = "KKA_TEST_DATABASE_URL"
 
 
@@ -39,6 +40,8 @@ ADMIN_URL_VARIABLE = "KKA_TEST_DATABASE_URL"
 def database_url() -> Iterator[str]:
     admin = os.environ.get(ADMIN_URL_VARIABLE)
     if not admin:
+        if os.environ.get("KKA_REQUIRE_PG") or os.environ.get("CI"):
+            pytest.fail(f"{ADMIN_URL_VARIABLE} is not set, but the database tests are required")
         pytest.skip(f"{ADMIN_URL_VARIABLE} is not set")
     name = f"kka_t_{uuid.uuid4().hex[:12]}"
     with psycopg.connect(admin, autocommit=True) as connection:
