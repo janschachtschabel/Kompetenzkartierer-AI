@@ -150,6 +150,10 @@ class Settings(BaseSettings):
     # How long a stopping worker lets its job run before it hands it back unspent; keep it below
     # the deployment's termination grace period (Kubernetes: 30 s), or the job waits for its lease
     job_shutdown_grace_s: Annotated[float, Field(ge=0, le=3600)] = 20.0
+    # The largest file an upload or URL import takes, in MB (MiB): a curriculum is far smaller
+    max_upload_mb: Annotated[int, Field(ge=1, le=500)] = 50
+    # Uploads an account may make per minute; more are answered 429
+    uploads_per_minute: Annotated[int, Field(ge=1)] = 20
     # The job kinds this worker takes, comma-separated (the conversion pods: source.convert);
     # empty for every kind it knows
     worker_kinds: Annotated[str, Field(pattern=rf"^({_JOB_KIND}(,{_JOB_KIND})*)?$")] = ""

@@ -93,6 +93,25 @@ def test_a_source_is_filed_under_its_name_ending_in_what_it_is(
     assert stored_name(name, detected) == stored
 
 
+def test_a_stored_name_shows_what_it_is_without_hidden_signs() -> None:
+    # a right-to-left override makes "lehrplan<RLO>fdp.exe" read as "lehrplanexe.pdf"
+    detected = detect_type("x.pdf", b"%PDF-1.7")
+    assert detected is not None
+
+    assert stored_name("lehr‮plan\x00.pdf", detected) == "lehrplan.pdf"
+    assert stored_name("​‮", detected) == "source.pdf"
+
+
+def test_a_long_name_is_cut_to_what_a_file_system_holds_keeping_its_ending() -> None:
+    detected = detect_type("x.pdf", b"%PDF-1.7")
+    assert detected is not None
+
+    stored = stored_name("Lehrplan" * 50 + ".pdf", detected)
+
+    assert len(stored) == 255
+    assert stored.endswith(".pdf")
+
+
 # --- archives that expand past what a conversion may hold (old app audit 2026-09-26, E-05)
 
 

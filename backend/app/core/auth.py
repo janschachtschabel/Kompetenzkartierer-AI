@@ -38,6 +38,19 @@ def shows_whole(value: str) -> str:
     return value
 
 
+def visible_only(value: str) -> str:
+    """``value`` in one spelling without the signs ``shows_whole`` refuses, for a name a sender's
+    system chose (a file's) that is cleaned rather than refused; an unusual space becomes a plain one."""
+    kept = []
+    for sign in unicodedata.normalize("NFC", value):
+        category = unicodedata.category(sign)
+        if category == "Zs":
+            kept.append(" ")
+        elif category not in _HIDDEN and ord(sign) not in _INVISIBLE:
+            kept.append(sign)
+    return "".join(kept)
+
+
 def plain_text(value: str) -> str:
     """``value`` in one spelling, showing whole (see both); ValueError otherwise."""
     return shows_whole(str(one_spelling(value)))

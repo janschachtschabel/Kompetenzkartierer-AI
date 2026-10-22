@@ -46,6 +46,15 @@ CODES = {
 }
 
 
+class Refusal(HTTPException):
+    """A refusal with a code of its own, for one the frontend words apart from others of its
+    status (``file_too_large`` beside a body cut at the limit)."""
+
+    def __init__(self, status_code: int, code: str, message: str, headers: Mapping[str, str] | None = None):
+        super().__init__(status_code, message, dict(headers) if headers else None)
+        self.code = code
+
+
 class ErrorBody(BaseModel):
     """The body of every error answer, as the OpenAPI spec documents it."""
 
@@ -102,7 +111,8 @@ async def _http_error(request: Request, error: Exception) -> Response:
     detail = error.detail
     message = detail if isinstance(detail, str) else None
     details = detail if isinstance(detail, Mapping) else None
-    return error_response(error.status_code, message, details=details, headers=error.headers)
+    code = error.code if isinstance(error, Refusal) else None
+    return error_response(error.status_code, message, code=code, details=details, headers=error.headers)
 
 
 async def _validation_error(request: Request, error: Exception) -> Response:

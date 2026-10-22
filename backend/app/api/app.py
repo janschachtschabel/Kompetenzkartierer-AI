@@ -7,8 +7,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app import __version__
-from app.api import accounts, internal, jobs, system
-from app.api.body_limit import JSON_BODY_LIMIT, BodyLimit
+from app.api import accounts, internal, jobs, sources, system
+from app.api.body_limit import JSON_BODY_LIMIT, MIB, BodyLimit
 from app.api.errors import ERROR_RESPONSES, install_error_handlers
 from app.api.request_log import RequestLog
 from app.api.security_headers import SecurityHeaders
@@ -33,6 +33,7 @@ TAGS = [
     {"name": "system", "description": "Facts about the running service."},
     {"name": "accounts", "description": "Accounts, roles and API tokens; managed by admins."},
     {"name": "jobs", "description": "Fetching, converting, extracting run as jobs: their state, a cancel."},
+    {"name": "sources", "description": "The register of curriculum documents: uploads and their files."},
 ]
 
 
@@ -76,8 +77,13 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(system.router)
     app.include_router(accounts.router)
     app.include_router(jobs.router)
+    app.include_router(sources.router)
     app.add_middleware(internal.InternalOnly, port=settings.internal_port)
-    app.add_middleware(BodyLimit, default=JSON_BODY_LIMIT, limits={})
+    # an upload takes a file and the form around it; every other body is JSON
+    upload_limit = (settings.max_upload_mb + 1) * MIB
+    app.add_middleware(
+        BodyLimit, default=JSON_BODY_LIMIT, limits={("POST", sources.UPLOAD_PATH): upload_limit}
+    )
     # Added after InternalOnly, so it runs before: every answer, the refused internal ones too, is
     # named and logged
     app.add_middleware(RequestLog, routes=app.routes)

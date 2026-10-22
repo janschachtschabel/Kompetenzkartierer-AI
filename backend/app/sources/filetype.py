@@ -10,8 +10,11 @@ import), so none takes another way round it. Taken over from curriculum-extracto
 from dataclasses import dataclass
 from pathlib import PurePosixPath, PureWindowsPath
 
+from app.core.auth import visible_only
 from app.sources.archives import check_archive
 
+# What the common file systems hold as one file's name
+MAX_NAME_SIGNS = 255
 DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 TURTLE_MIME = "text/turtle"
 # Name ending -> type, for text without a signature
@@ -80,14 +83,17 @@ def stored_name(filename: str | None, detected: DetectedType) -> str:
     """
     name = _base_name(filename)
     suffix = PurePosixPath(name).suffix.lower()
-    if suffix == detected.extension or (suffix and detected.mime == DOCX_MIME):
-        return name
-    return f"{name or 'source'}{detected.extension}"
+    if not (suffix == detected.extension or (suffix and detected.mime == DOCX_MIME)):
+        name, suffix = f"{name or 'source'}{detected.extension}", detected.extension
+    if len(name) > MAX_NAME_SIGNS:  # cut the stem, keep the ending every engine decides by
+        name = name[: MAX_NAME_SIGNS - len(suffix)] + name[len(name) - len(suffix) :]
+    return name
 
 
 def _base_name(filename: str | None) -> str:
-    """The last part of a name a sender gave, with either kind of slash."""
-    return PureWindowsPath(PurePosixPath(filename or "").name).name
+    """The last part of a name a sender gave, with either kind of slash, without signs that hide
+    what it is (a right-to-left override made ``lehrplan<RLO>fdp.exe`` read as a PDF)."""
+    return visible_only(PureWindowsPath(PurePosixPath(filename or "").name).name).strip()
 
 
 def _is_utf8(data: bytes) -> bool:

@@ -1,0 +1,195 @@
+"""An account uploads a curriculum document: one register entry, the file stored once by its bytes.
+
+The form is read only after the token is checked; a file too large, of no type a conversion
+reads, or an archive bomb is refused with a code of its own, and leaves nothing behind.
+"""
+
+import hashlib
+from collections.abc import Iterator
+from pathlib import Path
+from typing import Any
+from uuid import UUID
+
+import psycopg
+import pytest
+from fastapi.testclient import TestClient
+
+from app.api.app import create_app
+from app.db.migrate import migrate
+from tests.sources.zip_helpers import make_zip
+from tests.support import make_settings, seed_account, selector_client
+
+pytestmark = pytest.mark.pg
+
+PUBLIC = "http://testserver:8000"
+PDF = b"%PDF-1.7\n" + b"lehrplan " * 100
+
+
+@pytest.fixture
+def migrated(database_url: str) -> str:
+    migrate(database_url)
+    return database_url
+
+
+@pytest.fixture
+def store(tmp_path: Path) -> Path:
+    return tmp_path / "store"
+
+
+def client_for(url: str, store: Path, **settings: Any) -> TestClient:
+    app = create_app(make_settings(database_url=url, storage_dir=store, **settings))
+    return selector_client(app, base_url=PUBLIC)
+
+
+@pytest.fixture
+def client(migrated: str, store: Path) -> Iterator[TestClient]:
+    with client_for(migrated, store) as test_client:
+        yield test_client
+
+
+@pytest.fixture
+def owner(migrated: str) -> tuple[UUID, dict[str, str]]:
+    return seed_account(migrated, "Lehrkraft", ["nutzer"])
+
+
+def rows(url: str, query: str, *values: Any) -> list[tuple[Any, ...]]:
+    with psycopg.connect(url) as connection:
+        return connection.execute(query, values).fetchall()
+
+
+def upload(
+    client: TestClient, header: dict[str, str], data: bytes = PDF, name: str = "lehrplan.pdf", **form: str
+) -> Any:
+    return client.post("/api/v1/sources", headers=header, files={"file": (name, data)}, data=form)
+
+
+def nothing_was_kept(url: str, store: Path) -> bool:
+    counts = rows(url, "SELECT (SELECT count(*) FROM source), (SELECT count(*) FROM source_file)")
+    return counts == [(0, 0)] and not any(store.rglob("*.*")) and not (store / "sources").exists()
+
+
+def test_an_upload_becomes_a_register_entry_of_its_account(
+    client: TestClient, migrated: str, store: Path, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    account, header = owner
+    digest = hashlib.sha256(PDF).hexdigest()
+
+    answer = upload(client, header, title="Lehrplan Physik")
+
+    assert answer.status_code == 201
+    body = answer.json()
+    assert body["title"] == "Lehrplan Physik"
+    assert body["provenance"] == "upload"
+    assert body["rights_status"] == "unklar"
+    assert body["register_status"] == "acquired"
+    assert body["file"] == {
+        "name": "lehrplan.pdf",
+        "mime": "application/pdf",
+        "size": len(PDF),
+        "sha256": digest,
+    }
+    assert rows(migrated, "SELECT owner_id, provenance FROM source WHERE id = %s", UUID(body["id"])) == [
+        (account, "upload")
+    ]
+    assert (store / "sources" / digest).read_bytes() == PDF
+
+
+def test_an_upload_is_acquired_by_its_account_and_audited(
+    client: TestClient, migrated: str, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    account, header = owner
+
+    source_id = UUID(upload(client, header).json()["id"])
+
+    assert rows(
+        migrated, "SELECT method, account_id, received_name FROM acquisition WHERE source_id = %s", source_id
+    ) == [("upload", account, "lehrplan.pdf")]
+    assert rows(migrated, "SELECT action, subject FROM audit_log WHERE action = 'source.upload'") == [
+        ("source.upload", f"source:{source_id}")
+    ]
+
+
+def test_without_a_title_the_file_name_names_the_entry(
+    client: TestClient, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    assert upload(client, owner[1], name="Lehrplan_Physik_RS.pdf").json()["title"] == "Lehrplan_Physik_RS"
+
+
+def test_the_same_file_from_two_accounts_is_stored_once(
+    client: TestClient, migrated: str, store: Path, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    other = seed_account(migrated, "Andere", ["nutzer"])[1]
+
+    first = upload(client, owner[1]).json()
+    second = upload(client, other, name="kopie.pdf").json()
+
+    assert first["id"] != second["id"]
+    assert rows(migrated, "SELECT count(*) FROM source_file") == [(1,)]
+    assert len(list((store / "sources").iterdir())) == 1
+
+
+def test_a_name_with_folders_is_filed_under_its_last_part(
+    client: TestClient, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    assert upload(client, owner[1], name="../../etc/lehrplan.pdf").json()["file"]["name"] == "lehrplan.pdf"
+
+
+def test_a_file_over_the_limit_is_refused_and_nothing_is_kept(
+    migrated: str, store: Path, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    with client_for(migrated, store, max_upload_mb=1) as client:
+        answer = upload(client, owner[1], data=PDF + b"x" * 2**20)
+
+    assert answer.status_code == 413
+    assert answer.json()["code"] == "file_too_large"
+    assert nothing_was_kept(migrated, store)
+
+
+def test_a_file_of_no_type_a_conversion_reads_is_refused(
+    client: TestClient, migrated: str, store: Path, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    answer = upload(client, owner[1], data=b"MZ\x90\x00 an executable", name="lehrplan.pdf")
+
+    assert answer.status_code == 415
+    assert answer.json()["code"] == "unsupported_type"
+    assert nothing_was_kept(migrated, store)
+
+
+def test_an_archive_bomb_is_refused(
+    client: TestClient, migrated: str, store: Path, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    bomb = make_zip({"word/document.xml": b"\0" * (4 * 2**20)})
+
+    answer = upload(client, owner[1], data=bomb, name="lehrplan.docx")
+
+    assert answer.status_code == 413
+    assert answer.json()["code"] == "archive_too_large"
+    assert nothing_was_kept(migrated, store)
+
+
+def test_a_form_without_a_file_is_refused(client: TestClient, owner: tuple[UUID, dict[str, str]]) -> None:
+    answer = client.post("/api/v1/sources", headers=owner[1], data={"title": "ohne Datei"})
+
+    assert answer.status_code == 422
+    assert answer.json()["code"] == "file_missing"
+
+
+def test_a_title_over_500_signs_is_refused(client: TestClient, owner: tuple[UUID, dict[str, str]]) -> None:
+    answer = upload(client, owner[1], title="x" * 501)
+
+    assert answer.status_code == 422
+
+
+def test_a_visitor_cannot_upload(client: TestClient, migrated: str, store: Path) -> None:
+    assert upload(client, {}).status_code == 401
+    assert nothing_was_kept(migrated, store)
+
+
+def test_uploads_past_the_account_s_limit_wait(
+    migrated: str, store: Path, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    with client_for(migrated, store, uploads_per_minute=2) as client:
+        answers = [upload(client, owner[1], name=f"plan{index}.pdf") for index in range(3)]
+
+    assert [answer.status_code for answer in answers] == [201, 201, 429]
+    assert 1 <= int(answers[2].headers["Retry-After"]) <= 60
