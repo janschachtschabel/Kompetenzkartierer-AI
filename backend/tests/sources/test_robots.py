@@ -105,6 +105,9 @@ def test_an_allow_wins_a_tie() -> None:
         ("/lp.pdf$", "/lp.pdf", False),
         ("/lp.pdf$", "/lp.pdfx", True),
         ("/***a", "/xxa", False),
+        # the parts between the stars, and the first and the last, take signs of their own
+        ("/*b*b$", "/b", True),
+        ("/a*a$", "/a", True),
     ],
 )
 def test_a_star_matches_any_run_and_a_dollar_the_end(rule: str, path: str, allowed: bool) -> None:
@@ -165,9 +168,10 @@ def as_rfc_9309_reads(rule: str, target: str) -> bool:
 
 def test_a_rule_matches_as_its_stars_and_dollar_say() -> None:
     draw = random.Random(9309)  # noqa: S311 - the same draw of cases each run, no secret
+    # few signs, so that parts meet and overlap; a closing $ half the time, and one inside now and then
     for _ in range(5_000):
-        rule = "".join(draw.choices("ab*$/", k=draw.randrange(9)))
-        target = "".join(draw.choices("ab/$", k=draw.randrange(11)))
+        rule = "".join(draw.choices("ab*", k=draw.randrange(8))) + draw.choice(("", "$"))
+        target = "".join(draw.choices("ab$", weights=(5, 5, 1), k=draw.randrange(7)))
 
         assert _matches(rule, target) is as_rfc_9309_reads(rule, target), (rule, target)
 

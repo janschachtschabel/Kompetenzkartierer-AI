@@ -547,6 +547,24 @@ async def test_a_host_robots_txt_led_to_that_gave_no_answer_now_waits_too(contex
     assert result == {"checked": 0, "deferred": 2, "deferred_hosts": ["a.example", "z.example"]}
 
 
+async def test_a_robots_txt_led_to_a_host_that_waits_is_not_followed_there(context: JobContext) -> None:
+    # m.example asked to wait for its document; n.example's robots.txt now lives there
+    await add_entry(context, "https://m.example/x")
+    await add_entry(context, "https://n.example/lp.pdf")
+    network = Network(
+        {
+            "m.example/x": reply(503),
+            "n.example/robots.txt": reply(301, location="https://m.example/robots.txt"),
+            "n.example/lp.pdf": reply(200, PDF),
+        }
+    )
+
+    result = await run(context, network)
+
+    assert network.paths() == ["m.example/robots.txt", "m.example/x", "n.example/robots.txt"]
+    assert result == {"checked": 0, "deferred": 2, "deferred_hosts": ["m.example", "n.example"]}
+
+
 async def test_a_wait_in_signs_that_read_as_no_number_ends_no_check(context: JobContext) -> None:
     # a header's byte 0xB2 is "²" in Latin-1: a digit to str.isdigit, none to float()
     await add_entry(context, "https://b.example/x")
