@@ -45,6 +45,15 @@ def test_headings_paragraphs_and_a_note_are_blocks_of_their_own() -> None:
     assert conversion.pages == 2
 
 
+def test_scripts_and_a_change_of_font_within_a_word_stay_in_their_word_and_block() -> None:
+    conversion = converted("scripts.pdf")
+
+    assert [block.text for block in conversion.blocks] == [
+        "Die Schüler1 messen CO2 in m3 pro Stunde.\nDas Lernfeld und die Schülerinnen planen."
+    ]
+    assert conversion.blocks[0].font_size == 11.0
+
+
 def test_tables_are_blocks_their_words_in_no_text_block_and_joined_over_pages() -> None:
     conversion = converted("tables.pdf")
 

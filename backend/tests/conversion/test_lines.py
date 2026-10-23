@@ -72,6 +72,57 @@ def test_words_on_one_height_are_one_line_left_to_right() -> None:
     assert line.text == "Die ihrer Funktion"
 
 
+def test_a_word_overlapping_a_line_by_half_the_smaller_height_stands_on_it() -> None:
+    # the line's span is that of its largest word, 100 to 111: a word of 6 points stands on it with
+    # 3 points of its height within that span, and on a line of its own with less
+    on_it, below = word("Bezug", 165, 106, size=6), word("Fußnote", 300, 108.5, size=6)
+
+    lines = lines_of([*row("Die Lernenden planen", 100), on_it, below])
+
+    assert [line.text for line in lines] == ["Die Lernenden planen Bezug", "Fußnote"]
+
+
+def test_lines_set_solid_or_tighter_stay_two() -> None:
+    words = [*row("Erste Zeile", 100), *row("Zweite Zeile", 111), *row("Dritte Zeile", 119)]
+
+    assert [line.text for line in lines_of(words)] == ["Erste Zeile", "Zweite Zeile", "Dritte Zeile"]
+
+
+def test_scripts_stand_on_their_line_and_touch_their_word() -> None:
+    # as reportlab sets them at 11 points: a superscript 9 points high, 4 above the line, a
+    # subscript 7 below it - overlapping the line by less than half its height, glued to its word
+    words = [
+        Word("Die", 62.69, 79.19, 79.14, 90.14, 11.0, "Helvetica"),
+        Word("Schüler", 82.25, 119.54, 79.14, 90.14, 11.0, "Helvetica"),
+        Word("1", 119.54, 124.54, 75.23, 84.23, 9.0, "Helvetica"),
+        Word("messen", 127.60, 166.11, 79.14, 90.14, 11.0, "Helvetica"),
+        Word("CO", 169.17, 185.67, 79.14, 90.14, 11.0, "Helvetica"),
+        Word("2", 185.67, 190.68, 86.23, 95.23, 9.0, "Helvetica"),
+        Word("Das", 62.69, 82.25, 93.14, 104.14, 11.0, "Helvetica"),
+    ]
+
+    first, second = lines_of(words)
+
+    assert (first.text, second.text) == ("Die Schüler1 messen CO2", "Das")
+    assert first.size == 11.0
+
+
+def test_words_a_change_of_font_parts_are_one_where_they_touch() -> None:
+    words = [word("Das", 56, 100), word("Lern", 77, 100), word("feld", 99, 100, font="Helvetica-Bold")]
+
+    (line,) = lines_of(words)
+
+    assert line.text == "Das Lernfeld"
+
+
+def test_a_line_s_size_is_that_of_most_of_its_signs() -> None:
+    words = [word("1", 50, 98, size=9), word("Lernfeldern", 56, 100), word("2", 120, 98, size=9)]
+
+    (line,) = lines_of(words)
+
+    assert line.size == 11.0
+
+
 def test_a_wide_gap_parts_a_line_into_two() -> None:
     # two columns, or a note beside the text: no line runs across the gutter
     words = [*row("linke Spalte", 100), *row("rechte Spalte", 100, x0=320)]

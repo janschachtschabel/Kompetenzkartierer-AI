@@ -61,6 +61,20 @@ def prose(path: Path) -> None:
     )
 
 
+def scripts(path: Path) -> None:
+    """One paragraph of two lines: superscripts and a subscript, a word half bold, half italic."""
+    plain = ParagraphStyle("plain", fontName="Helvetica", fontSize=11, leading=14)
+    document = SimpleDocTemplate(str(path), pagesize=A4, invariant=1, leftMargin=LEFT, topMargin=25 * mm)
+    document.build(
+        [
+            Paragraph(
+                "Die Schüler<super>1</super> messen CO<sub>2</sub> in m<super>3</super> pro Stunde.", plain
+            ),
+            Paragraph("Das Lern<b>feld</b> und die Schüler<i>innen</i> planen.", plain),
+        ]
+    )
+
+
 def edges(path: Path) -> None:
     """Five pages under the same running head; the footer prints I, II, then 1, 2, 3."""
     printed = ["I", "II", "1", "2", "3"]
@@ -144,6 +158,7 @@ def scan(path: Path) -> None:
 
 FIXTURES: dict[str, Callable[[Path], None]] = {
     "prose.pdf": prose,
+    "scripts.pdf": scripts,
     "edges.pdf": edges,
     "tables.pdf": tables,
     "scan.pdf": scan,
