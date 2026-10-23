@@ -37,30 +37,25 @@ function goneReason(error: unknown): JobGone | null {
   return error.status === 404 ? "not_found" : null;
 }
 
-/** Asks for job `id` until it ends, is gone or `stop()` is called. */
-export function watchJob(id: string, handlers: JobWatchHandlers): JobWatch {
+/**
+ * Runs `ask` after 1, 2, 4 and then every 8 seconds, for as long as it answers true and `stop()`
+ * was not called. `ask` is told whether it is still wanted once its answer came: one let go of
+ * while it waited says nothing more.
+ */
+export function askWithBackoff(ask: (wanted: () => boolean) => Promise<boolean>): JobWatch {
   let delay = FIRST_DELAY_MS;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let stopped = false;
+  const wanted = () => !stopped;
 
   function schedule(): void {
-    timer = setTimeout(() => void ask(), delay);
+    timer = setTimeout(() => void run(), delay);
     delay = Math.min(delay * 2, MAX_DELAY_MS);
   }
 
-  async function ask(): Promise<void> {
-    try {
-      const job = await getJob(id);
-      if (stopped) return; // let go of while the answer was on its way
-      handlers.onState(job);
-      if (hasEnded(job.status)) return;
-    } catch (error) {
-      if (stopped) return;
-      const gone = goneReason(error);
-      if (gone) return handlers.onGone(gone);
-      handlers.onTrouble?.(error);
-    }
-    if (!stopped) schedule(); // a handler may have let go of it
+  async function run(): Promise<void> {
+    const again = await ask(wanted);
+    if (again && !stopped) schedule(); // a handler may have let go of it
   }
 
   schedule();
@@ -70,4 +65,25 @@ export function watchJob(id: string, handlers: JobWatchHandlers): JobWatch {
       clearTimeout(timer);
     },
   };
+}
+
+/** Asks for job `id` until it ends, is gone or `stop()` is called. */
+export function watchJob(id: string, handlers: JobWatchHandlers): JobWatch {
+  return askWithBackoff(async (wanted) => {
+    try {
+      const job = await getJob(id);
+      if (!wanted()) return false; // let go of while the answer was on its way
+      handlers.onState(job);
+      return !hasEnded(job.status);
+    } catch (error) {
+      if (!wanted()) return false;
+      const gone = goneReason(error);
+      if (gone) {
+        handlers.onGone(gone);
+        return false;
+      }
+      handlers.onTrouble?.(error);
+      return true;
+    }
+  });
 }
