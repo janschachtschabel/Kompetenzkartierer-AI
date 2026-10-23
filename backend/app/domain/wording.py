@@ -17,6 +17,7 @@ Ausgabe" across a line is read as one word. Folding case joins what German tells
 """
 
 import hashlib
+import re
 import unicodedata
 
 import regex
@@ -34,13 +35,13 @@ _ONE_NUMBERING = (
     rf"\(\s*(?:{_NUMBER}|[a-z]|{_ROMAN})\s*\)|{_NUMBER}(?:\.{_NUMBER}){{1,2}}\.?|{_NUMBER}[.)]"
     rf"|[a-z]\)|{_ROMAN}[.)]|[{_BULLETS}]"
 )
-_NUMBERING = regex.compile(rf"(?:\s*(?:{_ONE_NUMBERING})\s+){{1,3}}")
-_SPACE = regex.compile(r"\s+")
+_NUMBERING = re.compile(rf"(?:\s*(?:{_ONE_NUMBERING})\s+){{1,3}}")
+_SPACE = re.compile(r"\s+")
 
 
 def normalized(verbatim: str) -> str:
     """The wording as its hash takes it."""
-    text = _FORMAT.sub("", _DASHES.sub("-", unicodedata.normalize("NFC", verbatim)))
+    text: str = _FORMAT.sub("", _DASHES.sub("-", unicodedata.normalize("NFC", verbatim)))  # regex is untyped
     text = _BROKEN.sub("-", _PARTED.sub("", text)).replace(_SOFT_HYPHEN, "")
     text = unicodedata.normalize("NFC", text.casefold())
     if (numbering := _NUMBERING.match(text)) is not None:
