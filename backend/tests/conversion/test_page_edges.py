@@ -140,6 +140,23 @@ def test_a_number_alone_at_the_top_of_one_page_is_a_chapter_s_and_stays_text() -
     assert printed == ("14",)
 
 
+def test_chapter_numbers_alone_reaching_past_the_top_edge_on_two_pages_in_a_row_stay_text() -> None:
+    # "2" and "3" in 20 points at 60 to 80 on pages 5 and 6 of 10, past the edge's 67: two pages
+    # sharing an offset make a page number within the edge, not in the band beside it
+    pages = document(
+        *[
+            [RawBlock(n, "text", str(n - 3), (56, 60, 80, 80), 20.0, True, False)] * (n in (5, 6))
+            + [block(n, "Text", 300)]
+            for n in range(1, 11)
+        ]
+    )
+
+    printed = mark_edges(pages)
+
+    assert [pages[n - 1].blocks[0].kind for n in (5, 6)] == ["text", "text"]
+    assert printed == (None,) * 10
+
+
 def test_numbers_alone_at_the_top_that_run_with_the_pages_are_their_numbers() -> None:
     # three pages unnumbered, a preface numbered iv, v, the text 1, 2: the number less the page is
     # the same on two pages, and again on two
@@ -278,6 +295,31 @@ def test_one_page_whose_foot_belies_a_running_head_takes_it_from_no_other_page(f
     ]
 
 
+@pytest.mark.parametrize("variant", ["head-misprint", "foot-misprint", "foot-in-two-parts"])
+def test_a_running_head_the_foot_belies_on_some_pages_runs_where_as_many_agree(variant: str) -> None:
+    # page 5 prints 6 in its head, or in its foot; or the foot counts pages 6 to 10 from 1 again
+    def number(n: int, edge: str) -> int:
+        if variant == "foot-in-two-parts" and edge == "foot" and n > 5:
+            return n - 5
+        return 6 if n == 5 and variant == f"{edge}-misprint" else n
+
+    pages = document(
+        *[
+            [
+                block(n, f"Rahmenlehrplan Mechatronik {number(n, 'head')}", 30),
+                block(n, "Text", 300),
+                block(n, f"- {number(n, 'foot')} -", 815),
+            ]
+            for n in range(1, 11)
+        ]
+    )
+
+    printed = mark_edges(pages)
+
+    assert all(page.blocks[0].kind == "page_header" for page in pages)
+    assert printed == tuple(str(number(n, "foot")) for n in range(1, 11))
+
+
 def test_numbered_captions_in_the_foot_on_pages_in_pairs_stay_text_beside_its_page_numbers() -> None:
     captions = {4: 1, 5: 2, 9: 3, 10: 4}
     pages = document(
@@ -309,6 +351,31 @@ def test_a_footnote_reaching_into_the_foot_is_no_page_number_however_it_ends() -
 
     assert pages[2].blocks[1].kind == "text"
     assert printed == ("1", "2", "3", "4", "5")
+
+
+@pytest.mark.parametrize("numbered", [True, False], ids=["foot-numbers", "no-foot-numbers"])
+def test_footnotes_reaching_into_the_foot_of_two_pages_are_no_page_numbers_though_their_ends_agree(
+    numbered: bool,
+) -> None:
+    # pages 3 and 6 end on a reference seven pages on: two pages share its offset, as page numbers do
+    def footnote(n: int) -> RawBlock:
+        text = f"1 Vgl. KMK, Handreichung\nzur Erarbeitung, S. {n + 7}"
+        return RawBlock(n, "text", text, (56, 760, 400, 779.8), 9.0, False, False)
+
+    pages = document(
+        *[
+            [block(n, f"Rahmenlehrplan Mechatronik {n}", 30), block(n, "Text", 300)]
+            + [footnote(n)] * (n in (3, 6))
+            + [block(n, f"- {n} -", 815)] * numbered
+            for n in range(1, 11)
+        ]
+    )
+
+    printed = mark_edges(pages)
+
+    assert [pages[n - 1].blocks[2].kind for n in (3, 6)] == ["text", "text"]
+    assert all(page.blocks[0].kind == "page_header" for page in pages)
+    assert printed == tuple(str(n) for n in range(1, 11))
 
 
 @pytest.mark.parametrize(
@@ -354,6 +421,31 @@ def test_headings_numbered_on_pages_in_a_row_reaching_past_the_edge_stay_text() 
     assert printed == (None,) * 10
 
 
+@pytest.mark.parametrize("variant", ["one-within-the-edge", "two-within-the-edge", "one-foot-number"])
+def test_headings_numbered_in_a_row_half_past_the_edge_or_more_stay_text(variant: str) -> None:
+    # "Lernfeld 1" ... "Lernfeld 4" at 60 to 72 on pages 5 to 8 of 12; on page 5, or on 5 and 6,
+    # within the edge instead, or a page number in the foot of page 8 alone: none makes their count
+    # a running one
+    within = {"one-within-the-edge": {5}, "two-within-the-edge": {5, 6}}.get(variant, set())
+
+    def heading(n: int) -> RawBlock:
+        top = 30.0 if n in within else 60.0
+        return RawBlock(n, "text", f"Lernfeld {n - 4}", (56, top, 400, top + 12), 14.0, True, False)
+
+    pages = document(
+        *[
+            [heading(n)] * (5 <= n <= 8)
+            + [block(n, "Text", 300)]
+            + [block(n, str(n), 815)] * (variant == "one-foot-number" and n == 8)
+            for n in range(1, 13)
+        ]
+    )
+
+    mark_edges(pages)
+
+    assert all(page.blocks[0].kind == "text" for page in pages[4:8])
+
+
 def test_a_number_that_stays_over_stretches_beside_none_that_runs_makes_no_running_head() -> None:
     # "Kapitel 1" on pages 1 and 2, "Kapitel 2" on 3 and 4 ...: a heading kept a while, not a running head
     pages = document(*[[block(n, f"Kapitel {(n + 1) // 2}", 30), block(n, "Text", 300)] for n in range(1, 9)])
@@ -370,6 +462,26 @@ def test_the_foot_s_page_number_goes_before_the_head_s_where_both_run() -> None:
     )
 
     assert mark_edges(pages) == ("i", "ii", "iii")
+
+
+def test_a_running_head_agrees_with_the_first_page_number_of_its_foot() -> None:
+    # each foot prints the page and, below it, the page counted from the cover: the head goes by the first
+    pages = document(
+        *[
+            [
+                block(n, f"Rahmenlehrplan Mechatronik {n}", 30),
+                block(n, "Text", 300),
+                block(n, f"- {n} -", 800),
+                block(n, str(n + 2), 815),
+            ]
+            for n in range(1, 11)
+        ]
+    )
+
+    printed = mark_edges(pages)
+
+    assert all(page.blocks[0].kind == "page_header" for page in pages)
+    assert printed == tuple(str(n) for n in range(1, 11))
 
 
 def test_a_number_counts_each_page_once_however_often_its_block_stands_there() -> None:
@@ -426,15 +538,24 @@ def test_in_one_edge_the_number_alone_goes_before_the_running_one() -> None:
 
 
 @pytest.mark.parametrize(
-    ("head", "top", "bottom"),
+    ("head", "top", "bottom", "numbered"),
     [
-        ("Rahmenlehrplan Mechatronik\nSeite {n} von 10", 45, 69),  # two lines, past the edge
-        ("Rahmenlehrplan Mechatronik {n}", 30, 40),  # within the edge, but on page 4 three points lower
+        ("Rahmenlehrplan Mechatronik\nSeite {n} von 10", 45, 69, True),  # two lines, past the edge
+        ("Rahmenlehrplan Mechatronik\nSeite {n} von 10", 45, 69, False),  # a page number alone, unfooted
+        ("Rahmenlehrplan\nMechatronik {n}", 45, 69, True),  # running with the foot's page numbers
+        ("Rahmenlehrplan Mechatronik {n}", 30, 40, True),  # within the edge, but on page 4 lower
+        ("Rahmenlehrplan Mechatronik {n}", 30, 40, False),  # one of ten past the edge: no count of headings
     ],
-    ids=["two-lines-with-a-number", "one-page-lower"],
+    ids=[
+        "two-lines-with-a-number",
+        "two-lines-unfooted",
+        "two-lines-running",
+        "one-page-lower",
+        "one-unfooted",
+    ],
 )
 def test_a_running_head_with_its_page_number_reaching_into_the_band_beside_the_edge_runs(
-    head: str, top: float, bottom: float
+    head: str, top: float, bottom: float, numbered: bool
 ) -> None:
     def placed(n: int) -> tuple[float, float, float, float]:
         lower = 30.0 if n == 4 and top == 30 else 0.0  # 30 + 30 points: into the band
@@ -445,7 +566,7 @@ def test_a_running_head_with_its_page_number_reaching_into_the_band_beside_the_e
             [
                 RawBlock(n, "text", head.format(n=n), placed(n), 11.0, False, False),
                 block(n, "Text", 300),
-                block(n, f"- {n} -", 815),
+                *[block(n, f"- {n} -", 815)] * numbered,
             ]
             for n in range(1, 11)
         ]
@@ -472,13 +593,17 @@ def test_a_page_number_alone_just_above_the_foot_s_edge_is_one_where_it_runs_wit
     assert printed == ("1", "2", "3", "4", "5")
 
 
-def test_headings_numbered_in_a_row_stay_text_where_the_foot_s_running_numbers_belie_some() -> None:
-    # "Lernfeld 1" ... "Lernfeld 4" at the top of pages 5 to 8; only pages 7 and 8 print their number
+@pytest.mark.parametrize("footed", [(7, 8), (8, 9)], ids=["two-belie", "one-belies"])
+def test_headings_numbered_in_a_row_stay_text_where_the_foot_s_running_numbers_belie_some(
+    footed: tuple[int, int],
+) -> None:
+    # "Lernfeld 1" ... "Lernfeld 4" at the top of pages 5 to 8; only two pages print their number,
+    # both of them among the headings' or one
     pages = document(
         *[
             [block(n, f"Lernfeld {n - 4}", 40)] * (5 <= n <= 8)
             + [block(n, "Text", 300)]
-            + [block(n, f"- {n} -", 815)] * (n in (7, 8))
+            + [block(n, f"- {n} -", 815)] * (n in footed)
             for n in range(1, 11)
         ]
     )
@@ -486,7 +611,7 @@ def test_headings_numbered_in_a_row_stay_text_where_the_foot_s_running_numbers_b
     printed = mark_edges(pages)
 
     assert all(page.blocks[0].kind == "text" for page in pages[4:8])
-    assert printed[4:8] == (None, None, "7", "8")
+    assert printed[4:8] == tuple(str(n) if n in footed else None for n in range(5, 9))
 
 
 def test_a_year_alone_in_every_foot_takes_nothing_from_a_running_head() -> None:
