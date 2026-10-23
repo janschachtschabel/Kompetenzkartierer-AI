@@ -45,6 +45,27 @@ def test_headings_paragraphs_and_a_note_are_blocks_of_their_own() -> None:
     assert conversion.pages == 2
 
 
+COMPETENCE = (
+    "Die Schülerinnen und Schüler analysieren den Aufbau einer Steuerung und beschreiben die "
+    "Funktion ihrer Baugruppen. Sie wählen geeignete Messmittel aus und dokumentieren ihre "
+    "Ergebnisse in einem Prüfprotokoll."
+)
+# as tools/make_conversion_fixtures.py sets them, three in each column
+COLUMN_PARAGRAPHS = [
+    f"Absatz {number}. {COMPETENCE} Sie bewerten Lösungen nach Kosten, Sicherheit und Wartbarkeit."
+    for number in range(1, 7)
+]
+
+
+@pytest.mark.parametrize("name", ["columns_12pt.pdf", "columns_8mm.pdf"])
+def test_two_columns_are_read_a_column_after_the_other_each_paragraph_whole(name: str) -> None:
+    conversion = converted(name)
+
+    assert [" ".join(block.text.split()) for block in conversion.blocks] == COLUMN_PARAGRAPHS
+    middle = 595 / 2
+    assert all(block.bbox[2] < middle or block.bbox[0] > middle for block in conversion.blocks)
+
+
 def test_scripts_and_a_change_of_font_within_a_word_stay_in_their_word_and_block() -> None:
     conversion = converted("scripts.pdf")
 

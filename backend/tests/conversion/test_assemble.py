@@ -25,7 +25,8 @@ def converted(*blocks_per_page: list[RawBlock]) -> Conversion:
     return assemble(pages, engine="pdfplumber", version="0.11.10")
 
 
-def test_the_blocks_of_a_page_are_named_in_reading_order_top_down_then_left_to_right() -> None:
+def test_the_blocks_of_a_page_are_named_in_reading_order_a_column_after_the_other() -> None:
+    # nothing stands in the strip between "links" and "rechts", down the whole page: two columns
     conversion = converted(
         [text(1, "unten", 400), text(1, "rechts", 100, x0=320), text(1, "links", 100)],
         [text(2, "zweite Seite", 80)],
@@ -33,11 +34,18 @@ def test_the_blocks_of_a_page_are_named_in_reading_order_top_down_then_left_to_r
 
     assert [(block.id, block.text) for block in conversion.blocks] == [
         ("p1-b1", "links"),
-        ("p1-b2", "rechts"),
-        ("p1-b3", "unten"),
+        ("p1-b2", "unten"),
+        ("p1-b3", "rechts"),
         ("p2-b1", "zweite Seite"),
     ]
     assert (conversion.engine, conversion.engine_version, conversion.pages) == ("pdfplumber", "0.11.10", 2)
+
+
+def test_blocks_side_by_side_are_named_left_to_right_where_one_below_spans_both() -> None:
+    across = RawBlock(1, "text", "unten", (56, 400, 520, 412), 11.0, False, False)
+    conversion = converted([across, text(1, "rechts", 100, x0=320), text(1, "links", 100)])
+
+    assert [block.text for block in conversion.blocks] == ["links", "rechts", "unten"]
 
 
 def test_tables_are_counted_across_the_document_and_their_cells_named_by_row_and_column() -> None:

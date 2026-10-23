@@ -123,6 +123,59 @@ def test_a_line_s_size_is_that_of_most_of_its_signs() -> None:
     assert line.size == 11.0
 
 
+def two_columns(top: float) -> list[Word]:
+    """A line of two columns of 10 points, 12 points apart: "links Spalte", "rechts Spalte"."""
+    return [
+        word("links", 56, top, size=10),
+        word("Spalte", 84, top, size=10),
+        word("rechts", 126, top, size=10),
+        word("Spalte", 159, top, size=10),
+    ]
+
+
+def test_a_gutter_three_lines_share_parts_them_however_narrow() -> None:
+    words = [*two_columns(100), *two_columns(113), *two_columns(126)]
+
+    assert [line.text for line in lines_of(words)] == ["links Spalte", "rechts Spalte"] * 3
+
+
+def test_a_gap_that_wanders_from_line_to_line_is_no_gutter() -> None:
+    # justified text, spaces as wide as a gutter: what follows them begins somewhere else in each line
+    words: list[Word] = []
+    for line in range(3):
+        top = 100 + 13 * line
+        words += [word("links", 56, top, size=10), word("weiter", 92 + 4 * line, top, size=10)]
+
+    assert [line.text for line in lines_of(words)] == ["links weiter"] * 3
+
+
+def test_a_gap_two_lines_share_parts_neither() -> None:
+    words = [*two_columns(100), *two_columns(113)]
+
+    assert [line.text for line in lines_of(words)] == ["links Spalte rechts Spalte"] * 2
+
+
+JUSTIFIED = ["Die", "Lernenden", "planen", "ihre", "Arbeit", "sorgfältig", "und", "genau"]
+
+
+def justified(top: float, wide_after: int | None) -> list[Word]:
+    """A line of justified text at 10 points, its words 3 points apart, 9 behind one of them."""
+    made: list[Word] = []
+    x0 = 56.0
+    for index, text in enumerate(JUSTIFIED):
+        made.append(word(text, x0, top, size=10))
+        x0 = made[-1].x1 + (9 if index == wide_after else 3)
+    return made
+
+
+def test_wide_gaps_justified_text_scatters_over_its_lines_part_none() -> None:
+    # one beneath another in two lines, or four lines apart: no gutter
+    wide_after = [2, 2, None, None, 5, 5, None, 2]
+    words = [word for line, wide in enumerate(wide_after) for word in justified(100 + 13 * line, wide)]
+
+    assert [line.text for line in lines_of(words)] == [" ".join(JUSTIFIED)] * len(wide_after)
+
+
 def test_a_wide_gap_parts_a_line_into_two() -> None:
     # two columns, or a note beside the text: no line runs across the gutter
     words = [*row("linke Spalte", 100), *row("rechte Spalte", 100, x0=320)]

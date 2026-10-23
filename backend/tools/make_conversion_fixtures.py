@@ -16,12 +16,23 @@ from pathlib import Path
 
 from PIL import Image
 from reportlab.lib import colors
+from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen.canvas import Canvas
-from reportlab.platypus import LongTable, Paragraph, SimpleDocTemplate, Spacer, TableStyle
+from reportlab.platypus import (
+    BaseDocTemplate,
+    Frame,
+    FrameBreak,
+    LongTable,
+    PageTemplate,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    TableStyle,
+)
 
 OUT = Path(__file__).resolve().parents[1] / "tests" / "conversion" / "fixtures"
 WIDTH, HEIGHT = A4
@@ -38,6 +49,11 @@ COMPETENCE = (
     "Funktion ihrer Baugruppen. Sie wählen geeignete Messmittel aus und dokumentieren ihre "
     "Ergebnisse in einem Prüfprotokoll."
 )
+# The paragraphs of the columns' files
+COLUMN_PARAGRAPHS = [
+    f"Absatz {number}. {COMPETENCE} Sie bewerten Lösungen nach Kosten, Sicherheit und Wartbarkeit."
+    for number in range(1, 7)
+]
 
 
 def canvas_of(path: Path) -> Canvas:
@@ -73,6 +89,24 @@ def scripts(path: Path) -> None:
             Paragraph("Das Lern<b>feld</b> und die Schüler<i>innen</i> planen.", plain),
         ]
     )
+
+
+def columns(path: Path, gutter: float) -> None:
+    """Two columns of justified text at 10 points, ``gutter`` apart: paragraphs 1-3 on the left,
+    4-6 on the right, each whole in its column."""
+    body = ParagraphStyle(
+        "column", fontName="Helvetica", fontSize=10, leading=13, alignment=TA_JUSTIFY, spaceAfter=8
+    )
+    width = (WIDTH - 2 * LEFT - gutter) / 2
+    top, height = 25 * mm, HEIGHT - 50 * mm
+    frames = [
+        Frame(LEFT, top, width, height, id="left", leftPadding=0, rightPadding=0),
+        Frame(LEFT + width + gutter, top, width, height, id="right", leftPadding=0, rightPadding=0),
+    ]
+    document = BaseDocTemplate(str(path), pagesize=A4, invariant=1)
+    document.addPageTemplates([PageTemplate(id="columns", frames=frames)])
+    paragraphs = [Paragraph(text, body) for text in COLUMN_PARAGRAPHS]
+    document.build([*paragraphs[:3], FrameBreak(), *paragraphs[3:]])
 
 
 def edges(path: Path) -> None:
@@ -159,6 +193,8 @@ def scan(path: Path) -> None:
 FIXTURES: dict[str, Callable[[Path], None]] = {
     "prose.pdf": prose,
     "scripts.pdf": scripts,
+    "columns_12pt.pdf": lambda path: columns(path, 12),
+    "columns_8mm.pdf": lambda path: columns(path, 8 * mm),
     "edges.pdf": edges,
     "tables.pdf": tables,
     "scan.pdf": scan,

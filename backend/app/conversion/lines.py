@@ -5,13 +5,19 @@ its largest word, so a superscript does not lift it - it overlaps most, by half 
 at least; a sub- or superscript glued to a word of the line stands on it where it overlaps it at
 all (reportlab lowers a subscript by half a line). Two words a gap narrower than a tenth of their
 size apart are one: pdfplumber parts a word where its font or size changes ("Lern" "feld", "CO"
-"2"). A line's size is that of most of its signs. A wide gap parts a line, so no line runs across
-the gutter between two columns or into a note beside the text. A block is the lines below one
-another, close, overlapping across and set alike - the same size, bold and italic. A heading
-begins a block of its own however close the text below it stands, and a paragraph does where the
-space above it is half a line or more: the lines of a paragraph stand 3 points apart at 11
-points, paragraphs 6 and more (the fixtures, and what Lehrpläne set). The lines of a block keep
-their breaks: its text is the document's wording, line by line.
+"2"). A line's size is that of most of its signs.
+
+No line runs across the gutter between two columns or into a note beside the text. A gap of three
+sizes parts a line always; a gutter is narrower - 12 points or 8 mm at 10 points - so a gap of
+0.8 sizes parts it too where 2 of the 3 lines above and below have one in the same strip, behind
+which the next column begins at the same place. Justified text spreads its spaces as wide where
+it is not hyphenated, but they wander from line to line; a single wide space parts nothing.
+
+A block is the lines below one another, close, overlapping across and set alike - the same size,
+bold and italic. A heading begins a block of its own however close the text below it stands, and
+a paragraph does where the space above it is more than half its size: the lines of a paragraph
+stand 3 points apart at 11 points, paragraphs 6 and more (the fixtures, and what Lehrpläne set).
+The lines of a block keep their breaks: its text is the document's wording, line by line.
 """
 
 from collections import Counter
@@ -26,6 +32,10 @@ LINE_TOLERANCE = 0.5  # times the size: a line this far up into the one above st
 LINE_OVERLAP = 0.5  # of the smaller height: a word overlapping a line's span this much stands on it
 WORD_SPACE = 0.1  # times the larger size: two words a narrower gap apart are one
 COLUMN_GAP = 3.0  # times the size: a wider gap between two words parts a line
+GUTTER_GAP = 0.8  # times the size: a gap this wide parts a line where lines near it share it
+GUTTER_WINDOW = 3  # lines above and below: those that count as near
+GUTTER_SUPPORT = 2  # of the lines near: as many share a gap that is a gutter
+GUTTER_ALIGN = 0.1  # times the size: the columns behind a gutter begin this close in each line
 BLOCK_GAP = 0.5  # times the size: a line this close below another, set alike, goes on its block
 SIZE_TOLERANCE = 0.5  # points: sizes this close are one
 
@@ -103,6 +113,31 @@ class _Row:
 
 def lines_of(words: Iterable[Word]) -> list[Line]:
     """The lines of these words, top to bottom and, at one height, left to right."""
+    rows = [sorted(row.words, key=lambda word: word.x0) for row in _rows(words)]
+    gaps = [_wide_gaps(row) for row in rows]
+    lines: list[Line] = []
+    for index, row in enumerate(rows):
+        near = [*gaps[max(0, index - GUTTER_WINDOW) : index], *gaps[index + 1 : index + GUTTER_WINDOW + 1]]
+        # the words behind a gutter, by identity: a word printed twice over, to look bold, has a twin
+        behind = {
+            id(gap.after)
+            for gap in gaps[index]
+            if sum(_shared(gap, other) for other in near) >= GUTTER_SUPPORT
+        }
+        part: list[Word] = []
+        for word in row:
+            if part and (
+                word.x0 - part[-1].x1 > COLUMN_GAP * max(word.size, part[-1].size) or id(word) in behind
+            ):
+                lines.append(Line(tuple(part)))
+                part = []
+            part.append(word)
+        lines.append(Line(tuple(part)))
+    return lines
+
+
+def _rows(words: Iterable[Word]) -> list[_Row]:
+    """The words at each height, the rows in the order their first words come, top down."""
     rows: list[_Row] = []
     open_rows: list[_Row] = []  # those a word further down may still overlap
     for word in sorted(words, key=lambda word: (word.top, word.x0)):
@@ -113,16 +148,34 @@ def lines_of(words: Iterable[Word]) -> list[Line]:
         else:
             rows.append(_Row([word], word.top, word.bottom, word.size))
             open_rows.append(rows[-1])
-    lines: list[Line] = []
-    for found in rows:
-        part: list[Word] = []
-        for word in sorted(found.words, key=lambda word: word.x0):
-            if part and word.x0 - part[-1].x1 > COLUMN_GAP * max(word.size, part[-1].size):
-                lines.append(Line(tuple(part)))
-                part = []
-            part.append(word)
-        lines.append(Line(tuple(part)))
-    return lines
+    return rows
+
+
+@dataclass(frozen=True)
+class _Gap:
+    before: Word
+    after: Word  # the word that begins the part behind the gap
+
+    @property
+    def size(self) -> float:
+        return max(self.before.size, self.after.size)
+
+
+def _wide_gaps(row: list[Word]) -> list[_Gap]:
+    """The gaps between the row's words, left to right, wide enough to be part of a gutter."""
+    gaps = [_Gap(before, word) for before, word in pairwise(row)]
+    return [gap for gap in gaps if gap.after.x0 - gap.before.x1 >= GUTTER_GAP * gap.size]
+
+
+def _shared(gap: _Gap, gaps: list[_Gap]) -> bool:
+    """Whether one of ``gaps`` lies in the same strip of the page as ``gap``, across, and the part
+    behind both begins at one place: justified text, wide spaces and all, wanders from line to line,
+    a column begins where it begins."""
+    return any(
+        min(gap.after.x0, other.after.x0) > max(gap.before.x1, other.before.x1)
+        and abs(gap.after.x0 - other.after.x0) <= GUTTER_ALIGN * max(gap.size, other.size)
+        for other in gaps
+    )
 
 
 def _apart(before: Word, word: Word) -> bool:

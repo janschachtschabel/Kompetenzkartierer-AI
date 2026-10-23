@@ -1,8 +1,9 @@
 """The pages as an engine read them become a conversion (plan M1, 3.2).
 
-Each page's blocks in reading order - top down, at one height left to right; running heads and
-feet marked and the printed page numbers read (app/conversion/page_edges.py); tables continued
-over a page joined to their first part (app/conversion/tables.py); the signs of symbol fonts
+Each page's blocks in reading order - columns left to right, each top down, at one height left to
+right (app/conversion/reading_order.py); running heads and feet marked and the printed page
+numbers read (app/conversion/page_edges.py); tables continued over a page joined to their first
+part (app/conversion/tables.py); the signs of symbol fonts
 mapped and a broken text layer noticed (app/conversion/symbols.py, encoding.py), both as findings,
 and so the words the engine dropped: a finding for each reason, with the words and their pages;
 then the names: ``p<page>-b<n>`` for each page's blocks, the tables counted across the document,
@@ -17,13 +18,14 @@ from app.conversion.base import Block, Cell, Conversion, DropReason, Finding, bl
 from app.conversion.encoding import encoding_findings
 from app.conversion.layout import RawBlock, RawPage
 from app.conversion.page_edges import mark_edges
+from app.conversion.reading_order import reading_order
 from app.conversion.symbols import map_symbols
 from app.conversion.tables import merge_across_pages
 
 
 def assemble(pages: list[RawPage], *, engine: str, version: str) -> Conversion:
     for page in pages:
-        page.blocks.sort(key=lambda block: (block.bbox[1], block.bbox[0]))
+        page.blocks[:] = reading_order(page.blocks)
     printed = mark_edges(pages)  # before the joining: running heads and feet do not part a table
     merge_across_pages(pages)
     findings = [*map_symbols(pages), *encoding_findings(pages), *_dropped(pages)]
