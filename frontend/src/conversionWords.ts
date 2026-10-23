@@ -49,7 +49,12 @@ export function findingText({ code, params }: ConversionFinding): string {
   return FINDINGS[code]?.(params) ?? t("conversions.findings.other", { code });
 }
 
-/** Why a conversion failed: its job's reason, or that the job was stopped. */
+/**
+ * Why a conversion failed: its job's reason, or that the job was stopped. A job that failed again
+ * and again failed on the service here - a conversion asks no other server, as a fetch does.
+ */
 export function conversionFailureText(code: string | null): string {
-  return code === "cancelled" ? t("conversions.cancelled") : jobFailureText(code);
+  if (code === "cancelled") return t("conversions.cancelled");
+  if (code === "handler_error") return t("conversions.handlerError");
+  return jobFailureText(code);
 }

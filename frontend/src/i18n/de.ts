@@ -349,6 +349,10 @@ export const messages = {
     showBlocks: "Blöcke ansehen",
     // the job was cancelled before it ended (a conversion's error_code "cancelled")
     cancelled: "Sie wurde abgebrochen. Starte sie neu, wenn du die Blöcke brauchst.",
+    // its job failed again and again on the service, not on the file (a conversion's "handler_error")
+    handlerError:
+      "Sie ist mehrmals an einem Fehler des Dienstes gescheitert, nicht an der Datei. Versuch es später noch " +
+      "einmal; bleibt es dabei, melde es der Administration.",
     pageRange: "{from}–{to}",
     // a sign of the document, quoted in a sentence of the page
     quoted: "„{text}“",

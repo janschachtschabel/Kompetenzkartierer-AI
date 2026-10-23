@@ -92,6 +92,12 @@ describe("why a conversion failed, in words", () => {
     expect(conversionFailureText("cancelled")).toBe(t("conversions.cancelled"));
   });
 
+  it("is the service's failure, not a foreign server's, where its job failed again and again", () => {
+    // a conversion asks no other server: the words of a fetch would point the wrong way
+    expect(conversionFailureText("handler_error")).toBe(t("conversions.handlerError"));
+    expect(conversionFailureText("handler_error")).not.toBe(t("jobs.failures.handler_error"));
+  });
+
   it("is the general words for a code the page does not know, or for none", () => {
     expect(conversionFailureText("something_new")).toBe(t("jobs.failedUnknown"));
     expect(conversionFailureText(null)).toBe(t("jobs.failedUnknown"));
