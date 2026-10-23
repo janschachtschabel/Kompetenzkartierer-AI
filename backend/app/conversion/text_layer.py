@@ -14,7 +14,10 @@ the service takes is refused at once, not after reading them all.
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # loaded in the converting child alone, as below
+    from pypdfium2 import PdfTextPage
 
 # Below this a page carries a running head at most
 MIN_SIGNS_PER_PAGE = 20
@@ -60,7 +63,7 @@ def page_text_lengths(path: Path, *, max_pages: int) -> list[PageText]:
         document.close()
 
 
-def _page_text(number: int, text: Any) -> PageText:
+def _page_text(number: int, text: "PdfTextPage") -> PageText:
     return PageText(page=number, signs=len(text.get_text_bounded()), drawn=text.count_chars())
 
 

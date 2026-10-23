@@ -125,12 +125,12 @@ ungültig.
   und die Blöcke lesen. Die Konvertierung gehört zur Datei (gleiche SHA-256), nicht zum Eintrag:
   Ein Konto, das dieselbe Datei hochlädt, findet die vorhandene und erfährt so, dass die Datei
   schon hier war – der Preis dafür, jede Datei nur einmal umzuwandeln. Die Job-ID nennt die
-  Antwort nur dem Konto, das den Job gestartet hat, und Admins. Bisher nur PDFs mit Textebene (pdfplumber): ein Scan endet mit
-  `needs_ocr` (OCR folgt mit Docling), mehr als `MAX_PDF_PAGES` (800) Seiten mit
-  `too_many_pages`, eine Seite mit mehr als 100.000 Zeichen mit `too_dense`, länger als
-  `CONVERT_TIMEOUT_S` (900 s) mit `timed_out`. Die Umwandlung
-  läuft in einem eigenen Kindprozess, den Abbruch, Frist und Lease-Verlust beenden; dafür
-  eigene Worker mit `WORKER_KINDS=source.convert` vorsehen, ein Job je Pod.
+  Antwort nur dem Konto, das den Job gestartet hat, und Admins. Bisher nur PDFs mit Textebene
+  (pdfplumber): ein Scan endet mit `needs_ocr` (OCR folgt mit Docling), mehr als
+  `MAX_PDF_PAGES` (800) Seiten mit `too_many_pages`, eine Seite mit mehr als 100.000 Zeichen
+  mit `too_dense`, länger als `CONVERT_TIMEOUT_S` (900 s) mit `timed_out`. Die Umwandlung läuft
+  in einem eigenen Kindprozess, den Abbruch, Frist und Lease-Verlust beenden; dafür eigene
+  Worker mit `WORKER_KINDS=source.convert` vorsehen, ein Job je Pod.
 - Erster Admin: `python -m app.bootstrap NAME` gibt das Token einmal auf stdout aus. Interaktiv
   ausführen (`docker compose run`, `kubectl exec -it`), nicht als Job, dessen Ausgabe ein
   Log-System sammelt. Exit-Code 0: angelegt; 2: es gibt schon einen Admin, der sich anmelden
