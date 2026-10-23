@@ -116,6 +116,8 @@ def test_a_quota_for_no_account_is_not_found(client: TestClient, migrated: str) 
         {"page_limit": 10},
         {"token_limit": 10, "page_limit": 10, "role": "admin"},
         {"token_limit": "viel", "page_limit": 10},
+        {"token_limit": "5000", "page_limit": 10},
+        {"token_limit": True, "page_limit": False},
     ],
     ids=[
         "negative-tokens",
@@ -125,6 +127,8 @@ def test_a_quota_for_no_account_is_not_found(client: TestClient, migrated: str) 
         "tokens-unsaid",
         "extra",
         "text",
+        "number-as-text",
+        "booleans",
     ],
 )
 def test_a_quota_names_both_limits_as_counts_or_none(

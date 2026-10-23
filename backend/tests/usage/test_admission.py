@@ -9,6 +9,7 @@ from uuid import UUID
 
 import psycopg
 import pytest
+from psycopg import errors
 
 from app.core.ids import new_id
 from app.db.accounts import create_account
@@ -167,3 +168,25 @@ async def test_starts_side_by_side_never_exceed_the_jobs_in_flight(database_url:
         assert sorted(type(answer).__name__ for answer in started) == ["TooManyJobs"] * 7 + ["UUID"] * 5
         cursor = await setup.execute("SELECT count(*) FROM job WHERE lane = %s", (str(account),))
         assert await cursor.fetchone() == (5,)
+
+
+async def test_what_calls_in_flight_hold_refuses_no_start(connection: psycopg.AsyncConnection) -> None:
+    # their bookings give most of it back; the reservation of the start's first request decides
+    account = await an_account(connection, token_limit=20_000)
+    job = await enqueue(connection, "other.work", account_lane(account))
+    charge = Charge(account_id=account, job_id=job, purpose="x1", model="gpt-6-luna")
+    await reserve(connection, charge, 4_000, 16_000)  # all the limit, held
+
+    await start(connection, account)
+
+
+async def test_a_start_under_another_isolation_is_refused(database_url: str) -> None:
+    # repeatable read counts the jobs there were when it began, before the account's lock was free
+    migrate(database_url)
+    async with await psycopg.AsyncConnection.connect(database_url, autocommit=True) as setup:
+        account = await an_account(setup)
+    async with await psycopg.AsyncConnection.connect(database_url) as connection:
+        await connection.set_isolation_level(psycopg.IsolationLevel.REPEATABLE_READ)
+
+        with pytest.raises(errors.InvalidTransactionState, match="read committed"):
+            await start(connection, account)

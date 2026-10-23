@@ -9,7 +9,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
 from app.api.deps import require_account, require_role
 from app.api.errors import AUTH_RESPONSES
@@ -22,7 +22,8 @@ router = APIRouter(prefix="/api/v1", tags=["usage"], responses=AUTH_RESPONSES)
 Admin = Annotated[Principal, Depends(require_role("admin"))]
 # Far beyond any budget, well within what the database's bigint holds
 MAX_LIMIT = 10**15
-Limit = Annotated[int | None, Field(ge=0, le=MAX_LIMIT)]
+# A count as JSON writes one: no "5000", no true
+Limit = Annotated[StrictInt | None, Field(ge=0, le=MAX_LIMIT)]
 
 
 class QuotaIn(BaseModel):

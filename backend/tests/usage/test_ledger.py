@@ -289,3 +289,19 @@ async def test_reservations_are_counted_by_what_became_of_them(connection: psyco
         "late": 1,
         "abandoned": 1,
     }
+
+
+async def test_a_reservation_or_booking_inside_another_transaction_is_refused(database_url: str) -> None:
+    # held to the caller's commit, its quota's lock would stop the account's every other request,
+    # and a rollback after the request went out would take a paid reservation along
+    migrate(database_url)
+    async with await psycopg.AsyncConnection.connect(database_url, autocommit=True) as setup:
+        charge = await a_charge(setup, await an_account(setup, token_limit=1_000))
+        reservation = await reserve(setup, charge, input_tokens=10, output_tokens=10)
+    async with await psycopg.AsyncConnection.connect(database_url) as connection:
+        await connection.execute("SELECT 1")
+
+        with pytest.raises(ValueError, match="transaction of its own"):
+            await reserve(connection, charge, input_tokens=10, output_tokens=10)
+        with pytest.raises(ValueError, match="transaction of its own"):
+            await book(connection, reservation, Spent(input_tokens=5, output_tokens=5, requests=1))

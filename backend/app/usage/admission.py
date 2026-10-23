@@ -2,10 +2,12 @@
 app's MAX_JOBS_IN_FLIGHT).
 
 ``admit_model_job`` runs in the transaction that enqueues the job, under a lock per account held
-to its end: starts side by side take turns, and each counts the jobs the others enqueued. An
-account with no budget left starts none - an admin's too, unless its quota has no limit - one
-with ``max_in_flight`` model jobs waiting or running starts no more, and starts beyond the
-minute's limit wait. A start refused takes no place in the minute.
+to its end and read committed alone: starts side by side take turns, and each counts the jobs
+the others enqueued. An account that spent its budget starts none - an admin's too, unless its
+quota has no limit; what its calls in flight hold mostly comes back with their bookings, and the
+start's first reservation decides on it. One with ``max_in_flight`` model jobs waiting or
+running starts no more, and starts beyond the minute's limit wait. A start refused takes no
+place in the minute.
 """
 
 from collections.abc import Collection
@@ -22,6 +24,7 @@ from app.usage.ledger import usage_of
 MODEL_JOB_KINDS: frozenset[str] = frozenset()
 # The old app's answer to a client starting too many: come back in a minute
 JOBS_RETRY_AFTER_S = 60
+_READ_COMMITTED = "SELECT read_committed_alone('a model job''s admission')"
 _LOCK = "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))"
 _IN_FLIGHT = (
     "SELECT count(*) FROM job WHERE lane = %s AND kind = ANY (%s) AND status IN ('queued', 'running')"
@@ -29,7 +32,7 @@ _IN_FLIGHT = (
 
 
 class NoBudget(Exception):
-    """The account has no tokens left to spend."""
+    """The account has spent the tokens it may."""
 
 
 class TooManyJobs(Exception):
@@ -53,9 +56,10 @@ async def admit_model_job(
     transaction: the lock would go before the job is enqueued."""
     if connection.info.transaction_status != TransactionStatus.INTRANS:
         raise ValueError("a model job is admitted in the transaction that enqueues it")
+    await connection.execute(_READ_COMMITTED)
     await connection.execute(_LOCK, (f"admission:{account_id}",))
-    left = (await usage_of(connection, account_id)).tokens_left
-    if left is not None and left <= 0:
+    usage = await usage_of(connection, account_id)
+    if usage.token_limit is not None and usage.tokens_spent >= usage.token_limit:
         raise NoBudget("no tokens left")
     cursor = await connection.execute(_IN_FLIGHT, (account_lane(account_id), list(kinds)))
     row = await cursor.fetchone()

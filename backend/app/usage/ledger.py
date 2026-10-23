@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 import psycopg
+from psycopg.pq import TransactionStatus
 
 from app.core.metrics import observe_reservations
 from app.llm.metering import BudgetExhausted, Spent
@@ -121,8 +122,9 @@ async def reserve(
     connection: psycopg.AsyncConnection, charge: Charge, input_tokens: int, output_tokens: int
 ) -> Reservation:
     """Hold ``input_tokens`` and ``output_tokens`` for a request of ``charge``; BudgetExhausted
-    where what is left of the account's budget does not hold both. Under read committed alone:
-    repeatable read would sum what was there when its transaction began."""
+    where what is left of the account's budget does not hold both. In a transaction of its own,
+    under read committed alone: repeatable read would sum what was there when it began."""
+    _alone(connection, "a reservation")
     async with connection.transaction():
         await connection.execute(_READ_COMMITTED)
         cursor = await connection.execute(_LIMIT, (charge.account_id,))
@@ -155,8 +157,9 @@ async def reserve(
 
 
 async def book(connection: psycopg.AsyncConnection, reservation: Reservation, spent: Spent) -> bool:
-    """Book ``spent`` in the reservation's place; False where it was booked already (by
-    ``book_abandoned``, for a job given up on), and nothing is booked again."""
+    """Book ``spent`` in the reservation's place, in a statement of its own; False where it was
+    booked already (by ``book_abandoned``, for a job given up on), and nothing is booked again."""
+    _alone(connection, "a booking")
     cursor = await connection.execute(
         _BOOK,
         {
@@ -178,10 +181,19 @@ async def book(connection: psycopg.AsyncConnection, reservation: Reservation, sp
 
 async def book_abandoned(connection: psycopg.AsyncConnection, job_id: UUID) -> int:
     """Book the job's open reservations as spent and estimated, each a request nobody answered;
-    how many it took."""
+    how many it took. In the caller's transaction: the one that ends the job, under its lease,
+    so that it takes no reservation of the job's next attempt."""
     cursor = await connection.execute(_BOOK_ABANDONED, (job_id,))
     observe_reservations("abandoned", cursor.rowcount)
     return cursor.rowcount
+
+
+def _alone(connection: psycopg.AsyncConnection, what: str) -> None:
+    """ValueError for a connection inside a transaction: held to the caller's commit, the quota's
+    lock would stop the account's every other request, and a rollback after the request went out
+    would take what was held or booked for it along."""
+    if connection.info.transaction_status != TransactionStatus.IDLE:
+        raise ValueError(f"{what} is a transaction of its own, on a connection in none")
 
 
 async def set_quota(
