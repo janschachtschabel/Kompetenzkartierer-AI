@@ -12,20 +12,23 @@ would splinter its words - "dna", "6202"), its middle outside what a viewer show
 within the media box (``off_page``) - or smaller than a point (``tiny``): a way to hide text from
 a reader, not from a model, so it is said as a finding rather than lost unseen. A sign or a table
 at no finite point - a number of 400 digits in the content stream places it at NaN - is dropped
-so (``unplaced``). A word left without a sign once its control signs are cleaned off is none.
+so (``unplaced``). A sign printed again over itself, to look bold, is read once. A word left
+without a sign once its control signs are cleaned off is none.
 
 The file is untrusted. Whatever pdfplumber or pdfminer raise while reading it makes it unreadable,
 said without its path; so only the library's own calls stand where that is caught. So do pages
 pdfplumber counts otherwise than the text layer did (a page tree of one page and three kids): the
-limits on pages and on their signs were checked on the text layer's. What is built of what they
-read - which signs go, words, tables, lines and blocks - is ours, and its errors stay errors: in
-the converting child a crash, not a verdict on the file. A page is read, then built, then the
-next is read, so that the signs of one page at a time are held.
+limit on pages was checked on the text layer's. A page of more signs than the service takes is
+too dense (TooDense) - counted here, before its words and tables are read, since pdfium counts a
+text drawn many times at one place once and pdfminer reads each. What is built of what they read
+- which signs go, words, tables, lines and blocks - is ours, and its errors stay errors: in the
+converting child a crash, not a verdict on the file. A page is read, then built, then the next is
+read, so that the signs of one page at a time are held.
 """
 
 import logging
 import math
-from collections import Counter
+from collections import Counter, defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -37,13 +40,15 @@ import pdfplumber
 
 from app.conversion.assemble import assemble
 from app.conversion.base import Conversion, DropReason
+from app.conversion.convert import MAX_PAGE_SIGNS
 from app.conversion.layout import Box, RawPage, Word, clean_text
 from app.conversion.lines import blocks_of
 from app.conversion.tables import FoundTable, table_block
-from app.conversion.text_layer import UnreadablePdf
+from app.conversion.text_layer import TooDense, UnreadablePdf
 
 log = logging.getLogger(__name__)
 MIN_SIZE = 1.0  # points: text set smaller no reader reads
+TWIN = 0.1  # times the size: a sign set again this close to itself is printed over
 
 
 @dataclass(frozen=True)
@@ -61,7 +66,7 @@ class PdfplumberEngine:
     name = "pdfplumber"
     version = version("pdfplumber")
 
-    def convert(self, path: Path, *, pages: int) -> Conversion:
+    def convert(self, path: Path, *, pages: int, max_signs: int = MAX_PAGE_SIGNS) -> Conversion:
         with _reading():
             pdf = pdfplumber.open(path)
         built: list[RawPage] = []
@@ -73,10 +78,15 @@ class PdfplumberEngine:
                 raise UnreadablePdf("the file's pages are counted two ways")
             for page in found:
                 with _reading():
-                    signs, shown = page.chars, (page.cropbox, page.mediabox)
-                dropped, counted = dropped_signs(signs, _within_both(*shown))
+                    number, signs, shown = page.page_number, page.chars, (page.cropbox, page.mediabox)
+                if len(signs) > max_signs:
+                    raise TooDense(number, len(signs), max_signs)
+                twins = twin_signs(signs)
+                dropped, counted = dropped_signs(
+                    (sign for sign in signs if id(sign) not in twins), _within_both(*shown)
+                )
                 with _reading():
-                    read = read_page(page, dropped)
+                    read = read_page(page, dropped | twins)
                 built.append(page_of(read, counted))
         finally:
             with _reading():
@@ -111,6 +121,33 @@ def read_page(page: Any, dropped: Set[int] = frozenset()) -> PageRead:
     )
     page.flush_cache()  # pdfplumber keeps a page's objects otherwise, page by page
     return read
+
+
+def twin_signs(signs: Iterable[Mapping[str, Any]]) -> set[int]:
+    """The signs, by identity, printed again over one before them - its text in its font and size,
+    within a tenth of the size - to look bold, or to weigh a page down: pdfium reads them once,
+    pdfminer each time ("DDiiee"). A grid of a tenth of the size finds the one before in the cells
+    around, so that a page of many signs costs no more than few - pdfplumber's dedupe_chars sorts
+    by index, 17 s for 30,000 signs."""
+    kept: defaultdict[tuple[Any, ...], list[Mapping[str, Any]]] = defaultdict(list)
+    twins: set[int] = set()
+    for sign in signs:
+        size = sign["size"]
+        if not _finite((sign["x0"], sign["top"], size)) or size <= 0:
+            continue  # no place to be printed again at: dropped as it is
+        near = TWIN * size
+        kind = (sign["text"], sign["fontname"], size, sign["upright"])
+        column, row = math.floor(sign["x0"] / near), math.floor(sign["top"] / near)
+        cells = [(*kind, column + across, row + down) for across in (-1, 0, 1) for down in (-1, 0, 1)]
+        if any(
+            abs(other["x0"] - sign["x0"]) <= near and abs(other["top"] - sign["top"]) <= near
+            for cell in cells
+            for other in kept.get(cell, ())
+        ):
+            twins.add(id(sign))
+        else:
+            kept[(*kind, column, row)].append(sign)
+    return twins
 
 
 def dropped_signs(signs: Iterable[Mapping[str, Any]], shown: Box) -> tuple[set[int], Counter[DropReason]]:

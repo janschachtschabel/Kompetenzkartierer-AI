@@ -84,13 +84,28 @@ def test_signs_set_beyond_the_page_count_towards_its_density(
     assert refused.value.code == "too_dense"
 
 
+def test_one_text_drawn_many_times_over_is_refused_as_too_dense(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # pdfium reads the 30 copies at one place as one, 57 signs; pdfplumber reads each, 1,710
+    dense = tmp_path / "lehrplan.pdf"
+    dense.write_bytes(pages_pdf([SENTENCE * 30]))
+    monkeypatch.setattr(convert, "MAX_PAGE_SIGNS", 1000)
+    assert max(page.drawn for page in page_text_lengths(dense, max_pages=10)) < 1000
+
+    with pytest.raises(ConversionRefused) as refused:
+        convert_file(dense, engine("pdfplumber"), max_pages=10)
+
+    assert refused.value.code == "too_dense"
+
+
 class OnlyEdges:
     """An engine that finds nothing but running heads: the text of a document of headers alone."""
 
     name = "edges"
     version = "1"
 
-    def convert(self, path: Path, *, pages: int) -> Conversion:
+    def convert(self, path: Path, *, pages: int, max_signs: int = 0) -> Conversion:
         head = Block(
             id="p1-b1",
             page=1,

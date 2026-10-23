@@ -36,6 +36,15 @@ class TooManyPages(ValueError):
         self.pages = pages
 
 
+class TooDense(ValueError):
+    """A page holds more signs than the service takes, as the engine reads it: pdfium reads one
+    text drawn many times at one place as one, pdfminer each time."""
+
+    def __init__(self, page: int, signs: int, max_signs: int) -> None:
+        super().__init__(f"page {page} holds {signs} signs, more than the {max_signs} taken")
+        self.page = page
+
+
 @dataclass(frozen=True)
 class PageText:
     page: int  # from 1

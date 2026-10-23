@@ -10,7 +10,7 @@ import pytest
 from app.conversion import pdfplumber_blocks
 from app.conversion.base import Conversion, engine
 from app.conversion.tables import FoundTable
-from app.conversion.text_layer import UnreadablePdf, page_text_lengths
+from app.conversion.text_layer import TooDense, UnreadablePdf, page_text_lengths
 from tests.conversion.raw_pdf import HELVETICA, SENTENCE, pages_pdf, pdf_of, stream
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -275,6 +275,38 @@ def test_a_sign_of_one_point_is_read_and_one_smaller_is_not() -> None:
 
 def test_a_sign_of_no_finite_size_is_unplaced_where_its_place_is_finite() -> None:
     assert pdfplumber_blocks.why_dropped(sign(size=math.nan), PAGE) == "unplaced"
+
+
+def test_a_page_of_more_signs_than_taken_is_too_dense_before_its_words_are_read(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "lehrplan.pdf"
+    path.write_bytes(pages_pdf([SENTENCE * 3]))
+    monkeypatch.setattr(pdfplumber_blocks, "read_page", broken)
+
+    with pytest.raises(TooDense, match="171 signs"):
+        engine("pdfplumber").convert(path, pages=1, max_signs=170)
+
+
+def test_a_sentence_printed_twice_over_to_look_bold_reads_once(tmp_path: Path) -> None:
+    path = tmp_path / "lehrplan.pdf"
+    path.write_bytes(pages_pdf([SENTENCE + SENTENCE.replace(b"72 700 Td", b"72.3 700 Td")]))
+
+    assert [block.text for block in read(path).blocks] == [SENTENCE_READ]
+
+
+def test_a_sign_set_again_within_a_tenth_of_its_size_is_its_twin() -> None:
+    signs = [
+        sign(text="D", x0=72.0),
+        sign(text="D", x0=72.3),  # printed over: within 1.1 points at 11
+        sign(text="D", x0=74.0),
+        sign(text="l", x0=100.0, size=3.0),
+        sign(text="l", x0=100.67, size=3.0),  # "ll" at 3 points: 0.3 the most
+    ]
+
+    twins = pdfplumber_blocks.twin_signs(signs)
+
+    assert twins == {id(signs[1])}
 
 
 def test_text_beyond_the_crop_box_a_viewer_shows_is_dropped(tmp_path: Path) -> None:

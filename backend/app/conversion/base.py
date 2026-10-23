@@ -148,9 +148,10 @@ class Engine(Protocol):
     name: str
     version: str
 
-    def convert(self, path: Path, *, pages: int) -> Conversion:
+    def convert(self, path: Path, *, pages: int, max_signs: int = ...) -> Conversion:
         """The conversion of ``path``, whose text layer counted ``pages``; UnreadablePdf where
-        the engine reads the file otherwise - the limits on pages and their signs hold for those."""
+        the engine reads the file otherwise - the limit on pages holds for those - and TooDense
+        where it reads a page of more than ``max_signs`` signs (by default the service's)."""
         ...
 
 
