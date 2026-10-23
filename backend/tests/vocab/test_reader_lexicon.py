@@ -116,6 +116,8 @@ KIND_AS_ROLE = 'cur:surfaceForm "Plan" ; cur:cueRole cv:ck_term ; cur:cueKind cv
         (SCHOOL_PROFILE + "schul:Terminology cur:hasCue schul:nothing .", "no cue"),
         (with_cue(BASE), "no form"),
         (with_cue('cur:surfaceForm "Plan" ; cur:pattern "(unclosed" ; ' + BASE), "pattern"),
+        # regex reads \p{L}, Python's re - the syntax konzept §12.1 names - does not
+        (with_cue(r'cur:pattern "\\p{L}+ [0-9]+" ; ' + BASE), "does not compile"),
         (with_cue("cur:surfaceForm schul:dt-Lehrplan ; " + BASE), "text belongs"),
         (with_cue('cur:surfaceForm "Plan" , "Lehrplan" ; ' + BASE), "more than one"),
         (with_cue('cur:surfaceForm "Plan" ; cur:cueKind cv:ck_term ; cur:mapsTo schul:dt-Lehrplan'), "role"),
@@ -135,6 +137,7 @@ KIND_AS_ROLE = 'cur:surfaceForm "Plan" ; cur:cueRole cv:ck_term ; cur:cueKind cv
         "listed-but-no-cue",
         "no-form",
         "bad-pattern",
+        "pattern-only-regex-reads",
         "form-as-iri",
         "two-forms",
         "no-role",

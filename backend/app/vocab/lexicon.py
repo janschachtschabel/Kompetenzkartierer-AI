@@ -6,11 +6,12 @@ namespace - its IRI up to the last '#' or '/' - is where its values are named. A
 (``cur:LexicalCue``) belongs to the one profile that lists it (``cur:hasCue``). It names a form -
 a word, a pattern or a layout signal - its role and kind (one each, from ``cv:CueRoles`` and
 ``cv:CueKinds``) and a target at least; every IRI it names is typed in the model, since a target
-may be a class or a property as well as a concept. A pattern compiles with ``regex`` as Python's
-re reads it. What the tables cannot hold as it is - text where an IRI belongs, two forms, a date
+may be a class or a property as well as a concept. A pattern compiles with Python's re and with
+``regex`` as re reads it. What the tables cannot hold as it is - text where an IRI belongs, two forms, a date
 in prose - is refused; whatever else a file says of a cue goes to its properties.
 """
 
+import re
 from collections import defaultdict
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -141,10 +142,7 @@ def _cue(graph: Graph, iri: URIRef, profile: str, scheme_of: Mapping[str, str]) 
     if surface_form is None and pattern is None and layout_signal is None:
         raise VocabularyError(f"{iri} has no form: a surfaceForm, a pattern or a layoutSignal")
     if pattern is not None:
-        try:
-            regex.compile(pattern, regex.V0)
-        except regex.error as error:
-            raise VocabularyError(f"{iri}: the pattern {pattern!r} does not compile: {error}") from error
+        _check_pattern(iri, pattern)
     role = _one_of(graph, iri, "cueRole", ROLES, scheme_of)
     kind = _one_of(graph, iri, "cueKind", KINDS, scheme_of)
     named = {name: _all_iris(graph, iri, CUR[name]) for name in (*_TARGETS, "scopeSubject")}
@@ -181,6 +179,17 @@ def _cue(graph: Graph, iri: URIRef, profile: str, scheme_of: Mapping[str, str]) 
         negative_examples=texts["negativeExample"],
         properties=other_properties(graph, iri, _COLUMNS),
     )
+
+
+def _check_pattern(iri: URIRef, pattern: str) -> None:
+    """A pattern is in the syntax of Python's re (konzept §12.1), searched with ``regex`` for its
+    time limit: regex reads more (``\\p{L}``, ``(?r)``), which pruefe.py and any other reader of
+    the files would refuse, so it compiles with both."""
+    try:
+        re.compile(pattern)
+        regex.compile(pattern, regex.V0)
+    except (re.error, regex.error) as error:
+        raise VocabularyError(f"{iri}: the pattern {pattern!r} does not compile: {error}") from error
 
 
 def _single(graph: Graph, iri: URIRef, name: str) -> Node | None:
