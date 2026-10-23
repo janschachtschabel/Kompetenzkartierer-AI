@@ -20,6 +20,13 @@ export const REFUSAL_CODES = [
   "url_invalid",
   "too_many_uploads",
   "too_many_imports",
+  // an entry's content and its conversion (backend app/api/source_content.py, conversions.py)
+  "file_hidden",
+  "no_file",
+  "not_pdf",
+  "no_conversion",
+  "not_converted",
+  "no_such_page",
 ] as const;
 
 export type RefusalCode = (typeof REFUSAL_CODES)[number];

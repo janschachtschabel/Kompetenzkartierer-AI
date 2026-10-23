@@ -435,6 +435,13 @@ export const messages = {
       "und enthält keine Zugangsdaten.",
     too_many_uploads: "Du hast gerade viele Dateien hochgeladen. Warte eine Minute und versuch es dann noch einmal.",
     too_many_imports: "Du hast gerade viele Adressen abgerufen. Warte eine Minute und versuch es dann noch einmal.",
+    // an entry's content: its file and what the conversion read from it
+    file_hidden: "Die Datei dieses Eintrags und was aus ihr gelesen wurde, sieht nur die Redaktion.",
+    no_file: "Der Eintrag hat noch keine Datei. Sie kommt mit dem Hochladen oder dem Abruf seiner Adresse.",
+    not_pdf: "Bisher werden nur PDF-Dateien in Blöcke umgewandelt.",
+    no_conversion: "Die Datei wurde noch nicht in Blöcke umgewandelt. Die Umwandlung startest du auf der Seite des Eintrags.",
+    not_converted: "Die Umwandlung ist noch nicht fertig. Wie weit sie ist, zeigt die Seite des Eintrags.",
+    no_such_page: "Diese Seite gibt es in der Datei nicht.",
   },
 } as const;
 
