@@ -2,6 +2,9 @@
 
 import math
 import re
+import subprocess
+import sys
+from pathlib import Path
 from typing import get_args
 
 import pytest
@@ -22,8 +25,10 @@ from app.conversion.base import (
     offered_engines,
 )
 from app.core.settings import REPOSITORY_ONTOLOGY
+from tests.support import without_settings_variables
 
 SHAPES = REPOSITORY_ONTOLOGY / "ontologie" / "cur-shapes.ttl"
+BACKEND = Path(__file__).resolve().parents[2]
 
 
 def text_block(page: int = 1, number: int = 1, text: str = "Lernfeld 1", **fields: object) -> Block:
@@ -168,3 +173,20 @@ def test_the_register_offers_pdfplumber_and_names_what_it_offers_for_another() -
 
 def test_the_api_names_the_engines_the_register_offers() -> None:
     assert get_args(EngineName) == offered_engines()
+
+
+@pytest.mark.parametrize("module", ["app.api.app", "app.jobs.worker"])
+def test_the_api_and_the_worker_load_no_pdf_library(module: str) -> None:
+    # a parser of untrusted files belongs in the converting child alone, which imports its engine
+    check = (
+        f"import sys, {module}\n"
+        "loaded = sorted({'pdfplumber', 'pdfminer', 'pypdfium2'} & set(sys.modules))\n"
+        "sys.exit(', '.join(loaded) or 0)\n"
+    )
+
+    with without_settings_variables():
+        result = subprocess.run(  # noqa: S603 - fixed code
+            [sys.executable, "-c", check], cwd=BACKEND, check=False, capture_output=True, text=True
+        )
+
+    assert (result.returncode, result.stderr) == (0, "")
