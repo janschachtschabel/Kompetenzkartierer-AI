@@ -253,6 +253,138 @@ def test_headings_numbered_on_pages_in_a_row_that_the_foot_s_numbers_belie_stay_
     assert printed == tuple(str(n) for n in range(1, 21))
 
 
+@pytest.mark.parametrize(
+    "foot",
+    [
+        {7: "1 Vgl. KMK 2021, S. 40"},  # a footnote with a page reference, read as a page number
+        {1: "2026"},  # a year at the foot of the cover, no page number at all
+    ],
+    ids=["footnote", "year"],
+)
+def test_one_page_whose_foot_belies_a_running_head_takes_it_from_no_other_page(foot: dict[int, str]) -> None:
+    pages = document(
+        *[
+            [block(n, f"Rahmenlehrplan Mechatronik {n}", 30), block(n, "Text", 300)]
+            + ([block(n, foot[n], 815)] if n in foot else [])
+            for n in range(1, 21)
+        ]
+    )
+
+    printed = mark_edges(pages)
+
+    assert all(page.blocks[0].kind == "page_header" for page in pages)
+    assert [printed[n - 1] for n in range(1, 21) if n not in foot] == [
+        str(n) for n in range(1, 21) if n not in foot
+    ]
+
+
+def test_numbered_captions_in_the_foot_on_pages_in_pairs_stay_text_beside_its_page_numbers() -> None:
+    captions = {4: 1, 5: 2, 9: 3, 10: 4}
+    pages = document(
+        *[
+            [block(n, "Text", 300)]
+            + ([block(n, f"Abbildung {captions[n]}", 790)] if n in captions else [])
+            + [block(n, f"- {n} -", 815)]
+            for n in range(1, 21)
+        ]
+    )
+
+    printed = mark_edges(pages)
+
+    assert all(page.blocks[1].kind == "text" for n, page in enumerate(pages, 1) if n in captions)
+    assert printed == tuple(str(n) for n in range(1, 21))
+
+
+def test_a_footnote_reaching_into_the_foot_is_no_page_number_however_it_ends() -> None:
+    # two lines begun in the bottom 12 %, ending with a page reference
+    footnote = RawBlock(3, "text", "1 Siehe\nSeite 12", (56, 760, 400, 779.8), 9.0, False, False)
+    pages = document(
+        *[
+            [block(n, "Text", 300), *([footnote] if n == 3 else []), block(n, f"- {n} -", 815)]
+            for n in range(1, 6)
+        ]
+    )
+
+    printed = mark_edges(pages)
+
+    assert pages[2].blocks[1].kind == "text"
+    assert printed == ("1", "2", "3", "4", "5")
+
+
+@pytest.mark.parametrize(
+    ("text", "box", "kind"),
+    [
+        (
+            "Rahmenlehrplan\nMechatronik\nTeil III",
+            (56, 40, 400, 77.4),
+            "page_header",
+        ),  # three lines, 11 on 13.2
+        ("Rahmenlehrplan\nMechatronik\nTeil III\nAnhang", (56, 40, 400, 90.6), "text"),  # four lines
+        ("Rahmenlehrplan\nMechatronik", (56, 50, 400, 126), "text"),  # past 12 %, 101 points
+        ("Rahmenlehrplan\nMechatronik", (56, 761, 400, 785), "page_footer"),  # the foot's near band
+    ],
+    ids=["three-lines", "four-lines", "past-the-band", "foot"],
+)
+def test_a_running_head_or_foot_of_a_few_lines_may_reach_a_little_past_its_edge(
+    text: str, box: tuple[float, float, float, float], kind: str
+) -> None:
+    pages = document(
+        *[[RawBlock(n, "text", text, box, 11.0, False, False), block(n, "Text", 300)] for n in range(1, 4)]
+    )
+
+    mark_edges(pages)
+
+    assert [page.blocks[0].kind for page in pages] == [kind] * 3
+
+
+def test_headings_numbered_on_pages_in_a_row_reaching_past_the_edge_stay_text() -> None:
+    # "Lernfeld 1" ... "Lernfeld 5" in 14 points at 55 to 69, past the edge's 67: the band beside the
+    # edge takes a running head of a few lines, not a count that runs
+    pages = document(
+        *[
+            [RawBlock(n, "text", f"Lernfeld {n}", (56, 55, 400, 69), 14.0, True, False)] * (n <= 5)
+            + [block(n, "Text", 300)]
+            for n in range(1, 11)
+        ]
+    )
+
+    printed = mark_edges(pages)
+
+    assert all(page.blocks[0].kind == "text" for page in pages)
+    assert printed == (None,) * 10
+
+
+def test_a_number_that_stays_over_stretches_beside_none_that_runs_makes_no_running_head() -> None:
+    # "Kapitel 1" on pages 1 and 2, "Kapitel 2" on 3 and 4 ...: a heading kept a while, not a running head
+    pages = document(*[[block(n, f"Kapitel {(n + 1) // 2}", 30), block(n, "Text", 300)] for n in range(1, 9)])
+
+    mark_edges(pages)
+
+    assert all(page.blocks[0].kind == "text" for page in pages)
+
+
+def test_the_foot_s_page_number_goes_before_the_head_s_where_both_run() -> None:
+    labels = ["i", "ii", "iii"]
+    pages = document(
+        *[[block(n, str(n), 30), block(n, "Text", 300), block(n, labels[n - 1], 815)] for n in range(1, 4)]
+    )
+
+    assert mark_edges(pages) == ("i", "ii", "iii")
+
+
+def test_a_number_counts_each_page_once_however_often_its_block_stands_there() -> None:
+    # "Rahmenlehrplan 1" twice on page 1: one page whose offset no other shares, so nothing runs
+    pages = document(
+        [block(1, "Rahmenlehrplan 1", 20), block(1, "Rahmenlehrplan 1", 40)],
+        [block(2, "Rahmenlehrplan 4", 30)],
+        [block(3, "Rahmenlehrplan 5", 30)],
+    )
+
+    mark_edges(pages)
+
+    assert kinds(pages) == [["text", "text"], ["text"], ["text"]]
+
+
 def test_a_running_head_of_two_lines_reaching_a_little_past_the_edge_is_one() -> None:
     # the edge is 67 points of 842; two lines of 11 points begun at 45 end at 69
     pages = document(

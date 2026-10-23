@@ -1,16 +1,22 @@
 """Running heads and feet marked, not dropped, and the number printed on each page (plan M1, 3.3).
 
 The edges of a page are its top and bottom 8 %; a text block is in one where the whole of it is,
-or where it begins there, is no more than three lines high and ends within 12 % - a running head
-of two lines reaching a little past the edge. A paragraph that begins there and runs on below is
-text. A block there is a running head or foot where its text stands in the same edge on at least
-3 pages and a fifth of the document's - the same text, or one whose numbers each stay as they
-are, run with the page, or stay over stretches of pages beside one that runs ("Stand 2026 - Seite
-5", "Lernfeld 2 | 5"). A number runs with the page where each of its offsets from the page is
-shared by two pages at least: a count that jumps once - a blank page taken out, two parts counted
-from 1 - still runs; "Lernfeld 1" ... "Lernfeld 5" at the top of every other page of 10 do not,
-and stay headings. A number in the head runs only as the foot's page numbers do, where a page has
-one: headings numbered on pages in a row are no running head beside them.
+or where it begins there, has no more than three lines and ends within 12 % - a running head of
+two lines reaching a little past the edge. Such a block is a running head or foot of the same
+text only, never one whose number runs, nor a page number alone (headings "Lernfeld 1" ...
+"Lernfeld 5" at the top of pages in a row, a footnote ending "Seite 12"). A paragraph that begins
+there and runs on below is text.
+
+A block there is a running head or foot where its text stands in the same edge on at least 3
+pages and a fifth of the document's - the same text, or one whose numbers each stay as they are,
+run with the page, or stay over stretches of pages beside one that runs ("Stand 2026 - Seite 5",
+"Lernfeld 2 | 5"). A number runs with the page where each of its offsets from the page is shared
+by two pages at least: a count that jumps once - a blank page taken out, two parts counted from
+1 - still runs; "Lernfeld 1" ... "Lernfeld 5" at the top of every other page of 10 do not, and
+stay headings. A number runs only as the foot's page numbers do, where a page has one: headings
+and captions numbered on pages in a row are no running head or foot beside them. A page whose
+foot says otherwise - a misprint, a reference taken for a page number - is left out of that
+count, not counted against it: a running head goes on where at least half its pages agree.
 
 A block that is a page number alone is one in the foot wherever it stands - a year at the foot of
 a cover only where such a number recurs; in the head where such numbers run with the page on two
@@ -60,7 +66,8 @@ class _AtEdge:
     edge: Edge
     text: str  # its words, a space apart, in one case
     numbers: tuple[str, ...]  # as its text writes them
-    alone: str | None  # the page number it is alone, where it is one
+    alone: str | None  # the page number it is alone, where it is one - not where it reaches past the edge
+    near: bool  # in its edge by the band beside it alone
 
     @property
     def key(self) -> tuple[Edge, tuple[str, ...]]:
@@ -93,7 +100,10 @@ def mark_edges(pages: list[RawPage]) -> tuple[str | None, ...]:
         edge: Counter(_offset(at) for at in found if at.alone and at.edge == edge)
         for edge in ("page_footer", "page_header")
     }
-    feet = {at.page: _offset(at) for at in found if at.alone and at.edge == "page_footer"}
+    feet: dict[int, int] = {}  # each page's number in the foot, as it is printed: its offset from the page
+    for at in found:
+        if at.edge == "page_footer" and _is_page_number(at, offsets["page_footer"], {}):
+            feet.setdefault(at.page, _offset(at))
     repeated: dict[_AtEdge, int | None] = {}  # the running heads and feet, each with its running number
     for group in groups.values():
         repeated |= _repeated(group, needed, feet)
@@ -116,11 +126,13 @@ def _at_edges(page: RawPage) -> list[_AtEdge]:
     """The text blocks in the edges of the page."""
     found: list[_AtEdge] = []
     for index, block in enumerate(page.blocks):
-        edge = _edge(block, page)
-        if edge is not None:
+        found_edge = _edge(block, page)
+        if found_edge is not None:
+            edge, near = found_edge
             text = " ".join(block.text.split()).casefold()
             numbers = tuple(_DIGITS.findall(text))
-            found.append(_AtEdge(page.number, index, edge, text, numbers, printed_number(block.text)))
+            alone = None if near else printed_number(block.text)
+            found.append(_AtEdge(page.number, index, edge, text, numbers, alone, near))
     return found
 
 
@@ -140,10 +152,9 @@ def _repeated(group: list[_AtEdge], needed: float, feet: dict[int, int]) -> dict
     numbers of the one that runs with the page, if one does. The key holds where every number
     stays, runs with the page, or stays over stretches beside one that runs; else each text
     counts by itself."""
-    # in the head a number runs as the page numbers of the foot do, where a page has one
-    belie = feet if group[0].edge == "page_header" else {}
-    kinds = [_place(group, place, belie) for place in range(len(group[0].numbers))]
-    if all(kinds) and ("holds" not in kinds or "runs" in kinds):
+    kinds = [_place(group, place, feet) for place in range(len(group[0].numbers))]
+    near = any(at.near for at in group)  # the band beside the edge: a running text, not a count
+    if all(kinds) and ("holds" not in kinds or "runs" in kinds) and not (near and "runs" in kinds):
         if len({at.page for at in group}) < needed:
             return {}
         running = next((place for place, kind in enumerate(kinds) if kind == "runs"), None)
@@ -156,18 +167,22 @@ def _repeated(group: list[_AtEdge], needed: float, feet: dict[int, int]) -> dict
 
 def _place(group: list[_AtEdge], place: int, feet: dict[int, int]) -> str | None:
     """How the number at ``place`` goes over the group's pages: it ``stays`` the same, ``runs``
-    with the page - each offset from the page shared by two pages at least, so a count may jump,
-    and the offset of the page number in ``feet`` where a page has one - or ``holds`` each of its
-    values over two pages at least; None where it does none of these."""
-    values = [(at.numbers[place], at.page) for at in group]
+    with the page - each offset from the page shared by two pages at least, so a count may jump; a
+    page whose number in ``feet`` says otherwise left out, and at least half the pages agreeing -
+    or ``holds`` each of its values over two pages at least; None where it does none of these."""
+    values = {(at.numbers[place], at.page) for at in group}  # a page counts once
     if len({value for value, _ in values}) == 1:
         return "stays"
     if all(len(value) <= MAX_PAGE_DIGITS for value, _ in values):
-        offsets = Counter(int(value) - page for value, page in set(values))
-        agree = all(feet.get(page, int(value) - page) == int(value) - page for value, page in values)
-        if min(offsets.values()) >= MIN_RUNNING and agree:
+        agreeing = [
+            int(value) - page
+            for value, page in values
+            if feet.get(page, int(value) - page) == int(value) - page
+        ]
+        offsets = Counter(agreeing)
+        if 2 * len(agreeing) >= len(values) and offsets and min(offsets.values()) >= MIN_RUNNING:
             return "runs"
-    if min(Counter(value for value, _ in set(values)).values()) >= MIN_RUNNING:
+    if min(Counter(value for value, _ in values).values()) >= MIN_RUNNING:
         return "holds"
     return None
 
@@ -183,16 +198,21 @@ def _printed(
     return None
 
 
-def _edge(block: RawBlock, page: RawPage) -> Edge | None:
+def _edge(block: RawBlock, page: RawPage) -> tuple[Edge, bool] | None:
+    """The edge the block is in, and whether it reaches past it into the band beside it."""
     if block.kind != "text":
         return None
     _x0, top, _x1, bottom = block.bbox
-    few_lines = bottom - top <= NEAR_EDGE_LINES * (block.font_size or 0)
+    few_lines = len(block.text.splitlines()) <= NEAR_EDGE_LINES
     edge, near = EDGE_SHARE * page.height, NEAR_EDGE_SHARE * page.height
-    if bottom <= edge or (top < edge and bottom <= near and few_lines):
-        return "page_header"
-    if top >= page.height - edge or (bottom > page.height - edge and top >= page.height - near and few_lines):
-        return "page_footer"
+    if bottom <= edge:
+        return "page_header", False
+    if top >= page.height - edge:
+        return "page_footer", False
+    if few_lines and top < edge and bottom <= near:
+        return "page_header", True
+    if few_lines and bottom > page.height - edge and top >= page.height - near:
+        return "page_footer", True
     return None
 
 
