@@ -301,6 +301,7 @@ async def test_a_job_its_conversion_was_asked_again_without_leaves_it_to_the_new
     file_id, conversion_id, old_job = await a_conversion(context, data)
     new_job = await asked_again(context, file_id, conversion_id)
     done_before = counted("kka_conversions_total", engine="pdfplumber", outcome="done")
+    refused_before = counted("kka_conversions_total", engine="pdfplumber", outcome="needs_ocr")
 
     with contextlib.suppress(PermanentError):  # the old job ends as it ends; the conversion is not its
         await convert_source(context, old_job, **({"convert": convert} if convert else {}))
@@ -310,6 +311,8 @@ async def test_a_job_its_conversion_was_asked_again_without_leaves_it_to_the_new
     async with context.pool.connection() as connection:
         assert await blocks_on_page(connection, conversion_id, 1) == []
     assert counted("kka_conversions_total", engine="pdfplumber", outcome="done") == done_before
+    # a job whose conversion is no longer its counts nothing, as it records nothing
+    assert counted("kka_conversions_total", engine="pdfplumber", outcome="needs_ocr") == refused_before
 
 
 async def test_the_worker_knows_the_conversion(context: JobContext) -> None:
