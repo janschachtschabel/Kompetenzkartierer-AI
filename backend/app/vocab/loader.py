@@ -5,7 +5,9 @@ scheme (``skos:inScheme``) - the levels are ``cur:LevelConcept``, not ``skos:Con
 SKOS core fields become columns; every other statement about a scheme or concept is kept in
 ``properties``, so a new property in the Turtle files needs no migration. A vocabulary the
 tables cannot hold faithfully (a concept in two schemes, two labels in one language, a
-broader concept that does not exist) is refused rather than trimmed.
+broader concept that does not exist) is refused rather than trimmed. The lexicon - the
+sectors' terminology profiles and their cues - is read off the same files (app/vocab/lexicon.py),
+the model folders with their subfolders (a country's cues in profile/laender/).
 """
 
 import hashlib
@@ -24,6 +26,7 @@ from app.vocab.graph import (
     one_per_language,
     other_properties,
 )
+from app.vocab.lexicon import LexicalCue, TerminologyProfile, read_lexicon
 
 __all__ = ["MODEL_DIRS", "Concept", "Scheme", "Vocabulary", "VocabularyError", "read_vocabulary"]
 
@@ -32,7 +35,7 @@ CUR = Namespace("https://w3id.org/wlo/curriculum/core#")
 MODEL_DIRS = ("ontologie", "vokabulare", "profile")
 SCHEME_CLASSES = frozenset({SKOS.ConceptScheme, CUR.CompetencyModel, CUR.LevelScheme, CUR.OperatorList})
 # Raised with every change to what the reader yields, so the same files load anew afterwards
-READER_FORMAT = 1
+READER_FORMAT = 2
 # A relative IRI resolves under this base (.invalid is reserved) and is refused: against the
 # file's own place it would differ from machine to machine
 _RELATIVE_BASE = "https://relative.invalid/"
@@ -69,6 +72,8 @@ class Vocabulary:
     files: dict[str, str]
     schemes: dict[str, Scheme]
     concepts: dict[str, Concept]
+    profiles: dict[str, TerminologyProfile] = field(default_factory=dict)
+    cues: dict[str, LexicalCue] = field(default_factory=dict)
 
 
 def read_vocabulary(root: Path) -> Vocabulary:
@@ -99,7 +104,9 @@ def read_vocabulary(root: Path) -> Vocabulary:
     if not schemes:
         raise VocabularyError(f"no scheme in {root}: is ONTOLOGY_DIR the ontology folder?")
     concepts = _concepts(graph, schemes)
-    return Vocabulary(hashlib.sha256(listing.encode()).hexdigest(), files, schemes, concepts)
+    lexicon = read_lexicon(graph, {iri: concept.scheme for iri, concept in concepts.items()})
+    content_hash = hashlib.sha256(listing.encode()).hexdigest()
+    return Vocabulary(content_hash, files, schemes, concepts, lexicon.profiles, lexicon.cues)
 
 
 def _model_files(root: Path) -> list[Path]:
@@ -107,7 +114,7 @@ def _model_files(root: Path) -> list[Path]:
         raise VocabularyError(f"{root} is no folder: is ONTOLOGY_DIR the ontology folder?")
     paths: list[Path] = []
     for directory in MODEL_DIRS:
-        found = sorted((root / directory).glob("*.ttl"))
+        found = sorted((root / directory).rglob("*.ttl"))
         if not found:
             raise VocabularyError(f"{root / directory} holds no Turtle files: is ONTOLOGY_DIR right?")
         paths.extend(found)

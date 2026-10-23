@@ -97,3 +97,8 @@ plugins = ["pydantic.mypy"]
 # pypdfium2 ships no types; the text layer of a PDF (app/conversion/text_layer.py) reads it
 module = ["pypdfium2", "pypdfium2.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# regex ships no types (types-regex would be one more download); the lexicon's patterns use it
+module = ["regex"]
+ignore_missing_imports = true
