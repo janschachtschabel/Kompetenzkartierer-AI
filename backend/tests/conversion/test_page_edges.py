@@ -593,6 +593,21 @@ def test_a_page_number_alone_just_above_the_foot_s_edge_is_one_where_it_runs_wit
     assert printed == ("1", "2", "3", "4", "5")
 
 
+def test_a_preface_s_page_numbers_just_above_the_foot_s_edge_are_read_however_long_the_document() -> None:
+    # 60 pages: an unnumbered cover, a preface numbered i to iv, the text 1 to 55, each number at 770
+    # to 780: three pages sharing an offset make page numbers past the edge, not a fifth of them
+    labels = [None, "i", "ii", "iii", "iv", *[str(n) for n in range(1, 56)]]
+    pages = document(
+        *[
+            [block(n, "Text", 300)]
+            + ([RawBlock(n, "text", label, (280, 770, 320, 780), 9.0, False, False)] if label else [])
+            for n, label in enumerate(labels, 1)
+        ]
+    )
+
+    assert mark_edges(pages) == tuple(labels)
+
+
 @pytest.mark.parametrize("footed", [(7, 8), (8, 9)], ids=["two-belie", "one-belies"])
 def test_headings_numbered_in_a_row_stay_text_where_the_foot_s_running_numbers_belie_some(
     footed: tuple[int, int],

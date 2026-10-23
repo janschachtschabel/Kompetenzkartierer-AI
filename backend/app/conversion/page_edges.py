@@ -3,11 +3,12 @@
 The edges of a page are its top and bottom 8 %; a text block is in one where the whole of it is,
 or where it begins there, has no more than three lines and ends within 12 % - a running head of
 two lines reaching a little past the edge. A page number alone there counts only where it runs
-with as many pages as a running head stands on (footnotes ending "Seite 12" do not, nor two whose
-references stand as far from their pages); where half a running head's blocks or more reach past
-the edge and no page of theirs has a page number in the foot that runs itself, they are a running
-head of the same text only, never one whose number runs (headings "Lernfeld 1" ... "Lernfeld 5"
-at the top of pages in a row). A paragraph that begins there and runs on below is text.
+with three pages at least, however long the document (footnotes ending "Seite 12" do not, nor two
+whose references stand as far from their pages); where half a running head's blocks or more
+reach past the edge and no page of theirs has a page number in the foot that runs itself, they
+are a running head of the same text only, never one whose number runs (headings "Lernfeld 1" ...
+"Lernfeld 5" at the top of pages in a row). A paragraph that begins there and runs on below is
+text.
 
 A block there is a running head or foot where its text stands in the same edge on at least 3
 pages and a fifth of the document's - the same text, or one whose numbers each stay as they are,
@@ -20,7 +21,8 @@ and captions numbered on pages in a row are no running head or foot beside them.
 foot says otherwise - a misprint, a reference taken for a page number - is left out of that
 count: a running head goes on where at least half its pages agree. Where the foot's page numbers
 run themselves and say otherwise, the page counts against it: it runs where no more pages belie
-it so than the foot's numbers confirm - a misprint in one head, a foot counting two parts from 1.
+it so than the foot's numbers confirm - a misprint in one head, a foot counting a second part
+from 1 no longer than the first.
 
 A block that is a page number alone is one in the foot wherever it stands - a year at the foot of
 a cover only where such a number recurs; in the head where such numbers run with the page on two
@@ -106,7 +108,7 @@ def mark_edges(pages: list[RawPage]) -> tuple[str | None, ...]:
     }
     feet: dict[int, int] = {}  # each page's number in the foot, as it is printed: its offset from the page
     for at in found:
-        if at.edge == "page_footer" and _is_page_number(at, offsets["page_footer"], {}, needed):
+        if at.edge == "page_footer" and _is_page_number(at, offsets["page_footer"], {}):
             feet.setdefault(at.page, _offset(at))
     # the offsets of the foot's page numbers that run themselves
     counting = {offset for offset, shared in Counter(feet.values()).items() if shared >= MIN_RUNNING}
@@ -117,7 +119,7 @@ def mark_edges(pages: list[RawPage]) -> tuple[str | None, ...]:
     alone: dict[tuple[int, Edge], str] = {}  # the page number alone in each edge of a page
     running: dict[tuple[int, Edge], str] = {}  # the number of a running head or foot that runs
     for at in found:
-        is_number = _is_page_number(at, offsets[at.edge], feet, needed)
+        is_number = _is_page_number(at, offsets[at.edge], feet)
         if is_number and at.alone is not None:
             alone.setdefault((at.page, at.edge), at.alone)
         if (place := repeated.get(at)) is not None:
@@ -141,14 +143,14 @@ def _at_edges(page: RawPage) -> list[_AtEdge]:
     return found
 
 
-def _is_page_number(at: _AtEdge, offsets: Counter[int], feet: dict[int, int], needed: float) -> bool:
+def _is_page_number(at: _AtEdge, offsets: Counter[int], feet: dict[int, int]) -> bool:
     """Whether the block is its page's number: in the foot, a year only where it recurs; past the
-    edge where it runs with as many pages as a running head stands on - footnotes there end on a
-    page reference; in the head where it runs and agrees with the foot's."""
+    edge where it runs with three pages at least - footnotes there end on a page reference; in the
+    head where it runs and agrees with the foot's."""
     if at.alone is None:
         return False
     offset = _offset(at)
-    runs = offsets[offset] >= (needed if at.near else MIN_RUNNING)
+    runs = offsets[offset] >= (MIN_REPEATS if at.near else MIN_RUNNING)
     if at.edge == "page_footer":
         return runs if at.near else offset <= YEAR_OFFSET or runs
     return runs and feet.get(at.page, offset) == offset
