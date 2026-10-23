@@ -152,16 +152,27 @@ def test_what_a_run_made_or_found_is_of_the_run_s_document(
         )
 
 
+# A foreign key's index: one that leads with all its columns, or with one of them that is not the
+# document's - "(document_id, id)" finds a document's rows, not those of one run or node
+_UNINDEXED = """
+SELECT c.conrelid::regclass::text, c.conname FROM pg_constraint c
+WHERE c.contype = 'f' AND c.confdeltype IN ('c', 'n') AND NOT EXISTS (
+    SELECT FROM pg_index i, LATERAL (SELECT (i.indkey::int2[])[0:cardinality(c.conkey) - 1] AS lead) AS l
+    WHERE i.indrelid = c.conrelid AND (
+        (l.lead @> c.conkey AND l.lead <@ c.conkey)
+        OR i.indkey[0] IN (
+            SELECT a.attnum FROM pg_attribute a
+            WHERE a.attrelid = c.conrelid AND a.attnum = ANY (c.conkey) AND a.attname <> 'document_id'
+        )
+    )
+)
+ORDER BY 1, 2
+"""
+
+
 def test_what_goes_with_a_row_taken_away_is_found_by_an_index(connection: psycopg.Connection) -> None:
     # a cascade without one reads its whole table for each row taken away: a document's anchors
-    unindexed = connection.execute(
-        "SELECT c.conrelid::regclass::text, c.conname FROM pg_constraint c"
-        " WHERE c.contype = 'f' AND c.confdeltype IN ('c', 'n')"
-        " AND NOT EXISTS (SELECT FROM pg_index i"
-        " WHERE i.indrelid = c.conrelid AND i.indkey[0] = ANY (c.conkey))"
-    ).fetchall()
-
-    assert unindexed == []
+    assert connection.execute(_UNINDEXED).fetchall() == []
 
 
 def test_a_run_s_stage_comes_from_the_core(connection: psycopg.Connection, made: dict[str, Any]) -> None:
