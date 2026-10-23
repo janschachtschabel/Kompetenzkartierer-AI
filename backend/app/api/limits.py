@@ -11,6 +11,8 @@ from app.core.settings import Settings
 from app.db.rate_limits import RateLimited, take
 from app.usage.admission import MODEL_JOB_KINDS, NoBudget, TooManyJobs, admit_model_job
 
+TOO_MANY = "Too many of these for now; try again later."
+
 
 async def within_limit(
     connection: psycopg.AsyncConnection, account_id: UUID, action: str, per_minute: int, code: str
@@ -19,7 +21,8 @@ async def within_limit(
     try:
         await take(connection, account_id, action, per_minute=per_minute)
     except RateLimited as limited:
-        raise _too_many(limited.retry_after_s, code) from None
+        retry = {"Retry-After": str(limited.retry_after_s)}
+        raise Refusal(429, code, TOO_MANY, retry) from None
 
 
 async def admit_model_start(
@@ -42,11 +45,6 @@ async def admit_model_start(
     except NoBudget:
         raise Refusal(403, "no_budget", "This account has no tokens left for the language model.") from None
     except TooManyJobs as refused:
-        raise _too_many(refused.retry_after_s, "too_many_jobs") from None
+        raise Refusal(429, "too_many_jobs", TOO_MANY, {"Retry-After": str(refused.retry_after_s)}) from None
     except RateLimited as limited:
-        raise _too_many(limited.retry_after_s, "too_many_starts") from None
-
-
-def _too_many(retry_after_s: int, code: str) -> Refusal:
-    retry = {"Retry-After": str(retry_after_s)}
-    return Refusal(429, code, "Too many of these for now; try again later.", retry)
+        raise Refusal(429, "too_many_starts", TOO_MANY, {"Retry-After": str(limited.retry_after_s)}) from None
