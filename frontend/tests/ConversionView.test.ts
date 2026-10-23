@@ -314,6 +314,18 @@ describe("an entry's blocks", () => {
     expect(document.title).toContain(t("conversionPage.tabTitle", { title: "Rheinland-Pfalz · Physik · Gymnasium", page: 3 }));
   });
 
+  it("read no page of the address they are left for, nor name its tab", async () => {
+    // a leaving transition keeps the page mounted under the next page's address
+    await open({ seite: "2" });
+    vi.mocked(api.getBlocks).mockClear();
+
+    await router.push({ name: "sources" });
+    await flushPromises();
+
+    expect(api.getBlocks).not.toHaveBeenCalled();
+    expect(document.title).toBe(`${t("app.titles.sources")} · ${t("app.title")}`);
+  });
+
   it("lead back to the entry's page", async () => {
     const wrapper = await open();
 

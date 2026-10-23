@@ -34,7 +34,13 @@ function pageOf(value: unknown): number {
   return Math.max(page, 1);
 }
 
-const page = computed(() => pageOf(route.query[PAGE_PARAM]));
+// Only under the route the page was mounted at: a leaving transition keeps it mounted under the
+// next page's address, whose query is no page of this one - read, it asked for blocks and named
+// the next page's tab after this one (SourcesView keeps its filter the same way).
+const ownRoute = route.name;
+const page = computed<number>((before) =>
+  route.name === ownRoute ? pageOf(route.query[PAGE_PARAM]) : (before ?? 1),
+);
 
 /** Why no page can show: no such entry, a file for the editors alone, no blocks yet. */
 interface Blocked {
