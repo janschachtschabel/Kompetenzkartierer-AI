@@ -9,21 +9,28 @@ broader concept that does not exist) is refused rather than trimmed.
 """
 
 import hashlib
-import json
 from collections import defaultdict
-from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from rdflib import RDF, Graph, Literal, Namespace, URIRef
 from rdflib.namespace import SKOS, XSD
-from rdflib.term import Node
+
+from app.vocab.graph import (
+    Properties,
+    VocabularyError,
+    all_per_language,
+    iris,
+    one_per_language,
+    other_properties,
+)
+
+__all__ = ["MODEL_DIRS", "Concept", "Scheme", "Vocabulary", "VocabularyError", "read_vocabulary"]
 
 CUR = Namespace("https://w3id.org/wlo/curriculum/core#")
 # The folders pruefe.py reads as the model; examples and research material stay out
 MODEL_DIRS = ("ontologie", "vokabulare", "profile")
 SCHEME_CLASSES = frozenset({SKOS.ConceptScheme, CUR.CompetencyModel, CUR.LevelScheme, CUR.OperatorList})
-NO_LANGUAGE = "und"  # BCP 47 for "undetermined"
 # Raised with every change to what the reader yields, so the same files load anew afterwards
 READER_FORMAT = 1
 # A relative IRI resolves under this base (.invalid is reserved) and is refused: against the
@@ -33,12 +40,6 @@ _SCHEME_COLUMNS = frozenset({RDF.type, SKOS.prefLabel})
 _CONCEPT_COLUMNS = frozenset(
     {RDF.type, SKOS.inScheme, SKOS.prefLabel, SKOS.altLabel, SKOS.notation, SKOS.definition, SKOS.broader}
 )
-
-Properties = dict[str, list[dict[str, str]]]
-
-
-class VocabularyError(Exception):
-    """The Turtle files hold something the vocabulary tables cannot represent as it is."""
 
 
 @dataclass(frozen=True)
@@ -126,9 +127,9 @@ def _refuse_relative_iris(graph: Graph) -> None:
 def _scheme(graph: Graph, iri: URIRef) -> Scheme:
     return Scheme(
         iri=str(iri),
-        types=_iris(graph.objects(iri, RDF.type)),
-        pref_labels=_one_per_language(graph, iri, SKOS.prefLabel),
-        properties=_properties(graph, iri, _SCHEME_COLUMNS),
+        types=iris(graph.objects(iri, RDF.type)),
+        pref_labels=one_per_language(graph, iri, SKOS.prefLabel),
+        properties=other_properties(graph, iri, _SCHEME_COLUMNS),
     )
 
 
@@ -149,13 +150,13 @@ def _concepts(graph: Graph, schemes: dict[str, Scheme]) -> dict[str, Concept]:
         concepts[str(iri)] = Concept(
             iri=str(iri),
             scheme=members[iri][0],
-            types=_iris(graph.objects(iri, RDF.type)),
+            types=iris(graph.objects(iri, RDF.type)),
             notation=_notation(graph, iri),
-            pref_labels=_one_per_language(graph, iri, SKOS.prefLabel),
-            alt_labels=_all_per_language(graph, iri, SKOS.altLabel),
-            definitions=_one_per_language(graph, iri, SKOS.definition),
+            pref_labels=one_per_language(graph, iri, SKOS.prefLabel),
+            alt_labels=all_per_language(graph, iri, SKOS.altLabel),
+            definitions=one_per_language(graph, iri, SKOS.definition),
             broader=_broader(graph, iri),
-            properties=_properties(graph, iri, _CONCEPT_COLUMNS),
+            properties=other_properties(graph, iri, _CONCEPT_COLUMNS),
         )
     _check_links(concepts)
     return concepts
@@ -192,52 +193,4 @@ def _broader(graph: Graph, iri: URIRef) -> list[str]:
     values = list(graph.objects(iri, SKOS.broader))
     if any(not isinstance(value, URIRef) for value in values):
         raise VocabularyError(f"{iri}: broader must name a concept by its IRI")
-    return _iris(values)
-
-
-def _iris(nodes: Iterable[Node]) -> list[str]:
-    return sorted(str(node) for node in nodes if isinstance(node, URIRef))
-
-
-def _all_per_language(graph: Graph, iri: URIRef, predicate: URIRef) -> dict[str, list[str]]:
-    texts: dict[str, list[str]] = defaultdict(list)
-    for value in graph.objects(iri, predicate):
-        if not isinstance(value, Literal):
-            name = predicate.split("#")[-1]
-            raise VocabularyError(f"{iri} {name}: text belongs here, not {value!r}")
-        # BCP 47 tags ignore case: "de" and "DE" are one language
-        texts[(value.language or NO_LANGUAGE).lower()].append(str(value))
-    return {language: sorted(values) for language, values in sorted(texts.items())}
-
-
-def _one_per_language(graph: Graph, iri: URIRef, predicate: URIRef) -> dict[str, str]:
-    texts = _all_per_language(graph, iri, predicate)
-    for language, values in texts.items():
-        if len(values) > 1:
-            name = predicate.split("#")[-1]
-            raise VocabularyError(f"{iri} has more than one {name} in language {language}: {values}")
-    return {language: values[0] for language, values in texts.items()}
-
-
-def _properties(graph: Graph, iri: URIRef, columns: frozenset[URIRef]) -> Properties:
-    found: dict[str, list[dict[str, str]]] = defaultdict(list)
-    for predicate, value in graph.predicate_objects(iri):
-        if predicate not in columns:
-            found[str(predicate)].append(_value(iri, predicate, value))
-    return {
-        predicate: sorted(values, key=lambda value: json.dumps(value, sort_keys=True))
-        for predicate, values in sorted(found.items())
-    }
-
-
-def _value(iri: URIRef, predicate: Node, value: Node) -> dict[str, str]:
-    if isinstance(value, URIRef):
-        return {"iri": str(value)}
-    if isinstance(value, Literal):
-        literal = {"value": str(value)}
-        if value.language:
-            literal["lang"] = value.language.lower()  # as in the label columns: tags ignore case
-        elif value.datatype is not None:
-            literal["datatype"] = str(value.datatype)
-        return literal
-    raise VocabularyError(f"{iri} {predicate}: a blank node has no place in the vocabulary tables")
+    return iris(values)
