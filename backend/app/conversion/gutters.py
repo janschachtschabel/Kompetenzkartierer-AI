@@ -20,7 +20,6 @@ the next: where a page holds a single line or two in a second column, nothing pa
 from bisect import bisect_left, insort
 from dataclasses import dataclass
 from itertools import pairwise
-from statistics import median
 
 from app.conversion.layout import Word
 
@@ -70,8 +69,13 @@ def parts_of(rows: list[list[Word]]) -> list[list[list[Word]]]:
     parted: list[list[list[Word]]] = []
     for index, (row, found) in enumerate(zip(rows, gaps, strict=True)):
         spaces = [word.x0 - before.x1 for before, word in pairwise(row)]
+        ordered = sorted(spaces)  # once a row: each gap crossing a strip asks for the others' median
         # the words behind a gutter, by identity: a word printed twice over, to look bold, has a twin
-        behind = {id(gap.after) for gap in found if any(strip.parts(gap, index, spaces) for strip in strips)}
+        behind = {
+            id(gap.after)
+            for gap in found
+            if any(strip.parts(gap, index, spaces, ordered) for strip in strips)
+        }
         parts: list[list[Word]] = [[]]
         for word in row:
             if parts[-1] and (_far_apart(parts[-1][-1], word) or id(word) in behind):
@@ -89,11 +93,11 @@ class _Strip:
     right: float  # where the column begins
     rows: list[int]  # by their place on the page, in order
 
-    def parts(self, gap: _Gap, row: int, spaces: list[float]) -> bool:
+    def parts(self, gap: _Gap, row: int, spaces: list[float], ordered: list[float]) -> bool:
         """Whether ``gap``, the ``gap.at``th of the spaces of the ``row``th row, parts it here: where
         it crosses the strip in a row next to one that stands in it, or, further off, where it is
         twice as wide as the row's other spaces are as a rule - justified text across the page
-        below the columns spreads its spaces alike."""
+        below the columns spreads its spaces alike. ``ordered``: the row's spaces, sorted."""
         if not (gap.before.x1 < self.right and gap.after.x0 > self.left):
             return False
         place = bisect_left(self.rows, row)
@@ -101,8 +105,20 @@ class _Strip:
             abs(self.rows[at] - row) <= GUTTER_NEAR for at in (place - 1, place) if 0 <= at < len(self.rows)
         ):
             return True
-        others = [space for at, space in enumerate(spaces) if at != gap.at]
-        return bool(others) and spaces[gap.at] >= GUTTER_WIDEST * median(others)
+        wide = spaces[gap.at]
+        return len(spaces) > 1 and wide >= GUTTER_WIDEST * _median_without(ordered, wide)
+
+
+def _median_without(ordered: list[float], value: float) -> float:
+    """The median of the sorted ``ordered`` with one ``value`` of it taken out, read off by place."""
+    gone = bisect_left(ordered, value)
+    left = len(ordered) - 1
+
+    def at(place: int) -> float:
+        return ordered[place + (place >= gone)]
+
+    middle = left // 2
+    return at(middle) if left % 2 else (at(middle - 1) + at(middle)) / 2
 
 
 def _strips(gutters: list[tuple[int, _Gap]]) -> list[_Strip]:
