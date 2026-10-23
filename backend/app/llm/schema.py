@@ -40,11 +40,14 @@ _TYPES: dict[str, tuple[str, Any]] = {
     "object": ("an object", lambda value: isinstance(value, dict)),
     "array": ("an array", lambda value: isinstance(value, list)),
     "string": ("a string", lambda value: isinstance(value, str)),
+    # a whole number written as one: 3.0 is asked again, as the stages take an int
     "integer": ("an integer", lambda value: isinstance(value, int) and not isinstance(value, bool)),
     "number": ("a number", lambda value: isinstance(value, int | float) and not isinstance(value, bool)),
     "boolean": ("a boolean", lambda value: isinstance(value, bool)),
     "null": ("null", lambda value: value is None),
 }
+# The types it has a test for; additionalProperties it checks as false only, items as one schema
+KNOWN_TYPES = frozenset(_TYPES)
 
 
 def load_schema(directory: Path, name: str) -> dict[str, Any]:

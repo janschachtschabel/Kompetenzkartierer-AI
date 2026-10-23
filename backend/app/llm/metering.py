@@ -54,7 +54,8 @@ class Spent:
 
 class Meter(Protocol):
     """Reserves a request's tokens before it is sent, books what it spent after; ``reserve``
-    raises BudgetExhausted where the budget does not hold them."""
+    raises BudgetExhausted where the budget does not hold them. ``book`` may be asked again for
+    a reservation whose booking failed or was cancelled, and takes a reservation once."""
 
     async def reserve(self, input_tokens: int, output_tokens: int) -> Any: ...
 

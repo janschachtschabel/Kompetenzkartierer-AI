@@ -4,7 +4,9 @@ of what a stage was told, and of what it cost - each answer carries its usage.
 Kept in the object store under ``runs/<run-id>/<stage>/<n>.json``, numbered from 1 in the order
 the answers came. The store cannot list, so each number is the next one free after the last this
 keeper took: a job asked again after a crash goes on behind what its run kept, and writes over
-nothing, gaps and all. Written off the event loop, as the store is synchronous.
+nothing, gaps and all. That holds for one keeper of a run and stage at a time: two side by side
+could take one number, so a run is one attempt of a job (plan M1, Nachtrag 5.3). Written off the
+event loop, as the store is synchronous.
 """
 
 import asyncio

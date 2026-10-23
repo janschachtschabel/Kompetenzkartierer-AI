@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 
 from app.core.settings import REPOSITORY_ONTOLOGY
-from app.llm.schema import KNOWN_KEYWORDS, SCHEMA_DIR, load_schema, schema_errors
+from app.llm.schema import KNOWN_KEYWORDS, KNOWN_TYPES, SCHEMA_DIR, load_schema, schema_errors
 
 SCHEMAS = REPOSITORY_ONTOLOGY / SCHEMA_DIR
 SCHEMA = {
@@ -89,6 +89,33 @@ def test_every_keyword_the_ontology_s_schemas_use_is_one_the_check_knows(path: P
     walk(json.loads(path.read_text(encoding="utf-8")))
 
     assert used <= KNOWN_KEYWORDS, sorted(used - KNOWN_KEYWORDS)
+
+
+@pytest.mark.parametrize("path", sorted(SCHEMAS.glob("*.schema.json")), ids=lambda path: path.name)
+def test_every_form_the_ontology_s_schemas_give_a_keyword_is_one_the_check_knows(path: Path) -> None:
+    # additionalProperties as a schema or true, items as a list, a type it has no test for: the
+    # check would pass them over or fail on them in the middle of a paid run
+    unknown: list[str] = []
+
+    def walk(node: dict[str, Any], where: str) -> None:
+        kinds = node.get("type", [])
+        unknown.extend(
+            f"{where}: type {kind}"
+            for kind in ([kinds] if isinstance(kinds, str) else kinds)
+            if kind not in KNOWN_TYPES
+        )
+        if node.get("additionalProperties", False) is not False:
+            unknown.append(f"{where}: additionalProperties other than false")
+        if "items" in node and not isinstance(node["items"], dict):
+            unknown.append(f"{where}: items other than one schema")
+        for name, each in node.get("properties", {}).items():
+            walk(each, f"{where}.{name}")
+        if isinstance(node.get("items"), dict):
+            walk(node["items"], f"{where}[]")
+
+    walk(json.loads(path.read_text(encoding="utf-8")), "$")
+
+    assert unknown == []
 
 
 def test_a_stage_s_schema_is_read_by_its_name() -> None:
