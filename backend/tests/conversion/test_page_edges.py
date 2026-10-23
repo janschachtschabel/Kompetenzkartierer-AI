@@ -39,6 +39,10 @@ def kinds(pages: list[RawPage]) -> list[list[str]]:
         ("Lernfeld 5", None),
         ("Die Lernenden planen 5 Schritte.", None),
         ("Inhalt", None),
+        # Roman numerals in one case only: "Li" is a word
+        ("XII", "XII"),
+        ("Li", None),
+        ("xIi", None),
     ],
 )
 def test_a_page_number_is_read_off_a_line_that_is_one(text: str, number: str | None) -> None:
@@ -74,6 +78,95 @@ def test_a_heading_at_the_top_of_a_few_pages_of_many_stays_text() -> None:
     mark_edges(pages)
 
     assert all(found.kind == "text" for page in pages[:3] for found in page.blocks)
+
+
+def test_headings_whose_numbers_do_not_run_with_the_page_stay_text() -> None:
+    # "Lernfeld 1" ... "Lernfeld 5" at the top of every other page of 10
+    pages = document(
+        *[
+            [
+                block(n, f"Lernfeld {n // 2 + 1}", 40) if n % 2 else block(n, "Fortsetzung", 400),
+                block(n, "Text", 300),
+            ]
+            for n in range(1, 11)
+        ]
+    )
+
+    mark_edges(pages)
+
+    assert all(found.kind == "text" for page in pages for found in page.blocks)
+
+
+def test_a_block_that_reaches_out_of_an_edge_is_none_of_it() -> None:
+    # on 3 pages each: a paragraph that begins in the top edge (67 points), one that ends in the foot's
+    pages = document(
+        *[
+            [
+                RawBlock(
+                    n, "text", "Kompetenzen\nDie Lernenden planen.", (56, 60, 500, 400), 11.0, False, False
+                ),
+                RawBlock(n, "text", "Hinweis", (56, 500, 500, 780), 11.0, False, False),
+            ]
+            for n in range(1, 4)
+        ]
+    )
+
+    mark_edges(pages)
+
+    assert kinds(pages) == [["text", "text"]] * 3
+
+
+def test_a_number_alone_at_the_top_of_one_page_is_a_chapter_s_and_stays_text() -> None:
+    pages = document([block(1, "2", 50), block(1, "Unterrichtsgestaltung", 90), block(1, "- 14 -", 815)])
+
+    printed = mark_edges(pages)
+
+    assert kinds(pages) == [["text", "text", "page_footer"]]
+    assert printed == ("14",)
+
+
+def test_numbers_alone_at_the_top_that_run_with_the_pages_are_their_numbers() -> None:
+    # three pages unnumbered, a preface numbered iv, v, the text 1, 2: the number less the page is
+    # the same on two pages, and again on two
+    labels = [None, None, None, "iv", "v", "1", "2"]
+    pages = document(
+        *[
+            [block(n, "Text", 300)] + ([block(n, label, 30)] if label else [])
+            for n, label in enumerate(labels, 1)
+        ]
+    )
+
+    printed = mark_edges(pages)
+
+    assert printed == tuple(labels)
+    assert kinds(pages) == [["text"]] * 3 + [["text", "page_header"]] * 4
+
+
+@pytest.mark.parametrize(
+    ("running", "edge", "top"),
+    [("Rahmenlehrplan Mechatronik {}", "page_header", 30), ("{} | Rahmenlehrplan", "page_footer", 815)],
+    ids=["head", "foot"],
+)
+def test_a_running_title_carries_the_page_s_number_where_one_of_its_numbers_runs_with_the_page(
+    running: str, edge: str, top: float
+) -> None:
+    pages = document(*[[block(n, running.format(n + 4), top), block(n, "Text", 300)] for n in range(1, 5)])
+
+    printed = mark_edges(pages)
+
+    assert printed == ("5", "6", "7", "8")
+    assert kinds(pages) == [[edge, "text"]] * 4
+
+
+def test_a_page_number_alone_in_the_foot_goes_before_the_running_title_s() -> None:
+    pages = document(
+        *[
+            [block(n, f"Rahmenlehrplan {n + 4}", 30), block(n, "Text", 300), block(n, f"- {n} -", 815)]
+            for n in range(1, 4)
+        ]
+    )
+
+    assert mark_edges(pages) == ("1", "2", "3")
 
 
 def test_a_page_number_in_the_foot_is_marked_and_printed_where_it_stands_alone() -> None:
