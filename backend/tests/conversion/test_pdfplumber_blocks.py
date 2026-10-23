@@ -9,9 +9,10 @@ import pytest
 from app.conversion import pdfplumber_blocks
 from app.conversion.base import Conversion, engine
 from app.conversion.text_layer import UnreadablePdf
-from tests.conversion.raw_pdf import HELVETICA, SENTENCE, pdf_of, stream
+from tests.conversion.raw_pdf import HELVETICA, SENTENCE, pages_pdf, pdf_of, stream
 
 FIXTURES = Path(__file__).parent / "fixtures"
+SENTENCE_READ = "Die Lernenden planen und pruefen ihre Arbeit sorgfaeltig."
 
 
 def converted(name: str) -> Conversion:
@@ -110,6 +111,40 @@ def test_signs_no_store_keeps_leave_the_text_and_the_conversion_goes_as_json(
     if target == b"0000":
         assert mapped == "xx Wort"  # the word of nothing but them goes
     assert Conversion.model_validate_json(conversion.model_dump_json()) == conversion
+
+
+@pytest.mark.parametrize(
+    ("dropped", "reason", "words"),
+    [
+        # set upwards in the margin: pdfplumber reads it as splinters ("dna", "6202")
+        (b"BT /F1 9 Tf 0 1 -1 0 30 300 Tm (Entwurf Stand Oktober 2026) Tj ET\n", "vertical", 16),
+        (
+            b"BT /F1 11 Tf -300 -50 Td (Ausserhalb links unten) Tj ET\n"
+            b"BT /F1 11 Tf 72 900 Td (Ausserhalb oben) Tj ET\n",
+            "off_page",
+            5,
+        ),
+        (
+            b"BT /F1 0 Tf 72 500 Td (Nullgroesse Text hier) Tj ET\n"
+            b"BT /F1 0.5 Tf 72 400 Td (Halbpunkt Text) Tj ET\n",
+            "tiny",
+            5,
+        ),
+    ],
+    ids=["vertical", "off_page", "tiny"],
+)
+def test_text_no_reader_reads_where_it_stands_is_dropped_and_counted_by_its_pages(
+    tmp_path: Path, dropped: bytes, reason: str, words: int
+) -> None:
+    path = tmp_path / "lehrplan.pdf"
+    path.write_bytes(pages_pdf([SENTENCE + dropped, SENTENCE, SENTENCE + dropped]))
+
+    conversion = engine("pdfplumber").convert(path)
+
+    assert {block.text for block in conversion.blocks} == {SENTENCE_READ}
+    assert [(finding.code, finding.params) for finding in conversion.findings] == [
+        ("text_dropped", {"reason": reason, "count": 2 * words, "pages": [1, 3]})
+    ]
 
 
 def broken(*args: object, **kwargs: object) -> object:

@@ -9,7 +9,8 @@ the page it begins; each cell keeps the page it stands on.
 
 Headers and footers are marked (``page_header``, ``page_footer``), not dropped; the printed page
 number goes beside the physical page. What the conversion noticed about the text - symbols it
-could not map, a text layer that looks broken - goes with it as findings.
+could not map, a text layer that looks broken, words it dropped since no reader reads them where
+they stand - goes with it as findings.
 
 The models travel as JSON from the child process that converts (app/conversion/runners.py).
 The engines are named here and imported only when asked for: the API never loads a PDF library.
@@ -27,7 +28,10 @@ CELL_ID = re.compile(r"T([0-9]+):r([0-9]+)c([0-9]+)")
 _UNSTORABLE = re.compile(f"[{chr(0)}{chr(0xD800)}-{chr(0xDFFF)}]")
 BlockKind = Literal["text", "table", "page_header", "page_footer"]
 EngineName = Literal["pdfplumber"]  # the engines offered, for the API's schema (a test compares)
-FindingCode = Literal["unmapped_symbol", "encoding_suspect"]
+FindingCode = Literal["unmapped_symbol", "encoding_suspect", "text_dropped"]
+# Why an engine dropped a word (text_dropped), in the order the findings say them: set upright or
+# rotated, outside the page, smaller than a reader reads
+DropReason = Literal["vertical", "off_page", "tiny"]
 # Each engine by the class that converts with it, imported when first asked for
 _ENGINES = {"pdfplumber": "app.conversion.pdfplumber_blocks:PdfplumberEngine"}
 

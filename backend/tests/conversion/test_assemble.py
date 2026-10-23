@@ -1,6 +1,8 @@
 """The pages as an engine read them become a conversion: blocks in reading order with their names
 (plan M1, 3.2)."""
 
+from collections import Counter
+
 from app.conversion.assemble import assemble
 from app.conversion.base import Conversion
 from app.conversion.layout import RawBlock, RawCell, RawPage
@@ -79,6 +81,21 @@ def test_a_page_of_nothing_is_a_page_still() -> None:
 
     assert conversion.pages == 2
     assert len(conversion.printed_pages) == 2
+
+
+def test_the_text_an_engine_dropped_is_a_finding_for_each_reason_with_its_words_and_pages() -> None:
+    pages = [
+        RawPage(1, 842.0, [text(1, "Deckblatt", 100)], dropped=Counter({"tiny": 2, "vertical": 1})),
+        RawPage(2, 842.0, [text(2, "Inhalt", 100)]),
+        RawPage(3, 842.0, [], dropped=Counter({"tiny": 1})),
+    ]
+
+    conversion = assemble(pages, engine="pdfplumber", version="0.11.10")
+
+    assert [(finding.code, finding.params) for finding in conversion.findings] == [
+        ("text_dropped", {"reason": "vertical", "count": 1, "pages": [1]}),
+        ("text_dropped", {"reason": "tiny", "count": 3, "pages": [1, 3]}),
+    ]
 
 
 def test_a_conversion_shows_the_symbols_mapped_and_carries_the_findings() -> None:
