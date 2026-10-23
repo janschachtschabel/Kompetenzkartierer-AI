@@ -18,6 +18,10 @@ PREF = "https://w3id.org/wlo/curriculum/vocab#role_pref"
 NEGATIVE = "https://w3id.org/wlo/curriculum/vocab#role_negative"
 HOMONYM = "https://w3id.org/wlo/curriculum/vocab#role_homonym"
 TERM = "https://w3id.org/wlo/curriculum/vocab#ck_term"
+HEADING = "https://w3id.org/wlo/curriculum/vocab#ck_headingPattern"
+LAYOUT = "https://w3id.org/wlo/curriculum/vocab#ck_layout"
+BOLD = "https://w3id.org/wlo/curriculum/vocab#mark_bold"
+ITALIC = "https://w3id.org/wlo/curriculum/vocab#mark_italic"
 
 
 def cue(name: str, *, form: str | None = "Kernlehrplan", target: str = "dt-Lehrplan", **changes: Any) -> Cue:
@@ -189,6 +193,23 @@ def test_cues_of_a_pattern_and_a_word_alike_do_not_compete() -> None:
     ]
 
     assert active(cues) == {"word": False, "pattern": False}
+
+
+def test_cues_on_one_word_of_two_kinds_do_not_compete() -> None:
+    cues = [cue("term", strength=0.9), cue("heading", kind=HEADING, strength=0.5, target="dt-Rahmenplan")]
+
+    assert active(cues) == {"term": False, "heading": False}
+
+
+def test_cues_on_one_layout_signal_compete_and_on_another_do_not() -> None:
+    layout: dict[str, Any] = {"form": None, "kind": LAYOUT}
+    cues = [
+        cue("bold", layout_signal=BOLD, strength=0.9, **layout),
+        cue("weaker", layout_signal=BOLD, strength=0.5, target="dt-Rahmenplan", **layout),
+        cue("italic", layout_signal=ITALIC, strength=0.5, target="dt-Rahmenplan", **layout),
+    ]
+
+    assert active(cues) == {"bold": False, "italic": False}
 
 
 def test_a_pattern_is_searched_in_a_text() -> None:
