@@ -23,7 +23,7 @@ from app.api.deps import principal, require_account
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.api.limits import within_limit
 from app.api.source_content import content_row
-from app.conversion.base import Block, EngineName
+from app.conversion.base import Block, Cell, EngineName
 from app.conversion.job import KIND
 from app.core.auth import Principal
 from app.core.ids import new_id
@@ -36,6 +36,7 @@ from app.db.conversions import (
     conversion_for,
     lock_conversion,
     start_conversion,
+    tables_running_onto,
 )
 from app.jobs.queue import account_lane, enqueue
 
@@ -73,10 +74,20 @@ class ConversionRequest(BaseModel):
     engine: EngineName = "pdfplumber"
 
 
+class ContinuedOut(BaseModel):
+    """A table begun on an earlier page and running on to this one: its block's ID, the page it
+    begins on, and its cells on this page - a table joined over pages is one block, on its first."""
+
+    id: str
+    page: int
+    cells: list[Cell]
+
+
 class PageOut(BaseModel):
     page: int
     printed_page: str | None
     blocks: list[Block]
+    continued: list[ContinuedOut]
 
 
 CONTENT_REFUSALS: dict[int | str, dict[str, Any]] = {
@@ -192,7 +203,11 @@ async def get_blocks(
         if page > state.pages:
             raise Refusal(404, "no_such_page", f"The file has {state.pages} pages.")
         blocks = await blocks_on_page(connection, state.id, page)
-    return PageOut(page=page, printed_page=state.printed_pages[page - 1], blocks=blocks)
+        running = await tables_running_onto(connection, state.id, page)
+    continued = [
+        ContinuedOut(id=table.block_id, page=table.page, cells=list(table.cells)) for table in running
+    ]
+    return PageOut(page=page, printed_page=state.printed_pages[page - 1], blocks=blocks, continued=continued)
 
 
 async def _conversion(

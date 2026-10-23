@@ -75,6 +75,16 @@ _BLOCKS = """
     SELECT block_id, page, kind, text, x0, top, x1, bottom, font_size, bold, italic, cells
     FROM document_block WHERE conversion_id = %s AND page = %s ORDER BY seq
 """
+# A table joined over a page break is one block, on its first page; a later page holds its cells
+_RUNNING_ON = """
+    SELECT block_id, page,
+        jsonb_path_query_array(cells, '$[*] ? (@.page == $page)', jsonb_build_object('page', %(page)s::int))
+            AS cells
+    FROM document_block
+    WHERE conversion_id = %(conversion)s AND kind = 'table' AND page < %(page)s
+        AND cells @> jsonb_build_array(jsonb_build_object('page', %(page)s::int))
+    ORDER BY seq
+"""
 
 
 @dataclass(frozen=True)
@@ -218,6 +228,26 @@ async def blocks_on_page(connection: psycopg.AsyncConnection, conversion_id: UUI
             italic=row["italic"],
             cells=tuple(Cell.model_validate(cell) for cell in row["cells"] or ()),
         )
+        for row in await cursor.fetchall()
+    ]
+
+
+@dataclass(frozen=True)
+class RunningOn:
+    """A table begun on an earlier page, with its cells on this one."""
+
+    block_id: str
+    page: int  # where it begins
+    cells: tuple[Cell, ...]
+
+
+async def tables_running_onto(
+    connection: psycopg.AsyncConnection, conversion_id: UUID, page: int
+) -> list[RunningOn]:
+    cursor = connection.cursor(row_factory=dict_row)
+    await cursor.execute(_RUNNING_ON, {"conversion": conversion_id, "page": page})
+    return [
+        RunningOn(row["block_id"], row["page"], tuple(Cell.model_validate(cell) for cell in row["cells"]))
         for row in await cursor.fetchall()
     ]
 

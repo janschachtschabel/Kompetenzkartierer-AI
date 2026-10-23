@@ -58,6 +58,8 @@ CREATE TABLE document_block (
     CHECK (kind <> 'table' OR CASE WHEN jsonb_typeof(cells) = 'array' THEN jsonb_array_length(cells) >= 1 END)
 );
 CREATE INDEX document_block_page ON document_block (conversion_id, page, seq);
+-- the tables a page's table cells run on from (app/db/conversions.py, _RUNNING_ON)
+CREATE INDEX document_block_table ON document_block (conversion_id, page) WHERE kind = 'table';
 
 -- The pages a conversion booked, once: a job run again books nothing more. Billable only for an
 -- engine that costs (pdfplumber does not); quotas follow with the accounting (plan M1, 5)

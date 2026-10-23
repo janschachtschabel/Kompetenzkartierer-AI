@@ -184,6 +184,31 @@ def test_a_conversion_done_is_read_page_by_page(
     assert (asked_again.status_code, asked_again.json()["status"]) == (200, "done")
 
 
+def test_a_page_a_table_runs_on_to_names_that_table_with_the_cells_on_it(
+    client: TestClient, migrated: str, tmp_path: Path, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    # tables.pdf: the table p1-b4 runs on to page 2, p3-b1 to page 4, which holds nothing else
+    _, header = owner
+    source_id = upload(client, header, (FIXTURES / "tables.pdf").read_bytes())
+    client.post(f"/api/v1/sources/{source_id}/conversions", headers=header)
+    run_the_job(migrated, tmp_path)
+
+    pages = [
+        client.get(
+            f"/api/v1/sources/{source_id}/conversion/blocks", params={"page": page}, headers=header
+        ).json()
+        for page in (1, 2, 4)
+    ]
+
+    assert pages[0]["continued"] == []
+    assert [block["id"] for block in pages[1]["blocks"]] == ["p2-b1"]
+    for page, number, table in ((pages[1], 2, "p1-b4"), (pages[2], 4, "p3-b1")):
+        (continued,) = page["continued"]
+        assert (continued["id"], continued["page"]) == (table, int(table[1]))
+        assert continued["cells"] and {cell["page"] for cell in continued["cells"]} == {number}
+    assert pages[2]["blocks"] == []
+
+
 def test_before_any_conversion_and_before_it_is_done_the_entry_says_so(
     client: TestClient, owner: tuple[UUID, dict[str, str]]
 ) -> None:
