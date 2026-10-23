@@ -17,6 +17,7 @@ from tests.db.l1 import (
     add_entity,
     add_node,
     add_run,
+    add_specification,
     add_statement,
     seed_vocabulary,
 )
@@ -31,6 +32,8 @@ TABLES = (
     "anchor_block",
     "extraction_run",
     "validation_finding",
+    "specification",
+    "variant",
 )
 
 
@@ -77,6 +80,12 @@ def fill(connection: psycopg.Connection, made: dict[str, Any]) -> dict[str, uuid
         "INSERT INTO validation_finding (id, document_id, run_id, rule, severity, focus_id, message)"
         " VALUES (gen_random_uuid(), %s, %s, 'rule', 'warning', %s, 'Hinweis')",
         (document, run, statement),
+    )
+    specification = add_specification(connection, document)
+    connection.execute(
+        "INSERT INTO variant (id, specification_id, key, label, variant_kind_scheme, variant_kind_iri)"
+        " VALUES (%s, %s, 'v1', 'Gymnasium', %s, %s)",
+        (add_entity(connection, "variant"), specification, CV + "VariantKinds", CV + "var_track"),
     )
     return {"run": run, "node": node, "statement": statement}
 

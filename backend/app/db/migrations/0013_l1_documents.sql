@@ -110,28 +110,25 @@ CREATE TABLE document_profile (
 );
 
 -- What a document stands for (cur:represents): a curriculum, a competency framework, a
--- qualification or an assessment (the kinds X1 names, app/domain/l1.py); a document names each
--- of its own by a key of its own. Placements over many documents follow in M2/M3
+-- qualification or an assessment (the kinds X1 names, app/domain/l1.py), named by a key of the
+-- document's own. It is the document's and goes with it: one specification over many documents
+-- comes with the placements of M2/M3
 CREATE TABLE specification (
     id uuid PRIMARY KEY,
     kind text NOT NULL DEFAULT 'specification' CHECK (kind = 'specification'),
+    document_id uuid NOT NULL REFERENCES document (id) ON DELETE CASCADE,
+    key text NOT NULL CHECK (has_text(key) AND length(key) <= 100),
     spec_kind text NOT NULL CHECK (spec_kind IN (
         'curriculum', 'competencyFramework', 'qualificationSpecification', 'assessmentSpecification'
     )),
     title text NOT NULL CHECK (has_text(title) AND length(title) <= 1000),
     field_text text CHECK (length(field_text) <= 2000),  -- the subject or field, as written
     applicability jsonb NOT NULL DEFAULT '{}' CHECK (jsonb_typeof(applicability) = 'object'),
+    UNIQUE (document_id, key),
+    -- anchors name a specification with its document, so they name one of that document (0015)
+    UNIQUE (document_id, id),
     FOREIGN KEY (id, kind) REFERENCES entity (id, kind)
 );
-
-CREATE TABLE document_specification (
-    document_id uuid NOT NULL REFERENCES document (id) ON DELETE CASCADE,
-    specification_id uuid NOT NULL REFERENCES specification (id),
-    key text NOT NULL CHECK (has_text(key) AND length(key) <= 100),
-    PRIMARY KEY (document_id, specification_id),
-    UNIQUE (document_id, key)
-);
-CREATE INDEX document_specification_of ON document_specification (specification_id);
 
 CREATE TABLE variant (
     id uuid PRIMARY KEY,

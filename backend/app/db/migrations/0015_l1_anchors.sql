@@ -31,8 +31,9 @@ CREATE TABLE frame_part (
 );
 CREATE INDEX frame_part_of_run ON frame_part (run_id) WHERE run_id IS NOT NULL;
 
--- An anchor (cur:SourceAnchor) of one node, statement or frame part of its document. It names the
--- document with the document's conversion, so its blocks are that conversion's
+-- An anchor (cur:SourceAnchor) of one node, statement, frame part or specification of its
+-- document - or, naming none, of the document itself: where X1 read its title or dates. It names
+-- the document with the document's conversion, so its blocks are that conversion's
 CREATE TABLE anchor (
     id uuid PRIMARY KEY,
     kind text NOT NULL DEFAULT 'anchor' CHECK (kind = 'anchor'),
@@ -41,6 +42,7 @@ CREATE TABLE anchor (
     node_id uuid,
     statement_id uuid,
     frame_part_id uuid,
+    specification_id uuid,
     page_start integer CHECK (page_start >= 1),  -- physical, from 1
     page_end integer,
     printed_page text CHECK (has_text(printed_page) AND length(printed_page) <= 20),
@@ -58,9 +60,10 @@ CREATE TABLE anchor (
     FOREIGN KEY (document_id, node_id) REFERENCES node (document_id, id) ON DELETE CASCADE,
     FOREIGN KEY (document_id, statement_id) REFERENCES statement (document_id, id) ON DELETE CASCADE,
     FOREIGN KEY (document_id, frame_part_id) REFERENCES frame_part (document_id, id) ON DELETE CASCADE,
+    FOREIGN KEY (document_id, specification_id) REFERENCES specification (document_id, id) ON DELETE CASCADE,
     FOREIGN KEY (id, kind) REFERENCES entity (id, kind),
     FOREIGN KEY (match_kind_scheme, match_kind_iri) REFERENCES vocab_concept (scheme_iri, iri),
-    CHECK (num_nonnulls(node_id, statement_id, frame_part_id) = 1),
+    CHECK (num_nonnulls(node_id, statement_id, frame_part_id, specification_id) <= 1),
     CHECK (page_start IS NOT NULL OR printed_page IS NOT NULL),
     CHECK (page_end >= page_start),
     CHECK (char_end >= char_start),
@@ -69,6 +72,7 @@ CREATE TABLE anchor (
 CREATE INDEX anchor_of_node ON anchor (node_id) WHERE node_id IS NOT NULL;
 CREATE INDEX anchor_of_statement ON anchor (statement_id) WHERE statement_id IS NOT NULL;
 CREATE INDEX anchor_of_frame_part ON anchor (frame_part_id) WHERE frame_part_id IS NOT NULL;
+CREATE INDEX anchor_of_specification ON anchor (specification_id) WHERE specification_id IS NOT NULL;
 
 CREATE TABLE anchor_block (
     anchor_id uuid NOT NULL,

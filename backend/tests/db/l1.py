@@ -182,6 +182,21 @@ def add_statement(
     return statement
 
 
+def add_specification(
+    connection: psycopg.Connection, document: uuid.UUID, key: str = "s1", **columns: Any
+) -> uuid.UUID:
+    """A curriculum the document stands for, named by ``key`` within it."""
+    specification = add_entity(connection, "specification")
+    values = {"document_id": document, "key": key, "spec_kind": "curriculum", "title": "Mathematik"} | columns
+    names = ", ".join(values)
+    marks = ", ".join(["%s"] * len(values))
+    connection.execute(
+        f"INSERT INTO specification (id, {names}) VALUES (%s, {marks})",  # noqa: S608 - the tests' own names
+        (specification, *values.values()),
+    )
+    return specification
+
+
 def add_run(connection: psycopg.Connection, document: uuid.UUID, stage: str = "stage_X4") -> uuid.UUID:
     """A run of a stage of the pipeline on the document."""
     run = add_entity(connection, "extraction_run")

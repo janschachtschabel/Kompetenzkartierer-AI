@@ -20,6 +20,7 @@ from tests.db.l1 import (
     add_document,
     add_entity,
     add_node,
+    add_specification,
     add_statement,
     listed_values,
     seed_vocabulary,
@@ -88,9 +89,8 @@ def test_an_anchor_names_its_page_or_the_page_the_document_prints(
         {"match_score": 1.5},
         {"table_cell": "r3c2"},
         {"match_kind_scheme": CV + "MatchKinds"},  # a scheme without its value
-        {"node_id": None},  # anchoring nothing
     ],
-    ids=["page", "page-range", "char-range", "score", "cell", "pair", "no-subject"],
+    ids=["page", "page-range", "char-range", "score", "cell", "pair"],
 )
 def test_an_anchor_s_values_keep_their_forms(
     connection: psycopg.Connection, made: dict[str, Any], columns: dict[str, Any]
@@ -112,6 +112,34 @@ def test_an_anchor_anchors_one_thing_of_its_own_document(
         add_anchor(connection, made, node_id=foreign)
     with pytest.raises(errors.ForeignKeyViolation):
         add_anchor(connection, made, conversion_id=other["conversion"])
+
+
+def test_an_anchor_may_stand_for_the_document_itself_or_one_of_its_specifications(
+    connection: psycopg.Connection, made: dict[str, Any]
+) -> None:
+    # X1 anchors a document's title and dates, and what it stands for (x1-dokumentprofil.schema.json)
+    specification = add_specification(connection, made["document"])
+    other = add_document(connection, add_conversion(connection, b"\x02" * 32))
+    foreign = add_specification(connection, other)
+
+    add_anchor(connection, made, node_id=None)
+    add_anchor(connection, made, node_id=None, specification_id=specification)
+
+    with pytest.raises(errors.CheckViolation):
+        add_anchor(connection, made, specification_id=specification)  # beside the node
+    with pytest.raises(errors.ForeignKeyViolation):
+        add_anchor(connection, made, node_id=None, specification_id=foreign)
+
+
+def test_a_specification_taken_away_takes_its_anchors(
+    connection: psycopg.Connection, made: dict[str, Any]
+) -> None:
+    specification = add_specification(connection, made["document"])
+    add_anchor(connection, made, node_id=None, specification_id=specification)
+
+    connection.execute("DELETE FROM specification WHERE id = %s", (specification,))
+
+    assert connection.execute("SELECT count(*) FROM anchor").fetchone() == (0,)
 
 
 def test_an_anchor_s_blocks_are_blocks_of_its_document_s_conversion(

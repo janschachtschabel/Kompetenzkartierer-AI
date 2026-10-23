@@ -13,7 +13,16 @@ from psycopg import errors
 from app.db.migrate import migrate
 from app.domain.l1 import SpecificationKind
 from app.sources.register import RightsStatus
-from tests.db.l1 import CV, SCHOOL, add_conversion, add_document, add_entity, listed_values, seed_vocabulary
+from tests.db.l1 import (
+    CV,
+    SCHOOL,
+    add_conversion,
+    add_document,
+    add_entity,
+    add_specification,
+    listed_values,
+    seed_vocabulary,
+)
 
 pytestmark = pytest.mark.pg
 
@@ -147,30 +156,17 @@ def test_a_specification_s_kinds_are_those_x1_names(connection: psycopg.Connecti
     )
 
 
-def add_specification(connection: psycopg.Connection, document: Any, key: str = "s1", **columns: Any) -> Any:
-    specification = add_entity(connection, "specification")
-    values = {"spec_kind": "curriculum", "title": "Mathematik"} | columns
-    names = ", ".join(values)
-    marks = ", ".join(["%s"] * len(values))
-    connection.execute(
-        f"INSERT INTO specification (id, {names}) VALUES (%s, {marks})",  # noqa: S608 - the tests' names
-        (specification, *values.values()),
-    )
-    connection.execute(
-        "INSERT INTO document_specification (document_id, specification_id, key) VALUES (%s, %s, %s)",
-        (document, specification, key),
-    )
-    return specification
-
-
 def test_a_document_names_each_of_its_specifications_by_a_key_of_its_own(
     connection: psycopg.Connection, made: dict[str, Any]
 ) -> None:
     document = add_document(connection, made)
     add_specification(connection, document)
+    add_specification(connection, add_document(connection, made))  # another's key is its own
 
     with pytest.raises(errors.UniqueViolation):
         add_specification(connection, document)
+    with pytest.raises(errors.NotNullViolation):
+        add_specification(connection, document, key="s2", document_id=None)  # what no document stands for
 
 
 def test_a_variant_of_a_specification_is_of_a_kind_and_named_once(
