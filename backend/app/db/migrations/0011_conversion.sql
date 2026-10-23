@@ -10,8 +10,8 @@ CREATE TABLE conversion (
     engine_version text CHECK (length(engine_version) BETWEEN 1 AND 40),
     status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'done', 'failed')),
     error_code text CHECK (error_code IN (
-        'unreadable', 'too_many_pages', 'too_dense', 'needs_ocr', 'empty', 'timed_out', 'died', 'not_pdf',
-        'file_gone'
+        'unreadable', 'too_many_pages', 'too_dense', 'needs_ocr', 'empty', 'timed_out', 'died', 'crashed',
+        'not_pdf', 'file_gone'
     )),
     account_id uuid REFERENCES account (id),  -- who asked for it: its pages are booked to them
     job_id uuid REFERENCES job (id),  -- the job converting it, the last one asked

@@ -485,6 +485,9 @@ export const messages = {
       died:
         "Die Umwandlung wurde beendet, wohl weil sie zu viel Speicher brauchte. Teile die Datei auf, oder melde " +
         "es der Administration.",
+      crashed:
+        "Die Umwandlung ist an dieser Datei gescheitert; ein neuer Versuch ginge ebenso aus. Speichere die Datei " +
+        "in einem PDF-Programm neu und lade sie noch einmal hoch, oder melde es der Administration.",
       not_pdf: "Die gespeicherte Datei ist keine PDF-Datei, auch wenn sie als eine angegeben ist. Lade sie als PDF neu hoch.",
       file_gone: "Die Datei fehlt im Speicher des Servers. Melde das bitte der Administration.",
       handler_error:

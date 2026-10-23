@@ -3,15 +3,18 @@
 They live at module level so that the spawned child can import them by name.
 """
 
+import logging
 import os
 import signal
 import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import cast
 
 from app.conversion.base import Block, Conversion
 from app.conversion.convert import ConversionRefused
+from app.core.logging import current_request_id
 
 
 def reading(path: Path, engine: str, max_pages: int) -> Conversion:
@@ -36,8 +39,22 @@ def crashing(path: Path, engine: str, max_pages: int) -> Conversion:
     raise RuntimeError(f"broke on {path}")
 
 
+def answering_nothing(path: Path, engine: str, max_pages: int) -> Conversion:
+    """A conversion that is none: the child fails to write it down."""
+    return cast(Conversion, None)
+
+
 def exiting(path: Path, engine: str, max_pages: int) -> Conversion:
     os._exit(3)
+
+
+def telling_its_logging(path: Path, engine: str, max_pages: int) -> Conversion:
+    """Says how the child logs, in the text of its block: the root's level and format, the request."""
+    root = logging.getLogger()
+    formats = sorted({type(handler.formatter).__name__ for handler in root.handlers})
+    found = reading(path, engine, max_pages)
+    text = f"{logging.getLevelName(root.level)} {','.join(formats)} {current_request_id()}"
+    return found.model_copy(update={"blocks": (found.blocks[0].model_copy(update={"text": text}),)})
 
 
 def vanishing(path: Path, engine: str, max_pages: int) -> Conversion:

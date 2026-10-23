@@ -4,6 +4,9 @@ The store is a folder, the database real, the conversion runs in its child proce
 service - on the fixtures of tests/conversion.
 """
 
+import contextlib
+import sys
+import tempfile
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -14,7 +17,9 @@ from prometheus_client import REGISTRY
 from psycopg_pool import AsyncConnectionPool
 
 from app.conversion.job import KIND, convert_source
+from app.conversion.runners import ConversionFailed, Convert
 from app.core.ids import new_id
+from app.core.logging import current_request_id, set_request_id
 from app.core.storage import FileSystemStorage
 from app.core.storage_async import AsyncStorage
 from app.db.conversions import blocks_on_page, conversion_for, lock_conversion, start_conversion
@@ -24,6 +29,7 @@ from app.jobs.handlers import make_handlers
 from app.jobs.outcome import PermanentError
 from app.jobs.queue import Job, claim, enqueue
 from tests.conversion import standins
+from tests.conversion.raw_pdf import SENTENCE, pages_pdf
 from tests.support import make_settings
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
@@ -125,9 +131,12 @@ async def test_a_conversion_run_again_books_its_pages_once(context: JobContext) 
         ((FIXTURES / "edges.pdf").read_bytes(), 4, "too_many_pages"),  # 5 pages
         (b"PK\x03\x04 a docx", 10, "not_pdf"),
         (b"%PDF-1.7\nno document\n", 10, "unreadable"),
+        # what the upload takes for a PDF the job takes for one too (app/sources/filetype.py)
+        (b"%PDF no document\n", 10, "unreadable"),
+        (pages_pdf([SENTENCE], count=3), 10, "unreadable"),
         (None, 10, "file_gone"),
     ],
-    ids=["scan", "too-many-pages", "docx", "broken", "gone"],
+    ids=["scan", "too-many-pages", "docx", "broken", "no-dash", "a-page-lost", "gone"],
 )
 async def test_a_file_that_cannot_be_converted_fails_with_its_reason_for_good(
     context: JobContext, database_url: str, data: bytes | None, max_pages: int, code: str
@@ -156,6 +165,113 @@ async def test_a_conversion_past_its_deadline_ends_its_process_and_fails_for_goo
 
     assert failed.value.code == "timed_out"
     assert (await state(quick, file_id)).error_code == "timed_out"
+
+
+async def test_a_conversion_that_crashes_fails_for_good(context: JobContext) -> None:
+    # the same file crashes the same engine each time: another attempt would only cost
+    file_id, _, job = await a_conversion(context, (FIXTURES / "prose.pdf").read_bytes())
+    before = counted("kka_conversions_total", engine="pdfplumber", outcome="crashed")
+
+    with pytest.raises(PermanentError) as failed:
+        await convert_source(context, job, convert=standins.crashing)
+
+    assert failed.value.code == "crashed"
+    assert (await state(context, file_id)).error_code == "crashed"
+    assert counted("kka_conversions_total", engine="pdfplumber", outcome="crashed") == before + 1
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="a signal ends a process on POSIX")
+async def test_a_conversion_the_kernel_kills_fails_for_good(context: JobContext) -> None:
+    file_id, _, job = await a_conversion(context, (FIXTURES / "prose.pdf").read_bytes())
+
+    with pytest.raises(PermanentError) as failed:
+        await convert_source(context, job, convert=standins.vanishing)
+
+    assert failed.value.code == "died"
+    assert (await state(context, file_id)).error_code == "died"
+
+
+async def test_a_child_that_exits_without_an_answer_leaves_the_conversion_to_another_attempt(
+    context: JobContext,
+) -> None:
+    file_id, _, job = await a_conversion(context, (FIXTURES / "prose.pdf").read_bytes())
+
+    with pytest.raises(ConversionFailed):  # no PermanentError: the worker tries it again
+        await convert_source(context, job, convert=standins.exiting)
+
+    found = await state(context, file_id)
+    assert (found.status, found.error_code) == ("pending", None)
+
+
+async def test_the_child_logs_as_the_service_does_under_the_job_s_request(
+    context: JobContext, database_url: str
+) -> None:
+    told = settled(context, database_url, log_level="ERROR", log_format="json")
+    _, conversion_id, job = await a_conversion(told, (FIXTURES / "prose.pdf").read_bytes())
+    before = current_request_id()
+    set_request_id("job-trace-7")  # as the worker does for the job (app/jobs/worker.py)
+    try:
+        await convert_source(told, job, convert=standins.telling_its_logging)
+    finally:
+        set_request_id(before)
+
+    async with told.pool.connection() as connection:
+        blocks = await blocks_on_page(connection, conversion_id, 1)
+    assert blocks[0].text == "ERROR JsonFormatter job-trace-7"
+
+
+@pytest.mark.parametrize(
+    ("data", "convert", "timeout_s"),
+    [
+        ((FIXTURES / "prose.pdf").read_bytes(), standins.reading, 60),
+        ((FIXTURES / "prose.pdf").read_bytes(), standins.refusing, 60),
+        ((FIXTURES / "prose.pdf").read_bytes(), standins.working, 1),
+    ],
+    ids=["done", "refused", "past-its-deadline"],
+)
+async def test_a_conversion_leaves_no_file_behind(
+    context: JobContext,
+    database_url: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    data: bytes,
+    convert: Convert,
+    timeout_s: float,
+) -> None:
+    timed = settled(context, database_url, convert_timeout_s=timeout_s)
+    _, _, job = await a_conversion(timed, data)
+    scratch = tmp_path / "tmp"
+    scratch.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(scratch))
+
+    with contextlib.suppress(PermanentError):
+        await convert_source(timed, job, convert=convert)
+
+    assert list(scratch.iterdir()) == []
+
+
+async def test_the_pages_of_pdfplumber_are_booked_as_costing_nothing(context: JobContext) -> None:
+    _, conversion_id, job = await a_conversion(context, (FIXTURES / "prose.pdf").read_bytes())
+
+    await convert_source(context, job)
+
+    async with context.pool.connection() as connection:
+        cursor = await connection.execute(
+            "SELECT engine, pages, billable FROM conversion_usage WHERE conversion_id = %s", (conversion_id,)
+        )
+        assert await cursor.fetchone() == ("pdfplumber", 2, False)
+
+
+async def test_a_job_whose_conversion_is_gone_fails_for_good(context: JobContext) -> None:
+    async with context.pool.connection() as connection:
+        await enqueue(connection, KIND, "test", {"conversion_id": str(new_id())})
+        job = await claim(connection, "w1", [KIND], 60)
+    assert job is not None
+
+    with pytest.raises(PermanentError) as failed:
+        await convert_source(context, job)
+
+    assert failed.value.code == "conversion_gone"
 
 
 async def test_the_worker_knows_the_conversion(context: JobContext) -> None:

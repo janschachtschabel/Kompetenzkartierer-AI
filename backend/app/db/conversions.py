@@ -29,6 +29,7 @@ FailureCode = Literal[
     "empty",
     "timed_out",
     "died",
+    "crashed",
     "not_pdf",
     "file_gone",
 ]

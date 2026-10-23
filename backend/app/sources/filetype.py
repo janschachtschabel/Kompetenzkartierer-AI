@@ -49,13 +49,16 @@ class DetectedType:
     extension: str
 
 
+PDF_SIGNATURE = b"%PDF"  # what a PDF begins with; the version and a dash may follow
+
+
 def detect_type(filename: str | None, data: bytes) -> DetectedType | None:
     """The type, or ``None`` for none a conversion reads.
 
     A ZIP (``PK\\x03\\x04``) is taken for a DOCX, the only OOXML type in scope; a mislabelled
     XLSX or PPTX fails in the conversion, not here.
     """
-    if data.startswith(b"%PDF"):
+    if data.startswith(PDF_SIGNATURE):
         return DetectedType("application/pdf", ".pdf")
     if data.startswith(b"PK\x03\x04"):
         return DetectedType(DOCX_MIME, ".docx")

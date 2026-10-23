@@ -4,8 +4,10 @@ The job takes the file from the store, checks that it is a PDF, and converts it 
 (app/conversion/runners.py) within CONVERT_TIMEOUT_S; the child refuses a file it cannot serve
 (app/conversion/convert.py). Done, the blocks, the Markdown and the pages go in one transaction,
 the pages booked once (app/db/conversions.py). A failure another attempt cannot cure - the file's
-own, the deadline, a child the kernel killed - ends the conversion with its reason, for good; one
-that may pass (a crash in the conversion, the database) is tried again by the worker.
+own, a crash of the conversion on it, the deadline, a child the kernel killed - ends the
+conversion with its reason, for good; one that may pass (a child gone without a word, the
+database) is tried again by the worker. The child logs as the service does, under the job's
+request (app/conversion/runners.py).
 
 A cancel or a lost lease cancels the job's task, which ends the child (runners.py).
 """
@@ -20,17 +22,25 @@ from uuid import UUID
 
 from app.conversion.convert import ConversionRefused
 from app.conversion.markdown import markdown_of
-from app.conversion.runners import ConversionDied, Convert, convert_in_child, convert_with_engine
+from app.conversion.runners import (
+    ChildLog,
+    ConversionCrashed,
+    ConversionDied,
+    Convert,
+    convert_in_child,
+    convert_with_engine,
+)
+from app.core.logging import current_request_id
 from app.core.metrics import observe_conversion
 from app.core.storage import ObjectNotFound
 from app.db.conversions import FailureCode, conversion_target, record_conversion, record_failure
 from app.jobs.context import JobContext
 from app.jobs.outcome import PermanentError
 from app.jobs.queue import Job, report_progress
+from app.sources.filetype import PDF_SIGNATURE
 
 log = logging.getLogger(__name__)
 KIND = "source.convert"
-_PDF = b"%PDF-"
 MESSAGES: dict[FailureCode, str] = {
     "unreadable": "The file cannot be read as a PDF.",
     "too_many_pages": "The PDF has more pages than the service converts.",
@@ -39,6 +49,7 @@ MESSAGES: dict[FailureCode, str] = {
     "empty": "The conversion found no text beyond running heads and feet.",
     "timed_out": "The conversion took longer than it may.",
     "died": "The conversion's process was ended, most likely for its memory.",
+    "crashed": "The conversion failed on this file.",
     "not_pdf": "The file is no PDF.",
     "file_gone": "The file is missing from the store.",
 }
@@ -59,33 +70,37 @@ async def convert_source(
     except ObjectNotFound:
         log.warning("the file of conversion %s is not in the store: %s", conversion_id, key)
         await _fail(context, conversion_id, engine, "file_gone")
-    if not data.startswith(_PDF):
+    if not data.startswith(PDF_SIGNATURE):
         await _fail(context, conversion_id, engine, "not_pdf")
     async with context.pool.connection() as connection:
         await report_progress(connection, job, "converting", {})
-    folder = Path(await asyncio.to_thread(tempfile.mkdtemp, prefix="source-"))
+    settings = context.settings
+    told = ChildLog(level=settings.log_level, format=settings.log_format, request_id=current_request_id())
+    # one mkdir, made here: in a thread, a cancel meanwhile would leave the folder behind
+    folder = Path(tempfile.mkdtemp(prefix="source-"))
     try:
         path = folder / "source.pdf"
         await asyncio.to_thread(path.write_bytes, data)
-        settings = context.settings
+        del data  # the child reads the file; the worker need not hold it for the conversion's length
         try:
             async with asyncio.timeout(settings.convert_timeout_s):
                 conversion = await convert_in_child(
-                    path, engine=engine, max_pages=settings.max_pdf_pages, convert=convert
+                    path, engine=engine, max_pages=settings.max_pdf_pages, convert=convert, log=told
                 )
         except TimeoutError:
             await _fail(context, conversion_id, engine, "timed_out")
         except ConversionRefused as refused:
             await _fail(context, conversion_id, engine, refused.code)
+        except ConversionCrashed:
+            await _fail(context, conversion_id, engine, "crashed")
         except ConversionDied:
             await _fail(context, conversion_id, engine, "died")
     finally:
-        shutil.rmtree(folder, ignore_errors=True)  # one file: no wait worth a thread, even cancelled
+        shutil.rmtree(folder, ignore_errors=True)
+    markdown = await asyncio.to_thread(markdown_of, conversion)  # a long document's text: off the loop
     async with context.pool.connection() as connection:
         # pdfplumber, the one engine so far, costs nothing; an engine that bills comes with its quota
-        await record_conversion(
-            connection, conversion_id, conversion, markdown_of(conversion), billable=False
-        )
+        await record_conversion(connection, conversion_id, conversion, markdown, billable=False)
     observe_conversion(engine, "done", conversion.pages)
     return {"conversion_id": str(conversion_id), "pages": conversion.pages, "blocks": len(conversion.blocks)}
 

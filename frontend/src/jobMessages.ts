@@ -23,6 +23,7 @@ export const JOB_FAILURE_CODES = [
   "empty",
   "timed_out",
   "died",
+  "crashed",
   "not_pdf",
   "file_gone",
   // any job (app/jobs/outcome.py, app/jobs/queue.py)
