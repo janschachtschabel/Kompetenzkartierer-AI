@@ -37,8 +37,14 @@ def test_a_file_the_engine_cannot_serve_is_refused_with_its_reason(
 
 @pytest.mark.parametrize(
     "content",
-    [b"%PDF-1.7\nthis is no document\n", pages_pdf([SENTENCE], count=3)],
-    ids=["no document", "a page lost"],
+    [
+        b"%PDF-1.7\nthis is no document\n",
+        pages_pdf([SENTENCE], count=3),
+        # the page tree counts one page, its kids are three: pypdfium2 counts one, pdfplumber reads
+        # three - past MAX_PDF_PAGES and the density, both counted on the one
+        pages_pdf([SENTENCE] * 3, count=1),
+    ],
+    ids=["no document", "a page lost", "pages counted two ways"],
 )
 def test_a_file_that_is_no_pdf_is_refused_as_unreadable(tmp_path: Path, content: bytes) -> None:
     broken = tmp_path / "lehrplan.pdf"
@@ -84,7 +90,7 @@ class OnlyEdges:
     name = "edges"
     version = "1"
 
-    def convert(self, path: Path) -> Conversion:
+    def convert(self, path: Path, *, pages: int) -> Conversion:
         head = Block(
             id="p1-b1",
             page=1,

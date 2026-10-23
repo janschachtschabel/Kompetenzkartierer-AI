@@ -10,15 +10,20 @@ import pytest
 from app.conversion import pdfplumber_blocks
 from app.conversion.base import Conversion, engine
 from app.conversion.tables import FoundTable
-from app.conversion.text_layer import UnreadablePdf
+from app.conversion.text_layer import UnreadablePdf, page_text_lengths
 from tests.conversion.raw_pdf import HELVETICA, SENTENCE, pages_pdf, pdf_of, stream
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SENTENCE_READ = "Die Lernenden planen und pruefen ihre Arbeit sorgfaeltig."
 
 
+def read(path: Path) -> Conversion:
+    """The engine's conversion, told the pages the text layer counts, as convert_file tells it."""
+    return engine("pdfplumber").convert(path, pages=len(page_text_lengths(path, max_pages=10_000)))
+
+
 def converted(name: str) -> Conversion:
-    return engine("pdfplumber").convert(FIXTURES / name)
+    return read(FIXTURES / name)
 
 
 def test_the_register_hands_out_pdfplumber_at_its_version() -> None:
@@ -113,7 +118,7 @@ def test_a_file_pdfplumber_cannot_read_is_unreadable_and_says_so_without_its_pat
     broken.write_bytes(b"%PDF-1.7\nthis is no document\n")
 
     with pytest.raises(UnreadablePdf) as refused:
-        engine("pdfplumber").convert(broken)
+        engine("pdfplumber").convert(broken, pages=1)
 
     assert "geheim" not in str(refused.value)
 
@@ -146,7 +151,7 @@ def test_signs_no_store_keeps_leave_the_text_and_the_conversion_goes_as_json(
     path = tmp_path / "lehrplan.pdf"
     path.write_bytes(mapped_pdf(target))
 
-    conversion = engine("pdfplumber").convert(path)
+    conversion = read(path)
 
     mapped = conversion.blocks[-1].text
     assert all(sign != chr(0) and not 0xD800 <= ord(sign) <= 0xDFFF for sign in mapped)
@@ -182,7 +187,7 @@ def test_text_no_reader_reads_where_it_stands_is_dropped_and_counted_by_its_page
     path = tmp_path / "lehrplan.pdf"
     path.write_bytes(pages_pdf([SENTENCE + dropped, SENTENCE, SENTENCE + dropped]))
 
-    conversion = engine("pdfplumber").convert(path)
+    conversion = read(path)
 
     assert {block.text for block in conversion.blocks} == {SENTENCE_READ}
     assert [(finding.code, finding.params) for finding in conversion.findings] == [
@@ -198,7 +203,7 @@ def test_a_word_placed_at_no_finite_point_is_dropped_and_counted(tmp_path: Path)
         pages_pdf([SENTENCE + b"BT /F1 11 Tf %s 0 0 1 72 600 Tm (Riesig) Tj ET\n" % huge, SENTENCE])
     )
 
-    conversion = engine("pdfplumber").convert(path)
+    conversion = read(path)
 
     assert {block.text for block in conversion.blocks} == {SENTENCE_READ}
     assert [(finding.code, finding.params) for finding in conversion.findings] == [
@@ -238,7 +243,7 @@ def test_an_error_of_ours_stays_that_error_and_makes_no_file_unreadable(
     monkeypatch.setattr(pdfplumber_blocks, ours, broken)
 
     with pytest.raises(LookupError, match="a fault"):
-        engine("pdfplumber").convert(FIXTURES / fixture)
+        read(FIXTURES / fixture)
 
 
 @pytest.mark.parametrize(
@@ -260,7 +265,7 @@ def test_what_the_library_raises_on_a_file_makes_it_unreadable_and_is_logged_by_
     caplog.set_level(logging.WARNING, logger=pdfplumber_blocks.__name__)
 
     with pytest.raises(UnreadablePdf):
-        engine("pdfplumber").convert(FIXTURES / "tables.pdf")
+        engine("pdfplumber").convert(FIXTURES / "tables.pdf", pages=4)
 
     assert [record.getMessage() for record in caplog.records][:1] == [
         "pdfplumber could not read a file: LookupError"

@@ -14,7 +14,9 @@ model, so it is said as a finding rather than lost unseen. A word or a table at 
 a number of 400 digits in the content stream places it at NaN - is dropped so (``unplaced``).
 
 The file is untrusted. Whatever pdfplumber or pdfminer raise while reading it makes it unreadable,
-said without its path; so only the library's own calls stand where that is caught. What is built
+said without its path; so only the library's own calls stand where that is caught. So do pages
+pdfplumber counts otherwise than the text layer did (a page tree of one page and three kids): the
+limits on pages and on their signs were checked on the text layer's. What is built
 of what they read - words, tables, lines and blocks - is ours, and its errors stay errors: in the
 converting child a crash, not a verdict on the file. A page is read, then built, then the next is
 read, so that the signs of one page at a time are held.
@@ -59,21 +61,24 @@ class PdfplumberEngine:
     name = "pdfplumber"
     version = version("pdfplumber")
 
-    def convert(self, path: Path) -> Conversion:
+    def convert(self, path: Path, *, pages: int) -> Conversion:
         with _reading():
             pdf = pdfplumber.open(path)
-        pages: list[RawPage] = []
+        built: list[RawPage] = []
         try:
             with _reading():
                 found = pdf.pages
+            if len(found) != pages:  # a page tree counting one page, its kids three
+                log.warning("pdfplumber read %d pages where the text layer counted %d", len(found), pages)
+                raise UnreadablePdf("the file's pages are counted two ways")
             for page in found:
                 with _reading():
                     read = read_page(page)
-                pages.append(page_of(read))
+                built.append(page_of(read))
         finally:
             with _reading():
                 pdf.close()
-        return assemble(pages, engine=self.name, version=self.version)
+        return assemble(built, engine=self.name, version=self.version)
 
 
 @contextmanager

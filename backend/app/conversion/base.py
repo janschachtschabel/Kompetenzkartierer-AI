@@ -148,7 +148,10 @@ class Engine(Protocol):
     name: str
     version: str
 
-    def convert(self, path: Path) -> Conversion: ...
+    def convert(self, path: Path, *, pages: int) -> Conversion:
+        """The conversion of ``path``, whose text layer counted ``pages``; UnreadablePdf where
+        the engine reads the file otherwise - the limits on pages and their signs hold for those."""
+        ...
 
 
 class UnknownEngine(ValueError):

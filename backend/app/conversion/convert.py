@@ -38,7 +38,7 @@ def convert_file(path: Path, engine: Engine, *, max_pages: int) -> Conversion:
     if needs_ocr(pages):
         raise ConversionRefused("needs_ocr", "too few pages carry a text layer; the file needs OCR")
     try:
-        conversion = engine.convert(path)
+        conversion = engine.convert(path, pages=len(pages))
     except UnreadablePdf:
         raise ConversionRefused("unreadable", "the file cannot be read as a PDF") from None
     if not any(block.kind in ("text", "table") for block in conversion.blocks):

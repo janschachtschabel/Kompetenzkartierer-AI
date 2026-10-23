@@ -207,7 +207,7 @@ def test_the_foot_s_number_goes_before_the_head_s() -> None:
 
 
 def test_the_fixture_s_heads_and_feet_are_marked_and_its_pages_printed_i_ii_1_2_3() -> None:
-    conversion = engine("pdfplumber").convert(FIXTURES / "edges.pdf")
+    conversion = engine("pdfplumber").convert(FIXTURES / "edges.pdf", pages=5)
 
     assert conversion.printed_pages == ("I", "II", "1", "2", "3")
     assert [block.kind for block in conversion.blocks if block.page == 1] == [
