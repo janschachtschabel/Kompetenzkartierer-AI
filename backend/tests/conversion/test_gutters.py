@@ -1,5 +1,10 @@
 """The gutters of a page: where its lines part into columns (plan M1, 3.2), on made-up words."""
 
+import statistics
+
+import pytest
+
+from app.conversion.gutters import _median_without
 from app.conversion.layout import Word
 from app.conversion.lines import blocks_of, lines_of
 
@@ -71,21 +76,11 @@ def test_justified_text_across_the_page_below_two_columns_keeps_its_lines() -> N
     assert texts[7:] == [" ".join(["Kompet"] * 10)] * 4
 
 
-def test_far_below_its_columns_a_gutter_parts_a_line_where_its_gap_is_twice_its_other_spaces() -> None:
-    # past the lines that would confirm a gutter of their own: a gap of 10 crossing the gutter
-    # beside spaces of 4 - two and a half times as wide - parts the line; one of 9 beside spaces of
-    # 5 - 1.8 times - does not
-    def line(top: float, gap: float, space: float = 4) -> list[Word]:
-        widths = [44, 46, 46, 21]
-        made: list[Word] = []
-        x0 = 56.0
-        for n, width in enumerate([*widths, 45, 46]):
-            made.append(Word(f"w{n}", x0, x0 + width, top, top + SIZE, SIZE, "Helvetica"))
-            x0 = made[-1].x1 + (gap if n == 3 else space)
-        return made
-
+def far_below_columns() -> list[Word]:
+    """Three lines of two columns, a heading and three lines across the page: a line at 210 below
+    them stands past the lines that would confirm a gutter of its own."""
     across = "Ein Absatz über die ganze Breite der Seite"
-    words = [
+    return [
         *two_columns(100),
         *two_columns(114),
         *two_columns(128),
@@ -93,11 +88,61 @@ def test_far_below_its_columns_a_gutter_parts_a_line_where_its_gap_is_twice_its_
         *[word for top in (164, 178, 192) for word in words_at(top, (56, across))],
     ]
 
-    parted = [found.text for found in lines_of([*words, *line(210, 10)])]
-    kept = [found.text for found in lines_of([*words, *line(210, 9, space=5)])]
+
+def spaced(top: float, widths: list[float], spaces: list[float]) -> list[Word]:
+    """Words "w0", "w1" ... as wide as ``widths`` from 56 on, each the next of ``spaces`` apart."""
+    made: list[Word] = []
+    x0 = 56.0
+    for n, width in enumerate(widths):
+        made.append(Word(f"w{n}", x0, x0 + width, top, top + SIZE, SIZE, "Helvetica"))
+        x0 = made[-1].x1 + (spaces[n] if n < len(spaces) else 0)
+    return made
+
+
+def test_far_below_its_columns_a_gutter_parts_a_line_where_its_gap_is_twice_its_other_spaces() -> None:
+    # a gap of 10 crossing the gutter beside spaces of 5 - twice as wide - parts the line; one of 9
+    # - 1.8 times - does not
+    def line(gap: float) -> list[Word]:
+        return spaced(210, [44, 46, 46, 21, 45, 46], [5, 5, 5, gap, 5])
+
+    parted = [found.text for found in lines_of([*far_below_columns(), *line(10)])]
+    kept = [found.text for found in lines_of([*far_below_columns(), *line(9)])]
 
     assert parted[-2:] == ["w0 w1 w2 w3", "w4 w5"]
     assert kept[-1] == "w0 w1 w2 w3 w4 w5"
+
+
+@pytest.mark.parametrize(
+    ("widths", "spaces", "texts"),
+    [([120, 44, 45], [5, 10], ["w0 w1", "w2"]), ([169, 45], [10], ["w0 w1"])],
+    ids=["three-words", "two-words"],
+)
+def test_far_below_its_columns_a_short_line_weighs_its_gap_against_its_other_spaces_alone(
+    widths: list[float], spaces: list[float], texts: list[str]
+) -> None:
+    # three words: the gap of 10 crossing the gutter is twice the other space; two: there is none
+    # to weigh it against, and the line stays whole
+    found = [line.text for line in lines_of([*far_below_columns(), *spaced(210, widths, spaces)])]
+
+    assert found[-len(texts) :] == texts
+
+
+@pytest.mark.parametrize(
+    "spaces",
+    [
+        [3.3, 3.3, 3.3],
+        [1.0, 2.0, 3.0, 4.0],
+        [10.0, 1.0, 4.0, 2.0, 3.0],
+        [4.0, 4.0, 1.0, 9.0, 4.0, 2.0],
+        [0.0, -0.5, 2.0],
+        [5.0, 2.0],
+    ],
+)
+def test_a_row_s_other_spaces_have_the_median_of_its_spaces_but_the_one(spaces: list[float]) -> None:
+    ordered = sorted(spaces)
+
+    for at, value in enumerate(spaces):
+        assert _median_without(ordered, value) == statistics.median(spaces[:at] + spaces[at + 1 :])
 
 
 def test_a_gutter_is_confirmed_by_lines_three_above_and_below() -> None:
