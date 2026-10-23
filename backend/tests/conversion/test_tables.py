@@ -1,0 +1,174 @@
+"""Tables as pdfplumber finds them, and tables continued over a page break (plan M1, 3.2)."""
+
+from pathlib import Path
+
+import pdfplumber
+
+from app.conversion.layout import RawBlock, RawCell, RawPage
+from app.conversion.tables import merge_across_pages, table_block
+
+FIXTURES = Path(__file__).parent / "fixtures"
+HEADER = ("Nr.", "Lernfeld", "Zeitrichtwert")
+
+
+def tables_of_fixture() -> list[list[RawBlock]]:
+    with pdfplumber.open(FIXTURES / "tables.pdf") as pdf:
+        found = [[table_block(table, page) for table in page.find_tables()] for page in pdf.pages]
+    return [[block for block in blocks if block is not None] for blocks in found]
+
+
+def texts(block: RawBlock) -> list[list[str]]:
+    return [[cell.text if cell else "" for cell in row] for row in block.rows]
+
+
+def test_a_table_holds_its_rows_and_knows_a_bold_first_row_for_its_header() -> None:
+    first = tables_of_fixture()[0][0]
+
+    assert first.kind == "table" and first.page == 1
+    assert texts(first) == [list(HEADER), ["1", "Einführung", "40 Stunden"], ["2", "Planung", "60 Stunden"]]
+    assert [cell.header for cell in first.rows[0] if cell] == [True, True, True]
+    assert not any(cell.header for row in first.rows[1:] for cell in row if cell)
+    assert first.bbox[1] < first.bbox[3]
+
+
+def test_a_table_without_a_bold_first_row_has_no_header() -> None:
+    long_table = tables_of_fixture()[0][1]
+
+    assert texts(long_table)[0] == ["LF 1", "Ziel 1: Die Lernenden planen Schritt 1.", "20 Stunden"]
+    assert not any(cell.header for row in long_table.rows for cell in row if cell)
+
+
+class FoundRow:
+    def __init__(self, cells: list[tuple[float, float, float, float] | None]) -> None:
+        self.cells = cells
+
+
+class FoundTable:
+    """What table_block reads of a pdfplumber table."""
+
+    def __init__(self, texts: list[list[str | None]]) -> None:
+        self.texts = texts
+        self.rows = [FoundRow([(0, 0, 1, 1) if text is not None else None for text in row]) for row in texts]
+        self.bbox = (56.0, 100.0, 500.0, 200.0)
+
+    def extract(self) -> list[list[str | None]]:
+        return self.texts
+
+
+class FoundPage:
+    page_number = 7
+    chars: tuple[dict[str, object], ...] = ()
+
+
+def test_a_table_of_empty_rows_is_no_block() -> None:
+    assert table_block(FoundTable([["", None], [" ", ""]]), FoundPage()) is None
+
+
+def test_a_place_a_spanning_cell_covers_stays_empty_and_the_columns_stay() -> None:
+    found = table_block(FoundTable([["Lernfeld", None, "Zeit"], ["LF 1", "Ziel", "40"]]), FoundPage())
+
+    assert found is not None
+    assert [cell.text if cell else None for cell in found.rows[0]] == ["Lernfeld", None, "Zeit"]
+    assert found.page == 7 and not found.rows[0][0].header  # type: ignore[union-attr]
+
+
+def table(page: int, *rows: tuple[str, ...], header: bool = False, top: float = 600.0) -> RawBlock:
+    cells = tuple(
+        tuple(RawCell(text=text, header=header and index == 0, page=page) for text in row)
+        for index, row in enumerate(rows)
+    )
+    return RawBlock(page, "table", "", (56, top, 500, top + 100), None, False, False, cells)
+
+
+def text(page: int, words: str, kind: str = "text", top: float = 100.0) -> RawBlock:
+    return RawBlock(page, kind, words, (56, top, 500, top + 12), 11.0, False, False)  # type: ignore[arg-type]
+
+
+def pages(*blocks_per_page: list[RawBlock]) -> list[RawPage]:
+    return [RawPage(number, 842.0, list(blocks)) for number, blocks in enumerate(blocks_per_page, start=1)]
+
+
+def test_a_table_continued_without_a_header_is_one_table_whose_cells_keep_their_pages() -> None:
+    document = pages(
+        [text(1, "Übersicht"), table(1, HEADER, ("1", "a", "40"), header=True)],
+        [table(2, ("2", "b", "60"), ("3", "c", "80"), top=70), text(2, "Danach", top=300)],
+    )
+
+    merge_across_pages(document)
+
+    (merged,) = [block for block in document[0].blocks if block.kind == "table"]
+    assert texts(merged) == [list(HEADER), ["1", "a", "40"], ["2", "b", "60"], ["3", "c", "80"]]
+    assert [row[0].page for row in merged.rows if row[0]] == [1, 1, 2, 2]
+    assert [block.text for block in document[1].blocks] == ["Danach"]
+
+
+def test_a_header_repeated_on_the_next_page_goes_and_the_table_runs_on() -> None:
+    document = pages(
+        [table(1, HEADER, ("1", "a", "40"), header=True)],
+        [table(2, HEADER, ("2", "b", "60"), header=True, top=70)],
+    )
+
+    merge_across_pages(document)
+
+    assert texts(document[0].blocks[0]) == [list(HEADER), ["1", "a", "40"], ["2", "b", "60"]]
+    assert document[1].blocks == []
+
+
+def test_a_running_head_and_foot_between_the_parts_do_not_part_them() -> None:
+    document = pages(
+        [table(1, ("1", "a", "40")), text(1, "- 1 -", "page_footer", top=820)],
+        [text(2, "Rahmenlehrplan", "page_header", top=20), table(2, ("2", "b", "60"), top=70)],
+    )
+
+    merge_across_pages(document)
+
+    assert len(document[0].blocks[0].rows) == 2
+    assert [block.kind for block in document[1].blocks] == ["page_header"]
+
+
+def test_a_table_over_three_pages_is_one() -> None:
+    document = pages(
+        [table(1, ("1", "a", "40"))],
+        [table(2, ("2", "b", "60"), top=70)],
+        [table(3, ("3", "c", "80"), top=70)],
+    )
+
+    merge_across_pages(document)
+
+    assert texts(document[0].blocks[0]) == [["1", "a", "40"], ["2", "b", "60"], ["3", "c", "80"]]
+    assert document[1].blocks == [] and document[2].blocks == []
+
+
+def test_tables_that_do_not_continue_one_another_stay_apart() -> None:
+    other_header = ("Modul", "Titel", "ECTS")
+    cases = [
+        # another header: a table of its own
+        pages(
+            [table(1, HEADER, ("1", "a", "40"), header=True)],
+            [table(2, other_header, ("M1", "x", "5"), header=True)],
+        ),
+        # another number of columns
+        pages([table(1, ("1", "a", "40"))], [table(2, ("2", "b"), top=70)]),
+        # text after the first table, or before the second
+        pages([table(1, ("1", "a", "40")), text(1, "Ende", top=750)], [table(2, ("2", "b", "60"), top=70)]),
+        pages([table(1, ("1", "a", "40"))], [text(2, "Anfang", top=60), table(2, ("2", "b", "60"), top=90)]),
+    ]
+    for document in cases:
+        merge_across_pages(document)
+
+        assert len([block for block in document[1].blocks if block.kind == "table"]) == 1
+
+
+def test_a_table_continued_on_the_fixture_s_pages_is_merged_both_ways() -> None:
+    found = tables_of_fixture()
+    document = pages(*found)
+
+    merge_across_pages(document)
+
+    # page 1: the small table, then the long one with page 2's rows; page 3: the one with a header,
+    # page 4's rows behind its own, the repeated header gone
+    assert [len(block.rows) for block in document[0].blocks] == [3, 28]
+    assert document[1].blocks == []
+    (third,) = document[2].blocks
+    assert texts(third)[0] == list(HEADER)
+    assert len(third.rows) == 25 and document[3].blocks == []

@@ -45,7 +45,9 @@ class RawBlock:
     font_size: float | None
     bold: bool
     italic: bool
-    rows: tuple[tuple[RawCell, ...], ...] = ()  # a table's, its header row first where it has one
+    # a table's rows, its header row first where it has one; None where a spanning cell covers
+    # the place, so each cell keeps its column
+    rows: tuple[tuple[RawCell | None, ...], ...] = ()
 
 
 @dataclass
