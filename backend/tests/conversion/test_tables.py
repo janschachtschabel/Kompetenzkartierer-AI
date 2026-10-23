@@ -183,6 +183,37 @@ def test_a_table_ends_its_page_where_text_beside_it_ends_above_it() -> None:
     assert document[1].blocks == []
 
 
+def test_a_table_runs_on_over_a_page_where_a_note_stands_beside_its_middle_part() -> None:
+    # the middle part fills page 2 to its foot; the note beside it ends above that
+    middle = RawBlock(2, "table", "", (56, 70, 283, 765), None, False, False, table(2, ("2", "b")).rows)
+    document = pages(
+        [table(1, ("1", "a"))],
+        [middle, RawBlock(2, "text", "Hinweis", (340, 332, 461, 342), 10.0, False, False)],
+        [table(3, ("3", "c"), top=70)],
+    )
+
+    merge_across_pages(document)
+
+    assert texts(document[0].blocks[0]) == [["1", "a"], ["2", "b"], ["3", "c"]]
+    assert [block.text for block in document[1].blocks] == ["Hinweis"] and document[2].blocks == []
+
+
+def test_a_table_runs_on_where_a_note_in_the_margin_is_read_before_its_part() -> None:
+    # a margin note on the left, read first, begins lower than the part it stands beside
+    document = pages(
+        [table(1, ("1", "a"))],
+        [
+            RawBlock(2, "text", "Randnotiz", (20, 200, 50, 212), 9.0, False, False),
+            RawBlock(2, "table", "", (60, 70, 500, 400), None, False, False, table(2, ("2", "b")).rows),
+        ],
+    )
+
+    merge_across_pages(document)
+
+    assert texts(document[0].blocks[0]) == [["1", "a"], ["2", "b"]]
+    assert [block.text for block in document[1].blocks] == ["Randnotiz"]
+
+
 def test_a_page_without_text_or_table_between_two_ends_the_first() -> None:
     # an empty page, or one of a picture: what follows it is no continuation
     for between in ([], [text(2, "- 2 -", "page_footer", top=820)]):
