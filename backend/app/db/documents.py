@@ -3,9 +3,10 @@ conversion, read by those who may see them - decided here, in SQL.
 
 A document is the account's that made it, and every editor's and admin's to read (``Reader.
 sees_all``); whom else it shows itself to - other accounts, visitors - follows with the editor
-(plan M1 9, Gesamtplan §7.4.7). It is made of a conversion of its entry's own file, and its rights
-are the entry's when it is made. Its document type is one of its sector's profile, chosen only
-while active (app/vocab/lookup.py). Who may make a document is the API's to decide (plan M1 7.5).
+(plan M1 9, Gesamtplan §7.4.7). It is made of a conversion of its entry's own file, by one who may
+read that entry's content, and its rights are the entry's when it is made. Its regions are the
+vocabulary's, its document type one of its sector's profile - each chosen only while active
+(app/vocab/lookup.py). Which roles may make documents at all is the API's to decide (plan M1 7.5).
 """
 
 from collections.abc import Sequence
@@ -22,7 +23,7 @@ from app.db.sources import sector_by_notation
 from app.domain.iris import draft_iri
 from app.domain.l1 import ProfileProblem
 from app.sources.register import EDUCATION_SECTORS
-from app.vocab.lookup import profile_concepts
+from app.vocab.lookup import REGIONS, profile_concepts
 
 # The one rule of who reads a document, in every query of the first layer (app/db/nodes.py too)
 DOCUMENT_VISIBLE = "(d.owner_id = %(me)s OR %(all)s)"
@@ -32,9 +33,17 @@ _COLUMNS = """
 """
 _BY_ID = f"SELECT {_COLUMNS} FROM document d WHERE d.id = %(id)s"  # noqa: S608 - fixed parts
 _VISIBLE_BY_ID = f"{_BY_ID} AND {DOCUMENT_VISIBLE}"
+# The entry whose content the maker may read, as app/api/source_content.py has it: its own, every
+# entry for the editors, one of no account where its content is open to accounts. Locked, so
+# its rights and its conversion stay what the document takes from them
 _ENTRY_RIGHTS = """
 SELECT s.rights_status FROM source s JOIN conversion c ON c.source_file_id = s.file_id
-WHERE s.id = %s AND c.id = %s AND c.status = 'done'
+WHERE s.id = %(source)s AND c.id = %(conversion)s AND c.status = 'done'
+    AND (s.owner_id = %(me)s OR %(all)s OR (s.owner_id IS NULL AND %(third_party)s))
+FOR SHARE OF s, c
+"""
+_KNOWN_REGIONS = """
+SELECT notation FROM vocab_concept WHERE scheme_iri = %s AND retired_in IS NULL AND notation = ANY(%s)
 """
 _INSERT = """
 INSERT INTO document (id, source_id, conversion_id, owner_id, draft_iri, sector_scheme, sector_iri, regions,
@@ -78,24 +87,40 @@ class Document:
 
 async def create_document(
     connection: psycopg.AsyncConnection,
+    maker: Reader,
     *,
-    owner_id: UUID,
+    third_party_content: bool,
     source_id: UUID,
     conversion_id: UUID,
     sector: str,
     regions: Sequence[str] = (),
 ) -> Document:
-    """A new document of ``owner_id``'s, of the entry's finished conversion, in the sector of this
-    notation (``school``); DocumentError where the conversion is none such or the sector unknown."""
+    """A new document of ``maker``'s, of the entry's finished conversion, in the sector of this
+    notation (``school``) and the regions of these notations (``DE-NW``). ``third_party_content``:
+    whether the content of an entry of no account is open to accounts (THIRD_PARTY_MARKDOWN).
+    DocumentError where the conversion is none the maker may read, the sector or a region unknown."""
     document_id = new_id()
     async with connection.transaction():
-        cursor = await connection.execute(_ENTRY_RIGHTS, (source_id, conversion_id))
+        cursor = await connection.execute(
+            _ENTRY_RIGHTS,
+            {
+                "source": source_id,
+                "conversion": conversion_id,
+                "me": maker.account_id,
+                "all": maker.sees_all,
+                "third_party": third_party_content,
+            },
+        )
         entry = await cursor.fetchone()
-        if entry is None:
+        if entry is None:  # none, or none the maker may read: alike to the maker
             raise DocumentError("no finished conversion of this entry's file")
         sector_iri = await sector_by_notation(connection, sector)
         if sector_iri is None:
             raise DocumentError(f"no sector {sector!r}")
+        cursor = await connection.execute(_KNOWN_REGIONS, (REGIONS, list(regions)))
+        unknown = sorted(set(regions) - {row[0] for row in await cursor.fetchall()})
+        if unknown:
+            raise DocumentError(f"no region {', '.join(unknown)}")
         await connection.execute("INSERT INTO entity (id, kind) VALUES (%s, 'document')", (document_id,))
         await connection.execute(
             _INSERT,
@@ -103,7 +128,7 @@ async def create_document(
                 document_id,
                 source_id,
                 conversion_id,
-                owner_id,
+                maker.account_id,
                 draft_iri(document_id),
                 EDUCATION_SECTORS,
                 sector_iri,
@@ -130,7 +155,8 @@ async def set_document_type(connection: psycopg.AsyncConnection, document_id: UU
     async with connection.transaction():
         cursor = await connection.execute(
             "SELECT s.notation FROM document d JOIN vocab_concept s ON s.iri = d.sector_iri"
-            " WHERE d.id = %s FOR UPDATE OF d",
+            # no key changes: rows naming the document keep their key share meanwhile
+            " WHERE d.id = %s FOR NO KEY UPDATE OF d",
             (document_id,),
         )
         found = await cursor.fetchone()

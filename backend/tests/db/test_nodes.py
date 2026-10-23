@@ -48,7 +48,8 @@ async def document(url: str, connection: psycopg.AsyncConnection) -> Any:
         made = add_conversion(sync)
     return await create_document(
         connection,
-        owner_id=made["owner"],
+        Reader(made["owner"], sees_all=False),
+        third_party_content=False,
         source_id=made["source"],
         conversion_id=made["conversion"],
         sector="school",

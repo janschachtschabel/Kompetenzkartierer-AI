@@ -21,7 +21,7 @@ from app.db.migrate import migrate
 from app.db.source_queries import Reader
 from app.vocab.loader import read_vocabulary
 from app.vocab.store import load_vocabulary
-from tests.db.l1 import add_conversion
+from tests.db.l1 import add_conversion, add_node
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 
@@ -54,15 +54,48 @@ async def connection(url: str) -> AsyncIterator[psycopg.AsyncConnection]:
         yield opened
 
 
-async def make(connection: psycopg.AsyncConnection, made: dict[str, uuid.UUID], **changes: Any) -> Any:
+async def make(
+    connection: psycopg.AsyncConnection,
+    made: dict[str, uuid.UUID],
+    reader: Reader | None = None,
+    **changes: Any,
+) -> Any:
     values: dict[str, Any] = {
-        "owner_id": made["owner"],
+        "third_party_content": False,
         "source_id": made["source"],
         "conversion_id": made["conversion"],
         "sector": "school",
         "regions": ("DE-NW",),
     } | changes
-    return await create_document(connection, **values)
+    return await create_document(connection, reader or Reader(made["owner"], sees_all=False), **values)
+
+
+async def test_a_document_is_made_of_an_entry_whose_content_its_maker_may_read(
+    url: str, connection: psycopg.AsyncConnection, made: dict[str, uuid.UUID]
+) -> None:
+    editor = Reader(new_id(), sees_all=True)
+    with psycopg.connect(url, autocommit=True) as sync:
+        sync.execute("INSERT INTO account (id, name) VALUES (%s, 'redaktion-1')", (editor.account_id,))
+        seed = add_conversion(sync, b"\x02" * 32)
+        sync.execute(
+            "UPDATE source SET owner_id = NULL, provenance = 'recherche' WHERE id = %s", (seed["source"],)
+        )
+
+    with pytest.raises(DocumentError, match="conversion"):
+        await make(connection, made, Reader(seed["owner"], sees_all=False))  # another account's upload
+    with pytest.raises(DocumentError, match="conversion"):
+        await make(connection, seed)  # a seed's content, while it is hidden from accounts
+    by_editor = await make(connection, made, editor)
+    of_seed = await make(connection, seed, third_party_content=True)
+
+    assert (by_editor.owner_id, of_seed.owner_id) == (editor.account_id, seed["owner"])
+
+
+async def test_a_document_s_regions_are_regions_the_vocabulary_holds(
+    connection: psycopg.AsyncConnection, made: dict[str, uuid.UUID]
+) -> None:
+    with pytest.raises(DocumentError, match="region"):
+        await make(connection, made, regions=("DE-NW", "ZZ"))
 
 
 async def test_a_document_is_made_from_its_entry_s_finished_conversion_with_the_entry_s_rights(
@@ -131,6 +164,18 @@ async def test_a_document_s_type_comes_from_its_sector_s_profile(
     with pytest.raises(ProfileValueError) as refused:
         await set_document_type(connection, document.id, VOCATIONAL + "dt-Rahmenlehrplan")
     assert refused.value.problem == "not_in_profile"
+
+
+async def test_a_document_is_typed_while_its_nodes_are_written(
+    url: str, connection: psycopg.AsyncConnection, made: dict[str, uuid.UUID]
+) -> None:
+    # a node written names its document with a key share; typing it changes no key, so neither waits
+    document = await make(connection, made)
+
+    with psycopg.connect(url, autocommit=True) as writer, writer.transaction():
+        add_node(writer, document.id)
+        await connection.execute("SET lock_timeout = '200ms'")
+        await set_document_type(connection, document.id, SCHOOL + "dt-Lehrplan")
 
 
 async def test_a_retired_document_type_is_chosen_no_more(
