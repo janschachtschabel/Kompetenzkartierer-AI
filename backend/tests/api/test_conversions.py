@@ -7,6 +7,7 @@ finds the same one.
 
 import asyncio
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -16,11 +17,13 @@ import pytest
 from fastapi.testclient import TestClient
 from psycopg_pool import AsyncConnectionPool
 
+from app.api import conversions
 from app.api.app import create_app
 from app.conversion.job import KIND, convert_source
 from app.core.ids import new_id
 from app.core.storage import FileSystemStorage
 from app.core.storage_async import AsyncStorage
+from app.db.conversions import conversion_for
 from app.db.migrate import migrate
 from app.jobs.context import JobContext
 from app.jobs.outcome import PermanentError
@@ -306,6 +309,57 @@ def test_an_entry_of_no_account_is_converted_for_whom_its_file_is_open(
         assert answer.status_code == status
         if status == 403:
             assert answer.json()["code"] == "file_hidden"
+
+
+def test_the_conversion_of_an_entry_of_no_account_is_read_by_whom_its_file_is_open(
+    migrated: str, tmp_path: Path
+) -> None:
+    source_id = ownerless(migrated, tmp_path)
+    _, editor = seed_account(migrated, "Redaktion", ["redaktion"])
+    _, user = seed_account(migrated, "Konto", ["nutzer"])
+    for client in client_for(migrated, tmp_path):
+        client.post(f"/api/v1/sources/{source_id}/conversions", headers=editor)
+    run_the_job(migrated, tmp_path)
+    paths = [
+        f"/api/v1/sources/{source_id}/conversion",
+        f"/api/v1/sources/{source_id}/conversion/blocks?page=1",
+    ]
+
+    for client in client_for(migrated, tmp_path, third_party_markdown="hidden"):
+        hidden = [client.get(path, headers=user) for path in paths]
+    for client in client_for(migrated, tmp_path, third_party_markdown="public", public_access="lookup"):
+        public = [client.get(path) for path in paths]  # a visitor, without a token
+
+    assert [(answer.status_code, answer.json()["code"]) for answer in hidden] == [(403, "file_hidden")] * 2
+    assert [answer.status_code for answer in public] == [200, 200]
+    assert public[0].json()["job_id"] is None and public[1].json()["blocks"]
+
+
+def test_two_asking_at_once_start_one_conversion(
+    client: TestClient, migrated: str, owner: tuple[UUID, dict[str, str]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, header = owner
+    source_id = upload(client, header)
+
+    async def slowly(*args: Any) -> Any:
+        found = await conversion_for(*args)
+        await asyncio.sleep(0.3)  # both would have read "none" before either started one
+        return found
+
+    monkeypatch.setattr(conversions, "conversion_for", slowly)
+    with ThreadPoolExecutor(2) as pool:
+        answers = list(
+            pool.map(
+                lambda _: client.post(f"/api/v1/sources/{source_id}/conversions", headers=header), range(2)
+            )
+        )
+
+    assert sorted(answer.status_code for answer in answers) == [200, 202]
+    assert answers[0].json()["id"] == answers[1].json()["id"]
+    assert len(jobs(migrated)) == 1
+    with psycopg.connect(migrated) as connection:
+        found = connection.execute("SELECT count(*) FROM entity WHERE kind = 'conversion'").fetchone()
+    assert found == (1,)
 
 
 def test_a_visitor_asks_for_no_conversion(client: TestClient, migrated: str, tmp_path: Path) -> None:
