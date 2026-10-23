@@ -96,6 +96,18 @@ def test_a_strip_wider_than_a_point_cuts_and_a_narrower_one_does_not(strip: floa
     assert read(blocks) == order
 
 
+def test_blocks_nested_far_deeper_than_python_recurses_are_read_in_order() -> None:
+    # a bar across the top, then one down the left of what remains, and so on: each cut peels one
+    blocks = [
+        block(str(n), 3 * n, 3 * n, 10_000, 3 * n + 1)
+        if n % 2 == 0
+        else block(str(n), 3 * n, 3 * n, 3 * n + 1, 10_000)
+        for n in range(1200)
+    ]
+
+    assert read(blocks) == [str(n) for n in range(1200)]
+
+
 def test_no_blocks_are_none_and_one_is_one() -> None:
     assert reading_order([]) == []
     assert read([block("allein", 56, 100, 300, 112)]) == ["allein"]

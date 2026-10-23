@@ -21,12 +21,20 @@ _DOWN, _ACROSS = 0, 1
 
 
 def reading_order(blocks: Sequence[RawBlock]) -> list[RawBlock]:
-    """The blocks of a page in the order they are read."""
-    for cut in (_DOWN, _ACROSS):
-        parts = _parts(blocks, cut)
-        if len(parts) > 1:
-            return [block for part in parts for block in reading_order(part)]
-    return sorted(blocks, key=lambda block: (block.bbox[1], block.bbox[0]))
+    """The blocks of a page in the order they are read. The parts still to cut wait on a stack of
+    their own: a file may nest its blocks deeper than Python recurses."""
+    ordered: list[RawBlock] = []
+    waiting: list[Sequence[RawBlock]] = [blocks]
+    while waiting:
+        part = waiting.pop()
+        for cut in (_DOWN, _ACROSS):
+            parts = _parts(part, cut)
+            if len(parts) > 1:
+                waiting.extend(reversed(parts))  # the first part on top
+                break
+        else:
+            ordered += sorted(part, key=lambda block: (block.bbox[1], block.bbox[0]))
+    return ordered
 
 
 def _parts(blocks: Sequence[RawBlock], cut: int) -> list[list[RawBlock]]:
