@@ -55,6 +55,16 @@ def test_another_sign_of_a_symbol_font_stays_and_is_counted_by_its_pages() -> No
     assert BULLET in pages[0].blocks[0].text
 
 
+def test_a_sign_in_a_cell_counts_for_the_page_the_cell_stands_on() -> None:
+    # a table continued from page 1: its second row stands on page 2
+    rows = ((RawCell("Inhalt", False, 1),), (RawCell(f"{BULLET} weiter", False, 2),))
+    pages = document([RawBlock(1, "table", "", (56, 600, 400, 800), None, False, False, rows)], [])
+
+    (finding,) = map_symbols(pages)
+
+    assert finding.params["pages"] == [2]
+
+
 def test_a_clean_text_layer_raises_nothing() -> None:
     pages = document([text(1, "Die Schülerinnen und Schüler wählen Maße für die Prüfung. " * 40)])
 

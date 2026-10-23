@@ -30,11 +30,11 @@ def map_symbols(pages: list[RawPage]) -> list[Finding]:
         for index, block in enumerate(page.blocks):
             mapped = _mapped(block)
             page.blocks[index] = mapped
-            for text in _texts(mapped):
+            for text, on in _texts(mapped, page.number):
                 for sign in text:
                     if ord(sign) in _PRIVATE_USE:
                         counts[sign] += 1
-                        pages_of.setdefault(sign, set()).add(page.number)
+                        pages_of.setdefault(sign, set()).add(on)
     return [
         Finding(
             code="unmapped_symbol",
@@ -56,6 +56,8 @@ def _mapped(block: RawBlock) -> RawBlock:
     return replace(block, text=block.text.translate(_MAPPING), rows=rows)
 
 
-def _texts(block: RawBlock) -> list[str]:
+def _texts(block: RawBlock, page: int) -> list[tuple[str, int]]:
+    """The block's texts, each with the page it stands on: a cell of a table continued from the
+    page before stands on its own."""
     cells: list[RawCell] = [cell for row in block.rows for cell in row if cell is not None]
-    return [block.text, *(cell.text for cell in cells)]
+    return [(block.text, page), *((cell.text, cell.page) for cell in cells)]
