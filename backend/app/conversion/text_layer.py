@@ -6,7 +6,9 @@ a measured 23-page curriculum carries a median of 1787 signs per page, a page wi
 layer none. The rule is document-wide on purpose: per page it would take the near-empty pages
 every curriculum has (2 of 23 in the measured one) for scans.
 
-A file pypdfium2 cannot open is unreadable, a case of its own: it needs no OCR, it is no PDF.
+A file pypdfium2 cannot open, or one page of which it cannot load, is unreadable, a case of its
+own: it needs no OCR, it is no PDF. The pages are counted before any is read: a file of more than
+the service takes is refused at once, not after reading them all.
 """
 
 from collections.abc import Sequence
@@ -21,7 +23,13 @@ MIN_TEXT_PAGE_SHARE = 0.8
 
 
 class UnreadablePdf(ValueError):
-    """pypdfium2 cannot open the file as a PDF."""
+    """pypdfium2 cannot open the file as a PDF, or cannot load a page of it."""
+
+
+class TooManyPages(ValueError):
+    def __init__(self, pages: int, max_pages: int) -> None:
+        super().__init__(f"{pages} pages, more than the {max_pages} taken")
+        self.pages = pages
 
 
 @dataclass(frozen=True)
@@ -30,8 +38,8 @@ class PageText:
     signs: int
 
 
-def page_text_lengths(path: Path) -> list[PageText]:
-    """The signs the text layer yields on each page."""
+def page_text_lengths(path: Path, *, max_pages: int) -> list[PageText]:
+    """The signs the text layer yields on each page; TooManyPages past ``max_pages``."""
     import pypdfium2 as pdfium  # in the converting child alone
 
     try:
@@ -39,10 +47,16 @@ def page_text_lengths(path: Path) -> list[PageText]:
     except pdfium.PdfiumError:
         raise UnreadablePdf("the file cannot be read as a PDF") from None
     try:
-        return [
-            PageText(page=number, signs=len(page.get_textpage().get_text_bounded()))
-            for number, page in enumerate(document, start=1)
-        ]
+        pages = len(document)
+        if pages > max_pages:
+            raise TooManyPages(pages, max_pages)
+        try:
+            return [
+                PageText(page=number, signs=len(document[number - 1].get_textpage().get_text_bounded()))
+                for number in range(1, pages + 1)
+            ]
+        except pdfium.PdfiumError:  # a page the file counts but cannot give
+            raise UnreadablePdf("a page of the file cannot be read") from None
     finally:
         document.close()
 

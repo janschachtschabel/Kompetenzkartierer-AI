@@ -6,6 +6,7 @@ import pytest
 
 from app.conversion.base import Block, Conversion, engine
 from app.conversion.convert import ConversionRefused, convert_file
+from tests.conversion.raw_pdf import SENTENCE, pages_pdf
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -32,9 +33,14 @@ def test_a_file_the_engine_cannot_serve_is_refused_with_its_reason(
     assert refused.value.code == code
 
 
-def test_a_file_that_is_no_pdf_is_refused_as_unreadable(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "content",
+    [b"%PDF-1.7\nthis is no document\n", pages_pdf([SENTENCE], count=3)],
+    ids=["no document", "a page lost"],
+)
+def test_a_file_that_is_no_pdf_is_refused_as_unreadable(tmp_path: Path, content: bytes) -> None:
     broken = tmp_path / "lehrplan.pdf"
-    broken.write_bytes(b"%PDF-1.7\nthis is no document\n")
+    broken.write_bytes(content)
 
     with pytest.raises(ConversionRefused) as refused:
         convert_file(broken, engine("pdfplumber"), max_pages=10)

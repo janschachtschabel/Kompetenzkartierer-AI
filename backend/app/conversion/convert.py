@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Literal
 
 from app.conversion.base import Conversion, Engine
-from app.conversion.text_layer import UnreadablePdf, needs_ocr, page_text_lengths
+from app.conversion.text_layer import TooManyPages, UnreadablePdf, needs_ocr, page_text_lengths
 
 RefusalCode = Literal["unreadable", "too_many_pages", "needs_ocr", "empty"]
 
@@ -24,11 +24,11 @@ class ConversionRefused(ValueError):
 
 def convert_file(path: Path, engine: Engine, *, max_pages: int) -> Conversion:
     try:
-        pages = page_text_lengths(path)
+        pages = page_text_lengths(path, max_pages=max_pages)
     except UnreadablePdf:
         raise ConversionRefused("unreadable", "the file cannot be read as a PDF") from None
-    if len(pages) > max_pages:
-        raise ConversionRefused("too_many_pages", f"{len(pages)} pages, more than the {max_pages} taken")
+    except TooManyPages as counted:
+        raise ConversionRefused("too_many_pages", str(counted)) from None
     if needs_ocr(pages):
         raise ConversionRefused("needs_ocr", "too few pages carry a text layer; the file needs OCR")
     try:

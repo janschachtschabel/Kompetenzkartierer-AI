@@ -4,27 +4,29 @@ from pathlib import Path
 
 import pytest
 
-from app.conversion.text_layer import PageText, UnreadablePdf, needs_ocr, page_text_lengths
+from app.conversion.text_layer import PageText, TooManyPages, UnreadablePdf, needs_ocr, page_text_lengths
+from tests.conversion.raw_pdf import SENTENCE, pages_pdf
 
 FIXTURES = Path(__file__).parent / "fixtures"
+PAGES = 100
 
 
 def test_each_page_yields_the_signs_of_its_text_layer() -> None:
-    pages = page_text_lengths(FIXTURES / "edges.pdf")
+    pages = page_text_lengths(FIXTURES / "edges.pdf", max_pages=PAGES)
 
     assert [page.page for page in pages] == [1, 2, 3, 4, 5]
     assert all(page.signs > 100 for page in pages)
 
 
 def test_a_page_of_an_image_yields_no_text() -> None:
-    pages = page_text_lengths(FIXTURES / "scan.pdf")
+    pages = page_text_lengths(FIXTURES / "scan.pdf", max_pages=PAGES)
 
     assert [page.signs > 0 for page in pages] == [True, False, False, False]
 
 
 def test_a_scan_needs_ocr_and_a_born_digital_plan_does_not() -> None:
-    assert needs_ocr(page_text_lengths(FIXTURES / "scan.pdf"))
-    assert not needs_ocr(page_text_lengths(FIXTURES / "edges.pdf"))
+    assert needs_ocr(page_text_lengths(FIXTURES / "scan.pdf", max_pages=PAGES))
+    assert not needs_ocr(page_text_lengths(FIXTURES / "edges.pdf", max_pages=PAGES))
 
 
 @pytest.mark.parametrize(
@@ -50,6 +52,24 @@ def test_a_file_that_is_no_pdf_is_unreadable_and_says_so_without_its_path(tmp_pa
     broken.write_bytes(b"%PDF-1.7\nthis is no document\n")
 
     with pytest.raises(UnreadablePdf) as refused:
-        page_text_lengths(broken)
+        page_text_lengths(broken, max_pages=PAGES)
 
     assert "geheim" not in str(refused.value)
+
+
+def test_a_page_the_file_claims_but_lacks_makes_it_unreadable(tmp_path: Path) -> None:
+    lying = tmp_path / "lehrplan.pdf"
+    lying.write_bytes(pages_pdf([SENTENCE], count=3))  # a common breakage: the tree counts pages it lost
+
+    with pytest.raises(UnreadablePdf):
+        page_text_lengths(lying, max_pages=PAGES)
+
+
+def test_too_many_pages_are_counted_before_any_page_is_read(tmp_path: Path) -> None:
+    lying = tmp_path / "lehrplan.pdf"
+    lying.write_bytes(pages_pdf([SENTENCE], count=3))  # reading a page past the first would fail
+
+    with pytest.raises(TooManyPages) as refused:
+        page_text_lengths(lying, max_pages=2)
+
+    assert refused.value.pages == 3
