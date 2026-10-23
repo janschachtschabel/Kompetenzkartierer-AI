@@ -1,0 +1,122 @@
+"""Looking up the vocabularies as python -m app.vocab.load left them (plan M1 4.1).
+
+A concept is read whether it is retired or not - old data may name a retired one - but chosen
+only while it is active: a notation, a profile's values and a region's ancestors are active
+concepts. A profile's values - node types, statement subkinds, document types - are the concepts
+of those classes named under its namespace (app/db/migrations/0012_lexicon.sql), each with the
+core values it refines (``skos:broader``).
+"""
+
+from collections.abc import Mapping
+from dataclasses import dataclass
+from typing import Any
+
+import psycopg
+from psycopg.rows import dict_row
+
+CUR = "https://w3id.org/wlo/curriculum/core#"
+REGIONS = "https://w3id.org/wlo/curriculum/region/Regions"
+_VALUE_CLASSES = {
+    "node_types": CUR + "NodeType",
+    "subkinds": CUR + "StatementSubkind",
+    "document_types": CUR + "DocumentType",
+}
+
+
+@dataclass(frozen=True)
+class VocabEntry:
+    iri: str
+    scheme: str
+    types: tuple[str, ...]
+    notation: str | None
+    pref_labels: dict[str, str]
+    broader: tuple[str, ...]
+    retired: bool
+
+
+@dataclass(frozen=True)
+class ProfileConcepts:
+    """A profile's active values, each with the core values it refines."""
+
+    node_types: Mapping[str, tuple[str, ...]]
+    subkinds: Mapping[str, tuple[str, ...]]
+    document_types: Mapping[str, tuple[str, ...]]
+
+
+_ENTRY = (
+    "SELECT iri, scheme_iri, types, notation, pref_labels, broader, retired_in IS NOT NULL AS retired"
+    " FROM vocab_concept"
+)
+_PROFILE = """
+SELECT p.namespace FROM terminology_profile p JOIN vocab_concept s ON s.iri = p.sector_iri
+WHERE s.notation = %s AND s.retired_in IS NULL AND p.retired_in IS NULL
+"""
+_VALUES = """
+SELECT iri, types, broader FROM vocab_concept
+WHERE starts_with(iri, %s) AND retired_in IS NULL AND types && %s
+"""
+_ANCESTORS = """
+WITH RECURSIVE up (iri, broader) AS (
+    SELECT iri, broader FROM vocab_concept WHERE scheme_iri = %s AND notation = %s AND retired_in IS NULL
+    UNION
+    SELECT c.iri, c.broader FROM vocab_concept c JOIN up ON c.iri = ANY (up.broader)
+    WHERE c.retired_in IS NULL
+)
+SELECT iri FROM up
+"""
+
+
+async def concept(connection: psycopg.AsyncConnection, iri: str) -> VocabEntry | None:
+    """The concept of this IRI, retired or not."""
+    return await _entry(connection, _ENTRY + " WHERE iri = %s", (iri,))
+
+
+async def by_notation(
+    connection: psycopg.AsyncConnection, scheme_iri: str, notation: str
+) -> VocabEntry | None:
+    """The active concept of the scheme with this notation."""
+    query = _ENTRY + " WHERE scheme_iri = %s AND notation = %s AND retired_in IS NULL"
+    return await _entry(connection, query, (scheme_iri, notation))
+
+
+async def profile_concepts(
+    connection: psycopg.AsyncConnection, sector_notation: str
+) -> ProfileConcepts | None:
+    """The active values of the sector's profile (``school``, ``vocational``), or None where the
+    sector has no active profile."""
+    cursor = await connection.execute(_PROFILE, (sector_notation,))
+    profile = await cursor.fetchone()
+    if profile is None:
+        return None
+    cursor = await connection.execute(_VALUES, (profile[0], list(_VALUE_CLASSES.values())))
+    grouped: dict[str, dict[str, tuple[str, ...]]] = {name: {} for name in _VALUE_CLASSES}
+    for iri, types, broader in await cursor.fetchall():
+        for name, value_class in _VALUE_CLASSES.items():
+            if value_class in types:
+                grouped[name][iri] = tuple(broader)
+    return ProfileConcepts(**grouped)
+
+
+async def region_with_ancestors(connection: psycopg.AsyncConnection, notation: str) -> frozenset[str]:
+    """The active region of this notation ("DE-NW") and those it lies in ("DE"); none if unknown."""
+    cursor = await connection.execute(_ANCESTORS, (REGIONS, notation))
+    return frozenset(str(row[0]) for row in await cursor.fetchall())
+
+
+async def _entry(
+    connection: psycopg.AsyncConnection, query: str, params: tuple[Any, ...]
+) -> VocabEntry | None:
+    async with connection.cursor(row_factory=dict_row) as cursor:
+        await cursor.execute(query, params)
+        row = await cursor.fetchone()
+    if row is None:
+        return None
+    return VocabEntry(
+        iri=row["iri"],
+        scheme=row["scheme_iri"],
+        types=tuple(row["types"]),
+        notation=row["notation"],
+        pref_labels=row["pref_labels"],
+        broader=tuple(row["broader"]),
+        retired=row["retired"],
+    )
