@@ -1,6 +1,7 @@
 """The pages as an engine read them become a conversion (plan M1, 3.2).
 
-Each page's blocks in reading order - top down, at one height left to right; tables continued
+Each page's blocks in reading order - top down, at one height left to right; running heads and
+feet marked and the printed page numbers read (app/conversion/page_edges.py); tables continued
 over a page joined to their first part (app/conversion/tables.py); then the names: ``p<page>-b<n>``
 for each page's blocks, the tables counted across the document, a cell ``T<n>:r<i>c<j>`` by its
 row and column in the joined table. A place a spanning cell covers has no cell. A table's text is
@@ -9,12 +10,14 @@ its rows, line by line, its cells parted by " | " (a bar within a cell escaped).
 
 from app.conversion.base import Block, Cell, Conversion, block_id, cell_id
 from app.conversion.layout import RawBlock, RawPage
+from app.conversion.page_edges import mark_edges
 from app.conversion.tables import merge_across_pages
 
 
 def assemble(pages: list[RawPage], *, engine: str, version: str) -> Conversion:
     for page in pages:
         page.blocks.sort(key=lambda block: (block.bbox[1], block.bbox[0]))
+    printed = mark_edges(pages)  # before the joining: running heads and feet do not part a table
     merge_across_pages(pages)
     blocks: list[Block] = []
     tables = 0
@@ -41,7 +44,7 @@ def assemble(pages: list[RawPage], *, engine: str, version: str) -> Conversion:
         engine=engine,
         engine_version=version,
         pages=len(pages),
-        printed_pages=(None,) * len(pages),
+        printed_pages=printed,
         blocks=tuple(blocks),
     )
 
