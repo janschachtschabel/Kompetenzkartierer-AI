@@ -14,8 +14,9 @@ type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 // a text block says no kind: it is what most blocks are
 const typesFollow: [
   Same<api.FindingCode, Exclude<keyof typeof messages.conversions.findings, "other">>,
+  Same<api.DropReason, keyof typeof messages.conversions.findings.text_dropped>,
   Same<Exclude<api.BlockKind, "text">, keyof typeof messages.conversionPage.kind>,
-] = [true, true];
+] = [true, true, true];
 
 /** The values of the `Literal[...]` the backend names `name` in app/conversion/base.py. */
 function backendValues(name: string): string[] {
@@ -56,6 +57,33 @@ describe("what a conversion found, in words", () => {
     expect(text).toContain(`„${isolate("(cid:3)")}“`);
   });
 
+  it("says how many words the conversion dropped, why, and on which pages", () => {
+    const text = findingText({ code: "text_dropped", params: { reason: "vertical", count: 16, pages: [1, 3] } });
+    const pages = new Intl.ListFormat("de-DE", { type: "conjunction" }).format(["1", "3"]);
+
+    expect(text).toBe(t("conversions.findings.text_dropped.vertical", { count: 16, pageCount: 2, pages }));
+    expect(text).toContain("16 Wörter auf Seiten 1 und 3 ");
+    expect(text).toContain("senkrecht");
+  });
+
+  it("has words for each reason a word is dropped, one word as one", () => {
+    for (const reason of backendValues("DropReason")) {
+      const text = findingText({ code: "text_dropped", params: { reason, count: 1, pages: [4] } });
+
+      expect(text).toBe(t(`conversions.findings.text_dropped.${reason}`, { count: 1, pageCount: 1, pages: "4" }));
+      expect(text).toContain("1 Wort auf Seite 4 ");
+      expect(text).not.toMatch(/[{}]/);
+    }
+  });
+
+  it("says a dropping for a reason it does not know, or without its numbers, by its code", () => {
+    const other = t("conversions.findings.other", { code: "text_dropped" });
+
+    expect(findingText({ code: "text_dropped", params: { reason: "faded", count: 2, pages: [1] } })).toBe(other);
+    expect(findingText({ code: "text_dropped", params: { reason: "toString", count: 2, pages: [1] } })).toBe(other);
+    expect(findingText({ code: "text_dropped", params: { reason: "tiny", count: 2 } })).toBe(other);
+  });
+
   it("says a finding it has no words for, or whose numbers are missing, by its code rather than guess", () => {
     expect(findingText({ code: "something_new", params: {} })).toBe(t("conversions.findings.other", { code: "something_new" }));
     expect(findingText(symbol({ codepoint: "U+F0B7", count: "drei", pages: [1] }))).toBe(
@@ -71,6 +99,7 @@ describe("what a conversion found, in words", () => {
     const worded = Object.keys(messages.conversions.findings).filter((code) => code !== "other");
 
     expect(worded.sort()).toEqual(backendValues("FindingCode"));
+    expect(Object.keys(messages.conversions.findings.text_dropped).sort()).toEqual(backendValues("DropReason"));
   });
 });
 

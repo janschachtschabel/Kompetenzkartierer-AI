@@ -8,7 +8,9 @@ export type ConversionStatus = "pending" | "done" | "failed";
 /** What a block is (backend app/conversion/base.py, BlockKind). */
 export type BlockKind = "text" | "table" | "page_header" | "page_footer";
 /** What the conversion noticed in the text (backend FindingCode). */
-export type FindingCode = "unmapped_symbol" | "encoding_suspect";
+export type FindingCode = "unmapped_symbol" | "encoding_suspect" | "text_dropped";
+/** Why the conversion dropped words, a `text_dropped` finding's `reason` (backend DropReason). */
+export type DropReason = "vertical" | "off_page" | "tiny" | "unplaced";
 
 export interface ConversionFinding {
   code: string;

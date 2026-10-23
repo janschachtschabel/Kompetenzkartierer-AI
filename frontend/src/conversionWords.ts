@@ -1,10 +1,10 @@
 // What a conversion found in a file's text, and why one failed, in the page's words. A finding
-// is a code with its numbers (backend app/conversion/symbols.py, encoding.py); the page says
-// it only where the numbers are there, and by its code where they are not: a sentence filled
-// with guesses would read as confident nonsense.
+// is a code with its numbers (backend app/conversion/symbols.py, encoding.py, assemble.py); the
+// page says it only where the numbers are there, and by its code where they are not: a sentence
+// filled with guesses would read as confident nonsense.
 import type { ConversionFinding } from "@/api";
 import { isolate } from "@/bidi";
-import { LOCALE, t } from "@/i18n/de";
+import { LOCALE, messages, t } from "@/i18n/de";
 import { jobFailureText } from "@/jobMessages";
 
 const listFormat = new Intl.ListFormat(LOCALE, { type: "conjunction" });
@@ -39,9 +39,17 @@ function encodingText({ share, count, examples }: Record<string, unknown>): stri
   return t("conversions.findings.encoding_suspect", { count, share: shareFormat.format(share), examples: quoted });
 }
 
+/** Words left out of the blocks, by why: a reason the page has no words for is said by its code. */
+function droppedText({ reason, count, pages }: Record<string, unknown>): string | null {
+  if (typeof reason !== "string" || !Object.hasOwn(messages.conversions.findings.text_dropped, reason)) return null;
+  if (typeof count !== "number" || !isPageList(pages)) return null;
+  return t(`conversions.findings.text_dropped.${reason}`, { count, pageCount: pages.length, pages: pageRanges(pages) });
+}
+
 const FINDINGS: Readonly<Record<string, (params: Record<string, unknown>) => string | null>> = {
   unmapped_symbol: symbolText,
   encoding_suspect: encodingText,
+  text_dropped: droppedText,
 };
 
 /** A finding in words; by its code where the page has no words for it, or its numbers are missing. */
