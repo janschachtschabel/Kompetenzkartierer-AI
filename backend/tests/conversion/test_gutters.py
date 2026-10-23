@@ -49,6 +49,28 @@ def test_a_gutter_the_page_has_parts_its_lines_however_their_columns_begin() -> 
     ]
 
 
+def test_justified_text_across_the_page_below_two_columns_keeps_its_lines() -> None:
+    # three lines of two columns, a heading, then lines across the page, their spaces 9 points
+    # wide each and 5 points further on in each line: one in each lies in the gutter's strip too
+    across = [
+        word
+        for line in range(4)
+        for word in words_at(170 + 14 * line, *((56 + 5 * line + 42 * n, "Kompet") for n in range(10)))
+    ]
+    words = [
+        *two_columns(100),
+        *two_columns(114),
+        *two_columns(128),
+        *words_at(150, (56, "Abschnitt 2")),
+        *across,
+    ]
+
+    texts = [line.text for line in lines_of(words)]
+
+    assert texts[:7] == [LEFT, RIGHT, LEFT, RIGHT, LEFT, RIGHT, "Abschnitt 2"]
+    assert texts[7:] == [" ".join(["Kompet"] * 10)] * 4
+
+
 def test_a_gutter_is_confirmed_by_lines_three_above_and_below() -> None:
     # the gap at lines 1, 4 and 7 of seven: each of the outer ones three lines from the middle one
     words = [
