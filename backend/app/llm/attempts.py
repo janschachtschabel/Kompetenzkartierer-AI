@@ -11,7 +11,6 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 
 import httpx2
-from pydantic_ai.usage import RunUsage
 
 
 class Attempts:
@@ -30,12 +29,6 @@ class Attempts:
             yield
         finally:
             _ATTEMPTS.reset(token)
-
-    def unanswered(self, spent: RunUsage | None) -> int:
-        """The requests sent and never answered, given what pydantic-ai counted of the call: an
-        answered request is one request sent, as the app neither streams nor polls. Zero for a
-        model that sends nothing over the client, as a test's does."""
-        return max(self.sent - (spent.requests if spent is not None else 0), 0)
 
 
 _ATTEMPTS: ContextVar[Attempts | None] = ContextVar("kka_llm_attempts", default=None)

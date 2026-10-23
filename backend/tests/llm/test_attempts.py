@@ -8,7 +8,6 @@ import httpx2
 import pytest
 from pydantic_ai import Agent
 from pydantic_ai.exceptions import ModelHTTPError
-from pydantic_ai.usage import RunUsage
 
 from app.llm.attempts import Attempts
 from app.llm.client import build_model
@@ -51,12 +50,3 @@ async def test_calls_side_by_side_count_apart_and_none_outside_counts() -> None:
     await refused(model)  # counted by nobody
 
     assert (first.sent, second.sent, len(recorder.requests)) == (1, 2, 4)
-
-
-def test_the_unanswered_requests_are_those_sent_beyond_the_answered_ones() -> None:
-    attempts = Attempts()
-    attempts.sent = 3
-
-    assert attempts.unanswered(RunUsage(requests=1)) == 2
-    assert attempts.unanswered(None) == 3
-    assert attempts.unanswered(RunUsage(requests=4)) == 0  # a model that sends nothing over the client
