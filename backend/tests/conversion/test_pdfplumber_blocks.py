@@ -260,6 +260,29 @@ def test_a_table_placed_at_no_finite_point_is_dropped_and_its_words_counted() ->
     assert page.blocks == [] and page.dropped == {"unplaced": 5}
 
 
+def page_read(**word: object) -> pdfplumber_blocks.PageRead:
+    """A page as pdfplumber reads it, of one upright sign "X" of 11 points at 72, 500 but for ``word``."""
+    found = {"text": "X", "x0": 72.0, "x1": 78.0, "top": 500.0, "bottom": 511.0, "size": 11.0}
+    found |= {"fontname": "Helvetica", "upright": True} | word
+    return pdfplumber_blocks.PageRead(
+        number=1, height=842.0, bbox=(0.0, 0.0, 595.0, 842.0), words=[found], tables=[], chars=[]
+    )
+
+
+def test_a_word_of_one_point_is_read_and_one_smaller_is_not() -> None:
+    kept = pdfplumber_blocks.page_of(page_read(size=1.0, bottom=501.0))
+    dropped = pdfplumber_blocks.page_of(page_read(size=0.99, bottom=500.99))
+
+    assert ([block.text for block in kept.blocks], kept.dropped) == (["X"], {})
+    assert (dropped.blocks, dropped.dropped) == ([], {"tiny": 1})
+
+
+def test_a_word_of_no_finite_size_is_unplaced_where_its_place_is_finite() -> None:
+    page = pdfplumber_blocks.page_of(page_read(size=math.nan))
+
+    assert (page.blocks, page.dropped) == ([], {"unplaced": 1})
+
+
 def broken(*args: object, **kwargs: object) -> object:
     raise LookupError("a fault on /Geheim")
 

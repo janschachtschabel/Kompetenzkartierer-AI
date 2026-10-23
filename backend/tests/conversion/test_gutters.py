@@ -49,6 +49,31 @@ def test_a_gutter_the_page_has_parts_its_lines_however_their_columns_begin() -> 
     ]
 
 
+def test_a_gutter_is_confirmed_by_lines_three_above_and_below() -> None:
+    # the gap at lines 1, 4 and 7 of seven: each of the outer ones three lines from the middle one
+    words = [
+        word
+        for line in range(7)
+        for word in (two_columns(100 + 14 * line) if line % 3 == 0 else words_at(100 + 14 * line, (56, LEFT)))
+    ]
+
+    texts = [line.text for line in lines_of(words)]
+
+    assert texts == [LEFT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, LEFT, LEFT, RIGHT]
+
+
+def test_a_note_of_two_lines_three_and_a_half_sizes_beside_the_text_is_a_line_of_its_own() -> None:
+    # two lines share no gutter; their gap parts them as it is
+    beside = 223.2 + 3.5 * SIZE
+    words = [
+        *words_at(100, (56, LEFT), (beside, "Hinweis am Rand")),
+        *words_at(114, (56, LEFT), (beside, "zur Arbeit")),
+        *words_at(128, (56, LEFT)),
+    ]
+
+    assert [line.text for line in lines_of(words)] == [LEFT, "Hinweis am Rand", LEFT, "zur Arbeit", LEFT]
+
+
 def test_the_marks_of_a_list_with_a_hanging_indent_stay_before_their_text() -> None:
     # the marks at 56, each item's text and its second line at 74: the text begins at one place
     words = [

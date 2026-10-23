@@ -1,5 +1,7 @@
 """The reading order of a page's blocks (plan M1, 3.2): columns left to right, each top down."""
 
+import pytest
+
 from app.conversion.layout import RawBlock, RawCell
 from app.conversion.reading_order import reading_order
 
@@ -73,6 +75,25 @@ def test_a_table_is_read_in_its_column() -> None:
     ]
 
     assert read(blocks) == ["T", "Hinweis", "Danach"]
+
+
+def test_blocks_no_strip_parts_are_read_top_down_whatever_their_left_edges() -> None:
+    # each reaches into the other's height and breadth: no cut, the higher one first
+    blocks = [block("tiefer, links", 56, 150, 300, 250), block("höher, rechts", 250, 100, 540, 200)]
+
+    assert read(blocks) == ["höher, rechts", "tiefer, links"]
+
+
+@pytest.mark.parametrize(("strip", "order"), [(0.5, ["A", "B", "C"]), (2.0, ["A", "C", "B"])])
+def test_a_strip_wider_than_a_point_cuts_and_a_narrower_one_does_not(strip: float, order: list[str]) -> None:
+    # A and B side by side, C below A: a strip between A and B down the page makes two columns
+    blocks = [
+        block("C", 56, 130, 300, 142),
+        block("B", 300 + strip, 100, 540, 112),
+        block("A", 56, 100, 300, 112),
+    ]
+
+    assert read(blocks) == order
 
 
 def test_no_blocks_are_none_and_one_is_one() -> None:

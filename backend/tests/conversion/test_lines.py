@@ -275,6 +275,33 @@ def test_a_line_half_its_size_below_the_last_goes_on_its_block() -> None:
     assert [block.text for block in blocks_of(words, page=1)] == ["Erster Absatz,\nnoch derselbe."]
 
 
+def test_a_line_half_a_point_larger_and_half_its_size_below_goes_on_its_block() -> None:
+    # 5.75 points below a line of 11: the most a line may stand below one half a point smaller
+    words = [*row("Erste Zeile,", 100), *row("etwas größer.", 100 + SIZE + 5.75, size=SIZE + 0.5)]
+
+    assert [block.text for block in blocks_of(words, page=1)] == ["Erste Zeile,\netwas größer."]
+
+
+def test_two_columns_whose_lines_stand_a_little_apart_in_height_keep_a_block_each() -> None:
+    # the right column's lines 4 points higher than the left's: a line read before one higher
+    # up closes no block that one goes on
+    words = [
+        found
+        for line in range(3)
+        for found in (
+            *row("links weiter im Text", 104 + 14 * line),
+            *row("rechts weiter", 100 + 14 * line, x0=320),
+        )
+    ]
+
+    texts = [block.text for block in blocks_of(words, page=1)]
+
+    assert texts == [
+        "links weiter im Text\n" * 2 + "links weiter im Text",
+        "rechts weiter\n" * 2 + "rechts weiter",
+    ]
+
+
 def test_a_line_set_into_the_one_above_by_more_than_half_its_size_is_a_block_of_its_own() -> None:
     # "Drüber" reaches 7 points up into the line "Erste Zeile" (its last word lower): text set
     # over text, not the next line
