@@ -215,7 +215,7 @@ CREATE FUNCTION layout_markers_fit() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
     IF EXISTS (
         SELECT FROM unnest(NEW.layout_markers) AS marker
-        WHERE marker IS NULL OR NOT EXISTS (
+        WHERE NOT EXISTS (  -- a NULL is no concept either
             SELECT FROM vocab_concept
             WHERE scheme_iri = 'https://w3id.org/wlo/curriculum/vocab#LayoutMarkers' AND iri = marker
         )

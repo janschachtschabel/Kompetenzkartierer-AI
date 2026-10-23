@@ -35,6 +35,7 @@ TABLES = (
     "validation_finding",
     "specification",
     "variant",
+    "document_profile",
 )
 
 
@@ -82,6 +83,7 @@ def fill(connection: psycopg.Connection, made: dict[str, Any]) -> dict[str, uuid
         " VALUES (gen_random_uuid(), %s, %s, 'rule', 'warning', %s, 'Hinweis')",
         (document, run, statement),
     )
+    connection.execute("INSERT INTO document_profile (document_id) VALUES (%s)", (document,))
     specification = add_specification(connection, document)
     variant = add_variant(connection, specification)
     connection.execute(

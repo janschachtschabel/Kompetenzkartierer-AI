@@ -86,6 +86,23 @@ def test_a_node_is_moved_under_read_committed_alone(
         connection.execute("UPDATE node SET parent_id = %s WHERE id = %s", (root, child))
 
 
+def test_two_moves_in_one_document_wait_for_each_other(
+    connection: psycopg.Connection, document: uuid.UUID, database_url: str
+) -> None:
+    # a under b and y under z: each alone closes no circle, both a -> b -> y -> z -> a. No row
+    # either move locks is the other's, so it is the document's lock the second waits for
+    y = add_node(connection, document)
+    a = add_node(connection, document, position=2)
+    b = add_node(connection, document, y)
+    z = add_node(connection, document, a)
+
+    with connection.transaction(), psycopg.connect(database_url, autocommit=True) as other:
+        connection.execute("UPDATE node SET parent_id = %s WHERE id = %s", (b, a))
+        other.execute("SET lock_timeout = '200ms'")
+        with pytest.raises(errors.LockNotAvailable):
+            other.execute("UPDATE node SET parent_id = %s WHERE id = %s", (z, y))
+
+
 def test_a_node_lies_under_a_node_of_its_own_document(
     connection: psycopg.Connection, document: uuid.UUID
 ) -> None:
@@ -210,6 +227,32 @@ def test_what_a_node_applies_to_stays_while_the_node_names_it(
 
     connection.execute("UPDATE node SET applies_to = '{}' WHERE id = %s", (node,))
     connection.execute("DELETE FROM specification WHERE id = %s", (specification,))
+
+
+def test_a_specification_a_node_names_stays_and_goes_once_the_node_names_it_no_more(
+    connection: psycopg.Connection, document: uuid.UUID
+) -> None:
+    specification = add_specification(connection, document)
+    node = add_node(connection, document, applies_to=[specification])
+
+    with pytest.raises(errors.CheckViolation, match="applies to"):
+        connection.execute("DELETE FROM specification WHERE id = %s", (specification,))
+    # X1 read anew: the old specification goes before the node names the new one, in one transaction
+    with connection.transaction():
+        connection.execute("DELETE FROM specification WHERE id = %s", (specification,))
+        connection.execute("UPDATE node SET applies_to = '{}' WHERE id = %s", (node,))
+
+
+def test_what_a_node_is_written_to_apply_to_is_not_taken_away_meanwhile(
+    connection: psycopg.Connection, document: uuid.UUID, database_url: str
+) -> None:
+    specification = add_specification(connection, document)
+
+    with connection.transaction(), psycopg.connect(database_url, autocommit=True) as other:
+        add_node(connection, document, applies_to=[specification])
+        other.execute("SET lock_timeout = '200ms'")
+        with pytest.raises(errors.LockNotAvailable):
+            other.execute("DELETE FROM specification WHERE id = %s", (specification,))
 
 
 def test_a_statement_s_layout_markers_are_the_core_s(
