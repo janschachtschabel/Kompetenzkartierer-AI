@@ -124,7 +124,8 @@ ungültig.
   Redaktion, Admin; Einträge ohne Konto nach `THIRD_PARTY_MARKDOWN`), darf sie umwandeln lassen
   und die Blöcke lesen. Bisher nur PDFs mit Textebene (pdfplumber): ein Scan endet mit
   `needs_ocr` (OCR folgt mit Docling), mehr als `MAX_PDF_PAGES` (800) Seiten mit
-  `too_many_pages`, länger als `CONVERT_TIMEOUT_S` (900 s) mit `timed_out`. Die Umwandlung
+  `too_many_pages`, eine Seite mit mehr als 100.000 Zeichen mit `too_dense`, länger als
+  `CONVERT_TIMEOUT_S` (900 s) mit `timed_out`. Die Umwandlung
   läuft in einem eigenen Kindprozess, den Abbruch, Frist und Lease-Verlust beenden; dafür
   eigene Worker mit `WORKER_KINDS=source.convert` vorsehen, ein Job je Pod.
 - Erster Admin: `python -m app.bootstrap NAME` gibt das Token einmal auf stdout aus. Interaktiv

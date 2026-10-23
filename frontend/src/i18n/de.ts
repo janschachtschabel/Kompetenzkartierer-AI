@@ -470,6 +470,9 @@ export const messages = {
       too_many_pages:
         "Die PDF-Datei hat mehr Seiten, als der Kompetenzkartierer umwandelt. Teile sie auf und lade die Teile " +
         "einzeln hoch.",
+      too_dense:
+        "Eine Seite der PDF-Datei trägt weit mehr Text, als eine Seite fassen kann; die Datei wurde nicht " +
+        "umgewandelt. Prüfe, ob sie das Dokument selbst ist, und lade sonst eine andere Fassung hoch.",
       needs_ocr:
         "Zu wenige Seiten der PDF-Datei tragen Text; sie ist wohl eingescannt. Eine Texterkennung (OCR) gibt es " +
         "hier noch nicht: Nimm eine Fassung mit Text, wo es eine gibt.",

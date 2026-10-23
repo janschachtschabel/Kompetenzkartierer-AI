@@ -4,8 +4,10 @@ from pathlib import Path
 
 import pytest
 
+from app.conversion import convert
 from app.conversion.base import Block, Conversion, engine
 from app.conversion.convert import ConversionRefused, convert_file
+from app.conversion.text_layer import page_text_lengths
 from tests.conversion.raw_pdf import SENTENCE, pages_pdf
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -46,6 +48,20 @@ def test_a_file_that_is_no_pdf_is_refused_as_unreadable(tmp_path: Path, content:
         convert_file(broken, engine("pdfplumber"), max_pages=10)
 
     assert refused.value.code == "unreadable"
+
+
+def test_a_page_of_more_signs_than_any_page_holds_is_refused_as_too_dense(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    densest = max(page.signs for page in page_text_lengths(FIXTURES / "prose.pdf", max_pages=10))
+    monkeypatch.setattr(convert, "MAX_PAGE_SIGNS", densest)
+    assert convert_file(FIXTURES / "prose.pdf", engine("pdfplumber"), max_pages=10).pages == 2
+
+    monkeypatch.setattr(convert, "MAX_PAGE_SIGNS", densest - 1)
+    with pytest.raises(ConversionRefused) as refused:
+        convert_file(FIXTURES / "prose.pdf", engine("pdfplumber"), max_pages=10)
+
+    assert refused.value.code == "too_dense"
 
 
 class OnlyEdges:

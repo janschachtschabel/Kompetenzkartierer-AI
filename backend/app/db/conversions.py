@@ -22,7 +22,15 @@ from app.conversion.base import Block, Cell, Conversion
 ConversionStatus = Literal["pending", "done", "failed"]
 # Why a conversion failed: a refusal of the file (app/conversion/convert.py) or what ended the job
 FailureCode = Literal[
-    "unreadable", "too_many_pages", "needs_ocr", "empty", "timed_out", "died", "not_pdf", "file_gone"
+    "unreadable",
+    "too_many_pages",
+    "too_dense",
+    "needs_ocr",
+    "empty",
+    "timed_out",
+    "died",
+    "not_pdf",
+    "file_gone",
 ]
 
 _STATE = """

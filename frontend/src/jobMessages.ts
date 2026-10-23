@@ -18,6 +18,7 @@ export const JOB_FAILURE_CODES = [
   "conversion_gone",
   "unreadable",
   "too_many_pages",
+  "too_dense",
   "needs_ocr",
   "empty",
   "timed_out",

@@ -34,6 +34,7 @@ _PDF = b"%PDF-"
 MESSAGES: dict[FailureCode, str] = {
     "unreadable": "The file cannot be read as a PDF.",
     "too_many_pages": "The PDF has more pages than the service converts.",
+    "too_dense": "A page of the PDF holds more text than any page does.",
     "needs_ocr": "Too few pages carry a text layer; the file needs OCR.",
     "empty": "The conversion found no text beyond running heads and feet.",
     "timed_out": "The conversion took longer than it may.",
