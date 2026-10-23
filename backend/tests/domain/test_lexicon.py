@@ -49,7 +49,6 @@ def test_a_cue_without_a_scope_holds_everywhere_and_a_scoped_one_where_its_scope
         cue("generation", form="Bildungsplan", plan_generations=frozenset({"BP2016"})),
     ]
 
-    assert active(cues) == {"everywhere": False, "nw": False, "germany": False}
     assert set(active(cues, document_type="dt-Lehrplan", plan="BP2016")) == {
         "everywhere",
         "nw",
@@ -57,7 +56,35 @@ def test_a_cue_without_a_scope_holds_everywhere_and_a_scoped_one_where_its_scope
         "typed",
         "generation",
     }
-    assert active(cues, regions=frozenset()) == {"everywhere": False}
+    assert set(active(cues, document_type="dt-Rahmenplan", plan="BP2004")) == {"everywhere", "nw", "germany"}
+    assert set(active(cues, regions=frozenset(), document_type="dt-Rahmenplan", plan="BP2004")) == {
+        "everywhere"
+    }
+
+
+def test_a_cue_of_a_document_type_or_plan_generation_holds_where_the_document_s_is_unknown() -> None:
+    # X1 is to tell the plan generation by such cues (Bavaria's "LehrplanPLUS"): none can carry
+    # one before, and a document's type may stay unknown
+    cues = [
+        cue("typed", form="Fachlehrplan", scope_document_types=frozenset({"dt-Lehrplan"})),
+        cue("generation", form="LehrplanPLUS", plan_generations=frozenset({"LehrplanPLUS"})),
+    ]
+
+    assert active(cues) == {"typed": False, "generation": False}
+
+
+@pytest.mark.parametrize(
+    ("plan", "winner"),
+    [(None, "unscoped"), ("BP2016", "generation")],
+    ids=["unknown-no-bonus", "known-and-matching-ranks"],
+)
+def test_a_scope_ranks_a_cue_only_where_it_matches_the_document_s(plan: str | None, winner: str) -> None:
+    cues = [
+        cue("unscoped", target="dt-Lehrplan", strength=0.8),
+        cue("generation", target="dt-Rahmenplan", strength=0.6, plan_generations=frozenset({"BP2016"})),
+    ]
+
+    assert active(cues, plan=plan) == {winner: False}
 
 
 @pytest.mark.parametrize(

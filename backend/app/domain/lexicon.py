@@ -4,10 +4,13 @@ general.
 
 A cue holds where every scope it sets holds: one of its regions is the document's or one the
 document's lies in (a cue for all of Germany holds in each country), its document type is the
-document's, its plan generation the document's; a cue that sets none holds everywhere. Dates,
-subjects, issuers and kinds of institution do not filter: they go to the model as text. Cues
-on one word, pattern or layout signal of one kind compete; the first by rank holds - the more
-scopes it sets, then checked before unchecked, then the stronger (no strength is none). Where
+document's, its plan generation the document's; a cue that sets none holds everywhere. Where
+the document's type or plan generation is not known (None) - X1 is to tell the generation by
+such cues, and a document may carry none - a cue of that scope holds, but the scope does not
+rank it. Dates, subjects, issuers and kinds of institution do not filter: they go to the model
+as text. Cues on one word, pattern or layout signal of one kind compete; the first by rank
+holds - the more scopes it sets that match the document's known ones, then checked before
+unchecked, then the stronger (no strength is none). Where
 several share the first rank and point to other targets, all hold as a tie, and the model gets
 their rule texts. A negative cue and a homonym compete with none and always hold; a homonym
 keeps its other target. The document's own terms (its profile from X1) are laid over this when
@@ -74,8 +77,9 @@ def active_cues(
         else:
             competing[_trigger(cue)].append(cue)
     for group in competing.values():
-        best = max(_rank(cue) for cue in group)
-        first = [cue for cue in group if _rank(cue) == best]
+        ranks = {cue.iri: _rank(cue, document_type, plan_generation) for cue in group}
+        best = max(ranks.values())
+        first = [cue for cue in group if ranks[cue.iri] == best]
         tie = len({cue.maps_to for cue in first}) > 1
         held.extend(ActiveCue(cue, tie) for cue in first)
     return sorted(held, key=lambda found: found.cue.iri)
@@ -93,9 +97,15 @@ def pattern_matches(pattern: str, text: str, timeout: float = PATTERN_TIMEOUT_S)
 def _holds(cue: Cue, regions: Set[str], document_type: str | None, plan_generation: str | None) -> bool:
     return (
         (not cue.scope_regions or not cue.scope_regions.isdisjoint(regions))
-        and (not cue.scope_document_types or document_type in cue.scope_document_types)
-        and (not cue.plan_generations or plan_generation in cue.plan_generations)
+        and _open_to(cue.scope_document_types, document_type)
+        and _open_to(cue.plan_generations, plan_generation)
     )
+
+
+def _open_to(scope: frozenset[str], value: str | None) -> bool:
+    """Whether a scope lets its cue hold for a document's ``value``: it sets none, the value is
+    unknown, or it is one of them."""
+    return not scope or value is None or value in scope
 
 
 def _trigger(cue: Cue) -> tuple[str, str]:
@@ -107,6 +117,7 @@ def _trigger(cue: Cue) -> tuple[str, str]:
     return cue.kind, "layout:" + str(cue.layout_signal)
 
 
-def _rank(cue: Cue) -> tuple[int, bool, float]:
-    scopes = sum(bool(scope) for scope in (cue.scope_regions, cue.scope_document_types, cue.plan_generations))
-    return scopes, cue.verified, cue.strength or 0.0
+def _rank(cue: Cue, document_type: str | None, plan_generation: str | None) -> tuple[int, bool, float]:
+    # a scope ranks a cue only where it is known to match: unknown, it neither excludes nor ranks
+    matching = (document_type in cue.scope_document_types) + (plan_generation in cue.plan_generations)
+    return bool(cue.scope_regions) + matching, cue.verified, cue.strength or 0.0
