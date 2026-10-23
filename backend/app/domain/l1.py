@@ -19,6 +19,14 @@ from uuid import UUID
 from app.domain.blocks import BLOCK_ID, CELL_ID
 
 ProfileProblem = Literal["not_in_profile", "wrong_core"]
+# what a specification is, as X1 names it (ontology/schemas/x1-dokumentprofil.schema.json)
+SpecificationKind = Literal[
+    "curriculum", "competencyFramework", "qualificationSpecification", "assessmentSpecification"
+]
+# what X3 finds in a document's frame besides statements (ontology/schemas/x3-rahmenteile.schema.json)
+FramePartKind = Literal["competencyModels", "levelModels", "operators", "crossCuttingLegend", "rules"]
+# how grave a finding of X5 is, as SHACL has it (sh:Violation, sh:Warning, sh:Info)
+Severity = Literal["violation", "warning", "info"]
 
 
 def check_profile_value(value: str, core: str, allowed: Mapping[str, Sequence[str]]) -> ProfileProblem | None:
