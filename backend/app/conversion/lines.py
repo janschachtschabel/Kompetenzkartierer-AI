@@ -2,10 +2,13 @@
 
 A line is the words at one height, left to right. A word stands on the line whose span - that of
 its largest word, so a superscript does not lift it - it overlaps most, by half the smaller height
-at least; a sub- or superscript glued to a word of the line stands on it where it overlaps it at
-all (reportlab lowers a subscript by half a line). Two words a gap narrower than a tenth of their
-size apart are one: pdfplumber parts a word where its font or size changes ("Lern" "feld", "CO"
-"2"). A line's size is that of most of its signs.
+at least. A sub- or superscript - set smaller, glued to its word, overlapping it - stands on its
+word's line however little it overlaps it (reportlab lowers a subscript by half a line); it is
+placed once every line stands, with the word it overlaps most, since a mark raised to the line
+above may touch a word's end there as well. Two words of one size are never glued: where lines
+are set tight, a word's edge meets one above by chance. Two words a gap narrower than a tenth of
+their size apart are one: pdfplumber parts a word where its font or size changes ("Lern" "feld",
+"CO" "2"). A line's size is that of most of its signs.
 
 No line runs across the gutter between two columns or into a note beside the text. A gap of three
 sizes parts a line always; a gutter is narrower - 12 points or 8 mm at 10 points - so a gap of
@@ -24,7 +27,7 @@ from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import cached_property
-from itertools import accumulate, pairwise
+from itertools import accumulate, pairwise, takewhile
 
 from app.conversion.layout import RawBlock, Word, style_of
 
@@ -105,10 +108,17 @@ class _Row:
 
     def holds(self, word: Word) -> bool:
         overlap = self.overlap(word)
-        if overlap <= 0:
-            return False
-        least = LINE_OVERLAP * min(self.bottom - self.top, word.bottom - word.top)
-        return overlap >= least or any(_glued(word, other) for other in self.words)
+        return overlap > 0 and overlap >= LINE_OVERLAP * min(self.bottom - self.top, word.bottom - word.top)
+
+
+@dataclass(frozen=True)
+class _Script:
+    """A word that stands on no line by its overlap but is glued to a larger word: a sub- or
+    superscript, placed once every line stands, since its own word may come after it."""
+
+    word: Word
+    near: list[_Row]  # the lines open when it came
+    begun: int  # how many lines had begun by then: those after may be its word's
 
 
 def lines_of(words: Iterable[Word]) -> list[Line]:
@@ -140,15 +150,37 @@ def _rows(words: Iterable[Word]) -> list[_Row]:
     """The words at each height, the rows in the order their first words come, top down."""
     rows: list[_Row] = []
     open_rows: list[_Row] = []  # those a word further down may still overlap
+    scripts: list[_Script] = []
     for word in sorted(words, key=lambda word: (word.top, word.x0)):
         open_rows = [row for row in open_rows if row.bottom > word.top]
         holding = [row for row in open_rows if row.holds(word)]
         if holding:
             max(holding, key=lambda row: row.overlap(word)).add(word)
+        elif any(_glued(word, other) for row in open_rows for other in row.words):
+            scripts.append(_Script(word, open_rows, len(rows)))
         else:
             rows.append(_Row([word], word.top, word.bottom, word.size))
             open_rows.append(rows[-1])
+    for script in scripts:
+        _partner_row(script.word, [*script.near, *_begun_by(rows[script.begun :], script.word)]).add(
+            script.word
+        )
     return rows
+
+
+def _begun_by(rows: list[_Row], word: Word) -> list[_Row]:
+    """The rows of ``rows``, in the order begun, whose first word begins above the word's foot."""
+    return list(takewhile(lambda row: row.words[0].top < word.bottom, rows))
+
+
+def _partner_row(word: Word, rows: list[_Row]) -> _Row:
+    """The row of the word ``word`` is glued to that it overlaps most."""
+    glued = [(row, other) for row in rows for other in row.words if _glued(word, other)]
+    return max(glued, key=lambda found: _overlap(word, found[1]))[0]
+
+
+def _overlap(word: Word, other: Word) -> float:
+    return min(word.bottom, other.bottom) - max(word.top, other.top)
 
 
 @dataclass(frozen=True)
@@ -184,10 +216,15 @@ def _apart(before: Word, word: Word) -> bool:
 
 
 def _glued(word: Word, other: Word) -> bool:
-    """Whether the words touch side by side, on either side: a sub- or superscript and its word,
-    not two words one above the other, which overlap across."""
+    """Whether ``word``, set smaller, touches ``other`` side by side, on either side, and overlaps
+    it: a sub- or superscript and its word. Not two words one above the other, which overlap
+    across; nor two of one size, whose edges meet by chance where lines are set tight."""
     gap = max(other.x0 - word.x1, word.x0 - other.x1)
-    return abs(gap) < WORD_SPACE * max(word.size, other.size)
+    return (
+        word.size < other.size - SIZE_TOLERANCE
+        and abs(gap) < WORD_SPACE * max(word.size, other.size)
+        and _overlap(word, other) > 0
+    )
 
 
 def blocks_of(words: Iterable[Word], page: int) -> list[RawBlock]:

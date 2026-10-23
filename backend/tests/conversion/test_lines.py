@@ -107,6 +107,36 @@ def test_scripts_stand_on_their_line_and_touch_their_word() -> None:
     assert first.size == 11.0
 
 
+def test_lines_set_tighter_than_solid_keep_their_words_where_edges_meet_by_chance() -> None:
+    # 11 points on 10.5: "ihre" begins line 2 and ends where "Lernenden" begins above it
+    words = [
+        word("Die", 56, 100),
+        word("Lernenden", 78.6, 100),
+        word("ihre", 56, 110.5),
+        word("Arbeit", 81.3, 110.5),
+    ]
+
+    assert [line.text for line in lines_of(words)] == ["Die Lernenden", "ihre Arbeit"]
+
+
+def test_headings_set_tighter_than_solid_keep_their_words_where_edges_meet_by_chance() -> None:
+    # 24 points on 22: "Rahmen" begins line 2 and ends where "Plan" begins above it
+    words = [word("Der", 56, 100, size=24), word("Plan", 128, 100, size=24), word("Rahmen", 56, 122, size=24)]
+
+    assert [line.text for line in lines_of(words)] == ["Der Plan", "Rahmen"]
+
+
+def test_a_superscript_raised_to_a_word_end_above_stays_with_its_own_word() -> None:
+    # the mark of "Anhang", raised 4 points, touches where "Zeilen" ends on the line above as well
+    words = [
+        *row("Erste Zeilen", 100),
+        *row("Siehe Anhang", 114),
+        Word("1", 119.8, 124.3, 110, 119, 9.0, "Helvetica"),
+    ]
+
+    assert [line.text for line in lines_of(words)] == ["Erste Zeilen", "Siehe Anhang1"]
+
+
 def test_words_a_change_of_font_parts_are_one_where_they_touch() -> None:
     words = [word("Das", 56, 100), word("Lern", 77, 100), word("feld", 99, 100, font="Helvetica-Bold")]
 
