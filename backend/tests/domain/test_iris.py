@@ -36,7 +36,7 @@ def test_a_slug_keeps_a_hundred_signs_at_most_and_ends_on_a_word() -> None:
     made = slug("Kernlehrplan " * 20)
 
     assert len(made) <= 100
-    assert made.startswith("kernlehrplan-kernlehrplan")
+    assert set(made.split("-")) == {"kernlehrplan"}  # whole words alone
     assert not made.endswith("-")
 
 

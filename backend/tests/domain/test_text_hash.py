@@ -32,6 +32,8 @@ from app.domain.wording import normalized, text_hash
         ("STRASSE", "straße"),  # casefold, not lower
         ("1. a) Die Lernenden planen", "Die Lernenden planen"),  # numbering of three levels at most
         ("1.2. Die Lernenden planen", "Die Lernenden planen"),
+        ("2.1.3.4 Die Lernenden planen", "Die Lernenden planen"),  # a section's number, as deep
+        ("Texte\N{EM DASH}\nmehr", "Texte\N{EN DASH} mehr"),  # a dash at a line's end parts no word
         ("3. Klasse: Die Lernenden planen", "Klasse: Die Lernenden planen"),  # an ordinal reads as one
     ],
 )
@@ -50,6 +52,7 @@ def test_wordings_set_otherwise_have_one_hash(one: str, other: str) -> None:
         ("1.000 Wörter lesen", "2.000 Wörter lesen"),  # a number, not a numbering
         ("100. Geburtstag", "Geburtstag"),
         ("Klasse 5-\n6", "Klasse 56"),  # digits are no word parted
+        ("Texte\N{EM DASH}\nmehr", "Textemehr"),
     ],
 )
 def test_other_wordings_have_other_hashes(one: str, other: str) -> None:
