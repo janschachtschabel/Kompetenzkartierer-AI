@@ -17,7 +17,8 @@ their breaks: its text is the document's wording, line by line.
 from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass
-from itertools import pairwise
+from functools import cached_property
+from itertools import accumulate, pairwise
 
 from app.conversion.layout import RawBlock, Word, style_of
 
@@ -31,9 +32,11 @@ SIZE_TOLERANCE = 0.5  # points: sizes this close are one
 
 @dataclass(frozen=True)
 class Line:
+    """A line's words; what follows of them is reckoned once, since a page's blocks ask it often."""
+
     words: tuple[Word, ...]  # left to right
 
-    @property
+    @cached_property
     def text(self) -> str:
         parts = [self.words[0].text]
         for before, word in pairwise(self.words):
@@ -42,23 +45,23 @@ class Line:
             parts.append(word.text)
         return "".join(parts)
 
-    @property
+    @cached_property
     def x0(self) -> float:
         return min(word.x0 for word in self.words)
 
-    @property
+    @cached_property
     def x1(self) -> float:
         return max(word.x1 for word in self.words)
 
-    @property
+    @cached_property
     def top(self) -> float:
         return min(word.top for word in self.words)
 
-    @property
+    @cached_property
     def bottom(self) -> float:
         return max(word.bottom for word in self.words)
 
-    @property
+    @cached_property
     def size(self) -> float:
         """The size most of its signs are set in, to half a point: a superscript is one sign."""
         signs: Counter[float] = Counter()
@@ -66,7 +69,7 @@ class Line:
             signs[round(word.size * 2) / 2] += len(word.text)
         return signs.most_common(1)[0][0]
 
-    @property
+    @cached_property
     def style(self) -> tuple[bool, bool]:
         """Bold and italic where every word is: a bold lead-in does not make the line bold."""
         styles = [style_of(word.font) for word in self.words]
@@ -135,15 +138,28 @@ def _glued(word: Word, other: Word) -> bool:
 
 
 def blocks_of(words: Iterable[Word], page: int) -> list[RawBlock]:
-    """The text blocks of a page's words, in the order their first lines come."""
+    """The text blocks of a page's words, in the order their first lines come. A block whose last
+    line ends further above every line still to come than a line may stand below it is closed: no
+    line is matched against the many blocks of a long page."""
+    lines = lines_of(words)
+    # the highest top of each line and those after it
+    highest = list(accumulate((line.top for line in reversed(lines)), min))[::-1]
     blocks: list[list[Line]] = []
-    for line in lines_of(words):
-        target = next((block for block in reversed(blocks) if _goes_on(block[-1], line)), None)
+    open_blocks: list[list[Line]] = []
+    for line, top in zip(lines, highest, strict=True):
+        open_blocks = [block for block in open_blocks if _reach(block[-1]) >= top]
+        target = next((block for block in reversed(open_blocks) if _goes_on(block[-1], line)), None)
         if target is None:
             blocks.append([line])
+            open_blocks.append(blocks[-1])
         else:
             target.append(line)
     return [_raw(block, page) for block in blocks]
+
+
+def _reach(last: Line) -> float:
+    """How far down a line may begin and still go on the block that ``last`` ends (_goes_on)."""
+    return last.bottom + BLOCK_GAP * (last.size + SIZE_TOLERANCE)
 
 
 def _goes_on(last: Line, line: Line) -> bool:
