@@ -225,8 +225,8 @@ Nachtrag zur Umsetzung (23.10.):
   - Entwürfe nennen jeden Block, Adressaten und Geltungsbereich einmal, in der Reihenfolge der ersten Nennung. Ein Seitenende ohne Anfang und ein Wortlaut mit einzelnem Surrogat werden schon beim Entwurf abgewiesen.
 - **`text_hash`:**
   - NFC, Striche vereinheitlicht, Formatzeichen (Nullbreite, BOM) entfernt, `casefold`, führende Nummerierung entfernt, Leerraum zusammengezogen.
-  - Worttrennung am Zeilenende: Zwischen einem Buchstaben und einem Kleinbuchstaben gehen Trennstrich (auch weich oder U+2010) und Umbruch weg. Vor einem Großbuchstaben oder zwischen Ziffern bleibt der Bindestrich, nur der Umbruch geht („E-Mail“, „5-6“).
-  - Nummerierung: ein- oder zweistellige Zahlen, bis zu drei Ebenen („1. a)“, „1.2.3“). „1.000“ und „100.“ bleiben, ein Buchstabe mit Punkt ist eine Abkürzung („z. B.“).
+  - Worttrennung am Zeilenende: Zwischen einem Buchstaben und einem Kleinbuchstaben gehen Trennstrich (auch weich, U+2010 oder U+2011) und Umbruch weg. Vor einem Großbuchstaben oder zwischen Ziffern bleibt der Bindestrich, nur der Umbruch geht („E-Mail“, „5-6“). Ein Halbgeviert- oder Geviertstrich am Zeilenende trennt kein Wort.
+  - Nummerierung: ein- oder zweistellige Zahlen mit bis zu fünf Teilen („2.1.3.4“), bis zu drei hintereinander („1. a)“). „1.000“ und „100.“ bleiben, ein Buchstabe mit Punkt ist eine Abkürzung („z. B.“).
   - Mehrdeutig bleibt, was wie beides aussieht: „3. Klasse“, „1.5 Stunden“ und „i. d. R.“ verlieren ihren ersten Teil, „Ein-“ / „und“ über den Zeilenumbruch wird ein Wort. `casefold` macht „Maße“ und „Masse“ gleich.
 - **IRIs:**
   - Die Basis ist ein Parameter, eine http(s)-IRI mit Schrägstrich am Ende, ohne Zugangsdaten, Query oder Fragment. `IRI_BASE`, die Vergabe beim Festschreiben sowie die IRIs von Aussagen und Fundstellen folgen mit 9.6.
@@ -236,12 +236,14 @@ Nachtrag zur Umsetzung (23.10.):
   - Sie hängt mit höchstens einem Fremdschlüssel an Knoten, Aussage, Rahmenteil oder Spezifikation desselben Dokuments; ohne Gegenstand steht sie für das Dokument selbst (wo X1 Titel und Daten las). Ein Verweis auf `entity` würde verwaisen, weil Entity-Zeilen beim Löschen stehen bleiben.
   - Ihre Blöcke sind über einen Fremdschlüssel Zeilen von `document_block` der Konvertierung des Dokuments. Eine Fundstelle mit `cv:match_notFound` nennt ihre Seite und keinen Block (8.1, 9.4).
 - **Prüfungen in der Datenbank:**
-  - Der Baum hat keinen Zyklus. Prüft ein Constraint-Trigger nach jeder Anweisung, mit Sperre je Dokument; Verschieben unter `repeatable read` wird abgewiesen.
+  - Der Baum hat keinen Zyklus. Prüft ein Constraint-Trigger nach jeder Anweisung, mit Sperre je Dokument.
+  - Wächter, die eine Zeile gegen andere prüfen, die eine fremde Transaktion inzwischen ändern kann, gelten nur unter `read committed`; jede andere Stufe weisen sie ab (`invalid_transaction_state`). Das betrifft: einen Knoten verschieben, eine Fundstelle oder einen Adressaten von einer bleibenden Aussage nehmen, eine Spezifikation oder Variante für sich wegnehmen. Nur `read committed` sieht nach dem Warten neu hin. `repeatable read` behält seinen ersten Blick, und `serializable` findet den Konflikt nur, wenn alle Seiten `serializable` laufen. Wer eine Fundstelle oder einen Adressaten wegnimmt, sperrt die Aussage, sodass zwei solche Transaktionen, die jede einen übrig ließen, aufeinander warten.
   - Der Knotentyp liegt unter der Funktion und die Unterart unter der Art. Geprüft wird beim Schreiben einer Zeile; was ein späteres Neuladen der Vokabulare an `skos:broader` ändert, findet X5.
   - Beim Commit hat jede Aussage mindestens einen Adressaten und eine Fundstelle (wie `StatementShape`).
   - `applies_to` nennt Spezifikationen und Varianten des eigenen Dokuments, jede einmal. Sie bleiben, solange ein Knoten sie nennt (geprüft beim Commit). Gesperrt sind sie wie bei einem Fremdschlüssel, mit ihrem Dokument gehen sie.
   - Layoutmerkmale stammen aus `cv:LayoutMarkers`, der Dokumenttyp ist ein `cur:DocumentType`. Ein Rahmenteil aus einer Regel nennt die Regel.
-  - Ein Wächtertest verlangt für jeden kaskadierenden Fremdschlüssel einen Index.
+  - Ein Seitenende steht nur neben seinem Seitenanfang.
+  - Ein Wächtertest verlangt für jeden kaskadierenden Fremdschlüssel einen Index, der mit allen seinen Spalten beginnt oder mit einer, die nicht `document_id` ist.
   - Die Profilzugehörigkeit und zurückgezogene Kernwerte prüft das Repository.
 - **Einzelheiten:**
   - `extraction_run` hat noch keinen Ausgang; der kommt mit 6.6. Knoten, Aussagen und Rahmenteile nennen ihren Lauf (`run_id`, über `write_subtree(..., run_id=)`); wird ein Lauf gelöscht, bleiben sie ohne ihn, während die Befunde eines Laufs mit ihm gehen.
@@ -252,8 +254,8 @@ Nachtrag zur Umsetzung (23.10.):
 - **Sichtbarkeit:**
   - Dokument und Baum lesen Eigentümer, Redaktion und Admin (`DOCUMENT_VISIBLE`, in jeder Abfrage). Regeln für Dritte folgen mit dem Editor (9).
   - `create_document(connection, maker, *, third_party_content, …)` findet den Eintrag in SQL nur, wenn sein Inhalt dem Ersteller zu lesen ist: der eigene, für die Redaktion jeder, einer ohne Konto, wo `THIRD_PARTY_MARKDOWN` ihn Konten öffnet. Der Eintrag ist gesperrt, solange seine Rechte übernommen werden.
-  - Regionen müssen im aktiven Regionen-Vokabular stehen.
-  - `read_tree` liest in einem Snapshot (eigene Transaktion `REPEATABLE READ READ ONLY`, wo der Aufrufer keine hat).
+  - Regionen müssen im aktiven Regionen-Vokabular stehen; jede wird einmal gespeichert.
+  - `read_tree` liest in einem Snapshot (eigene Transaktion `REPEATABLE READ READ ONLY`, wo der Aufrufer keine hat; in dessen Transaktion so, wie diese liest). Den eigenen Snapshot und die Sichtbarkeit in jeder Abfrage prüft kein Test: Die erste Abfrage entscheidet über die Sichtbarkeit, beides ist Schutz in der Tiefe.
   - Das Typisieren sperrt das Dokument `FOR NO KEY UPDATE`, wartet also nicht auf Knoten, die gerade hineingeschrieben werden.
   - `lock_tree` ist die Sperre, die alle Schreibzugriffe auf einen Baum teilen; auch die Verschiebungen des Editors nehmen sie.
 - **Aktives Profil:**
