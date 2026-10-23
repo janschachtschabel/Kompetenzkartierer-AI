@@ -251,9 +251,11 @@ async def tables_running_onto(
 ) -> list[RunningOn]:
     cursor = connection.cursor(row_factory=dict_row)
     await cursor.execute(_RUNNING_ON, {"conversion": conversion_id, "page": page})
+    # a table may span a page without a cell on it: one that held only its repeated header row
     return [
         RunningOn(row["block_id"], row["page"], tuple(Cell.model_validate(cell) for cell in row["cells"]))
         for row in await cursor.fetchall()
+        if row["cells"]
     ]
 
 

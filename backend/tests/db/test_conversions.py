@@ -16,6 +16,7 @@ from app.db.conversions import (
     record_conversion,
     record_failure,
     start_conversion,
+    tables_running_onto,
 )
 from app.db.migrate import migrate
 from app.jobs.queue import enqueue
@@ -198,6 +199,37 @@ async def test_a_conversion_done_stays_done_whatever_asks_again(connection: psyc
 
     state = await conversion_for(connection, file_id, "pdfplumber")
     assert state is not None and (state.status, state.job_id, state.pages) == ("done", first_job, 2)
+
+
+async def test_a_page_a_table_spans_without_a_cell_on_it_is_not_one_it_runs_on_to(
+    connection: psycopg.AsyncConnection,
+) -> None:
+    # a page between two parts that holds only the repeated header row, which the joining drops:
+    # the table spans it, but nothing of it stands there
+    file_id = await a_file(connection)
+    conversion_id, job_id = await started(connection, file_id)
+    cells = (
+        Cell(id="T1:r1c1", page=1, row=1, column=1, text="Nr.", header=True),
+        Cell(id="T1:r2c1", page=3, row=2, column=1, text="1", header=False),
+    )
+    spanning = Block(id="p1-b1", page=1, kind="table", text="Nr.\n1", bbox=(56, 600, 500, 800),
+                     font_size=None, bold=False, italic=False, cells=cells)  # fmt: skip
+    conversion = Conversion(
+        engine="pdfplumber",
+        engine_version="0.11.10",
+        pages=3,
+        printed_pages=(None, None, None),
+        blocks=(spanning,),
+    )
+    await record_conversion(connection, conversion_id, job_id, conversion, "", billable=False)
+
+    on_two = await tables_running_onto(connection, conversion_id, 2)
+    on_three = await tables_running_onto(connection, conversion_id, 3)
+
+    assert on_two == []
+    assert [(table.block_id, [cell.id for cell in table.cells]) for table in on_three] == [
+        ("p1-b1", ["T1:r2c1"])
+    ]
 
 
 async def test_a_job_the_conversion_was_asked_again_without_records_nothing(
