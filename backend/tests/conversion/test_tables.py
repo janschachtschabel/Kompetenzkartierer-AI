@@ -5,7 +5,8 @@ from pathlib import Path
 import pdfplumber
 
 from app.conversion.layout import RawBlock, RawCell, RawPage
-from app.conversion.tables import merge_across_pages, table_block
+from app.conversion.pdfplumber_blocks import read_page
+from app.conversion.tables import FoundTable, merge_across_pages, table_block
 
 FIXTURES = Path(__file__).parent / "fixtures"
 HEADER = ("Nr.", "Lernfeld", "Zeitrichtwert")
@@ -13,7 +14,8 @@ HEADER = ("Nr.", "Lernfeld", "Zeitrichtwert")
 
 def tables_of_fixture() -> list[list[RawBlock]]:
     with pdfplumber.open(FIXTURES / "tables.pdf") as pdf:
-        found = [[table_block(table, page) for table in page.find_tables()] for page in pdf.pages]
+        pages = [read_page(page) for page in pdf.pages]
+    found = [[table_block(table, page.chars, page.number) for table in page.tables] for page in pages]
     return [[block for block in blocks if block is not None] for blocks in found]
 
 
@@ -38,34 +40,18 @@ def test_a_table_without_a_bold_first_row_has_no_header() -> None:
     assert not any(cell.header for row in long_table.rows for cell in row if cell)
 
 
-class FoundRow:
-    def __init__(self, cells: list[tuple[float, float, float, float] | None]) -> None:
-        self.cells = cells
-
-
-class FoundTable:
-    """What table_block reads of a pdfplumber table."""
-
-    def __init__(self, texts: list[list[str | None]]) -> None:
-        self.texts = texts
-        self.rows = [FoundRow([(0, 0, 1, 1) if text is not None else None for text in row]) for row in texts]
-        self.bbox = (56.0, 100.0, 500.0, 200.0)
-
-    def extract(self) -> list[list[str | None]]:
-        return self.texts
-
-
-class FoundPage:
-    page_number = 7
-    chars: tuple[dict[str, object], ...] = ()
+def found_table(texts: list[list[str | None]]) -> FoundTable:
+    """A table as pdfplumber reads it, a cell a unit square, None where a spanning cell covers it."""
+    boxes = [[(0.0, 0.0, 1.0, 1.0) if text is not None else None for text in row] for row in texts]
+    return FoundTable(texts=texts, boxes=boxes, bbox=(56.0, 100.0, 500.0, 200.0))
 
 
 def test_a_table_of_empty_rows_is_no_block() -> None:
-    assert table_block(FoundTable([["", None], [" ", ""]]), FoundPage()) is None
+    assert table_block(found_table([["", None], [" ", ""]]), [], page=7) is None
 
 
 def test_a_place_a_spanning_cell_covers_stays_empty_and_the_columns_stay() -> None:
-    found = table_block(FoundTable([["Lernfeld", None, "Zeit"], ["LF 1", "Ziel", "40"]]), FoundPage())
+    found = table_block(found_table([["Lernfeld", None, "Zeit"], ["LF 1", "Ziel", "40"]]), [], page=7)
 
     assert found is not None
     assert [cell.text if cell else None for cell in found.rows[0]] == ["Lernfeld", None, "Zeit"]

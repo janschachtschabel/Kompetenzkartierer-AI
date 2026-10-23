@@ -1,9 +1,12 @@
 """The engine pdfplumber: a PDF's text layer into named blocks (plan M1, 3.2), on the fixtures."""
 
+import logging
 from pathlib import Path
 
+import pdfplumber
 import pytest
 
+from app.conversion import pdfplumber_blocks
 from app.conversion.base import Conversion, engine
 from app.conversion.text_layer import UnreadablePdf
 
@@ -68,3 +71,49 @@ def test_a_file_pdfplumber_cannot_read_is_unreadable_and_says_so_without_its_pat
         engine("pdfplumber").convert(broken)
 
     assert "geheim" not in str(refused.value)
+
+
+def broken(*args: object, **kwargs: object) -> object:
+    raise LookupError("a fault on /Geheim")
+
+
+@pytest.mark.parametrize(
+    ("ours", "fixture"),
+    [("table_block", "tables.pdf"), ("Word", "prose.pdf"), ("blocks_of", "prose.pdf")],
+)
+def test_an_error_of_ours_stays_that_error_and_makes_no_file_unreadable(
+    monkeypatch: pytest.MonkeyPatch, ours: str, fixture: str
+) -> None:
+    # in the converting child it ends the conversion as a crash, which a fix may cure, not as a
+    # verdict on the file
+    monkeypatch.setattr(pdfplumber_blocks, ours, broken)
+
+    with pytest.raises(LookupError, match="a fault"):
+        engine("pdfplumber").convert(FIXTURES / fixture)
+
+
+@pytest.mark.parametrize(
+    ("owner", "name"),
+    [
+        (pdfplumber.pdf.PDF, "pages"),
+        (pdfplumber.page.Page, "extract_words"),
+        (pdfplumber.page.Page, "find_tables"),
+        (pdfplumber.page.Page, "chars"),
+        (pdfplumber.table.Table, "extract"),
+        (pdfplumber.table.Table, "rows"),
+    ],
+)
+def test_what_the_library_raises_on_a_file_makes_it_unreadable_and_is_logged_by_its_type(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, owner: type, name: str
+) -> None:
+    is_property = isinstance(getattr(owner, name), property)
+    monkeypatch.setattr(owner, name, property(broken) if is_property else broken)
+    caplog.set_level(logging.WARNING, logger=pdfplumber_blocks.__name__)
+
+    with pytest.raises(UnreadablePdf):
+        engine("pdfplumber").convert(FIXTURES / "tables.pdf")
+
+    assert [record.getMessage() for record in caplog.records][:1] == [
+        "pdfplumber could not read a file: LookupError"
+    ]
+    assert "Geheim" not in caplog.text

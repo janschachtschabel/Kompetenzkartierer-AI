@@ -10,42 +10,51 @@ repeated header goes. The rows join the first part, each cell keeping the page i
 the second part's block goes. A table may run on over many pages so.
 """
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any
 
-from app.conversion.layout import RawBlock, RawCell, RawPage, style_of
+from app.conversion.layout import Box, RawBlock, RawCell, RawPage, style_of
 
 _BODY = ("text", "table")  # what is no running head or foot
 
 
-def table_block(table: Any, page: Any) -> RawBlock | None:
-    """The block of a pdfplumber ``table`` on its ``page``: rows of cells, empty rows dropped;
-    None where no row is left - ruling lines around nothing."""
-    number = page.page_number
-    texts = table.extract()
-    boxes = [row.cells for row in table.rows]
+@dataclass(frozen=True)
+class FoundTable:
+    """A table as pdfplumber read it: each row's texts and the boxes of its cells, None where a
+    spanning cell covers the place, and the table's box."""
+
+    texts: Sequence[Sequence[str | None]]
+    boxes: Sequence[Sequence[Box | None]]
+    bbox: Box
+
+
+def table_block(table: FoundTable, chars: Sequence[Mapping[str, Any]], page: int) -> RawBlock | None:
+    """The block of a ``table`` on ``page`` among the page's ``chars`` (pdfplumber's: x0, x1, top,
+    bottom, text, fontname): rows of cells, empty rows dropped; None where no row is left - ruling
+    lines around nothing."""
     rows: list[tuple[RawCell | None, ...]] = []
-    for index, (cells, places) in enumerate(zip(texts, boxes, strict=True)):
+    for index, (cells, places) in enumerate(zip(table.texts, table.boxes, strict=True)):
         if all(not (cell or "").strip() for cell in cells):
             continue
-        header = index == 0 and _bold(page, [place for place in places if place is not None])
+        header = index == 0 and _bold(chars, [place for place in places if place is not None])
         rows.append(
             tuple(
-                None if cell is None else RawCell(text=" ".join(cell.split()), header=header, page=number)
+                None if cell is None else RawCell(text=" ".join(cell.split()), header=header, page=page)
                 for cell in cells
             )
         )
     if not rows:
         return None
-    return RawBlock(number, "table", "", tuple(table.bbox), None, False, False, tuple(rows))
+    return RawBlock(page, "table", "", table.bbox, None, False, False, tuple(rows))
 
 
-def _bold(page: Any, places: Iterable[tuple[float, float, float, float]]) -> bool:
+def _bold(chars: Sequence[Mapping[str, Any]], places: Iterable[Box]) -> bool:
     """Whether every sign within these cells is set bold - and there is one."""
     signs = [
         char
         for x0, top, x1, bottom in places
-        for char in page.chars
+        for char in chars
         if x0 <= (char["x0"] + char["x1"]) / 2 <= x1
         and top <= (char["top"] + char["bottom"]) / 2 <= bottom
         and char["text"].strip()
