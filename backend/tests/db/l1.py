@@ -9,6 +9,7 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 from app.core.ids import new_id
+from app.domain.wording import text_hash
 
 CV = "https://w3id.org/wlo/curriculum/vocab#"
 CUR = "https://w3id.org/wlo/curriculum/core#"
@@ -109,6 +110,76 @@ def add_document(connection: psycopg.Connection, made: dict[str, uuid.UUID], **c
         (document, *values.values()),
     )
     return document
+
+
+def add_node(
+    connection: psycopg.Connection,
+    document: uuid.UUID,
+    parent: uuid.UUID | None = None,
+    position: int = 1,
+    **columns: Any,
+) -> uuid.UUID:
+    """A node of the document, an area from the source, proposed."""
+    node = add_entity(connection, "node")
+    values = {
+        "document_id": document,
+        "parent_id": parent,
+        "position": position,
+        "function_scheme": CV + "NodeFunctions",
+        "function_iri": CV + "fn_area",
+        "origin_scheme": CV + "Origins",
+        "origin_iri": CV + "orig_source",
+        "review_status_scheme": CV + "ReviewStatuses",
+        "review_status_iri": CV + "rev_proposed",
+    } | columns
+    names = ", ".join(values)
+    marks = ", ".join(["%s"] * len(values))
+    connection.execute(
+        f"INSERT INTO node (id, {names}) VALUES (%s, {marks})",  # noqa: S608 - the tests' own names
+        (node, *values.values()),
+    )
+    return node
+
+
+def add_statement(
+    connection: psycopg.Connection,
+    document: uuid.UUID,
+    node: uuid.UUID,
+    *,
+    addressees: tuple[str, ...] = ("addr_learner",),
+    position: int = 1,
+    **columns: Any,
+) -> uuid.UUID:
+    """A learning outcome at the node with its addressees, written in one transaction."""
+    statement = add_entity(connection, "statement")
+    verbatim = columns.pop("verbatim", "Die Lernenden planen ihre Arbeit.")
+    values = {
+        "document_id": document,
+        "node_id": node,
+        "position": position,
+        "verbatim": verbatim,
+        "statement_kind_scheme": CV + "StatementKinds",
+        "statement_kind_iri": CV + "kind_learningOutcome",
+        "origin_scheme": CV + "Origins",
+        "origin_iri": CV + "orig_source",
+        "review_status_scheme": CV + "ReviewStatuses",
+        "review_status_iri": CV + "rev_proposed",
+        "text_hash": text_hash(verbatim),
+    } | columns
+    names = ", ".join(values)
+    marks = ", ".join(["%s"] * len(values))
+    with connection.transaction():
+        connection.execute(
+            f"INSERT INTO statement (id, {names}) VALUES (%s, {marks})",  # noqa: S608 - the tests' own names
+            (statement, *values.values()),
+        )
+        for addressee in addressees:
+            connection.execute(
+                "INSERT INTO statement_addressee (statement_id, addressee_scheme, addressee_iri)"
+                " VALUES (%s, %s, %s)",
+                (statement, CV + "Addressees", CV + addressee),
+            )
+    return statement
 
 
 def listed_values(connection: psycopg.Connection, table: str, column: str) -> set[str]:

@@ -127,6 +127,7 @@ CREATE TABLE statement (
     run_id uuid REFERENCES extraction_run (id),
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (document_id, id),
     UNIQUE (node_id, position) DEFERRABLE,
     FOREIGN KEY (document_id, node_id) REFERENCES node (document_id, id) ON DELETE CASCADE,
     FOREIGN KEY (id, kind) REFERENCES entity (id, kind),

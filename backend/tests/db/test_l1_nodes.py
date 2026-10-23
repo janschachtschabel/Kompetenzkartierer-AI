@@ -11,8 +11,7 @@ import pytest
 from psycopg import errors
 
 from app.db.migrate import migrate
-from app.domain.wording import text_hash
-from tests.db.l1 import CV, SCHOOL, add_conversion, add_document, add_entity, seed_vocabulary
+from tests.db.l1 import CV, SCHOOL, add_conversion, add_document, add_node, add_statement, seed_vocabulary
 
 pytestmark = pytest.mark.pg
 
@@ -28,78 +27,6 @@ def connection(database_url: str) -> Iterator[psycopg.Connection]:
 @pytest.fixture
 def document(connection: psycopg.Connection) -> uuid.UUID:
     return add_document(connection, add_conversion(connection))
-
-
-def pair(scheme: str, value: str) -> tuple[str, str]:
-    return CV + scheme, CV + value
-
-
-def add_node(
-    connection: psycopg.Connection,
-    document: uuid.UUID,
-    parent: uuid.UUID | None = None,
-    position: int = 1,
-    **columns: Any,
-) -> uuid.UUID:
-    node = add_entity(connection, "node")
-    values = {
-        "document_id": document,
-        "parent_id": parent,
-        "position": position,
-        "function_scheme": CV + "NodeFunctions",
-        "function_iri": CV + "fn_area",
-        "origin_scheme": CV + "Origins",
-        "origin_iri": CV + "orig_source",
-        "review_status_scheme": CV + "ReviewStatuses",
-        "review_status_iri": CV + "rev_proposed",
-    } | columns
-    names = ", ".join(values)
-    marks = ", ".join(["%s"] * len(values))
-    connection.execute(
-        f"INSERT INTO node (id, {names}) VALUES (%s, {marks})",  # noqa: S608 - the tests' own names
-        (node, *values.values()),
-    )
-    return node
-
-
-def add_statement(
-    connection: psycopg.Connection,
-    document: uuid.UUID,
-    node: uuid.UUID,
-    *,
-    addressees: tuple[str, ...] = ("addr_learner",),
-    position: int = 1,
-    **columns: Any,
-) -> uuid.UUID:
-    statement = add_entity(connection, "statement")
-    verbatim = columns.pop("verbatim", "Die Lernenden planen ihre Arbeit.")
-    values = {
-        "document_id": document,
-        "node_id": node,
-        "position": position,
-        "verbatim": verbatim,
-        "statement_kind_scheme": CV + "StatementKinds",
-        "statement_kind_iri": CV + "kind_learningOutcome",
-        "origin_scheme": CV + "Origins",
-        "origin_iri": CV + "orig_source",
-        "review_status_scheme": CV + "ReviewStatuses",
-        "review_status_iri": CV + "rev_proposed",
-        "text_hash": text_hash(verbatim),
-    } | columns
-    names = ", ".join(values)
-    marks = ", ".join(["%s"] * len(values))
-    with connection.transaction():  # a statement and its addressees, as one
-        connection.execute(
-            f"INSERT INTO statement (id, {names}) VALUES (%s, {marks})",  # noqa: S608 - the tests' own names
-            (statement, *values.values()),
-        )
-        for addressee in addressees:
-            connection.execute(
-                "INSERT INTO statement_addressee (statement_id, addressee_scheme, addressee_iri)"
-                " VALUES (%s, %s, %s)",
-                (statement, *pair("Addressees", addressee)),
-            )
-    return statement
 
 
 def test_a_tree_of_nodes_is_held_and_none_comes_to_lie_under_itself(
