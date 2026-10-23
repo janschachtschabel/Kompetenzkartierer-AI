@@ -25,6 +25,10 @@ dependencies = [
     "boto3>=1.43",
     # multipart forms: the upload of a source (starlette's request.form)
     "python-multipart>=0.0.32",
+    # the conversion of a PDF into blocks (X0) and its text layer: the versions the old app runs
+    "pdfplumber>=0.11.10",
+    "pdfminer-six>=20260107",
+    "pypdfium2>=5.13",
 ]
 
 [dependency-groups]
