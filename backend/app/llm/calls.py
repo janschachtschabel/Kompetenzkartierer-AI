@@ -26,6 +26,7 @@ from pydantic_ai.models import Model
 from pydantic_ai.models.openai import OpenAIChatModel, OpenAIResponsesModelSettings
 from pydantic_ai.output import StructuredDict
 
+from app.core.metrics import observe_llm_request
 from app.llm.attempts import Attempts
 from app.llm.metering import Meter, Spent, estimate_input
 from app.llm.schema import schema_errors
@@ -189,23 +190,14 @@ async def _attempt(
     except ModelHTTPError as error:
         # answered, with a refusal: nothing to charge but the request
         refused = Spent(requests=1)
+        observe_llm_request("refused")
         if open_ is not None:
             await asyncio.shield(meter.book(open_[0], refused))
         raise _Refused(error, spent + refused) from error
     except BaseException:
         if open_ is not None:
             reservation, estimate, before = open_
-            sent = attempts.sent > before
-            unanswered = (
-                Spent(
-                    input_tokens=estimate,
-                    output_tokens=stage.output_tokens,
-                    unanswered_requests=1,
-                    estimated=True,
-                )
-                if sent
-                else Spent()
-            )
+            unanswered = _unanswered(estimate, stage.output_tokens, sent=attempts.sent > before)
             # shielded: a cancel must not take the booking of a request that may be paid for along
             await asyncio.shield(meter.book(reservation, unanswered))
         raise
@@ -213,10 +205,26 @@ async def _attempt(
 
 
 def _answered(response: ModelResponse) -> Spent:
+    """What an answer cost, as it reports it; counted."""
     usage = response.usage
+    observe_llm_request(
+        "answered",
+        input_tokens=usage.input_tokens,
+        cached_input_tokens=usage.cache_read_tokens,
+        output_tokens=usage.output_tokens,
+    )
     return Spent(
         input_tokens=usage.input_tokens,
         cached_input_tokens=usage.cache_read_tokens,
         output_tokens=usage.output_tokens,
         requests=1,
     )
+
+
+def _unanswered(estimate: int, output_tokens: int, *, sent: bool) -> Spent:
+    """What a request cut off cost: what was held for it where it went out - the provider may
+    have charged for it - and counted; nothing where it never did."""
+    if not sent:
+        return Spent()
+    observe_llm_request("unanswered", estimated_tokens=estimate + output_tokens)
+    return Spent(input_tokens=estimate, output_tokens=output_tokens, unanswered_requests=1, estimated=True)

@@ -17,6 +17,7 @@ from uuid import UUID
 
 import psycopg
 
+from app.core.metrics import observe_reservations
 from app.llm.metering import BudgetExhausted, Spent
 
 _READ_COMMITTED = "SELECT read_committed_alone('a reservation')"
@@ -133,6 +134,7 @@ async def reserve(
             assert taken is not None  # noqa: S101 - an aggregate always has its row
             left = limit - int(taken[0])
             if input_tokens + output_tokens > left:
+                observe_reservations("refused")
                 raise BudgetExhausted(f"{input_tokens + output_tokens} tokens asked, {max(0, left)} left")
         cursor = await connection.execute(
             _HOLD,
@@ -148,6 +150,7 @@ async def reserve(
         )
         held = await cursor.fetchone()
     assert held is not None  # noqa: S101 - an INSERT … RETURNING returns its row
+    observe_reservations("held")
     return Reservation(int(held[0]))
 
 
@@ -169,6 +172,7 @@ async def book(connection: psycopg.AsyncConnection, reservation: Reservation, sp
     )
     row = await cursor.fetchone()
     assert row is not None  # noqa: S101 - an aggregate always has its row
+    observe_reservations("booked" if row[0] else "late")
     return bool(row[0])
 
 
@@ -176,6 +180,7 @@ async def book_abandoned(connection: psycopg.AsyncConnection, job_id: UUID) -> i
     """Book the job's open reservations as spent and estimated, each a request nobody answered;
     how many it took."""
     cursor = await connection.execute(_BOOK_ABANDONED, (job_id,))
+    observe_reservations("abandoned", cursor.rowcount)
     return cursor.rowcount
 
 

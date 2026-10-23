@@ -9,6 +9,7 @@ from uuid import UUID
 
 import psycopg
 import pytest
+from prometheus_client import REGISTRY
 from psycopg import errors
 
 from app.core.ids import new_id
@@ -261,3 +262,30 @@ async def test_reservations_side_by_side_never_hold_more_than_the_limit(database
             == ["BudgetExhausted"] * 10 + ["Reservation"] * 10
         )
         assert (await usage_of(setup, account)).tokens_held == 1_000
+
+
+def reservations(outcome: str) -> float:
+    return REGISTRY.get_sample_value("kka_usage_reservations_total", {"outcome": outcome}) or 0.0
+
+
+async def test_reservations_are_counted_by_what_became_of_them(connection: psycopg.AsyncConnection) -> None:
+    # held, refused for the budget, booked - or late, where it was booked as abandoned before
+    outcomes = ("held", "refused", "booked", "late", "abandoned")
+    before = {outcome: reservations(outcome) for outcome in outcomes}
+    account = await an_account(connection, token_limit=1_000)
+    answered, abandoned = await a_charge(connection, account), await a_charge(connection, account)
+    booked = await reserve(connection, answered, input_tokens=100, output_tokens=100)
+    await book(connection, booked, Spent(input_tokens=50, output_tokens=50, requests=1))
+    late = await reserve(connection, abandoned, input_tokens=100, output_tokens=100)
+    with pytest.raises(BudgetExhausted):
+        await reserve(connection, abandoned, input_tokens=900, output_tokens=100)
+    await book_abandoned(connection, abandoned.job_id)
+    await book(connection, late, Spent(input_tokens=50, output_tokens=50, requests=1))
+
+    assert {outcome: reservations(outcome) - before[outcome] for outcome in outcomes} == {
+        "held": 2,
+        "refused": 1,
+        "booked": 1,
+        "late": 1,
+        "abandoned": 1,
+    }

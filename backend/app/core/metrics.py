@@ -57,6 +57,47 @@ CONVERSIONS = Counter(
 CONVERSION_PAGES = Counter("kka_conversion_pages_total", "Pages converted, by engine", ["engine"])
 
 
+# Requests to the language model by how they ended: answered, refused (an HTTP error) or
+# unanswered (sent, never answered); and their tokens by kind - input (of it, cached_input),
+# output, as the provider reported them, and estimated: what was held for one unanswered
+LLM_REQUESTS = Counter(
+    "kka_llm_requests_total", "Requests to the language model by how they ended", ["outcome"]
+)
+LLM_TOKENS = Counter("kka_llm_tokens_total", "Tokens of the language model's requests by kind", ["kind"])
+# Reservations of an account's budget by what became of them: held, refused (the budget did not
+# hold them), booked, late (booked once more after its job's were booked as abandoned) or abandoned
+USAGE_RESERVATIONS = Counter(
+    "kka_usage_reservations_total", "Reservations of the model's budget by what became of them", ["outcome"]
+)
+
+
+def observe_llm_request(
+    outcome: str,
+    *,
+    input_tokens: int = 0,
+    cached_input_tokens: int = 0,
+    output_tokens: int = 0,
+    estimated_tokens: int = 0,
+) -> None:
+    """``outcome`` is answered, refused or unanswered: a fixed set."""
+    LLM_REQUESTS.labels(outcome).inc()
+    tokens = {
+        "input": input_tokens,
+        "cached_input": cached_input_tokens,
+        "output": output_tokens,
+        "estimated": estimated_tokens,
+    }
+    for kind, count in tokens.items():
+        if count:
+            LLM_TOKENS.labels(kind).inc(count)
+
+
+def observe_reservations(outcome: str, count: int = 1) -> None:
+    """``outcome`` is held, refused, booked, late or abandoned: a fixed set."""
+    if count:
+        USAGE_RESERVATIONS.labels(outcome).inc(count)
+
+
 def observe_conversion(engine: str, outcome: str, pages: int = 0) -> None:
     """``engine`` is an offered one and ``outcome`` done or a FailureCode: fixed sets."""
     CONVERSIONS.labels(engine, outcome).inc()
