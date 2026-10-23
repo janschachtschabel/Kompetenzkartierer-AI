@@ -53,8 +53,10 @@ _DATES: dict[URIRef | None, re.Pattern[str]] = {
 _TARGETS = ("mapsTo", "alsoMapsTo", "occursIn", "scopeRegion", "scopeDocumentType", "scopeInstitutionType")
 _TEXTS = ("scopeIssuer", "planGeneration", "positiveExample", "negativeExample")
 _SINGLE = ("surfaceForm", "pattern", "layoutSignal", "cueRole", "cueKind", "validFrom", "validUntil")
+# scopeSector has no column: a cue holds in its profile's sector, and may say so
 _COLUMNS = frozenset(
     {RDF.type, CUR.strength, CUR.verified, CUR.recognitionHint, CUR.negativeHint, CUR.scopeSubject}
+    | {CUR.scopeSector}
     | {CUR[name] for name in (*_TARGETS, *_TEXTS, *_SINGLE)}
 )
 
@@ -134,7 +136,7 @@ def read_lexicon(graph: Graph, scheme_of: Mapping[str, str]) -> Lexicon:
             if not owners[iri]:
                 raise VocabularyError(f"{iri} is in no profile: a profile lists it with cur:hasCue")
             raise VocabularyError(f"{iri} is in more than one profile: {sorted(owners[iri])}")
-        cues[iri] = _cue(graph, URIRef(iri), owners[iri][0], scheme_of)
+        cues[iri] = _cue(graph, URIRef(iri), profiles[owners[iri][0]], scheme_of)
     return Lexicon(profiles, cues)
 
 
@@ -151,7 +153,12 @@ def _profile(graph: Graph, iri: URIRef, scheme_of: Mapping[str, str]) -> Termino
     return TerminologyProfile(name, name[:end], scopes[0], one_per_language(graph, iri, RDFS.label))
 
 
-def _cue(graph: Graph, iri: URIRef, profile: str, scheme_of: Mapping[str, str]) -> LexicalCue:
+def _cue(graph: Graph, iri: URIRef, profile: TerminologyProfile, scheme_of: Mapping[str, str]) -> LexicalCue:
+    for sector in _all_iris(graph, iri, CUR.scopeSector):
+        if sector != profile.sector:
+            raise VocabularyError(
+                f"{iri} scopeSector: {sector} is not the sector of its profile {profile.iri}, where it holds"
+            )
     surface_form = _one_text(graph, iri, "surfaceForm")
     pattern = _one_text(graph, iri, "pattern")
     layout_signal = _one_iri(graph, iri, "layoutSignal")
@@ -171,7 +178,7 @@ def _cue(graph: Graph, iri: URIRef, profile: str, scheme_of: Mapping[str, str]) 
     texts = {name: _all_texts(graph, iri, CUR[name]) for name in _TEXTS}
     return LexicalCue(
         iri=str(iri),
-        profile=profile,
+        profile=profile.iri,
         surface_form=surface_form,
         pattern=pattern,
         layout_signal=layout_signal,

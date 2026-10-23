@@ -201,6 +201,20 @@ def test_a_cue_of_a_layout_signal_with_a_year_and_a_month_is_read(tmp_path: Path
     assert (cue.layout_signal, cue.valid_from, cue.valid_until) == (CV + "mark_bold", "2027", "2031-07")
 
 
+def test_a_cue_s_sector_is_its_profile_s_and_said_so_it_adds_nothing(tmp_path: Path) -> None:
+    _, cues = read(tmp_path, {"schule.ttl": with_cue("cur:scopeSector cv:sec_school ; " + WORD)})
+
+    assert cues[SCHOOL + "cue-x"].properties == {}
+
+
+def test_a_cue_of_another_sector_than_its_profile_s_is_refused(tmp_path: Path) -> None:
+    # a cue holds for its profile's documents only: another sector would be lost unseen
+    profile = with_cue("cur:scopeSector cv:sec_school , cv:sec_vocational ; " + WORD)
+
+    with pytest.raises(VocabularyError, match="scopeSector"):
+        read(tmp_path, {"schule.ttl": profile})
+
+
 def test_a_profile_without_a_cue_is_refused(tmp_path: Path) -> None:
     profile = PREFIXES + "schul:Terminology a cur:TerminologyProfile ; cur:profileScope cv:sec_school ."
 
