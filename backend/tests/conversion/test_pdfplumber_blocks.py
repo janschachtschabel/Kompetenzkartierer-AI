@@ -311,6 +311,17 @@ def test_a_page_of_more_signs_than_taken_is_too_dense_before_its_words_are_read(
         engine("pdfplumber").convert(path, pages=1, max_signs=170)
 
 
+def test_a_page_of_as_many_signs_as_taken_is_read(tmp_path: Path) -> None:
+    # the sentence printed three times over: 171 signs, read once
+    path = tmp_path / "lehrplan.pdf"
+    path.write_bytes(pages_pdf([SENTENCE * 3]))
+
+    converted = engine("pdfplumber").convert(path, pages=1, max_signs=171)
+
+    (block,) = converted.blocks
+    assert block.text == "Die Lernenden planen und pruefen ihre Arbeit sorgfaeltig."
+
+
 def test_a_sentence_printed_twice_over_to_look_bold_reads_once(tmp_path: Path) -> None:
     path = tmp_path / "lehrplan.pdf"
     path.write_bytes(pages_pdf([SENTENCE + SENTENCE.replace(b"72 700 Td", b"72.3 700 Td")]))
