@@ -3,10 +3,13 @@
 
 A profile (``cur:TerminologyProfile``) names one education sector (``cur:profileScope``) and
 lists one cue at least; its namespace - its IRI up to the last '#' or '/' - is where its values
-are named. One profile for each sector. A cue (``cur:LexicalCue``) belongs to the one profile
-that lists it (``cur:hasCue``). It names a form - a word, a pattern or a layout signal - its role
-and kind (one each, from ``cv:CueRoles`` and ``cv:CueKinds``) and a target at least; every IRI it
-names is typed in the model, since a target may be a class or a property as well as a concept.
+are named. One profile for each sector: a country's file (profile/laender/) lists its cues on
+its sector's profile with ``cur:hasCue`` and scopes them to its region, rather than making a
+profile of the sector and country of its own (konzept §12.4) - the active profile of a document
+is then one profile's cues. A cue (``cur:LexicalCue``) belongs to the one profile that lists it
+(``cur:hasCue``). It names a form - a word, a pattern or a layout signal - its role and kind
+(one each, from ``cv:CueRoles`` and ``cv:CueKinds``) and a target at least; every IRI it names
+is typed in the model, since a target may be a class or a property as well as a concept.
 Its layout signal, places and regions are concepts of ``cv:LayoutMarkers``, ``cv:Occurrences``
 and the regions, its document types ``cur:DocumentType``s; a date is an xsd:date, gYearMonth or
 gYear as written, without a time zone (cur-shapes.ttl). A pattern compiles with Python's re and
