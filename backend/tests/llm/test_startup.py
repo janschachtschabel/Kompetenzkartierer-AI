@@ -25,8 +25,9 @@ REFUSED = BASE | {"OPENAI_REASONING_EFFORT": "minimal"}
     [
         ({}, "o200k_base.tiktoken"),  # without the encoding's file: nothing to count with
         ({"LLM_CONTEXT_TOKENS": "16000"}, "LLM_CONTEXT_TOKENS=16000"),
+        ({"LLM_CONTEXT_TOKENS": "32000"}, "LLM_MAX_OUTPUT_TOKENS=16000"),
     ],
-    ids=["no-encoding", "context-window"],
+    ids=["no-encoding", "context-window", "answer-cap"],
 )
 def test_api_and_worker_refuse_a_model_layer_that_cannot_count_or_holds_no_document(
     restore_logging: None,

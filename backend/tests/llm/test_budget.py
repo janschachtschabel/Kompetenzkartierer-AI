@@ -88,7 +88,16 @@ def test_a_missing_or_changed_encoding_stops_the_start_and_is_fetched_from_nowhe
 
 
 def test_a_context_window_without_room_beside_a_document_is_refused() -> None:
-    budget.check_context_window(budget.RESERVE_TOKENS + 1)
+    budget.check_context_window(budget.RESERVE_TOKENS + 1_001, max_output_tokens=1_000)
 
     with pytest.raises(ValueError, match="LLM_CONTEXT_TOKENS=17000"):
-        budget.check_context_window(budget.RESERVE_TOKENS)
+        budget.check_context_window(budget.RESERVE_TOKENS, max_output_tokens=1_000)
+
+
+def test_an_answer_cap_that_leaves_a_request_no_room_is_refused() -> None:
+    # the provider refuses a request whose input and cap pass the window (vLLM), or the cap
+    # past the model's own (OpenAI): every request of a paid job would end in a 400
+    budget.check_context_window(budget.RESERVE_TOKENS + 16_001, max_output_tokens=16_000)
+
+    with pytest.raises(ValueError, match="LLM_MAX_OUTPUT_TOKENS=16000"):
+        budget.check_context_window(budget.RESERVE_TOKENS + 16_000, max_output_tokens=16_000)

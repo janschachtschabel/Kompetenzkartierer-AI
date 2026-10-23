@@ -71,11 +71,18 @@ def count_tokens(text: str) -> int:
     return len(encoding().encode_ordinary(text))
 
 
-def check_context_window(tokens: int) -> None:
+def check_context_window(tokens: int, *, max_output_tokens: int) -> None:
     """ValueError where a window of ``tokens`` leaves a document no room beside the rest of a
-    request (``RESERVE_TOKENS``): a window given in thousands - 128 for 128,000 - is the likely slip."""
+    request (``RESERVE_TOKENS``) - a window given in thousands, 128 for 128,000, is the likely
+    slip - or where the answer's cap leaves the request none: a provider refuses a request
+    whose input and cap pass the window, or a cap past the model's own."""
     if tokens <= RESERVE_TOKENS:
         raise ValueError(
             f"LLM_CONTEXT_TOKENS={tokens}: a request needs {RESERVE_TOKENS} tokens beside the document; "
             "give the model's whole context window in tokens, 128000 for 128k"
+        )
+    if max_output_tokens >= tokens - RESERVE_TOKENS:
+        raise ValueError(
+            f"LLM_MAX_OUTPUT_TOKENS={max_output_tokens}: an answer up to it leaves a request no room in a "
+            f"context window of {tokens} beside the {RESERVE_TOKENS} tokens it needs; lower it"
         )
