@@ -101,6 +101,7 @@ def with_cue(cue: str, *, listed: bool = True) -> str:
 
 BASE = "cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term ; cur:mapsTo schul:dt-Lehrplan"
 KIND_AS_ROLE = 'cur:surfaceForm "Plan" ; cur:cueRole cv:ck_term ; cur:cueKind cv:ck_term ; cur:mapsTo schul:x'
+ROLE_AS_KIND = 'cur:surfaceForm "P" ; cur:cueRole cv:role_cue ; cur:cueKind cv:role_cue ; cur:mapsTo schul:x'
 
 
 @pytest.mark.parametrize(
@@ -125,6 +126,7 @@ KIND_AS_ROLE = 'cur:surfaceForm "Plan" ; cur:cueRole cv:ck_term ; cur:cueKind cv
             with_cue(KIND_AS_ROLE),
             "role",
         ),
+        (with_cue(ROLE_AS_KIND), "kind"),
         (with_cue('cur:surfaceForm "Plan" ; cur:cueRole cv:role_cue ; cur:cueKind cv:ck_term'), "target"),
         (with_cue('cur:surfaceForm "Plan" ; ' + BASE + " , schul:nowhere"), "nowhere"),
         (with_cue('cur:surfaceForm "Plan" ; cur:mapsTo "Lehrplan" ; ' + BASE), "IRI"),
@@ -142,6 +144,7 @@ KIND_AS_ROLE = 'cur:surfaceForm "Plan" ; cur:cueRole cv:ck_term ; cur:cueKind cv
         "two-forms",
         "no-role",
         "role-of-another-scheme",
+        "kind-of-another-scheme",
         "no-target",
         "target-not-in-the-model",
         "target-as-text",
@@ -171,6 +174,8 @@ WORD = 'cur:surfaceForm "Plan" ; ' + BASE
         ('cur:validUntil "2023-08-01T10:00:00"^^xsd:dateTime', "date"),
         ('cur:validUntil "2023-13"^^xsd:gYearMonth', "date"),
         ('cur:validUntil "20x7"^^xsd:gYear', "date"),
+        ('cur:verified "ja"', "verified"),
+        ("cur:scopeIssuer schul:dt-Lehrplan", "text belongs"),
     ],
     ids=[
         "layout-signal-of-another-scheme",
@@ -184,6 +189,8 @@ WORD = 'cur:surfaceForm "Plan" ; ' + BASE
         "date-with-time",
         "year-month-ill-typed",
         "year-ill-typed",
+        "verified-as-text",
+        "issuer-as-iri",
     ],
 )
 def test_a_cue_s_value_its_field_does_not_take_is_refused(tmp_path: Path, statement: str, fault: str) -> None:
@@ -235,6 +242,14 @@ def test_a_profile_names_one_education_sector(tmp_path: Path, scope: str, fault:
     profile = SCHOOL_PROFILE.replace("cur:profileScope cv:sec_school ;", scope)
 
     with pytest.raises(VocabularyError, match=fault):
+        read(tmp_path, {"schule.ttl": profile})
+
+
+def test_a_profile_named_by_its_namespace_alone_is_refused(tmp_path: Path) -> None:
+    # its values are named under its namespace: the namespace itself names none of them
+    profile = SCHOOL_PROFILE.replace("schul:Terminology", f"<{SCHOOL}>")
+
+    with pytest.raises(VocabularyError, match="namespace"):
         read(tmp_path, {"schule.ttl": profile})
 
 

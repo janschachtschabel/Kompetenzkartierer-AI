@@ -171,3 +171,20 @@ async def test_a_region_comes_with_those_it_lies_in(connection: psycopg.AsyncCon
     assert await region_with_ancestors(connection, "DE-NW") == frozenset({REGION + "DE-NW", REGION + "DE"})
     assert await region_with_ancestors(connection, "DE") == frozenset({REGION + "DE"})
     assert await region_with_ancestors(connection, "XX") == frozenset()
+
+
+async def test_a_retired_region_is_no_region_a_region_lies_in(connection: psycopg.AsyncConnection) -> None:
+    await connection.execute("UPDATE vocab_concept SET retired_in = 1 WHERE iri = %s", (REGION + "DE",))
+
+    assert await region_with_ancestors(connection, "DE-NW") == frozenset({REGION + "DE-NW"})
+
+
+async def test_a_retired_cue_is_not_read(connection: psycopg.AsyncConnection) -> None:
+    await connection.execute(
+        "UPDATE lexical_cue SET retired_in = 1 WHERE iri = %s", (SCHOOL + "cue-dt-kernlehrplan",)
+    )
+
+    cues = await cues_for(connection, "school")
+
+    assert len(cues) == 486
+    assert SCHOOL + "cue-dt-kernlehrplan" not in {cue.iri for cue in cues}

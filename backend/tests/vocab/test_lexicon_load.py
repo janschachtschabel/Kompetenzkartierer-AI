@@ -108,6 +108,20 @@ def test_a_second_load_of_the_same_files_changes_nothing(migrated: str) -> None:
     assert fetch(migrated, "SELECT count(*) FROM lexical_cue WHERE retired_in IS NULL") == [(1267,)]
 
 
+def test_a_cue_the_files_change_is_written_anew(migrated: str, tmp_path: Path) -> None:
+    load_vocabulary(migrated, read_vocabulary(school(tmp_path / "1")))
+    weaker = SCHOOL_PROFILE.replace("cur:strength 0.9", "cur:strength 0.4")
+    assert weaker != SCHOOL_PROFILE
+
+    changed = write_model(tmp_path / "2", LEXICON_CORE, {"schule.ttl": weaker})
+
+    load_vocabulary(migrated, read_vocabulary(changed))
+
+    assert fetch(migrated, "SELECT strength FROM lexical_cue WHERE iri = %s", SCHOOL + "cue-klp") == [
+        (Decimal("0.4"),)
+    ]
+
+
 def test_a_cue_the_files_drop_is_retired_by_their_release_and_revived_when_it_returns(
     migrated: str, tmp_path: Path
 ) -> None:
