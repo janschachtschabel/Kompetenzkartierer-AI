@@ -153,7 +153,7 @@ describe("the register page's check", () => {
 
     const followed = wrapper.findAllComponents(JobProgress);
     expect(followed).toHaveLength(1);
-    expect(followed[0].props()).toEqual({ jobId: "j1", label: t("sources.check.jobLabel") });
+    expect(followed[0].props()).toEqual({ jobId: "j1", label: t("sources.check.jobLabel"), quiet: false });
     wrapper.unmount();
   });
 });
