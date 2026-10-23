@@ -5,9 +5,15 @@
  * start it again, and to its blocks. Only a PDF is converted so far, so another file is not asked
  * about; a file only the editors may read is said to be theirs, without a start. What happens
  * while the reader is on the page - started, done, failed - is announced in a region that is
- * there from the start; a state found on arrival is shown, not announced.
+ * there from the start, once: the job's progress is shown, not announced; a state found on
+ * arrival is shown, not announced either.
+ *
+ * The conversion belongs to the file, its job to whoever started it: another account holding
+ * the same file, an editor, the reader of an entry of no account gets no job named, or one that
+ * answers them 404 (app/api/jobs.py). The panel then asks after the conversion itself, as a job
+ * is asked after (jobWatch.ts), until it is no longer waiting.
  */
-import { computed, nextTick, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
 import { ApiError, askConversion, getConversion, type Conversion } from "@/api";
 import AppIcon from "@/components/AppIcon.vue";
@@ -19,6 +25,7 @@ import NoticeText from "@/components/NoticeText.vue";
 import { conversionFailureText } from "@/conversionWords";
 import { focusIsFree } from "@/focusRescue";
 import { t } from "@/i18n/de";
+import { askWithBackoff, type JobWatch } from "@/jobWatch";
 import { sayAnew } from "@/liveRegion";
 import { failureNotice, type Notice } from "@/notice";
 
@@ -41,10 +48,18 @@ const refusal = ref<Notice | null>(null);
 const busy = ref(false);
 const status = ref("");
 const heading = ref<HTMLElement | null>(null);
+/** The job that answered it is gone - another's, or one this reader may not follow. */
+const lostJob = ref<string | null>(null);
 // The latest answer counts: a reading asked for before a start is older than the start's answer
 let generation = 0;
+let following: JobWatch | null = null;
 
 const failed = computed(() => conversion.value?.status === "failed");
+/** Waiting with no job this reader can follow: the conversion itself is asked after. */
+const unfollowed = computed(() => {
+  const state = conversion.value;
+  return state?.status === "pending" && (!state.job_id || state.job_id === lostJob.value);
+});
 const startable = computed(() => none.value || failed.value);
 
 function refusedAs(error: unknown, status: number, code: string): boolean {
@@ -109,9 +124,34 @@ async function start(): Promise<void> {
   }
 }
 
+/** Asks after the conversion until it no longer waits, or a job this reader can follow takes it on. */
+function follow(): JobWatch {
+  return askWithBackoff(async (wanted) => {
+    try {
+      const found = await getConversion(props.sourceId);
+      if (!wanted()) return false;
+      conversion.value = found; // done, failed, or a job to follow: unfollowed ends the asking
+      if (found.status !== "pending") say(outcome(found));
+      return found.status === "pending";
+    } catch (error) {
+      if (!wanted()) return false;
+      if (!(error instanceof ApiError) || error.status >= 500) return true; // the next question follows
+      void load(); // gone or refused meanwhile: the section shows why
+      return false;
+    }
+  });
+}
+
+watch(unfollowed, (asking) => {
+  following?.stop();
+  following = asking ? follow() : null;
+});
+
 onMounted(() => {
   if (convertible.value) void load();
 });
+
+onUnmounted(() => following?.stop());
 </script>
 
 <template>
@@ -132,14 +172,15 @@ onMounted(() => {
     <template v-else-if="conversion">
       <template v-if="conversion.status === 'pending'">
         <JobProgress
-          v-if="conversion.job_id"
+          v-if="conversion.job_id && !unfollowed"
           :key="conversion.job_id"
           :job-id="conversion.job_id"
           :label="t('conversions.jobLabel')"
+          quiet
           @ended="load({ announce: true })"
-          @gone="load({ announce: true })"
+          @gone="lostJob = conversion.job_id"
         />
-        <p v-else class="conversion__note">{{ t("jobs.status.queued") }}</p>
+        <p v-else class="conversion__note" data-test="conversion-following">{{ t("conversions.following") }}</p>
       </template>
       <ConversionSummary v-else-if="conversion.status === 'done'" :conversion="conversion" :source-id="sourceId" />
       <p v-else class="conversion__failure">

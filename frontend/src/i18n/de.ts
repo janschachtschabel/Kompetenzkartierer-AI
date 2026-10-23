@@ -335,6 +335,8 @@ export const messages = {
     startFailed: "Die Umwandlung wurde nicht gestartet.",
     loadFailed: "Der Stand der Umwandlung wurde nicht geladen.",
     jobLabel: "Umwandlung in Blöcke",
+    // waiting with no job this reader may follow (another account's, an editor's start)
+    following: "Die Umwandlung wartet oder läuft; diese Seite fragt nach, bis sie fertig ist.",
     done: "Die Umwandlung ist fertig: {pages} {pages|Seite|Seiten} gelesen.",
     failed: "Die Umwandlung ist gescheitert.",
     facts: {

@@ -174,6 +174,63 @@ describe("an entry's conversion", () => {
     expect(wrapper.find("[data-test=conversion-start]").exists()).toBe(true);
   });
 
+  it("says the job's end once: in the section's words, not the job's as well", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const reloaded = deferred<api.Conversion>();
+    vi.mocked(api.getConversion).mockResolvedValueOnce(pending).mockReturnValue(reloaded.promise);
+    vi.spyOn(api, "getJob").mockResolvedValue({ ...job("done"), kind: "source.convert" });
+    const wrapper = await open();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    // the job has ended, the section reloads: whatever is said meanwhile is heard as well
+    const meanwhile = wrapper.findAll("[role=status]").map((region) => region.text()).filter(Boolean);
+    reloaded.resolve(conversion());
+    await flushPromises();
+
+    expect(meanwhile).toEqual([]);
+    expect(status(wrapper).text()).toBe(t("conversions.done", { pages: 3 }));
+  });
+
+  it.each([
+    // another account's job, an editor's start: the job answers 404 to this reader (app/api/jobs.py)
+    ["a job it may not follow", { job_id: "j9" }],
+    ["no job named", { job_id: null }],
+  ])("follows a conversion by its own state where it has %s, until it is done", async (_case, named) => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    vi.mocked(api.getConversion)
+      .mockResolvedValueOnce({ ...pending, ...named })
+      .mockResolvedValueOnce({ ...pending, ...named })
+      .mockResolvedValue(conversion());
+    vi.spyOn(api, "getJob").mockRejectedValue(new ApiError("server", 404, "not_found"));
+    const wrapper = await open();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    await flushPromises();
+    expect(wrapper.text()).toContain(t("conversions.following"));
+    expect(wrapper.text()).not.toContain(t("jobs.goneReasons.not_found"));
+
+    await vi.advanceTimersByTimeAsync(2000);
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(4000);
+    await flushPromises();
+
+    expect(status(wrapper).text()).toBe(t("conversions.done", { pages: 3 }));
+    expect(wrapper.text()).toContain(t("conversions.showBlocks"));
+  });
+
+  it("stops asking once it is gone from the page", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    vi.mocked(api.getConversion).mockResolvedValue({ ...pending, job_id: null });
+    const wrapper = await open();
+    const asked = vi.mocked(api.getConversion).mock.calls.length;
+
+    wrapper.unmount();
+    shown = null;
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    expect(api.getConversion).toHaveBeenCalledTimes(asked);
+  });
+
   it("says a refused start beside the button, which stays", async () => {
     vi.spyOn(api, "askConversion").mockRejectedValue(new ApiError("server", 422, "not_pdf"));
     const wrapper = await open();

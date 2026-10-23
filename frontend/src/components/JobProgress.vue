@@ -18,6 +18,8 @@ const props = defineProps<{
   jobId: string;
   /** What the job works on, as the page names it. */
   label: string;
+  /** Shown and not announced: the page around it says how the job ended, once, in its words. */
+  quiet?: boolean;
 }>();
 const emit = defineEmits<{ ended: [job: Job]; gone: [why: JobGone] }>();
 
@@ -57,6 +59,7 @@ const progressText = computed(() => {
 });
 // Each change of what the page shows, and only a change: the same state again reads the same.
 const announcement = computed(() => {
+  if (props.quiet) return "";
   const label = isolate(props.label);
   if (goneText.value) return t("jobs.announce", { label, status: goneText.value });
   if (trouble.value) return t("jobs.announce", { label, status: t("jobs.trouble") });
