@@ -122,12 +122,10 @@ def without_long_prefix(path: str) -> str:
 
 class FileSystemStorage:
     def __init__(self, root: Path) -> None:
-        self.root = root.resolve()
+        self.root = _plain_resolved(root)
 
     def _path(self, key: str) -> Path:
-        path = (self.root / check_key(key)).resolve()
-        if os.name == "nt":
-            path = Path(without_long_prefix(str(path)))
+        path = _plain_resolved(self.root / check_key(key))
         # a checked key has no "..", but a link inside the root may lead out of it
         if not path.is_relative_to(self.root):
             raise InvalidKey(f"not a storage key: {key[:80]!r}")
@@ -190,6 +188,13 @@ class FileSystemStorage:
         if not path.is_file():
             raise ObjectNotFound(key)
         return path
+
+
+def _plain_resolved(path: Path) -> Path:
+    """``path`` resolved, in its plain form on Windows: the root and every key's path compare alike,
+    whether the root was named in the long form or resolve kept it there."""
+    resolved = path.resolve()
+    return Path(without_long_prefix(str(resolved))) if os.name == "nt" else resolved
 
 
 def _sync_folder(folder: Path) -> None:

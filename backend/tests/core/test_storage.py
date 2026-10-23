@@ -180,6 +180,17 @@ def test_a_key_whose_path_resolves_in_the_long_form_is_written(
     assert storage.get("runs/r1/x4/1.json") == b"{}"
 
 
+@pytest.mark.skipif(os.name != "nt", reason="the long form is Windows'")
+def test_a_root_named_in_the_long_form_takes_keys(tmp_path: Path) -> None:
+    # STORAGE_DIR may name it so to pass MAX_PATH; resolve keeps the prefix on a root that has it
+    storage = FileSystemStorage(Path("\\\\?\\" + str(tmp_path / "objects")))
+
+    storage.put("runs/r1/x4/1.json", b"{}")
+
+    assert storage.get("runs/r1/x4/1.json") == b"{}"
+    assert (tmp_path / "objects" / "runs" / "r1" / "x4" / "1.json").read_bytes() == b"{}"
+
+
 @pytest.mark.skipif(os.name != "posix", reason="a folder is synced on POSIX systems only")
 def test_a_write_syncs_the_folder_it_renamed_in(
     storage: FileSystemStorage, monkeypatch: pytest.MonkeyPatch
