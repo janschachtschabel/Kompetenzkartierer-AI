@@ -12,9 +12,12 @@ the profiles' with their subfolders (a country's cues in profile/laender/).
 
 import hashlib
 from collections import defaultdict
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import rdflib
 from rdflib import RDF, Graph, Literal, Namespace, URIRef
 from rdflib.namespace import SKOS, XSD
 
@@ -88,14 +91,15 @@ def read_vocabulary(root: Path) -> Vocabulary:
     root = root.resolve()
     graph = Graph()
     files: dict[str, str] = {}
-    for path in _model_files(root):
-        content = path.read_bytes()
-        name = path.relative_to(root).as_posix()
-        files[name] = hashlib.sha256(content).hexdigest()
-        try:
-            graph.parse(data=content, format="turtle", publicID=_RELATIVE_BASE + name)
-        except Exception as error:  # rdflib reports bad Turtle as SyntaxError, IndexError, ...
-            raise VocabularyError(f"{name} does not parse: {error}") from error
+    with _literals_as_written():
+        for path in _model_files(root):
+            content = path.read_bytes()
+            name = path.relative_to(root).as_posix()
+            files[name] = hashlib.sha256(content).hexdigest()
+            try:
+                graph.parse(data=content, format="turtle", publicID=_RELATIVE_BASE + name)
+            except Exception as error:  # rdflib reports bad Turtle as SyntaxError, IndexError, ...
+                raise VocabularyError(f"{name} does not parse: {error}") from error
     _refuse_relative_iris(graph)
     entries = [f"{name} {digest}" for name, digest in sorted(files.items())]
     listing = "\n".join([f"reader {READER_FORMAT}", *entries])
@@ -110,6 +114,20 @@ def read_vocabulary(root: Path) -> Vocabulary:
     lexicon = read_lexicon(graph, {iri: concept.scheme for iri, concept in concepts.items()})
     content_hash = hashlib.sha256(listing.encode()).hexdigest()
     return Vocabulary(content_hash, files, schemes, concepts, lexicon.profiles, lexicon.cues)
+
+
+@contextmanager
+def _literals_as_written() -> Iterator[None]:
+    """rdflib rewrites a literal it can read into its canonical form as it parses, and a date
+    loses its time zone so ("2023-08-01Z" becomes "2023-08-01"): read so, a value the tables
+    cannot hold as written would pass unseen. The switch is rdflib's, for the whole process -
+    the reader runs alone in the load command; the ontology reads alike either way."""
+    normalize = rdflib.NORMALIZE_LITERALS
+    rdflib.NORMALIZE_LITERALS = False
+    try:
+        yield
+    finally:
+        rdflib.NORMALIZE_LITERALS = normalize
 
 
 def _model_files(root: Path) -> list[Path]:

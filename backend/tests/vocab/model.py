@@ -27,9 +27,11 @@ cv:ck_term a skos:Concept ; skos:inScheme cv:CueKinds .
 cv:ck_headingPattern a skos:Concept ; skos:inScheme cv:CueKinds .
 cv:Occurrences a skos:ConceptScheme .
 cv:occ_titlePage a skos:Concept ; skos:inScheme cv:Occurrences .
-land:Laender a skos:ConceptScheme .
-land:DE a skos:Concept ; skos:inScheme land:Laender ; skos:notation "DE" .
-land:DE-NW a skos:Concept ; skos:inScheme land:Laender ; skos:notation "DE-NW" ; skos:broader land:DE .
+cv:LayoutMarkers a skos:ConceptScheme .
+cv:mark_bold a skos:Concept ; skos:inScheme cv:LayoutMarkers .
+land:Regions a skos:ConceptScheme .
+land:DE a skos:Concept ; skos:inScheme land:Regions ; skos:notation "DE" .
+land:DE-NW a skos:Concept ; skos:inScheme land:Regions ; skos:notation "DE-NW" ; skos:broader land:DE .
 cur:Curriculum a rdfs:Class .
 """
 

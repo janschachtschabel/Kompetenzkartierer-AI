@@ -1,14 +1,18 @@
 """The lexicon of Curriculum-Kern 1.0: each sector's terminology profile and its cues (konzept
 §12.1), read off the model's graph with the vocabularies (app/vocab/loader.py).
 
-A profile (``cur:TerminologyProfile``) names one education sector (``cur:profileScope``); its
-namespace - its IRI up to the last '#' or '/' - is where its values are named. A cue
-(``cur:LexicalCue``) belongs to the one profile that lists it (``cur:hasCue``). It names a form -
-a word, a pattern or a layout signal - its role and kind (one each, from ``cv:CueRoles`` and
-``cv:CueKinds``) and a target at least; every IRI it names is typed in the model, since a target
-may be a class or a property as well as a concept. A pattern compiles with Python's re and with
-``regex`` as re reads it. What the tables cannot hold as it is - text where an IRI belongs, two forms, a date
-in prose - is refused; whatever else a file says of a cue goes to its properties.
+A profile (``cur:TerminologyProfile``) names one education sector (``cur:profileScope``) and
+lists one cue at least; its namespace - its IRI up to the last '#' or '/' - is where its values
+are named. One profile for each sector. A cue (``cur:LexicalCue``) belongs to the one profile
+that lists it (``cur:hasCue``). It names a form - a word, a pattern or a layout signal - its role
+and kind (one each, from ``cv:CueRoles`` and ``cv:CueKinds``) and a target at least; every IRI it
+names is typed in the model, since a target may be a class or a property as well as a concept.
+Its layout signal, places and regions are concepts of ``cv:LayoutMarkers``, ``cv:Occurrences``
+and the regions, its document types ``cur:DocumentType``s; a date is an xsd:date, gYearMonth or
+gYear as written, without a time zone (cur-shapes.ttl). A pattern compiles with Python's re and
+with ``regex`` as re reads it. What the tables cannot hold as it is - text where an IRI belongs,
+two forms, a date in prose - is refused; whatever else a file says of a cue goes to its
+properties.
 """
 
 import re
@@ -36,7 +40,16 @@ CV = Namespace("https://w3id.org/wlo/curriculum/vocab#")
 SECTORS = str(CV.EducationSectors)
 ROLES = str(CV.CueRoles)
 KINDS = str(CV.CueKinds)
-_DATE = regex.compile(r"[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?")
+LAYOUT_MARKERS = str(CV.LayoutMarkers)
+REGIONS = "https://w3id.org/wlo/curriculum/region/Regions"
+# What a cue's places and regions are concepts of
+_SCHEMES = {"occursIn": str(CV.Occurrences), "scopeRegion": REGIONS}
+# A date's lexical form by its datatype (cur-shapes.ttl DateLike); the tables keep it as written
+_DATES: dict[URIRef | None, re.Pattern[str]] = {
+    XSD.date: re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}"),
+    XSD.gYearMonth: re.compile(r"[0-9]{4}-(0[1-9]|1[0-2])"),
+    XSD.gYear: re.compile(r"[0-9]{4}"),
+}
 _TARGETS = ("mapsTo", "alsoMapsTo", "occursIn", "scopeRegion", "scopeDocumentType", "scopeInstitutionType")
 _TEXTS = ("scopeIssuer", "planGeneration", "positiveExample", "negativeExample")
 _SINGLE = ("surfaceForm", "pattern", "layoutSignal", "cueRole", "cueKind", "validFrom", "validUntil")
@@ -105,7 +118,10 @@ def read_lexicon(graph: Graph, scheme_of: Mapping[str, str]) -> Lexicon:
             raise VocabularyError(f"{sector} has more than one profile: {named}, a sector has one")
     owners: dict[str, list[str]] = defaultdict(list)
     for profile in profiles:
-        for cue in _all_iris(graph, URIRef(profile), CUR.hasCue):
+        its_cues = _all_iris(graph, URIRef(profile), CUR.hasCue)
+        if not its_cues:
+            raise VocabularyError(f"{profile} lists no cue: a profile lists one at least (cur:hasCue)")
+        for cue in its_cues:
             owners[cue].append(profile)
     typed = {str(iri) for iri in graph.subjects(RDF.type, CUR.LexicalCue) if isinstance(iri, URIRef)}
     for listed in sorted(set(owners) - typed):
@@ -151,6 +167,7 @@ def _cue(graph: Graph, iri: URIRef, profile: str, scheme_of: Mapping[str, str]) 
     for target in [*(target for targets in named.values() for target in targets), layout_signal]:
         if target is not None and (URIRef(target), RDF.type, None) not in graph:
             raise VocabularyError(f"{iri} names {target}, which the model does not type: no such target")
+    _check_kinds_of_values(graph, iri, named, layout_signal, scheme_of)
     texts = {name: _all_texts(graph, iri, CUR[name]) for name in _TEXTS}
     return LexicalCue(
         iri=str(iri),
@@ -179,6 +196,27 @@ def _cue(graph: Graph, iri: URIRef, profile: str, scheme_of: Mapping[str, str]) 
         negative_examples=texts["negativeExample"],
         properties=other_properties(graph, iri, _COLUMNS),
     )
+
+
+def _check_kinds_of_values(
+    graph: Graph,
+    iri: URIRef,
+    named: Mapping[str, list[str]],
+    layout_signal: str | None,
+    scheme_of: Mapping[str, str],
+) -> None:
+    """A cue's layout signal, places, regions and document types are of the kind cur-shapes.ttl
+    and the core name: typed in the model, a place or a region of another scheme would go
+    unnoticed until a document met it."""
+    if layout_signal is not None and scheme_of.get(layout_signal) != LAYOUT_MARKERS:
+        raise VocabularyError(f"{iri} layoutSignal: {layout_signal} is no concept of {LAYOUT_MARKERS}")
+    for name, scheme in _SCHEMES.items():
+        for value in named[name]:
+            if scheme_of.get(value) != scheme:
+                raise VocabularyError(f"{iri} {name}: {value} is no concept of {scheme}")
+    for value in named["scopeDocumentType"]:
+        if (URIRef(value), RDF.type, CUR.DocumentType) not in graph:
+            raise VocabularyError(f"{iri} scopeDocumentType: {value} is no cur:DocumentType")
 
 
 def _check_pattern(iri: URIRef, pattern: str) -> None:
@@ -238,12 +276,18 @@ def _all_texts(graph: Graph, iri: URIRef, predicate: URIRef) -> list[str]:
 
 
 def _date(graph: Graph, iri: URIRef, name: str) -> str | None:
-    value = _one_text(graph, iri, name)
-    if value is not None and _DATE.fullmatch(value) is None:
-        raise VocabularyError(
-            f"{iri} {name}: a date (YYYY, YYYY-MM or YYYY-MM-DD) belongs here, not {value!r}"
-        )
-    return value
+    value = _single(graph, iri, name)
+    if value is None:
+        return None
+    # rdflib checks an xsd:date (ill_typed), not a gYearMonth or gYear: their form does
+    if isinstance(value, Literal) and not value.ill_typed:
+        form = _DATES.get(value.datatype)
+        if form is not None and form.fullmatch(value) is not None:
+            return str(value)
+    raise VocabularyError(
+        f"{iri} {name}: a date belongs here - an xsd:date, gYearMonth or gYear (YYYY-MM-DD, YYYY-MM"
+        f" or YYYY) without a time zone - not {value!r}"
+    )
 
 
 def _strength(graph: Graph, iri: URIRef) -> Decimal | None:

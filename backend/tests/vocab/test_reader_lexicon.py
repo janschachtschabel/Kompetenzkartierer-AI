@@ -154,6 +154,60 @@ def test_a_cue_the_tables_cannot_hold_as_it_is_is_refused(tmp_path: Path, profil
         read(tmp_path, {"schule.ttl": profile})
 
 
+WORD = 'cur:surfaceForm "Plan" ; ' + BASE
+
+
+@pytest.mark.parametrize(
+    ("statement", "fault"),
+    [
+        ("cur:layoutSignal cv:occ_titlePage", "LayoutMarkers"),
+        ('cur:layoutSignal "fett"', "IRI belongs"),
+        ("cur:scopeRegion land:DE , cv:sec_school", "Regions"),
+        ("cur:occursIn land:DE", "Occurrences"),
+        ("cur:scopeDocumentType cur:Curriculum", "DocumentType"),
+        ('cur:validFrom "2023-08-01"', "date"),
+        ('cur:validFrom "2023-13-01"^^xsd:date', "date"),
+        ('cur:validFrom "2023-08-01Z"^^xsd:date', "date"),
+        ('cur:validUntil "2023-08-01T10:00:00"^^xsd:dateTime', "date"),
+        ('cur:validUntil "2023-13"^^xsd:gYearMonth', "date"),
+        ('cur:validUntil "20x7"^^xsd:gYear', "date"),
+    ],
+    ids=[
+        "layout-signal-of-another-scheme",
+        "layout-signal-as-text",
+        "region-of-another-scheme",
+        "place-of-another-scheme",
+        "document-type-no-document-type",
+        "date-without-datatype",
+        "date-ill-typed",
+        "date-with-time-zone",  # read as rdflib makes it, the time zone would fall away
+        "date-with-time",
+        "year-month-ill-typed",
+        "year-ill-typed",
+    ],
+)
+def test_a_cue_s_value_its_field_does_not_take_is_refused(tmp_path: Path, statement: str, fault: str) -> None:
+    with pytest.raises(VocabularyError, match=fault):
+        read(tmp_path, {"schule.ttl": with_cue(statement + " ; " + WORD)})
+
+
+def test_a_cue_of_a_layout_signal_with_a_year_and_a_month_is_read(tmp_path: Path) -> None:
+    dates = 'cur:validFrom "2027"^^xsd:gYear ; cur:validUntil "2031-07"^^xsd:gYearMonth'
+    profile = with_cue("cur:layoutSignal cv:mark_bold ; " + dates + " ; " + BASE)
+
+    _, cues = read(tmp_path, {"schule.ttl": profile})
+
+    cue = cues[SCHOOL + "cue-x"]
+    assert (cue.layout_signal, cue.valid_from, cue.valid_until) == (CV + "mark_bold", "2027", "2031-07")
+
+
+def test_a_profile_without_a_cue_is_refused(tmp_path: Path) -> None:
+    profile = PREFIXES + "schul:Terminology a cur:TerminologyProfile ; cur:profileScope cv:sec_school ."
+
+    with pytest.raises(VocabularyError, match="hasCue"):
+        read(tmp_path, {"schule.ttl": profile})
+
+
 @pytest.mark.parametrize(
     ("scope", "fault"),
     [
