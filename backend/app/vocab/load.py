@@ -27,8 +27,15 @@ def main() -> int:
         log.error("vocabulary not loaded: %s", " ".join(str(error).split()))
         return 1
     if result.changed:
-        counts = (result.release_id, len(vocabulary.schemes), len(vocabulary.concepts))
-        log.info("loaded release %d: %d schemes, %d concepts", *counts)
+        counts = (
+            len(vocabulary.schemes),
+            len(vocabulary.concepts),
+            len(vocabulary.profiles),
+            len(vocabulary.cues),
+        )
+        log.info(
+            "loaded release %d: %d schemes, %d concepts, %d profiles, %d cues", result.release_id, *counts
+        )
     else:
         log.info("release %d unchanged", result.release_id)
     return 0

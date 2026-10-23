@@ -152,5 +152,6 @@ def test_the_load_command_reads_the_folder_the_settings_name(migrated: str, tmp_
 
     assert [run.returncode for run in runs] == [0, 0], runs[0].stderr
     assert "loaded release" in runs[0].stderr
+    assert "1 schemes, 1 concepts, 0 profiles, 0 cues" in runs[0].stderr  # the colours have no lexicon
     assert "unchanged" in runs[1].stderr
     assert fetch(migrated, "SELECT iri FROM vocab_concept") == [(EX + "red",)]
