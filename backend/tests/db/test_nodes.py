@@ -1,6 +1,7 @@
 """Writing a document's structure as one subtree at a time and reading it back as a tree (plan M1
 4.6): a subtree is written whole or not at all, and read only by those who see its document."""
 
+import asyncio
 import uuid
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -217,17 +218,23 @@ async def test_a_subtree_with_a_value_its_profile_does_not_hold_is_written_not_a
     assert await counts(connection) == (0, 0, 0, 0)
 
 
+@pytest.mark.parametrize(
+    ("retired", "draft"),
+    [
+        ("addr_educator", AREA),  # a statement's addressee, two levels down
+        ("match_exact", node(anchors=(AnchorDraft(("p1-b1",), 1, match_kind=CV + "match_exact"),))),
+    ],
+    ids=["addressee", "match-kind-of-a-node-s-anchor"],
+)
 async def test_a_subtree_with_a_retired_core_value_is_written_not_at_all(
-    connection: psycopg.AsyncConnection, document: Any
+    connection: psycopg.AsyncConnection, document: Any, retired: str, draft: NodeDraft
 ) -> None:
-    await connection.execute(
-        "UPDATE vocab_concept SET retired_in = 1 WHERE iri = %s", (CV + "addr_educator",)
-    )
+    await connection.execute("UPDATE vocab_concept SET retired_in = 1 WHERE iri = %s", (CV + retired,))
 
     with pytest.raises(ProfileValueError) as refused:
-        await write_subtree(connection, document.id, AREA)
+        await write_subtree(connection, document.id, draft)
 
-    assert (refused.value.problem, refused.value.value) == ("retired", CV + "addr_educator")
+    assert (refused.value.problem, refused.value.value) == ("retired", CV + retired)
     assert await counts(connection) == (0, 0, 0, 0)
 
 
@@ -254,6 +261,53 @@ async def test_a_subtree_waits_for_another_write_to_its_document_s_tree(
         await connection.execute("SET lock_timeout = '200ms'")
         with pytest.raises(psycopg.errors.LockNotAvailable):
             await write_subtree(connection, document.id, node())
+
+
+async def test_a_node_moved_waits_for_a_write_to_its_document_s_tree(
+    url: str, connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # the tree's lock and the one the database's check of a move takes are one
+    root = await write_subtree(connection, document.id, node())
+    moved = await write_subtree(connection, document.id, node())
+
+    async with await psycopg.AsyncConnection.connect(url, autocommit=True) as other, other.transaction():
+        await lock_tree(other, document.id)
+        await connection.execute("SET lock_timeout = '200ms'")
+        with pytest.raises(psycopg.errors.LockNotAvailable):
+            await connection.execute("UPDATE node SET parent_id = %s WHERE id = %s", (root, moved))
+
+
+async def test_a_subtree_that_waited_for_the_tree_takes_the_place_after_what_was_written_meanwhile(
+    url: str, connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    async with (
+        await psycopg.AsyncConnection.connect(url, autocommit=True) as other,
+        await psycopg.AsyncConnection.connect(url, autocommit=True) as watcher,
+    ):
+        async with other.transaction():
+            await lock_tree(other, document.id)
+            waiting = asyncio.create_task(write_subtree(connection, document.id, node()))
+            await waiting_for_a_lock(watcher)
+            first = await write_subtree(other, document.id, node())
+        second = await waiting
+
+    tree = await read_tree(connection, owner(document), document.id)
+    assert tree is not None
+    assert [(top.id, top.position) for top in tree] == [(first, 1), (second, 2)]
+
+
+async def waiting_for_a_lock(watcher: psycopg.AsyncConnection) -> None:
+    """Until a session waits for an advisory lock: there, as long as the lock is held, it stays."""
+    for _ in range(200):
+        cursor = await watcher.execute(
+            "SELECT count(*) FROM pg_stat_activity"
+            " WHERE datname = current_database() AND wait_event_type = 'Lock' AND wait_event = 'advisory'"
+        )
+        found = await cursor.fetchone()
+        if found is not None and found[0] > 0:
+            return
+        await asyncio.sleep(0.05)
+    raise AssertionError("no session came to wait for the tree's lock")
 
 
 async def test_a_tree_is_read_within_a_transaction_already_open(

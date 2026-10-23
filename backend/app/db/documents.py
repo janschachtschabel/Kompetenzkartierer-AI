@@ -102,6 +102,7 @@ async def create_document(
     whether the content of an entry of no account is open to accounts (THIRD_PARTY_MARKDOWN).
     DocumentError where the conversion is none the maker may read, the sector or a region unknown."""
     document_id = new_id()
+    regions = list(dict.fromkeys(regions))  # each once, in the order first given
     async with connection.transaction():
         cursor = await connection.execute(
             _ENTRY_RIGHTS,
@@ -119,7 +120,7 @@ async def create_document(
         sector_iri = await sector_by_notation(connection, sector)
         if sector_iri is None:
             raise DocumentError(f"no sector {sector!r}")
-        cursor = await connection.execute(_KNOWN_REGIONS, (REGIONS, list(regions)))
+        cursor = await connection.execute(_KNOWN_REGIONS, (REGIONS, regions))
         unknown = sorted(set(regions) - {row[0] for row in await cursor.fetchall()})
         if unknown:
             raise DocumentError(f"no region {', '.join(unknown)}")
@@ -134,7 +135,7 @@ async def create_document(
                 draft_iri(document_id),
                 EDUCATION_SECTORS,
                 sector_iri,
-                list(regions),
+                regions,
                 entry[0],
             ),
         )

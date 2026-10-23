@@ -143,8 +143,9 @@ async def read_tree(
     connection: psycopg.AsyncConnection, reader: Reader, document_id: UUID
 ) -> tuple[TreeNode, ...] | None:
     """The document's nodes from its top, each with its statements and children in their order;
-    None where ``reader`` does not see the document. Read in one snapshot: within the caller's
-    transaction, or one of its own that reads alone."""
+    None where ``reader`` does not see the document. Read in one snapshot, in a read-only
+    transaction of its own; within the caller's, as that one reads (each query anew under read
+    committed)."""
     if connection.info.transaction_status != psycopg.pq.TransactionStatus.IDLE:
         return await _read_tree(connection, reader, document_id)
     async with connection.transaction():

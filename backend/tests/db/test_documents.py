@@ -20,6 +20,7 @@ from app.db.documents import (
 from app.db.migrate import migrate
 from app.db.source_queries import Reader
 from app.vocab.loader import read_vocabulary
+from app.vocab.lookup import REGIONS
 from app.vocab.store import load_vocabulary
 from tests.db.l1 import add_conversion, add_node
 
@@ -91,11 +92,30 @@ async def test_a_document_is_made_of_an_entry_whose_content_its_maker_may_read(
     assert (by_editor.owner_id, of_seed.owner_id) == (editor.account_id, seed["owner"])
 
 
-async def test_a_document_s_regions_are_regions_the_vocabulary_holds(
+async def test_a_document_s_regions_are_regions_the_vocabulary_holds_each_once(
     connection: psycopg.AsyncConnection, made: dict[str, uuid.UUID]
 ) -> None:
+    document = await make(connection, made, regions=("DE-NW", "DE-BY", "DE-NW"))
+
+    assert document.regions == ("DE-NW", "DE-BY")
     with pytest.raises(DocumentError, match="region"):
         await make(connection, made, regions=("DE-NW", "ZZ"))
+    await connection.execute(
+        "UPDATE vocab_concept SET retired_in = 1 WHERE scheme_iri = %s AND notation = 'DE-NW'", (REGIONS,)
+    )
+    with pytest.raises(DocumentError, match="region"):
+        await make(connection, made)  # of a region retired
+
+
+async def test_a_document_takes_its_entry_s_rights_once_a_change_to_them_is_done(
+    url: str, connection: psycopg.AsyncConnection, made: dict[str, uuid.UUID]
+) -> None:
+    with psycopg.connect(url) as editor:  # in a transaction of its own until it ends
+        editor.execute("UPDATE source SET rights_status = 'unklar' WHERE id = %s", (made["source"],))
+        await connection.execute("SET lock_timeout = '200ms'")
+        with pytest.raises(psycopg.errors.LockNotAvailable):
+            await make(connection, made)
+        editor.rollback()
 
 
 async def test_a_document_is_made_from_its_entry_s_finished_conversion_with_the_entry_s_rights(
