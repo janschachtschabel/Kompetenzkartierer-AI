@@ -367,17 +367,18 @@ export const messages = {
       // text the conversion left out of the blocks, its signs counted, by why (backend DropReason)
       text_dropped: {
         vertical:
-          "{count} Zeichen Text auf {pageCount|Seite|Seiten} {pages} {count|steht|stehen} senkrecht oder " +
-          "gedreht, oft ein Vermerk am Rand; die Blöcke lassen {count|es|sie} aus.",
+          "{count} {count|Zeichen|Zeichen} Text auf {pageCount|Seite|Seiten} {pages} {count|steht|stehen} " +
+          "senkrecht oder gedreht, oft ein Vermerk am Rand; die Blöcke lassen {count|es|sie} aus.",
         off_page:
-          "{count} Zeichen Text auf {pageCount|Seite|Seiten} {pages} {count|steht|stehen} außerhalb der " +
-          "sichtbaren Seite; die Blöcke lassen {count|es|sie} aus, denn niemand sieht {count|es|sie} beim Lesen.",
+          "{count} {count|Zeichen|Zeichen} Text auf {pageCount|Seite|Seiten} {pages} {count|steht|stehen} " +
+          "außerhalb der sichtbaren Seite; die Blöcke lassen {count|es|sie} aus, denn niemand sieht " +
+          "{count|es|sie} beim Lesen.",
         tiny:
-          "{count} Zeichen Text auf {pageCount|Seite|Seiten} {pages} {count|ist|sind} kleiner als ein Punkt " +
-          "gesetzt und beim Lesen nicht zu sehen; die Blöcke lassen {count|es|sie} aus.",
+          "{count} {count|Zeichen|Zeichen} Text auf {pageCount|Seite|Seiten} {pages} {count|ist|sind} kleiner " +
+          "als ein Punkt gesetzt und beim Lesen nicht zu sehen; die Blöcke lassen {count|es|sie} aus.",
         unplaced:
-          "{count} Zeichen Text auf {pageCount|Seite|Seiten} {pages} {count|hat|haben} in der Datei keinen " +
-          "gültigen Platz; die Blöcke lassen {count|es|sie} aus.",
+          "{count} {count|Zeichen|Zeichen} Text auf {pageCount|Seite|Seiten} {pages} {count|hat|haben} in der " +
+          "Datei keinen gültigen Platz; die Blöcke lassen {count|es|sie} aus.",
       },
       // a finding the page has no words for yet, or whose numbers did not come
       other: "Ein Befund, den diese Seite noch nicht beschreibt: {code}.",
