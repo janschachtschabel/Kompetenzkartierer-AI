@@ -46,6 +46,34 @@ def found_table(texts: list[list[str | None]]) -> FoundTable:
     return FoundTable(texts=texts, boxes=boxes, bbox=(56.0, 100.0, 500.0, 200.0))
 
 
+def grid(texts: list[list[str]], fonts: list[str]) -> tuple[FoundTable, list[dict[str, object]]]:
+    """A ruled table, each row 10 points high and each cell 50 wide, and its signs: those of a row
+    set in the row's font, a point apart."""
+    boxes = [
+        [(50.0 * column, 10.0 * row, 50.0 * column + 50, 10.0 * row + 10) for column in range(len(cells))]
+        for row, cells in enumerate(texts)
+    ]
+    chars: list[dict[str, object]] = [
+        {"x0": x0 + 1 + at, "x1": x0 + 2 + at, "top": top + 1, "bottom": top + 9}
+        | {"text": sign, "fontname": font}
+        for cells, places, font in zip(texts, boxes, fonts, strict=True)
+        for text, (x0, top, _, _) in zip(cells, places, strict=True)
+        for at, sign in enumerate(text)
+    ]
+    return FoundTable(texts=texts, boxes=boxes, bbox=(0.0, 0.0, 100.0, 10.0 * len(texts))), chars
+
+
+def test_the_header_is_the_first_row_with_text_where_an_empty_one_stands_above() -> None:
+    found, chars = grid(
+        [["", ""], ["Nr.", "Lernfeld"], ["1", "Einführung"]], ["Helvetica", "Helvetica-Bold", "Helvetica"]
+    )
+
+    block = table_block(found, chars, page=1)
+
+    assert block is not None and texts(block) == [["Nr.", "Lernfeld"], ["1", "Einführung"]]
+    assert [[cell.header for cell in row if cell] for row in block.rows] == [[True, True], [False, False]]
+
+
 def test_a_table_of_empty_rows_is_no_block() -> None:
     assert table_block(found_table([["", None], [" ", ""]]), [], page=7) is None
 
