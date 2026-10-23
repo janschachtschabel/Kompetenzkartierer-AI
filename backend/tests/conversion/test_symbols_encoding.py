@@ -73,6 +73,26 @@ def test_replacement_signs_unread_glyphs_and_double_encoded_umlauts_are_suspect(
     assert finding.params["examples"] == [REPLACEMENT, "(cid:31)", "(cid:32)", "Ã¼", "â€"]
 
 
+def read_as_cp1252(text: str) -> str:
+    """The text's UTF-8 read as Windows-1252: "ß" becomes "ÃŸ", "Ä" "Ã" and a low quotation mark."""
+    return text.encode("utf-8").decode("cp1252")
+
+
+def test_umlauts_utf_8_read_as_windows_1252_are_suspect() -> None:
+    broken = read_as_cp1252("Größe Änderung Öl Übung ") * 10
+
+    (finding,) = encoding_findings(document([text(1, broken + "Die Lernenden planen. " * 20)]))
+
+    assert finding.params["count"] == 50
+    assert finding.params["examples"] == [read_as_cp1252(sign) for sign in ("ö", "ß", "Ä", "Ö", "Ü")]
+
+
+def test_german_with_its_quotation_marks_and_dashes_is_not_suspect() -> None:
+    quoted = f"{chr(0x201E)}Größe{chr(0x201C)} {chr(0x2013)} Änderung, Öl {chr(0x2014)} Übung. "
+
+    assert encoding_findings(document([text(1, quoted * 40)])) == []
+
+
 def test_a_few_suspect_signs_in_a_short_text_are_no_finding() -> None:
     pages = document([text(1, f"Sch{REPLACEMENT}ler " * (MIN_SUSPECT - 1))])
 
