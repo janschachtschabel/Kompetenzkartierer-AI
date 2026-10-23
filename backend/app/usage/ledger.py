@@ -58,6 +58,11 @@ _BOOK_ABANDONED = """
     SELECT account_id, job_id, run_id, purpose, model, input_tokens, 0, output_tokens, 0, 1, true FROM taken
 """
 _LIMITS = "SELECT token_limit, page_limit FROM quota WHERE account_id = %s"
+_SET_LIMITS = """
+    INSERT INTO quota (account_id, token_limit, page_limit) VALUES (%(account)s, %(tokens)s, %(pages)s)
+    ON CONFLICT (account_id)
+    DO UPDATE SET token_limit = excluded.token_limit, page_limit = excluded.page_limit
+"""
 _COUNTS = """
     SELECT spent.tokens, spent.estimated, held.tokens, pages.billable
     FROM (
@@ -172,6 +177,13 @@ async def book_abandoned(connection: psycopg.AsyncConnection, job_id: UUID) -> i
     how many it took."""
     cursor = await connection.execute(_BOOK_ABANDONED, (job_id,))
     return cursor.rowcount
+
+
+async def set_quota(
+    connection: psycopg.AsyncConnection, account_id: UUID, *, token_limit: int | None, page_limit: int | None
+) -> None:
+    """Set the account's limits (None: no limit) in place of any before; the account exists."""
+    await connection.execute(_SET_LIMITS, {"account": account_id, "tokens": token_limit, "pages": page_limit})
 
 
 async def usage_of(connection: psycopg.AsyncConnection, account_id: UUID) -> Usage:

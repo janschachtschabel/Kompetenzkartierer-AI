@@ -7,7 +7,17 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app import __version__
-from app.api import accounts, conversions, internal, jobs, source_checks, source_register, sources, system
+from app.api import (
+    accounts,
+    conversions,
+    internal,
+    jobs,
+    source_checks,
+    source_register,
+    sources,
+    system,
+    usage,
+)
 from app.api.body_limit import JSON_BODY_LIMIT, MIB, BodyLimit
 from app.api.errors import ERROR_RESPONSES, install_error_handlers
 from app.api.request_log import RequestLog
@@ -32,6 +42,7 @@ not part of this specification.
 TAGS = [
     {"name": "system", "description": "Facts about the running service."},
     {"name": "accounts", "description": "Accounts, roles and API tokens; managed by admins."},
+    {"name": "usage", "description": "What an account may spend on the language model, and has spent."},
     {"name": "jobs", "description": "Fetching, converting, extracting run as jobs: their state, a cancel."},
     {"name": "sources", "description": "The register of curriculum documents: uploads and their files."},
     {"name": "conversions", "description": "A register file converted into named blocks (X0), page by page."},
@@ -77,6 +88,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(internal.router)
     app.include_router(system.router)
     app.include_router(accounts.router)
+    app.include_router(usage.router)
     app.include_router(jobs.router)
     app.include_router(sources.router)
     app.include_router(source_register.router)
