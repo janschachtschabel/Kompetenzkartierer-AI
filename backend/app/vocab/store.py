@@ -100,10 +100,11 @@ def _write_concepts(connection: psycopg.Connection, vocabulary: Vocabulary, rele
 
 
 def _write_profiles(connection: psycopg.Connection, vocabulary: Vocabulary, release_id: int) -> None:
-    # those the files no longer hold first: a profile renamed keeps its sector's one active place
+    # Every active profile is retired first and the upsert revives those the files hold, as for
+    # the concepts: one active profile for each sector is checked row by row, so a profile
+    # renamed, or two profiles swapping their sectors, would meet the old holder still active
     connection.execute(
-        "UPDATE terminology_profile SET retired_in = %s WHERE retired_in IS NULL AND NOT (iri = ANY(%s))",
-        (release_id, list(vocabulary.profiles)),
+        "UPDATE terminology_profile SET retired_in = %s WHERE retired_in IS NULL", (release_id,)
     )
     with connection.cursor() as cursor:
         cursor.executemany(

@@ -96,6 +96,12 @@ def read_lexicon(graph: Graph, scheme_of: Mapping[str, str]) -> Lexicon:
         for iri in sorted(graph.subjects(RDF.type, CUR.TerminologyProfile), key=str)
         if isinstance(iri, URIRef)
     }
+    by_sector: dict[str, list[str]] = defaultdict(list)
+    for read in profiles.values():
+        by_sector[read.sector].append(read.iri)
+    for sector, named in sorted(by_sector.items()):
+        if len(named) > 1:
+            raise VocabularyError(f"{sector} has more than one profile: {named}, a sector has one")
     owners: dict[str, list[str]] = defaultdict(list)
     for profile in profiles:
         for cue in _all_iris(graph, URIRef(profile), CUR.hasCue):

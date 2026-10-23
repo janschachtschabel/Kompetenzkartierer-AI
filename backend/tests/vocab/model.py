@@ -18,6 +18,7 @@ LEXICON_CORE = r"""
 
 cv:EducationSectors a skos:ConceptScheme .
 cv:sec_school a skos:Concept ; skos:inScheme cv:EducationSectors ; skos:notation "school" .
+cv:sec_vocational a skos:Concept ; skos:inScheme cv:EducationSectors ; skos:notation "vocational" .
 cv:CueRoles a skos:ConceptScheme .
 cv:role_cue a skos:Concept ; skos:inScheme cv:CueRoles .
 cv:role_homonym a skos:Concept ; skos:inScheme cv:CueRoles .

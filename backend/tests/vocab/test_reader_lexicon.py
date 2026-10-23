@@ -109,7 +109,7 @@ KIND_AS_ROLE = 'cur:surfaceForm "Plan" ; cur:cueRole cv:ck_term ; cur:cueKind cv
         (with_cue('cur:surfaceForm "Plan" ; ' + BASE, listed=False), "in no profile"),
         (
             with_cue('cur:surfaceForm "Plan" ; ' + BASE)
-            + "schul:Other a cur:TerminologyProfile ; cur:profileScope cv:sec_school ;"
+            + "schul:Other a cur:TerminologyProfile ; cur:profileScope cv:sec_vocational ;"
             + " cur:hasCue schul:cue-x .",
             "more than one profile",
         ),
@@ -165,6 +165,20 @@ def test_a_profile_names_one_education_sector(tmp_path: Path, scope: str, fault:
 
     with pytest.raises(VocabularyError, match=fault):
         read(tmp_path, {"schule.ttl": profile})
+
+
+def test_two_profiles_of_one_sector_are_refused_with_both_named(tmp_path: Path) -> None:
+    # the table holds one active profile for each sector; refused there, neither would be named
+    other = (
+        "schul:Other a cur:TerminologyProfile ; cur:profileScope cv:sec_school ; cur:hasCue schul:cue-o .\n"
+        'schul:cue-o a cur:LexicalCue ; cur:surfaceForm "Plan" ; ' + BASE + " .\n"
+    )
+
+    with pytest.raises(VocabularyError, match="sec_school") as raised:
+        read(tmp_path, {"schule.ttl": SCHOOL_PROFILE + other})
+
+    assert SCHOOL + "Other" in str(raised.value)
+    assert SCHOOL + "Terminology" in str(raised.value)
 
 
 def test_the_ontology_s_lexicon_holds_five_profiles_and_their_1267_cues() -> None:
