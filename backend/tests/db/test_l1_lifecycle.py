@@ -126,6 +126,18 @@ def test_a_node_s_run_is_a_run_of_its_document(connection: psycopg.Connection, m
         add_statement(connection, made["document"], node, run_id=foreign)
 
 
+def test_what_goes_with_a_row_taken_away_is_found_by_an_index(connection: psycopg.Connection) -> None:
+    # a cascade without one reads its whole table for each row taken away: a document's anchors
+    unindexed = connection.execute(
+        "SELECT c.conrelid::regclass::text, c.conname FROM pg_constraint c"
+        " WHERE c.contype = 'f' AND c.confdeltype IN ('c', 'n')"
+        " AND NOT EXISTS (SELECT FROM pg_index i"
+        " WHERE i.indrelid = c.conrelid AND i.indkey[0] = ANY (c.conkey))"
+    ).fetchall()
+
+    assert unindexed == []
+
+
 def test_a_run_s_stage_comes_from_the_core(connection: psycopg.Connection, made: dict[str, Any]) -> None:
     with pytest.raises(errors.ForeignKeyViolation):
         add_run(connection, made["document"], stage="sec_school")

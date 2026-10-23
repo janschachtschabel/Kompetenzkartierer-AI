@@ -85,12 +85,14 @@ def test_an_anchor_names_its_page_or_the_page_the_document_prints(
     [
         {"page_start": 0},
         {"page_start": 3, "page_end": 2},
+        {"page_start": None, "printed_page": "IV", "page_end": 0},  # an end without its start
         {"char_start": 5, "char_end": 4},
+        {"char_end": -1},
         {"match_score": 1.5},
         {"table_cell": "r3c2"},
         {"match_kind_scheme": CV + "MatchKinds"},  # a scheme without its value
     ],
-    ids=["page", "page-range", "char-range", "score", "cell", "pair"],
+    ids=["page", "page-range", "page-end", "char-range", "char-end", "score", "cell", "pair"],
 )
 def test_an_anchor_s_values_keep_their_forms(
     connection: psycopg.Connection, made: dict[str, Any], columns: dict[str, Any]
@@ -212,6 +214,19 @@ def test_a_frame_part_s_kinds_are_the_parts_x3_names_beside_statements(
 def test_a_frame_part_s_content_is_an_object(connection: psycopg.Connection, made: dict[str, Any]) -> None:
     with pytest.raises(errors.CheckViolation):
         add_frame_part(connection, made, content=Jsonb(["Operatoren"]))
+
+
+def test_a_frame_part_from_a_rule_names_the_rule(
+    connection: psycopg.Connection, made: dict[str, Any]
+) -> None:
+    add_frame_part(connection, made, origin_iri=CV + "orig_rule", rule_id="legend-from-table")
+
+    with pytest.raises(errors.CheckViolation):
+        add_frame_part(connection, made, origin_iri=CV + "orig_rule")
+    with pytest.raises(errors.CheckViolation):
+        add_frame_part(connection, made, rule_id="legend-from-table")  # a rule named for a model's
+    with pytest.raises(errors.CheckViolation):
+        add_frame_part(connection, made, origin_iri=CV + "orig_rule", rule_id=" ")
 
 
 def add_finding(connection: psycopg.Connection, made: dict[str, Any], **columns: Any) -> None:

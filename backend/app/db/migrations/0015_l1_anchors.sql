@@ -19,6 +19,7 @@ CREATE TABLE frame_part (
     review_status_scheme text NOT NULL
         CHECK (review_status_scheme = 'https://w3id.org/wlo/curriculum/vocab#ReviewStatuses'),
     review_status_iri text NOT NULL,
+    rule_id text CHECK (has_text(rule_id) AND length(rule_id) <= 200),
     revision integer NOT NULL DEFAULT 1 CHECK (revision >= 1),
     run_id uuid,  -- the run that made it; a run taken away leaves what it made
     created_at timestamptz NOT NULL DEFAULT now(),
@@ -27,7 +28,9 @@ CREATE TABLE frame_part (
     FOREIGN KEY (document_id, run_id) REFERENCES extraction_run (document_id, id) ON DELETE SET NULL (run_id),
     FOREIGN KEY (id, kind) REFERENCES entity (id, kind),
     FOREIGN KEY (origin_scheme, origin_iri) REFERENCES vocab_concept (scheme_iri, iri),
-    FOREIGN KEY (review_status_scheme, review_status_iri) REFERENCES vocab_concept (scheme_iri, iri)
+    FOREIGN KEY (review_status_scheme, review_status_iri) REFERENCES vocab_concept (scheme_iri, iri),
+    -- one a rule gave names the rule, as a node does (0014)
+    CHECK ((origin_iri = 'https://w3id.org/wlo/curriculum/vocab#orig_rule') = (rule_id IS NOT NULL))
 );
 CREATE INDEX frame_part_of_run ON frame_part (run_id) WHERE run_id IS NOT NULL;
 
@@ -44,14 +47,14 @@ CREATE TABLE anchor (
     frame_part_id uuid,
     specification_id uuid,
     page_start integer CHECK (page_start >= 1),  -- physical, from 1
-    page_end integer,
+    page_end integer CHECK (page_end >= 1),
     printed_page text CHECK (has_text(printed_page) AND length(printed_page) <= 20),
     quote text CHECK (length(quote) <= 20000),
     match_kind_scheme text CHECK (match_kind_scheme = 'https://w3id.org/wlo/curriculum/vocab#MatchKinds'),
     match_kind_iri text,
     match_score numeric CHECK (match_score BETWEEN 0 AND 1),
     char_start integer CHECK (char_start >= 0),
-    char_end integer,
+    char_end integer CHECK (char_end >= 0),
     table_cell text CHECK (table_cell ~ '^T[0-9]+:r[0-9]+c[0-9]+$'),  -- cur:tableCell, "T4:r3c2"
     section_path text CHECK (length(section_path) <= 2000),
     created_at timestamptz NOT NULL DEFAULT now(),
@@ -69,6 +72,7 @@ CREATE TABLE anchor (
     CHECK (char_end >= char_start),
     CHECK ((match_kind_scheme IS NULL) = (match_kind_iri IS NULL))
 );
+CREATE INDEX anchor_of_document ON anchor (document_id, conversion_id);
 CREATE INDEX anchor_of_node ON anchor (node_id) WHERE node_id IS NOT NULL;
 CREATE INDEX anchor_of_statement ON anchor (statement_id) WHERE statement_id IS NOT NULL;
 CREATE INDEX anchor_of_frame_part ON anchor (frame_part_id) WHERE frame_part_id IS NOT NULL;
