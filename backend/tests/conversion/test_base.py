@@ -11,8 +11,6 @@ import pytest
 from pydantic import ValidationError
 
 from app.conversion.base import (
-    BLOCK_ID,
-    CELL_ID,
     Block,
     Cell,
     Conversion,
@@ -25,6 +23,7 @@ from app.conversion.base import (
     offered_engines,
 )
 from app.core.settings import REPOSITORY_ONTOLOGY
+from app.domain.blocks import BLOCK_ID, CELL_ID
 from tests.support import without_settings_variables
 
 SHAPES = REPOSITORY_ONTOLOGY / "ontologie" / "cur-shapes.ttl"
