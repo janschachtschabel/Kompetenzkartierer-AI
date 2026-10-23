@@ -164,11 +164,23 @@ def test_a_small_mark_a_space_apart_inside_a_line_stands_on_it() -> None:
     assert [line.text for line in lines_of(words)] == ["Die Lernenden planen [1] ihre Arbeit."]
 
 
-def test_words_far_smaller_a_space_behind_a_heading_on_its_height_stand_on_its_line() -> None:
-    # a heading of 14 points and its hours at 9, on one baseline
-    words = [*row("Lernfeld 3:", 181, size=14), *row("Zeitrichtwert 80 Stunden", 185, x0=152, size=9)]
+@pytest.mark.parametrize(
+    ("line", "size", "beside", "gap", "top", "small"),
+    [
+        ("Die Lernenden planen", 11.0, "Hinweis: vgl. Anlage 3", 13, 101, 7.0),  # a margin note 13 points off
+        ("Rahmenlehrplan", 24.0, "Stand: 01.08.2026", 50, 108, 8.0),  # a label 50 points behind a title
+    ],
+    ids=["margin-note", "label"],
+)
+def test_words_far_smaller_beside_a_line_stay_a_line_of_their_own(
+    line: str, size: float, beside: str, gap: float, top: float, small: float
+) -> None:
+    # more than one word: a line of its own, set small - not marks of the line beside it; nearer
+    # than three times the line's size, no gap parts them either
+    words = row(line, 100, size=size)
+    words += row(beside, top, x0=words[-1].x1 + gap, size=small)
 
-    assert [line.text for line in lines_of(words)] == ["Lernfeld 3: Zeitrichtwert 80 Stunden"]
+    assert sorted(found.text for found in lines_of(words)) == sorted([line, beside])
 
 
 def test_an_operator_far_larger_than_its_line_stands_on_it_where_it_covers_no_other() -> None:
