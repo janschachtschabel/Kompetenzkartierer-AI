@@ -173,6 +173,137 @@ def test_a_running_title_carries_the_page_s_number_where_one_of_its_numbers_runs
     assert kinds(pages) == [[edge, "text"]] * 4
 
 
+@pytest.mark.parametrize(
+    "numbers",
+    [
+        [n + 4 for n in range(1, 11)] + [n + 2 for n in range(11, 21)],  # a blank page taken out
+        [*range(1, 11), *range(1, 11)],  # two parts, each counted from 1
+    ],
+    ids=["count-jumps", "two-parts"],
+)
+def test_a_running_title_whose_count_jumps_is_one_still(numbers: list[int]) -> None:
+    pages = document(
+        *[
+            [block(n, f"Rahmenlehrplan Mechatronik {number}", 30), block(n, "Text", 300)]
+            for n, number in enumerate(numbers, 1)
+        ]
+    )
+
+    printed = mark_edges(pages)
+
+    assert kinds(pages) == [["page_header", "text"]] * 20
+    assert printed == tuple(str(number) for number in numbers)
+
+
+def test_a_running_foot_naming_its_section_and_the_page_is_one() -> None:
+    # "Lernfeld 2 | 5": the section's number stays over its pages, the page's runs
+    sections = [1, 1, 1, 2, 2, 3, 3, 3]
+    pages = document(
+        *[[block(n, "Text", 300), block(n, f"Lernfeld {s} | {n}", 815)] for n, s in enumerate(sections, 1)]
+    )
+
+    printed = mark_edges(pages)
+
+    assert kinds(pages) == [["text", "page_footer"]] * 8
+    assert printed == tuple(str(n) for n in range(1, 9))
+
+
+def test_a_sign_in_an_edge_s_text_and_a_number_of_many_digits_end_nothing() -> None:
+    # "#" is no number; a number of thousands of digits is no int Python makes
+    long = "9" * 5000
+    pages = document(
+        *[[block(n, f"Rahmenlehrplan {n}", 30), block(n, f"Nr. {long}{n}", 815)] for n in range(1, 4)],
+        [block(4, "Rahmenlehrplan #", 30), block(4, "Text", 300)],
+    )
+
+    printed = mark_edges(pages)
+
+    assert kinds(pages)[:3] == [["page_header", "text"]] * 3
+    assert kinds(pages)[3] == ["text", "text"]
+    assert printed == ("1", "2", "3", None)
+
+
+def test_numbers_alone_at_the_top_that_the_foot_s_page_numbers_belie_are_chapters() -> None:
+    # chapter 1 and 2 at the top of two pages in a row, the foot printing 5 and 6
+    pages = document(
+        [block(1, "1", 40), block(1, "Text", 300), block(1, "- 5 -", 815)],
+        [block(2, "2", 40), block(2, "Text", 300), block(2, "- 6 -", 815)],
+    )
+
+    printed = mark_edges(pages)
+
+    assert kinds(pages) == [["text", "text", "page_footer"]] * 2
+    assert printed == ("5", "6")
+
+
+def test_headings_numbered_on_pages_in_a_row_that_the_foot_s_numbers_belie_stay_text() -> None:
+    # "Lernfeld 1" ... "Lernfeld 5" at the top of pages 6 to 10 of 20: their number runs with the
+    # pages, but not as the page numbers in the foot do
+    pages = document(
+        *[
+            [block(n, f"Lernfeld {n - 5}", 40)] * (6 <= n <= 10)
+            + [block(n, "Text", 300), block(n, f"- {n} -", 815)]
+            for n in range(1, 21)
+        ]
+    )
+
+    printed = mark_edges(pages)
+
+    assert all(page.blocks[0].kind == "text" for page in pages[5:10])
+    assert printed == tuple(str(n) for n in range(1, 21))
+
+
+def test_a_running_head_of_two_lines_reaching_a_little_past_the_edge_is_one() -> None:
+    # the edge is 67 points of 842; two lines of 11 points begun at 45 end at 69
+    pages = document(
+        *[
+            [
+                RawBlock(n, "text", "Rahmenlehrplan\nMechatronik", (56, 45, 400, 69), 11.0, False, False),
+                block(n, "Text", 300),
+            ]
+            for n in range(1, 4)
+        ]
+    )
+
+    mark_edges(pages)
+
+    assert kinds(pages) == [["page_header", "text"]] * 3
+
+
+def test_a_year_alone_at_the_foot_of_a_cover_is_no_page_number() -> None:
+    pages = document([block(1, "Rahmenlehrplan", 300), block(1, "2026", 815)], [block(2, "Text", 300)])
+
+    printed = mark_edges(pages)
+
+    assert printed == (None, None)
+    assert kinds(pages) == [["text", "text"], ["text"]]
+
+
+def test_in_one_edge_the_number_alone_goes_before_the_running_one() -> None:
+    pages = document(
+        *[
+            [block(n, "Text", 300), block(n, f"Rahmenlehrplan {n + 4}", 790), block(n, f"- {n} -", 815)]
+            for n in range(1, 4)
+        ]
+    )
+
+    assert mark_edges(pages) == ("1", "2", "3")
+
+
+def test_a_line_twice_at_the_top_of_one_page_counts_one_page() -> None:
+    # of 4 pages, 3 are needed: twice on page 1 and once on page 2 is on two pages
+    pages = document(
+        [block(1, "Rahmenlehrplan", 20), block(1, "Rahmenlehrplan", 40)],
+        [block(2, "Rahmenlehrplan", 30)],
+        [block(3, "Text", 300)],
+        [block(4, "Text", 300)],
+    )
+
+    mark_edges(pages)
+
+    assert kinds(pages)[:2] == [["text", "text"], ["text"]]
+
+
 def test_a_page_number_alone_in_the_foot_goes_before_the_running_title_s() -> None:
     pages = document(
         *[
