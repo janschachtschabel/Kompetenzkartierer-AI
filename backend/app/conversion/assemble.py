@@ -2,15 +2,19 @@
 
 Each page's blocks in reading order - top down, at one height left to right; running heads and
 feet marked and the printed page numbers read (app/conversion/page_edges.py); tables continued
-over a page joined to their first part (app/conversion/tables.py); then the names: ``p<page>-b<n>``
+over a page joined to their first part (app/conversion/tables.py); the signs of symbol fonts
+mapped and a broken text layer noticed (app/conversion/symbols.py, encoding.py), both as findings;
+then the names: ``p<page>-b<n>``
 for each page's blocks, the tables counted across the document, a cell ``T<n>:r<i>c<j>`` by its
 row and column in the joined table. A place a spanning cell covers has no cell. A table's text is
 its rows, line by line, its cells parted by " | " (a bar within a cell escaped).
 """
 
 from app.conversion.base import Block, Cell, Conversion, block_id, cell_id
+from app.conversion.encoding import encoding_findings
 from app.conversion.layout import RawBlock, RawPage
 from app.conversion.page_edges import mark_edges
+from app.conversion.symbols import map_symbols
 from app.conversion.tables import merge_across_pages
 
 
@@ -19,6 +23,7 @@ def assemble(pages: list[RawPage], *, engine: str, version: str) -> Conversion:
         page.blocks.sort(key=lambda block: (block.bbox[1], block.bbox[0]))
     printed = mark_edges(pages)  # before the joining: running heads and feet do not part a table
     merge_across_pages(pages)
+    findings = [*map_symbols(pages), *encoding_findings(pages)]
     blocks: list[Block] = []
     tables = 0
     for page in pages:
@@ -46,6 +51,7 @@ def assemble(pages: list[RawPage], *, engine: str, version: str) -> Conversion:
         pages=len(pages),
         printed_pages=printed,
         blocks=tuple(blocks),
+        findings=tuple(findings),
     )
 
 

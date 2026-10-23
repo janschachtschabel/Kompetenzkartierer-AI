@@ -79,3 +79,13 @@ def test_a_page_of_nothing_is_a_page_still() -> None:
 
     assert conversion.pages == 2
     assert len(conversion.printed_pages) == 2
+
+
+def test_a_conversion_shows_the_symbols_mapped_and_carries_the_findings() -> None:
+    arrow, bullet, broken = chr(0xF0DA), chr(0xF0B7), chr(0xFFFD)
+    conversion = converted(
+        [text(1, f"{arrow} Lernbereich 2", 100), text(1, f"{bullet} Punkt", 200), text(1, broken * 40, 300)]
+    )
+
+    assert conversion.blocks[0].text == f"{chr(0x2794)} Lernbereich 2"
+    assert [finding.code for finding in conversion.findings] == ["unmapped_symbol", "encoding_suspect"]
