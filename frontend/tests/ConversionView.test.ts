@@ -221,6 +221,19 @@ describe("an entry's blocks", () => {
     expect(wrapper.find("table").exists()).toBe(true);
   });
 
+  it("count a table run on from an earlier page among the blocks it says a page shows", async () => {
+    const runningOn = { id: "p2-b2", page: 2, cells: [cell("T1:r3c1", "Modellieren", { page: 3 })] };
+    vi.mocked(api.getBlocks).mockImplementation((_id, page) =>
+      Promise.resolve(page === 3 ? blockPage(3, [], "2", [runningOn]) : blockPage(page, [block(`p${page}-b1`, "Text")])),
+    );
+    const wrapper = await open({ seite: "2" });
+
+    await wrapper.get("[data-test=next]").trigger("click");
+    await flushPromises();
+
+    expect(status(wrapper).text()).toBe(t("conversionPage.announce", { page: 3, pages: 3, count: 1 }));
+  });
+
   it("name a wide table's scrolling region by its caption, and reach it by keyboard", async () => {
     vi.mocked(api.getBlocks).mockResolvedValue(blockPage(2, [table()]));
     const wrapper = await open({ seite: "2" });

@@ -9,6 +9,7 @@ import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import { ApiError, getBlocks, getConversion, getSource, type BlockPage, type Conversion, type SourceDetail } from "@/api";
+import { PAGE_PARAM, pageQuery } from "@/blockPages";
 import BlockList from "@/components/BlockList.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
@@ -20,7 +21,6 @@ import { sayAnew } from "@/liveRegion";
 import { failureNotice, type Notice } from "@/notice";
 import { pageTitle } from "@/pageTitle";
 
-const PAGE_PARAM = "seite";
 /** The refusals that say there are no blocks yet, and why, in the refusal's own words. */
 const NOT_CONVERTED: ReadonlySet<string> = new Set(["no_conversion", "no_file", "not_converted"]);
 
@@ -154,7 +154,7 @@ function arrival(found: BlockPage): string {
 
 /** Replace, not push: a page turned is no step the way back has to walk - it leads to the entry. */
 function go(number: number): void {
-  void router.replace({ query: number === 1 ? {} : { [PAGE_PARAM]: String(number) } });
+  void router.replace({ query: pageQuery(number) });
 }
 
 onMounted(load);

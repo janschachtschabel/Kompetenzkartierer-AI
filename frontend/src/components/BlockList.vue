@@ -10,6 +10,7 @@
 import { RouterLink } from "vue-router";
 
 import type { Block, ContinuedTable } from "@/api";
+import { pageQuery } from "@/blockPages";
 import BlockTable from "@/components/BlockTable.vue";
 import { messages, t } from "@/i18n/de";
 import { word } from "@/registerWords";
@@ -24,7 +25,7 @@ defineProps<{ blocks: Block[]; continued: ContinuedTable[]; page: number }>();
         <code class="block__id">{{ item.id }}</code>
         <span class="block__kind">{{ t("conversionPage.kind.table") }}</span>
         <span>{{ t("conversionPage.continued", { page: item.page }) }}</span>
-        <RouterLink :to="{ query: item.page === 1 ? {} : { seite: String(item.page) } }" replace>
+        <RouterLink :to="{ query: pageQuery(item.page) }" replace>
           {{ t("conversionPage.tableStart", { page: item.page }) }}
         </RouterLink>
       </p>
