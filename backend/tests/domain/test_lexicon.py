@@ -13,7 +13,9 @@ ONTOLOGY = Path(__file__).resolve().parents[3] / "ontology"
 REGION = "https://w3id.org/wlo/curriculum/region/"
 NW = frozenset({REGION + "DE-NW", REGION + "DE"})  # a region with those it lies in
 CUE = "https://w3id.org/wlo/curriculum/vocab#role_cue"
+PREF = "https://w3id.org/wlo/curriculum/vocab#role_pref"
 NEGATIVE = "https://w3id.org/wlo/curriculum/vocab#role_negative"
+HOMONYM = "https://w3id.org/wlo/curriculum/vocab#role_homonym"
 TERM = "https://w3id.org/wlo/curriculum/vocab#ck_term"
 
 
@@ -107,6 +109,17 @@ def test_a_homonym_holds_with_its_other_target() -> None:
     [found] = active_cues([homonym], NW, None, None)
 
     assert found.cue.also_maps_to == ("dt-Rahmenplan",)
+
+
+def test_a_homonym_holds_beside_a_stronger_cue_on_its_word() -> None:
+    # "Verwendbarkeit des Moduls": a checked homonym beside a stronger preferred term
+    cues = [
+        cue("pref", role=PREF, strength=0.9, verified=True, target="cur:Placement"),
+        cue("homonym", role=HOMONYM, strength=0.5, also_maps_to=("dt-Rahmenplan",)),
+        cue("weaker", role=PREF, strength=0.3, target="dt-Rahmenplan"),
+    ]
+
+    assert active(cues) == {"pref": False, "homonym": False}
 
 
 def test_cues_of_a_pattern_and_a_word_alike_do_not_compete() -> None:

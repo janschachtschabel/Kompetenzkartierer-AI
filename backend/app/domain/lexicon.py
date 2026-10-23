@@ -9,8 +9,9 @@ subjects, issuers and kinds of institution do not filter: they go to the model a
 on one word, pattern or layout signal of one kind compete; the first by rank holds - the more
 scopes it sets, then checked before unchecked, then the stronger (no strength is none). Where
 several share the first rank and point to other targets, all hold as a tie, and the model gets
-their rule texts. A negative cue always holds; a homonym keeps its other target. The document's
-own terms (its profile from X1) are laid over this when the prompt is built (plan M1 6).
+their rule texts. A negative cue and a homonym compete with none and always hold; a homonym
+keeps its other target. The document's own terms (its profile from X1) are laid over this when
+the prompt is built (plan M1 6).
 
 A pattern is searched with a time limit, so a pattern that backtracks without end stops.
 """
@@ -23,6 +24,10 @@ import regex
 
 PATTERN_TIMEOUT_S = 0.05
 NEGATIVE = "https://w3id.org/wlo/curriculum/vocab#role_negative"
+HOMONYM = "https://w3id.org/wlo/curriculum/vocab#role_homonym"
+# Cues that warn of a reading rather than offer one: lost to a stronger cue on their word, the
+# model would lose the warning - a homonym's other target and the rule that tells them apart
+_ALWAYS = frozenset({NEGATIVE, HOMONYM})
 
 
 class PatternTimeout(Exception):
@@ -64,7 +69,7 @@ def active_cues(
     for cue in cues:
         if not _holds(cue, regions, document_type, plan_generation):
             continue
-        if cue.role == NEGATIVE:
+        if cue.role in _ALWAYS:
             held.append(ActiveCue(cue, tie=False))
         else:
             competing[_trigger(cue)].append(cue)
