@@ -320,6 +320,25 @@ export const messages = {
       none: "Keine Zugangsnotiz für Land, Schulform und Fach dieses Eintrags.",
     },
   },
+  // An entry's file converted into blocks (ConversionPanel.vue, conversionWords.ts)
+  conversion: {
+    // the job was cancelled before it ended (a conversion's error_code "cancelled")
+    cancelled: "Sie wurde abgebrochen. Starte sie neu, wenn du die Blöcke brauchst.",
+    pageRange: "{from}–{to}",
+    // a sign of the document, quoted in a sentence of the page
+    quoted: "„{text}“",
+    // what the conversion noticed in the text (backend FindingCode)
+    findings: {
+      unmapped_symbol:
+        "{count} {count|Zeichen|Zeichen} einer Symbolschrift ({codepoint}) auf {pageCount|Seite|Seiten} {pages} " +
+        "nicht zugeordnet; in den Blöcken {count|steht es|stehen sie} unverändert, oft als Aufzählungszeichen.",
+      encoding_suspect:
+        "Die Textebene wirkt beschädigt: {count} {count|verdächtiges Zeichen|verdächtige Zeichen} ({share} des Texts), " +
+        "etwa {examples}. Prüfe die Blöcke, bevor du aus ihnen zitierst.",
+      // a finding the page has no words for yet, or whose numbers did not come
+      other: "Ein Befund, den diese Seite noch nicht beschreibt: {code}.",
+    },
+  },
   // A job the page follows (jobWatch.ts), and why one failed (jobMessages.ts).
   jobs: {
     status: {
