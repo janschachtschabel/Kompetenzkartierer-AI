@@ -284,30 +284,34 @@ async def test_a_subtree_that_waited_for_the_tree_takes_the_place_after_what_was
         await psycopg.AsyncConnection.connect(url, autocommit=True) as other,
         await psycopg.AsyncConnection.connect(url, autocommit=True) as watcher,
     ):
-        async with other.transaction():
-            await lock_tree(other, document.id)
-            waiting = asyncio.create_task(write_subtree(connection, document.id, node()))
-            await waiting_for_a_lock(watcher)
-            first = await write_subtree(other, document.id, node())
-        second = await waiting
+        waiting: asyncio.Task[uuid.UUID] | None = None
+        try:
+            async with other.transaction():
+                await lock_tree(other, document.id)
+                waiting = asyncio.create_task(write_subtree(connection, document.id, node()))
+                await waiting_for_a_lock(watcher, connection.info.backend_pid)
+                first = await write_subtree(other, document.id, node())
+        finally:  # once the lock is let go, however, the waiting one ends too
+            second = None if waiting is None else await waiting
 
     tree = await read_tree(connection, owner(document), document.id)
     assert tree is not None
     assert [(top.id, top.position) for top in tree] == [(first, 1), (second, 2)]
 
 
-async def waiting_for_a_lock(watcher: psycopg.AsyncConnection) -> None:
-    """Until a session waits for an advisory lock: there, as long as the lock is held, it stays."""
+async def waiting_for_a_lock(watcher: psycopg.AsyncConnection, pid: int) -> None:
+    """Until the session of ``pid`` waits for an advisory lock: as long as it is held, it stays."""
     for _ in range(200):
         cursor = await watcher.execute(
             "SELECT count(*) FROM pg_stat_activity"
-            " WHERE datname = current_database() AND wait_event_type = 'Lock' AND wait_event = 'advisory'"
+            " WHERE pid = %s AND wait_event_type = 'Lock' AND wait_event = 'advisory'",
+            (pid,),
         )
         found = await cursor.fetchone()
         if found is not None and found[0] > 0:
             return
         await asyncio.sleep(0.05)
-    raise AssertionError("no session came to wait for the tree's lock")
+    raise AssertionError(f"session {pid} came to wait for no advisory lock")
 
 
 async def test_a_tree_is_read_within_a_transaction_already_open(

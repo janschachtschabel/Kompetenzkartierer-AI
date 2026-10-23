@@ -152,12 +152,14 @@ def test_what_a_run_made_or_found_is_of_the_run_s_document(
         )
 
 
-# A foreign key's index: one that leads with all its columns, or with one of them that is not the
-# document's - "(document_id, id)" finds a document's rows, not those of one run or node
+# A foreign key's index: one whose key columns lead with all its columns, or with one of them that
+# is not the document's - "(document_id, id)" finds a document's rows, not those of one run or
+# node. A partial index counts: the layer's leave out the rows whose column is NULL alone
 _UNINDEXED = """
 SELECT c.conrelid::regclass::text, c.conname FROM pg_constraint c
 WHERE c.contype = 'f' AND c.confdeltype IN ('c', 'n') AND NOT EXISTS (
-    SELECT FROM pg_index i, LATERAL (SELECT (i.indkey::int2[])[0:cardinality(c.conkey) - 1] AS lead) AS l
+    SELECT FROM pg_index i,
+        LATERAL (SELECT (i.indkey::int2[])[0:least(cardinality(c.conkey), i.indnkeyatts) - 1] AS lead) AS l
     WHERE i.indrelid = c.conrelid AND (
         (l.lead @> c.conkey AND l.lead <@ c.conkey)
         OR i.indkey[0] IN (
