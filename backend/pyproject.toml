@@ -90,3 +90,8 @@ strict = true
 files = ["app", "tests"]
 explicit_package_bases = true
 plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+# pypdfium2 ships no types; the text layer of a PDF (app/conversion/text_layer.py) reads it
+module = ["pypdfium2", "pypdfium2.*"]
+ignore_missing_imports = true
