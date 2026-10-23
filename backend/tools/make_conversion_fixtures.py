@@ -171,6 +171,22 @@ def tables(path: Path) -> None:
     )
 
 
+def table_beside_text(path: Path) -> None:
+    """Page 1: a table of 40 rows without a header and, beside it, a short note that begins lower
+    and ends long before the table does; page 2: 10 more rows of the table at the top."""
+    canvas = canvas_of(path)
+    widths = [20 * mm, 60 * mm]
+    for rows in (range(1, 41), range(41, 51)):
+        part = table([[str(n), f"Inhalt {n}"] for n in rows], header=False, widths=widths)
+        _, height = part.wrapOn(canvas, WIDTH, HEIGHT)
+        part.drawOn(canvas, LEFT, HEIGHT - 30 * mm - height)
+        if rows.start == 1:
+            canvas.setFont("Helvetica", 10)
+            canvas.drawString(120 * mm, HEIGHT - 120 * mm, "Hinweis neben der Tabelle.")
+        canvas.showPage()
+    canvas.save()
+
+
 def scan(path: Path) -> None:
     """Three pages of an image and no text, one page of text: a scan with a typed cover note."""
     picture = Image.new("RGB", (400, 560), "white")
@@ -197,6 +213,7 @@ FIXTURES: dict[str, Callable[[Path], None]] = {
     "columns_8mm.pdf": lambda path: columns(path, 8 * mm),
     "edges.pdf": edges,
     "tables.pdf": tables,
+    "table_beside_text.pdf": table_beside_text,
     "scan.pdf": scan,
 }
 

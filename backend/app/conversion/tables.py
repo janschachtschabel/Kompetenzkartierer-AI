@@ -5,10 +5,12 @@ is its words, the cell's own line breaks and control signs aside. The first row 
 empty one above it is dropped - is the table's header where every sign in it is bold; the old app
 took any first row for one.
 
-A table that ends a page - running heads and feet aside - and one that begins the next with as
-many columns are one table where the second has no header row, or repeats the first one's: the
-repeated header goes. The rows join the first part, each cell keeping the page it stands on;
-the second part's block goes. A table may run on over many pages so.
+A table that ends a page - reaches lowest of its text and tables, running heads and feet aside,
+however far down a note beside it begins - and one that begins the next with as many columns are
+one table where the second has no header row, or repeats the first one's: the repeated header
+goes. The rows join the first part, each cell keeping the page it stands on; the second part's
+block goes. A table may run on over many pages so; a page between without text or a table - an
+empty one, a picture - ends it.
 """
 
 from collections.abc import Iterable, Mapping, Sequence
@@ -66,20 +68,20 @@ def merge_across_pages(pages: list[RawPage]) -> None:
     open_part: tuple[RawPage, int] | None = None  # the table that ends the pages read so far
     for page in pages:
         body = [index for index, block in enumerate(page.blocks) if block.kind in _BODY]
-        if open_part is not None and body:
+        if not body:
+            open_part = None  # an empty page, or a picture's: what follows continues nothing
+            continue
+        if open_part is not None:
             holder, at = open_part
-            first = page.blocks[body[0]]
-            joined = _joined(holder.blocks[at], first)
+            joined = _joined(holder.blocks[at], page.blocks[body[0]])
             if joined is not None:
                 holder.blocks[at] = joined
                 del page.blocks[body[0]]
                 body = [index for index, block in enumerate(page.blocks) if block.kind in _BODY]
                 if not body:
                     continue  # the whole page was the table: it may run on
-        if body and page.blocks[body[-1]].kind == "table":
-            open_part = (page, body[-1])
-        elif body:
-            open_part = None
+        last = max(body, key=lambda index: page.blocks[index].bbox[3])
+        open_part = (page, last) if page.blocks[last].kind == "table" else None
 
 
 def _joined(part: RawBlock, next_part: RawBlock) -> RawBlock | None:

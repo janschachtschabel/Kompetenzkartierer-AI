@@ -159,6 +159,30 @@ def test_a_table_over_three_pages_is_one() -> None:
     assert document[1].blocks == [] and document[2].blocks == []
 
 
+def test_a_table_ends_its_page_where_text_beside_it_ends_above_it() -> None:
+    # read after the table, the note beside it ends far above the table's foot
+    long_table = RawBlock(1, "table", "", (56, 85, 283, 765), None, False, False, table(1, ("1", "a")).rows)
+    document = pages(
+        [long_table, RawBlock(1, "text", "Hinweis", (340, 332, 461, 342), 10.0, False, False)],
+        [table(2, ("2", "b"), top=85)],
+    )
+
+    merge_across_pages(document)
+
+    assert texts(document[0].blocks[0]) == [["1", "a"], ["2", "b"]]
+    assert document[1].blocks == []
+
+
+def test_a_page_without_text_or_table_between_two_ends_the_first() -> None:
+    # an empty page, or one of a picture: what follows it is no continuation
+    for between in ([], [text(2, "- 2 -", "page_footer", top=820)]):
+        document = pages([table(1, ("1", "a", "40"))], between, [table(3, ("3", "c", "80"), top=70)])
+
+        merge_across_pages(document)
+
+        assert len(document[0].blocks[0].rows) == 1 and len(document[2].blocks) == 1
+
+
 def test_tables_that_do_not_continue_one_another_stay_apart() -> None:
     other_header = ("Modul", "Titel", "ECTS")
     cases = [

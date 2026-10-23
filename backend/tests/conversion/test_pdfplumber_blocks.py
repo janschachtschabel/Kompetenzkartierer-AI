@@ -96,6 +96,17 @@ def test_tables_are_blocks_their_words_in_no_text_block_and_joined_over_pages() 
     assert not any("Einführung" in block.text for block in conversion.blocks if block.kind == "text")
 
 
+def test_a_table_beside_a_shorter_note_runs_on_to_the_next_page() -> None:
+    conversion = converted("table_beside_text.pdf")
+
+    (table,) = [block for block in conversion.blocks if block.kind == "table"]
+    assert (table.id, max(cell.row for cell in table.cells)) == ("p1-b1", 50)
+    assert {cell.page for cell in table.cells} == {1, 2}
+    assert [block.text for block in conversion.blocks if block.kind == "text"] == [
+        "Hinweis neben der Tabelle."
+    ]
+
+
 def test_a_file_pdfplumber_cannot_read_is_unreadable_and_says_so_without_its_path(tmp_path: Path) -> None:
     broken = tmp_path / "geheim" / "lehrplan.pdf"
     broken.parent.mkdir()
