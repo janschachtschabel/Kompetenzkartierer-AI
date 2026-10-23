@@ -55,9 +55,12 @@ def test_a_new_document_is_a_first_unfrozen_revision_of_unclear_rights(
         {"issued": "2023-8"},
         {"revision": 0},
         {"draft_iri": "https://example.org/doc/1"},
+        {"draft_iri": "urn:uuid:01a16940-29e3-7bf4-86d3-421b72698f8e"},  # another id's
         {"frozen_at": "2026-10-23T12:00:00Z"},  # frozen, yet without its IRI
         {"legal_form_scheme": CV + "LegalForms"},  # a scheme without its value
         {"rights_status": "frei"},
+        {"issuer": " "},
+        {"document_type_iri": CV + "sec_school"},  # a concept, but no document type
     ],
     ids=[
         "region-code",
@@ -66,9 +69,12 @@ def test_a_new_document_is_a_first_unfrozen_revision_of_unclear_rights(
         "issued",
         "revision",
         "draft-iri",
+        "draft-iri-of-another",
         "frozen",
         "pair",
         "rights",
+        "issuer",
+        "no-document-type",
     ],
 )
 def test_a_document_s_values_keep_their_forms(
@@ -76,6 +82,19 @@ def test_a_document_s_values_keep_their_forms(
 ) -> None:
     with pytest.raises(errors.CheckViolation):
         add_document(connection, made, **columns)
+
+
+def test_one_iri_names_each_revision_of_a_document_once(
+    connection: psycopg.Connection, made: dict[str, Any]
+) -> None:
+    # a draft copy is a new revision of the same edition, with the same IRIs (plan M1 9.6)
+    iri = "https://example.org/kk/doc/msb-nrw/klp-mathematik/2019"
+    frozen = {"iri": iri, "frozen_at": "2026-10-23T12:00:00Z"}
+    add_document(connection, made, revision=1, document_type_iri=SCHOOL + "dt-Lehrplan", **frozen)
+    add_document(connection, made, revision=2, iri=iri)
+
+    with pytest.raises(errors.UniqueViolation):
+        add_document(connection, made, revision=2, iri=iri)
 
 
 def test_a_document_s_dates_and_regions_are_held_as_the_document_gives_them(

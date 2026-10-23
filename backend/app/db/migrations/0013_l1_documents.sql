@@ -42,9 +42,10 @@ CREATE TABLE document (
     conversion_id uuid NOT NULL REFERENCES conversion (id),
     owner_id uuid NOT NULL REFERENCES account (id),
     work_id uuid REFERENCES work (id),
-    draft_iri text NOT NULL UNIQUE CHECK (draft_iri ~ '^urn:uuid:[0-9a-f-]{36}$'),
-    iri text UNIQUE CHECK (iri ~ '^https?://' AND length(iri) <= 2000),
+    draft_iri text NOT NULL UNIQUE,
+    iri text CHECK (iri ~ '^https?://' AND length(iri) <= 2000),  -- one for each of its revisions
     edition text CHECK (has_text(edition) AND length(edition) <= 200),
+    issuer text CHECK (has_text(issuer) AND length(issuer) <= 500),  -- as the document names it
     revision integer NOT NULL DEFAULT 1 CHECK (revision >= 1),
     frozen_at timestamptz,
     title text CHECK (has_text(title) AND length(title) <= 1000),
@@ -67,6 +68,9 @@ CREATE TABLE document (
     updated_at timestamptz NOT NULL DEFAULT now(),
     -- anchors name the document with its conversion, so they name blocks of that one (0015)
     UNIQUE (id, conversion_id),
+    -- a draft copy is a new revision of the same edition, under the same IRI (plan M1 9.6)
+    UNIQUE (iri, revision),
+    CHECK (draft_iri = 'urn:uuid:' || id::text),
     FOREIGN KEY (id, kind) REFERENCES entity (id, kind),
     FOREIGN KEY (sector_scheme, sector_iri) REFERENCES vocab_concept (scheme_iri, iri),
     FOREIGN KEY (legal_form_scheme, legal_form_iri) REFERENCES vocab_concept (scheme_iri, iri),
@@ -79,6 +83,22 @@ CREATE TABLE document (
 );
 CREATE INDEX document_owner ON document (owner_id);
 CREATE INDEX document_source ON document (source_id);
+
+-- A document's type is a document type (cur:DocumentType); one the vocabularies do not hold the
+-- foreign key refuses, which profile it comes from the app checks (app/db/documents.py)
+CREATE FUNCTION document_type_fits() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF EXISTS (
+        SELECT FROM vocab_concept
+        WHERE iri = NEW.document_type_iri AND NOT 'https://w3id.org/wlo/curriculum/core#DocumentType' = ANY (types)
+    ) THEN
+        RAISE EXCEPTION '% is no document type', NEW.document_type_iri USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END
+$$;
+CREATE TRIGGER document_type_fits BEFORE INSERT OR UPDATE OF document_type_iri ON document
+    FOR EACH ROW EXECUTE FUNCTION document_type_fits();
 
 -- What X1 found of the document's own terms (konzept §12.2): its words for profile values, the
 -- new terms it brings for the editors' review list, and its tables' columns
