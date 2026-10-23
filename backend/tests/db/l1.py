@@ -62,7 +62,8 @@ def add_entity(connection: psycopg.Connection, kind: str) -> uuid.UUID:
 def add_conversion(connection: psycopg.Connection, digest: bytes = b"\x01" * 32) -> dict[str, uuid.UUID]:
     """An account, its source with a file, and that file's finished conversion with a block p1-b1."""
     owner = new_id()
-    connection.execute("INSERT INTO account (id, name) VALUES (%s, %s)", (owner, f"konto-{owner.hex[:8]}"))
+    # a UUIDv7 begins with its time: its random end tells two made at once apart
+    connection.execute("INSERT INTO account (id, name) VALUES (%s, %s)", (owner, f"konto-{owner.hex[-12:]}"))
     file_id = new_id()
     connection.execute(
         "INSERT INTO source_file (id, sha256, size_bytes, storage_key) VALUES (%s, %s, 1, %s)",
