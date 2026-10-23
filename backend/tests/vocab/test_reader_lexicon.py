@@ -206,10 +206,8 @@ def test_the_reader_leaves_rdflib_normalizing_literals_again_after_it_read_or_re
     read(tmp_path / "read", {"schule.ttl": with_cue(WORD)})
     assert rdflib.NORMALIZE_LITERALS is True
 
-    with pytest.raises(VocabularyError):
-        read(
-            tmp_path / "refused", {"schule.ttl": with_cue('cur:validFrom "2023-08-01Z"^^xsd:date ; ' + WORD)}
-        )
+    with pytest.raises(VocabularyError, match="does not parse"):  # refused while the switch is off
+        read(tmp_path / "refused", {"schule.ttl": "schul:profile a cur:TerminologyProfile"})
     assert rdflib.NORMALIZE_LITERALS is True
 
 
