@@ -1,9 +1,12 @@
 """What a profile value must be, and what a drafted node, statement and anchor must carry (plan M1 4.5)."""
 
+import uuid
+
 import pytest
 
 from app.domain.l1 import AnchorDraft, NodeDraft, StatementDraft, check_profile_value
 
+NOT_FOUND = "https://w3id.org/wlo/curriculum/vocab#match_notFound"
 PROFILE = {"schul:Inhaltsbereich": ("cv:fn_area",), "schul:Kompetenzerwartung": ("cv:kind_learningOutcome",)}
 
 
@@ -40,14 +43,49 @@ def test_an_anchor_with_a_printed_page_alone_is_one() -> None:
     assert anchor(page_start=None, printed_page="IV").printed_page == "IV"
 
 
+def test_a_wording_not_found_is_anchored_at_its_page_without_blocks() -> None:
+    # plan M1 8.1, 9.4: where the blocks hold no fitting passage, the page stays
+    assert anchor(block_ids=(), match_kind=NOT_FOUND).page_start == 3
+
+
+def test_a_draft_names_each_block_and_addressee_once_in_its_order() -> None:
+    found = statement(
+        addressees=("cv:addr_teacher", "cv:addr_learner", "cv:addr_teacher"),
+        anchors=(anchor(block_ids=("p3-b2", "p3-b1", "p3-b2")),),
+    )
+
+    assert found.addressees == ("cv:addr_teacher", "cv:addr_learner")
+    assert found.anchors[0].block_ids == ("p3-b2", "p3-b1")
+
+
+def test_a_node_applies_to_each_once_in_its_order() -> None:
+    first, second = uuid.uuid4(), uuid.uuid4()
+
+    node = NodeDraft(
+        function="cv:fn_area",
+        origin="cv:orig_source",
+        review_status="cv:rev_proposed",
+        applies_to=(second, first, second),
+    )
+
+    assert node.applies_to == (second, first)
+
+
+def test_a_wording_that_is_no_text_is_refused() -> None:
+    with pytest.raises(ValueError, match="surrogate"):
+        statement(verbatim="Die Lernenden \ud800planen")
+
+
 @pytest.mark.parametrize(
     ("changes", "says"),
     [
         ({"page_start": None}, "page"),
         ({"page_start": 0}, "page"),
         ({"page_start": 4, "page_end": 3}, "page"),
+        ({"page_start": None, "printed_page": "IV", "page_end": 5}, "page"),  # an end without its start
         ({"block_ids": ("3-2",)}, "block"),
         ({"block_ids": ()}, "block"),
+        ({"block_ids": (), "match_kind": NOT_FOUND, "page_start": None, "printed_page": "IV"}, "page"),
         ({"match_score": 1.5}, "score"),
         ({"table_cell": "r1c1"}, "cell"),
     ],

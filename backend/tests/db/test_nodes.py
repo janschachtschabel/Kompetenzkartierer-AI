@@ -158,6 +158,21 @@ async def test_a_subtree_s_anchors_are_kept_with_their_blocks(
     assert await counts(connection) == (3, 2, 3, 8)
 
 
+async def test_a_wording_not_found_is_kept_with_its_page_and_no_block(
+    connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    missed = AnchorDraft(block_ids=(), page_start=2, match_kind=CV + "match_notFound")
+
+    await write_subtree(
+        connection, document.id, node(statements=(statement("Sie lesen.", anchors=(missed,)),))
+    )
+
+    cursor = await connection.execute(
+        "SELECT a.page_start, a.match_kind_iri, (SELECT count(*) FROM anchor_block) FROM anchor a"
+    )
+    assert await cursor.fetchall() == [(2, CV + "match_notFound", 0)]
+
+
 async def test_a_second_subtree_takes_the_next_place(
     connection: psycopg.AsyncConnection, document: Any
 ) -> None:

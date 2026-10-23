@@ -3,8 +3,10 @@
 A drafted node holds its statements and its children in their order: their positions are where
 they stand, from 1. Every statement keeps its wording, addressees and anchors, as the core's
 shapes demand (``cur:verbatim`` 1, ``cur:addressee`` and ``cur:anchor`` one at least); an anchor
-names its page, or the page the document prints, and the blocks it was found in. Values are IRIs:
-which ones the vocabularies hold, the store checks.
+names its page, or the page the document prints, and the blocks it was found in - or, for a
+wording the blocks hold no passage for (``cv:match_notFound``), its page alone. Values are IRIs:
+which ones the vocabularies hold, the store checks. A draft naming a block, an addressee or what
+a node applies to twice names it once.
 
 A profile value - a node type, a statement's subkind, a document type - is one of its profile's
 and lies under the core value it refines (``skos:broader``): a ``schul:Inhaltsbereich`` is a
@@ -27,6 +29,13 @@ SpecificationKind = Literal[
 FramePartKind = Literal["competencyModels", "levelModels", "operators", "crossCuttingLegend", "rules"]
 # how grave a finding of X5 is, as SHACL has it (sh:Violation, sh:Warning, sh:Info)
 Severity = Literal["violation", "warning", "info"]
+# a wording the blocks hold no fitting passage for: anchored at its page alone (plan M1 8.1, 9.4)
+MATCH_NOT_FOUND = "https://w3id.org/wlo/curriculum/vocab#match_notFound"
+
+
+def _once[T](items: tuple[T, ...]) -> tuple[T, ...]:
+    """Each item once, where it first stands: a draft naming one twice means it once."""
+    return tuple(dict.fromkeys(items))
 
 
 def check_profile_value(value: str, core: str, allowed: Mapping[str, Sequence[str]]) -> ProfileProblem | None:
@@ -55,13 +64,20 @@ class AnchorDraft:
     char_end: int | None = None
 
     def __post_init__(self) -> None:
-        if self.page_start is None and self.printed_page is None:
-            raise ValueError("an anchor names its page or the page the document prints")
-        if self.page_start is not None and (
-            self.page_start < 1 or (self.page_end is not None and self.page_end < self.page_start)
+        object.__setattr__(self, "block_ids", _once(self.block_ids))
+        not_found = self.match_kind == MATCH_NOT_FOUND
+        if self.page_start is None and (self.printed_page is None or not_found):
+            raise ValueError(
+                "an anchor names its page, or the page the document prints where it found the passage"
+            )
+        if (self.page_start is None and self.page_end is not None) or (
+            self.page_start is not None
+            and (self.page_start < 1 or (self.page_end is not None and self.page_end < self.page_start))
         ):
             raise ValueError(f"no such page range: {self.page_start} to {self.page_end}")
-        if not self.block_ids or any(BLOCK_ID.fullmatch(block) is None for block in self.block_ids):
+        if (not self.block_ids and not not_found) or any(
+            BLOCK_ID.fullmatch(block) is None for block in self.block_ids
+        ):
             raise ValueError(f"an anchor names its blocks as p<page>-b<n>, not {self.block_ids}")
         if self.match_score is not None and not 0 <= self.match_score <= 1:
             raise ValueError(f"a match score lies between 0 and 1, not {self.match_score}")
@@ -88,8 +104,13 @@ class StatementDraft:
     layout_markers: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "addressees", _once(self.addressees))
         if not self.verbatim.strip():
             raise ValueError("a statement has a wording")
+        try:
+            self.verbatim.encode("utf-8")
+        except UnicodeEncodeError as error:
+            raise ValueError("a wording is text: it holds no lone surrogate") from error
         if not self.addressees:
             raise ValueError("a statement has an addressee at least")
         if not self.anchors:
@@ -118,5 +139,6 @@ class NodeDraft:
     children: tuple["NodeDraft", ...] = ()
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "applies_to", _once(self.applies_to))
         if self.code_assigned and self.code is None:
             raise ValueError("an assigned code is a code: the node's position")
