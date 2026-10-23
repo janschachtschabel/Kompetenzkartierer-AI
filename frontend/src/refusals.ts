@@ -24,6 +24,7 @@ export const REFUSAL_CODES = [
   "file_hidden",
   "no_file",
   "not_pdf",
+  "too_many_conversions",
   "no_conversion",
   "not_converted",
   "no_such_page",

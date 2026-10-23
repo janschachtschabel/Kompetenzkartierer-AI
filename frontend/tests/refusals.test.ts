@@ -9,7 +9,7 @@ const API = join(process.cwd(), "..", "backend", "app", "api");
 
 /**
  * The codes the backend answers with: the table of app/api/errors.py and its own
- * one, and every route's own - a Refusal's, and a rate limit's (sources.py).
+ * one, and every route's own - a Refusal's, and a rate limit's (within_limit, app/api/limits.py).
  */
 function backendCodes(): Set<string> {
   const source = readFileSync(join(API, "errors.py"), "utf8");
@@ -20,7 +20,7 @@ function backendCodes(): Set<string> {
     .map((name) => readFileSync(join(API, name), "utf8"))
     .join("\n");
   const refused = [...routes.matchAll(/Refusal\(\s*\d{3},\s*"([a-z_]+)"/g)].map(([, code]) => code);
-  const limited = [...routes.matchAll(/_within_limit\([^)]*?"([a-z_]+)"\s*\)/g)].map(([, code]) => code);
+  const limited = [...routes.matchAll(/\bwithin_limit\([^)]*?"([a-z_]+)"\s*\)/g)].map(([, code]) => code);
   const tabled = [...table.matchAll(/:\s*"([a-z_]+)"/g)].map(([, code]) => code);
   return new Set([...tabled, ...own, ...refused, ...limited]);
 }
@@ -33,6 +33,7 @@ describe("the refusals the page says in its own words", () => {
     // a route's own, and a rate limit's
     expect(codes).toContain("file_too_large");
     expect(codes).toContain("too_many_imports");
+    expect(codes).toContain("too_many_conversions");
   });
 
   it.each(REFUSAL_CODES)("%s is a code the backend sends", (code) => {
