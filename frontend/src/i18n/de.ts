@@ -334,6 +334,7 @@ export const messages = {
     // how far a job has come, as it reports it (JobProgress.vue, PROGRESS)
     progress: {
       checking: "{done} von {total} {total|Adresse|Adressen} angesehen",
+      converting: "Die Datei wird in Blöcke umgewandelt; bei einer großen Datei dauert das einige Minuten.",
     },
     trouble: "Der Server antwortet gerade nicht; der Stand wird weiter abgefragt.",
     // why there is nothing left to ask (jobWatch.ts, JobGone); for a fetch and the seed's check alike
@@ -369,6 +370,28 @@ export const messages = {
       download_throttled:
         "Der fremde Server bittet, ihn seltener anzufragen. Versuch es später noch einmal, oder lade das " +
         "Dokument im Browser herunter und lade es hoch.",
+      // a conversion into blocks (source.convert)
+      conversion_gone: "Diese Umwandlung steht nicht mehr im Register, etwa weil ihre Datei entfernt wurde.",
+      unreadable:
+        "Die Datei lässt sich nicht als PDF lesen; sie ist vielleicht beschädigt. Öffnet sie sich in einem " +
+        "PDF-Programm, speichere sie dort neu und lade sie noch einmal hoch.",
+      too_many_pages:
+        "Die PDF-Datei hat mehr Seiten, als der Kompetenzkartierer umwandelt. Teile sie auf und lade die Teile " +
+        "einzeln hoch.",
+      needs_ocr:
+        "Zu wenige Seiten der PDF-Datei tragen Text; sie ist wohl eingescannt. Eine Texterkennung (OCR) gibt es " +
+        "hier noch nicht: Nimm eine Fassung mit Text, wo es eine gibt.",
+      empty:
+        "Die Umwandlung fand außer Kopf- und Fußzeilen keinen Text. Prüfe, ob die Datei das Dokument selbst ist " +
+        "und nicht nur sein Deckblatt.",
+      timed_out:
+        "Die Umwandlung hat länger gedauert, als sie darf. Versuch es später noch einmal; eine sehr große Datei " +
+        "teile auf.",
+      died:
+        "Die Umwandlung wurde beendet, wohl weil sie zu viel Speicher brauchte. Teile die Datei auf, oder melde " +
+        "es der Administration.",
+      not_pdf: "Die gespeicherte Datei ist keine PDF-Datei, auch wenn sie als eine angegeben ist. Lade sie als PDF neu hoch.",
+      file_gone: "Die Datei fehlt im Speicher des Servers. Melde das bitte der Administration.",
       handler_error:
         "Der Auftrag ist mehrmals gescheitert, etwa weil ein fremder Server nicht antwortete. " +
         "Versuch es später noch einmal.",

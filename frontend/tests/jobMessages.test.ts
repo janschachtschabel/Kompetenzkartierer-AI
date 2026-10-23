@@ -10,17 +10,21 @@ import { sourceFiles } from "./sources";
 
 /**
  * The codes a job ends with (backend app/): a PermanentError's, the outcome's
- * own (app/jobs/outcome.py) and the queue's for a lost lease (app/jobs/queue.py).
+ * own (app/jobs/outcome.py), the queue's for a lost lease (app/jobs/queue.py),
+ * and a conversion's reasons (FailureCode, app/db/conversions.py), which its job
+ * raises by a name it holds rather than spells out (app/conversion/job.py).
  */
 function backendJobCodes(): Set<string> {
   const code = sourceFiles(join(process.cwd(), "..", "backend", "app"), /\.py$/)
     .map((path) => readFileSync(path, "utf8"))
     .join("\n");
+  const conversion = /^FailureCode = Literal\[([^\]]*)\]/m.exec(code)?.[1] ?? "";
   return new Set(
     [
       ...code.matchAll(/PermanentError\(\s*"([a-z_]+)"/g),
       ...code.matchAll(/fail\(\s*connection,\s*job,\s*"([a-z_]+)"/g),
       ...code.matchAll(/'code',\s*'([a-z_]+)'/g),
+      ...conversion.matchAll(/"([a-z_]+)"/g),
     ].map(([, found]) => found),
   );
 }
@@ -31,6 +35,9 @@ describe("why a job failed, in the page's words", () => {
     expect(codes).toContain("download_refused");
     expect(codes).toContain("handler_error");
     expect(codes).toContain("lease_lost");
+    // a conversion's, raised by a name the job holds
+    expect(codes).toContain("needs_ocr");
+    expect(codes).toContain("file_gone");
   });
 
   it.each(JOB_FAILURE_CODES)("%s is a code a job ends with", (code) => {

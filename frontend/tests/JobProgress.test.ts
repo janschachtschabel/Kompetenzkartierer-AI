@@ -153,9 +153,22 @@ describe("a job's progress", () => {
     expect(heard).not.toContain("12");
   });
 
+  it("shows that a conversion is under way, a progress that needs no numbers", async () => {
+    vi.spyOn(api, "getJob").mockResolvedValue({
+      ...job("running"),
+      kind: "source.convert",
+      progress: { code: "converting", params: {} },
+    });
+    const wrapper = shown("Umwandlung in Blöcke");
+
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(wrapper.get(".job__progress").text()).toBe(t("jobs.progress.converting"));
+  });
+
   it("shows no progress it has no words for, nor one whose numbers are missing", async () => {
     vi.spyOn(api, "getJob")
-      .mockResolvedValueOnce({ ...job("running"), progress: { code: "converting", params: { page: 3 } } })
+      .mockResolvedValueOnce({ ...job("running"), progress: { code: "sorting", params: { page: 3 } } })
       .mockResolvedValue({ ...job("running"), progress: { code: "checking", params: { done: "viele" } } });
     const wrapper = shown();
 

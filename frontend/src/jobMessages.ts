@@ -14,6 +14,16 @@ export const JOB_FAILURE_CODES = [
   "too_many_redirects",
   "bad_answer",
   "download_throttled",
+  // source.convert (backend app/conversion/job.py, FailureCode in app/db/conversions.py)
+  "conversion_gone",
+  "unreadable",
+  "too_many_pages",
+  "needs_ocr",
+  "empty",
+  "timed_out",
+  "died",
+  "not_pdf",
+  "file_gone",
   // any job (app/jobs/outcome.py, app/jobs/queue.py)
   "handler_error",
   "result_not_storable",

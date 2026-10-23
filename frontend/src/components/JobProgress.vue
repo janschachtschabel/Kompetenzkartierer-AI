@@ -31,7 +31,7 @@ const TONE: Record<JobStatus, string> = {
 };
 
 // The progress codes the page has words for, with the numbers each needs (jobs.progress)
-const PROGRESS: Readonly<Record<string, readonly string[]>> = { checking: ["done", "total"] };
+const PROGRESS: Readonly<Record<string, readonly string[]>> = { checking: ["done", "total"], converting: [] };
 
 const job = ref<Job | null>(null);
 const trouble = ref(false);
