@@ -53,13 +53,27 @@ def test_a_file_that_is_no_pdf_is_refused_as_unreadable(tmp_path: Path, content:
 def test_a_page_of_more_signs_than_any_page_holds_is_refused_as_too_dense(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    densest = max(page.signs for page in page_text_lengths(FIXTURES / "prose.pdf", max_pages=10))
+    densest = max(page.drawn for page in page_text_lengths(FIXTURES / "prose.pdf", max_pages=10))
     monkeypatch.setattr(convert, "MAX_PAGE_SIGNS", densest)
     assert convert_file(FIXTURES / "prose.pdf", engine("pdfplumber"), max_pages=10).pages == 2
 
     monkeypatch.setattr(convert, "MAX_PAGE_SIGNS", densest - 1)
     with pytest.raises(ConversionRefused) as refused:
         convert_file(FIXTURES / "prose.pdf", engine("pdfplumber"), max_pages=10)
+
+    assert refused.value.code == "too_dense"
+
+
+def test_signs_set_beyond_the_page_count_towards_its_density(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    hidden = b"BT /F1 11 Tf 72 2000 Td (" + b"x" * 5000 + b") Tj ET\n"  # far above the page's box
+    dense = tmp_path / "lehrplan.pdf"
+    dense.write_bytes(pages_pdf([SENTENCE + hidden]))
+    monkeypatch.setattr(convert, "MAX_PAGE_SIGNS", 1000)
+
+    with pytest.raises(ConversionRefused) as refused:
+        convert_file(dense, engine("pdfplumber"), max_pages=10)
 
     assert refused.value.code == "too_dense"
 

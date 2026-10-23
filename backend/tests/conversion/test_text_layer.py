@@ -40,8 +40,8 @@ def test_a_scan_needs_ocr_and_a_born_digital_plan_does_not() -> None:
 def test_a_document_needs_ocr_where_under_four_fifths_of_its_pages_carry_text(
     with_text: int, without: int, wanted: bool
 ) -> None:
-    pages = [PageText(page=n, signs=1500) for n in range(1, with_text + 1)]
-    pages += [PageText(page=with_text + n, signs=12) for n in range(1, without + 1)]
+    pages = [PageText(page=n, signs=1500, drawn=1500) for n in range(1, with_text + 1)]
+    pages += [PageText(page=with_text + n, signs=12, drawn=12) for n in range(1, without + 1)]
 
     assert needs_ocr(pages) is wanted
 

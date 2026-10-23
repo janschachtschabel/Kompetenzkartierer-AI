@@ -14,6 +14,7 @@ the service takes is refused at once, not after reading them all.
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 # Below this a page carries a running head at most
 MIN_SIGNS_PER_PAGE = 20
@@ -35,7 +36,8 @@ class TooManyPages(ValueError):
 @dataclass(frozen=True)
 class PageText:
     page: int  # from 1
-    signs: int
+    signs: int  # within the page's box: what a reader sees, for the rule of OCR
+    drawn: int  # every sign the page sets, in its box or not: what its blocks may weigh
 
 
 def page_text_lengths(path: Path, *, max_pages: int) -> list[PageText]:
@@ -51,14 +53,15 @@ def page_text_lengths(path: Path, *, max_pages: int) -> list[PageText]:
         if pages > max_pages:
             raise TooManyPages(pages, max_pages)
         try:
-            return [
-                PageText(page=number, signs=len(document[number - 1].get_textpage().get_text_bounded()))
-                for number in range(1, pages + 1)
-            ]
+            return [_page_text(number, document[number - 1].get_textpage()) for number in range(1, pages + 1)]
         except pdfium.PdfiumError:  # a page the file counts but cannot give
             raise UnreadablePdf("a page of the file cannot be read") from None
     finally:
         document.close()
+
+
+def _page_text(number: int, text: Any) -> PageText:
+    return PageText(page=number, signs=len(text.get_text_bounded()), drawn=text.count_chars())
 
 
 def needs_ocr(pages: Sequence[PageText]) -> bool:

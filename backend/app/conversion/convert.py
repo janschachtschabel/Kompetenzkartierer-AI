@@ -33,7 +33,7 @@ def convert_file(path: Path, engine: Engine, *, max_pages: int) -> Conversion:
         raise ConversionRefused("unreadable", "the file cannot be read as a PDF") from None
     except TooManyPages as counted:
         raise ConversionRefused("too_many_pages", str(counted)) from None
-    if any(page.signs > MAX_PAGE_SIGNS for page in pages):
+    if any(page.drawn > MAX_PAGE_SIGNS for page in pages):
         raise ConversionRefused("too_dense", f"a page holds more than the {MAX_PAGE_SIGNS} signs taken")
     if needs_ocr(pages):
         raise ConversionRefused("needs_ocr", "too few pages carry a text layer; the file needs OCR")
