@@ -6,12 +6,12 @@ empty one above it is dropped - is the table's header where every sign in it is 
 took any first row for one.
 
 A table that ends a page - reaches lowest of its text and tables, running heads and feet aside,
-however far down a note beside it begins - and one that begins the next - stands highest on it,
-however a note in its margin is read - with as many columns are one table where the second has no
-header row, or repeats the first one's: the repeated header
+however far down a note beside it begins - and one that begins the next - stands highest on it
+beneath the first, not beside it, however a note in its margin is read - with as many columns
+are one table where the second has no header row, or repeats the first one's: the repeated header
 goes. The rows join the first part, each cell keeping the page it stands on; the second part's
-block goes. A table may run on over many pages so; a page between without text or a table - an
-empty one, a picture - ends it.
+block goes, and where it reached lowest on its page the table runs on. A table may run on over
+many pages so; a page between without text or a table - an empty one, a picture - ends it.
 """
 
 from collections.abc import Iterable, Mapping, Sequence
@@ -74,8 +74,13 @@ def merge_across_pages(pages: list[RawPage]) -> None:
             continue
         if open_part is not None:
             holder, at = open_part
-            # what begins highest on the page continues it, however a note in the margin is read
-            first = min(body, key=lambda index: page.blocks[index].bbox[1])
+            # what begins highest on the page beneath the part continues it - not a table or a note
+            # beside it, however it is read; the highest at all where nothing stands beneath it
+            x0, _top, x1, _bottom = holder.blocks[at].bbox
+            beneath = [
+                index for index in body if page.blocks[index].bbox[0] < x1 and page.blocks[index].bbox[2] > x0
+            ]
+            first = min(beneath or body, key=lambda index: page.blocks[index].bbox[1])
             joined = _joined(holder.blocks[at], page.blocks[first])
             if joined is not None:
                 holder.blocks[at] = joined

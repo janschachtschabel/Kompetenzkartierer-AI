@@ -116,6 +116,12 @@ def test_names_with_a_tilde_set_in_capitals_are_not_suspect() -> None:
     assert encoding_findings(document([text(1, names * 40)])) == []
 
 
+def test_french_and_portuguese_words_with_a_circumflex_are_not_suspect() -> None:
+    words = f"ch{chr(0xE2)}teau, c{chr(0xE2)}mara, p{chr(0xE2)}te, {chr(0xE2)}ge. "
+
+    assert encoding_findings(document([text(1, words * 40)])) == []
+
+
 def test_german_with_its_quotation_marks_and_dashes_is_not_suspect() -> None:
     quoted = f"{chr(0x201E)}Größe{chr(0x201C)} {chr(0x2013)} Änderung, Öl {chr(0x2014)} Übung. "
 

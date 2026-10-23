@@ -214,6 +214,50 @@ def test_a_table_runs_on_where_a_note_in_the_margin_is_read_before_its_part() ->
     assert [block.text for block in document[1].blocks] == ["Randnotiz"]
 
 
+def part(page: int, row: tuple[str, ...], x0: float, top: float, bottom: float) -> RawBlock:
+    return RawBlock(page, "table", "", (x0, top, x0 + 227, bottom), None, False, False, table(page, row).rows)
+
+
+def test_of_two_tables_side_by_side_the_one_beneath_the_part_continues_it() -> None:
+    # the right one begins 5 points higher; the left one stands beneath the part on the page before
+    document = pages(
+        [part(1, ("1", "a"), 56, 85, 765)],
+        [part(2, ("r", "x"), 300, 65, 300), part(2, ("2", "b"), 56, 70, 300)],
+    )
+
+    merge_across_pages(document)
+
+    assert texts(document[0].blocks[0]) == [["1", "a"], ["2", "b"]]
+    assert [texts(block) for block in document[1].blocks] == [[["r", "x"]]]
+
+
+def test_a_note_in_the_right_margin_begun_higher_than_the_part_does_not_part_the_table() -> None:
+    document = pages(
+        [part(1, ("1", "a"), 56, 85, 765)],
+        [
+            RawBlock(2, "text", "Randnotiz", (340, 60, 461, 72), 9.0, False, False),
+            part(2, ("2", "b"), 56, 70, 300),
+        ],
+    )
+
+    merge_across_pages(document)
+
+    assert texts(document[0].blocks[0]) == [["1", "a"], ["2", "b"]]
+
+
+def test_a_table_runs_on_where_a_note_beside_its_part_ends_level_with_it() -> None:
+    middle = part(2, ("2", "b"), 56, 70, 765)
+    document = pages(
+        [part(1, ("1", "a"), 56, 85, 765)],
+        [middle, RawBlock(2, "text", "Hinweis", (340, 700, 461, 765), 10.0, False, False)],
+        [part(3, ("3", "c"), 56, 70, 300)],
+    )
+
+    merge_across_pages(document)
+
+    assert texts(document[0].blocks[0]) == [["1", "a"], ["2", "b"], ["3", "c"]]
+
+
 def test_a_page_without_text_or_table_between_two_ends_the_first() -> None:
     # an empty page, or one of a picture: what follows it is no continuation
     for between in ([], [text(2, "- 2 -", "page_footer", top=820)]):
