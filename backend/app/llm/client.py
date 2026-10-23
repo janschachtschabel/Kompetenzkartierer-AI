@@ -1,16 +1,20 @@
 """The configured language model, as pydantic-ai models it (after the old app's extraction/llm.py).
 
 ``openai`` is spoken to over the Responses API, which carries reasoning effort and text
-verbosity; ``openai-compatible`` over Chat Completions, which carries the effort. No network
-call happens here: the client connects on the first request, so the app starts without the
-provider. pydantic-ai 2.42 does not know gpt-6-luna and would silently drop its prompt cache
-breakpoint and encrypted reasoning; the model is described as it was measured instead.
+verbosity; ``openai-compatible`` over Chat Completions, which carries the effort. Every request
+caps its answer at LLM_MAX_OUTPUT_TOKENS, is counted into the call that sent it
+(app/llm/attempts.py), carries the trace of its request or job, and is sent once: the SDK does
+not ask again on its own. No network call happens here: the client connects on the first
+request, so the app starts without the provider. pydantic-ai 2.42 does not know gpt-6-luna and
+would silently drop its prompt cache breakpoint and encrypted reasoning; the model is described
+as it was measured instead.
 """
 
 import re
 from typing import Any, cast
 
 import httpx2
+from openai import AsyncOpenAI
 from pydantic_ai.models.openai import (
     OpenAIChatModel,
     OpenAIChatModelSettings,
@@ -21,6 +25,8 @@ from pydantic_ai.profiles import merge_profile
 from pydantic_ai.profiles.openai import OpenAIModelProfile
 from pydantic_ai.providers.openai import OpenAIProvider
 
+from app.core.tracing import outgoing_headers
+from app.llm.attempts import count_attempt
 from app.llm.settings import LLMSettings
 
 # The smallest context window the app is meant for, for a model it does not know
@@ -60,25 +66,41 @@ def build_model(
     """
     if settings.openai_api_key is None:
         raise LLMNotConfigured("OPENAI_API_KEY is not set: the language model cannot be asked")
-    provider = OpenAIProvider(
+    http_client = httpx2.AsyncClient(
+        # ten minutes for an answer, five seconds to connect, as pydantic-ai's own client has
+        timeout=httpx2.Timeout(600, connect=5),
+        event_hooks={"request": [count_attempt, _carry_trace]},
+        transport=transport,
+    )
+    # The SDK asks again after a timeout, a 429 or a 5xx, twice by default, and every request may
+    # be paid for: the app waits and asks itself, each time with a reservation (app/llm/calls.py)
+    sdk = AsyncOpenAI(
         base_url=settings.openai_base_url,
         api_key=settings.openai_api_key.get_secret_value(),
-        # ten minutes for an answer, five seconds to connect, as pydantic-ai's own client has
-        http_client=cast(
-            Any, httpx2.AsyncClient(timeout=httpx2.Timeout(600, connect=5), transport=transport)
-        ),
+        http_client=cast(Any, http_client),
+        max_retries=0,
     )
+    provider = OpenAIProvider(openai_client=sdk)
     profile = _measured_profile(settings.openai_model)
+    # max_output_tokens (Responses) or max_completion_tokens (Chat): what an answer may cost at
+    # most, reasoning included - the reservation counts on it
+    cap = settings.llm_max_output_tokens
     if settings.llm_provider == "openai":
         responses = OpenAIResponsesModelSettings(
+            max_tokens=cap,
             openai_reasoning_effort=settings.openai_reasoning_effort,
             openai_text_verbosity=settings.openai_text_verbosity,
         )
         return OpenAIResponsesModel(
             settings.openai_model, provider=provider, settings=responses, profile=profile
         )
-    chat = OpenAIChatModelSettings(openai_reasoning_effort=settings.openai_reasoning_effort)
+    chat = OpenAIChatModelSettings(max_tokens=cap, openai_reasoning_effort=settings.openai_reasoning_effort)
     return OpenAIChatModel(settings.openai_model, provider=provider, settings=chat, profile=profile)
+
+
+async def _carry_trace(request: httpx2.Request) -> None:
+    """The client's request hook: the trace of the request or job the call is made for."""
+    request.headers.update(outgoing_headers())
 
 
 def check_reasoning_effort(settings: LLMSettings) -> None:

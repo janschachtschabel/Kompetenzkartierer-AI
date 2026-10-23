@@ -53,6 +53,8 @@ def test_the_defaults_follow_the_old_app() -> None:
         ("OPENAI_BASE_URL", "https://gateway.example.invalid:99999/v1"),
         ("OPENAI_BASE_URL", "https:///v1"),
         ("LLM_CONTEXT_TOKENS", "100"),
+        ("LLM_MAX_OUTPUT_TOKENS", "999"),
+        ("LLM_MAX_OUTPUT_TOKENS", "-7"),
     ],
     ids=[
         "provider",
@@ -66,6 +68,8 @@ def test_the_defaults_follow_the_old_app() -> None:
         "port",
         "no-host",
         "context",
+        "output-cap",
+        "no-output",
     ],
 )
 def test_a_value_the_endpoint_cannot_take_stops_the_start(

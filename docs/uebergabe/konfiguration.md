@@ -60,6 +60,7 @@ ein Test schlägt an, wenn sie veraltet.
 | `OPENAI_TEXT_VERBOSITY` | `low` \| `medium` \| `high` | `low` | – | Sprachmodell |
 | `LLM_PROVIDER` | `openai` \| `openai-compatible` | `openai` | – | Sprachmodell |
 | `LLM_CONTEXT_TOKENS` | Zahl ≥ 8000 | – | – | Sprachmodell |
+| `LLM_MAX_OUTPUT_TOKENS` | Zahl ≥ 1000, ≤ 1000000 | 16000 | – | Sprachmodell |
 <!-- settings:end -->
 
 ## Auf einem Rechner

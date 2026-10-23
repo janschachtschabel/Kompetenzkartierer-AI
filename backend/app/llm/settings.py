@@ -31,6 +31,9 @@ class LLMSettings(BaseSettings):
     llm_provider: Literal["openai", "openai-compatible"] = "openai"
     # What one request and its answer may hold together; unset, the model's (app/llm/client.py)
     llm_context_tokens: Annotated[int, Field(ge=8_000)] | None = None
+    # What one answer may cost at most, its reasoning included: every request says so, and
+    # reserves it from the budget before it is sent
+    llm_max_output_tokens: Annotated[int, Field(ge=1_000, le=1_000_000)] = 16_000
 
     @classmethod
     def settings_customise_sources(

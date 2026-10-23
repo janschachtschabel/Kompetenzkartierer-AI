@@ -12,6 +12,7 @@ from pydantic_ai.models.openai import OpenAIResponsesModel
 from pydantic_ai.profiles.openai import openai_model_profile
 from pydantic_ai.providers.openai import OpenAIProvider
 
+from app.core.tracing import CLIENT_TRACE, continue_trace, end_trace
 from app.llm.client import (
     DEFAULT_CONTEXT_TOKENS,
     LLMNotConfigured,
@@ -82,6 +83,46 @@ async def test_a_chat_gateway_gets_the_effort(restore_logging: None) -> None:
     recorder, _ = await ask(llm_settings(llm_provider="openai-compatible", openai_reasoning_effort="medium"))
 
     assert json.loads(recorder.requests[0].content)["reasoning_effort"] == "medium"
+
+
+@pytest.mark.parametrize("status", [429, 500, 503])
+async def test_the_sdk_asks_once_and_leaves_the_waiting_to_the_app(status: int) -> None:
+    # the SDK would ask twice more on its own, and every request may be paid for
+    requests: list[httpx2.Request] = []
+
+    def busy(request: httpx2.Request) -> httpx2.Response:
+        requests.append(request)
+        return httpx2.Response(status, json={"error": {"message": "busy", "type": "server_error"}})
+
+    model = build_model(llm_settings(), transport=httpx2.MockTransport(busy))
+    with pytest.raises(ModelHTTPError):
+        await Agent(model).run("Nenne ein Thema.")
+
+    assert len(requests) == 1
+
+
+@pytest.mark.parametrize(
+    ("provider", "field"),
+    [("openai", "max_output_tokens"), ("openai-compatible", "max_completion_tokens")],
+)
+async def test_each_request_caps_its_answer_reasoning_and_all(provider: str, field: str) -> None:
+    default, _ = await ask(llm_settings(llm_provider=provider))
+    set_, _ = await ask(llm_settings(llm_provider=provider, llm_max_output_tokens=2_000))
+
+    assert json.loads(default.requests[0].content)[field] == 16_000
+    assert json.loads(set_.requests[0].content)[field] == 2_000
+
+
+async def test_a_request_carries_the_trace_of_the_job_that_sent_it() -> None:
+    token = continue_trace("job-trace-0123")
+    try:
+        recorder, _ = await ask(llm_settings())
+    finally:
+        end_trace(token)
+    untraced, _ = await ask(llm_settings())
+
+    assert recorder.requests[0].headers[CLIENT_TRACE] == "job-trace-0123"
+    assert CLIENT_TRACE not in untraced.requests[0].headers
 
 
 async def test_the_key_shows_in_no_error_and_no_log_line(caplog: pytest.LogCaptureFixture) -> None:
