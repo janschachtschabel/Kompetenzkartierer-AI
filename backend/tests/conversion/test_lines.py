@@ -113,8 +113,12 @@ def test_scripts_stand_on_their_line_and_touch_their_word() -> None:
         (Word("ENTWURF", 120, 400, 106, 178, 72.0, "Helvetica"), 5),  # a watermark across five lines
         (Word("●", 40, 52, 101, 125, 24.0, "ZapfDingbats"), 2),  # a symbol beside two
         (Word("D", 30, 56, 100, 136, 36.0, "Helvetica-Bold"), 3),  # an initial of three
+        # as close as they are set: the lines' words touch them within a tenth of their size
+        (Word("ENTWURF", 89.5, 400, 106, 178, 72.0, "Helvetica"), 5),  # 2 points behind "Zeile"
+        (Word("●", 35, 59, 101, 125, 24.0, "ZapfDingbats"), 2),  # 1 point before the text
+        (Word("D", 30, 59.5, 100, 136, 36.0, "Helvetica-Bold"), 3),  # half a point before it
     ],
-    ids=["watermark", "symbol", "initial"],
+    ids=["watermark", "symbol", "initial", "watermark_close", "symbol_close", "initial_close"],
 )
 def test_a_word_far_higher_than_the_lines_it_overlaps_takes_none_of_them(tall: Word, lines: int) -> None:
     texts = [f"Zeile {number} des Absatzes mit Text" for number in range(1, lines + 1)]

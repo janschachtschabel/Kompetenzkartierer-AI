@@ -36,6 +36,7 @@ LINE_TOLERANCE = 0.5  # times the size: a line this far up into the one above st
 LINE_OVERLAP = 0.5  # of the smaller height: a word overlapping a line's span this much stands on it
 TALL = 1.5  # times the height: a word this much higher than a line's span, or lower, is none of its
 WORD_SPACE = 0.1  # times the larger size: two words a narrower gap apart are one
+GLUE_RATIO = 2.0  # times the size: a script glues to a word at most this much larger
 BLOCK_GAP = 0.5  # times the size: a line this close below another, set alike, goes on its block
 SIZE_TOLERANCE = 0.5  # points: sizes this close are one
 
@@ -200,10 +201,13 @@ def _apart(before: Word, word: Word) -> bool:
 def _glued(word: Word, other: Word) -> bool:
     """Whether ``word``, set smaller, touches ``other`` side by side, on either side, and overlaps
     it: a sub- or superscript and its word. Not two words one above the other, which overlap
-    across; nor two of one size, whose edges meet by chance where lines are set tight."""
+    across; nor two of one size, whose edges meet by chance where lines are set tight; nor a word
+    and one more than twice its size - an initial, a symbol, a watermark beside the line, whose
+    tenth of a size reaches 3.6 points at 36."""
     gap = max(other.x0 - word.x1, word.x0 - other.x1)
     return (
         word.size < other.size - SIZE_TOLERANCE
+        and other.size <= GLUE_RATIO * word.size
         and abs(gap) < WORD_SPACE * max(word.size, other.size)
         and _overlap(word, other) > 0
     )
