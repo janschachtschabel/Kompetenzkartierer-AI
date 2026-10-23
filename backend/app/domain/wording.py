@@ -1,32 +1,47 @@
 """A statement's wording as the core compares it: ``cur:textHash`` (konzept §11, cur-kern.ttl).
 
 Two wordings are one where they differ only in how they were set: composed or decomposed
-letters, case, a word parted at a line's end or by a soft hyphen, the kind of dash, the space
-between words, and the numbering before them ("1.", "1.2.3", "(a)", "b)", "IV.", a bullet). A
-hyphen within a line stays ("E-Mail"), and so does a number alone before a word ("3 Aufgaben"):
-it may be what the statement says.
+letters, case, signs that set a text without saying anything (a zero width space, a byte order
+mark), a word parted at a line's end or by a soft hyphen, the kind of dash, the space between
+words, and up to three numberings before them ("1.", "1.2.3", "(a)", "b)", "IV.", a bullet).
+
+A word is parted at a line's end where a hyphen and the break stand between a letter and a small
+one ("Kompe-" / "tenzen"); before a capital or between digits the hyphen is the word's own and
+stays, the break goes ("E-" / "Mail" is "E-Mail", "5-" / "6" is "5-6"). A hyphen within a line
+stays too ("E-Mail"). A numbering is a number of one or two digits, so "1.000" and "100." are
+none; a letter with a point is an abbreviation ("z. B.", "d. h."), not a numbering, and a number
+alone before a word ("3 Aufgaben") may be what the statement says. What looks like both stays
+ambiguous: "3. Klasse", "1.5 Stunden" and "i. d. R." lose their first part, and "Ein-" / "und
+Ausgabe" across a line is read as one word. Folding case joins what German tells apart only by
+"ß": "Maße" and "Masse" are one.
 """
 
 import hashlib
-import re
 import unicodedata
 
+import regex
+
 _SOFT_HYPHEN = "\N{SOFT HYPHEN}"
-# a word parted at the end of a line: the hyphen and the break between two letters
-_PARTED = re.compile(r"(?<=\w)-[ \t]*\r?\n[ \t]*(?=\w)")
-_DASHES = re.compile("[\N{HYPHEN}-\N{HORIZONTAL BAR}\N{MINUS SIGN}]")
+_DASHES = regex.compile("[\N{HYPHEN}-\N{HORIZONTAL BAR}\N{MINUS SIGN}]")
+# format signs (Cf) but the soft hyphen, which first shows where a word was parted
+_FORMAT = regex.compile("(?!\N{SOFT HYPHEN})\\p{Cf}")
+_PARTED = regex.compile("(?<=\\p{L})[-\N{SOFT HYPHEN}]\\h*\\R\\h*(?=\\p{Ll})")
+_BROKEN = regex.compile("(?<=[\\p{L}\\p{N}])-\\h*\\R\\h*(?=[\\p{L}\\p{N}])")
 _ROMAN = r"(?=[ivx])x{0,3}(?:ix|iv|v?i{0,3})"
+_NUMBER = r"\d{1,2}(?!\d)"
 _BULLETS = "\N{BULLET}\N{BLACK SMALL SQUARE}\N{WHITE BULLET}\N{TRIANGULAR BULLET}\N{MIDDLE DOT}*-"
-_NUMBERING = re.compile(
-    rf"\s*(?:\(\s*(?:\d+|[a-z]|{_ROMAN})\s*\)|\d+(?:\.\d+)+\.?|\d+[.)]|[a-z][.)]|{_ROMAN}[.)]|[{_BULLETS}])\s+"
+_ONE_NUMBERING = (
+    rf"\(\s*(?:{_NUMBER}|[a-z]|{_ROMAN})\s*\)|{_NUMBER}(?:\.{_NUMBER}){{1,2}}\.?|{_NUMBER}[.)]"
+    rf"|[a-z]\)|{_ROMAN}[.)]|[{_BULLETS}]"
 )
-_SPACE = re.compile(r"\s+")
+_NUMBERING = regex.compile(rf"(?:\s*(?:{_ONE_NUMBERING})\s+){{1,3}}")
+_SPACE = regex.compile(r"\s+")
 
 
 def normalized(verbatim: str) -> str:
     """The wording as its hash takes it."""
-    text = unicodedata.normalize("NFC", verbatim).replace(_SOFT_HYPHEN, "")
-    text = _DASHES.sub("-", _PARTED.sub("", text))
+    text = _FORMAT.sub("", _DASHES.sub("-", unicodedata.normalize("NFC", verbatim)))
+    text = _BROKEN.sub("-", _PARTED.sub("", text)).replace(_SOFT_HYPHEN, "")
     text = unicodedata.normalize("NFC", text.casefold())
     if (numbering := _NUMBERING.match(text)) is not None:
         text = text[numbering.end() :]
