@@ -31,7 +31,7 @@ _DOCUMENT = """
 SELECT d.conversion_id, s.notation FROM document d JOIN vocab_concept s ON s.iri = d.sector_iri
 WHERE d.id = %s
 """
-_LOCK = "SELECT pg_advisory_xact_lock(hashtextextended('node-tree:' || %s::text, 0))"
+_LOCK = "SELECT lock_node_tree(%s)"  # the lock the database's guards take (migration l1_nodes)
 _RETIRED = "SELECT iri FROM vocab_concept WHERE iri = ANY(%s) AND retired_in IS NOT NULL ORDER BY iri LIMIT 1"
 _NEXT = """
 SELECT coalesce(max(position), 0) + 1 FROM node WHERE document_id = %s AND parent_id IS NOT DISTINCT FROM %s
@@ -136,7 +136,7 @@ async def write_subtree(
 async def lock_tree(connection: psycopg.AsyncConnection, document_id: UUID) -> None:
     """Wait for, then hold until the transaction ends, the lock all writes to the document's tree
     share - subtrees written, nodes moved (migration l1_nodes); within a transaction alone."""
-    await connection.execute(_LOCK, (str(document_id),))
+    await connection.execute(_LOCK, (document_id,))
 
 
 async def read_tree(

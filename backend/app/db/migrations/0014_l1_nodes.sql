@@ -70,6 +70,12 @@ BEGIN
 END
 $$;
 
+-- The lock every write to one document's tree shares, held until its transaction ends: the
+-- guards below take it, and so does whoever writes a tree (app/db/nodes.py, lock_tree)
+CREATE FUNCTION lock_node_tree(document uuid) RETURNS void LANGUAGE sql AS $$
+    SELECT pg_advisory_xact_lock(hashtextextended('node-tree:' || document::text, 0))
+$$;
+
 -- A node comes to lie under itself nowhere, however it is written: checked once its statement
 -- has written all its rows (nodes inserted in a circle at once too). Writes to one document's
 -- tree wait for each other, so two moves that would close a circle between them do not pass side
@@ -83,7 +89,7 @@ BEGIN
     IF TG_OP = 'UPDATE' THEN
         PERFORM read_committed_alone('a node is moved');
     END IF;
-    PERFORM pg_advisory_xact_lock(hashtextextended('node-tree:' || NEW.document_id::text, 0));
+    PERFORM lock_node_tree(NEW.document_id);
     IF EXISTS (
         WITH RECURSIVE up (id) AS (
             SELECT NEW.parent_id
@@ -258,20 +264,24 @@ CREATE TABLE statement_addressee (
     FOREIGN KEY (addressee_scheme, addressee_iri) REFERENCES vocab_concept (scheme_iri, iri)
 );
 
+-- One taken away from a statement that stays takes the document's tree, so another taking one
+-- away waits for this one and then counts what it left. The statement's own row it leaves: the
+-- deletion of a node locks its statements before their addressees, which this one holds already
 CREATE FUNCTION statement_addressed() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
     target uuid;
+    document uuid;
 BEGIN
     IF TG_TABLE_NAME = 'statement' THEN
         target := NEW.id;
     ELSE
         target := OLD.statement_id;
-        IF NOT EXISTS (SELECT FROM statement WHERE id = target) THEN
+        SELECT statement.document_id INTO document FROM statement WHERE id = target;
+        IF NOT FOUND THEN
             RETURN NULL;  -- gone with its statement
         END IF;
         PERFORM read_committed_alone('an addressee is taken away from its statement');
-        -- locked, so another taking one away waits for this one and then counts what it left
-        PERFORM FROM statement WHERE id = target FOR NO KEY UPDATE;
+        PERFORM lock_node_tree(document);
     END IF;
     IF EXISTS (SELECT FROM statement WHERE id = target)
         AND NOT EXISTS (SELECT FROM statement_addressee WHERE statement_id = target) THEN
@@ -282,5 +292,5 @@ END
 $$;
 CREATE CONSTRAINT TRIGGER statement_addressed AFTER INSERT ON statement
     DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION statement_addressed();
-CREATE CONSTRAINT TRIGGER statement_addressee_kept AFTER DELETE OR UPDATE ON statement_addressee
+CREATE CONSTRAINT TRIGGER statement_addressee_kept AFTER DELETE OR UPDATE OF statement_id ON statement_addressee
     DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION statement_addressed();

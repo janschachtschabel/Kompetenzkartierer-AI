@@ -80,7 +80,8 @@ CREATE INDEX anchor_of_frame_part ON anchor (frame_part_id) WHERE frame_part_id 
 CREATE INDEX anchor_of_specification ON anchor (specification_id) WHERE specification_id IS NOT NULL;
 
 -- A statement stands on its source (cur:anchor, one at least): when its transaction commits it
--- has an anchor, and its last one stays with it, as its last addressee does (0014)
+-- has an anchor, and its last one stays with it, as its last addressee does - one taken away
+-- takes the document's tree, not the statement's row (0014)
 CREATE FUNCTION statement_anchored() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
     target uuid;
@@ -93,8 +94,7 @@ BEGIN
             RETURN NULL;  -- a node's or frame part's, or gone with its statement
         END IF;
         PERFORM read_committed_alone('an anchor is taken away from its statement');
-        -- locked, so another taking one away waits for this one and then counts what it left
-        PERFORM FROM statement WHERE id = target FOR NO KEY UPDATE;
+        PERFORM lock_node_tree(OLD.document_id);
     END IF;
     IF EXISTS (SELECT FROM statement WHERE id = target)
         AND NOT EXISTS (SELECT FROM anchor WHERE statement_id = target) THEN

@@ -2,6 +2,8 @@
 without cycles within one document, values that fit their core values, an addressee for each
 statement."""
 
+import threading
+import time
 import uuid
 from collections.abc import Iterator
 from typing import Any
@@ -133,6 +135,65 @@ def test_two_takings_away_of_a_statement_s_last_two_anchors_or_addressees_wait_f
         with pytest.raises(errors.LockNotAvailable), other.transaction():
             other.execute(delete, second)
             other.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
+@pytest.mark.parametrize("table", ["anchor", "statement_addressee"])
+def test_taking_an_anchor_or_addressee_away_and_deleting_its_node_meanwhile_deadlock_never(
+    connection: psycopg.Connection, document: uuid.UUID, database_url: str, table: str
+) -> None:
+    # the deletion locks the statement before its anchors; the check of the taking away, done as
+    # it commits, comes after its own row's lock - so it locks the document's tree, not the statement
+    delete, [first, _] = two_of_each(connection, document, table)
+    failed: list[BaseException] = []
+
+    with (
+        psycopg.connect(database_url, autocommit=True) as other,
+        psycopg.connect(database_url, autocommit=True) as watcher,
+    ):
+        other.execute("SET lock_timeout = '5s'")  # beyond deadlock_timeout: a deadlock shows as one
+
+        def delete_node() -> None:
+            try:
+                other.execute("DELETE FROM node")
+            except psycopg.Error as error:
+                failed.append(error)
+
+        deleting = threading.Thread(target=delete_node)
+        with connection.transaction():
+            connection.execute("SET LOCAL lock_timeout = '5s'")
+            connection.execute(delete, first)
+            deleting.start()
+            waiting_for_a_lock(watcher, other.info.backend_pid)
+        deleting.join(15)
+
+    assert not deleting.is_alive()
+    assert failed == []
+    assert connection.execute("SELECT count(*) FROM statement").fetchone() == (0,)
+
+
+def waiting_for_a_lock(watcher: psycopg.Connection, pid: int) -> None:
+    """Until the session of ``pid`` waits for a lock."""
+    for _ in range(200):
+        found = watcher.execute(
+            "SELECT count(*) FROM pg_stat_activity WHERE pid = %s AND wait_event_type = 'Lock'", (pid,)
+        ).fetchone()
+        if found is not None and found[0] > 0:
+            return
+        time.sleep(0.05)
+    raise AssertionError(f"session {pid} came to wait for no lock")
+
+
+def test_an_addressee_changed_in_place_is_none_taken_away(
+    connection: psycopg.Connection, document: uuid.UUID
+) -> None:
+    statement = add_statement(connection, document, add_node(connection, document))
+
+    with connection.transaction():  # under any level: nothing is left to count
+        connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        connection.execute(
+            "UPDATE statement_addressee SET addressee_iri = %s WHERE statement_id = %s",
+            (CV + "addr_teacher", statement),
+        )
 
 
 def test_two_moves_in_one_document_wait_for_each_other(
