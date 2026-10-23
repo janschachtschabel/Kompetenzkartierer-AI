@@ -29,8 +29,8 @@ _UNSTORABLE = re.compile(f"[{chr(0)}{chr(0xD800)}-{chr(0xDFFF)}]")
 BlockKind = Literal["text", "table", "page_header", "page_footer"]
 EngineName = Literal["pdfplumber"]  # the engines offered, for the API's schema (a test compares)
 FindingCode = Literal["unmapped_symbol", "encoding_suspect", "text_dropped"]
-# Why an engine dropped a word (text_dropped), in the order the findings say them: set upright or
-# rotated, outside the page, smaller than a reader reads, at no finite point
+# Why an engine dropped a word, its signs counted (text_dropped), in the order the findings say
+# them: set upwards or turned, outside the page, smaller than a reader reads, at no finite point
 DropReason = Literal["vertical", "off_page", "tiny", "unplaced"]
 # Each engine by the class that converts with it, imported when first asked for
 _ENGINES = {"pdfplumber": "app.conversion.pdfplumber_blocks:PdfplumberEngine"}

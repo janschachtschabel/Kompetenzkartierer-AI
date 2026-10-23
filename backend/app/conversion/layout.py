@@ -3,8 +3,8 @@
 An engine hands over words with their place and font, and tables with their rows; what follows -
 lines, blocks, headers and footers, tables continued over a page, names - works on these alone,
 so another engine (Docling, 3b) can hand over the same and get the same treatment. A text an
-engine hands over is cleaned of control signs first (``clean_text``); the words it drops it
-counts on their page, by why.
+engine hands over is cleaned of control signs first (``clean_text``); the signs of the words it
+drops it counts on their page, by why.
 """
 
 import re
@@ -61,7 +61,7 @@ class RawPage:
     number: int  # from 1
     height: float
     blocks: list[RawBlock] = field(default_factory=list)
-    # the words the engine dropped from the page, by why (a finding, app/conversion/assemble.py)
+    # the signs of the words the engine dropped from the page, by why (a finding, assemble.py)
     dropped: Counter[DropReason] = field(default_factory=Counter)
 
 

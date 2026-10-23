@@ -195,27 +195,27 @@ def test_signs_no_store_keeps_leave_the_text_and_the_conversion_goes_as_json(
 
 
 @pytest.mark.parametrize(
-    ("dropped", "reason", "words"),
+    ("dropped", "reason", "signs"),
     [
-        # set upwards in the margin: pdfplumber reads it as splinters ("dna", "6202")
-        (b"BT /F1 9 Tf 0 1 -1 0 30 300 Tm (Entwurf Stand Oktober 2026) Tj ET\n", "vertical", 16),
+        # set upwards in the margin: pdfplumber splinters it ("dna", "6202"), its signs are 23
+        (b"BT /F1 9 Tf 0 1 -1 0 30 300 Tm (Entwurf Stand Oktober 2026) Tj ET\n", "vertical", 23),
         (
             b"BT /F1 11 Tf -300 -50 Td (Ausserhalb links unten) Tj ET\n"
             b"BT /F1 11 Tf 72 900 Td (Ausserhalb oben) Tj ET\n",
             "off_page",
-            5,
+            34,
         ),
         (
             b"BT /F1 0 Tf 72 500 Td (Nullgroesse Text hier) Tj ET\n"
             b"BT /F1 0.5 Tf 72 400 Td (Halbpunkt Text) Tj ET\n",
             "tiny",
-            5,
+            32,
         ),
     ],
     ids=["vertical", "off_page", "tiny"],
 )
-def test_text_no_reader_reads_where_it_stands_is_dropped_and_counted_by_its_pages(
-    tmp_path: Path, dropped: bytes, reason: str, words: int
+def test_text_no_reader_reads_where_it_stands_is_dropped_and_its_signs_counted_by_its_pages(
+    tmp_path: Path, dropped: bytes, reason: str, signs: int
 ) -> None:
     path = tmp_path / "lehrplan.pdf"
     path.write_bytes(pages_pdf([SENTENCE + dropped, SENTENCE, SENTENCE + dropped]))
@@ -224,7 +224,7 @@ def test_text_no_reader_reads_where_it_stands_is_dropped_and_counted_by_its_page
 
     assert {block.text for block in conversion.blocks} == {SENTENCE_READ}
     assert [(finding.code, finding.params) for finding in conversion.findings] == [
-        ("text_dropped", {"reason": reason, "count": 2 * words, "pages": [1, 3]})
+        ("text_dropped", {"reason": reason, "count": 2 * signs, "pages": [1, 3]})
     ]
 
 
@@ -240,11 +240,11 @@ def test_a_word_placed_at_no_finite_point_is_dropped_and_counted(tmp_path: Path)
 
     assert {block.text for block in conversion.blocks} == {SENTENCE_READ}
     assert [(finding.code, finding.params) for finding in conversion.findings] == [
-        ("text_dropped", {"reason": "unplaced", "count": 6, "pages": [1]})  # "Riesig", a sign a word
+        ("text_dropped", {"reason": "unplaced", "count": 6, "pages": [1]})  # "Riesig"
     ]
 
 
-def test_a_table_placed_at_no_finite_point_is_dropped_and_its_words_counted() -> None:
+def test_a_table_placed_at_no_finite_point_is_dropped_and_its_signs_counted() -> None:
     nowhere = (math.nan, 100.0, 500.0, math.inf)
     read = pdfplumber_blocks.PageRead(
         number=1,
@@ -257,7 +257,7 @@ def test_a_table_placed_at_no_finite_point_is_dropped_and_its_words_counted() ->
 
     page = pdfplumber_blocks.page_of(read)
 
-    assert page.blocks == [] and page.dropped == {"unplaced": 5}
+    assert page.blocks == [] and page.dropped == {"unplaced": len("LF1Planenundbauen")}
 
 
 def page_read(**word: object) -> pdfplumber_blocks.PageRead:

@@ -364,19 +364,19 @@ export const messages = {
       encoding_suspect:
         "Die Textebene wirkt beschädigt: {count} {count|verdächtiges Zeichen|verdächtige Zeichen} ({share} des Texts), " +
         "etwa {examples}. Prüfe die Blöcke, bevor du aus ihnen zitierst.",
-      // words the conversion left out of the blocks, by why (backend DropReason)
+      // text the conversion left out of the blocks, its signs counted, by why (backend DropReason)
       text_dropped: {
         vertical:
-          "{count} {count|Wort|Wörter} auf {pageCount|Seite|Seiten} {pages} {count|steht|stehen} senkrecht oder " +
+          "{count} Zeichen Text auf {pageCount|Seite|Seiten} {pages} {count|steht|stehen} senkrecht oder " +
           "gedreht, oft ein Vermerk am Rand; die Blöcke lassen {count|es|sie} aus.",
         off_page:
-          "{count} {count|Wort|Wörter} auf {pageCount|Seite|Seiten} {pages} {count|steht|stehen} außerhalb der " +
+          "{count} Zeichen Text auf {pageCount|Seite|Seiten} {pages} {count|steht|stehen} außerhalb der " +
           "sichtbaren Seite; die Blöcke lassen {count|es|sie} aus, denn niemand sieht {count|es|sie} beim Lesen.",
         tiny:
-          "{count} {count|Wort|Wörter} auf {pageCount|Seite|Seiten} {pages} {count|ist|sind} kleiner als ein Punkt " +
+          "{count} Zeichen Text auf {pageCount|Seite|Seiten} {pages} {count|ist|sind} kleiner als ein Punkt " +
           "gesetzt und beim Lesen nicht zu sehen; die Blöcke lassen {count|es|sie} aus.",
         unplaced:
-          "{count} {count|Wort|Wörter} auf {pageCount|Seite|Seiten} {pages} {count|hat|haben} in der Datei keinen " +
+          "{count} Zeichen Text auf {pageCount|Seite|Seiten} {pages} {count|hat|haben} in der Datei keinen " +
           "gültigen Platz; die Blöcke lassen {count|es|sie} aus.",
       },
       // a finding the page has no words for yet, or whose numbers did not come

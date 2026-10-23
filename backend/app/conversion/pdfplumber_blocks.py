@@ -7,8 +7,9 @@ more (app/conversion/assemble.py). It reads no scan: the converting job asks the
 (app/conversion/text_layer.py).
 
 A word left without a sign once its control signs are cleaned off is none. A word no reader reads
-where it stands is dropped and counted on its page, by why: set upwards or turned (``vertical``:
-pdfplumber splinters it - "dna", "6202" - into words of its own), its middle outside the page
+where it stands is dropped and its signs counted on its page, by why: set upwards or turned
+(``vertical``: pdfplumber splinters it - "dna", "6202" - into words of its own, so the words would
+count its splinters), its middle outside the page
 (``off_page``), or smaller than a point (``tiny``) - a way to hide text from a reader, not from a
 model, so it is said as a finding rather than lost unseen. A word or a table at no finite point -
 a number of 400 digits in the content stream places it at NaN - is dropped so (``unplaced``).
@@ -116,9 +117,7 @@ def page_of(read: PageRead) -> RawPage:
     tables = []
     for table in read.tables:
         if not _finite(table.bbox):
-            dropped["unplaced"] += sum(
-                len(clean_text(text or "").split()) for row in table.texts for text in row
-            )
+            dropped["unplaced"] += sum(_signs(text or "") for row in table.texts for text in row)
         elif (block := table_block(table, read.chars, number)) is not None:
             tables.append(block)
     boxes = [table.bbox for table in tables]
@@ -131,8 +130,14 @@ def page_of(read: PageRead) -> RawPage:
         if reason is None:
             words.append(word)
         else:
-            dropped[reason] += 1
+            dropped[reason] += _signs(word.text)
     return RawPage(number, float(read.height), [*blocks_of(words, number), *tables], dropped)
+
+
+def _signs(text: str) -> int:
+    """The signs of a text, spaces and control signs aside: what a dropping counts, since pdfplumber
+    splinters a word set upwards into words of a sign or three."""
+    return sum(not sign.isspace() for sign in clean_text(text))
 
 
 def _word(found: Mapping[str, Any]) -> Word:

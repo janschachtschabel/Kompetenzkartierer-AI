@@ -5,7 +5,7 @@ right (app/conversion/reading_order.py); running heads and feet marked and the p
 numbers read (app/conversion/page_edges.py); tables continued over a page joined to their first
 part (app/conversion/tables.py); the signs of symbol fonts
 mapped and a broken text layer noticed (app/conversion/symbols.py, encoding.py), both as findings,
-and so the words the engine dropped: a finding for each reason, with the words and their pages;
+and so the text the engine dropped: a finding for each reason, with its signs and their pages;
 then the names: ``p<page>-b<n>`` for each page's blocks, the tables counted across the document,
 a cell ``T<n>:r<i>c<j>`` by its row and column in the joined table. A place a spanning cell covers
 has no cell. A table's text is its rows, line by line, its cells parted by " | " (a bar within a

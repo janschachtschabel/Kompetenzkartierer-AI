@@ -39,7 +39,7 @@ function encodingText({ share, count, examples }: Record<string, unknown>): stri
   return t("conversions.findings.encoding_suspect", { count, share: shareFormat.format(share), examples: quoted });
 }
 
-/** Words left out of the blocks, by why: a reason the page has no words for is said by its code. */
+/** Text left out of the blocks, by why and in signs: a reason the page has no words for is said by its code. */
 function droppedText({ reason, count, pages }: Record<string, unknown>): string | null {
   if (typeof reason !== "string" || !Object.hasOwn(messages.conversions.findings.text_dropped, reason)) return null;
   if (typeof count !== "number" || !isPageList(pages)) return null;

@@ -57,21 +57,23 @@ describe("what a conversion found, in words", () => {
     expect(text).toContain(`„${isolate("(cid:3)")}“`);
   });
 
-  it("says how many words the conversion dropped, why, and on which pages", () => {
-    const text = findingText({ code: "text_dropped", params: { reason: "vertical", count: 16, pages: [1, 3] } });
+  it("says how many signs of text the conversion dropped, why, and on which pages", () => {
+    // the backend counts signs: pdfplumber splinters a word set upwards into words of its own
+    const text = findingText({ code: "text_dropped", params: { reason: "vertical", count: 23, pages: [1, 3] } });
     const pages = new Intl.ListFormat("de-DE", { type: "conjunction" }).format(["1", "3"]);
 
-    expect(text).toBe(t("conversions.findings.text_dropped.vertical", { count: 16, pageCount: 2, pages }));
-    expect(text).toContain("16 Wörter auf Seiten 1 und 3 ");
+    expect(text).toBe(t("conversions.findings.text_dropped.vertical", { count: 23, pageCount: 2, pages }));
+    expect(text).toContain("23 Zeichen Text auf Seiten 1 und 3 ");
     expect(text).toContain("senkrecht");
+    expect(text).not.toContain("Wort");
   });
 
-  it("has words for each reason a word is dropped, one word as one", () => {
+  it("has words for each reason text is dropped, one sign as one", () => {
     for (const reason of backendValues("DropReason")) {
       const text = findingText({ code: "text_dropped", params: { reason, count: 1, pages: [4] } });
 
       expect(text).toBe(t(`conversions.findings.text_dropped.${reason}`, { count: 1, pageCount: 1, pages: "4" }));
-      expect(text).toContain("1 Wort auf Seite 4 ");
+      expect(text).toContain("1 Zeichen Text auf Seite 4 ");
       expect(text).not.toMatch(/[{}]/);
     }
   });
