@@ -13,6 +13,8 @@ ONTOLOGY = Path(__file__).resolve().parents[3] / "ontology"
 REGION = "https://w3id.org/wlo/curriculum/region/"
 NW = frozenset({REGION + "DE-NW"})
 GERMANY = frozenset({REGION + "DE"})  # the region North Rhine-Westphalia lies in
+TYPED = frozenset({"dt-Lehrplan"})
+GENERATION = frozenset({"BP2016"})
 CUE = "https://w3id.org/wlo/curriculum/vocab#role_cue"
 PREF = "https://w3id.org/wlo/curriculum/vocab#role_pref"
 NEGATIVE = "https://w3id.org/wlo/curriculum/vocab#role_negative"
@@ -150,6 +152,22 @@ def test_of_cues_on_one_word_for_other_targets_the_first_by_rank_holds(
     assert active(cues) == {winner: False}
 
 
+@pytest.mark.parametrize(
+    ("loser", "winner"),
+    [
+        ({"scope_regions": GERMANY, "scope_document_types": TYPED}, {"scope_regions": NW}),
+        ({"verified": True, "strength": 0.9}, {"plan_generations": GENERATION}),
+        ({"strength": 0.9}, {"strength": 0.6, "scope_document_types": TYPED}),
+    ],
+    ids=["region-before-scopes", "scopes-before-checked", "document-type-before-strength"],
+)
+def test_the_parts_of_a_rank_count_in_their_order(loser: dict[str, Any], winner: dict[str, Any]) -> None:
+    # region, then the scopes that match the document's known ones, then checked, then strength
+    cues = [cue("loser", target="dt-Lehrplan", **loser), cue("winner", target="dt-Rahmenplan", **winner)]
+
+    assert active(cues, document_type="dt-Lehrplan", plan="BP2016") == {"winner": False}
+
+
 def test_cues_on_one_word_that_rank_alike_both_hold_as_a_tie_for_another_target() -> None:
     cues = [
         cue("lehrplan", target="dt-Lehrplan", strength=0.8),
@@ -165,6 +183,20 @@ def test_a_negative_cue_holds_beside_a_stronger_one_on_its_word() -> None:
     cues = [cue("plan", strength=0.95), cue("not", role=NEGATIVE, strength=0.5, target="dt-Rahmenplan")]
 
     assert active(cues) == {"plan": False, "not": False}
+
+
+def test_a_negative_cue_and_a_homonym_hold_where_their_scope_does_alone() -> None:
+    # Bavaria's and Thuringia's "Lernbereich" warns a document of Bavaria, not one of North Rhine-Westphalia
+    cues = [
+        cue("not", role=NEGATIVE, target="dt-Rahmenplan", scope_document_types=TYPED),
+        cue("homonym", role=HOMONYM, form="Lernbereich", scope_regions=frozenset({REGION + "DE-BY"})),
+    ]
+
+    assert active(cues, document_type="dt-Rahmenplan") == {}
+    assert active(cues, regions=frozenset({REGION + "DE-BY"}), document_type="dt-Lehrplan") == {
+        "not": False,
+        "homonym": False,
+    }
 
 
 def test_a_homonym_holds_with_its_other_target() -> None:

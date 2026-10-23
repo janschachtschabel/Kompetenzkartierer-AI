@@ -14,7 +14,7 @@ Its layout signal, places and regions are concepts of ``cv:LayoutMarkers``, ``cv
 and the regions, its document types ``cur:DocumentType``s; a date is an xsd:date, gYearMonth or
 gYear as written, without a time zone (cur-shapes.ttl). A pattern compiles with Python's re and
 with ``regex`` as re reads it. What the tables cannot hold as it is - text where an IRI belongs,
-two forms, a date in prose - is refused; whatever else a file says of a cue goes to its
+two values of one form, a date in prose - is refused; whatever else a file says of a cue goes to its
 properties.
 """
 
@@ -314,6 +314,7 @@ def _verified(graph: Graph, iri: URIRef) -> bool:
     value = _single(graph, iri, "verified")
     if value is None:
         return False  # unsaid, it was not checked against an original
-    if not isinstance(value, Literal) or value.datatype != XSD.boolean:
+    # an ill-typed boolean ("ja") rdflib reads as false, with no more than a warning
+    if not isinstance(value, Literal) or value.datatype != XSD.boolean or value.ill_typed:
         raise VocabularyError(f"{iri} verified: true or false belongs here, not {value!r}")
     return bool(value.toPython())

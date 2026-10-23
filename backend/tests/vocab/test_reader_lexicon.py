@@ -6,6 +6,7 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
+import rdflib
 
 from app.vocab.lexicon import LexicalCue, TerminologyProfile
 from app.vocab.loader import VocabularyError, read_vocabulary
@@ -175,6 +176,7 @@ WORD = 'cur:surfaceForm "Plan" ; ' + BASE
         ('cur:validUntil "2023-13"^^xsd:gYearMonth', "date"),
         ('cur:validUntil "20x7"^^xsd:gYear', "date"),
         ('cur:verified "ja"', "verified"),
+        ('cur:verified "ja"^^xsd:boolean', "verified"),  # rdflib only warns, and reads it as false
         ("cur:scopeIssuer schul:dt-Lehrplan", "text belongs"),
     ],
     ids=[
@@ -190,12 +192,25 @@ WORD = 'cur:surfaceForm "Plan" ; ' + BASE
         "year-month-ill-typed",
         "year-ill-typed",
         "verified-as-text",
+        "verified-ill-typed",
         "issuer-as-iri",
     ],
 )
 def test_a_cue_s_value_its_field_does_not_take_is_refused(tmp_path: Path, statement: str, fault: str) -> None:
     with pytest.raises(VocabularyError, match=fault):
         read(tmp_path, {"schule.ttl": with_cue(statement + " ; " + WORD)})
+
+
+def test_the_reader_leaves_rdflib_normalizing_literals_again_after_it_read_or_refused(tmp_path: Path) -> None:
+    # the switch is rdflib's, for the whole process: SHACL in the same process normalizes
+    read(tmp_path / "read", {"schule.ttl": with_cue(WORD)})
+    assert rdflib.NORMALIZE_LITERALS is True
+
+    with pytest.raises(VocabularyError):
+        read(
+            tmp_path / "refused", {"schule.ttl": with_cue('cur:validFrom "2023-08-01Z"^^xsd:date ; ' + WORD)}
+        )
+    assert rdflib.NORMALIZE_LITERALS is True
 
 
 def test_a_cue_of_a_layout_signal_with_a_year_and_a_month_is_read(tmp_path: Path) -> None:

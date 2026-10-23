@@ -14,9 +14,10 @@ own before one they lie in before none (a country's cue before Germany's before 
 konzept §12.4), then the more of its document type and plan generation that match the
 document's known ones, then checked before unchecked, then the stronger (no strength is none).
 Where several share the first rank and point to other targets, all hold as a tie, and the
-model gets their rule texts. A negative cue and a homonym compete with none and always hold; a
-homonym keeps its other target. The document's own terms (its profile from X1) are laid over
-this when the prompt is built (plan M1 6).
+model gets their rule texts. A negative cue and a homonym compete with none: they hold wherever
+their scope does, beside any stronger cue on their word, and a homonym keeps its other target.
+The document's own terms (its profile from X1) are laid over this when the prompt is built
+(plan M1 6).
 
 A pattern is searched with a time limit, so a pattern that backtracks without end stops.
 """

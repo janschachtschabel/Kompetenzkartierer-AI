@@ -262,7 +262,13 @@ Nachtrag zur Umsetzung (23.10.):
   - Hinweise konkurrieren je Art und Wort, Muster oder Layout. Rang: eigene Region vor umfassender vor keiner (Land vor Deutschland vor Bereich), dann die Zahl der bekannten passenden Geltungen, dann geprüft, dann Stärke.
   - Bei Gleichstand mit anderem Ziel bleiben beide mit `tie`. Negative Hinweise und Homonyme konkurrieren nicht und gelten immer.
   - Ein `Cue` trägt Orte, Daten, die übrigen Geltungen und die Beispiele für den Prompt. Das Dokumentprofil legt Paket 6 beim Bau des Prompts darüber.
-  - Am echten Lexikon (5 Profile × 16 Länder) gelten 9.770 statt 9.272 Einträge. 17 entfallen, weil ein Hinweis für ganz Deutschland dem Landeshinweis auf demselben Wort mit demselben Ziel weicht.
+  - Am echten Lexikon (5 Profile × 16 Länder) gelten 9.811 Hinweise. 41 davon weichen in der Konkurrenz, es bleiben 9.770 statt 9.272, davon 64 mit `tie`:
+    - 17 Hinweise für ganz Deutschland weichen dem Landeshinweis auf demselben Wort.
+    - 8-mal weicht `schul:cue-kb-kompetenzbereich` (0,8, Deutschland und acht Länder) in den übrigen Ländern einem Landeshinweis mit demselben Ziel (0,6).
+    - 16-mal ist es die bekannte HCO-Kollision „Applicability“.
+  - Weicht ein Hinweis einem spezifischeren mit demselben Ziel, geht seine Stärke mit ihm. Ob der Prompt dafür eine Ausnahme braucht, etwa für die Markierung „starkes Signal“ ab 0,8, entscheidet Paket 6.
+- **Profilangaben:** Ein Profil trägt in den Tabellen nur Bereich, Namensraum und `rdfs:label`. Was es sonst sagt, etwa ein Steckbrief, den eine Länderdatei an das Bereichsprofil hängt (konzept §12.4), wird nicht gespeichert; das folgt, sobald es gebraucht wird.
+- **Leser, Unterordner:** Unter `profile/` liest er jeden Unterordner, nicht nur `laender/`. Eine alte Kopie dort würde mit denselben IRIs zusammenfallen; neue Ordner neben `laender/` sollen aber ohne Codeänderung gelesen werden. Alte Kopien gehören deshalb nicht unter `profile/`.
 - **Paket 10:** `pruefe.py` liest keine Unterordner und sieht `profile/laender/` deshalb nie. Für 10.1 („pruefe.py OK“) muss es `profile/` rekursiv lesen.
 - **Muster:**
   - Sie laufen mit `regex` und einer Zeitgrenze von 50 ms (`PatternTimeout`).

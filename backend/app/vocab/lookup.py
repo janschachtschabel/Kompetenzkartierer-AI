@@ -151,7 +151,9 @@ def _texts(by_language: dict[str, list[str]]) -> tuple[str, ...]:
 
 
 async def region_with_ancestors(connection: psycopg.AsyncConnection, notation: str) -> frozenset[str]:
-    """The active region of this notation ("DE-NW") and those it lies in ("DE"); none if unknown."""
+    """The active region of this notation ("DE-NW") and those it lies in ("DE"); none if unknown.
+    One set: for ``active_cues`` the caller parts the region itself from those it lies in
+    (``wider_regions``), or Germany's cues would rank as the country's own."""
     cursor = await connection.execute(_ANCESTORS, (REGIONS, notation))
     return frozenset(str(row[0]) for row in await cursor.fetchall())
 
