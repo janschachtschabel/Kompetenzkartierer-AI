@@ -206,15 +206,42 @@ def test_a_gap_of_half_a_line_parts_two_paragraphs() -> None:
     assert [block.text for block in blocks_of(words, page=1)] == ["Erster Absatz.", "Zweiter Absatz."]
 
 
+def test_a_line_half_its_size_below_the_last_goes_on_its_block() -> None:
+    words = [*row("Erster Absatz,", 100), *row("noch derselbe.", 100 + SIZE + 0.5 * SIZE)]
+
+    assert [block.text for block in blocks_of(words, page=1)] == ["Erster Absatz,\nnoch derselbe."]
+
+
+def test_a_line_set_into_the_one_above_by_more_than_half_its_size_is_a_block_of_its_own() -> None:
+    # "Drüber" reaches 7 points up into the line "Erste Zeile" (its last word lower): text set
+    # over text, not the next line
+    words = [word("Erste", 56, 100), word("Zeile", 87, 104), word("Drüber", 56, 108)]
+
+    assert [block.text for block in blocks_of(words, page=1)] == ["Erste Zeile", "Drüber"]
+
+
+@pytest.mark.parametrize(
+    ("size", "blocks"),
+    [(SIZE + 0.5, 1), (SIZE - 0.5, 1), (SIZE + 1, 2), (SIZE - 1, 2)],
+    ids=["half_larger", "half_smaller", "point_larger", "point_smaller"],
+)
+def test_sizes_half_a_point_apart_are_one_and_a_point_apart_two(size: float, blocks: int) -> None:
+    # a line's size is read to half a point: 11.6 points are 11.5
+    words = [*row("Erste Zeile", 100), *row("zweite Zeile", 100 + SIZE + 3, size=size)]
+
+    assert len(blocks_of(words, page=1)) == blocks
+
+
 @pytest.mark.parametrize(
     ("font", "size"),
     [("Helvetica-Bold", SIZE), ("Helvetica-Oblique", SIZE), ("Helvetica", 14.0)],
     ids=["bold", "italic", "larger"],
 )
 def test_a_line_set_otherwise_begins_a_block_of_its_own(font: str, size: float) -> None:
+    # 3 points below: as close as the lines of a paragraph
     words = [
         *row("1 Lernfeld Technik", 100, size=size, font=font),
-        *row("Die Lernenden planen.", 100 + 14 + 3),
+        *row("Die Lernenden planen.", 100 + size + 3),
     ]
 
     blocks = blocks_of(words, page=1)

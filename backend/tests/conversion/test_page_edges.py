@@ -61,6 +61,21 @@ def test_a_line_repeated_at_the_top_or_foot_of_pages_is_marked_and_stays() -> No
     assert pages[0].blocks[0].text == "Rahmenlehrplan Mechatronik"
 
 
+@pytest.mark.parametrize(("repeated", "edge"), [(2, "text"), (3, "page_header")])
+def test_a_line_at_the_top_is_a_running_head_from_three_pages_on(repeated: int, edge: str) -> None:
+    # of 4 pages: a fifth of them is less than 3
+    pages = document(
+        *[
+            [block(n, "Rahmenlehrplan" if n <= repeated else f"Kopf {n}a", 30), block(n, "Text", 300)]
+            for n in range(1, 5)
+        ]
+    )
+
+    mark_edges(pages)
+
+    assert [page.blocks[0].kind for page in pages[:repeated]] == [edge] * repeated
+
+
 def test_a_running_foot_differs_only_in_its_numbers() -> None:
     pages = document(
         *[[block(n, "Inhalt", 100), block(n, f"Stand 2026 · Kapitel {n}", 815)] for n in range(1, 4)]
