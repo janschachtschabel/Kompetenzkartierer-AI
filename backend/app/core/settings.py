@@ -163,6 +163,11 @@ class Settings(BaseSettings):
     # Conversions an account may start per minute - each may take a worker for CONVERT_TIMEOUT_S;
     # more are answered 429. Asking for one that waits or is done starts none and counts none
     conversions_per_minute: Annotated[int, Field(ge=1)] = 20
+    # Model jobs an account may have waiting or running at once; a start past them is answered
+    # 429 (too_many_jobs), to try again in a minute (app/usage/admission.py)
+    max_jobs_in_flight: Annotated[int, Field(ge=1, le=1000)] = 20
+    # Model jobs an account may start per minute; more are answered 429 (too_many_starts)
+    model_starts_per_minute: Annotated[int, Field(ge=1)] = 10
     # Who the register's requests say they are (source.fetch, source.check): the product token
     # robots.txt knows us by, then where to reach the operators; printable ASCII, as a header
     # holds it - and no space at its end, which h11 refuses in a header's value

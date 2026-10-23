@@ -429,3 +429,24 @@ def test_a_user_agent_a_header_cannot_carry_is_refused(agent: str) -> None:
 @pytest.mark.parametrize("agent", ["Kka", "Kka/1", "Kka/1 (+https://example.org/kka; mail@example.org)"])
 def test_a_user_agent_of_its_token_and_a_contact_is_taken(agent: str) -> None:
     assert make_settings(fetch_user_agent=agent).fetch_user_agent == agent
+
+
+def test_model_jobs_are_limited_by_default() -> None:
+    # as the old app: twenty waiting or running for an account, and ten starts a minute
+    settings = make_settings()
+
+    assert (settings.max_jobs_in_flight, settings.model_starts_per_minute) == (20, 10)
+
+
+@pytest.mark.parametrize(
+    ("variable", "value"),
+    [("MAX_JOBS_IN_FLIGHT", "0"), ("MAX_JOBS_IN_FLIGHT", "1001"), ("MODEL_STARTS_PER_MINUTE", "0")],
+)
+def test_the_limits_of_model_jobs_are_bounded(
+    monkeypatch: pytest.MonkeyPatch, variable: str, value: str
+) -> None:
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+    monkeypatch.setenv(variable, value)
+
+    with pytest.raises(ValidationError, match=variable.lower()):
+        Settings()
