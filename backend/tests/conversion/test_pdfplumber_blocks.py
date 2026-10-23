@@ -356,6 +356,60 @@ def test_text_beyond_the_crop_box_a_viewer_shows_is_dropped(tmp_path: Path) -> N
     ]
 
 
+SEEN = "Die Lernenden planen ihre Arbeit im Querformat sorgfaeltig."
+HIDDEN = "Versteckt hinter dem Beschnitt steht dieser Satz."
+# a page turned by /Rotate, its text turned back so a viewer shows it upright: where each sentence
+# starts in the page's own space - one within the crop box, one beyond it - and the crop box
+TURNED = {
+    90: (b"0 1 -1 0", (300, 100), (500, 100), b"0 0 400 842"),
+    180: (b"-1 0 0 -1", (500, 300), (500, 700), b"0 0 595 421"),
+    270: (b"0 -1 1 0", (100, 700), (500, 700), b"0 0 400 842"),
+}
+
+
+def turned_pdf(rotate: int, cropped: bool) -> bytes:
+    turn, seen, hidden, crop = TURNED[rotate]
+    content = b"".join(
+        b"BT /F1 11 Tf %s %d %d Tm (%s) Tj ET\n" % (turn, x, y, text.encode())
+        for (x, y), text in ((seen, SEEN), (hidden, HIDDEN))
+    )
+    return pdf_of(
+        [
+            b"<< /Type /Catalog /Pages 2 0 R >>",
+            b"<< /Type /Pages /Kids [4 0 R] /Count 1 >>",
+            HELVETICA,
+            b"<< /Type /Page /Parent 2 0 R /Rotate %d /MediaBox [0 0 595 842]%s"
+            b" /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>"
+            % (rotate, b" /CropBox [%s]" % crop if cropped else b""),
+            stream(content),
+        ]
+    )
+
+
+@pytest.mark.parametrize("rotate", [90, 180, 270])
+def test_a_turned_page_shows_what_its_crop_box_holds_turned_as_its_signs_are(
+    tmp_path: Path, rotate: int
+) -> None:
+    # pdfplumber swaps the crop box's axes on a turned page, but does not turn it
+    path = tmp_path / "lehrplan.pdf"
+    path.write_bytes(turned_pdf(rotate, cropped=True))
+
+    conversion = read(path)
+
+    assert [block.text for block in conversion.blocks] == [SEEN]
+    assert [finding.params for finding in conversion.findings] == [
+        {"reason": "off_page", "count": len(HIDDEN.replace(" ", "")), "pages": [1]}
+    ]
+
+
+@pytest.mark.parametrize("rotate", [90, 180, 270])
+def test_a_turned_page_without_a_crop_box_shows_all_it_holds(tmp_path: Path, rotate: int) -> None:
+    path = tmp_path / "lehrplan.pdf"
+    path.write_bytes(turned_pdf(rotate, cropped=False))
+
+    assert sorted(block.text for block in read(path).blocks) == sorted([SEEN, HIDDEN])
+
+
 def test_text_in_a_table_s_cell_too_small_to_read_is_dropped_from_the_cell(tmp_path: Path) -> None:
     grid = (
         b"0.5 w 72 600 200 40 re S 272 600 200 40 re S 72 560 200 40 re S 272 560 200 40 re S\n"

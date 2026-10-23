@@ -9,7 +9,8 @@ more (app/conversion/assemble.py). It reads no scan: the converting job asks the
 A sign no reader reads where it stands is dropped before words and tables are read - in a cell
 of a table too - and counted on its page, by why: set upwards or turned (``vertical``: pdfplumber
 would splinter its words - "dna", "6202"), its middle outside what a viewer shows - the crop box,
-within the media box (``off_page``) - or smaller than a point (``tiny``): a way to hide text from
+within the media box, turned with the page (``off_page``) - or smaller than a point (``tiny``): a
+way to hide text from
 a reader, not from a model, so it is said as a finding rather than lost unseen. A sign or a table
 at no finite point - a number of 400 digits in the content stream places it at NaN - is dropped
 so (``unplaced``). A sign printed again over itself, to look bold, is read once. A word left
@@ -87,12 +88,13 @@ class PdfplumberEngine:
                 found = pdf.pages
             for page in found:
                 with _reading():
-                    number, signs, shown = page.page_number, page.chars, (page.cropbox, page.mediabox)
+                    number, signs = page.page_number, page.chars
+                    boxes = page.page_obj.cropbox, page.page_obj.mediabox, page.page_obj.rotate, page.mediabox
                 if len(signs) > max_signs:
                     raise TooDense(number, len(signs), max_signs)
                 twins = twin_signs(signs)
                 dropped, counted = dropped_signs(
-                    (sign for sign in signs if id(sign) not in twins), _within_both(*shown)
+                    (sign for sign in signs if id(sign) not in twins), shown_box(*boxes)
                 )
                 with _reading():
                     read = read_page(page, dropped | twins)
@@ -229,9 +231,30 @@ def _word(found: Mapping[str, Any]) -> Word:
     )
 
 
-def _within_both(crop: Box, media: Box) -> Box:
-    """What a viewer shows of a page: its crop box, as far as it lies within its media box."""
-    return max(crop[0], media[0]), max(crop[1], media[1]), min(crop[2], media[2]), min(crop[3], media[3])
+def shown_box(crop: Box, media: Box, rotate: int, page: Box) -> Box:
+    """What a viewer shows of a page, where pdfplumber places its signs: the crop box as far as it
+    lies within the media box (``page``, pdfplumber's), both as the PDF gives them, turned as pdfminer
+    turns the page by its /Rotate to read the signs. pdfplumber's own crop box of a turned page
+    swaps its axes but does not turn it: a crop box not in the middle would show the wrong half."""
+    a, b, c, d, e, f = _turn(rotate, media)
+    corners = [(a * x + c * y + e, b * x + d * y + f) for x in (crop[0], crop[2]) for y in (crop[1], crop[3])]
+    across, up = [x for x, _ in corners], [y for _, y in corners]
+    left, top, right, bottom = page
+    height = bottom - top  # pdfplumber: x from the left, top down from the top
+    shown = (min(across) + left, height - max(up) + top, max(across) + left, height - min(up) + top)
+    return max(shown[0], left), max(shown[1], top), min(shown[2], right), min(shown[3], bottom)
+
+
+def _turn(rotate: int, media: Box) -> tuple[float, float, float, float, float, float]:
+    """The matrix pdfminer turns a page's space by to read its signs (pdfinterp, process_page)."""
+    x0, y0, x1, y1 = media
+    if rotate == 90:
+        return (0, -1, 1, 0, -y0, x1)
+    if rotate == 180:
+        return (-1, 0, 0, -1, x1, y1)
+    if rotate == 270:
+        return (0, 1, -1, 0, y1, -x0)
+    return (1, 0, 0, 1, -x0, -y0)
 
 
 def _finite(numbers: Iterable[float]) -> bool:
