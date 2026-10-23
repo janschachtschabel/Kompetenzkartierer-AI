@@ -33,7 +33,9 @@ from app.domain.wording import normalized, text_hash
         ("1. a) Die Lernenden planen", "Die Lernenden planen"),  # numbering of three levels at most
         ("1.2. Die Lernenden planen", "Die Lernenden planen"),
         ("2.1.3.4 Die Lernenden planen", "Die Lernenden planen"),  # a section's number, as deep
-        ("Texte\N{EM DASH}\nmehr", "Texte\N{EN DASH} mehr"),  # a dash at a line's end parts no word
+        ("Texte\N{EM DASH}\nmehr", "Texte\N{EM DASH}mehr"),  # a dash at a line's end parts no word,
+        ("Klassen 5\N{EN DASH}\n6", "Klassen 5\N{EN DASH}6"),  # and stays as a hyphen does
+        ("S. 12\N{EN DASH}\n14", "S. 12-14"),
         ("3. Klasse: Die Lernenden planen", "Klasse: Die Lernenden planen"),  # an ordinal reads as one
     ],
 )

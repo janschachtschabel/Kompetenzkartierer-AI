@@ -27,12 +27,13 @@ _SOFT_HYPHEN = "\N{SOFT HYPHEN}"
 _DASHES = regex.compile("[\N{HYPHEN}-\N{HORIZONTAL BAR}\N{MINUS SIGN}]")
 # format signs (Cf) but the soft hyphen, which first shows where a word was parted
 _FORMAT = regex.compile("(?!\N{SOFT HYPHEN})\\p{Cf}")
-# hyphens - not the dashes, which at a line's end part no word but sentences
+# a word parted by a hyphen - not by a dash, which at a line's end parts sentences; a hyphen or a
+# dash before a line's break that parts no word stays, and the break goes ("5-" / "6" is "5-6")
 _PARTED = regex.compile(
     "(?<=\\p{L})[-\N{HYPHEN}\N{NON-BREAKING HYPHEN}\N{SOFT HYPHEN}]\\h*\\R\\h*(?=\\p{Ll})"
 )
 _BROKEN = regex.compile(
-    "(?<=[\\p{L}\\p{N}])[-\N{HYPHEN}\N{NON-BREAKING HYPHEN}]\\h*\\R\\h*(?=[\\p{L}\\p{N}])"
+    "(?<=[\\p{L}\\p{N}])[-\N{HYPHEN}-\N{HORIZONTAL BAR}\N{MINUS SIGN}]\\h*\\R\\h*(?=[\\p{L}\\p{N}])"
 )
 _ROMAN = r"(?=[ivx])x{0,3}(?:ix|iv|v?i{0,3})"
 _NUMBER = r"\d{1,2}(?!\d)"
