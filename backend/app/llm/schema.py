@@ -33,6 +33,8 @@ KNOWN_KEYWORDS = frozenset(
 )
 # what the model is told back of a wrong answer, at most: enough to mend it, not a second answer
 MOST_ERRORS = 10
+# The folder of ontology/ the stages' output schemas lie in (the image ships it)
+SCHEMA_DIR = "schemas"
 _NAME = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
 _TYPES: dict[str, tuple[str, Any]] = {
     "object": ("an object", lambda value: isinstance(value, dict)),

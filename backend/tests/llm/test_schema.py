@@ -8,9 +8,9 @@ from typing import Any
 import pytest
 
 from app.core.settings import REPOSITORY_ONTOLOGY
-from app.llm.schema import KNOWN_KEYWORDS, load_schema, schema_errors
+from app.llm.schema import KNOWN_KEYWORDS, SCHEMA_DIR, load_schema, schema_errors
 
-SCHEMAS = REPOSITORY_ONTOLOGY / "schemas"
+SCHEMAS = REPOSITORY_ONTOLOGY / SCHEMA_DIR
 SCHEMA = {
     "type": "object",
     "additionalProperties": False,
