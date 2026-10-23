@@ -67,8 +67,9 @@ Typen und baut nach `dist/`, mit den Lizenzen der Schriften und Bibliotheken in
 ## Betrieb
 
 `python -m app.db.migrate` wendet die Migrationen an (einmal je Release, nie aus API
-oder Worker), `python -m app.vocab.load` lädt die Vokabulare aus `ONTOLOGY_DIR` (Standard:
-`ontology/` dieses Repositorys), `python -m app.serve` startet die API auf `PUBLIC_PORT` und
+oder Worker), `python -m app.vocab.load` lädt die Vokabulare und das Lexikon (die
+Terminologieprofile der Bereiche mit ihren Erkennungshinweisen, auch aus Unterordnern wie
+`profile/laender/`) aus `ONTOLOGY_DIR` (Standard: `ontology/` dieses Repositorys), `python -m app.serve` startet die API auf `PUBLIC_PORT` und
 `INTERNAL_PORT` (`/health`, `/ready`, `/metrics`), `python -m app.jobs.worker` den Worker
 (`WORKER_KINDS` beschränkt ihn auf Job-Arten, kommagetrennt). Beide starten nur mit einem
 nutzbaren Objektspeicher (lokal etwa `STORAGE_DIR=../data/store`). Der Worker bedient

@@ -97,7 +97,7 @@ vocab:
   backoffLimit: 0
   activeDeadlineSeconds: 600
   command: [python, -m, app.vocab.load]
-  resources:                  # reads the vocabularies into memory before it writes them
+  resources:                  # reads the vocabularies and the lexicon into memory before it writes them
     requests: { cpu: 250m, memory: 384Mi }
     limits: { cpu: "1", memory: 768Mi }
   secrets:

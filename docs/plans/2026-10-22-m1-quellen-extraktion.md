@@ -206,6 +206,42 @@ Ohne 3b nimmt M1 nur PDFs mit Textebene an; die Abnahme wählt solche.
 | 4.7 | Lexikon laden | Migration `lexicon` (`terminology_profile`, `lexical_cue` mit allen Feldern aus konzept §12.1; `maps_to` als IRI ohne Fremdschlüssel, weil 226 von 1.460 Zielen Klassen, Properties oder Schemata sind; beim Laden gegen den Ontologiegraphen geprüft), `app/vocab/lexicon.py`, Erweiterung von `python -m app.vocab.load` | 1.267 Hinweise aus `profile/` (112/375/34/239/55/21/395/36); Muster kompilieren mit `regex` und Zeitgrenze; zweiter Lauf unverändert; Stand an `vocab_release`; jedes Ziel existiert im Graphen | `pytest -m pg tests/vocab/test_lexicon.py` |
 | 4.8 | Aktives Profil | `app/domain/lexicon.py` (`active_cues(cues, region, document_type, plan_generation)`) nach konzept §12.2 und §12.4 | spezifischer gewinnt; geprüft vor ungeprüft; Gleichstand → beide mit Regeltext; Homonym mit `alsoMapsTo` | `pytest tests/domain/test_lexicon.py` |
 
+Nachtrag zur Umsetzung (23.10.):
+
+- **Migrationen:**
+  - Reihenfolge `lexicon`, `l1_documents` (mit `extraction_run`, auf den Knoten und Aussagen verweisen), `l1_nodes`, `l1_anchors`.
+  - `vocab_scheme_iri` entfällt, weil es `UNIQUE (scheme_iri, iri)` schon seit `sources` gibt.
+  - Hilfsfunktionen `has_text` und `all_match`.
+- **Bereich eines Profils:** Den kennt nur das geladene `terminology_profile` (Bereich und Namensraum). Darauf bauen `profile_concepts(conn, sector_notation)`, `region_with_ancestors` und `cues_for` auf.
+- **Leser:** Er liest die Modellordner rekursiv, damit auch `profile/laender/` erfasst wird (Leserformat 2).
+- **Domäne:**
+  - Aufgeteilt in `wording.py` (`text_hash`), `iris.py`, `blocks.py` (Block- und Zellmuster, aus `conversion/base.py` verschoben), `l1.py` (Entwürfe, Profilprüfung, Wertelisten) und `lexicon.py`.
+  - Der Importwächter arbeitet mit einer Positivliste: Standardbibliothek und `regex`.
+- **`text_hash`:**
+  - NFC, weiche Trennzeichen und Worttrennung am Zeilenende zusammengezogen, Striche vereinheitlicht, `casefold`, führende Nummerierung entfernt, Leerraum zusammengezogen.
+  - Ein Bindestrich in der Zeile und eine allein stehende Zahl bleiben erhalten.
+- **IRIs:**
+  - Die Basis ist ein Parameter. `IRI_BASE`, die Vergabe beim Festschreiben sowie die IRIs von Aussagen und Fundstellen folgen mit 9.6.
+  - Knotensegmente entstehen aus dem Code; vergebene Codes heißen `pos-<n>`, Wiederholungen zählen weiter.
+- **Fundstelle:**
+  - Sie hängt mit genau einem Fremdschlüssel an Knoten, Aussage oder Rahmenteil desselben Dokuments. Ein Verweis auf `entity` würde verwaisen, weil Entity-Zeilen beim Löschen stehen bleiben.
+  - Ihre Blöcke sind über einen Fremdschlüssel Zeilen von `document_block` der Konvertierung des Dokuments.
+- **Prüfungen in der Datenbank:** Baum ohne Zyklus (mit Sperre je Dokument), Knotentyp unter der Funktion, Unterart unter der Art, mindestens ein Adressat beim Commit. Die Profilzugehörigkeit prüft das Repository.
+- **Einzelheiten:**
+  - `extraction_run` hat noch keinen Ausgang; der kommt mit 6.6.
+  - `newTerms` stehen als JSON in `document_profile`; Paket 10 löst sie bei Bedarf heraus.
+  - Den Schlüssel einer Spezifikation trägt `document_specification`.
+- **Sichtbarkeit:** Dokument und Baum lesen Eigentümer, Redaktion und Admin (`DOCUMENT_VISIBLE`). Regeln für Dritte folgen mit dem Editor (9).
+- **Aktives Profil:**
+  - Ein Hinweis gilt nach Region (mit Vorfahren, `land:DE` gilt also in jedem Land), Dokumenttyp und Plangeneration.
+  - Hinweise konkurrieren je Art und Wort, Muster oder Layout. Rang: mehr Geltungen vor geprüft vor Stärke.
+  - Bei Gleichstand mit anderem Ziel bleiben beide mit `tie`. Negative Hinweise gelten immer.
+  - Das Dokumentprofil legt Paket 6 beim Bau des Prompts darüber.
+- **Muster:**
+  - Sie laufen mit `regex` und einer Zeitgrenze von 50 ms (`PatternTimeout`).
+  - Ein Datenwächter prüft die 46 Muster mit Beispielen: Sie treffen ihre positiven Beispiele und keines der negativen.
+- **Abhängigkeit:** `regex` ist jetzt direkt deklariert, in der Version des Locks. Der Export ändert sich dadurch im via-Vermerk, deshalb lädt der Image-Neubau die Wheels neu.
+
 ### Paket 5: Modellschicht und Abrechnung (5 PT)
 
 | # | Aufgabe | Dateien | Test zuerst | Nachweis |
