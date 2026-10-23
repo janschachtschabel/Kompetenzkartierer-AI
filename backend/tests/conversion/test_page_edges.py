@@ -412,14 +412,111 @@ def test_a_year_alone_at_the_foot_of_a_cover_is_no_page_number() -> None:
 
 
 def test_in_one_edge_the_number_alone_goes_before_the_running_one() -> None:
+    # both count the page alike; the foot prints it in Roman numerals alone
+    labels = ["i", "ii", "iii"]
     pages = document(
         *[
-            [block(n, "Text", 300), block(n, f"Rahmenlehrplan {n + 4}", 790), block(n, f"- {n} -", 815)]
+            [block(n, "Text", 300), block(n, f"Rahmenlehrplan {n}", 790), block(n, labels[n - 1], 815)]
             for n in range(1, 4)
         ]
     )
 
-    assert mark_edges(pages) == ("1", "2", "3")
+    assert mark_edges(pages) == ("i", "ii", "iii")
+    assert kinds(pages) == [["text", "page_footer", "page_footer"]] * 3
+
+
+@pytest.mark.parametrize(
+    ("head", "top", "bottom"),
+    [
+        ("Rahmenlehrplan Mechatronik\nSeite {n} von 10", 45, 69),  # two lines, past the edge
+        ("Rahmenlehrplan Mechatronik {n}", 30, 40),  # within the edge, but on page 4 three points lower
+    ],
+    ids=["two-lines-with-a-number", "one-page-lower"],
+)
+def test_a_running_head_with_its_page_number_reaching_into_the_band_beside_the_edge_runs(
+    head: str, top: float, bottom: float
+) -> None:
+    def placed(n: int) -> tuple[float, float, float, float]:
+        lower = 30.0 if n == 4 and top == 30 else 0.0  # 30 + 30 points: into the band
+        return (56, top + lower, 400, bottom + lower)
+
+    pages = document(
+        *[
+            [
+                RawBlock(n, "text", head.format(n=n), placed(n), 11.0, False, False),
+                block(n, "Text", 300),
+                block(n, f"- {n} -", 815),
+            ]
+            for n in range(1, 11)
+        ]
+    )
+
+    printed = mark_edges(pages)
+
+    assert all(page.blocks[0].kind == "page_header" for page in pages)
+    assert printed == tuple(str(n) for n in range(1, 11))
+
+
+def test_a_page_number_alone_just_above_the_foot_s_edge_is_one_where_it_runs_with_the_pages() -> None:
+    # "- 5 -" at 770 to 780: the foot's edge begins at 775
+    pages = document(
+        *[
+            [block(n, "Text", 300), RawBlock(n, "text", f"- {n} -", (280, 770, 320, 780), 9.0, False, False)]
+            for n in range(1, 6)
+        ]
+    )
+
+    printed = mark_edges(pages)
+
+    assert kinds(pages) == [["text", "page_footer"]] * 5
+    assert printed == ("1", "2", "3", "4", "5")
+
+
+def test_headings_numbered_in_a_row_stay_text_where_the_foot_s_running_numbers_belie_some() -> None:
+    # "Lernfeld 1" ... "Lernfeld 4" at the top of pages 5 to 8; only pages 7 and 8 print their number
+    pages = document(
+        *[
+            [block(n, f"Lernfeld {n - 4}", 40)] * (5 <= n <= 8)
+            + [block(n, "Text", 300)]
+            + [block(n, f"- {n} -", 815)] * (n in (7, 8))
+            for n in range(1, 11)
+        ]
+    )
+
+    printed = mark_edges(pages)
+
+    assert all(page.blocks[0].kind == "text" for page in pages[4:8])
+    assert printed[4:8] == (None, None, "7", "8")
+
+
+def test_a_year_alone_in_every_foot_takes_nothing_from_a_running_head() -> None:
+    pages = document(
+        *[
+            [block(n, f"Rahmenlehrplan Mechatronik {n}", 30), block(n, "Text", 300), block(n, "2026", 815)]
+            for n in range(1, 11)
+        ]
+    )
+
+    printed = mark_edges(pages)
+
+    assert all(page.blocks[0].kind == "page_header" for page in pages)
+    assert printed == tuple(str(n) for n in range(1, 11))
+
+
+@pytest.mark.parametrize(("footnoted", "runs"), [(5, True), (6, False)])
+def test_a_running_head_goes_on_where_half_its_pages_agree_with_the_foot(footnoted: int, runs: bool) -> None:
+    # a footnote taken for a page number on the first pages: each says another, and none agrees
+    pages = document(
+        *[
+            [block(n, f"Rahmenlehrplan Mechatronik {n}", 30), block(n, "Text", 300)]
+            + ([block(n, "1 Vgl. KMK 2021, S. 40", 815)] if n <= footnoted else [])
+            for n in range(1, 11)
+        ]
+    )
+
+    mark_edges(pages)
+
+    assert all((page.blocks[0].kind == "page_header") is runs for page in pages)
 
 
 def test_a_line_twice_at_the_top_of_one_page_counts_one_page() -> None:

@@ -2,10 +2,11 @@
 
 The edges of a page are its top and bottom 8 %; a text block is in one where the whole of it is,
 or where it begins there, has no more than three lines and ends within 12 % - a running head of
-two lines reaching a little past the edge. Such a block is a running head or foot of the same
-text only, never one whose number runs, nor a page number alone (headings "Lernfeld 1" ...
-"Lernfeld 5" at the top of pages in a row, a footnote ending "Seite 12"). A paragraph that begins
-there and runs on below is text.
+two lines reaching a little past the edge. A page number alone there counts only where it runs
+with the pages (a footnote ending "Seite 12" does not); where all of a running head's blocks reach
+past the edge and no page of theirs has a page number in the foot, they are a running head of the
+same text only, never one whose number runs (headings "Lernfeld 1" ... "Lernfeld 5" at the top of
+pages in a row). A paragraph that begins there and runs on below is text.
 
 A block there is a running head or foot where its text stands in the same edge on at least 3
 pages and a fifth of the document's - the same text, or one whose numbers each stay as they are,
@@ -16,7 +17,8 @@ by two pages at least: a count that jumps once - a blank page taken out, two par
 stay headings. A number runs only as the foot's page numbers do, where a page has one: headings
 and captions numbered on pages in a row are no running head or foot beside them. A page whose
 foot says otherwise - a misprint, a reference taken for a page number - is left out of that
-count, not counted against it: a running head goes on where at least half its pages agree.
+count, not counted against it: a running head goes on where at least half its pages agree. Page
+numbers that run themselves and say otherwise stop it.
 
 A block that is a page number alone is one in the foot wherever it stands - a year at the foot of
 a cover only where such a number recurs; in the head where such numbers run with the page on two
@@ -66,7 +68,7 @@ class _AtEdge:
     edge: Edge
     text: str  # its words, a space apart, in one case
     numbers: tuple[str, ...]  # as its text writes them
-    alone: str | None  # the page number it is alone, where it is one - not where it reaches past the edge
+    alone: str | None  # the page number it is alone, where it is one
     near: bool  # in its edge by the band beside it alone
 
     @property
@@ -131,20 +133,20 @@ def _at_edges(page: RawPage) -> list[_AtEdge]:
             edge, near = found_edge
             text = " ".join(block.text.split()).casefold()
             numbers = tuple(_DIGITS.findall(text))
-            alone = None if near else printed_number(block.text)
-            found.append(_AtEdge(page.number, index, edge, text, numbers, alone, near))
+            found.append(_AtEdge(page.number, index, edge, text, numbers, printed_number(block.text), near))
     return found
 
 
 def _is_page_number(at: _AtEdge, offsets: Counter[int], feet: dict[int, int]) -> bool:
-    """Whether the block is its page's number: in the foot, a year only where it recurs; in the
-    head where it runs with the pages and agrees with the foot's."""
+    """Whether the block is its page's number: in the foot, a year only where it recurs; past the
+    edge where it runs with the pages; in the head where it runs and agrees with the foot's."""
     if at.alone is None:
         return False
     offset = _offset(at)
+    runs = offsets[offset] >= MIN_RUNNING
     if at.edge == "page_footer":
-        return offset <= YEAR_OFFSET or offsets[offset] >= MIN_RUNNING
-    return offsets[offset] >= MIN_RUNNING and feet.get(at.page, offset) == offset
+        return runs if at.near else offset <= YEAR_OFFSET or runs
+    return runs and feet.get(at.page, offset) == offset
 
 
 def _repeated(group: list[_AtEdge], needed: float, feet: dict[int, int]) -> dict[_AtEdge, int | None]:
@@ -153,7 +155,8 @@ def _repeated(group: list[_AtEdge], needed: float, feet: dict[int, int]) -> dict
     stays, runs with the page, or stays over stretches beside one that runs; else each text
     counts by itself."""
     kinds = [_place(group, place, feet) for place in range(len(group[0].numbers))]
-    near = any(at.near for at in group)  # the band beside the edge: a running text, not a count
+    # past the edge, a count runs only beside the foot's page numbers: else it is headings in a row
+    near = all(at.near for at in group) and not any(at.page in feet for at in group)
     if all(kinds) and ("holds" not in kinds or "runs" in kinds) and not (near and "runs" in kinds):
         if len({at.page for at in group}) < needed:
             return {}
@@ -168,19 +171,29 @@ def _repeated(group: list[_AtEdge], needed: float, feet: dict[int, int]) -> dict
 def _place(group: list[_AtEdge], place: int, feet: dict[int, int]) -> str | None:
     """How the number at ``place`` goes over the group's pages: it ``stays`` the same, ``runs``
     with the page - each offset from the page shared by two pages at least, so a count may jump; a
-    page whose number in ``feet`` says otherwise left out, and at least half the pages agreeing -
-    or ``holds`` each of its values over two pages at least; None where it does none of these."""
+    page whose number in ``feet`` says otherwise left out where that number is a stray one, and none
+    run at all where the foot's numbers run otherwise; at least half the pages agreeing - or
+    ``holds`` each of its values over two pages at least; None where it does none of these."""
     values = {(at.numbers[place], at.page) for at in group}  # a page counts once
     if len({value for value, _ in values}) == 1:
         return "stays"
     if all(len(value) <= MAX_PAGE_DIGITS for value, _ in values):
-        agreeing = [
-            int(value) - page
-            for value, page in values
-            if feet.get(page, int(value) - page) == int(value) - page
-        ]
+        counted = Counter(feet.values())
+        agreeing: list[int] = []
+        belied = False
+        for value, page in values:
+            offset = int(value) - page
+            if feet.get(page, offset) == offset:
+                agreeing.append(offset)
+            elif counted[feet[page]] >= MIN_RUNNING:
+                belied = True  # page numbers that run themselves, and say otherwise
         offsets = Counter(agreeing)
-        if 2 * len(agreeing) >= len(values) and offsets and min(offsets.values()) >= MIN_RUNNING:
+        if (
+            not belied
+            and 2 * len(agreeing) >= len(values)
+            and offsets
+            and min(offsets.values()) >= MIN_RUNNING
+        ):
             return "runs"
     if min(Counter(value for value, _ in values).values()) >= MIN_RUNNING:
         return "holds"
