@@ -293,41 +293,52 @@ Nachtrag zur Umsetzung (23.10.):
 Nachtrag zur Umsetzung (24.10.):
 
 - **Token zählen (5.2):**
-  - Die Kodierung `o200k_base.tiktoken` liegt im Repo, in `backend/app/llm/` (Nutzerentscheid 23.10.), statt aus `TIKTOKEN_CACHE_DIR` zu kommen. Geladen wird sie per Pfad und geprüftem SHA-256, nie aus dem Netz; dazu ein Lizenzhinweis und `.gitattributes` `-text`.
-  - API und Worker prüfen beim Start Reasoning-Aufwand, Kontextfenster und Kodierung (`check_model_layer`).
+  - Die Kodierung `o200k_base.tiktoken` liegt im Repo, in `backend/app/llm/` (Nutzerentscheid 23.10.), statt aus `TIKTOKEN_CACHE_DIR` zu kommen. Geladen wird sie per Pfad und geprüftem SHA-256, nie aus dem Netz; dazu ein Lizenzhinweis und `.gitattributes` `-text -diff`.
+  - API und Worker prüfen beim Start Reasoning-Aufwand, Kontextfenster und Kodierung (`check_model_layer`). Sie lehnen auch ein `LLM_MAX_OUTPUT_TOKENS` ab, das neben `RESERVE_TOKENS` (17.000) nicht ins Fenster passt. `RESERVE_TOKENS` rechnet noch mit der gemessenen Antwort der alten App (rund 5.900 Token und eine Wiederholung). Ob es mit dem Deckel wachsen muss, entscheidet die Raumrechnung des Präfixes (Paket 6/7).
   - `tiktoken` ist direkt deklariert. Der Export ändert sich dadurch nur im via-Vermerk.
 - **Aufruf (5.1):**
-  - `StructuredDict` prüft die Antwort nicht gegen das Schema; eine Probe ließ `{"n": "x"}` gegen `integer` durch. Deshalb gibt es einen eigenen Prüfer `app/llm/schema.py` für genau die Teilmenge der sechs Schemas, der als `output_validator` per `ModelRetry` nachfragt. Ein Wächtertest verlangt, dass er jedes Schlüsselwort der Schemas kennt. `jsonschema` wäre ein Download mit fünf Paketen gewesen.
+  - `StructuredDict` prüft die Antwort nicht gegen das Schema; eine Probe ließ `{"n": "x"}` gegen `integer` durch. Deshalb gibt es einen eigenen Prüfer `app/llm/schema.py` für genau die Teilmenge der sechs Schemas, der als `output_validator` per `ModelRetry` nachfragt. Zwei Wächtertests verlangen, dass er jedes Schlüsselwort der Schemas kennt und jede Form, die sie ihm geben: Typen aus `KNOWN_TYPES`, `additionalProperties` nur `false`, `items` als ein Schema. `integer` bleibt streng, `3.0` wird nachgefragt. `jsonschema` wäre ein Download mit fünf Paketen gewesen.
   - pydantic-ai 2.42 kennt `output_retries` nicht; es heißt `retries=2`.
-  - Reserviert wird je Modellanfrage, nicht je Aufruf. `ask` geht den Lauf Knoten für Knoten durch: Vor jedem `ModelRequestNode` reserviert er, am `CallToolsNode` legt er die Antwort ab und bucht ihre Nutzung. So ist jede Ausgabe-Wiederholung eine eigene, neu reservierte Anfrage.
+  - Reserviert wird je Modellanfrage, nicht je Aufruf. `ask` geht den Lauf Knoten für Knoten durch: Vor jedem `ModelRequestNode` reserviert er, am `CallToolsNode` bucht er die gemeldete Nutzung und legt danach die Antwort ab, noch bevor der nächste Knoten sie prüft. So ist jede Ausgabe-Wiederholung eine eigene, neu reservierte Anfrage. Scheitert die Buchung oder wird sie abgebrochen, bucht er dieselbe Nutzung noch einmal, nicht die Schätzung; der Meter nimmt eine Reservierung nur einmal.
+  - Den reservierten Deckel liest `build_agent` aus den Einstellungen des Modells (`max_tokens`), damit Reservierung und Anfrage nicht auseinanderlaufen.
   - Ein eigener `AsyncOpenAI` mit `max_retries=0` und einem Client, der jede Anfrage zählt (`Attempts`) und die Trace-Header setzt. `max_tokens` = `LLM_MAX_OUTPUT_TOKENS` wird zu `max_output_tokens` bzw. `max_completion_tokens`.
-  - Gebucht wird so: Eine abgewiesene Anfrage (HTTP-Fehler) kostet 0 Token und zählt als eine Anfrage. Eine gesendete ohne Antwort (Zeitüberschreitung, Abriss, Abbruch im Flug) kostet ihre Reservierung, gekennzeichnet `estimated`, unter `asyncio.shield` gebucht. Eine nie gesendete kostet nichts.
-  - Gewartet wird wie in der alten App, aber ohne Wiederholungen des SDK.
+  - Gebucht wird so:
+    - Eine abgewiesene Anfrage (HTTP-Fehler) kostet 0 Token und zählt als eine Anfrage.
+    - Eine gesendete ohne Antwort (Zeitüberschreitung, Abriss, Abbruch im Flug) kostet ihre Reservierung, gekennzeichnet `estimated`, unter `asyncio.shield` gebucht.
+    - Ebenso eine Antwort ohne Nutzungsangabe und eine, die kein Modell lesen konnte (etwa eine 200-Seite eines Proxys). Die zweite lässt den Aufruf scheitern; bis zum Review galt sie als „nie in Form“, und ihre Reservierung blieb stehen.
+    - Eine nie gesendete kostet nichts. Der Client zählt eine Anfrage, bevor er verbindet; `ConnectError`, `ConnectTimeout` und `PoolTimeout` in der Ausnahmekette gelten deshalb als nie gesendet (`never_sent`).
+  - Gewartet wird wie in der alten App, aber ohne Wiederholungen des SDK. Ein nicht erreichter Anbieter wird wie ein 5xx noch zweimal gefragt, denn die SDK-Wiederholungen, die das früher taten, sind aus.
+  - Hat eine Stufe keine Ausgabe, sagt `Answer.failure` warum (nie in Form, Antwort am Deckel abgeschnitten, Inhaltsfilter); eine Warnzeile nennt es ohne den Körper.
 - **Rohantworten (5.3):**
   - Abgelegt wird je `ModelResponse` die JSON-Form von pydantic-ai, mit Nutzung, Modell und Zeit, bevor die Antwort geprüft wird.
-  - Weil der Speicher nicht auflisten kann, springt die Nummer per `exists` hinter Vorhandenes.
-  - Gefunden dabei: Unter Windows behält `Path.resolve()` in einem Rennen das Präfix `\\?\`, und `FileSystemStorage` wies den Schlüssel dann ab. Behoben mit `without_long_prefix`.
+  - Weil der Speicher nicht auflisten kann, springt die Nummer per `exists` hinter Vorhandenes. Das hält für einen Ablegenden je Lauf und Stufe; zwei nebeneinander könnten dieselbe Nummer nehmen.
+  - Gefunden dabei: Unter Windows behält `Path.resolve()` in einem Rennen das Präfix `\\?\`, und `FileSystemStorage` wies den Schlüssel dann ab. Behoben mit `without_long_prefix`, für Schlüssel wie für eine Wurzel, die schon in der Langform steht.
 - **Tabellen (5.4):**
   - `quota`: Ohne Zeile gilt die Grenze 0, `NULL` heißt unbegrenzt, für jede Rolle.
   - `llm_usage` hat keinen Fremdschlüssel auf Job und Lauf, damit sie überdauert, wie das Audit-Log. Das Konto bleibt, solange es Verbrauch hat. `estimated` hat keinen Standard: Der Schreiber sagt es.
-  - `usage_reservation` hält Job und Konto, bis sie gebucht ist (RESTRICT). Sie trägt Zweck, Modell und Lauf für die Buchung.
+  - `usage_reservation` hält Job und Konto, bis sie gebucht ist (Fremdschlüssel ohne `ON DELETE`, also NO ACTION wie überall). Sie trägt Zweck, Modell und Lauf für die Buchung.
   - Ein Index auf jedem `account_id` und auf `job_id`.
 - **Ledger (5.5):**
   - Rest = Grenze − Σ Verbrauch − Σ Reservierungen, summiert unter `SELECT … FROM quota … FOR UPDATE` und nur unter `read committed` (`read_committed_alone`). Es gibt keinen Zähler, der von den Zeilen abweichen kann. `simplify:` Die Summen lesen alle Zeilen eines Kontos, das kann später eine laufende Summe übernehmen.
   - `book` ersetzt die Reservierung in einer Anweisung und genau einmal. Eine späte Buchung nach `book_abandoned` bucht nichts mehr: Die Schätzung steht.
-  - `book_abandoned` ist gebaut und getestet. Aufgerufen wird es erst aus dem Fehlerpfad der Modelljobs (Paket 6).
+  - `reserve` und `book` laufen je in einer eigenen Transaktion. Auf einer Verbindung, die schon in einer steckt, lehnen sie ab: Die Zeilensperre der Quote hielte sonst bis zum Commit des Aufrufers jede andere Anfrage des Kontos an, und ein Rollback nach dem Senden nähme die Reservierung mit.
+  - `book_abandoned` ist gebaut und getestet. Aufgerufen wird es erst mit den Modelljobs (Paket 6).
   - `remaining_tokens` entfällt; dafür gibt es `usage_of(...).tokens_left`.
   - Abweichung beim Stresslauf: 8 statt 2 Worker. Mit zweien kam das Rennen an der Grenze zu selten zustande, und der Mutant „ohne `FOR UPDATE`“ überlebte 5 von 5 Läufen; mit acht stirbt er 8 von 8. Die Schranke ist für W Worker verallgemeinert: Unverbraucht bleibt weniger als ein Aufruf plus (W − 1) × (Reservierung − Kosten). Verbraucht jeder Aufruf genau seine Reservierung, sind es genau 12. Dazu kommt ein Ledger-Test mit 20 gleichzeitigen Verbindungen, Mutant 10 von 10.
 - **Zulassung (5.6):**
-  - `admit_model_job` läuft in der Transaktion, die den Job einreiht, unter einer Sperre je Konto. Ohne offene Transaktion lehnt es ab, weil die Sperre sonst vor dem Einreihen ginge.
-  - Die Reihenfolge ist Budget > 0, offene Modelljobs, Rate. Die Rate zählt zuletzt, damit ein abgewiesener Start keinen Platz kostet.
+  - `admit_model_job` läuft in der Transaktion, die den Job einreiht, unter einer Sperre je Konto und nur unter `read committed`. Ohne offene Transaktion lehnt es ab, weil die Sperre sonst vor dem Einreihen ginge; unter `repeatable read` sähe es die Jobs der anderen nicht.
+  - Die Reihenfolge ist Budget, offene Modelljobs, Rate. Das Budget gilt als verbraucht, wenn der Verbrauch die Grenze erreicht. Was laufende Aufrufe reserviert halten, zählt nicht mit, denn ihre Buchungen geben das meiste zurück; die erste Reservierung des Jobs entscheidet. Die Rate zählt zuletzt, damit ein abgewiesener Start keinen Platz kostet.
   - Fachliche Ausnahmen; die Antworten (403 `no_budget`, 429 `too_many_jobs`, 429 `too_many_starts`) baut `admit_model_start` in `app/api/limits.py`.
   - `MODEL_JOB_KINDS` ist leer, bis X1 kommt. Ein Start mit kleinem Rest scheitert erst an der ersten Reservierung.
 - **API, Metriken, Image (5.7):**
-  - `PUT …/quota` verlangt beide Grenzen ausdrücklich (Zahl bis 10^15 oder `null`), damit keine aus Versehen fehlt. Die Endpunkte stehen unter dem Tag `usage`.
-  - Metriken: `kka_llm_requests_total{outcome}` (answered, refused, unanswered), `kka_llm_tokens_total{kind}` (input, cached_input, output, estimated) und `kka_usage_reservations_total{outcome}` (held, refused, booked, late, abandoned).
+  - `PUT …/quota` verlangt beide Grenzen ausdrücklich (JSON-Zahl bis 10^15 oder `null`, nicht `"5000"` oder `true`), damit keine aus Versehen fehlt. Die Endpunkte stehen unter dem Tag `usage`.
+  - Metriken: `kka_llm_requests_total{outcome}` (answered, refused, unanswered, unsent), `kka_llm_tokens_total{kind}` (input, cached_input, output, estimated) und `kka_usage_reservations_total{outcome}` (held, refused, booked, late, abandoned).
   - Das Image kopiert `ontology/schemas` (`SCHEMA_DIR`).
   - Die Seitengrenze ist nur eine Spalte. Durchgesetzt wird sie mit der ersten abrechenbaren Engine (3b).
+- **Festlegungen für Paket 6, aus dem Review:**
+  - `book_abandoned(job_id)` läuft am Ende jedes Modelljobs, ob Erfolg, Fehler oder Rückgabe, in der Transaktion, die den Job unter seiner Lease beendet (`complete`, `fail`, `release`, `requeue_expired`). Dann nimmt es alles, was ein Abbruch zwischen Reservierung und Buchung liegen ließ, und nie eine Reservierung des nächsten Versuchs.
+  - Jeder Versuch eines Modelljobs bekommt seinen eigenen Lauf (`extraction_run`). Die Rohantworten zweier Versuche, die sich nach einem Lease-Verlust kurz überschneiden, liegen so unter verschiedenen Schlüsseln.
+  - Die Stufe wertet `Answer.failure` aus: Eine am Deckel abgeschnittene Antwort ist ein Signal für `LLM_MAX_OUTPUT_TOKENS`, keine Formfrage.
 
 ### Paket 6: X1 Dokumentprofil, Gerüst und X2 Segmente (6 PT)
 
