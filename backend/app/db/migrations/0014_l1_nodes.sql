@@ -56,12 +56,21 @@ CREATE TABLE node (
 );
 CREATE INDEX node_of_run ON node (run_id) WHERE run_id IS NOT NULL;
 
--- A node moved comes to lie under itself nowhere; moves within one document wait for each
--- other, so two that would close a circle between them do not pass side by side
+-- A node comes to lie under itself nowhere, however it is written: checked once its statement
+-- has written all its rows (nodes inserted in a circle at once too). Writes to one document's
+-- tree wait for each other, so two moves that would close a circle between them do not pass side
+-- by side - under read committed, where each sees the other's once it waits; under repeatable
+-- read neither would, so a move there is refused (serializable finds the conflict itself). Who
+-- writes a tree takes its lock first (app/db/nodes.py, lock_tree): taken here, after the row's
+-- own lock, two moves could wait for each other the other way round
 CREATE FUNCTION node_without_cycle() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
     IF NEW.parent_id IS NULL THEN
-        RETURN NEW;
+        RETURN NULL;
+    END IF;
+    IF TG_OP = 'UPDATE' AND current_setting('transaction_isolation') = 'repeatable read' THEN
+        RAISE EXCEPTION 'a node is moved under read committed or serializable, not repeatable read'
+            USING ERRCODE = 'invalid_transaction_state';
     END IF;
     PERFORM pg_advisory_xact_lock(hashtextextended('node-tree:' || NEW.document_id::text, 0));
     IF EXISTS (
@@ -74,10 +83,10 @@ BEGIN
     ) THEN
         RAISE EXCEPTION 'node % would lie under itself', NEW.id USING ERRCODE = 'check_violation';
     END IF;
-    RETURN NEW;
+    RETURN NULL;
 END
 $$;
-CREATE TRIGGER node_without_cycle BEFORE UPDATE OF parent_id ON node
+CREATE CONSTRAINT TRIGGER node_without_cycle AFTER INSERT OR UPDATE OF parent_id ON node
     FOR EACH ROW EXECUTE FUNCTION node_without_cycle();
 
 -- A profile value refines the core value it stands beside: a node type lies under the node's

@@ -11,7 +11,16 @@ import pytest
 from psycopg import errors
 
 from app.db.migrate import migrate
-from tests.db.l1 import CV, SCHOOL, add_conversion, add_document, add_node, add_statement, seed_vocabulary
+from tests.db.l1 import (
+    CV,
+    SCHOOL,
+    add_conversion,
+    add_document,
+    add_entity,
+    add_node,
+    add_statement,
+    seed_vocabulary,
+)
 
 pytestmark = pytest.mark.pg
 
@@ -41,6 +50,38 @@ def test_a_tree_of_nodes_is_held_and_none_comes_to_lie_under_itself(
     with pytest.raises(errors.CheckViolation):
         connection.execute("UPDATE node SET parent_id = id WHERE id = %s", (child,))
     connection.execute("UPDATE node SET parent_id = %s, position = 2 WHERE id = %s", (root, grandchild))
+
+
+def test_nodes_written_in_a_circle_at_once_are_refused(
+    connection: psycopg.Connection, document: uuid.UUID
+) -> None:
+    # each the other's parent, in one statement: the foreign key holds once both rows stand
+    first, second = add_entity(connection, "node"), add_entity(connection, "node")
+    columns = (
+        "id, document_id, parent_id, position, function_scheme, function_iri, origin_scheme, origin_iri,"
+    )
+    columns += " review_status_scheme, review_status_iri"
+    row = "(%s, %s, %s, 1, %s, %s, %s, %s, %s, %s)"
+    values = [CV + "NodeFunctions", CV + "fn_area", CV + "Origins", CV + "orig_source"]
+    values += [CV + "ReviewStatuses", CV + "rev_proposed"]
+
+    with pytest.raises(errors.CheckViolation, match="under itself"):
+        connection.execute(
+            f"INSERT INTO node ({columns}) VALUES {row}, {row}",  # noqa: S608 - the test's own names
+            (first, document, second, *values, second, document, first, *values),
+        )
+
+
+def test_a_node_is_moved_under_read_committed_alone(
+    connection: psycopg.Connection, document: uuid.UUID
+) -> None:
+    # under repeatable read two moves could each close a circle the other does not see
+    root = add_node(connection, document)
+    child = add_node(connection, document, position=2)
+
+    with pytest.raises(errors.InvalidTransactionState, match="read committed"), connection.transaction():
+        connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        connection.execute("UPDATE node SET parent_id = %s WHERE id = %s", (root, child))
 
 
 def test_a_node_lies_under_a_node_of_its_own_document(
