@@ -51,6 +51,22 @@ describe("a job's progress", () => {
     expect(wrapper.emitted("ended")?.[0]).toEqual([job("done")]);
   });
 
+  it("quiet, says no change of the job's state, but that the server does not answer", async () => {
+    vi.spyOn(api, "getJob")
+      .mockResolvedValueOnce(job("running"))
+      .mockRejectedValue(new ApiError("server", 503, "service_unavailable"));
+    const wrapper = mount(JobProgress, { props: { jobId: "j1", label: "Lehrplan Physik", quiet: true } });
+    const region = () => wrapper.get("[role=status]").text();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(wrapper.get(".status-badge").text()).toBe(t("jobs.status.running"));
+    expect(region()).toBe("");
+
+    await vi.advanceTimersByTimeAsync(2000);
+    // the page around it says how the job ends; that its progress stalls only this can say
+    expect(region()).toBe(t("jobs.announce", { label: isolate("Lehrplan Physik"), status: t("jobs.trouble") }));
+  });
+
   it("says why a job failed, in its own words", async () => {
     vi.spyOn(api, "getJob").mockResolvedValue(job("failed", "download_refused"));
     const wrapper = shown();

@@ -218,6 +218,23 @@ describe("an entry's conversion", () => {
     expect(wrapper.text()).toContain(t("conversions.showBlocks"));
   });
 
+  it("stops asking after the conversion where the server refuses it, and shows why", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    vi.mocked(api.getConversion)
+      .mockResolvedValueOnce({ ...pending, job_id: null })
+      .mockRejectedValue(new ApiError("forbidden", 403, "file_hidden"));
+    const wrapper = await open();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    await flushPromises();
+    const asked = vi.mocked(api.getConversion).mock.calls.length;
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    expect(asked).toBe(3); // the state, one question after it, the state again to say why
+    expect(api.getConversion).toHaveBeenCalledTimes(asked);
+    expect(wrapper.text()).toContain(t("refusals.file_hidden"));
+  });
+
   it("stops asking once it is gone from the page", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     vi.mocked(api.getConversion).mockResolvedValue({ ...pending, job_id: null });
