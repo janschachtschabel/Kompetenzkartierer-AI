@@ -350,6 +350,30 @@ def test_a_sign_far_out_or_of_next_to_no_size_is_dropped_not_measured_for_its_tw
     assert [finding.params["reason"] for finding in conversion.findings] == [reason]
 
 
+def test_a_sign_kept_far_out_on_a_page_as_wide_as_a_number_holds_is_not_measured_for_its_twin(
+    tmp_path: Path,
+) -> None:
+    # the page 8e307 points wide; a sign of 1.1 points on it at 5e307, over a tenth of its size not finite
+    wide, far = b"8" + b"0" * 307, b"5" + b"0" * 307
+    path = tmp_path / "lehrplan.pdf"
+    path.write_bytes(
+        pdf_of(
+            [
+                b"<< /Type /Catalog /Pages 2 0 R >>",
+                b"<< /Type /Pages /Kids [4 0 R] /Count 1 >>",
+                HELVETICA,
+                b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %s 842]" % wide
+                + b" /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>",
+                stream(SENTENCE + b"BT /F1 1.1 Tf %s 400 Td (Weit draussen) Tj ET\n" % far),
+            ]
+        )
+    )
+
+    conversion = read(path)
+
+    assert SENTENCE_READ in [block.text for block in conversion.blocks]
+
+
 def test_a_sign_set_again_within_a_tenth_of_its_size_is_its_twin() -> None:
     signs = [
         sign(text="D", x0=72.0),
