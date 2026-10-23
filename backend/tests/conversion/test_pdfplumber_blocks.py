@@ -80,6 +80,20 @@ def test_scripts_and_a_change_of_font_within_a_word_stay_in_their_word_and_block
     assert conversion.blocks[0].font_size == 11.0
 
 
+def test_a_watermark_across_a_paragraph_leaves_its_lines_whole(tmp_path: Path) -> None:
+    lines = [f"Zeile {number} des Absatzes mit Text darin." for number in ("eins", "zwei", "drei", "vier")]
+    content = b"".join(
+        b"BT /F1 11 Tf 72 %d Td (%s) Tj ET\n" % (700 - 14 * index, line.encode())
+        for index, line in enumerate(lines)
+    )
+    path = tmp_path / "lehrplan.pdf"
+    path.write_bytes(pages_pdf([content + b"BT /F1 72 Tf 120 650 Td (ENTWURF) Tj ET\n"]))
+
+    conversion = read(path)
+
+    assert sorted(block.text for block in conversion.blocks) == ["ENTWURF", "\n".join(lines)]
+
+
 def test_tables_are_blocks_their_words_in_no_text_block_and_joined_over_pages() -> None:
     conversion = converted("tables.pdf")
 

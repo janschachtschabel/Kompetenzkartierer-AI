@@ -1,11 +1,15 @@
 """Words into lines, lines into blocks: runs of text set alike (plan M1, 3.2).
 
 A line is the words at one height, left to right. A word stands on the line whose span - that of
-its largest word, so a superscript does not lift it - it overlaps most, by half the smaller height
-at least. A sub- or superscript - set smaller, glued to its word, overlapping it - stands on its
-word's line however little it overlaps it (reportlab lowers a subscript by half a line); it is
-placed once every line stands, with the word it overlaps most, since a mark raised to the line
-above may touch a word's end there as well. Two words of one size are never glued: where lines
+the size most of its signs are set in, so neither a superscript nor a large initial moves it - it
+overlaps most, by half the smaller height at least. A word more than 1.5 times as high as that
+span, or as low, stands on no such line: a watermark, a symbol beside two lines or an initial
+across three would take them all in, line by line, and splice its letters into one of them. A
+sub- or superscript - set smaller, glued to its word, overlapping it - stands on its word's line
+however little it overlaps it (reportlab lowers a subscript by half a line), and so does a mark
+far smaller than its word that comes before it; both are placed once every line stands, with the
+word they overlap most, since a mark raised to the line above may touch a word's end there as
+well. Two words of one size are never glued: where lines
 are set tight, a word's edge meets one above by chance. Two words a gap narrower than a tenth of
 their size apart are one: pdfplumber parts a word where its font or size changes ("Lern" "feld",
 "CO" "2"). A line's size is that of most of its signs.
@@ -23,9 +27,10 @@ stand 3 points apart at 11 points, paragraphs 6 and more (the fixtures, and what
 The lines of a block keep their breaks: its text is the document's wording, line by line.
 """
 
+from bisect import insort
 from collections import Counter
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 from itertools import accumulate, pairwise, takewhile
 
@@ -33,6 +38,7 @@ from app.conversion.layout import RawBlock, Word, style_of
 
 LINE_TOLERANCE = 0.5  # times the size: a line this far up into the one above still goes below it
 LINE_OVERLAP = 0.5  # of the smaller height: a word overlapping a line's span this much stands on it
+TALL = 1.5  # times the height: a word this much higher than a line's span, or lower, is none of its
 WORD_SPACE = 0.1  # times the larger size: two words a narrower gap apart are one
 COLUMN_GAP = 3.0  # times the size: a wider gap between two words parts a line
 GUTTER_GAP = 0.8  # times the size: a gap this wide parts a line where lines near it share it
@@ -91,30 +97,47 @@ class Line:
 
 @dataclass
 class _Row:
-    """The words of a line while they are found, and its span: that of its largest word."""
+    """The words of a line while they are found, and its span: that of the size most of its
+    signs are set in, so a watermark or an initial it holds does not stretch it."""
 
-    words: list[Word]
-    top: float
-    bottom: float
-    size: float
+    words: list[Word] = field(default_factory=list)
+    signs: Counter[float] = field(default_factory=Counter)  # by size, to half a point
+    spans: dict[float, tuple[float, float]] = field(default_factory=dict)  # the first word's of a size
+
+    @classmethod
+    def of(cls, word: Word) -> "_Row":
+        row = cls()
+        row.add(word)
+        return row
 
     def add(self, word: Word) -> None:
         self.words.append(word)
-        if word.size > self.size:
-            self.top, self.bottom, self.size = word.top, word.bottom, word.size
+        size = round(word.size * 2) / 2
+        self.signs[size] += len(word.text)
+        self.spans.setdefault(size, (word.top, word.bottom))
+
+    @property
+    def span(self) -> tuple[float, float]:
+        return self.spans[self.signs.most_common(1)[0][0]]
 
     def overlap(self, word: Word) -> float:
-        return min(self.bottom, word.bottom) - max(self.top, word.top)
+        top, bottom = self.span
+        return min(bottom, word.bottom) - max(top, word.top)
 
     def holds(self, word: Word) -> bool:
+        top, bottom = self.span
+        height, own = bottom - top, word.bottom - word.top
+        if own > TALL * height or height > TALL * own:
+            return False
         overlap = self.overlap(word)
-        return overlap > 0 and overlap >= LINE_OVERLAP * min(self.bottom - self.top, word.bottom - word.top)
+        return overlap > 0 and overlap >= LINE_OVERLAP * min(height, own)
 
 
 @dataclass(frozen=True)
 class _Script:
-    """A word that stands on no line by its overlap but is glued to a larger word: a sub- or
-    superscript, placed once every line stands, since its own word may come after it."""
+    """A word placed once every line stands: one that stands on no line by its overlap but is
+    glued to a larger word - a sub- or superscript - or that began a line of its own before its
+    word came."""
 
     word: Word
     near: list[_Row]  # the lines open when it came
@@ -151,32 +174,46 @@ def _rows(words: Iterable[Word]) -> list[_Row]:
     rows: list[_Row] = []
     open_rows: list[_Row] = []  # those a word further down may still overlap
     scripts: list[_Script] = []
+    firsts: list[_Script] = []  # each row's first word, as it came
     for word in sorted(words, key=lambda word: (word.top, word.x0)):
-        open_rows = [row for row in open_rows if row.bottom > word.top]
+        open_rows = [row for row in open_rows if row.span[1] > word.top]
         holding = [row for row in open_rows if row.holds(word)]
         if holding:
             max(holding, key=lambda row: row.overlap(word)).add(word)
         elif any(_glued(word, other) for row in open_rows for other in row.words):
             scripts.append(_Script(word, open_rows, len(rows)))
         else:
-            rows.append(_Row([word], word.top, word.bottom, word.size))
+            firsts.append(_Script(word, open_rows, len(rows)))
+            rows.append(_Row.of(word))
             open_rows.append(rows[-1])
+    # a mark far smaller than its word, raised a little above it, begins a line before its word does
+    alone = {
+        id(row)
+        for row, first in zip(rows, firsts, strict=True)
+        if len(row.words) == 1 and _partners(first, rows, set())
+    }
+    scripts += [first for row, first in zip(rows, firsts, strict=True) if id(row) in alone]
+    kept = [row for row in rows if id(row) not in alone]
     for script in scripts:
-        _partner_row(script.word, [*script.near, *_begun_by(rows[script.begun :], script.word)]).add(
-            script.word
-        )
-    return rows
+        partners = _partners(script, rows, alone)
+        if partners:
+            max(partners, key=lambda found: _overlap(script.word, found[1]))[0].add(script.word)
+        else:  # its word was a mark as well
+            insort(kept, _Row.of(script.word), key=lambda row: row.words[0].top)
+    return kept
 
 
-def _begun_by(rows: list[_Row], word: Word) -> list[_Row]:
-    """The rows of ``rows``, in the order begun, whose first word begins above the word's foot."""
-    return list(takewhile(lambda row: row.words[0].top < word.bottom, rows))
-
-
-def _partner_row(word: Word, rows: list[_Row]) -> _Row:
-    """The row of the word ``word`` is glued to that it overlaps most."""
-    glued = [(row, other) for row in rows for other in row.words if _glued(word, other)]
-    return max(glued, key=lambda found: _overlap(word, found[1]))[0]
+def _partners(script: _Script, rows: list[_Row], moved: set[int]) -> list[tuple[_Row, Word]]:
+    """The words, with their rows, the script's word is glued to: on the lines open when it came,
+    or on those begun after whose first word begins above its foot - ``moved`` rows aside."""
+    begun = takewhile(lambda row: row.words[0].top < script.word.bottom, rows[script.begun :])
+    return [
+        (row, other)
+        for row in [*script.near, *begun]
+        if id(row) not in moved
+        for other in row.words
+        if _glued(script.word, other)
+    ]
 
 
 def _overlap(word: Word, other: Word) -> float:

@@ -73,9 +73,9 @@ def test_words_on_one_height_are_one_line_left_to_right() -> None:
 
 
 def test_a_word_overlapping_a_line_by_half_the_smaller_height_stands_on_it() -> None:
-    # the line's span is that of its largest word, 100 to 111: a word of 6 points stands on it with
-    # 3 points of its height within that span, and on a line of its own with less
-    on_it, below = word("Bezug", 165, 106, size=6), word("Fußnote", 300, 108.5, size=6)
+    # the line's span is that of most of its signs, 100 to 111: a word of 8 points stands on it with
+    # 4 points of its height within that span, and on a line of its own with less
+    on_it, below = word("Bezug", 165, 107, size=8), word("Fußnote", 300, 107.5, size=8)
 
     lines = lines_of([*row("Die Lernenden planen", 100), on_it, below])
 
@@ -105,6 +105,39 @@ def test_scripts_stand_on_their_line_and_touch_their_word() -> None:
 
     assert (first.text, second.text) == ("Die Schüler1 messen CO2", "Das")
     assert first.size == 11.0
+
+
+@pytest.mark.parametrize(
+    ("tall", "lines"),
+    [
+        (Word("ENTWURF", 120, 400, 106, 178, 72.0, "Helvetica"), 5),  # a watermark across five lines
+        (Word("●", 40, 52, 101, 125, 24.0, "ZapfDingbats"), 2),  # a symbol beside two
+        (Word("D", 30, 56, 100, 136, 36.0, "Helvetica-Bold"), 3),  # an initial of three
+    ],
+    ids=["watermark", "symbol", "initial"],
+)
+def test_a_word_far_higher_than_the_lines_it_overlaps_takes_none_of_them(tall: Word, lines: int) -> None:
+    texts = [f"Zeile {number} des Absatzes mit Text" for number in range(1, lines + 1)]
+    words = [
+        tall,
+        *(found for index, text in enumerate(texts) for found in row(text, 100 + 14 * index, x0=60)),
+    ]
+
+    found = [line.text for line in lines_of(words)]
+
+    assert [text for text in found if text != tall.text] == texts
+    assert tall.text in found
+
+
+def test_a_mark_much_smaller_than_its_word_stands_on_its_line_where_it_comes_first() -> None:
+    # set at 58 % of the size and raised a third: its top stands a little above its word's
+    words = [
+        Word("1", 38.5, 42.2, 99.9, 106.3, 6.4, "Helvetica"),
+        word("Schüler", 0, 100),
+        word("lernen", 45, 100),
+    ]
+
+    assert [line.text for line in lines_of(words)] == ["Schüler1 lernen"]
 
 
 def test_lines_set_tighter_than_solid_keep_their_words_where_edges_meet_by_chance() -> None:
