@@ -144,6 +144,47 @@ def test_a_mark_much_smaller_than_its_word_stands_on_its_line_where_it_comes_fir
     assert [line.text for line in lines_of(words)] == ["Schüler1 lernen"]
 
 
+def test_a_footnote_s_mark_a_space_before_its_text_stands_on_its_line() -> None:
+    # Word sets the mark at 6.5 points, raised, a space before the note of 10
+    words = [
+        Word("1", 56, 59.25, 98, 104.5, 6.5, "Helvetica"),
+        *row("Vgl. KMK, Handreichung", 100, x0=62, size=10),
+    ]
+
+    assert [line.text for line in lines_of(words)] == ["1 Vgl. KMK, Handreichung"]
+
+
+def test_a_small_mark_a_space_apart_inside_a_line_stands_on_it() -> None:
+    words = [
+        *row("Die Lernenden planen", 100, size=10),
+        Word("[1]", 157, 166, 103.5, 109.5, 6.0, "Helvetica"),
+        *row("ihre Arbeit.", 100, x0=169, size=10),
+    ]
+
+    assert [line.text for line in lines_of(words)] == ["Die Lernenden planen [1] ihre Arbeit."]
+
+
+def test_words_far_smaller_a_space_behind_a_heading_on_its_height_stand_on_its_line() -> None:
+    # a heading of 14 points and its hours at 9, on one baseline
+    words = [*row("Lernfeld 3:", 181, size=14), *row("Zeitrichtwert 80 Stunden", 185, x0=152, size=9)]
+
+    assert [line.text for line in lines_of(words)] == ["Lernfeld 3: Zeitrichtwert 80 Stunden"]
+
+
+def test_an_operator_far_larger_than_its_line_stands_on_it_where_it_covers_no_other() -> None:
+    words = [
+        *row("Oben steht ein Satz.", 60, size=10),
+        *row("Es gilt F =", 100, size=10),
+        Word("S", 115, 129.7, 94, 116, 22.0, "Helvetica"),
+        *row("f(x) dx", 100, x0=133, size=10),
+        *row("Unten steht ein Satz.", 140, size=10),
+    ]
+
+    texts = [line.text for line in lines_of(words)]
+
+    assert texts == ["Oben steht ein Satz.", "Es gilt F = S f(x) dx", "Unten steht ein Satz."]
+
+
 def test_lines_set_tighter_than_solid_keep_their_words_where_edges_meet_by_chance() -> None:
     # 11 points on 10.5: "ihre" begins line 2 and ends where "Lernenden" begins above it
     words = [

@@ -3,13 +3,16 @@
 A line is the words at one height, left to right. A word stands on the line whose span - that of
 the size most of its signs are set in, so neither a superscript nor a large initial moves it - it
 overlaps most, by half the smaller height at least. A word more than 1.5 times as high as that
-span, or as low, stands on no such line: a watermark, a symbol beside two lines or an initial
-across three would take them all in, line by line, and splice its letters into one of them. A
-sub- or superscript - set smaller, glued to its word, overlapping it - stands on its word's line
-however little it overlaps it (reportlab lowers a subscript by half a line), and so does a mark
-far smaller than its word that comes before it; both are placed once every line stands, with the
-word they overlap most, since a mark raised to the line above may touch a word's end there as
-well. Two words of one size are never glued: where lines
+span, or as low, stands on no such line as it comes: a watermark, a symbol beside two lines or an
+initial across three would take them all in, line by line, and splice its letters into one of
+them. A sub- or superscript - set smaller, glued to its word (at most twice its size), overlapping
+it - stands on its word's line however little it overlaps it (reportlab lowers a subscript by
+half a line), and so does a mark far smaller than its word that comes before it; both are placed
+once every line stands, with the word they overlap most, since a mark raised to the line above
+may touch a word's end there as well. Then words far smaller than a line, a space apart from its
+words - a footnote's mark, "[1]", a heading's hours set small - stand on the line whose span holds
+their middle, and so does a single word far larger, a formula's operator; but never where the
+larger covers the middle of another line too. Two words of one size are never glued: where lines
 are set tight, a word's edge meets one above by chance. Two words a gap narrower than a tenth of
 their size apart are one: pdfplumber parts a word where its font or size changes ("Lern" "feld",
 "CO" "2"). A line's size is that of most of its signs. No line runs across the gutter between
@@ -22,7 +25,7 @@ stand 3 points apart at 11 points, paragraphs 6 and more (the fixtures, and what
 The lines of a block keep their breaks: its text is the document's wording, line by line.
 """
 
-from bisect import insort
+from bisect import bisect_left, bisect_right, insort
 from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass, field
@@ -166,14 +169,47 @@ def _rows(words: Iterable[Word]) -> list[_Row]:
         if len(row.words) == 1 and _partners(first, rows, set())
     }
     scripts += [first for row, first in zip(rows, firsts, strict=True) if id(row) in alone]
-    kept = [row for row in rows if id(row) not in alone]
+    gone = set(alone)  # the rows whose words went to another
+    middles = sorted((row.span[0] + row.span[1]) / 2 for row in rows)
+    for row, first in zip(rows, firsts, strict=True):
+        if id(row) not in gone and (home := _home(first, row, rows, gone, middles)):
+            for word in row.words:
+                home.add(word)
+            gone.add(id(row))
+    kept = [row for row in rows if id(row) not in gone]
     for script in scripts:
-        partners = _partners(script, rows, alone)
+        partners = _partners(script, rows, gone)
         if partners:
             max(partners, key=lambda found: _overlap(script.word, found[1]))[0].add(script.word)
         else:  # its word was a mark as well
             insort(kept, _Row.of(script.word), key=lambda row: row.words[0].top)
     return kept
+
+
+def _home(first: _Script, own: _Row, rows: list[_Row], gone: set[int], middles: list[float]) -> _Row | None:
+    """The line words far smaller or larger than its span stand on though they glue to none of its
+    words - a footnote's mark a space before its note, "[1]" within a sentence, a heading's hours at
+    9 points behind it at 14, a formula's large operator: the one line near whose span holds the
+    middle of theirs. The larger of the two covers the middle of no line but the other's - of all
+    the page's lines, ``middles``: a watermark, an initial, a symbol beside two lines does - and is,
+    where it is theirs, a single word."""
+    top, bottom = own.span
+    begun = takewhile(lambda row: row.words[0].top < bottom, rows[first.begun :])
+    near = [row for row in [*first.near, *begun] if row is not own and id(row) not in gone]
+    middle = (top + bottom) / 2
+    holding = [row for row in near if row.span[0] <= middle <= row.span[1]]
+    if len(holding) != 1:
+        return None
+    home = holding[0]
+    height, own_height = home.span[1] - home.span[0], bottom - top
+    if own_height > TALL * height and len(own.words) == 1:
+        larger = own.span
+    elif height > TALL * own_height:
+        larger = home.span
+    else:
+        return None
+    # the middles the larger covers: its own and the other's alone
+    return home if bisect_right(middles, larger[1]) - bisect_left(middles, larger[0]) == 2 else None
 
 
 def _partners(script: _Script, rows: list[_Row], moved: set[int]) -> list[tuple[_Row, Word]]:
