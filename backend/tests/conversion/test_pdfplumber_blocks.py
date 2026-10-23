@@ -428,32 +428,43 @@ TURNED = {
 }
 
 
-def turned_pdf(rotate: int, cropped: bool) -> bytes:
+def turned_pdf(rotate: int, cropped: bool, origin: int = 0) -> bytes:
+    """``origin``: where the media box begins, both ways; everything on the page shifts with it."""
     turn, seen, hidden, crop = TURNED[rotate]
     content = b"".join(
-        b"BT /F1 11 Tf %s %d %d Tm (%s) Tj ET\n" % (turn, x, y, text.encode())
+        b"BT /F1 11 Tf %s %d %d Tm (%s) Tj ET\n" % (turn, x + origin, y + origin, text.encode())
         for (x, y), text in ((seen, SEEN), (hidden, HIDDEN))
     )
+    shifted = b" ".join(b"%d" % (int(value) + origin) for value in crop.split())
     return pdf_of(
         [
             b"<< /Type /Catalog /Pages 2 0 R >>",
             b"<< /Type /Pages /Kids [4 0 R] /Count 1 >>",
             HELVETICA,
-            b"<< /Type /Page /Parent 2 0 R /Rotate %d /MediaBox [0 0 595 842]%s"
+            b"<< /Type /Page /Parent 2 0 R /Rotate %d /MediaBox [%d %d %d %d]%s"
             b" /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>"
-            % (rotate, b" /CropBox [%s]" % crop if cropped else b""),
+            % (
+                rotate,
+                origin,
+                origin,
+                595 + origin,
+                842 + origin,
+                b" /CropBox [%s]" % shifted if cropped else b"",
+            ),
             stream(content),
         ]
     )
 
 
+@pytest.mark.parametrize("origin", [0, 100, -100])
 @pytest.mark.parametrize("rotate", [90, 180, 270])
 def test_a_turned_page_shows_what_its_crop_box_holds_turned_as_its_signs_are(
-    tmp_path: Path, rotate: int
+    tmp_path: Path, rotate: int, origin: int
 ) -> None:
-    # pdfplumber swaps the crop box's axes on a turned page, but does not turn it
+    # pdfplumber swaps the crop box's axes on a turned page, but does not turn it; a media box may
+    # begin anywhere
     path = tmp_path / "lehrplan.pdf"
-    path.write_bytes(turned_pdf(rotate, cropped=True))
+    path.write_bytes(turned_pdf(rotate, cropped=True, origin=origin))
 
     conversion = read(path)
 

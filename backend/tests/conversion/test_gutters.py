@@ -71,6 +71,35 @@ def test_justified_text_across_the_page_below_two_columns_keeps_its_lines() -> N
     assert texts[7:] == [" ".join(["Kompet"] * 10)] * 4
 
 
+def test_far_below_its_columns_a_gutter_parts_a_line_where_its_gap_is_twice_its_other_spaces() -> None:
+    # past the lines that would confirm a gutter of their own: a gap of 10 crossing the gutter
+    # beside spaces of 4 - two and a half times as wide - parts the line; one of 9 beside spaces of
+    # 5 - 1.8 times - does not
+    def line(top: float, gap: float, space: float = 4) -> list[Word]:
+        widths = [44, 46, 46, 21]
+        made: list[Word] = []
+        x0 = 56.0
+        for n, width in enumerate([*widths, 45, 46]):
+            made.append(Word(f"w{n}", x0, x0 + width, top, top + SIZE, SIZE, "Helvetica"))
+            x0 = made[-1].x1 + (gap if n == 3 else space)
+        return made
+
+    across = "Ein Absatz über die ganze Breite der Seite"
+    words = [
+        *two_columns(100),
+        *two_columns(114),
+        *two_columns(128),
+        *words_at(150, (56, "Abschnitt 2")),
+        *[word for top in (164, 178, 192) for word in words_at(top, (56, across))],
+    ]
+
+    parted = [found.text for found in lines_of([*words, *line(210, 10)])]
+    kept = [found.text for found in lines_of([*words, *line(210, 9, space=5)])]
+
+    assert parted[-2:] == ["w0 w1 w2 w3", "w4 w5"]
+    assert kept[-1] == "w0 w1 w2 w3 w4 w5"
+
+
 def test_a_gutter_is_confirmed_by_lines_three_above_and_below() -> None:
     # the gap at lines 1, 4 and 7 of seven: each of the outer ones three lines from the middle one
     words = [
