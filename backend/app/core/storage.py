@@ -110,12 +110,24 @@ def _plain(segment: str) -> bool:
     )
 
 
+def without_long_prefix(path: str) -> str:
+    """A Windows path in its plain form: ``\\\\?\\C:\\…`` as ``C:\\…``, ``\\\\?\\UNC\\server\\…`` as
+    ``\\\\server\\…``. CPython's resolve keeps the long form where another thread makes a missing
+    path's folder between the two lookups of its realpath - they fail with other errors, and only
+    alike errors drop the prefix (ntpath.realpath) - though it names the same file."""
+    if path.startswith("\\\\?\\UNC\\"):
+        return "\\\\" + path[len("\\\\?\\UNC\\") :]
+    return path.removeprefix("\\\\?\\")
+
+
 class FileSystemStorage:
     def __init__(self, root: Path) -> None:
         self.root = root.resolve()
 
     def _path(self, key: str) -> Path:
         path = (self.root / check_key(key)).resolve()
+        if os.name == "nt":
+            path = Path(without_long_prefix(str(path)))
         # a checked key has no "..", but a link inside the root may lead out of it
         if not path.is_relative_to(self.root):
             raise InvalidKey(f"not a storage key: {key[:80]!r}")

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from app.core.storage import FileSystemStorage, InvalidKey, ObjectNotFound
+from app.core.storage import FileSystemStorage, InvalidKey, ObjectNotFound, without_long_prefix
 
 
 @pytest.fixture
@@ -150,6 +150,34 @@ def test_a_link_inside_the_root_does_not_lead_out_of_it(storage: FileSystemStora
         storage.put("linked/x.json", b"{}")
 
     assert list(outside.iterdir()) == []
+
+
+@pytest.mark.parametrize(
+    ("resolved", "plain"),
+    [
+        ("\\\\?\\C:\\data\\store\\runs\\1.json", "C:\\data\\store\\runs\\1.json"),
+        ("\\\\?\\UNC\\server\\share\\store\\1.json", "\\\\server\\share\\store\\1.json"),
+        ("C:\\data\\store\\1.json", "C:\\data\\store\\1.json"),
+    ],
+)
+def test_a_path_resolved_in_windows_long_form_is_read_in_its_plain_one(resolved: str, plain: str) -> None:
+    assert without_long_prefix(resolved) == plain
+
+
+@pytest.mark.skipif(os.name != "nt", reason="the long form is Windows'")
+def test_a_key_whose_path_resolves_in_the_long_form_is_written(
+    storage: FileSystemStorage, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # CPython keeps \\?\ where another thread makes the missing path's folder between the two
+    # lookups of realpath: they fail with other errors (ntpath.realpath), and put refused the key
+    resolve = Path.resolve
+    monkeypatch.setattr(
+        Path, "resolve", lambda self, strict=False: Path("\\\\?\\" + str(resolve(self, strict)))
+    )
+
+    storage.put("runs/r1/x4/1.json", b"{}")
+
+    assert storage.get("runs/r1/x4/1.json") == b"{}"
 
 
 @pytest.mark.skipif(os.name != "posix", reason="a folder is synced on POSIX systems only")
