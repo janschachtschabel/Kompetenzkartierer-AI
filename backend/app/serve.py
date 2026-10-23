@@ -21,8 +21,9 @@ from uvicorn.config import STARTUP_FAILURE
 from app.api.app import create_app
 from app.core.logging import configure_logging
 from app.core.settings import Settings
-from app.llm.client import check_reasoning_effort
+from app.llm.budget import TokenizerMissing
 from app.llm.settings import LLMSettings
+from app.llm.startup import check_model_layer
 
 log = logging.getLogger("app.serve")  # also when run as __main__
 
@@ -65,8 +66,8 @@ def main() -> None:
     llm = LLMSettings()
     configure_logging(settings.log_level, settings.log_format, stream=sys.stdout)
     try:
-        check_reasoning_effort(llm)
-    except ValueError as error:
+        check_model_layer(llm)
+    except (ValueError, TokenizerMissing) as error:
         log.error("%s", error)
         raise SystemExit(STARTUP_FAILURE) from None
     server, sockets = build_server(settings)

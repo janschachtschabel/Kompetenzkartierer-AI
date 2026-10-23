@@ -31,6 +31,9 @@ dependencies = [
     "pypdfium2>=5.13",
     # the lexicon's patterns: the syntax of Python's re, with a time limit on each search (ReDoS)
     "regex>=2026.9.10",
+    # counting a request's tokens before it is sent, with o200k_base (app/llm/budget.py); the
+    # version pydantic-ai brought along
+    "tiktoken>=0.14",
 ]
 
 [dependency-groups]
@@ -101,4 +104,9 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 # regex ships no types (types-regex would be one more download); the lexicon's patterns use it
 module = ["regex"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# tiktoken_ext ships no types; a test reads its definition of o200k_base to compare the app's with
+module = ["tiktoken_ext", "tiktoken_ext.*"]
 ignore_missing_imports = true

@@ -437,6 +437,7 @@ dependencies = [
     { name = "rdflib" },
     { name = "regex" },
     { name = "starlette" },
+    { name = "tiktoken" },
     { name = "uvicorn" },
 ]
 
@@ -468,6 +469,7 @@ requires-dist = [
     { name = "rdflib", specifier = ">=7.6" },
     { name = "regex", specifier = ">=2026.9.10" },
     { name = "starlette", specifier = ">=1.7" },
+    { name = "tiktoken", specifier = ">=0.14" },
     { name = "uvicorn", specifier = ">=0.54" },
 ]
 

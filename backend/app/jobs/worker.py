@@ -305,15 +305,16 @@ def main() -> int:
     from app.core.settings import Settings
     from app.core.storage import StorageNotConfigured
     from app.jobs.handlers import UnknownJobKind
-    from app.llm.client import check_reasoning_effort
+    from app.llm.budget import TokenizerMissing
     from app.llm.settings import LLMSettings
+    from app.llm.startup import check_model_layer
 
     settings = Settings()
     llm = LLMSettings()
     configure_logging(settings.log_level, settings.log_format, stream=sys.stdout)
     try:
-        check_reasoning_effort(llm)
-    except ValueError as error:
+        check_model_layer(llm)
+    except (ValueError, TokenizerMissing) as error:
         log.error("%s", error)
         return 1
     try:
