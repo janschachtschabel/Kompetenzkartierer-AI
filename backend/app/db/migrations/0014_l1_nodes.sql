@@ -24,7 +24,7 @@ CREATE TABLE node (
     extraction_depth_scheme text
         CHECK (extraction_depth_scheme = 'https://w3id.org/wlo/curriculum/vocab#ExtractionDepths'),
     extraction_depth_iri text,
-    applies_to uuid[] NOT NULL DEFAULT '{}',  -- specifications or variants of the document
+    applies_to uuid[] NOT NULL DEFAULT '{}',  -- specifications or variants of the document (trigger below)
     origin_scheme text NOT NULL CHECK (origin_scheme = 'https://w3id.org/wlo/curriculum/vocab#Origins'),
     origin_iri text NOT NULL,
     review_status_scheme text NOT NULL
@@ -108,6 +108,50 @@ $$;
 CREATE TRIGGER node_type_fits BEFORE INSERT OR UPDATE OF node_type_iri, function_iri ON node
     FOR EACH ROW EXECUTE FUNCTION node_type_fits();
 
+-- What a node applies to (cur:appliesTo): specifications of its document and their variants,
+-- each named once. They stay while a node names them; taken away with their document, they go
+-- with its nodes
+CREATE FUNCTION scope_of(document uuid) RETURNS SETOF uuid LANGUAGE sql STABLE AS $$
+    SELECT id FROM specification WHERE document_id = document
+    UNION ALL
+    SELECT variant.id FROM variant JOIN specification ON specification.id = variant.specification_id
+    WHERE specification.document_id = document
+$$;
+
+CREATE FUNCTION node_scope_fits() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    -- locked as a foreign key locks what it names: none is taken away before this commits
+    PERFORM FROM specification WHERE id = ANY (NEW.applies_to) FOR KEY SHARE;
+    PERFORM FROM variant WHERE id = ANY (NEW.applies_to) FOR KEY SHARE;
+    IF cardinality(NEW.applies_to) <> (
+        SELECT count(*) FROM scope_of(NEW.document_id) AS scope (id) WHERE id = ANY (NEW.applies_to)
+    ) THEN
+        RAISE EXCEPTION 'node % applies to what is no specification or variant of its document, or to one twice',
+            NEW.id USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END
+$$;
+CREATE TRIGGER node_scope_fits BEFORE INSERT OR UPDATE OF applies_to, document_id ON node
+    FOR EACH ROW EXECUTE FUNCTION node_scope_fits();
+CREATE INDEX node_applies_to ON node USING gin (applies_to);
+
+CREATE FUNCTION scope_kept() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF EXISTS (
+        SELECT FROM node
+        WHERE applies_to @> ARRAY[OLD.id] AND NOT OLD.id IN (SELECT scope_of(node.document_id))
+    ) THEN
+        RAISE EXCEPTION 'a node still applies to %', OLD.id USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NULL;
+END
+$$;
+CREATE CONSTRAINT TRIGGER specification_kept AFTER DELETE OR UPDATE OF document_id ON specification
+    DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION scope_kept();
+CREATE CONSTRAINT TRIGGER variant_kept AFTER DELETE OR UPDATE OF specification_id ON variant
+    DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION scope_kept();
+
 CREATE TABLE statement (
     id uuid PRIMARY KEY,
     kind text NOT NULL DEFAULT 'statement' CHECK (kind = 'statement'),
@@ -132,7 +176,7 @@ CREATE TABLE statement (
     text_hash text NOT NULL CHECK (text_hash ~ '^[0-9a-f]{64}$'),  -- cur:textHash (app/domain/wording.py)
     -- the wording's other fields X4 gives (level, time, context, example, purpose ...)
     details jsonb NOT NULL DEFAULT '{}' CHECK (jsonb_typeof(details) = 'object'),
-    layout_markers text[] NOT NULL DEFAULT '{}',  -- cv:LayoutMarkers
+    layout_markers text[] NOT NULL DEFAULT '{}',  -- cv:LayoutMarkers (trigger below)
     revision integer NOT NULL DEFAULT 1 CHECK (revision >= 1),
     run_id uuid,  -- the run that made it; a run taken away leaves what it made
     created_at timestamptz NOT NULL DEFAULT now(),
@@ -163,6 +207,25 @@ END
 $$;
 CREATE TRIGGER subkind_fits BEFORE INSERT OR UPDATE OF subkind_iri, statement_kind_iri ON statement
     FOR EACH ROW EXECUTE FUNCTION subkind_fits();
+
+-- How the source sets a statement apart (cur:layoutMarker): concepts of cv:LayoutMarkers, which
+-- the vocabularies retire but never take away
+CREATE FUNCTION layout_markers_fit() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF EXISTS (
+        SELECT FROM unnest(NEW.layout_markers) AS marker
+        WHERE marker IS NULL OR NOT EXISTS (
+            SELECT FROM vocab_concept
+            WHERE scheme_iri = 'https://w3id.org/wlo/curriculum/vocab#LayoutMarkers' AND iri = marker
+        )
+    ) THEN
+        RAISE EXCEPTION 'statement % names what is no layout marker', NEW.id USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END
+$$;
+CREATE TRIGGER layout_markers_fit BEFORE INSERT OR UPDATE OF layout_markers ON statement
+    FOR EACH ROW EXECUTE FUNCTION layout_markers_fit();
 
 -- Whom a statement addresses (cur:addressee): one at least, when its transaction commits
 CREATE TABLE statement_addressee (

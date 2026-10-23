@@ -18,7 +18,9 @@ from tests.db.l1 import (
     add_document,
     add_entity,
     add_node,
+    add_specification,
     add_statement,
+    add_variant,
     seed_vocabulary,
 )
 
@@ -154,6 +156,52 @@ def test_a_value_from_a_rule_names_the_rule(connection: psycopg.Connection, docu
     assert connection.execute("SELECT rule_id FROM node WHERE id = %s", (node,)).fetchone() == (
         "code-from-position",
     )
+
+
+def test_a_node_applies_to_specifications_and_variants_of_its_own_document(
+    connection: psycopg.Connection, document: uuid.UUID
+) -> None:
+    specification = add_specification(connection, document)
+    variant = add_variant(connection, specification)
+    other = add_specification(connection, add_document(connection, add_conversion(connection, b"\x02" * 32)))
+
+    add_node(connection, document, applies_to=[specification, variant])
+
+    for named in ([other], [uuid.uuid4()], [variant, variant], [None]):
+        with pytest.raises(errors.CheckViolation, match="applies to"):
+            add_node(connection, document, position=2, applies_to=named)
+
+
+def test_what_a_node_applies_to_stays_while_the_node_names_it(
+    connection: psycopg.Connection, document: uuid.UUID
+) -> None:
+    specification = add_specification(connection, document)
+    variant = add_variant(connection, specification)
+    node = add_node(connection, document, applies_to=[variant])
+    foreign = add_specification(
+        connection, add_document(connection, add_conversion(connection, b"\x02" * 32))
+    )
+
+    with pytest.raises(errors.CheckViolation, match="applies to"):
+        connection.execute("UPDATE variant SET specification_id = %s WHERE id = %s", (foreign, variant))
+    with pytest.raises(errors.CheckViolation, match="applies to"):
+        connection.execute("DELETE FROM variant WHERE id = %s", (variant,))
+    with pytest.raises(errors.CheckViolation, match="applies to"):
+        connection.execute("DELETE FROM specification WHERE id = %s", (specification,))  # and its variant
+
+    connection.execute("UPDATE node SET applies_to = '{}' WHERE id = %s", (node,))
+    connection.execute("DELETE FROM specification WHERE id = %s", (specification,))
+
+
+def test_a_statement_s_layout_markers_are_the_core_s(
+    connection: psycopg.Connection, document: uuid.UUID
+) -> None:
+    node = add_node(connection, document)
+    add_statement(connection, document, node, layout_markers=[CV + "mark_bold"])
+
+    for markers in ([CV + "addr_learner"], [CV + "mark_nowhere"], [None]):
+        with pytest.raises(errors.CheckViolation, match="layout marker"):
+            add_statement(connection, document, node, position=2, layout_markers=markers)
 
 
 def test_a_statement_stands_at_a_node_of_its_document_with_an_addressee(

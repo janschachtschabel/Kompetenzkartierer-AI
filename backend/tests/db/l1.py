@@ -31,6 +31,7 @@ CONCEPTS: dict[str, list[tuple[str, list[str], list[str]]]] = {
     CV + "ExtractionDepths": [(CV + "depth_full", [], [])],
     CV + "ScopeShares": [(CV + "share_core", [], [])],
     CV + "MatchKinds": [(CV + "match_exact", [], [])],
+    CV + "LayoutMarkers": [(CV + "mark_bold", [], [])],
     SCHOOL + "NodeTypes": [(SCHOOL + "Inhaltsbereich", [CUR + "NodeType"], [CV + "fn_area"])],
     SCHOOL + "StatementSubkinds": [
         (SCHOOL + "Kompetenzerwartung", [CUR + "StatementSubkind"], [CV + "kind_learningOutcome"])
@@ -203,6 +204,17 @@ def add_specification(
         (specification, *values.values()),
     )
     return specification
+
+
+def add_variant(connection: psycopg.Connection, specification: uuid.UUID, key: str = "v1") -> uuid.UUID:
+    """A track of the specification, named by ``key`` within it."""
+    variant = add_entity(connection, "variant")
+    connection.execute(
+        "INSERT INTO variant (id, specification_id, key, label, variant_kind_scheme, variant_kind_iri)"
+        " VALUES (%s, %s, %s, 'Gymnasium', %s, %s)",
+        (variant, specification, key, CV + "VariantKinds", CV + "var_track"),
+    )
+    return variant
 
 
 def add_run(connection: psycopg.Connection, document: uuid.UUID, stage: str = "stage_X4") -> uuid.UUID:

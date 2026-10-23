@@ -19,6 +19,7 @@ from tests.db.l1 import (
     add_run,
     add_specification,
     add_statement,
+    add_variant,
     seed_vocabulary,
 )
 
@@ -82,10 +83,9 @@ def fill(connection: psycopg.Connection, made: dict[str, Any]) -> dict[str, uuid
         (document, run, statement),
     )
     specification = add_specification(connection, document)
+    variant = add_variant(connection, specification)
     connection.execute(
-        "INSERT INTO variant (id, specification_id, key, label, variant_kind_scheme, variant_kind_iri)"
-        " VALUES (%s, %s, 'v1', 'Gymnasium', %s, %s)",
-        (add_entity(connection, "variant"), specification, CV + "VariantKinds", CV + "var_track"),
+        "UPDATE node SET applies_to = ARRAY[%s, %s]::uuid[] WHERE id = %s", (specification, variant, node)
     )
     return {"run": run, "node": node, "statement": statement}
 
