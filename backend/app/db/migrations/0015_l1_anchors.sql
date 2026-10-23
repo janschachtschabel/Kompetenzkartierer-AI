@@ -88,6 +88,12 @@ BEGIN
         target := NEW.id;
     ELSE
         target := OLD.statement_id;
+        IF NOT EXISTS (SELECT FROM statement WHERE id = target) THEN
+            RETURN NULL;  -- a node's or frame part's, or gone with its statement
+        END IF;
+        PERFORM read_committed_alone('an anchor is taken away from its statement');
+        -- locked, so another taking one away waits for this one and then counts what it left
+        PERFORM FROM statement WHERE id = target FOR NO KEY UPDATE;
     END IF;
     IF EXISTS (SELECT FROM statement WHERE id = target)
         AND NOT EXISTS (SELECT FROM anchor WHERE statement_id = target) THEN

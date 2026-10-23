@@ -74,16 +74,65 @@ def test_nodes_written_in_a_circle_at_once_are_refused(
         )
 
 
+@pytest.mark.parametrize("isolation", ["REPEATABLE READ", "SERIALIZABLE"])
 def test_a_node_is_moved_under_read_committed_alone(
-    connection: psycopg.Connection, document: uuid.UUID
+    connection: psycopg.Connection, document: uuid.UUID, isolation: str
 ) -> None:
-    # under repeatable read two moves could each close a circle the other does not see
+    # under repeatable read two moves could each close a circle the other does not see, and
+    # serializable finds it only where both moves are serializable
     root = add_node(connection, document)
     child = add_node(connection, document, position=2)
 
     with pytest.raises(errors.InvalidTransactionState, match="read committed"), connection.transaction():
-        connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        connection.execute(f"SET TRANSACTION ISOLATION LEVEL {isolation}")
         connection.execute("UPDATE node SET parent_id = %s WHERE id = %s", (root, child))
+
+
+def two_of_each(connection: psycopg.Connection, document: uuid.UUID, table: str) -> tuple[str, list[Any]]:
+    """A statement with two anchors and two addressees; the delete of one row of ``table`` by its
+    key, and the keys of its two."""
+    statement = add_statement(
+        connection,
+        document,
+        add_node(connection, document),
+        addressees=("addr_learner", "addr_teacher"),
+        anchors=2,
+    )
+    key = "id" if table == "anchor" else "addressee_iri"
+    keys = f"SELECT {key} FROM {table} WHERE statement_id = %s ORDER BY 1"  # noqa: S608 - the test's names
+    delete = f"DELETE FROM {table} WHERE {key} = %s AND statement_id = %s"  # noqa: S608 - the test's names
+    return delete, [(row[0], statement) for row in connection.execute(keys, (statement,)).fetchall()]
+
+
+@pytest.mark.parametrize("table", ["anchor", "statement_addressee"])
+def test_a_statement_s_anchor_or_addressee_is_taken_away_under_read_committed_alone(
+    connection: psycopg.Connection, document: uuid.UUID, table: str
+) -> None:
+    # one of two: what another transaction takes away meanwhile, repeatable read would not see
+    delete, [first, _] = two_of_each(connection, document, table)
+
+    with pytest.raises(errors.InvalidTransactionState, match="read committed"), connection.transaction():
+        connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        connection.execute(delete, first)
+    with connection.transaction():  # with its statement, under any
+        connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        connection.execute("DELETE FROM node")
+
+
+@pytest.mark.parametrize("table", ["anchor", "statement_addressee"])
+def test_two_takings_away_of_a_statement_s_last_two_anchors_or_addressees_wait_for_each_other(
+    connection: psycopg.Connection, document: uuid.UUID, database_url: str, table: str
+) -> None:
+    # each leaves one, both none: the second checks once the first is done
+    delete, [first, second] = two_of_each(connection, document, table)
+
+    with connection.transaction(), psycopg.connect(database_url, autocommit=True) as other:
+        connection.execute(delete, first)
+        connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        with pytest.raises(errors.LockNotAvailable), other.transaction():
+            other.execute(delete, second)
+            other.execute("SET lock_timeout = '200ms'")
+            other.execute("SET CONSTRAINTS ALL IMMEDIATE")
 
 
 def test_two_moves_in_one_document_wait_for_each_other(
@@ -243,6 +292,22 @@ def test_a_specification_a_node_names_stays_and_goes_once_the_node_names_it_no_m
         connection.execute("UPDATE node SET applies_to = '{}' WHERE id = %s", (node,))
 
 
+@pytest.mark.parametrize("table", ["specification", "variant"])
+def test_a_specification_or_variant_is_taken_away_under_read_committed_alone(
+    connection: psycopg.Connection, document: uuid.UUID, table: str
+) -> None:
+    # a node naming it meanwhile, repeatable read would not see once its lock is let go
+    specification = add_specification(connection, document)
+    add_variant(connection, specification)
+
+    with pytest.raises(errors.InvalidTransactionState, match="read committed"), connection.transaction():
+        connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        connection.execute(f"DELETE FROM {table}")  # noqa: S608 - the test's names
+    with connection.transaction():  # with its document, under any
+        connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        connection.execute("DELETE FROM document WHERE id = %s", (document,))
+
+
 def test_what_a_node_is_written_to_apply_to_is_not_taken_away_meanwhile(
     connection: psycopg.Connection, document: uuid.UUID, database_url: str
 ) -> None:
@@ -314,7 +379,7 @@ def test_a_statement_without_an_anchor_is_refused_when_it_is_committed(
     node = add_node(connection, document)
 
     with pytest.raises(errors.CheckViolation, match="anchor"):
-        add_statement(connection, document, node, anchored=False)
+        add_statement(connection, document, node, anchors=0)
 
 
 def test_a_statement_s_last_anchor_stays_with_it(connection: psycopg.Connection, document: uuid.UUID) -> None:

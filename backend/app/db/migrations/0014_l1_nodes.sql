@@ -56,21 +56,32 @@ CREATE TABLE node (
 );
 CREATE INDEX node_of_run ON node (run_id) WHERE run_id IS NOT NULL;
 
+-- The guards below check a row against others another transaction may change meanwhile: a move
+-- against the tree, a removal against what is left. Each waits for the others' locks and then
+-- looks again, which read committed alone does - repeatable read keeps its first look, and
+-- serializable finds the conflict only where every side is serializable. So what such a guard
+-- checks is done under read committed alone (the app's level), refused under any other
+CREATE FUNCTION read_committed_alone(what text) RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+    IF current_setting('transaction_isolation') NOT IN ('read committed', 'read uncommitted') THEN
+        RAISE EXCEPTION '% under read committed alone, not %', what, current_setting('transaction_isolation')
+            USING ERRCODE = 'invalid_transaction_state';
+    END IF;
+END
+$$;
+
 -- A node comes to lie under itself nowhere, however it is written: checked once its statement
 -- has written all its rows (nodes inserted in a circle at once too). Writes to one document's
 -- tree wait for each other, so two moves that would close a circle between them do not pass side
--- by side - under read committed, where each sees the other's once it waits; under repeatable
--- read neither would, so a move there is refused (serializable finds the conflict itself). Who
--- writes a tree takes its lock first (app/db/nodes.py, lock_tree): taken here, after the row's
--- own lock, two moves could wait for each other the other way round
+-- by side. Who writes a tree takes its lock first (app/db/nodes.py, lock_tree): taken here, after
+-- the row's own lock, two moves could wait for each other the other way round
 CREATE FUNCTION node_without_cycle() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
     IF NEW.parent_id IS NULL THEN
         RETURN NULL;
     END IF;
-    IF TG_OP = 'UPDATE' AND current_setting('transaction_isolation') = 'repeatable read' THEN
-        RAISE EXCEPTION 'a node is moved under read committed or serializable, not repeatable read'
-            USING ERRCODE = 'invalid_transaction_state';
+    IF TG_OP = 'UPDATE' THEN
+        PERFORM read_committed_alone('a node is moved');
     END IF;
     PERFORM pg_advisory_xact_lock(hashtextextended('node-tree:' || NEW.document_id::text, 0));
     IF EXISTS (
@@ -138,7 +149,17 @@ CREATE TRIGGER node_scope_fits BEFORE INSERT OR UPDATE OF applies_to, document_i
 CREATE INDEX node_applies_to ON node USING gin (applies_to);
 
 CREATE FUNCTION scope_kept() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+    alone boolean;  -- taken away on its own, not with its document: a node may name it meanwhile
 BEGIN
+    IF TG_TABLE_NAME = 'specification' THEN
+        alone := EXISTS (SELECT FROM document WHERE id = OLD.document_id);
+    ELSE
+        alone := EXISTS (SELECT FROM specification WHERE id = OLD.specification_id);
+    END IF;
+    IF alone THEN
+        PERFORM read_committed_alone('a specification or variant is taken away');
+    END IF;
     IF EXISTS (
         SELECT FROM node
         WHERE applies_to @> ARRAY[OLD.id] AND NOT OLD.id IN (SELECT scope_of(node.document_id))
@@ -245,6 +266,12 @@ BEGIN
         target := NEW.id;
     ELSE
         target := OLD.statement_id;
+        IF NOT EXISTS (SELECT FROM statement WHERE id = target) THEN
+            RETURN NULL;  -- gone with its statement
+        END IF;
+        PERFORM read_committed_alone('an addressee is taken away from its statement');
+        -- locked, so another taking one away waits for this one and then counts what it left
+        PERFORM FROM statement WHERE id = target FOR NO KEY UPDATE;
     END IF;
     IF EXISTS (SELECT FROM statement WHERE id = target)
         AND NOT EXISTS (SELECT FROM statement_addressee WHERE statement_id = target) THEN
