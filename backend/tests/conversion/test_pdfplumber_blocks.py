@@ -1,6 +1,7 @@
 """The engine pdfplumber: a PDF's text layer into named blocks (plan M1, 3.2), on the fixtures."""
 
 import logging
+import math
 from pathlib import Path
 
 import pdfplumber
@@ -8,6 +9,7 @@ import pytest
 
 from app.conversion import pdfplumber_blocks
 from app.conversion.base import Conversion, engine
+from app.conversion.tables import FoundTable
 from app.conversion.text_layer import UnreadablePdf
 from tests.conversion.raw_pdf import HELVETICA, SENTENCE, pages_pdf, pdf_of, stream
 
@@ -145,6 +147,38 @@ def test_text_no_reader_reads_where_it_stands_is_dropped_and_counted_by_its_page
     assert [(finding.code, finding.params) for finding in conversion.findings] == [
         ("text_dropped", {"reason": reason, "count": 2 * words, "pages": [1, 3]})
     ]
+
+
+def test_a_word_placed_at_no_finite_point_is_dropped_and_counted(tmp_path: Path) -> None:
+    # a number of 400 digits in the text matrix: pdfminer places the word at NaN
+    huge = b"1" + b"0" * 400 + b".0"
+    path = tmp_path / "lehrplan.pdf"
+    path.write_bytes(
+        pages_pdf([SENTENCE + b"BT /F1 11 Tf %s 0 0 1 72 600 Tm (Riesig) Tj ET\n" % huge, SENTENCE])
+    )
+
+    conversion = engine("pdfplumber").convert(path)
+
+    assert {block.text for block in conversion.blocks} == {SENTENCE_READ}
+    assert [(finding.code, finding.params) for finding in conversion.findings] == [
+        ("text_dropped", {"reason": "unplaced", "count": 6, "pages": [1]})  # "Riesig", a sign a word
+    ]
+
+
+def test_a_table_placed_at_no_finite_point_is_dropped_and_its_words_counted() -> None:
+    nowhere = (math.nan, 100.0, 500.0, math.inf)
+    read = pdfplumber_blocks.PageRead(
+        number=1,
+        height=842.0,
+        bbox=(0.0, 0.0, 595.0, 842.0),
+        words=[],
+        tables=[FoundTable(texts=[["LF 1", "Planen und bauen"]], boxes=[[nowhere, nowhere]], bbox=nowhere)],
+        chars=[],
+    )
+
+    page = pdfplumber_blocks.page_of(read)
+
+    assert page.blocks == [] and page.dropped == {"unplaced": 5}
 
 
 def broken(*args: object, **kwargs: object) -> object:

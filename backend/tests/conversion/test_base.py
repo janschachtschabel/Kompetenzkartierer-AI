@@ -1,5 +1,6 @@
 """What a conversion (X0) makes of a document: blocks with stable IDs (plan M1, 3.1; konzept §13.2)."""
 
+import math
 import re
 from typing import get_args
 
@@ -111,6 +112,21 @@ def test_a_text_no_store_keeps_is_refused_in_a_block_and_a_cell(sign: str) -> No
         text_block(text=f"Lern{sign}feld")
     with pytest.raises(ValidationError, match="NUL"):
         Cell(id="T1:r1c1", page=1, row=1, column=1, text=f"Lern{sign}feld", header=False)
+
+
+@pytest.mark.parametrize(
+    "place",
+    [
+        {"bbox": (56.0, 70.0, math.inf, 82.0)},
+        {"bbox": (math.nan, 70.0, 300.0, 82.0)},
+        {"font_size": math.nan},
+    ],
+    ids=["infinite", "nan", "size"],
+)
+def test_a_block_stands_at_finite_numbers(place: dict[str, object]) -> None:
+    # JSON has no NaN: the child would write null, and its answer would fail to read back
+    with pytest.raises(ValidationError, match="finite"):
+        Block.model_validate(text_block().model_dump() | place)
 
 
 def test_a_conversion_says_a_printed_page_or_none_for_each_page() -> None:

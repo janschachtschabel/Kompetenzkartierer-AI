@@ -30,8 +30,8 @@ BlockKind = Literal["text", "table", "page_header", "page_footer"]
 EngineName = Literal["pdfplumber"]  # the engines offered, for the API's schema (a test compares)
 FindingCode = Literal["unmapped_symbol", "encoding_suspect", "text_dropped"]
 # Why an engine dropped a word (text_dropped), in the order the findings say them: set upright or
-# rotated, outside the page, smaller than a reader reads
-DropReason = Literal["vertical", "off_page", "tiny"]
+# rotated, outside the page, smaller than a reader reads, at no finite point
+DropReason = Literal["vertical", "off_page", "tiny", "unplaced"]
 # Each engine by the class that converts with it, imported when first asked for
 _ENGINES = {"pdfplumber": "app.conversion.pdfplumber_blocks:PdfplumberEngine"}
 
@@ -59,8 +59,13 @@ def _storable(text: str) -> str:
 StorableText = Annotated[str, AfterValidator(_storable)]
 
 
+# The numbers of a block are finite: JSON has no NaN, and an engine drops what it cannot place
+# (DropReason "unplaced"), so one here is a fault, which fails in the converting child
+_PLACED = ConfigDict(extra="forbid", frozen=True, allow_inf_nan=False)
+
+
 class Cell(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = _PLACED
 
     id: str
     page: int = Field(ge=1)
@@ -78,7 +83,7 @@ class Cell(BaseModel):
 
 
 class Block(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = _PLACED
 
     id: str
     page: int = Field(ge=1)

@@ -10,7 +10,8 @@ A word left without a sign once its control signs are cleaned off is none. A wor
 where it stands is dropped and counted on its page, by why: set upwards or turned (``vertical``:
 pdfplumber splinters it - "dna", "6202" - into words of its own), its middle outside the page
 (``off_page``), or smaller than a point (``tiny``) - a way to hide text from a reader, not from a
-model, so it is said as a finding rather than lost unseen.
+model, so it is said as a finding rather than lost unseen. A word or a table at no finite point -
+a number of 400 digits in the content stream places it at NaN - is dropped so (``unplaced``).
 
 The file is untrusted. Whatever pdfplumber or pdfminer raise while reading it makes it unreadable,
 said without its path; so only the library's own calls stand where that is caught. What is built
@@ -20,8 +21,9 @@ read, so that the signs of one page at a time are held.
 """
 
 import logging
+import math
 from collections import Counter
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from importlib.metadata import version
@@ -105,10 +107,17 @@ def read_page(page: Any) -> PageRead:
 def page_of(read: PageRead) -> RawPage:
     """The page's blocks: its tables, and its words outside them in lines and blocks."""
     number = int(read.number)
-    tables = [found for found in (table_block(table, read.chars, number) for table in read.tables) if found]
+    dropped: Counter[DropReason] = Counter()
+    tables = []
+    for table in read.tables:
+        if not _finite(table.bbox):
+            dropped["unplaced"] += sum(
+                len(clean_text(text or "").split()) for row in table.texts for text in row
+            )
+        elif (block := table_block(table, read.chars, number)) is not None:
+            tables.append(block)
     boxes = [table.bbox for table in tables]
     words: list[Word] = []
-    dropped: Counter[DropReason] = Counter()
     for found in read.words:
         word = _word(found)
         if not word.text or _within(word, boxes):
@@ -135,6 +144,8 @@ def _word(found: Mapping[str, Any]) -> Word:
 
 def _dropped(word: Word, found: Mapping[str, Any], page: Box) -> DropReason | None:
     """Why no reader reads ``word`` where it stands on the page, or None where one does."""
+    if not _finite((word.x0, word.top, word.x1, word.bottom, word.size)):
+        return "unplaced"  # first: pdfplumber says such a word is no upright one, and NaN lies anywhere
     if not found["upright"]:
         return "vertical"
     if not _within(word, [page]):
@@ -142,6 +153,10 @@ def _dropped(word: Word, found: Mapping[str, Any], page: Box) -> DropReason | No
     if word.size < MIN_SIZE:
         return "tiny"
     return None
+
+
+def _finite(numbers: Iterable[float]) -> bool:
+    return all(map(math.isfinite, numbers))
 
 
 def _within(word: Word, boxes: list[Box]) -> bool:
