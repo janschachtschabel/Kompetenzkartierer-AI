@@ -137,9 +137,10 @@ def test_a_file_is_converted_once_by_each_engine(connection: psycopg.Connection)
         {**DONE, "pages": None},
         {**DONE, "finished_at": None},
         {"finished_at": "2026-10-23T10:00:00Z"},  # pending has not ended
+        {**DONE, "pages": 3},  # a printed number, or none, for each page
     ],
     ids=["failed-without-code", "pending-with-code", "failed-without-end", "done-without-markdown",
-         "done-without-pages", "done-without-end", "pending-ended"],
+         "done-without-pages", "done-without-end", "pending-ended", "printed-pages-not-the-pages"],
 )  # fmt: skip
 def test_a_conversion_s_state_says_what_it_holds(
     connection: psycopg.Connection, columns: dict[str, Any]
@@ -165,13 +166,16 @@ def test_a_block_is_named_as_the_kern_names_it_and_only_a_table_holds_cells(
 ) -> None:
     conversion_id = add_conversion(connection, a_file(connection), **DONE)
     add_block(connection, conversion_id)
+    cell = {"id": "T1:r1c1", "page": 1, "row": 1, "column": 1, "text": "Nr.", "header": True}
     add_block(
-        connection, conversion_id, block_id="p1-b2", seq=2, kind="table", cells=Jsonb([]), font_size=None
+        connection, conversion_id, block_id="p1-b2", seq=2, kind="table", cells=Jsonb([cell]), font_size=None
     )
 
     for columns in (
         {"block_id": "p1-x3", "seq": 3},
+        {"block_id": "p2-b3", "seq": 3},  # named for another page than it stands on
         {"block_id": "p1-b3", "seq": 3, "kind": "table"},
+        {"block_id": "p1-b3", "seq": 3, "kind": "table", "cells": Jsonb([])},  # a table of no cell
         {"block_id": "p1-b3", "seq": 3, "cells": Jsonb([])},
         {"block_id": "p1-b3", "seq": 2},  # one block at each place of the reading order
     ):

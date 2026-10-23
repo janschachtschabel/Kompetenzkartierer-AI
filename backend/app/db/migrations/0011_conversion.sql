@@ -26,7 +26,10 @@ CREATE TABLE conversion (
     CHECK ((status = 'failed') = (error_code IS NOT NULL)),
     CHECK ((status = 'pending') = (finished_at IS NULL)),
     CHECK ((status = 'done') = (pages IS NOT NULL)),
-    CHECK (status <> 'done' OR (engine_version IS NOT NULL AND printed_pages IS NOT NULL AND markdown IS NOT NULL))
+    CHECK (status <> 'done' OR (engine_version IS NOT NULL AND printed_pages IS NOT NULL AND markdown IS NOT NULL)),
+    -- a printed number, or none, for each page (an array: the check above)
+    CHECK (pages IS NULL OR printed_pages IS NULL OR CASE
+        WHEN jsonb_typeof(printed_pages) = 'array' THEN jsonb_array_length(printed_pages) = pages END)
 );
 CREATE INDEX conversion_job ON conversion (job_id);
 
@@ -48,7 +51,11 @@ CREATE TABLE document_block (
     cells jsonb CHECK (jsonb_typeof(cells) = 'array'),  -- a table's, each T<n>:r<i>c<j>
     PRIMARY KEY (conversion_id, block_id),
     UNIQUE (conversion_id, seq),
-    CHECK ((kind = 'table') = (cells IS NOT NULL))
+    -- what the reader of a block takes for granted (app/conversion/base.py): its name names its
+    -- page, and a table has a cell
+    CHECK (block_id LIKE 'p' || page || '-b%'),
+    CHECK ((kind = 'table') = (cells IS NOT NULL)),
+    CHECK (kind <> 'table' OR CASE WHEN jsonb_typeof(cells) = 'array' THEN jsonb_array_length(cells) >= 1 END)
 );
 CREATE INDEX document_block_page ON document_block (conversion_id, page, seq);
 
