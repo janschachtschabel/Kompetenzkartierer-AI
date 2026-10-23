@@ -7,16 +7,16 @@ one they lie in (a cue for all of Germany holds in each country), its document t
 document's, its plan generation the document's; a cue that sets none holds everywhere. Where
 the document's type or plan generation is not known (None) - X1 is to tell the generation by
 such cues, and a document may carry none - a cue of that scope holds, but the scope does not
-rank it. Dates, subjects, issuers and kinds of institution do not filter: they go to the model
-as text. Cues on one word, pattern or layout signal of one kind compete; the first by rank
-holds - by region first, one of the document's own before one they lie in before none (a
-country's cue before Germany's before the sector's, konzept §12.4), then the more of its
-document type and plan generation that match the document's known ones, then checked before
-unchecked, then the stronger (no strength is none). Where several share the first rank and
-point to other targets, all hold as a tie, and the model gets their rule texts. A negative cue
-and a homonym compete with none and always hold; a homonym keeps its other target. The
-document's own terms (its profile from X1) are laid over this when the prompt is built (plan
-M1 6).
+rank it. Places, dates, subjects, issuers and kinds of institution do not filter: a cue carries
+them, with its examples, for the prompt (plan M1 6). Cues on one word, pattern or layout
+signal of one kind compete; the first by rank holds - by region first, one of the document's
+own before one they lie in before none (a country's cue before Germany's before the sector's,
+konzept §12.4), then the more of its document type and plan generation that match the
+document's known ones, then checked before unchecked, then the stronger (no strength is none).
+Where several share the first rank and point to other targets, all hold as a tie, and the
+model gets their rule texts. A negative cue and a homonym compete with none and always hold; a
+homonym keeps its other target. The document's own terms (its profile from X1) are laid over
+this when the prompt is built (plan M1 6).
 
 A pattern is searched with a time limit, so a pattern that backtracks without end stops.
 """
@@ -49,13 +49,21 @@ class Cue:
     pattern: str | None = None
     layout_signal: str | None = None
     also_maps_to: tuple[str, ...] = ()
+    occurs_in: frozenset[str] = frozenset()
     scope_regions: frozenset[str] = frozenset()
     scope_document_types: frozenset[str] = frozenset()
+    scope_institution_types: frozenset[str] = frozenset()
+    scope_subjects: frozenset[str] = frozenset()
+    scope_issuers: frozenset[str] = frozenset()
     plan_generations: frozenset[str] = frozenset()
+    valid_from: str | None = None  # as written: YYYY, YYYY-MM or YYYY-MM-DD
+    valid_until: str | None = None
     strength: float | None = None
     verified: bool = False
     recognition_hints: tuple[str, ...] = ()
     negative_hints: tuple[str, ...] = ()
+    positive_examples: tuple[str, ...] = ()
+    negative_examples: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -59,8 +59,9 @@ WHERE starts_with(iri, %s) AND retired_in IS NULL AND types && %s
 """
 _CUES = """
 SELECT c.iri, c.role_iri, c.kind_iri, c.maps_to, c.surface_form, c.pattern, c.layout_signal, c.also_maps_to,
-    c.scope_regions, c.scope_document_types, c.plan_generations, c.strength, c.verified, c.recognition_hints,
-    c.negative_hints
+    c.occurs_in, c.scope_regions, c.scope_document_types, c.scope_institution_types, c.scope_subjects,
+    c.scope_issuers, c.plan_generations, c.valid_from, c.valid_until, c.strength, c.verified,
+    c.recognition_hints, c.negative_hints, c.positive_examples, c.negative_examples
 FROM lexical_cue c
 JOIN terminology_profile p ON p.iri = c.profile_iri
 JOIN vocab_concept s ON s.iri = p.sector_iri
@@ -125,13 +126,21 @@ async def cues_for(connection: psycopg.AsyncConnection, sector_notation: str) ->
             pattern=row["pattern"],
             layout_signal=row["layout_signal"],
             also_maps_to=tuple(row["also_maps_to"]),
+            occurs_in=frozenset(row["occurs_in"]),
             scope_regions=frozenset(row["scope_regions"]),
             scope_document_types=frozenset(row["scope_document_types"]),
+            scope_institution_types=frozenset(row["scope_institution_types"]),
+            scope_subjects=frozenset(row["scope_subjects"]),
+            scope_issuers=frozenset(row["scope_issuers"]),
             plan_generations=frozenset(row["plan_generations"]),
+            valid_from=row["valid_from"],
+            valid_until=row["valid_until"],
             strength=None if row["strength"] is None else float(row["strength"]),
             verified=row["verified"],
             recognition_hints=_texts(row["recognition_hints"]),
             negative_hints=_texts(row["negative_hints"]),
+            positive_examples=tuple(row["positive_examples"]),
+            negative_examples=tuple(row["negative_examples"]),
         )
         for row in rows
     ]

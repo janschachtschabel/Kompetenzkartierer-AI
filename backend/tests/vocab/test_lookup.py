@@ -8,17 +8,31 @@ import psycopg
 import pytest
 
 from app.db.migrate import migrate
-from app.domain.lexicon import active_cues
+from app.domain.lexicon import Cue, active_cues
 from app.vocab.loader import read_vocabulary
 from app.vocab.lookup import REGIONS, by_notation, concept, cues_for, profile_concepts, region_with_ancestors
 from app.vocab.store import load_vocabulary
+from tests.vocab.model import LEXICON_CORE, PROFILE_PREFIXES, SCHOOL_PROFILE, write_model
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 
 ONTOLOGY = Path(__file__).resolve().parents[3] / "ontology"
 CV = "https://w3id.org/wlo/curriculum/vocab#"
+CUR = "https://w3id.org/wlo/curriculum/core#"
 SCHOOL = "https://w3id.org/wlo/curriculum/profile/school#"
 REGION = "https://w3id.org/wlo/curriculum/region/"
+# What the school's profile does not yet say of its first cue
+MORE_OF_THE_CUE = (
+    PROFILE_PREFIXES
+    + """
+schul:InstitutionTypes a skos:ConceptScheme .
+schul:it-gymnasium a skos:Concept ; skos:inScheme schul:InstitutionTypes .
+schul:Subjects a skos:ConceptScheme .
+schul:subj-mathe a skos:Concept ; skos:inScheme schul:Subjects .
+schul:cue-klp cur:validUntil "2031-07"^^xsd:gYearMonth ; cur:scopeSubject schul:subj-mathe ;
+    cur:scopeInstitutionType schul:it-gymnasium .
+"""
+)
 
 
 @pytest.fixture
@@ -114,6 +128,38 @@ async def test_a_sector_s_cues_are_read_for_its_active_profile(connection: psyco
         (SCHOOL + "dt-Lehrplan",),
         frozenset({REGION + "DE-NW"}),
         0.95,
+    )
+
+
+async def test_a_cue_is_read_with_all_it_carries_for_the_prompt(database_url: str, tmp_path: Path) -> None:
+    migrate(database_url)
+    model = write_model(tmp_path, LEXICON_CORE, {"schule.ttl": SCHOOL_PROFILE, "mehr.ttl": MORE_OF_THE_CUE})
+    load_vocabulary(database_url, read_vocabulary(model))
+    async with await psycopg.AsyncConnection.connect(database_url, autocommit=True) as opened:
+        cues = {cue.iri: cue for cue in await cues_for(opened, "school")}
+
+    assert cues[SCHOOL + "cue-klp"] == Cue(
+        iri=SCHOOL + "cue-klp",
+        role=CV + "role_homonym",
+        kind=CV + "ck_term",
+        maps_to=(CUR + "Curriculum", SCHOOL + "dt-Kernlehrplan"),
+        surface_form="Kernlehrplan",
+        also_maps_to=(SCHOOL + "dt-Lehrplan",),
+        occurs_in=frozenset({CV + "occ_titlePage"}),
+        scope_regions=frozenset({REGION + "DE", REGION + "DE-NW"}),
+        scope_document_types=frozenset({SCHOOL + "dt-Lehrplan"}),
+        scope_institution_types=frozenset({SCHOOL + "it-gymnasium"}),
+        scope_subjects=frozenset({SCHOOL + "subj-mathe"}),
+        scope_issuers=frozenset({"MSB NRW"}),
+        plan_generations=frozenset({"G9"}),
+        valid_from="2023-08-01",
+        valid_until="2031-07",
+        strength=0.9,
+        verified=True,
+        recognition_hints=("NRW: Kernlehrplan der Sekundarstufe I.",),
+        negative_hints=("Nicht der KMK-Plan.",),
+        positive_examples=("Kernlehrplan Mathematik",),
+        negative_examples=("Lehrplan",),
     )
 
 
