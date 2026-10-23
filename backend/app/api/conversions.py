@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict
 
 from app.api.deps import principal, require_account
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
+from app.api.limits import within_limit
 from app.api.source_content import content_row
 from app.conversion.base import Block, EngineName
 from app.conversion.job import KIND
@@ -86,6 +87,7 @@ CONTENT_REFUSALS: dict[int | str, dict[str, Any]] = {
         200: {"model": ConversionOut, "description": "The conversion there: waiting, running or done"},
         **CONTENT_REFUSALS,
         422: {"model": ErrorBody, "description": "not_pdf: only a PDF is converted so far"},
+        429: {"model": ErrorBody, "description": "too_many_conversions: started too many this minute"},
     },
 )
 async def ask_conversion(
@@ -107,6 +109,10 @@ async def ask_conversion(
         if there is not None and there.status != "failed":
             response.status_code = 200
             return _out(there)
+        settings = request.app.state.settings
+        await within_limit(
+            connection, who.account_id, KIND, settings.conversions_per_minute, "too_many_conversions"
+        )
         conversion_id = there.id if there else new_id()
         job_id = await enqueue(
             connection, KIND, account_lane(who.account_id), {"conversion_id": str(conversion_id)}

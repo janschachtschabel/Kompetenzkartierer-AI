@@ -139,8 +139,10 @@ ungültig.
   `MAX_UPLOAD_MB` + 1 MiB schon vor dem Lesen mit 413 `content_too_large`. Ein DOCX darf
   entpackt höchstens 256 MiB in 5.000 Teilen halten (`archive_too_large`). Was ein Upload in
   `/tmp` und im Arbeitsspeicher braucht, steht in `docs/uebergabe/konfiguration.md`.
-- `UPLOADS_PER_MINUTE` und `URL_IMPORTS_PER_MINUTE` (Standard je 20): Uploads bzw. URL-Importe
-  je Konto und Minute, gezählt in PostgreSQL für alle Replicas; darüber 429 mit `Retry-After`.
+- `UPLOADS_PER_MINUTE`, `URL_IMPORTS_PER_MINUTE` und `CONVERSIONS_PER_MINUTE` (Standard je 20):
+  Uploads, URL-Importe bzw. gestartete Konvertierungen je Konto und Minute, gezählt in
+  PostgreSQL für alle Replicas; darüber 429 mit `Retry-After`. Eine Konvertierung, die wartet
+  oder fertig ist, noch einmal anzufragen, startet und zählt nichts.
 - `FETCH_USER_AGENT`: so stellen sich URL-Import und Prüfjob den Servern vor. Vorn steht das
   Produktkürzel, unter dem robots.txt uns kennt (`Kompetenzkartierer-AI`), dahinter, wo die
   Betreiber zu erreichen sind – hier den eigenen Kontakt eintragen (öffentliche Seite oder

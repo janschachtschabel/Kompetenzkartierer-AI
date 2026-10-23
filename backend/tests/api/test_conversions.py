@@ -211,6 +211,24 @@ def test_a_conversion_that_failed_says_why_and_may_be_asked_again(
     assert again.json()["id"] == first["id"] and again.json()["job_id"] != first["job_id"]
 
 
+def test_an_account_starts_as_many_conversions_a_minute_as_the_service_takes(
+    migrated: str, tmp_path: Path, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    _, header = owner
+    for client in client_for(migrated, tmp_path, conversions_per_minute=1):
+        first = upload(client, header)
+        second = upload(client, header, (FIXTURES / "tables.pdf").read_bytes())
+
+        started = client.post(f"/api/v1/sources/{first}/conversions", headers=header)
+        asked_again = client.post(f"/api/v1/sources/{first}/conversions", headers=header)  # starts nothing
+        refused = client.post(f"/api/v1/sources/{second}/conversions", headers=header)
+
+        assert (started.status_code, asked_again.status_code) == (202, 200)
+        assert (refused.status_code, refused.json()["code"]) == (429, "too_many_conversions")
+        assert int(refused.headers["retry-after"]) >= 1
+        assert len(jobs(migrated)) == 1
+
+
 def test_only_a_pdf_is_converted(client: TestClient, owner: tuple[UUID, dict[str, str]]) -> None:
     _, header = owner
     source_id = upload(client, header, b"# Lehrplan\n\nLernfeld 1", name="lehrplan.md")

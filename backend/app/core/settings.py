@@ -160,6 +160,9 @@ class Settings(BaseSettings):
     third_party_markdown: Literal["hidden", "accounts", "public"] = "hidden"
     # Imports by URL an account may start per minute; more are answered 429
     url_imports_per_minute: Annotated[int, Field(ge=1)] = 20
+    # Conversions an account may start per minute - each may take a worker for CONVERT_TIMEOUT_S;
+    # more are answered 429. Asking for one that waits or is done starts none and counts none
+    conversions_per_minute: Annotated[int, Field(ge=1)] = 20
     # Who the register's requests say they are (source.fetch, source.check): the product token
     # robots.txt knows us by, then where to reach the operators; printable ASCII, as a header
     # holds it - and no space at its end, which h11 refuses in a header's value

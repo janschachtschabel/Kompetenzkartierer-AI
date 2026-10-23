@@ -38,6 +38,7 @@ ein Test schlägt an, wenn sie veraltet.
 | `UPLOADS_PER_MINUTE` | Zahl ≥ 1 | 20 | – | Dienst |
 | `THIRD_PARTY_MARKDOWN` | `hidden` \| `accounts` \| `public` | `hidden` | – | Dienst |
 | `URL_IMPORTS_PER_MINUTE` | Zahl ≥ 1 | 20 | – | Dienst |
+| `CONVERSIONS_PER_MINUTE` | Zahl ≥ 1 | 20 | – | Dienst |
 | `FETCH_USER_AGENT` | Text nach Muster `^[A-Za-z0-9._-]+(/[!-~]+)?( [ -~]*[!-~])?$`, höchstens 200 Zeichen | `Kompetenzkartierer-AI (+https://github.com/janschachtschabel/Kompetenzkartierer-AI)` | – | Dienst |
 | `CHECK_HOST_INTERVAL_S` | Zahl ≥ 0.5, ≤ 60 | 2 | – | Dienst |
 | `MAX_PDF_PAGES` | Zahl ≥ 1, ≤ 5000 | 800 | – | Dienst |
