@@ -9,7 +9,9 @@ conversion with its reason, for good; one that may pass (a child gone without a 
 database) is tried again by the worker. The child logs as the service does, under the job's
 request (app/conversion/runners.py).
 
-A cancel or a lost lease cancels the job's task, which ends the child (runners.py).
+A cancel or a lost lease cancels the job's task, which ends the child (runners.py). A job whose
+conversion no longer waits for it - asked again after it counted as failed, or done by its own
+attempt before - records nothing and counts nothing (app/db/conversions.py).
 """
 
 import asyncio
@@ -69,9 +71,9 @@ async def convert_source(
         data = await context.storage.get(key)
     except ObjectNotFound:
         log.warning("the file of conversion %s is not in the store: %s", conversion_id, key)
-        await _fail(context, conversion_id, engine, "file_gone")
+        await _fail(context, job, conversion_id, engine, "file_gone")
     if not data.startswith(PDF_SIGNATURE):
-        await _fail(context, conversion_id, engine, "not_pdf")
+        await _fail(context, job, conversion_id, engine, "not_pdf")
     async with context.pool.connection() as connection:
         await report_progress(connection, job, "converting", {})
     settings = context.settings
@@ -88,25 +90,33 @@ async def convert_source(
                     path, engine=engine, max_pages=settings.max_pdf_pages, convert=convert, log=told
                 )
         except TimeoutError:
-            await _fail(context, conversion_id, engine, "timed_out")
+            await _fail(context, job, conversion_id, engine, "timed_out")
         except ConversionRefused as refused:
-            await _fail(context, conversion_id, engine, refused.code)
+            await _fail(context, job, conversion_id, engine, refused.code)
         except ConversionCrashed:
-            await _fail(context, conversion_id, engine, "crashed")
+            await _fail(context, job, conversion_id, engine, "crashed")
         except ConversionDied:
-            await _fail(context, conversion_id, engine, "died")
+            await _fail(context, job, conversion_id, engine, "died")
     finally:
         shutil.rmtree(folder, ignore_errors=True)
     markdown = await asyncio.to_thread(markdown_of, conversion)  # a long document's text: off the loop
     async with context.pool.connection() as connection:
         # pdfplumber, the one engine so far, costs nothing; an engine that bills comes with its quota
-        await record_conversion(connection, conversion_id, conversion, markdown, billable=False)
-    observe_conversion(engine, "done", conversion.pages)
+        recorded = await record_conversion(
+            connection, conversion_id, job.id, conversion, markdown, billable=False
+        )
+    if recorded:
+        observe_conversion(engine, "done", conversion.pages)
+    else:
+        log.info("conversion %s no longer waits for job %s: its result goes", conversion_id, job.id)
     return {"conversion_id": str(conversion_id), "pages": conversion.pages, "blocks": len(conversion.blocks)}
 
 
-async def _fail(context: JobContext, conversion_id: UUID, engine: str, code: FailureCode) -> NoReturn:
+async def _fail(
+    context: JobContext, job: Job, conversion_id: UUID, engine: str, code: FailureCode
+) -> NoReturn:
     async with context.pool.connection() as connection:
-        await record_failure(connection, conversion_id, code)
-    observe_conversion(engine, code)
+        recorded = await record_failure(connection, conversion_id, job.id, code)
+    if recorded:
+        observe_conversion(engine, code)
     raise PermanentError(code, MESSAGES[code])

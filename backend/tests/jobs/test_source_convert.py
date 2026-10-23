@@ -274,6 +274,44 @@ async def test_a_job_whose_conversion_is_gone_fails_for_good(context: JobContext
     assert failed.value.code == "conversion_gone"
 
 
+async def asked_again(context: JobContext, file_id: UUID, conversion_id: UUID) -> UUID:
+    """The conversion asked for again under a new job, as after its old job counted as failed."""
+    async with context.pool.connection() as connection, connection.transaction():
+        await lock_conversion(connection, file_id, "pdfplumber")
+        job_id = await enqueue(connection, KIND, "test", {"conversion_id": str(conversion_id)})
+        await start_conversion(
+            connection,
+            conversion_id,
+            source_file_id=file_id,
+            engine="pdfplumber",
+            account_id=None,
+            job_id=job_id,
+        )
+    return job_id
+
+
+@pytest.mark.parametrize(
+    ("data", "convert"),
+    [((FIXTURES / "prose.pdf").read_bytes(), standins.reading), ((FIXTURES / "scan.pdf").read_bytes(), None)],
+    ids=["converted", "refused"],
+)
+async def test_a_job_its_conversion_was_asked_again_without_leaves_it_to_the_new_one(
+    context: JobContext, data: bytes, convert: Convert | None
+) -> None:
+    file_id, conversion_id, old_job = await a_conversion(context, data)
+    new_job = await asked_again(context, file_id, conversion_id)
+    done_before = counted("kka_conversions_total", engine="pdfplumber", outcome="done")
+
+    with contextlib.suppress(PermanentError):  # the old job ends as it ends; the conversion is not its
+        await convert_source(context, old_job, **({"convert": convert} if convert else {}))
+
+    found = await state(context, file_id)
+    assert (found.status, found.error_code, found.job_id) == ("pending", None, new_job)
+    async with context.pool.connection() as connection:
+        assert await blocks_on_page(connection, conversion_id, 1) == []
+    assert counted("kka_conversions_total", engine="pdfplumber", outcome="done") == done_before
+
+
 async def test_the_worker_knows_the_conversion(context: JobContext) -> None:
     assert KIND == "source.convert"
     assert KIND in make_handlers(context)

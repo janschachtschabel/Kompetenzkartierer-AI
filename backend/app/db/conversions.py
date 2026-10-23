@@ -4,8 +4,12 @@ A conversion is asked for in the caller's transaction, under a lock on its file 
 (lock_conversion): the caller reads what is there (conversion_for), enqueues the job and starts
 the conversion with it (start_conversion) - a new one, or a failed one asked again under its
 name; one done stays done. The job records the outcome: the blocks, Markdown and pages in one
-transaction, booked once (record_conversion), or the reason (record_failure). A conversion still
-pending whose job ended without it - failed, cancelled - shows as failed, with the job's code.
+transaction, booked once (record_conversion), or the reason (record_failure) - only while the
+conversion waits for that very job. A job that tries again after its result is in, or one whose
+conversion was asked again meanwhile (its lease lost, it counted as failed, but it ran on), writes
+nothing. A conversion still pending whose job ended without it - failed, cancelled - shows as
+failed with the job's code and end; a cancelled one as cancelled, whatever an attempt before ended
+with.
 """
 
 from dataclasses import dataclass
@@ -36,8 +40,8 @@ FailureCode = Literal[
 
 _STATE = """
     SELECT c.id, c.source_file_id, c.engine, c.engine_version, c.status, c.error_code, c.account_id,
-        c.job_id, j.status AS job_status, j.error ->> 'code' AS job_error, c.pages, c.printed_pages,
-        c.findings, c.created_at, c.finished_at
+        c.job_id, j.status AS job_status, j.error ->> 'code' AS job_error, j.finished_at AS job_finished_at,
+        c.pages, c.printed_pages, c.findings, c.created_at, c.finished_at
     FROM conversion c LEFT JOIN job j ON j.id = c.job_id
     WHERE c.source_file_id = %s AND c.engine = %s
 """
@@ -54,11 +58,12 @@ _BLOCK = """
     VALUES (%(conversion)s, %(id)s, %(page)s, %(seq)s, %(kind)s, %(text)s, %(x0)s, %(top)s, %(x1)s,
         %(bottom)s, %(font_size)s, %(bold)s, %(italic)s, %(cells)s)
 """
+# First in its transaction: the row stays locked until the blocks are in
 _DONE = """
     UPDATE conversion SET status = 'done', error_code = NULL, engine_version = %(version)s,
         pages = %(pages)s, printed_pages = %(printed)s, findings = %(findings)s, markdown = %(markdown)s,
         finished_at = now()
-    WHERE id = %(id)s
+    WHERE id = %(id)s AND job_id = %(job)s AND status = 'pending'
 """
 _BOOK = """
     INSERT INTO conversion_usage (conversion_id, account_id, engine, pages, billable)
@@ -104,9 +109,14 @@ async def conversion_for(
     row = await cursor.fetchone()
     if row is None:
         return None
-    job_status, job_error = row.pop("job_status"), row.pop("job_error")
+    job_status, job_error, job_finished_at = (
+        row.pop("job_status"),
+        row.pop("job_error"),
+        row.pop("job_finished_at"),
+    )
     if row["status"] == "pending" and job_status in ("failed", "cancelled"):
-        row["status"], row["error_code"] = "failed", job_error or job_status
+        row["status"], row["finished_at"] = "failed", job_finished_at
+        row["error_code"] = job_error if job_status == "failed" and job_error else job_status
     return ConversionState(**row, job_status=job_status)
 
 
@@ -145,22 +155,19 @@ async def conversion_target(
 async def record_conversion(
     connection: psycopg.AsyncConnection,
     conversion_id: UUID,
+    job_id: UUID,
     conversion: Conversion,
     markdown: str,
     *,
     billable: bool,
-) -> None:
+) -> bool:
+    """Whether the conversion waited for ``job_id`` and is now done with these blocks."""
     async with connection.transaction():
-        await connection.execute("DELETE FROM document_block WHERE conversion_id = %s", (conversion_id,))
-        async with connection.cursor() as cursor:
-            await cursor.executemany(
-                _BLOCK,
-                [_block_row(conversion_id, seq, block) for seq, block in enumerate(conversion.blocks, 1)],
-            )
-        await connection.execute(
+        cursor = await connection.execute(
             _DONE,
             {
                 "id": conversion_id,
+                "job": job_id,
                 "version": conversion.engine_version,
                 "pages": conversion.pages,
                 "printed": Jsonb(list(conversion.printed_pages)),
@@ -168,17 +175,30 @@ async def record_conversion(
                 "markdown": markdown,
             },
         )
+        if cursor.rowcount == 0:
+            return False
+        await connection.execute("DELETE FROM document_block WHERE conversion_id = %s", (conversion_id,))
+        async with connection.cursor() as blocks:
+            await blocks.executemany(
+                _BLOCK,
+                [_block_row(conversion_id, seq, block) for seq, block in enumerate(conversion.blocks, 1)],
+            )
         await connection.execute(
             _BOOK, {"id": conversion_id, "pages": conversion.pages, "billable": billable}
         )
+    return True
 
 
-async def record_failure(connection: psycopg.AsyncConnection, conversion_id: UUID, code: FailureCode) -> None:
-    await connection.execute(
+async def record_failure(
+    connection: psycopg.AsyncConnection, conversion_id: UUID, job_id: UUID, code: FailureCode
+) -> bool:
+    """Whether the conversion waited for ``job_id`` and now failed with ``code``."""
+    cursor = await connection.execute(
         "UPDATE conversion SET status = 'failed', error_code = %s, finished_at = now()"
-        " WHERE id = %s AND status = 'pending'",
-        (code, conversion_id),
+        " WHERE id = %s AND job_id = %s AND status = 'pending'",
+        (code, conversion_id, job_id),
     )
+    return cursor.rowcount > 0
 
 
 async def blocks_on_page(connection: psycopg.AsyncConnection, conversion_id: UUID, page: int) -> list[Block]:

@@ -100,15 +100,16 @@ async def test_a_conversion_done_keeps_its_blocks_text_and_pages_and_books_them_
     connection: psycopg.AsyncConnection,
 ) -> None:
     file_id = await a_file(connection)
-    conversion_id, _ = await started(connection, file_id)
+    conversion_id, job_id = await started(connection, file_id)
 
-    await record_conversion(
-        connection, conversion_id, converted(), "<!-- p1-b1 -->\nLernfeld 1\n", billable=False
+    recorded = await record_conversion(
+        connection, conversion_id, job_id, converted(), "<!-- p1-b1 -->\nLernfeld 1\n", billable=False
     )
-    await record_conversion(
-        connection, conversion_id, converted(), "<!-- p1-b1 -->\nLernfeld 1\n", billable=False
-    )
+    # the job tried again after its result was in: the conversion done stays as it was
+    again = converted().model_copy(update={"engine_version": "9.9"})
+    recorded_again = await record_conversion(connection, conversion_id, job_id, again, "", billable=False)
 
+    assert (recorded, recorded_again) == (True, False)
     state = await conversion_for(connection, file_id, "pdfplumber")
     assert state is not None
     assert (state.status, state.pages, state.printed_pages, state.engine_version) == (
@@ -130,9 +131,9 @@ async def test_a_conversion_done_keeps_its_blocks_text_and_pages_and_books_them_
 
 async def test_a_conversion_refused_ends_with_its_reason(connection: psycopg.AsyncConnection) -> None:
     file_id = await a_file(connection)
-    conversion_id, _ = await started(connection, file_id)
+    conversion_id, job_id = await started(connection, file_id)
 
-    await record_failure(connection, conversion_id, "needs_ocr")
+    assert await record_failure(connection, conversion_id, job_id, "needs_ocr")
 
     state = await conversion_for(connection, file_id, "pdfplumber")
     assert state is not None and (state.status, state.error_code) == ("failed", "needs_ocr")
@@ -141,7 +142,12 @@ async def test_a_conversion_refused_ends_with_its_reason(connection: psycopg.Asy
 
 @pytest.mark.parametrize(
     ("job_status", "error", "code"),
-    [("failed", '{"code": "handler_error"}', "handler_error"), ("cancelled", None, "cancelled")],
+    [
+        ("failed", '{"code": "handler_error"}', "handler_error"),
+        ("cancelled", None, "cancelled"),
+        # cancelled while waiting for another attempt: its last attempt's code is not why it ended
+        ("cancelled", '{"code": "handler_error"}', "cancelled"),
+    ],
 )
 async def test_a_conversion_whose_job_ended_without_it_shows_as_failed(
     connection: psycopg.AsyncConnection, job_status: str, error: str | None, code: str
@@ -160,6 +166,8 @@ async def test_a_conversion_whose_job_ended_without_it_shows_as_failed(
         code,
         job_status,
     )
+    cursor = await connection.execute("SELECT finished_at FROM job WHERE id = %s", (job_id,))
+    assert (state.finished_at,) == await cursor.fetchone()  # failed, as one recorded is: with its end
 
 
 async def test_a_failed_conversion_asked_again_waits_anew_under_its_name(
@@ -167,7 +175,7 @@ async def test_a_failed_conversion_asked_again_waits_anew_under_its_name(
 ) -> None:
     file_id = await a_file(connection)
     conversion_id, first_job = await started(connection, file_id)
-    await record_failure(connection, conversion_id, "timed_out")
+    await record_failure(connection, conversion_id, first_job, "timed_out")
 
     again, second_job = await started(connection, file_id)
 
@@ -183,10 +191,31 @@ async def test_a_failed_conversion_asked_again_waits_anew_under_its_name(
 async def test_a_conversion_done_stays_done_whatever_asks_again(connection: psycopg.AsyncConnection) -> None:
     file_id = await a_file(connection)
     conversion_id, first_job = await started(connection, file_id)
-    await record_conversion(connection, conversion_id, converted(), "", billable=False)
+    await record_conversion(connection, conversion_id, first_job, converted(), "", billable=False)
 
     await started(connection, file_id)
-    await record_failure(connection, conversion_id, "died")
+    assert not await record_failure(connection, conversion_id, first_job, "died")
 
     state = await conversion_for(connection, file_id, "pdfplumber")
     assert state is not None and (state.status, state.job_id, state.pages) == ("done", first_job, 2)
+
+
+async def test_a_job_the_conversion_was_asked_again_without_records_nothing(
+    connection: psycopg.AsyncConnection,
+) -> None:
+    # its lease lost, the job counted as failed, the conversion asked again: the old job, still
+    # running somewhere, must not write over what the new one does
+    file_id = await a_file(connection)
+    conversion_id, old_job = await started(connection, file_id)
+    _, new_job = await started(connection, file_id)
+
+    assert not await record_conversion(connection, conversion_id, old_job, converted(), "", billable=False)
+    assert not await record_failure(connection, conversion_id, old_job, "died")
+
+    state = await conversion_for(connection, file_id, "pdfplumber")
+    assert state is not None and (state.status, state.job_id) == ("pending", new_job)
+    assert await blocks_on_page(connection, conversion_id, 1) == []
+    cursor = await connection.execute(
+        "SELECT count(*) FROM conversion_usage WHERE conversion_id = %s", (conversion_id,)
+    )
+    assert await cursor.fetchone() == (0,)
