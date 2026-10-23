@@ -290,6 +290,45 @@ Nachtrag zur Umsetzung (23.10.):
 | 5.6 | Zulassung | `app/usage/admission.py` (Restbudget, `MAX_JOBS_IN_FLIGHT`, Rate-Limit Starts) | 403 ohne Budget; 429 mit Retry-After über 20 offenen Modelljobs oder über dem Rate-Limit; Admin unbegrenzt nur mit `NULL`-Grenze | `pytest -m pg tests/usage/test_admission.py` |
 | 5.7 | API und Metriken | `PUT /api/v1/accounts/{id}/quota` (Admin), `GET /api/v1/me/usage`; Metriken Aufrufe, Token, Fehler, Reservierungen; `LLM_MAX_OUTPUT_TOKENS`, `MAX_JOBS_IN_FLIGHT` in Settings und `konfiguration.md` | `test_auth_surface`, `test_openapi`; Audit-Zeile | `pytest tests/api/test_usage_api.py` |
 
+Nachtrag zur Umsetzung (24.10.):
+
+- **Token zählen (5.2):**
+  - Die Kodierung `o200k_base.tiktoken` liegt im Repo, in `backend/app/llm/` (Nutzerentscheid 23.10.), statt aus `TIKTOKEN_CACHE_DIR` zu kommen. Geladen wird sie per Pfad und geprüftem SHA-256, nie aus dem Netz; dazu ein Lizenzhinweis und `.gitattributes` `-text`.
+  - API und Worker prüfen beim Start Reasoning-Aufwand, Kontextfenster und Kodierung (`check_model_layer`).
+  - `tiktoken` ist direkt deklariert. Der Export ändert sich dadurch nur im via-Vermerk.
+- **Aufruf (5.1):**
+  - `StructuredDict` prüft die Antwort nicht gegen das Schema; eine Probe ließ `{"n": "x"}` gegen `integer` durch. Deshalb gibt es einen eigenen Prüfer `app/llm/schema.py` für genau die Teilmenge der sechs Schemas, der als `output_validator` per `ModelRetry` nachfragt. Ein Wächtertest verlangt, dass er jedes Schlüsselwort der Schemas kennt. `jsonschema` wäre ein Download mit fünf Paketen gewesen.
+  - pydantic-ai 2.42 kennt `output_retries` nicht; es heißt `retries=2`.
+  - Reserviert wird je Modellanfrage, nicht je Aufruf. `ask` geht den Lauf Knoten für Knoten durch: Vor jedem `ModelRequestNode` reserviert er, am `CallToolsNode` legt er die Antwort ab und bucht ihre Nutzung. So ist jede Ausgabe-Wiederholung eine eigene, neu reservierte Anfrage.
+  - Ein eigener `AsyncOpenAI` mit `max_retries=0` und einem Client, der jede Anfrage zählt (`Attempts`) und die Trace-Header setzt. `max_tokens` = `LLM_MAX_OUTPUT_TOKENS` wird zu `max_output_tokens` bzw. `max_completion_tokens`.
+  - Gebucht wird so: Eine abgewiesene Anfrage (HTTP-Fehler) kostet 0 Token und zählt als eine Anfrage. Eine gesendete ohne Antwort (Zeitüberschreitung, Abriss, Abbruch im Flug) kostet ihre Reservierung, gekennzeichnet `estimated`, unter `asyncio.shield` gebucht. Eine nie gesendete kostet nichts.
+  - Gewartet wird wie in der alten App, aber ohne Wiederholungen des SDK.
+- **Rohantworten (5.3):**
+  - Abgelegt wird je `ModelResponse` die JSON-Form von pydantic-ai, mit Nutzung, Modell und Zeit, bevor die Antwort geprüft wird.
+  - Weil der Speicher nicht auflisten kann, springt die Nummer per `exists` hinter Vorhandenes.
+  - Gefunden dabei: Unter Windows behält `Path.resolve()` in einem Rennen das Präfix `\\?\`, und `FileSystemStorage` wies den Schlüssel dann ab. Behoben mit `without_long_prefix`.
+- **Tabellen (5.4):**
+  - `quota`: Ohne Zeile gilt die Grenze 0, `NULL` heißt unbegrenzt, für jede Rolle.
+  - `llm_usage` hat keinen Fremdschlüssel auf Job und Lauf, damit sie überdauert, wie das Audit-Log. Das Konto bleibt, solange es Verbrauch hat. `estimated` hat keinen Standard: Der Schreiber sagt es.
+  - `usage_reservation` hält Job und Konto, bis sie gebucht ist (RESTRICT). Sie trägt Zweck, Modell und Lauf für die Buchung.
+  - Ein Index auf jedem `account_id` und auf `job_id`.
+- **Ledger (5.5):**
+  - Rest = Grenze − Σ Verbrauch − Σ Reservierungen, summiert unter `SELECT … FROM quota … FOR UPDATE` und nur unter `read committed` (`read_committed_alone`). Es gibt keinen Zähler, der von den Zeilen abweichen kann. `simplify:` Die Summen lesen alle Zeilen eines Kontos, das kann später eine laufende Summe übernehmen.
+  - `book` ersetzt die Reservierung in einer Anweisung und genau einmal. Eine späte Buchung nach `book_abandoned` bucht nichts mehr: Die Schätzung steht.
+  - `book_abandoned` ist gebaut und getestet. Aufgerufen wird es erst aus dem Fehlerpfad der Modelljobs (Paket 6).
+  - `remaining_tokens` entfällt; dafür gibt es `usage_of(...).tokens_left`.
+  - Abweichung beim Stresslauf: 8 statt 2 Worker. Mit zweien kam das Rennen an der Grenze zu selten zustande, und der Mutant „ohne `FOR UPDATE`“ überlebte 5 von 5 Läufen; mit acht stirbt er 8 von 8. Die Schranke ist für W Worker verallgemeinert: Unverbraucht bleibt weniger als ein Aufruf plus (W − 1) × (Reservierung − Kosten). Verbraucht jeder Aufruf genau seine Reservierung, sind es genau 12. Dazu kommt ein Ledger-Test mit 20 gleichzeitigen Verbindungen, Mutant 10 von 10.
+- **Zulassung (5.6):**
+  - `admit_model_job` läuft in der Transaktion, die den Job einreiht, unter einer Sperre je Konto. Ohne offene Transaktion lehnt es ab, weil die Sperre sonst vor dem Einreihen ginge.
+  - Die Reihenfolge ist Budget > 0, offene Modelljobs, Rate. Die Rate zählt zuletzt, damit ein abgewiesener Start keinen Platz kostet.
+  - Fachliche Ausnahmen; die Antworten (403 `no_budget`, 429 `too_many_jobs`, 429 `too_many_starts`) baut `admit_model_start` in `app/api/limits.py`.
+  - `MODEL_JOB_KINDS` ist leer, bis X1 kommt. Ein Start mit kleinem Rest scheitert erst an der ersten Reservierung.
+- **API, Metriken, Image (5.7):**
+  - `PUT …/quota` verlangt beide Grenzen ausdrücklich (Zahl bis 10^15 oder `null`), damit keine aus Versehen fehlt. Die Endpunkte stehen unter dem Tag `usage`.
+  - Metriken: `kka_llm_requests_total{outcome}` (answered, refused, unanswered), `kka_llm_tokens_total{kind}` (input, cached_input, output, estimated) und `kka_usage_reservations_total{outcome}` (held, refused, booked, late, abandoned).
+  - Das Image kopiert `ontology/schemas` (`SCHEMA_DIR`).
+  - Die Seitengrenze ist nur eine Spalte. Durchgesetzt wird sie mit der ersten abrechenbaren Engine (3b).
+
 ### Paket 6: X1 Dokumentprofil, Gerüst und X2 Segmente (6 PT)
 
 | # | Aufgabe | Dateien | Test zuerst | Nachweis |

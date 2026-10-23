@@ -180,6 +180,31 @@ ohne Nutzer, Query oder Fragment, `http` für ein Gateway im Cluster), `OPENAI_M
 Completions), `OPENAI_REASONING_EFFORT` und `OPENAI_TEXT_VERBOSITY` (Standard `low`). Nimmt das
 Modell den Aufwand laut seinem Profil nicht an (gpt-6-luna kein `minimal`), starten API und
 Worker nicht. Ohne Schlüssel starten beide, nur Aufrufe des Modells scheitern.
+`LLM_MAX_OUTPUT_TOKENS` (Standard 16.000, mindestens 1.000) begrenzt die Ausgabe jeder Anfrage,
+Reasoning eingeschlossen. Token zählt der Dienst lokal mit tiktoken (`o200k_base`): Die Datei
+liegt mit ihrem SHA-256 in `backend/app/llm/` und wird nie aus dem Netz geladen. Fehlt sie oder
+stimmt ihr Hash nicht, starten API und Worker nicht.
+
+Kosten des Modells: Ein Konto ohne Quote darf nichts verbrauchen, auch ein Admin nicht.
+- Ein Admin setzt die Quote mit `PUT /api/v1/accounts/{id}/quota`
+  (`{"token_limit": …, "page_limit": …}`). Beide Grenzen müssen ausdrücklich genannt werden,
+  `null` heißt unbegrenzt. Die Änderung wird als `account.quota` protokolliert.
+- `GET /api/v1/me/usage` zeigt dem Konto Grenze, Verbrauch, Reserviertes, davon Geschätztes und
+  den Rest.
+- Vor jeder Anfrage reserviert der Aufruf die gezählte Eingabe (plus 10 %) und
+  `LLM_MAX_OUTPUT_TOKENS`. Danach ersetzt die gemeldete Nutzung die Reservierung. Eine gesendete
+  Anfrage ohne Antwort wird als Verbrauch gebucht und als geschätzt gekennzeichnet.
+- Bei 429 und 5xx wartet der Aufruf selbst, höchstens zweimal: so lange wie `Retry-After`, sonst
+  20 bzw. 40 s, nie länger als 60 s. Bei `insufficient_quota` wartet er nicht.
+- Die Rohantworten legt er vor der Auswertung unter `runs/<Lauf>/<Stufe>/<n>.json` im
+  Objektspeicher ab.
+- Einen Modelljob darf ein Konto nur mit Restbudget starten, sonst 403 `no_budget`. Höchstens
+  `MAX_JOBS_IN_FLIGHT` (Standard 20) dürfen warten oder laufen, sonst 429 `too_many_jobs` mit
+  `Retry-After: 60`. Höchstens `MODEL_STARTS_PER_MINUTE` (Standard 10) Starts je Minute, sonst 429
+  `too_many_starts`.
+- Modelljobs gibt es ab X1 (Paket 6). Dann bucht auch ein abgebrochener Job seine offenen
+  Reservierungen als geschätzten Verbrauch.
+- Metriken: `kka_llm_requests_total`, `kka_llm_tokens_total`, `kka_usage_reservations_total`.
 
 Objektspeicher: `STORAGE_BACKEND` (`fs` | `s3`, Standard `fs`). Mit `fs` braucht der Speicher
 `STORAGE_DIR` (für Entwicklung und einen einzelnen Knoten); im Cluster `s3` mit `S3_BUCKET`,
