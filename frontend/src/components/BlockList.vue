@@ -4,18 +4,32 @@
  * than text - a table, a running head or foot - and whether its type is bold or italic, which
  * tells a heading from the text under it. The text keeps the conversion's line breaks. Running
  * heads and feet are quieter than the text, as on paper; they are kept, not dropped, since a
- * page number in them is what a reader cites.
+ * page number in them is what a reader cites. A table run on from an earlier page comes first,
+ * as on paper, under its block's ID, with the way to the page it begins on.
  */
-import type { Block } from "@/api";
+import { RouterLink } from "vue-router";
+
+import type { Block, ContinuedTable } from "@/api";
 import BlockTable from "@/components/BlockTable.vue";
 import { messages, t } from "@/i18n/de";
 import { word } from "@/registerWords";
 
-defineProps<{ blocks: Block[] }>();
+defineProps<{ blocks: Block[]; continued: ContinuedTable[]; page: number }>();
 </script>
 
 <template>
   <ol class="blocks">
+    <li v-for="item in continued" :key="`continued-${item.id}`" class="block block--table" data-test="continued">
+      <p class="block__meta">
+        <code class="block__id">{{ item.id }}</code>
+        <span class="block__kind">{{ t("conversionPage.kind.table") }}</span>
+        <span>{{ t("conversionPage.continued", { page: item.page }) }}</span>
+        <RouterLink :to="{ query: item.page === 1 ? {} : { seite: String(item.page) } }" replace>
+          {{ t("conversionPage.tableStart", { page: item.page }) }}
+        </RouterLink>
+      </p>
+      <BlockTable :cells="item.cells" :page="page" continued />
+    </li>
     <li v-for="item in blocks" :key="item.id" class="block" :class="`block--${item.kind}`">
       <p class="block__meta">
         <code class="block__id">{{ item.id }}</code>
@@ -23,7 +37,7 @@ defineProps<{ blocks: Block[] }>();
         <span v-if="item.bold">{{ t("conversionPage.bold") }}</span>
         <span v-if="item.italic">{{ t("conversionPage.italic") }}</span>
       </p>
-      <BlockTable v-if="item.kind === 'table' && item.cells.length" :block="item" />
+      <BlockTable v-if="item.kind === 'table' && item.cells.length" :cells="item.cells" :page="item.page" />
       <!-- on one line: the text keeps its white space, the template's would show -->
       <p v-else class="block__text" :class="{ 'block__text--bold': item.bold, 'block__text--italic': item.italic }" dir="auto">{{ item.text }}</p>
     </li>

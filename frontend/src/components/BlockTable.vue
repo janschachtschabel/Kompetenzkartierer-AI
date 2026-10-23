@@ -4,14 +4,21 @@
  * their columns, and each cell with its ID - `T4:r3c2`, the table's number, its row and column -
  * since a quote cites a cell by it. The ID is shown and read with the cell, not hidden in a
  * tooltip: whoever cites needs it, by eye or by ear. A cell the table carried over from the next
- * page says where it stands; one the file left empty keeps its column.
+ * page says where it stands; one the file left empty keeps its column. A table run on from an
+ * earlier page shows its cells on this one, and says it is a continuation.
  */
-import { computed } from "vue";
+import { computed, useId } from "vue";
 
-import type { Block, BlockCell } from "@/api";
+import type { BlockCell } from "@/api";
 import { t } from "@/i18n/de";
 
-const props = defineProps<{ block: Block }>();
+const props = defineProps<{
+  cells: BlockCell[];
+  /** The page shown: a cell standing on another says which. */
+  page: number;
+  continued?: boolean;
+}>();
+const captionId = useId();
 
 interface Row {
   number: number;
@@ -22,9 +29,9 @@ interface Row {
 }
 
 const rows = computed<Row[]>(() => {
-  const columns = Math.max(0, ...props.block.cells.map((cell) => cell.column));
+  const columns = Math.max(0, ...props.cells.map((cell) => cell.column));
   const byRow = new Map<number, BlockCell[]>();
-  for (const cell of props.block.cells) byRow.set(cell.row, [...(byRow.get(cell.row) ?? []), cell]);
+  for (const cell of props.cells) byRow.set(cell.row, [...(byRow.get(cell.row) ?? []), cell]);
   return [...byRow.entries()]
     .sort(([a], [b]) => a - b)
     .map(([number, cells]) => ({
@@ -35,7 +42,10 @@ const rows = computed<Row[]>(() => {
 });
 
 /** The table's number, which its cells' IDs begin with. */
-const number = computed(() => /^T(\d+):/.exec(props.block.cells[0]?.id ?? "")?.[1] ?? "");
+const number = computed(() => /^T(\d+):/.exec(props.cells[0]?.id ?? "")?.[1] ?? "");
+const caption = computed(() =>
+  t(props.continued ? "conversionPage.table.continuedCaption" : "conversionPage.table.caption", { table: number.value }),
+);
 
 function scopeOf(row: Row): "col" | "row" {
   return row.heading ? "col" : "row";
@@ -43,17 +53,18 @@ function scopeOf(row: Row): "col" | "row" {
 </script>
 
 <template>
-  <!-- Focusable and named: a wide table scrolls sideways, and a keyboard can only scroll what it reaches -->
-  <div class="block-table" tabindex="0" role="region" :aria-label="t('conversionPage.table.caption', { table: number })">
+  <!-- Focusable and named by its caption: a wide table scrolls sideways, and a keyboard can only
+       scroll what it reaches; one name, so it is not read twice -->
+  <div class="block-table" tabindex="0" role="region" :aria-labelledby="captionId">
     <table class="block-table__table">
-      <caption class="block-table__caption">{{ t("conversionPage.table.caption", { table: number }) }}</caption>
+      <caption :id="captionId" class="block-table__caption">{{ caption }}</caption>
       <tbody>
         <tr v-for="row in rows" :key="row.number">
           <template v-for="(cell, index) in row.cells" :key="cell?.id ?? `${row.number}-${index}`">
             <component :is="cell?.header ? 'th' : 'td'" v-if="cell" :scope="cell.header ? scopeOf(row) : undefined">
               <code class="cell__id">{{ cell.id }}</code>
               <span class="cell__text" dir="auto">{{ cell.text }}</span>
-              <span v-if="cell.page !== block.page" class="cell__page">{{ t("conversionPage.table.onPage", { page: cell.page }) }}</span>
+              <span v-if="cell.page !== page" class="cell__page">{{ t("conversionPage.table.onPage", { page: cell.page }) }}</span>
             </component>
             <td v-else></td>
           </template>

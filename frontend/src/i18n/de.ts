@@ -408,8 +408,12 @@ export const messages = {
     },
     bold: "fett",
     italic: "kursiv",
+    // a table begun on an earlier page, at the top of a page it runs on to
+    continued: "Fortsetzung von Seite {page}",
+    tableStart: "Zum Anfang auf Seite {page}",
     table: {
       caption: "Tabelle {table}",
+      continuedCaption: "Tabelle {table}, Fortsetzung",
       // a cell of a table that runs on from the page before
       onPage: "auf Seite {page}",
     },

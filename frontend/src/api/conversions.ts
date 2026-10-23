@@ -58,11 +58,24 @@ export interface Block {
   cells: BlockCell[];
 }
 
+/**
+ * A table begun on an earlier page that runs on to this one (backend ContinuedOut): a table joined
+ * over pages is one block, on its first; here are its cells on this page.
+ */
+export interface ContinuedTable {
+  /** The table's block, `p<page>-b<n>` of the page it begins on. */
+  id: string;
+  page: number;
+  cells: BlockCell[];
+}
+
 /** One page's blocks (backend PageOut). */
 export interface BlockPage {
   page: number;
   printed_page: string | null;
   blocks: Block[];
+  /** The tables of earlier pages that run on here, before the page's own blocks. */
+  continued: ContinuedTable[];
 }
 
 function conversionPath(sourceId: string): string {

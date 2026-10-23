@@ -148,7 +148,8 @@ async function showPage(number: number, { moved = false } = {}): Promise<void> {
 }
 
 function arrival(found: BlockPage): string {
-  return t("conversionPage.announce", { page: found.page, pages: pages.value, count: found.blocks.length });
+  const count = found.blocks.length + found.continued.length;
+  return t("conversionPage.announce", { page: found.page, pages: pages.value, count });
 }
 
 /** Replace, not push: a page turned is no step the way back has to walk - it leads to the entry. */
@@ -207,7 +208,8 @@ watch([source, page], ([entry, number]) => {
         {{ t("conversionPage.pageHeading", { page, pages }) }}
       </h2>
       <p v-if="printed" class="conversion-page__printed" data-test="printed">{{ t("conversionPage.printed", { printed }) }}</p>
-      <LoadingState v-if="pageLoading" />
+      <!-- quiet: the move is said once the page shows -->
+      <LoadingState v-if="pageLoading" quiet />
       <EmptyState v-else-if="pastEnd" :level="3" :title="t('conversionPage.noPageTitle')" :body="t('conversionPage.noPageBody', { pages })">
         <RouterLink data-test="first-page" :to="{ query: {} }" replace>{{ t("conversionPage.firstPage") }}</RouterLink>
       </EmptyState>
@@ -219,12 +221,12 @@ watch([source, page], ([entry, number]) => {
         @retry="showPage(page, { moved: true })"
       />
       <EmptyState
-        v-else-if="shown && shown.blocks.length === 0"
+        v-else-if="shown && shown.blocks.length === 0 && shown.continued.length === 0"
         :level="3"
         :title="t('conversionPage.emptyTitle')"
         :body="t('conversionPage.emptyBody')"
       />
-      <BlockList v-else-if="shown" :blocks="shown.blocks" />
+      <BlockList v-else-if="shown" :blocks="shown.blocks" :continued="shown.continued" :page="shown.page" />
     </section>
     <!-- always in the page, so the first move is read out -->
     <p class="visually-hidden" role="status" data-test="page-status">{{ status }}</p>

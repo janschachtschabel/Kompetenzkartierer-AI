@@ -1,5 +1,5 @@
 // Conversions and their blocks as the server answers, for the tests of the conversion's pages.
-import type { Block, BlockCell, BlockPage, Conversion } from "@/api";
+import type { Block, BlockCell, BlockPage, ContinuedTable, Conversion } from "@/api";
 
 export function conversion(overrides: Partial<Conversion> = {}): Conversion {
   return {
@@ -52,6 +52,11 @@ export function table(): Block {
   });
 }
 
-export function blockPage(page: number, blocks: Block[], printed: string | null = null): BlockPage {
-  return { page, printed_page: printed, blocks };
+export function blockPage(
+  page: number,
+  blocks: Block[],
+  printed: string | null = null,
+  continued: ContinuedTable[] = [],
+): BlockPage {
+  return { page, printed_page: printed, blocks, continued };
 }

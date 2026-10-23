@@ -7,7 +7,7 @@ import { t } from "@/i18n/de";
 import { router } from "@/router";
 import ConversionView from "@/views/ConversionView.vue";
 
-import { block, blockPage, conversion, table } from "./conversions";
+import { block, blockPage, cell, conversion, table } from "./conversions";
 import { deferred, detail } from "./registerEntries";
 
 const PDF = { name: "physik.pdf", mime: "application/pdf", size: 8, sha256: "ab" };
@@ -195,6 +195,76 @@ describe("an entry's blocks", () => {
     expect(rows[1].text()).not.toContain(t("conversionPage.table.onPage", { page: 2 }));
     // the table is not shown a second time as its text
     expect(wrapper.text()).not.toContain("| Kompetenz | Stufe |");
+  });
+
+  it("show a table that runs on from an earlier page, its cells here, and the way to where it begins", async () => {
+    const runningOn = { id: "p2-b2", page: 2, cells: [cell("T1:r3c1", "Modellieren", { page: 3 })] };
+    vi.mocked(api.getBlocks).mockResolvedValue(blockPage(3, [block("p3-b1", "Nach der Tabelle")], "2", [runningOn]));
+    const wrapper = await open({ seite: "3" });
+
+    const items = wrapper.findAll(".block");
+    expect(items.map((item) => item.get(".block__id").text())).toEqual(["p2-b2", "p3-b1"]);
+    expect(items[0].text()).toContain(t("conversionPage.continued", { page: 2 }));
+    expect(items[0].get("a").attributes("href")).toBe("/quellen/s1/bloecke?seite=2");
+    expect(items[0].get("caption").text()).toBe(t("conversionPage.table.continuedCaption", { table: "1" }));
+    expect(items[0].get(".cell__id").text()).toBe("T1:r3c1");
+    // its cells stand on this page: none says it stands elsewhere
+    expect(items[0].text()).not.toContain(t("conversionPage.table.onPage", { page: 3 }));
+  });
+
+  it("say a page a table from an earlier page fills is no empty page", async () => {
+    const runningOn = { id: "p2-b2", page: 2, cells: [cell("T1:r3c1", "Modellieren", { page: 3 })] };
+    vi.mocked(api.getBlocks).mockResolvedValue(blockPage(3, [], "2", [runningOn]));
+    const wrapper = await open({ seite: "3" });
+
+    expect(wrapper.text()).not.toContain(t("conversionPage.emptyTitle"));
+    expect(wrapper.find("table").exists()).toBe(true);
+  });
+
+  it("name a wide table's scrolling region by its caption, and reach it by keyboard", async () => {
+    vi.mocked(api.getBlocks).mockResolvedValue(blockPage(2, [table()]));
+    const wrapper = await open({ seite: "2" });
+
+    const region = wrapper.get(".block-table");
+    const caption = wrapper.get("caption");
+    // axe in jsdom calls a scroll region without focus "inapplicable": said here instead
+    expect(region.attributes("tabindex")).toBe("0");
+    expect(region.attributes("role")).toBe("region");
+    expect(region.attributes("aria-labelledby")).toBe(caption.attributes("id"));
+    expect(region.attributes("aria-label")).toBeUndefined(); // the caption once, not twice
+  });
+
+  it("let the document's text run in its own direction", async () => {
+    vi.mocked(api.getBlocks).mockResolvedValue(blockPage(2, [block("p2-b1", "مرحبا"), table()]));
+    const wrapper = await open({ seite: "2" });
+
+    expect(wrapper.get(".block__text").attributes("dir")).toBe("auto");
+    expect(wrapper.findAll(".cell__text").every((text) => text.attributes("dir") === "auto")).toBe(true);
+  });
+
+  it("go on past the last page nowhere", async () => {
+    const wrapper = await open({ seite: "3" });
+    const asked = vi.mocked(api.getBlocks).mock.calls.length;
+
+    await wrapper.get("[data-test=next]").trigger("click");
+    await flushPromises();
+
+    expect(router.currentRoute.value.query.seite).toBe("3");
+    expect(api.getBlocks).toHaveBeenCalledTimes(asked);
+  });
+
+  it("show a page loading without saying so: the move is said once the page shows", async () => {
+    const later = deferred<api.BlockPage>();
+    const wrapper = await open();
+    vi.mocked(api.getBlocks).mockReturnValue(later.promise);
+
+    await wrapper.get("[data-test=next]").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(t("states.loading"));
+    expect(wrapper.findAll("[role=status]").map((region) => region.text()).filter(Boolean)).toEqual([]);
+    later.resolve(blockPage(2, []));
+    await flushPromises();
   });
 
   it("say the file is not converted yet, with the way to the entry where it is started", async () => {
