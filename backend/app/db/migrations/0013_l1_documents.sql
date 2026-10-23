@@ -144,8 +144,10 @@ CREATE TABLE extraction_run (
     raw_response_key text CHECK (length(raw_response_key) BETWEEN 1 AND 512),
     started_at timestamptz NOT NULL DEFAULT now(),
     finished_at timestamptz,
+    -- what a run made names it with its document, so it names a run of that document (0014, 0015)
+    UNIQUE (document_id, id),
     FOREIGN KEY (id, kind) REFERENCES entity (id, kind),
     FOREIGN KEY (stage_scheme, stage_iri) REFERENCES vocab_concept (scheme_iri, iri),
     CHECK (finished_at IS NULL OR finished_at >= started_at)
 );
-CREATE INDEX extraction_run_of_document ON extraction_run (document_id);
+CREATE INDEX extraction_run_of_job ON extraction_run (job_id) WHERE job_id IS NOT NULL;

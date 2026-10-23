@@ -20,15 +20,16 @@ CREATE TABLE frame_part (
         CHECK (review_status_scheme = 'https://w3id.org/wlo/curriculum/vocab#ReviewStatuses'),
     review_status_iri text NOT NULL,
     revision integer NOT NULL DEFAULT 1 CHECK (revision >= 1),
-    run_id uuid REFERENCES extraction_run (id),
+    run_id uuid,  -- the run that made it; a run taken away leaves what it made
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     UNIQUE (document_id, id),
+    FOREIGN KEY (document_id, run_id) REFERENCES extraction_run (document_id, id) ON DELETE SET NULL (run_id),
     FOREIGN KEY (id, kind) REFERENCES entity (id, kind),
     FOREIGN KEY (origin_scheme, origin_iri) REFERENCES vocab_concept (scheme_iri, iri),
     FOREIGN KEY (review_status_scheme, review_status_iri) REFERENCES vocab_concept (scheme_iri, iri)
 );
-CREATE INDEX frame_part_of_document ON frame_part (document_id);
+CREATE INDEX frame_part_of_run ON frame_part (run_id) WHERE run_id IS NOT NULL;
 
 -- An anchor (cur:SourceAnchor) of one node, statement or frame part of its document. It names the
 -- document with the document's conversion, so its blocks are that conversion's
@@ -85,14 +86,15 @@ CREATE INDEX anchor_block_of_block ON anchor_block (conversion_id, block_id);
 CREATE TABLE validation_finding (
     id uuid PRIMARY KEY,
     document_id uuid NOT NULL REFERENCES document (id) ON DELETE CASCADE,
-    run_id uuid REFERENCES extraction_run (id) ON DELETE CASCADE,
+    run_id uuid,  -- the run of X5 that found it; its findings go with it
     rule text NOT NULL CHECK (has_text(rule) AND length(rule) <= 500),
     severity text NOT NULL CHECK (severity IN ('violation', 'warning', 'info')),
     focus_id uuid NOT NULL REFERENCES entity (id),
     path text CHECK (length(path) <= 500),  -- the property the finding is about, where it is one
     message text NOT NULL CHECK (has_text(message) AND length(message) <= 4000),
     details jsonb NOT NULL DEFAULT '{}' CHECK (jsonb_typeof(details) = 'object'),
-    created_at timestamptz NOT NULL DEFAULT now()
+    created_at timestamptz NOT NULL DEFAULT now(),
+    FOREIGN KEY (document_id, run_id) REFERENCES extraction_run (document_id, id) ON DELETE CASCADE
 );
 CREATE INDEX validation_finding_of_document ON validation_finding (document_id);
-CREATE INDEX validation_finding_of_run ON validation_finding (run_id);
+CREATE INDEX validation_finding_of_run ON validation_finding (run_id) WHERE run_id IS NOT NULL;

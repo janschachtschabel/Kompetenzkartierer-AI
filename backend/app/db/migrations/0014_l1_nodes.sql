@@ -32,13 +32,14 @@ CREATE TABLE node (
     review_status_iri text NOT NULL,
     rule_id text CHECK (has_text(rule_id) AND length(rule_id) <= 200),
     revision integer NOT NULL DEFAULT 1 CHECK (revision >= 1),
-    run_id uuid REFERENCES extraction_run (id),
+    run_id uuid,  -- the run that made it; a run taken away leaves what it made
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     UNIQUE (document_id, id),
     -- deferrable, so the editors may reorder siblings within one transaction (plan M1 9)
     UNIQUE NULLS NOT DISTINCT (document_id, parent_id, position) DEFERRABLE,
     FOREIGN KEY (document_id, parent_id) REFERENCES node (document_id, id) ON DELETE CASCADE,
+    FOREIGN KEY (document_id, run_id) REFERENCES extraction_run (document_id, id) ON DELETE SET NULL (run_id),
     FOREIGN KEY (id, kind) REFERENCES entity (id, kind),
     FOREIGN KEY (function_scheme, function_iri) REFERENCES vocab_concept (scheme_iri, iri),
     FOREIGN KEY (obligation_scheme, obligation_iri) REFERENCES vocab_concept (scheme_iri, iri),
@@ -53,7 +54,7 @@ CREATE TABLE node (
     CHECK (NOT code_assigned OR code IS NOT NULL),
     CHECK ((origin_iri = 'https://w3id.org/wlo/curriculum/vocab#orig_rule') = (rule_id IS NOT NULL))
 );
-CREATE INDEX node_children ON node (document_id, parent_id, position);
+CREATE INDEX node_of_run ON node (run_id) WHERE run_id IS NOT NULL;
 
 -- A node moved comes to lie under itself nowhere; moves within one document wait for each
 -- other, so two that would close a circle between them do not pass side by side
@@ -124,12 +125,13 @@ CREATE TABLE statement (
     details jsonb NOT NULL DEFAULT '{}' CHECK (jsonb_typeof(details) = 'object'),
     layout_markers text[] NOT NULL DEFAULT '{}',  -- cv:LayoutMarkers
     revision integer NOT NULL DEFAULT 1 CHECK (revision >= 1),
-    run_id uuid REFERENCES extraction_run (id),
+    run_id uuid,  -- the run that made it; a run taken away leaves what it made
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     UNIQUE (document_id, id),
     UNIQUE (node_id, position) DEFERRABLE,
     FOREIGN KEY (document_id, node_id) REFERENCES node (document_id, id) ON DELETE CASCADE,
+    FOREIGN KEY (document_id, run_id) REFERENCES extraction_run (document_id, id) ON DELETE SET NULL (run_id),
     FOREIGN KEY (id, kind) REFERENCES entity (id, kind),
     FOREIGN KEY (statement_kind_scheme, statement_kind_iri) REFERENCES vocab_concept (scheme_iri, iri),
     FOREIGN KEY (obligation_scheme, obligation_iri) REFERENCES vocab_concept (scheme_iri, iri),
@@ -138,7 +140,7 @@ CREATE TABLE statement (
     CHECK ((obligation_scheme IS NULL) = (obligation_iri IS NULL)),
     CHECK ((origin_iri = 'https://w3id.org/wlo/curriculum/vocab#orig_rule') = (rule_id IS NOT NULL))
 );
-CREATE INDEX statement_of_document ON statement (document_id);
+CREATE INDEX statement_of_run ON statement (run_id) WHERE run_id IS NOT NULL;
 CREATE INDEX statement_text_hash ON statement (text_hash);
 
 CREATE FUNCTION subkind_fits() RETURNS trigger LANGUAGE plpgsql AS $$

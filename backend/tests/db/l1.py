@@ -182,6 +182,16 @@ def add_statement(
     return statement
 
 
+def add_run(connection: psycopg.Connection, document: uuid.UUID, stage: str = "stage_X4") -> uuid.UUID:
+    """A run of a stage of the pipeline on the document."""
+    run = add_entity(connection, "extraction_run")
+    connection.execute(
+        "INSERT INTO extraction_run (id, document_id, stage_scheme, stage_iri) VALUES (%s, %s, %s, %s)",
+        (run, document, CV + "Stages", CV + stage),
+    )
+    return run
+
+
 def listed_values(connection: psycopg.Connection, table: str, column: str) -> set[str]:
     """The values the CHECK of a column lists, as the database reads it back."""
     found = connection.execute(
