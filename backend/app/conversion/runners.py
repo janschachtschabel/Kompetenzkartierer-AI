@@ -7,11 +7,15 @@ would copy half of). Its answer comes back as a file, written whole before it is
 conversion as JSON, the refusal with its code, or the kind of error it raised.
 
 How a child ends tells what may come of trying again. A refusal or a crash - an error raised in
-the conversion, or in writing it down - is the file's, the same each time for the same engine:
-ConversionRefused, ConversionCrashed. A child ended by a signal died, on Linux most likely killed
-by the kernel for its memory: ConversionDied. A child that exits with no answer and no signal - a
+the conversion, or in writing it down, or a fault that ended it by a signal of its own (SIGSEGV,
+SIGABRT of a parser on a broken file) - is the file's, the same each time for the same engine:
+ConversionRefused, ConversionCrashed. A child killed (SIGKILL) died, on Linux most likely by the
+kernel for its memory: ConversionDied. A child that exits with no answer and no signal - a
 library's exit, a full disk for the answer - says nothing of the file: ConversionFailed, which
 may pass.
+
+The child logs as the service does, but the PDF libraries say no more than warnings: at DEBUG
+pdfminer logs each token it reads, the text of a file perhaps hidden from all but its editors.
 
 Whatever ends the waiting - the job cancelled, its deadline (``asyncio.timeout`` around the call),
 its lease lost, which the worker turns into a cancel - kills the child at once. On POSIX the child
@@ -43,6 +47,8 @@ from app.core.logging import configure_logging, current_request_id, set_request_
 
 log = logging.getLogger(__name__)
 POLL_S = 0.2  # how often the waiting asks whether the child is done
+KILLED = -9  # the exit code of a process ended by SIGKILL, which Windows does not name
+LIBRARIES = ("pdfminer", "pdfplumber", "pypdfium2")
 KILL_WAIT_S = 5.0
 Convert = Callable[[Path, str, int], Conversion]
 
@@ -78,12 +84,12 @@ async def convert_in_child(
     engine: str,
     max_pages: int,
     convert: Convert = convert_with_engine,
-    log: ChildLog | None = None,
+    child_log: ChildLog | None = None,
 ) -> Conversion:
     """The conversion of ``path`` by ``engine`` in a child process; ConversionRefused with its
     code, ConversionCrashed, ConversionDied or ConversionFailed where there is none. ``convert``
     stands in for the conversion in tests: a function the child imports by its name."""
-    told = log or ChildLog(level="WARNING", format="text", request_id=current_request_id())
+    told = child_log or ChildLog(level="WARNING", format="text", request_id=current_request_id())
     # one mkdir, made here: in a thread, a cancel meanwhile would leave the folder behind
     out = Path(tempfile.mkdtemp(prefix="convert-"))
     child = multiprocessing.get_context("spawn").Process(
@@ -118,8 +124,10 @@ def _outcome(exit_code: int | None, out: Path) -> Conversion:
     if (out / "crashed.json").exists():
         crashed = json.loads((out / "crashed.json").read_text(encoding="utf-8"))
         raise ConversionCrashed(f"the conversion raised {crashed['error']} in its process")
-    if exit_code is not None and exit_code < 0:
+    if exit_code == KILLED:
         raise ConversionDied(f"the conversion's process was ended by signal {-exit_code}")
+    if exit_code is not None and exit_code < 0:
+        raise ConversionCrashed(f"the conversion's process was ended by signal {-exit_code}")
     raise ConversionFailed(f"the conversion's process ended without an answer (exit code {exit_code})")
 
 
@@ -152,6 +160,9 @@ def _run(convert: Convert, path: str, name: str, max_pages: int, out: str, told:
 
 def _stand_alone(told: ChildLog) -> None:
     configure_logging(told.level, told.format, stream=sys.stderr)
+    quietest = max(logging.WARNING, logging.getLogger().level)
+    for name in LIBRARIES:
+        logging.getLogger(name).setLevel(quietest)
     set_request_id(told.request_id)
     if sys.platform != "win32":
         os.setsid()  # a group of its own, killed whole

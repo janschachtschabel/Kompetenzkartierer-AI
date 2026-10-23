@@ -96,7 +96,7 @@ async def test_the_child_logs_as_the_service_does_under_the_job_s_request() -> N
         engine="stand-in",
         max_pages=9,
         convert=standins.telling_its_logging,
-        log=ChildLog(level="INFO", format="json", request_id="job-trace-1"),
+        child_log=ChildLog(level="INFO", format="json", request_id="job-trace-1"),
     )
 
     assert conversion.blocks[0].text == "INFO JsonFormatter job-trace-1"
@@ -107,6 +107,29 @@ async def test_a_child_the_kernel_kills_died() -> None:
     with pytest.raises(ConversionDied, match="signal"):
         await convert_in_child(
             FIXTURES / "prose.pdf", engine="stand-in", max_pages=9, convert=standins.vanishing
+        )
+
+
+async def test_the_child_s_pdf_libraries_say_no_more_than_warnings_whatever_the_service_logs() -> None:
+    # at DEBUG pdfminer logs each token it reads: the file's text, line by line, in the log
+    conversion = await convert_in_child(
+        FIXTURES / "prose.pdf",
+        engine="stand-in",
+        max_pages=9,
+        convert=standins.telling_the_libraries_levels,
+        child_log=ChildLog(level="DEBUG", format="text", request_id="job-trace-2"),
+    )
+
+    assert conversion.blocks[0].text == "WARNING WARNING WARNING"
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="a signal ends a process on POSIX")
+async def test_a_child_a_fault_of_its_own_ends_crashed() -> None:
+    # the kernel ends a process out of memory with SIGKILL; a parser's fault on a broken file is
+    # the file's, as an exception is
+    with pytest.raises(ConversionCrashed, match="signal 11"):
+        await convert_in_child(
+            FIXTURES / "prose.pdf", engine="stand-in", max_pages=9, convert=standins.segfaulting
         )
 
 

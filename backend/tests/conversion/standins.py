@@ -48,6 +48,24 @@ def exiting(path: Path, engine: str, max_pages: int) -> Conversion:
     os._exit(3)
 
 
+def segfaulting(path: Path, engine: str, max_pages: int) -> Conversion:
+    if sys.platform != "win32":  # the test runs on POSIX alone
+        os.kill(os.getpid(), signal.SIGSEGV)  # as a parser fault on a broken file ends a process
+    raise AssertionError("not ended")
+
+
+def telling_the_libraries_levels(path: Path, engine: str, max_pages: int) -> Conversion:
+    """Says the levels the PDF libraries log at, in the text of its block."""
+    levels = [logging.getLevelName(logging.getLogger(name).getEffectiveLevel()) for name in LIBRARIES]
+    found = reading(path, engine, max_pages)
+    return found.model_copy(
+        update={"blocks": (found.blocks[0].model_copy(update={"text": " ".join(levels)}),)}
+    )
+
+
+LIBRARIES = ("pdfminer.psparser", "pdfplumber", "pypdfium2")
+
+
 def telling_its_logging(path: Path, engine: str, max_pages: int) -> Conversion:
     """Says how the child logs, in the text of its block: the root's level and format, the request."""
     root = logging.getLogger()

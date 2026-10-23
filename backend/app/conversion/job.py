@@ -87,7 +87,7 @@ async def convert_source(
         try:
             async with asyncio.timeout(settings.convert_timeout_s):
                 conversion = await convert_in_child(
-                    path, engine=engine, max_pages=settings.max_pdf_pages, convert=convert, log=told
+                    path, engine=engine, max_pages=settings.max_pdf_pages, convert=convert, child_log=told
                 )
         except TimeoutError:
             await _fail(context, job, conversion_id, engine, "timed_out")
