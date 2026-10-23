@@ -12,10 +12,10 @@ from app.conversion.base import BlockKind
 
 Box = tuple[float, float, float, float]  # x0, top, x1, bottom in PDF points
 
-_BOLD = re.compile(r"bold|black|heavy|semibold|demi", re.IGNORECASE)
-_ITALIC = re.compile(r"italic|oblique", re.IGNORECASE)
-# Adobe's short style names: "MinionPro-It", "MyriadPro-BoldIt"
-_IT = re.compile(r"it$", re.IGNORECASE)
+# The style's words, and Adobe's short ones as a word of their own ("HelveticaNeueLTStd-BdIt",
+# "MinionPro-It"): capitalised, no small letter after them
+_BOLD = re.compile(r"(?i:bold|black|heavy|demi)|(?:Bd|Blk|Hv|Sb|Smbd)(?![a-z])")
+_ITALIC = re.compile(r"(?i:italic|oblique)|(?:It|Obl)(?![a-z])")
 
 
 @dataclass(frozen=True)
@@ -58,12 +58,13 @@ class RawPage:
 
 
 def style_of(font: str) -> tuple[bool, bool]:
-    """Bold and italic as the font's name says them, its subset prefix ("ABCDEF+") aside."""
+    """Bold and italic as the font's name says them, its subset prefix ("ABCDEF+") aside: in the
+    style behind the family's name where one follows it, since a family may hold the words
+    ("Academica-Regular", "Blackletter-Regular"); in the whole name where none does ("ArialBold")."""
     name = font.rpartition("+")[2]
     _family, separator, style = _parts(name)
-    bold = bool(_BOLD.search(name))
-    italic = bool(_ITALIC.search(name) or (separator and _IT.search(style)))
-    return bold, italic
+    said = style if separator else name
+    return bool(_BOLD.search(said)), bool(_ITALIC.search(said))
 
 
 def _parts(name: str) -> tuple[str, str, str]:

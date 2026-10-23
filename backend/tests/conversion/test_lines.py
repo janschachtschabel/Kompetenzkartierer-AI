@@ -39,6 +39,25 @@ def row(
         ("TimesNewRomanPS-ItalicMT", False, True),
         ("Calibri", False, False),
         ("Arial-Black", True, False),
+        # Adobe's short style names, alone and combined
+        ("HelveticaNeueLTStd-Bd", True, False),
+        ("HelveticaNeueLTStd-BdIt", True, True),
+        ("HelveticaNeueLTStd-BdCn", True, False),
+        ("HelveticaNeueLTStd-Blk", True, False),
+        ("HelveticaNeueLTStd-Hv", True, False),
+        ("MyriadPro-SbIt", True, True),
+        ("FuturaStd-Smbd", True, False),
+        ("FrutigerLTStd-Obl", False, True),
+        ("HelveticaNeueLTStd-LtIt", False, True),
+        ("HelveticaNeueLTStd-Md", False, False),
+        ("HelveticaNeueLTStd-Lt", False, False),
+        # the family's name says nothing where a style follows it
+        ("Academica-Regular", False, False),
+        ("Blackletter-Regular", False, False),
+        ("ABCDEF+Academica-Italic", False, True),
+        # and all where none does
+        ("ArialBold", True, False),
+        ("Arial,BoldItalic", True, True),
     ],
 )
 def test_bold_and_italic_are_read_off_the_font_s_name(font: str, bold: bool, italic: bool) -> None:
