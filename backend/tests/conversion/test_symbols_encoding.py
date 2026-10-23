@@ -97,6 +97,25 @@ def test_umlauts_utf_8_read_as_windows_1252_are_suspect() -> None:
     assert finding.params["examples"] == [read_as_cp1252(sign) for sign in ("ö", "ß", "Ä", "Ö", "Ü")]
 
 
+def test_quotation_marks_and_dashes_utf_8_read_as_latin_1_are_suspect() -> None:
+    broken = (
+        "".join(f"{sign}Text " for sign in (chr(0x201E), chr(0x201C), chr(0x2013)))
+        .encode("utf-8")
+        .decode("latin-1")
+    )
+
+    (finding,) = encoding_findings(document([text(1, broken * 10 + "Die Lernenden planen. " * 20)]))
+
+    assert finding.params["count"] == 30
+
+
+def test_names_with_a_tilde_set_in_capitals_are_not_suspect() -> None:
+    # "Ã" before a letter is Portuguese, not UTF-8 read twice
+    names = f"S{chr(0xC3)}O PAULO, JO{chr(0xC3)}O, CAPIT{chr(0xC3)}ES. "
+
+    assert encoding_findings(document([text(1, names * 40)])) == []
+
+
 def test_german_with_its_quotation_marks_and_dashes_is_not_suspect() -> None:
     quoted = f"{chr(0x201E)}Größe{chr(0x201C)} {chr(0x2013)} Änderung, Öl {chr(0x2014)} Übung. "
 

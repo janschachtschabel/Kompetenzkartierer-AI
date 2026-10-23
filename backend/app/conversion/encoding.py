@@ -25,7 +25,9 @@ _SUSPECT = re.compile(
             re.escape(chr(0xFFFD)),
             r"\(cid:[0-9]+\)",
             chr(0xC3) + "[" + _SECOND_BYTE + "]",  # a Latin-1 letter's UTF-8 read twice
-            re.escape(chr(0xE2) + chr(0x20AC)),  # the start of a quotation mark or dash read twice
+            # the start of a quotation mark or dash read twice, as Windows-1252 and as Latin-1 reads it
+            re.escape(chr(0xE2) + chr(0x20AC)),
+            re.escape(chr(0xE2) + chr(0x80)),
         ]
     )
 )
