@@ -230,6 +230,9 @@ def _goes_on(last: Line, line: Line) -> bool:
 
 def _raw(lines: list[Line], page: int) -> RawBlock:
     bold, italic = lines[0].style
+    signs: Counter[float] = Counter()
+    for line in lines:
+        signs[line.size] += len(line.text)
     return RawBlock(
         page=page,
         kind="text",
@@ -240,7 +243,7 @@ def _raw(lines: list[Line], page: int) -> RawBlock:
             max(line.x1 for line in lines),
             max(line.bottom for line in lines),
         ),
-        font_size=lines[0].size,
+        font_size=signs.most_common(1)[0][0],  # sizes creep half a point a line: the most of them
         bold=bold,
         italic=italic,
     )

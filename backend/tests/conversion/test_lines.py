@@ -254,6 +254,19 @@ def test_a_line_set_otherwise_begins_a_block_of_its_own(font: str, size: float) 
     )
 
 
+def test_a_block_s_size_is_that_of_most_of_its_signs_not_of_its_first_line() -> None:
+    # sizes half a point apart are one block; the short first line is set smaller
+    words = [
+        *row("Kurz", 100, size=10.5),
+        *row("die Lernenden planen ihre Arbeit", 113),
+        *row("und prüfen sie.", 127),
+    ]
+
+    (block,) = blocks_of(words, page=1)
+
+    assert block.font_size == SIZE
+
+
 def test_a_line_bold_in_part_is_not_bold() -> None:
     words = [word("Hinweis:", 56, 100, font="Helvetica-Bold"), *row("die Inhalte gelten.", 100, x0=110)]
 
