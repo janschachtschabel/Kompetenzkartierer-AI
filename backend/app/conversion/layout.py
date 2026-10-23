@@ -61,7 +61,7 @@ class RawPage:
     number: int  # from 1
     height: float
     blocks: list[RawBlock] = field(default_factory=list)
-    # the signs of the words the engine dropped from the page, by why (a finding, assemble.py)
+    # the signs the engine dropped from the page, by why (a finding, assemble.py)
     dropped: Counter[DropReason] = field(default_factory=Counter)
 
 

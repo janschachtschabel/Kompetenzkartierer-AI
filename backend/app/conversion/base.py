@@ -9,7 +9,7 @@ the page it begins; each cell keeps the page it stands on.
 
 Headers and footers are marked (``page_header``, ``page_footer``), not dropped; the printed page
 number goes beside the physical page. What the conversion noticed about the text - symbols it
-could not map, a text layer that looks broken, words it dropped since no reader reads them where
+could not map, a text layer that looks broken, signs it dropped since no reader reads them where
 they stand - goes with it as findings.
 
 The models travel as JSON from the child process that converts (app/conversion/runners.py).
@@ -29,7 +29,7 @@ _UNSTORABLE = re.compile(f"[{chr(0)}{chr(0xD800)}-{chr(0xDFFF)}]")
 BlockKind = Literal["text", "table", "page_header", "page_footer"]
 EngineName = Literal["pdfplumber"]  # the engines offered, for the API's schema (a test compares)
 FindingCode = Literal["unmapped_symbol", "encoding_suspect", "text_dropped"]
-# Why an engine dropped a word, its signs counted (text_dropped), in the order the findings say
+# Why an engine dropped a sign, the signs counted (text_dropped), in the order the findings say
 # them: set upwards or turned, outside the page, smaller than a reader reads, at no finite point
 DropReason = Literal["vertical", "off_page", "tiny", "unplaced"]
 # Each engine by the class that converts with it, imported when first asked for
