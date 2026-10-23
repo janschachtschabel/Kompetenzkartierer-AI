@@ -6,6 +6,7 @@ import pytest
 from prometheus_client import REGISTRY
 from pydantic_ai.exceptions import ModelAPIError, ModelHTTPError
 
+from app.llm import calls
 from app.llm.calls import ask
 from app.llm.metering import BudgetExhausted
 from tests.llm.test_calls import Ledger, completion, gateway
@@ -14,7 +15,7 @@ pytestmark = pytest.mark.anyio
 
 REQUESTS = "kka_llm_requests_total"
 TOKENS = "kka_llm_tokens_total"
-OUTCOMES = ("answered", "refused", "unanswered")
+OUTCOMES = ("answered", "refused", "unanswered", "unsent")
 KINDS = ("input", "cached_input", "output", "estimated")
 
 
@@ -72,3 +73,33 @@ async def test_a_request_never_sent_is_not_counted() -> None:
         )
 
     assert grown(before) == {}
+
+
+async def test_a_request_that_never_went_out_counts_as_unsent_without_tokens(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def no_wait(seconds: float) -> None:
+        pass
+
+    monkeypatch.setattr(calls, "_sleep", no_wait)
+    before = counts()
+
+    def refused(request: httpx2.Request) -> httpx2.Response:
+        raise httpx2.ConnectError("connection refused", request=request)
+
+    with pytest.raises(ModelAPIError):
+        await ask(gateway(refused), "Text", meter=Ledger())
+
+    assert grown(before) == {"unsent": 3}
+
+
+async def test_an_answer_that_reports_no_usage_counts_its_reservation_as_estimated() -> None:
+    before = counts()
+    ledger = Ledger()
+    silent = completion("Zahlen")
+    del silent["usage"]
+
+    await ask(gateway(lambda _: httpx2.Response(200, json=silent)), "Text", meter=ledger)
+
+    [(estimate, cap)] = ledger.reserved
+    assert grown(before) == {"answered": 1, "estimated": estimate + cap}

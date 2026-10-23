@@ -10,7 +10,7 @@ from typing import Any
 import httpx2
 import pytest
 from pydantic_ai import Agent
-from pydantic_ai.exceptions import ModelAPIError, ModelHTTPError
+from pydantic_ai.exceptions import ModelAPIError, ModelHTTPError, UnexpectedModelBehavior
 from pydantic_ai.messages import CachePoint, ModelMessage, ModelResponse, RetryPromptPart, ToolCallPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.usage import RequestUsage
@@ -382,3 +382,145 @@ def test_a_stage_needs_a_model_that_caps_its_answers() -> None:
         build_agent(
             FunctionModel(lambda *_: ModelResponse(parts=[])), schema=SCHEMA, name="titel", instructions=""
         )
+
+
+# What review M1 5 found (scratchpad review-m1p5/befunde.md): requests that never went out, answers
+# nobody could read, bookings and keeping that failed, answers without usage, calls cancelled early
+
+
+@pytest.mark.parametrize("error", [httpx2.ConnectError, httpx2.ConnectTimeout, httpx2.PoolTimeout])
+async def test_a_request_that_never_went_out_costs_nothing_and_is_asked_again(
+    waited: list[float], error: type[httpx2.TransportError]
+) -> None:
+    # no connection, none in time, none free in the pool: not a byte of the request was written
+    ledger = Ledger()
+    tried: list[int] = []
+
+    def flaky(request: httpx2.Request) -> httpx2.Response:
+        tried.append(1)
+        if len(tried) == 1:
+            raise error("no connection", request=request)
+        return httpx2.Response(200, json=completion("Zahlen"))
+
+    answer = await ask(gateway(flaky), "Text", meter=ledger)
+
+    assert answer.output == {"title": "Zahlen"}
+    assert waited == [20.0]
+    assert ledger.booked == [
+        (1, Spent()),
+        (2, Spent(input_tokens=120, cached_input_tokens=100, output_tokens=30, requests=1)),
+    ]
+
+
+async def test_a_provider_never_reached_fails_the_call_after_two_waits(waited: list[float]) -> None:
+    ledger = Ledger()
+
+    def refused(request: httpx2.Request) -> httpx2.Response:
+        raise httpx2.ConnectError("connection refused", request=request)
+
+    with pytest.raises(ModelAPIError):
+        await ask(gateway(refused), "Text", meter=ledger)
+
+    assert waited == [20.0, 40.0]
+    assert ledger.booked == [(1, Spent()), (2, Spent()), (3, Spent())]
+
+
+async def test_an_answer_no_model_could_read_books_its_reservation_and_fails_the_call() -> None:
+    # a proxy's page with a 200: the provider may have counted what it passed on
+    ledger = Ledger()
+    page = httpx2.Response(200, text="<html>Anmeldung</html>", headers={"content-type": "text/html"})
+
+    with pytest.raises(UnexpectedModelBehavior):
+        await ask(gateway(lambda _: page), "Text", meter=ledger)
+
+    [(estimate, cap)] = ledger.reserved
+    assert ledger.booked == [
+        (1, Spent(input_tokens=estimate, output_tokens=cap, unanswered_requests=1, estimated=True))
+    ]
+
+
+class Lost:
+    """A store that keeps nothing."""
+
+    async def keep(self, data: bytes) -> str:
+        raise OSError("the store is away (invented)")
+
+
+async def test_an_answer_the_store_could_not_keep_is_booked_as_it_reported_once() -> None:
+    ledger = Ledger()
+
+    with pytest.raises(OSError, match="store is away"):
+        await ask(
+            gateway(lambda _: httpx2.Response(200, json=completion("Zahlen"))),
+            "Text",
+            meter=ledger,
+            raw=Lost(),
+        )
+
+    assert ledger.booked == [
+        (1, Spent(input_tokens=120, cached_input_tokens=100, output_tokens=30, requests=1))
+    ]
+
+
+class Faltering(Ledger):
+    """A ledger whose first booking fails after it took the reservation, as a lost commit answer would."""
+
+    async def book(self, reservation: int, spent: Spent) -> None:
+        await super().book(reservation, spent)
+        if len(self.booked) == 1:
+            raise ConnectionError("the database went away (invented)")
+
+
+async def test_a_booking_that_failed_is_tried_again_with_what_the_answer_reported() -> None:
+    # the meter takes a reservation once: asked again, it books nothing twice
+    ledger = Faltering()
+
+    with pytest.raises(ConnectionError):
+        await ask(gateway(lambda _: httpx2.Response(200, json=completion("Zahlen"))), "Text", meter=ledger)
+
+    answered = Spent(input_tokens=120, cached_input_tokens=100, output_tokens=30, requests=1)
+    assert ledger.booked == [(1, answered), (1, answered)]
+
+
+async def test_an_answer_that_reports_no_usage_is_booked_at_its_reservation_as_an_estimate() -> None:
+    # a gateway that tells nothing would otherwise spend the budget never
+    ledger = Ledger()
+    silent = completion("Zahlen")
+    del silent["usage"]
+
+    answer = await ask(gateway(lambda _: httpx2.Response(200, json=silent)), "Text", meter=ledger)
+
+    assert answer.output == {"title": "Zahlen"}
+    [(estimate, cap)] = ledger.reserved
+    assert ledger.booked == [(1, Spent(input_tokens=estimate, output_tokens=cap, requests=1, estimated=True))]
+
+
+async def test_an_answer_never_in_form_says_why() -> None:
+    built, _ = stage(['{"title": 3}'])
+
+    answer = await ask(built, "Das Dokument.", meter=Ledger())
+
+    assert answer.output is None
+    assert answer.failure is not None and "retries" in answer.failure
+
+
+async def test_a_call_cancelled_before_its_request_went_out_books_nothing() -> None:
+    # the model is asked and nothing goes over the wire: no provider can have charged for it
+    ledger = Ledger()
+    asked = asyncio.Event()
+
+    async def thinking(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        asked.set()
+        await asyncio.Event().wait()
+        raise AssertionError("never answered")
+
+    built = build_agent(
+        FunctionModel(thinking, settings={"max_tokens": 2_000}), schema=SCHEMA, name="titel", instructions="x"
+    )
+    task = asyncio.create_task(ask(built, "Text", meter=ledger))
+    await asked.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert ledger.booked == [(1, Spent())]

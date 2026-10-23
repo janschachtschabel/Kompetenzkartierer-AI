@@ -8,11 +8,14 @@ input and the answer's cap - and after the answer it books what the answer repor
 the reservation's place. A retry of the agent is a request like any other, reserved anew. A
 refused request (an HTTP error) is booked as a request without tokens; one sent and never
 answered - timed out, cut off, cancelled in flight - as its reservation, an estimate, since the
-provider may have charged for it. A 429 or a 5xx is waited on and asked again, twice at most;
-the SDK does not ask again on its own (app/llm/client.py).
+provider may have charged for it; so is an answer that reports no usage, and one no model could
+read, which fails the call. A request that never went out (no connection) costs nothing. A 429,
+a 5xx or a provider not reached is waited on and asked again, twice at most; the SDK does not
+ask again on its own (app/llm/client.py).
 """
 
 import asyncio
+import logging
 import random
 import re
 from collections.abc import Mapping, Sequence
@@ -27,9 +30,11 @@ from pydantic_ai.models.openai import OpenAIChatModel, OpenAIResponsesModelSetti
 from pydantic_ai.output import StructuredDict
 
 from app.core.metrics import observe_llm_request
-from app.llm.attempts import Attempts
+from app.llm.attempts import Attempts, never_sent
 from app.llm.metering import Meter, Spent, estimate_input
 from app.llm.schema import schema_errors
+
+log = logging.getLogger(__name__)
 
 # A stage's answer out of form is asked again this often, each a request of its own
 OUTPUT_RETRIES = 2
@@ -62,10 +67,13 @@ class StageAgent:
 
 @dataclass(frozen=True)
 class Answer:
-    """The output in the schema's form, or None where no answer took it; what the call spent."""
+    """The output in the schema's form, or None where no answer took it - ``failure`` says why
+    (out of form however often asked, an answer cut at the cap, a content filter); what the call
+    spent."""
 
     output: dict[str, Any] | None
     spent: Spent
+    failure: str | None = None
 
 
 def build_agent(model: Model, *, schema: Mapping[str, Any], name: str, instructions: str) -> StageAgent:
@@ -116,15 +124,20 @@ def breakpoint_settings(content: str | Sequence[UserContent]) -> OpenAIResponses
 
 def wait_after(refused: ModelHTTPError, attempt: int) -> float | None:
     """How long to wait before asking again after the provider refused, or None when not to:
-    only a rate limit or an outage is worth it, twice at most, and never a spent quota (a 429
-    too). The provider's Retry-After, else a wait that grows; spread a little, a minute at most."""
-    if attempt >= _RETRIES_AFTER_REFUSAL:
-        return None
+    only a rate limit or an outage is worth it, and never a spent quota (a 429 too); the
+    provider's Retry-After where it gives one (``_wait``)."""
     if refused.status_code != 429 and refused.status_code < 500:
         return None
     if "insufficient_quota" in str(refused.body):
         return None
-    after = refused.retry_after
+    return _wait(attempt, refused.retry_after)
+
+
+def _wait(attempt: int, after: float | None = None) -> float | None:
+    """The wait before asking again, twice at most: ``after``, else one that grows; spread a little,
+    a minute at most."""
+    if attempt >= _RETRIES_AFTER_REFUSAL:
+        return None
     wait = after if after is not None else _WAIT_AFTER_REFUSAL * (attempt + 1)
     return min(wait * (1 + _SPREAD * _draw()), _LONGEST_WAIT)
 
@@ -133,21 +146,28 @@ async def ask(
     stage: StageAgent, content: str | Sequence[UserContent], *, meter: Meter, raw: RawSink | None = None
 ) -> Answer:
     """The stage's answer to ``content``, every request reserved and booked with ``meter`` and
-    every answer kept in ``raw`` before it is checked. BudgetExhausted where the budget holds no
-    further request; ModelHTTPError where the provider refused for good; whatever else failed."""
+    every answer kept in ``raw`` before it is checked. A request the provider was never reached
+    with is asked again as a busy provider's is. BudgetExhausted where the budget holds no further
+    request; ModelHTTPError where the provider refused for good; ModelAPIError where it was never
+    reached; UnexpectedModelBehavior for an answer no model could read; whatever else failed."""
     spent = Spent()
     attempt = 0
     while True:
         try:
-            output, this = await _attempt(stage, content, meter, raw)
-            return Answer(output, spent + this)
+            output, this, failure = await _attempt(stage, content, meter, raw)
+            return Answer(output, spent + this, failure)
         except _Refused as refused:
             spent += refused.spent
             wait = wait_after(refused.error, attempt)
             if wait is None:
                 raise refused.error from None
-            attempt += 1
-            await _sleep(wait)
+        except _NotSent as unsent:
+            spent += unsent.spent
+            wait = _wait(attempt)
+            if wait is None:
+                raise unsent.error from None
+        attempt += 1
+        await _sleep(wait)
 
 
 class _Refused(Exception):
@@ -158,14 +178,33 @@ class _Refused(Exception):
         self.spent = spent
 
 
+class _NotSent(Exception):
+    """A request that never went out (``never_sent``), with what the attempt spent up to it."""
+
+    def __init__(self, error: Exception, spent: Spent) -> None:
+        self.error = error
+        self.spent = spent
+
+
+@dataclass
+class _Open:
+    """A request reserved and not yet booked: its input as reckoned, the requests sent before it,
+    and what its answer reported once one came."""
+
+    reservation: Any
+    estimate: int
+    sent_before: int
+    answered: Spent | None = None
+
+
 async def _attempt(
     stage: StageAgent, content: str | Sequence[UserContent], meter: Meter, raw: RawSink | None
-) -> tuple[dict[str, Any] | None, Spent]:
-    """One run of the agent: its requests reserved, answered and booked one by one."""
+) -> tuple[dict[str, Any] | None, Spent, str | None]:
+    """One run of the agent, its requests reserved, answered and booked one by one: the output,
+    what the run spent, and why there is no output where there is none."""
     spent = Spent()
     attempts = Attempts()
-    open_: tuple[Any, int, int] | None = None  # reservation, its input, the requests sent before it
-    output: dict[str, Any] | None = None
+    open_: _Open | None = None
     try:
         with attempts.counted():
             async with stage.agent.iter(content, model_settings=breakpoint_settings(content)) as run:
@@ -177,38 +216,71 @@ async def _attempt(
                             instructions=stage.instructions,
                             schema=stage.schema,
                         )
-                        open_ = (await meter.reserve(estimate, stage.output_tokens), estimate, attempts.sent)
+                        open_ = _Open(
+                            await meter.reserve(estimate, stage.output_tokens), estimate, attempts.sent
+                        )
                     elif Agent.is_call_tools_node(node) and open_ is not None:
-                        answered = _answered(node.model_response)
+                        open_.answered = _answered(node.model_response, open_.estimate, stage.output_tokens)
+                        await meter.book(open_.reservation, open_.answered)
+                        spent += open_.answered
+                        open_ = None
+                        # kept before the next node checks it against the schema
                         if raw is not None:
                             await raw.keep(ModelMessagesTypeAdapter.dump_json([node.model_response]))
-                        await meter.book(open_[0], answered)
-                        spent += answered
-                        open_ = None
                 assert run.result is not None  # noqa: S101 - the run went to its end
-                output = run.result.output
-    except UnexpectedModelBehavior:
-        output = None  # out of form however often asked: every answer is booked already
+                return run.result.output, spent, None
+    except UnexpectedModelBehavior as error:
+        if open_ is not None:  # raised by the request: an answer no model could read
+            await _book_cut_off(meter, open_, stage, sent=attempts.sent > open_.sent_before)
+            raise
+        # every answer came and is booked: none took the schema's form, or the run stopped at one
+        log.warning("a stage's answer took no form: %s", error.message)
+        return None, spent, error.message
     except ModelHTTPError as error:
         # answered, with a refusal: nothing to charge but the request
         refused = Spent(requests=1)
         observe_llm_request("refused")
         if open_ is not None:
-            await asyncio.shield(meter.book(open_[0], refused))
+            await asyncio.shield(meter.book(open_.reservation, refused))
         raise _Refused(error, spent + refused) from error
-    except BaseException:
+    except BaseException as error:
+        unsent = isinstance(error, Exception) and never_sent(error)
+        if unsent:
+            observe_llm_request("unsent")
         if open_ is not None:
-            reservation, estimate, before = open_
-            unanswered = _unanswered(estimate, stage.output_tokens, sent=attempts.sent > before)
-            # shielded: a cancel must not take the booking of a request that may be paid for along
-            await asyncio.shield(meter.book(reservation, unanswered))
+            await _book_cut_off(meter, open_, stage, sent=attempts.sent > open_.sent_before and not unsent)
+        if isinstance(error, Exception) and unsent:
+            raise _NotSent(error, spent) from error
         raise
-    return output, spent
 
 
-def _answered(response: ModelResponse) -> Spent:
-    """What an answer cost, as it reports it; counted."""
+async def _book_cut_off(meter: Meter, open_: _Open, stage: StageAgent, *, sent: bool) -> None:
+    """Book a request its run left unbooked: what its answer reported, where one came and its
+    booking failed - the meter takes a reservation once - else what was held for it where it went
+    out, the provider may have charged for it; nothing where it never did. Shielded: a cancel must
+    not take the booking of a request that may be paid for along."""
+    if open_.answered is not None:
+        cost = open_.answered
+    elif sent:
+        observe_llm_request("unanswered", estimated_tokens=open_.estimate + stage.output_tokens)
+        cost = Spent(
+            input_tokens=open_.estimate,
+            output_tokens=stage.output_tokens,
+            unanswered_requests=1,
+            estimated=True,
+        )
+    else:
+        cost = Spent()
+    await asyncio.shield(meter.book(open_.reservation, cost))
+
+
+def _answered(response: ModelResponse, estimate: int, output_tokens: int) -> Spent:
+    """What an answer cost, as it reports it - or, where it reports no input at all (a gateway that
+    counts nothing), what was held for it, as an estimate; counted."""
     usage = response.usage
+    if usage.input_tokens == 0:
+        observe_llm_request("answered", estimated_tokens=estimate + output_tokens)
+        return Spent(input_tokens=estimate, output_tokens=output_tokens, requests=1, estimated=True)
     observe_llm_request(
         "answered",
         input_tokens=usage.input_tokens,
@@ -221,12 +293,3 @@ def _answered(response: ModelResponse) -> Spent:
         output_tokens=usage.output_tokens,
         requests=1,
     )
-
-
-def _unanswered(estimate: int, output_tokens: int, *, sent: bool) -> Spent:
-    """What a request cut off cost: what was held for it where it went out - the provider may
-    have charged for it - and counted; nothing where it never did."""
-    if not sent:
-        return Spent()
-    observe_llm_request("unanswered", estimated_tokens=estimate + output_tokens)
-    return Spent(input_tokens=estimate, output_tokens=output_tokens, unanswered_requests=1, estimated=True)

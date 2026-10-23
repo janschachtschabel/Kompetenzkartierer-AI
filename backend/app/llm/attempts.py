@@ -32,6 +32,22 @@ class Attempts:
 
 
 _ATTEMPTS: ContextVar[Attempts | None] = ContextVar("kka_llm_attempts", default=None)
+# What fails a request before a byte of it is written: no connection, none in time, none free in
+# the pool. The client counts a request before it connects (httpx2 runs its hooks first)
+_UNSENT = (httpx2.ConnectError, httpx2.ConnectTimeout, httpx2.PoolTimeout)
+
+
+def never_sent(error: BaseException) -> bool:
+    """Whether ``error``, or one it was raised from or while handling, failed a request before it
+    went out - the SDK and pydantic-ai wrap the client's error twice."""
+    seen: set[int] = set()
+    current: BaseException | None = error
+    while current is not None and id(current) not in seen:
+        if isinstance(current, _UNSENT):
+            return True
+        seen.add(id(current))
+        current = current.__cause__ or current.__context__
+    return False
 
 
 async def count_attempt(request: httpx2.Request) -> None:

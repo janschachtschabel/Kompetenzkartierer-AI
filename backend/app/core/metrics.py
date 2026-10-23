@@ -57,9 +57,10 @@ CONVERSIONS = Counter(
 CONVERSION_PAGES = Counter("kka_conversion_pages_total", "Pages converted, by engine", ["engine"])
 
 
-# Requests to the language model by how they ended: answered, refused (an HTTP error) or
-# unanswered (sent, never answered); and their tokens by kind - input (of it, cached_input),
-# output, as the provider reported them, and estimated: what was held for one unanswered
+# Requests to the language model by how they ended: answered, refused (an HTTP error),
+# unanswered (sent, never answered) or unsent (the provider never reached); and their tokens by
+# kind - input (of it, cached_input), output, as the provider reported them, and estimated: what
+# was held for one unanswered, or for an answer that reported no usage
 LLM_REQUESTS = Counter(
     "kka_llm_requests_total", "Requests to the language model by how they ended", ["outcome"]
 )
@@ -79,7 +80,7 @@ def observe_llm_request(
     output_tokens: int = 0,
     estimated_tokens: int = 0,
 ) -> None:
-    """``outcome`` is answered, refused or unanswered: a fixed set."""
+    """``outcome`` is answered, refused, unanswered or unsent: a fixed set."""
     LLM_REQUESTS.labels(outcome).inc()
     tokens = {
         "input": input_tokens,
