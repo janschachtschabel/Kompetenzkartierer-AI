@@ -18,7 +18,9 @@ without a sign once its control signs are cleaned off is none.
 The file is untrusted. Whatever pdfplumber or pdfminer raise while reading it makes it unreadable,
 said without its path; so only the library's own calls stand where that is caught. So do pages
 pdfplumber counts otherwise than the text layer did (a page tree of one page and three kids): the
-limit on pages was checked on the text layer's. A page of more signs than the service takes is
+limit on pages was checked on the text layer's. They are counted as far as one more before
+pdfplumber builds them, which it does for every page the tree holds - and closing the file builds
+them too where none were. A page of more signs than the service takes is
 too dense (TooDense) - counted here, before its words and tables are read, since pdfium counts a
 text drawn many times at one place once and pdfminer reads each. What is built of what they read
 - which signs go, words, tables, lines and blocks - is ours, and its errors stay errors: in the
@@ -33,10 +35,12 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
 from contextlib import contextmanager
 from dataclasses import dataclass
 from importlib.metadata import version
+from itertools import islice
 from pathlib import Path
 from typing import Any
 
 import pdfplumber
+from pdfminer.pdfpage import PDFPage
 
 from app.conversion.assemble import assemble
 from app.conversion.base import Conversion, DropReason
@@ -70,12 +74,17 @@ class PdfplumberEngine:
         with _reading():
             pdf = pdfplumber.open(path)
         built: list[RawPage] = []
+        found: list[Any] | None = None
         try:
+            with _reading():  # as far as one page more: pdf.pages builds every page the tree holds
+                held = sum(1 for _ in islice(PDFPage.create_pages(pdf.doc), pages + 1))
+            if held != pages:  # a page tree counting one page, its kids three
+                log.warning(
+                    "pdfminer found %s pages where the text layer counted %d", _upto(held, pages), pages
+                )
+                raise UnreadablePdf("the file's pages are counted two ways")
             with _reading():
                 found = pdf.pages
-            if len(found) != pages:  # a page tree counting one page, its kids three
-                log.warning("pdfplumber read %d pages where the text layer counted %d", len(found), pages)
-                raise UnreadablePdf("the file's pages are counted two ways")
             for page in found:
                 with _reading():
                     number, signs, shown = page.page_number, page.chars, (page.cropbox, page.mediabox)
@@ -90,8 +99,16 @@ class PdfplumberEngine:
                 built.append(page_of(read, counted))
         finally:
             with _reading():
-                pdf.close()
+                if found is None:  # pdf.close() builds every page to close it
+                    pdf.stream.close()
+                else:
+                    pdf.close()
         return assemble(built, engine=self.name, version=self.version)
+
+
+def _upto(held: int, pages: int) -> str:
+    """The pages a tree holds, counted as far as one more than expected: "more than 1" beyond."""
+    return str(held) if held <= pages else f"more than {pages}"
 
 
 @contextmanager

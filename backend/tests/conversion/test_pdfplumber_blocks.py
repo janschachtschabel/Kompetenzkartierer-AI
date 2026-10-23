@@ -1,5 +1,6 @@
 """The engine pdfplumber: a PDF's text layer into named blocks (plan M1, 3.2), on the fixtures."""
 
+import inspect
 import logging
 import math
 from pathlib import Path
@@ -275,6 +276,28 @@ def test_a_sign_of_one_point_is_read_and_one_smaller_is_not() -> None:
 
 def test_a_sign_of_no_finite_size_is_unplaced_where_its_place_is_finite() -> None:
     assert pdfplumber_blocks.why_dropped(sign(size=math.nan), PAGE) == "unplaced"
+
+
+def test_a_page_tree_with_more_kids_than_it_counts_is_unreadable_before_its_pages_are_built(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # pdf.pages builds every page the tree holds: 330,000 kids fit in 50 MB
+    built: list[bool] = []
+    pages = inspect.getattr_static(pdfplumber.pdf.PDF, "pages")
+
+    def building(pdf: pdfplumber.pdf.PDF) -> object:
+        built.append(True)
+        return pages.fget(pdf)
+
+    monkeypatch.setattr(pdfplumber.pdf.PDF, "pages", property(building))
+    lying = tmp_path / "lehrplan.pdf"
+    lying.write_bytes(pages_pdf([SENTENCE] * 40, count=1))
+
+    with pytest.raises(UnreadablePdf):
+        engine("pdfplumber").convert(lying, pages=1)
+
+    assert built == []
+    assert read(FIXTURES / "prose.pdf").pages == 2 and built
 
 
 def test_a_page_of_more_signs_than_taken_is_too_dense_before_its_words_are_read(
