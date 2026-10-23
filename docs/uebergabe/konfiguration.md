@@ -93,5 +93,10 @@ ein Test schlägt an, wenn sie veraltet.
   Arbeitsspeicher (bei 50 MB und vier Uploads zugleich rund 204 MiB `/tmp` und 200 MiB RAM).
   Eine Grenze für gleichzeitige Uploads je Replica gibt es nicht; `UPLOADS_PER_MINUTE` zählt je
   Konto.
+- Konvertierung: Der Worker legt die Datei für die Dauer der Umwandlung in `/tmp` ab (bis
+  `MAX_UPLOAD_MB`) und hält sie einmal im Arbeitsspeicher; der Kindprozess, der sie umwandelt,
+  braucht je nach PDF ein Vielfaches davon (gemessen wird in M6). Unter Linux nimmt der Kernel
+  bei Speichermangel zuerst ihn (`oom_score_adj` 1000), nicht den Worker; die Konvertierung
+  endet dann mit `died`.
 - `JOB_SHUTDOWN_GRACE_S` mindestens 5 s unter `terminationGracePeriodSeconds` des Workers.
 - `LOG_FORMAT=json` für die zentrale Logsammlung.

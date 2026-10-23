@@ -116,6 +116,17 @@ ungültig.
   Ein zweiter Start, solange einer wartet oder läuft, gibt 409 `check_running` mit der Job-ID.
   Der Lauf dauert Stunden (allein ein Host trägt 400 Adressen) und belegt einen Worker; dafür
   einen eigenen Worker mit `WORKER_KINDS=source.check` vorsehen.
+- Konvertierung (X0): `POST /api/v1/sources/{id}/conversions` startet für die Datei eines
+  Eintrags den Job `source.convert` (202) oder gibt die vorhandene Konvertierung zurück (200,
+  eine gescheiterte startet neu). `GET …/conversion` nennt Stand, Seiten, gedruckte Seiten und
+  Befunde, `GET …/conversion/blocks?page=N` die Blöcke einer Seite (`p<Seite>-b<Block>`,
+  Tabellenzellen `T<n>:r<i>c<j>`). Wer die Datei eines Eintrags lesen darf (Eigentümer,
+  Redaktion, Admin; Einträge ohne Konto nach `THIRD_PARTY_MARKDOWN`), darf sie umwandeln lassen
+  und die Blöcke lesen. Bisher nur PDFs mit Textebene (pdfplumber): ein Scan endet mit
+  `needs_ocr` (OCR folgt mit Docling), mehr als `MAX_PDF_PAGES` (800) Seiten mit
+  `too_many_pages`, länger als `CONVERT_TIMEOUT_S` (900 s) mit `timed_out`. Die Umwandlung
+  läuft in einem eigenen Kindprozess, den Abbruch, Frist und Lease-Verlust beenden; dafür
+  eigene Worker mit `WORKER_KINDS=source.convert` vorsehen, ein Job je Pod.
 - Erster Admin: `python -m app.bootstrap NAME` gibt das Token einmal auf stdout aus. Interaktiv
   ausführen (`docker compose run`, `kubectl exec -it`), nicht als Job, dessen Ausgabe ein
   Log-System sammelt. Exit-Code 0: angelegt; 2: es gibt schon einen Admin, der sich anmelden
