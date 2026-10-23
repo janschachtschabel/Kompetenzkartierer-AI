@@ -85,7 +85,7 @@ def test_an_anchor_names_its_page_or_the_page_the_document_prints(
     [
         {"page_start": 0},
         {"page_start": 3, "page_end": 2},
-        {"page_start": None, "printed_page": "IV", "page_end": 0},  # an end without its start
+        {"page_start": None, "printed_page": "IV", "page_end": 5},  # an end without its start
         {"page_start": None, "printed_page": " "},
         {"char_start": 5, "char_end": 4},
         {"char_end": -1},

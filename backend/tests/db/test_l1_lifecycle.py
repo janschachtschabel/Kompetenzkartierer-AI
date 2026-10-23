@@ -117,15 +117,39 @@ def test_a_run_taken_away_leaves_what_it_made_without_it(
     assert left == (None, None, 0)  # its findings were the run's
 
 
-def test_a_node_s_run_is_a_run_of_its_document(connection: psycopg.Connection, made: dict[str, Any]) -> None:
+def test_what_a_run_made_or_found_is_of_the_run_s_document(
+    connection: psycopg.Connection, made: dict[str, Any]
+) -> None:
     other = add_document(connection, add_conversion(connection, b"\x02" * 32))
     foreign = add_run(connection, other)
+    document = made["document"]
 
     with pytest.raises(errors.ForeignKeyViolation):
-        add_node(connection, made["document"], run_id=foreign)
-    node = add_node(connection, made["document"])
+        add_node(connection, document, run_id=foreign)
+    node = add_node(connection, document)
     with pytest.raises(errors.ForeignKeyViolation):
-        add_statement(connection, made["document"], node, run_id=foreign)
+        add_statement(connection, document, node, run_id=foreign)
+    with pytest.raises(errors.ForeignKeyViolation):
+        connection.execute(
+            "INSERT INTO frame_part (id, document_id, part_kind, content, origin_scheme, origin_iri,"
+            " review_status_scheme, review_status_iri, run_id)"
+            " VALUES (%s, %s, 'operators', '{}', %s, %s, %s, %s, %s)",
+            (
+                add_entity(connection, "frame_part"),
+                document,
+                CV + "Origins",
+                CV + "orig_model",
+                CV + "ReviewStatuses",
+                CV + "rev_proposed",
+                foreign,
+            ),
+        )
+    with pytest.raises(errors.ForeignKeyViolation):
+        connection.execute(
+            "INSERT INTO validation_finding (id, document_id, run_id, rule, severity, focus_id, message)"
+            " VALUES (gen_random_uuid(), %s, %s, 'rule', 'warning', %s, 'Hinweis')",
+            (document, foreign, node),
+        )
 
 
 def test_what_goes_with_a_row_taken_away_is_found_by_an_index(connection: psycopg.Connection) -> None:

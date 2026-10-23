@@ -97,6 +97,17 @@ def test_a_document_s_values_keep_their_forms(
         add_document(connection, made, **columns)
 
 
+def test_a_document_is_typed_anew_with_a_document_type_alone(
+    connection: psycopg.Connection, made: dict[str, Any]
+) -> None:
+    document = add_document(connection, made, document_type_iri=SCHOOL + "dt-Lehrplan")
+
+    with pytest.raises(errors.CheckViolation, match="no document type"):
+        connection.execute(
+            "UPDATE document SET document_type_iri = %s WHERE id = %s", (CV + "sec_school", document)
+        )
+
+
 def test_one_iri_names_each_revision_of_a_document_once(
     connection: psycopg.Connection, made: dict[str, Any]
 ) -> None:

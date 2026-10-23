@@ -250,11 +250,13 @@ def test_a_node_applies_to_specifications_and_variants_of_its_own_document(
     variant = add_variant(connection, specification)
     other = add_specification(connection, add_document(connection, add_conversion(connection, b"\x02" * 32)))
 
-    add_node(connection, document, applies_to=[specification, variant])
+    node = add_node(connection, document, applies_to=[specification, variant])
 
     for named in ([other], [uuid.uuid4()], [variant, variant], [None]):
         with pytest.raises(errors.CheckViolation, match="applies to"):
             add_node(connection, document, position=2, applies_to=named)
+    with pytest.raises(errors.CheckViolation, match="applies to"):
+        connection.execute("UPDATE node SET applies_to = ARRAY[%s]::uuid[] WHERE id = %s", (other, node))
 
 
 def test_what_a_node_applies_to_stays_while_the_node_names_it(
@@ -283,9 +285,12 @@ def test_a_specification_a_node_names_stays_and_goes_once_the_node_names_it_no_m
 ) -> None:
     specification = add_specification(connection, document)
     node = add_node(connection, document, applies_to=[specification])
+    other = add_document(connection, add_conversion(connection, b"\x02" * 32))
 
     with pytest.raises(errors.CheckViolation, match="applies to"):
         connection.execute("DELETE FROM specification WHERE id = %s", (specification,))
+    with pytest.raises(errors.CheckViolation, match="applies to"):
+        connection.execute("UPDATE specification SET document_id = %s WHERE id = %s", (other, specification))
     # X1 read anew: the old specification goes before the node names the new one, in one transaction
     with connection.transaction():
         connection.execute("DELETE FROM specification WHERE id = %s", (specification,))
@@ -308,27 +313,33 @@ def test_a_specification_or_variant_is_taken_away_under_read_committed_alone(
         connection.execute("DELETE FROM document WHERE id = %s", (document,))
 
 
+@pytest.mark.parametrize("table", ["specification", "variant"])
 def test_what_a_node_is_written_to_apply_to_is_not_taken_away_meanwhile(
-    connection: psycopg.Connection, document: uuid.UUID, database_url: str
+    connection: psycopg.Connection, document: uuid.UUID, database_url: str, table: str
 ) -> None:
     specification = add_specification(connection, document)
+    named = {"specification": specification, "variant": add_variant(connection, specification)}[table]
 
     with connection.transaction(), psycopg.connect(database_url, autocommit=True) as other:
-        add_node(connection, document, applies_to=[specification])
+        add_node(connection, document, applies_to=[named])
         other.execute("SET lock_timeout = '200ms'")
         with pytest.raises(errors.LockNotAvailable):
-            other.execute("DELETE FROM specification WHERE id = %s", (specification,))
+            other.execute(f"DELETE FROM {table} WHERE id = %s", (named,))  # noqa: S608 - the test's names
 
 
 def test_a_statement_s_layout_markers_are_the_core_s(
     connection: psycopg.Connection, document: uuid.UUID
 ) -> None:
     node = add_node(connection, document)
-    add_statement(connection, document, node, layout_markers=[CV + "mark_bold"])
+    statement = add_statement(connection, document, node, layout_markers=[CV + "mark_bold"])
 
     for markers in ([CV + "addr_learner"], [CV + "mark_nowhere"], [None]):
         with pytest.raises(errors.CheckViolation, match="layout marker"):
             add_statement(connection, document, node, position=2, layout_markers=markers)
+    with pytest.raises(errors.CheckViolation, match="layout marker"):
+        connection.execute(
+            "UPDATE statement SET layout_markers = %s WHERE id = %s", ([CV + "addr_learner"], statement)
+        )
 
 
 def test_a_statement_stands_at_a_node_of_its_document_with_an_addressee(
@@ -392,6 +403,13 @@ def test_a_statement_s_last_anchor_stays_with_it(connection: psycopg.Connection,
     with pytest.raises(errors.CheckViolation, match="anchor"):
         connection.execute("UPDATE anchor SET statement_id = %s WHERE statement_id = %s", (other, statement))
     connection.execute("UPDATE anchor SET quote = 'planen' WHERE statement_id = %s", (statement,))
+    with connection.transaction():  # anchored anew within the transaction: checked as it commits
+        connection.execute("DELETE FROM anchor WHERE statement_id = %s", (statement,))
+        connection.execute(
+            "INSERT INTO anchor (id, document_id, conversion_id, statement_id, page_start)"
+            " SELECT %s, id, conversion_id, %s, 2 FROM document WHERE id = %s",
+            (add_entity(connection, "anchor"), statement, document),
+        )
 
 
 def test_an_addressee_is_one_of_the_core_s(connection: psycopg.Connection, document: uuid.UUID) -> None:

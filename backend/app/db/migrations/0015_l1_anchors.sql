@@ -47,7 +47,7 @@ CREATE TABLE anchor (
     frame_part_id uuid,
     specification_id uuid,
     page_start integer CHECK (page_start >= 1),  -- physical, from 1
-    page_end integer CHECK (page_end >= 1),
+    page_end integer,
     printed_page text CHECK (has_text(printed_page) AND length(printed_page) <= 20),
     quote text CHECK (length(quote) <= 20000),
     match_kind_scheme text CHECK (match_kind_scheme = 'https://w3id.org/wlo/curriculum/vocab#MatchKinds'),
@@ -69,6 +69,7 @@ CREATE TABLE anchor (
     CHECK (num_nonnulls(node_id, statement_id, frame_part_id, specification_id) <= 1),
     CHECK (page_start IS NOT NULL OR printed_page IS NOT NULL),
     CHECK (page_end >= page_start),
+    CHECK (page_end IS NULL OR page_start IS NOT NULL),  -- an end of a range it begins
     CHECK (char_end >= char_start),
     CHECK ((match_kind_scheme IS NULL) = (match_kind_iri IS NULL))
 );
