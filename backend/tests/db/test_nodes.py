@@ -223,8 +223,9 @@ async def test_a_subtree_with_a_value_its_profile_does_not_hold_is_written_not_a
     [
         ("addr_educator", AREA),  # a statement's addressee, two levels down
         ("match_exact", node(anchors=(AnchorDraft(("p1-b1",), 1, match_kind=CV + "match_exact"),))),
+        ("obl_binding", node(statements=(statement("Sie lesen.", obligation=CV + "obl_binding"),))),
     ],
-    ids=["addressee", "match-kind-of-a-node-s-anchor"],
+    ids=["addressee", "match-kind-of-a-node-s-anchor", "obligation-of-a-statement"],
 )
 async def test_a_subtree_with_a_retired_core_value_is_written_not_at_all(
     connection: psycopg.AsyncConnection, document: Any, retired: str, draft: NodeDraft
