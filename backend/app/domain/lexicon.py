@@ -2,19 +2,21 @@
 that hold for its regions, document type and plan generation, the more specific before the
 general.
 
-A cue holds where every scope it sets holds: one of its regions is the document's or one the
-document's lies in (a cue for all of Germany holds in each country), its document type is the
+A cue holds where every scope it sets holds: one of its regions is one of the document's own or
+one they lie in (a cue for all of Germany holds in each country), its document type is the
 document's, its plan generation the document's; a cue that sets none holds everywhere. Where
 the document's type or plan generation is not known (None) - X1 is to tell the generation by
 such cues, and a document may carry none - a cue of that scope holds, but the scope does not
 rank it. Dates, subjects, issuers and kinds of institution do not filter: they go to the model
 as text. Cues on one word, pattern or layout signal of one kind compete; the first by rank
-holds - the more scopes it sets that match the document's known ones, then checked before
-unchecked, then the stronger (no strength is none). Where
-several share the first rank and point to other targets, all hold as a tie, and the model gets
-their rule texts. A negative cue and a homonym compete with none and always hold; a homonym
-keeps its other target. The document's own terms (its profile from X1) are laid over this when
-the prompt is built (plan M1 6).
+holds - by region first, one of the document's own before one they lie in before none (a
+country's cue before Germany's before the sector's, konzept §12.4), then the more of its
+document type and plan generation that match the document's known ones, then checked before
+unchecked, then the stronger (no strength is none). Where several share the first rank and
+point to other targets, all hold as a tie, and the model gets their rule texts. A negative cue
+and a homonym compete with none and always hold; a homonym keeps its other target. The
+document's own terms (its profile from X1) are laid over this when the prompt is built (plan
+M1 6).
 
 A pattern is searched with a time limit, so a pattern that backtracks without end stops.
 """
@@ -63,21 +65,28 @@ class ActiveCue:
 
 
 def active_cues(
-    cues: Iterable[Cue], regions: Set[str], document_type: str | None, plan_generation: str | None
+    cues: Iterable[Cue],
+    regions: Set[str],
+    document_type: str | None,
+    plan_generation: str | None,
+    *,
+    wider_regions: Set[str] = frozenset(),
 ) -> list[ActiveCue]:
-    """The cues that hold for a document of ``regions`` (with those they lie in), ``document_type``
-    and ``plan_generation``, by their IRIs."""
+    """The cues that hold for a document of ``regions`` - its own, a country - and the
+    ``wider_regions`` they lie in (Germany), of ``document_type`` and ``plan_generation`` (None
+    where unknown), by their IRIs."""
+    document = _Document(frozenset(regions), frozenset(wider_regions), document_type, plan_generation)
     competing: defaultdict[tuple[str, str], list[Cue]] = defaultdict(list)
     held: list[ActiveCue] = []
     for cue in cues:
-        if not _holds(cue, regions, document_type, plan_generation):
+        if not _holds(cue, document):
             continue
         if cue.role in _ALWAYS:
             held.append(ActiveCue(cue, tie=False))
         else:
             competing[_trigger(cue)].append(cue)
     for group in competing.values():
-        ranks = {cue.iri: _rank(cue, document_type, plan_generation) for cue in group}
+        ranks = {cue.iri: _rank(cue, document) for cue in group}
         best = max(ranks.values())
         first = [cue for cue in group if ranks[cue.iri] == best]
         tie = len({cue.maps_to for cue in first}) > 1
@@ -94,11 +103,19 @@ def pattern_matches(pattern: str, text: str, timeout: float = PATTERN_TIMEOUT_S)
         raise PatternTimeout(f"{pattern!r} took longer than {timeout} s") from error
 
 
-def _holds(cue: Cue, regions: Set[str], document_type: str | None, plan_generation: str | None) -> bool:
+@dataclass(frozen=True)
+class _Document:
+    regions: frozenset[str]
+    wider_regions: frozenset[str]
+    document_type: str | None
+    plan_generation: str | None
+
+
+def _holds(cue: Cue, document: _Document) -> bool:
     return (
-        (not cue.scope_regions or not cue.scope_regions.isdisjoint(regions))
-        and _open_to(cue.scope_document_types, document_type)
-        and _open_to(cue.plan_generations, plan_generation)
+        (not cue.scope_regions or _region_rank(cue, document) > 0)
+        and _open_to(cue.scope_document_types, document.document_type)
+        and _open_to(cue.plan_generations, document.plan_generation)
     )
 
 
@@ -117,7 +134,17 @@ def _trigger(cue: Cue) -> tuple[str, str]:
     return cue.kind, "layout:" + str(cue.layout_signal)
 
 
-def _rank(cue: Cue, document_type: str | None, plan_generation: str | None) -> tuple[int, bool, float]:
+def _region_rank(cue: Cue, document: _Document) -> int:
+    """2 where one of the cue's regions is one of the document's own, 1 where it is one they lie
+    in, 0 where it names neither (or none)."""
+    if not cue.scope_regions.isdisjoint(document.regions):
+        return 2
+    return 1 if not cue.scope_regions.isdisjoint(document.wider_regions) else 0
+
+
+def _rank(cue: Cue, document: _Document) -> tuple[int, int, bool, float]:
     # a scope ranks a cue only where it is known to match: unknown, it neither excludes nor ranks
-    matching = (document_type in cue.scope_document_types) + (plan_generation in cue.plan_generations)
-    return bool(cue.scope_regions) + matching, cue.verified, cue.strength or 0.0
+    matching = (document.document_type in cue.scope_document_types) + (
+        document.plan_generation in cue.plan_generations
+    )
+    return _region_rank(cue, document), matching, cue.verified, cue.strength or 0.0

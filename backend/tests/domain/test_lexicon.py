@@ -11,7 +11,8 @@ from app.vocab.loader import read_vocabulary
 
 ONTOLOGY = Path(__file__).resolve().parents[3] / "ontology"
 REGION = "https://w3id.org/wlo/curriculum/region/"
-NW = frozenset({REGION + "DE-NW", REGION + "DE"})  # a region with those it lies in
+NW = frozenset({REGION + "DE-NW"})
+GERMANY = frozenset({REGION + "DE"})  # the region North Rhine-Westphalia lies in
 CUE = "https://w3id.org/wlo/curriculum/vocab#role_cue"
 PREF = "https://w3id.org/wlo/curriculum/vocab#role_pref"
 NEGATIVE = "https://w3id.org/wlo/curriculum/vocab#role_negative"
@@ -31,11 +32,15 @@ def cue(name: str, *, form: str | None = "Kernlehrplan", target: str = "dt-Lehrp
 
 
 def active(
-    cues: list[Cue], regions: frozenset[str] = NW, document_type: str | None = None, plan: str | None = None
+    cues: list[Cue],
+    regions: frozenset[str] = NW,
+    document_type: str | None = None,
+    plan: str | None = None,
+    wider: frozenset[str] = GERMANY,
 ) -> dict[str, bool]:
     return {
         found.cue.iri.rsplit("/", 1)[-1]: found.tie
-        for found in active_cues(cues, regions, document_type, plan)
+        for found in active_cues(cues, regions, document_type, plan, wider_regions=wider)
     }
 
 
@@ -57,9 +62,37 @@ def test_a_cue_without_a_scope_holds_everywhere_and_a_scoped_one_where_its_scope
         "generation",
     }
     assert set(active(cues, document_type="dt-Rahmenplan", plan="BP2004")) == {"everywhere", "nw", "germany"}
-    assert set(active(cues, regions=frozenset(), document_type="dt-Rahmenplan", plan="BP2004")) == {
+    none = frozenset[str]()
+    assert set(active(cues, regions=none, document_type="dt-Rahmenplan", plan="BP2004", wider=none)) == {
         "everywhere"
     }
+
+
+def test_a_cue_of_several_countries_holds_in_each_of_them() -> None:
+    both = [cue("both", scope_regions=frozenset({REGION + "DE-BY", REGION + "DE-NW"}))]
+
+    assert active(both) == {"both": False}
+    assert active(both, regions=frozenset({REGION + "DE-BY"})) == {"both": False}
+    assert active(both, regions=frozenset({REGION + "DE-HH"})) == {}
+
+
+@pytest.mark.parametrize(
+    ("first", "second"),
+    [
+        (
+            {"scope_regions": GERMANY, "strength": 0.9, "verified": True},
+            {"scope_regions": NW, "strength": 0.6},
+        ),
+        ({"strength": 0.9, "verified": True}, {"scope_regions": GERMANY, "strength": 0.6}),
+    ],
+    ids=["own-before-wider", "wider-before-none"],
+)
+def test_a_cue_of_the_document_s_own_region_ranks_before_one_of_a_region_it_lies_in_and_that_before_none(
+    first: dict[str, Any], second: dict[str, Any]
+) -> None:
+    cues = [cue("first", target="dt-Lehrplan", **first), cue("second", target="dt-Rahmenplan", **second)]
+
+    assert active(cues) == {"second": False}
 
 
 def test_a_cue_of_a_document_type_or_plan_generation_holds_where_the_document_s_is_unknown() -> None:

@@ -10,7 +10,7 @@ import pytest
 from app.db.migrate import migrate
 from app.domain.lexicon import active_cues
 from app.vocab.loader import read_vocabulary
-from app.vocab.lookup import by_notation, concept, cues_for, profile_concepts, region_with_ancestors
+from app.vocab.lookup import REGIONS, by_notation, concept, cues_for, profile_concepts, region_with_ancestors
 from app.vocab.store import load_vocabulary
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
@@ -98,9 +98,12 @@ async def test_an_unknown_concept_is_none(connection: psycopg.AsyncConnection) -
 
 async def test_a_sector_s_cues_are_read_for_its_active_profile(connection: psycopg.AsyncConnection) -> None:
     cues = await cues_for(connection, "school")
-    regions = await region_with_ancestors(connection, "DE-NW")
+    region = await by_notation(connection, REGIONS, "DE-NW")
+    assert region is not None
+    own = frozenset({region.iri})
+    wider = await region_with_ancestors(connection, "DE-NW") - own
 
-    held = [found.cue for found in active_cues(cues, regions, None, None)]
+    held = [found.cue for found in active_cues(cues, own, None, None, wider_regions=wider)]
     named = {cue.iri for cue in held}
     kernlehrplan = next(cue for cue in cues if cue.iri == SCHOOL + "cue-dt-kernlehrplan")
 
