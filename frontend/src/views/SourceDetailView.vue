@@ -5,13 +5,15 @@
  * where the register has them - and how its file came, each time it came; for a
  * seed's candidate what the dataset or the land's research said of the
  * curriculum, what the check found at its address, and the access notes of its
- * land, school form and subject.
+ * land, school form and subject. Where it has a file, its conversion into blocks
+ * (ConversionPanel).
  */
 import { onMounted, ref, watch } from "vue";
 import { RouterLink, useRouter, type RouteLocationRaw } from "vue-router";
 
 import { ApiError, getSource, MIB, type SeedFields, type SourceDetail } from "@/api";
 import AcquisitionList from "@/components/AcquisitionList.vue";
+import ConversionPanel from "@/components/ConversionPanel.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
@@ -155,6 +157,8 @@ function grades(seed: SeedFields): string | null {
         <h2 id="source-acquisitions">{{ t("entryPage.acquisitions.heading") }}</h2>
         <AcquisitionList :acquisitions="source.acquisitions" />
       </section>
+
+      <ConversionPanel v-if="source.file" class="source__section" :source-id="source.id" :mime="source.file.mime" />
 
       <section v-if="source.seed" class="source__section" aria-labelledby="source-seed">
         <h2 id="source-seed">{{ t("entryPage.seed.heading") }}</h2>

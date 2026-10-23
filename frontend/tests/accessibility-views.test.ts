@@ -222,6 +222,57 @@ describe("accessibility of the pages", () => {
     expect(found, describeViolations(found)).toEqual([]);
   });
 
+  it("an entry's page with its conversion done and what it found has none", async () => {
+    api.setToken("kka_token");
+    setSession({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
+    vi.spyOn(api, "getSource").mockResolvedValue(detail({ file: ENTRY.file, mine: true }));
+    const findings = [
+      { code: "unmapped_symbol", params: { codepoint: "U+F0B7", count: 3, pages: [1, 2] } },
+      { code: "encoding_suspect", params: { share: 0.034, count: 41, examples: ["Ã¤"] } },
+    ];
+    vi.spyOn(api, "getConversion").mockResolvedValue(conversion({ findings }));
+    const wrapper = await show("/quellen/s1");
+    expect(wrapper.find("[data-test=findings]").exists()).toBe(true);
+
+    const found = await pageViolations();
+
+    expect(found, describeViolations(found)).toEqual([]);
+  });
+
+  it("an entry's page while its conversion runs has none", async () => {
+    api.setToken("kka_token");
+    setSession({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
+    vi.spyOn(api, "getSource").mockResolvedValue(detail({ file: ENTRY.file, mine: true }));
+    vi.spyOn(api, "getConversion").mockResolvedValue(conversion({ status: "pending", pages: null, printed_pages: null }));
+    vi.spyOn(api, "getJob").mockResolvedValue({ ...FAILED_JOB, kind: "source.convert", status: "running", error_code: null, progress: { code: "converting", params: {} } });
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const wrapper = await show("/quellen/s1");
+    await vi.advanceTimersByTimeAsync(1000);
+    vi.useRealTimers(); // axe keeps its own time
+    expect(wrapper.text()).toContain(t("jobs.progress.converting"));
+
+    const found = await pageViolations();
+
+    expect(found, describeViolations(found)).toEqual([]);
+  });
+
+  it("an entry's page whose conversion failed, its start again refused, has none", async () => {
+    api.setToken("kka_token");
+    setSession({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
+    vi.spyOn(api, "getSource").mockResolvedValue(detail({ file: ENTRY.file, mine: true }));
+    vi.spyOn(api, "getConversion").mockResolvedValue(conversion({ status: "failed", error_code: "needs_ocr", pages: null }));
+    vi.spyOn(api, "askConversion").mockRejectedValue(new api.ApiError("server", 503, "service_unavailable"));
+    const wrapper = await show("/quellen/s1");
+    await wrapper.get("[data-test=conversion-start]").trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain(t("jobs.failures.needs_ocr"));
+    expect(wrapper.find("[aria-labelledby=source-conversion] [role=alert]").exists()).toBe(true);
+
+    const found = await pageViolations();
+
+    expect(found, describeViolations(found)).toEqual([]);
+  });
+
   it("an entry's blocks with a table, a running head and foot, and a page number refused has none", async () => {
     api.setToken("kka_token");
     setSession({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });

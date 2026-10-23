@@ -321,8 +321,30 @@ export const messages = {
       none: "Keine Zugangsnotiz für Land, Schulform und Fach dieses Eintrags.",
     },
   },
-  // An entry's file converted into blocks (ConversionPanel.vue, conversionWords.ts)
-  conversion: {
+  // An entry's file converted into blocks (ConversionPanel.vue, conversionWords.ts). Not
+  // "conversion": the guards read "conversion.status" in a template as a key of the group.
+  conversions: {
+    heading: "Umwandlung in Blöcke",
+    intro:
+      "Die Umwandlung liest die PDF-Datei in Blöcke – Absätze, Überschriften, Tabellen, Kopf- und Fußzeilen –, " +
+      "jeden mit einer ID, über die spätere Schritte ihn zitieren. Sie läuft im Hintergrund weiter, auch wenn du " +
+      "die Seite verlässt.",
+    start: "In Blöcke umwandeln",
+    // an event, not a state: the line stays once the job has ended
+    started: "Die Umwandlung wurde gestartet.",
+    startFailed: "Die Umwandlung wurde nicht gestartet.",
+    loadFailed: "Der Stand der Umwandlung wurde nicht geladen.",
+    jobLabel: "Umwandlung in Blöcke",
+    done: "Die Umwandlung ist fertig: {pages} {pages|Seite|Seiten} gelesen.",
+    failed: "Die Umwandlung ist gescheitert.",
+    facts: {
+      pages: "Seiten",
+      engine: "Werkzeug",
+      finishedAt: "Abgeschlossen",
+    },
+    findingsHeading: "Befunde",
+    noFindings: "Die Umwandlung fand nichts Auffälliges im Text.",
+    showBlocks: "Blöcke ansehen",
     // the job was cancelled before it ended (a conversion's error_code "cancelled")
     cancelled: "Sie wurde abgebrochen. Starte sie neu, wenn du die Blöcke brauchst.",
     pageRange: "{from}–{to}",

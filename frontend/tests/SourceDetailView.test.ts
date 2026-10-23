@@ -27,6 +27,8 @@ function described(wrapper: VueWrapper, section: string, term: string): string {
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  // an entry with a file asks for its conversion: none, unless a test says otherwise
+  vi.spyOn(api, "getConversion").mockRejectedValue(new ApiError("server", 404, "no_conversion"));
 });
 
 afterEach(() => {
@@ -105,6 +107,24 @@ describe("a register entry's page", () => {
     const addresses = acquired.findAll("ol li a");
     expect(addresses.map((link) => link.attributes("href"))).toEqual(chain);
     expect(addresses.every((link) => link.attributes("rel") === "noreferrer")).toBe(true);
+  });
+
+  it("shows the conversion of its file, and none where it has no file yet", async () => {
+    vi.spyOn(api, "getSource").mockResolvedValue(
+      detail({ file: { name: "physik.pdf", mime: "application/pdf", size: 8, sha256: "ab" } }),
+    );
+    const wrapper = await open();
+
+    expect(wrapper.get("#source-conversion").text()).toBe(t("conversions.heading"));
+    expect(wrapper.get("[aria-labelledby=source-conversion]").text()).toContain(t("conversions.start"));
+    expect(api.getConversion).toHaveBeenCalledWith("s1");
+
+    vi.mocked(api.getConversion).mockClear();
+    vi.mocked(api.getSource).mockResolvedValue(detail({ id: "s2" }));
+    await wrapper.setProps({ id: "s2" });
+    await flushPromises();
+    expect(wrapper.find("#source-conversion").exists()).toBe(false);
+    expect(api.getConversion).not.toHaveBeenCalled();
   });
 
   it("says an upload came as one, with no addresses to show", async () => {

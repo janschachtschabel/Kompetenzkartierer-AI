@@ -13,7 +13,7 @@ type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 
 // a text block says no kind: it is what most blocks are
 const typesFollow: [
-  Same<api.FindingCode, Exclude<keyof typeof messages.conversion.findings, "other">>,
+  Same<api.FindingCode, Exclude<keyof typeof messages.conversions.findings, "other">>,
   Same<Exclude<api.BlockKind, "text">, keyof typeof messages.conversionPage.kind>,
 ] = [true, true];
 
@@ -30,7 +30,7 @@ describe("what a conversion found, in words", () => {
   it("says how many signs of a symbol font were left as they are, and on which page", () => {
     const text = findingText(symbol({ codepoint: "U+F0B7", count: 3, pages: [1] }));
 
-    expect(text).toBe(t("conversion.findings.unmapped_symbol", { count: 3, codepoint: "U+F0B7", pageCount: 1, pages: "1" }));
+    expect(text).toBe(t("conversions.findings.unmapped_symbol", { count: 3, codepoint: "U+F0B7", pageCount: 1, pages: "1" }));
     expect(text).toContain("3 Zeichen");
     expect(text).toContain("U+F0B7");
     expect(text).toContain("Seite 1 ");
@@ -42,7 +42,7 @@ describe("what a conversion found, in words", () => {
 
     expect(one).toContain("1 Zeichen");
     expect(one).toContain("steht es");
-    const ranges = [t("conversion.pageRange", { from: 1, to: 3 }), "5", t("conversion.pageRange", { from: 7, to: 8 })];
+    const ranges = [t("conversions.pageRange", { from: 1, to: 3 }), "5", t("conversions.pageRange", { from: 7, to: 8 })];
     expect(many).toContain(`Seiten ${new Intl.ListFormat("de-DE", { type: "conjunction" }).format(ranges)} `);
   });
 
@@ -57,18 +57,18 @@ describe("what a conversion found, in words", () => {
   });
 
   it("says a finding it has no words for, or whose numbers are missing, by its code rather than guess", () => {
-    expect(findingText({ code: "something_new", params: {} })).toBe(t("conversion.findings.other", { code: "something_new" }));
+    expect(findingText({ code: "something_new", params: {} })).toBe(t("conversions.findings.other", { code: "something_new" }));
     expect(findingText(symbol({ codepoint: "U+F0B7", count: "drei", pages: [1] }))).toBe(
-      t("conversion.findings.other", { code: "unmapped_symbol" }),
+      t("conversions.findings.other", { code: "unmapped_symbol" }),
     );
     expect(findingText({ code: "encoding_suspect", params: { share: 0.5, count: 30 } })).toBe(
-      t("conversion.findings.other", { code: "encoding_suspect" }),
+      t("conversions.findings.other", { code: "encoding_suspect" }),
     );
   });
 
   it("has words for every finding the backend reports, and for no other", () => {
     expect(typesFollow.every(Boolean)).toBe(true);
-    const worded = Object.keys(messages.conversion.findings).filter((code) => code !== "other");
+    const worded = Object.keys(messages.conversions.findings).filter((code) => code !== "other");
 
     expect(worded.sort()).toEqual(backendValues("FindingCode"));
   });
@@ -89,7 +89,7 @@ describe("why a conversion failed, in words", () => {
   });
 
   it("is that it was stopped, where its job was cancelled", () => {
-    expect(conversionFailureText("cancelled")).toBe(t("conversion.cancelled"));
+    expect(conversionFailureText("cancelled")).toBe(t("conversions.cancelled"));
   });
 
   it("is the general words for a code the page does not know, or for none", () => {
