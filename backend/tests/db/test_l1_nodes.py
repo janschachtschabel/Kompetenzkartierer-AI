@@ -123,6 +123,11 @@ def test_a_node_type_lies_under_the_node_s_function(
         )
     with pytest.raises(errors.CheckViolation):
         connection.execute("UPDATE node SET function_iri = %s WHERE id = %s", (CV + "fn_unit", node))
+    unit = add_node(connection, document, position=2, function_iri=CV + "fn_unit")
+    with pytest.raises(errors.CheckViolation):
+        connection.execute(
+            "UPDATE node SET node_type_iri = %s WHERE id = %s", (SCHOOL + "Inhaltsbereich", unit)
+        )
 
 
 @pytest.mark.parametrize(
@@ -133,8 +138,22 @@ def test_a_node_type_lies_under_the_node_s_function(
         {"code_assigned": True},  # an assigned code that is none
         {"position": 0},
         {"title_language": "Deutsch"},
+        {"original_title": "\N{IDEOGRAPHIC SPACE}"},
+        {"obligation_scheme": CV + "Obligations"},  # a scheme without its value
+        {"scope_share_iri": CV + "share_core"},  # a value without its scheme
+        {"extraction_depth_scheme": CV + "ExtractionDepths"},
     ],
-    ids=["rule-without-id", "id-without-rule", "assigned-code", "position", "language"],
+    ids=[
+        "rule-without-id",
+        "id-without-rule",
+        "assigned-code",
+        "position",
+        "language",
+        "title",
+        "obligation-pair",
+        "scope-share-pair",
+        "depth-pair",
+    ],
 )
 def test_a_node_s_values_keep_their_forms(
     connection: psycopg.Connection, document: uuid.UUID, columns: dict[str, Any]
@@ -237,6 +256,13 @@ def test_a_statement_s_last_addressee_stays(connection: psycopg.Connection, docu
 
     with pytest.raises(errors.CheckViolation, match="addressee"):
         connection.execute("DELETE FROM statement_addressee WHERE statement_id = %s", (statement,))
+    other = add_statement(
+        connection, document, add_node(connection, document, position=2), addressees=("addr_teacher",)
+    )
+    with pytest.raises(errors.CheckViolation, match="addressee"):
+        connection.execute(
+            "UPDATE statement_addressee SET statement_id = %s WHERE statement_id = %s", (other, statement)
+        )
 
 
 def test_a_statement_without_an_anchor_is_refused_when_it_is_committed(
@@ -272,8 +298,21 @@ def test_an_addressee_is_one_of_the_core_s(connection: psycopg.Connection, docum
         {"verbatim": "   "},
         {"text_hash": "abc"},
         {"details": psycopg.types.json.Jsonb([])},
+        {"lead_in": "\N{IDEOGRAPHIC SPACE}"},
+        {"origin_iri": CV + "orig_rule"},  # a rule's value without the rule
+        {"rule_id": "split-enumeration"},  # a rule named for a value from the source
+        {"obligation_iri": CV + "obl_mandatory"},  # a value without its scheme
     ],
-    ids=["subkind-of-another-kind", "no-wording", "hash", "details"],
+    ids=[
+        "subkind-of-another-kind",
+        "no-wording",
+        "hash",
+        "details",
+        "lead-in",
+        "rule-without-id",
+        "id-without-rule",
+        "obligation-pair",
+    ],
 )
 def test_a_statement_s_values_keep_their_forms(
     connection: psycopg.Connection, document: uuid.UUID, columns: dict[str, Any]
@@ -293,6 +332,26 @@ def test_a_subkind_lies_under_its_statement_s_kind(
         connection.execute(
             "UPDATE statement SET statement_kind_iri = %s WHERE id = %s", (CV + "kind_content", statement)
         )
+    content = add_statement(
+        connection,
+        document,
+        add_node(connection, document, position=2),
+        statement_kind_iri=CV + "kind_content",
+    )
+    with pytest.raises(errors.CheckViolation):
+        connection.execute(
+            "UPDATE statement SET subkind_iri = %s WHERE id = %s", (SCHOOL + "Kompetenzerwartung", content)
+        )
+
+
+def test_statements_stand_at_places_of_their_own_at_their_node(
+    connection: psycopg.Connection, document: uuid.UUID
+) -> None:
+    node = add_node(connection, document)
+    add_statement(connection, document, node)
+
+    with pytest.raises(errors.UniqueViolation):
+        add_statement(connection, document, node)
 
 
 def test_a_node_taken_away_takes_its_children_and_statements(

@@ -86,13 +86,14 @@ def test_an_anchor_names_its_page_or_the_page_the_document_prints(
         {"page_start": 0},
         {"page_start": 3, "page_end": 2},
         {"page_start": None, "printed_page": "IV", "page_end": 0},  # an end without its start
+        {"page_start": None, "printed_page": " "},
         {"char_start": 5, "char_end": 4},
         {"char_end": -1},
         {"match_score": 1.5},
         {"table_cell": "r3c2"},
         {"match_kind_scheme": CV + "MatchKinds"},  # a scheme without its value
     ],
-    ids=["page", "page-range", "page-end", "char-range", "char-end", "score", "cell", "pair"],
+    ids=["page", "page-range", "page-end", "printed-page", "char-range", "char-end", "score", "cell", "pair"],
 )
 def test_an_anchor_s_values_keep_their_forms(
     connection: psycopg.Connection, made: dict[str, Any], columns: dict[str, Any]
@@ -106,12 +107,17 @@ def test_an_anchor_anchors_one_thing_of_its_own_document(
 ) -> None:
     statement = add_statement(connection, made["document"], made["node"])
     other = add_conversion(connection, b"\x02" * 32)
-    foreign = add_node(connection, add_document(connection, other))
+    foreign_document = add_document(connection, other)
+    foreign = add_node(connection, foreign_document)
 
     with pytest.raises(errors.CheckViolation):
         add_anchor(connection, made, statement_id=statement)  # beside the node
     with pytest.raises(errors.ForeignKeyViolation):
         add_anchor(connection, made, node_id=foreign)
+    with pytest.raises(errors.ForeignKeyViolation):
+        add_anchor(
+            connection, made, node_id=None, statement_id=add_statement(connection, foreign_document, foreign)
+        )
     with pytest.raises(errors.ForeignKeyViolation):
         add_anchor(connection, made, conversion_id=other["conversion"])
 
@@ -200,6 +206,8 @@ def test_a_frame_part_is_anchored_like_a_node(connection: psycopg.Connection, ma
     assert connection.execute("SELECT count(*) FROM anchor WHERE frame_part_id = %s", (part,)).fetchone() == (
         1,
     )
+    connection.execute("DELETE FROM frame_part WHERE id = %s", (part,))
+    assert connection.execute("SELECT count(*) FROM anchor").fetchone() == (0,)  # its anchors with it
 
 
 def test_a_frame_part_s_kinds_are_the_parts_x3_names_beside_statements(

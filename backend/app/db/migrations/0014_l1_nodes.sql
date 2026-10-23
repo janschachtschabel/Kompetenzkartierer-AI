@@ -91,7 +91,8 @@ CREATE CONSTRAINT TRIGGER node_without_cycle AFTER INSERT OR UPDATE OF parent_id
 
 -- A profile value refines the core value it stands beside: a node type lies under the node's
 -- function, a subkind under its statement's kind (skos:broader, cur-shapes.ttl). Which profile
--- a value may come from, the app checks (app/db/nodes.py)
+-- a value may come from, the app checks (app/db/nodes.py). Checked as a row is written: what a
+-- later load of the vocabularies changes in skos:broader, X5 finds in the rows already written
 CREATE FUNCTION refines(value_iri text, core_iri text) RETURNS boolean
     LANGUAGE sql STABLE PARALLEL SAFE
     RETURN value_iri IS NULL OR EXISTS (SELECT FROM vocab_concept WHERE iri = value_iri AND core_iri = ANY (broader));

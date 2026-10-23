@@ -60,6 +60,8 @@ def test_a_new_document_is_a_first_unfrozen_revision_of_unclear_rights(
     [
         {"regions": ["NRW"]},
         {"regions": ["DE-NW", "de-by"]},
+        {"regions": ["DE-NW", None]},
+        {"title": "\N{IDEOGRAPHIC SPACE}\N{NO-BREAK SPACE}"},
         {"valid_from": "1. August 2023"},
         {"issued": "2023-8"},
         {"revision": 0},
@@ -74,6 +76,8 @@ def test_a_new_document_is_a_first_unfrozen_revision_of_unclear_rights(
     ids=[
         "region-code",
         "region-case",
+        "region-null",
+        "title-of-space",
         "valid-from",
         "issued",
         "revision",
