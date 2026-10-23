@@ -11,7 +11,11 @@ import { messages, t } from "@/i18n/de";
 /** true where `A` and `B` name the same values; vue-tsc fails the list below where they do not. */
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 
-const typesFollow: [Same<api.FindingCode, Exclude<keyof typeof messages.conversion.findings, "other">>] = [true];
+// a text block says no kind: it is what most blocks are
+const typesFollow: [
+  Same<api.FindingCode, Exclude<keyof typeof messages.conversion.findings, "other">>,
+  Same<Exclude<api.BlockKind, "text">, keyof typeof messages.conversionPage.kind>,
+] = [true, true];
 
 /** The values of the `Literal[...]` the backend names `name` in app/conversion/base.py. */
 function backendValues(name: string): string[] {
@@ -67,6 +71,14 @@ describe("what a conversion found, in words", () => {
     const worded = Object.keys(messages.conversion.findings).filter((code) => code !== "other");
 
     expect(worded.sort()).toEqual(backendValues("FindingCode"));
+  });
+});
+
+describe("what a block is, in words", () => {
+  it("names every kind the backend has but text, and no other", () => {
+    expect(backendValues("BlockKind")).toContain("page_header");
+
+    expect([...Object.keys(messages.conversionPage.kind), "text"].sort()).toEqual(backendValues("BlockKind"));
   });
 });
 

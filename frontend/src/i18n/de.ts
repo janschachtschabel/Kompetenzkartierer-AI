@@ -21,6 +21,7 @@ export const messages = {
       login: "Anmeldung",
       sources: "Quellen",
       source: "Registereintrag",
+      conversion: "Blöcke",
     },
     roles: {
       admin: "Administration",
@@ -337,6 +338,56 @@ export const messages = {
         "etwa {examples}. Prüfe die Blöcke, bevor du aus ihnen zitierst.",
       // a finding the page has no words for yet, or whose numbers did not come
       other: "Ein Befund, den diese Seite noch nicht beschreibt: {code}.",
+    },
+  },
+  // The blocks of an entry's converted file, a page at a time (ConversionView.vue)
+  conversionPage: {
+    // the page's heading until the entry names it
+    heading: "Blöcke",
+    back: "Zurück zum Eintrag",
+    intro:
+      "Die Blöcke der Datei, Seite für Seite, so wie die Umwandlung sie gelesen hat. Mit der ID eines Blocks " +
+      "oder einer Tabellenzelle zitieren spätere Schritte die Stelle.",
+    // the browser's title: the entry, and the page shown
+    tabTitle: "{title}, Seite {page}",
+    loadFailed: "Die Blöcke wurden nicht geladen.",
+    pageFailed: "Die Blöcke dieser Seite wurden nicht geladen.",
+    hiddenTitle: "Nur für die Redaktion",
+    notConvertedTitle: "Noch keine Blöcke",
+    failedBody: "Die Umwandlung ist gescheitert. Warum, und wie du sie neu startest, zeigt die Seite des Eintrags.",
+    toEntry: "Zur Seite des Eintrags",
+    pageHeading: "Seite {page} von {pages}",
+    printed: "Gedruckte Seitenzahl: {printed}",
+    // what a screen reader hears once a page the reader moved to shows
+    announce: "Seite {page} von {pages}: {count} {count|Block|Blöcke}.",
+    emptyTitle: "Auf dieser Seite steht kein Text",
+    emptyBody: "Die Umwandlung fand hier weder Text noch Tabelle, etwa weil die Seite nur ein Bild trägt.",
+    noPageTitle: "Diese Seite gibt es nicht",
+    noPageBody: "Die Datei hat {pages} {pages|Seite|Seiten}.",
+    firstPage: "Zur ersten Seite",
+    pager: {
+      // names the landmark, so a screen reader can list it and jump to it by name
+      label: "Seiten",
+      previous: "Vorige Seite",
+      next: "Nächste Seite",
+      field: "Seite",
+      of: "von {pages}",
+      go: "Anzeigen",
+      invalid: "Gib eine Seite von 1 bis {pages} an.",
+    },
+    // what a block is, where it is more than text (backend BlockKind). Read as
+    // messages.conversionPage.kind[value]: a value holds an underscore.
+    kind: {
+      table: "Tabelle",
+      page_header: "Kopfzeile",
+      page_footer: "Fußzeile",
+    },
+    bold: "fett",
+    italic: "kursiv",
+    table: {
+      caption: "Tabelle {table}",
+      // a cell of a table that runs on from the page before
+      onPage: "auf Seite {page}",
     },
   },
   // A job the page follows (jobWatch.ts), and why one failed (jobMessages.ts).

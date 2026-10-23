@@ -14,6 +14,7 @@ import { router } from "@/router";
 import { clearSession, setSession } from "@/session";
 
 import { describeViolations, pageViolations } from "./axe";
+import { block, blockPage, conversion, table } from "./conversions";
 import { detail } from "./registerEntries";
 
 let shown: VueWrapper | null = null;
@@ -215,6 +216,43 @@ describe("accessibility of the pages", () => {
     vi.spyOn(api, "getSource").mockRejectedValue(new api.ApiError("server", 404, "not_found"));
     const wrapper = await show("/quellen/s1");
     expect(wrapper.text()).toContain(t("entryPage.notFoundTitle"));
+
+    const found = await pageViolations();
+
+    expect(found, describeViolations(found)).toEqual([]);
+  });
+
+  it("an entry's blocks with a table, a running head and foot, and a page number refused has none", async () => {
+    api.setToken("kka_token");
+    setSession({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
+    vi.spyOn(api, "getSource").mockResolvedValue(detail({ file: ENTRY.file, mine: true }));
+    vi.spyOn(api, "getConversion").mockResolvedValue(conversion());
+    vi.spyOn(api, "getBlocks").mockResolvedValue(
+      blockPage(2, [
+        block("p2-b1", "Kerncurriculum Physik", { kind: "page_header" }),
+        block("p2-b2", "Kompetenzen", { bold: true }),
+        table(),
+        block("p2-b4", "2", { kind: "page_footer" }),
+      ], "1"),
+    );
+    const wrapper = await show("/quellen/s1/bloecke?seite=2");
+    await wrapper.get("#pager-page").setValue("12");
+    await wrapper.get("form.pager__jump").trigger("submit");
+    expect(wrapper.find("table").exists()).toBe(true);
+    expect(wrapper.find("#pager-error").exists()).toBe(true);
+
+    const found = await pageViolations();
+
+    expect(found, describeViolations(found)).toEqual([]);
+  });
+
+  it("an entry's blocks before its file is converted has none", async () => {
+    api.setToken("kka_token");
+    setSession({ id: "0190-a", name: "Lehrkraft", roles: ["nutzer"] });
+    vi.spyOn(api, "getSource").mockResolvedValue(detail({ file: ENTRY.file, mine: true }));
+    vi.spyOn(api, "getConversion").mockRejectedValue(new api.ApiError("server", 404, "no_conversion"));
+    const wrapper = await show("/quellen/s1/bloecke");
+    expect(wrapper.text()).toContain(t("conversionPage.notConvertedTitle"));
 
     const found = await pageViolations();
 

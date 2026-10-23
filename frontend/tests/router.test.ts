@@ -84,6 +84,18 @@ describe("the guards", () => {
     expect(entry.matched[0].props).toEqual({ default: true });
   });
 
+  it("keep an entry's blocks for accounts too, and hand them the entry's id", async () => {
+    await router.push("/quellen/0190-s1/bloecke?seite=2");
+    expect(router.currentRoute.value.query[RETURN_PARAM]).toBe("/quellen/0190-s1/bloecke?seite=2");
+
+    const blocks = router.resolve("/quellen/0190-s1/bloecke");
+    expect(blocks.name).toBe("conversion");
+    expect(blocks.params).toEqual({ id: "0190-s1" });
+    expect(blocks.matched[0].props).toEqual({ default: true });
+    // the navigation marks the register as where the reader is
+    expect(blocks.meta.section).toBe("sources");
+  });
+
   it("keep an account without the role off a page, to the start", async () => {
     // hiding an entry is convenience; the server refuses the route's requests anyway
     router.addRoute({ path: "/nur-admin", name: "nur-admin", component: BLANK, meta: { requiresRole: "admin" } });
