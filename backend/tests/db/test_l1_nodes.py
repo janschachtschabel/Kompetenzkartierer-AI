@@ -191,6 +191,27 @@ def test_a_statement_s_last_addressee_stays(connection: psycopg.Connection, docu
         connection.execute("DELETE FROM statement_addressee WHERE statement_id = %s", (statement,))
 
 
+def test_a_statement_without_an_anchor_is_refused_when_it_is_committed(
+    connection: psycopg.Connection, document: uuid.UUID
+) -> None:
+    node = add_node(connection, document)
+
+    with pytest.raises(errors.CheckViolation, match="anchor"):
+        add_statement(connection, document, node, anchored=False)
+
+
+def test_a_statement_s_last_anchor_stays_with_it(connection: psycopg.Connection, document: uuid.UUID) -> None:
+    node = add_node(connection, document)
+    statement = add_statement(connection, document, node)
+    other = add_statement(connection, document, node, position=2)
+
+    with pytest.raises(errors.CheckViolation, match="anchor"):
+        connection.execute("DELETE FROM anchor WHERE statement_id = %s", (statement,))
+    with pytest.raises(errors.CheckViolation, match="anchor"):
+        connection.execute("UPDATE anchor SET statement_id = %s WHERE statement_id = %s", (other, statement))
+    connection.execute("UPDATE anchor SET quote = 'planen' WHERE statement_id = %s", (statement,))
+
+
 def test_an_addressee_is_one_of_the_core_s(connection: psycopg.Connection, document: uuid.UUID) -> None:
     with pytest.raises(errors.ForeignKeyViolation):
         add_statement(connection, document, add_node(connection, document), addressees=("fn_area",))

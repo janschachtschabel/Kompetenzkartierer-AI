@@ -78,6 +78,29 @@ CREATE INDEX anchor_of_statement ON anchor (statement_id) WHERE statement_id IS 
 CREATE INDEX anchor_of_frame_part ON anchor (frame_part_id) WHERE frame_part_id IS NOT NULL;
 CREATE INDEX anchor_of_specification ON anchor (specification_id) WHERE specification_id IS NOT NULL;
 
+-- A statement stands on its source (cur:anchor, one at least): when its transaction commits it
+-- has an anchor, and its last one stays with it, as its last addressee does (0014)
+CREATE FUNCTION statement_anchored() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+    target uuid;
+BEGIN
+    IF TG_TABLE_NAME = 'statement' THEN
+        target := NEW.id;
+    ELSE
+        target := OLD.statement_id;
+    END IF;
+    IF EXISTS (SELECT FROM statement WHERE id = target)
+        AND NOT EXISTS (SELECT FROM anchor WHERE statement_id = target) THEN
+        RAISE EXCEPTION 'statement % has no anchor', target USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NULL;
+END
+$$;
+CREATE CONSTRAINT TRIGGER statement_anchored AFTER INSERT ON statement
+    DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION statement_anchored();
+CREATE CONSTRAINT TRIGGER statement_anchor_kept AFTER DELETE OR UPDATE OF statement_id ON anchor
+    DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION statement_anchored();
+
 CREATE TABLE anchor_block (
     anchor_id uuid NOT NULL,
     conversion_id uuid NOT NULL,

@@ -147,10 +147,12 @@ def add_statement(
     node: uuid.UUID,
     *,
     addressees: tuple[str, ...] = ("addr_learner",),
+    anchored: bool = True,
     position: int = 1,
     **columns: Any,
 ) -> uuid.UUID:
-    """A learning outcome at the node with its addressees, written in one transaction."""
+    """A learning outcome at the node with its addressees and an anchor on page 1, written in one
+    transaction."""
     statement = add_entity(connection, "statement")
     verbatim = columns.pop("verbatim", "Die Lernenden planen ihre Arbeit.")
     values = {
@@ -178,6 +180,12 @@ def add_statement(
                 "INSERT INTO statement_addressee (statement_id, addressee_scheme, addressee_iri)"
                 " VALUES (%s, %s, %s)",
                 (statement, CV + "Addressees", CV + addressee),
+            )
+        if anchored:
+            connection.execute(
+                "INSERT INTO anchor (id, document_id, conversion_id, statement_id, page_start)"
+                " SELECT %s, id, conversion_id, %s, 1 FROM document WHERE id = %s",
+                (add_entity(connection, "anchor"), statement, values["document_id"]),
             )
     return statement
 
