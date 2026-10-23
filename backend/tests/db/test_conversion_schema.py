@@ -63,6 +63,7 @@ def add_block(connection: psycopg.Connection, conversion_id: UUID, **columns: An
         "conversion_id": conversion_id,
         "block_id": "p1-b1",
         "page": 1,
+        "last_page": 1,
         "seq": 1,
         "kind": "text",
         "text": "Lernfeld 1",
@@ -174,6 +175,8 @@ def test_a_block_is_named_as_the_kern_names_it_and_only_a_table_holds_cells(
     for columns in (
         {"block_id": "p1-x3", "seq": 3},
         {"block_id": "p2-b3", "seq": 3},  # named for another page than it stands on
+        {"block_id": "p1-b3", "seq": 3, "last_page": 2},  # a text block ends on its page
+        {"block_id": "p1-b3", "seq": 3, "kind": "table", "cells": Jsonb([cell]), "last_page": 0},
         {"block_id": "p1-b3", "seq": 3, "kind": "table"},
         {"block_id": "p1-b3", "seq": 3, "kind": "table", "cells": Jsonb([])},  # a table of no cell
         {"block_id": "p1-b3", "seq": 3, "cells": Jsonb([])},

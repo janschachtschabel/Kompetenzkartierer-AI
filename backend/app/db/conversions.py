@@ -54,10 +54,10 @@ _START = """
     WHERE conversion.status <> 'done'
 """
 _BLOCK = """
-    INSERT INTO document_block (conversion_id, block_id, page, seq, kind, text, x0, top, x1, bottom,
-        font_size, bold, italic, cells)
-    VALUES (%(conversion)s, %(id)s, %(page)s, %(seq)s, %(kind)s, %(text)s, %(x0)s, %(top)s, %(x1)s,
-        %(bottom)s, %(font_size)s, %(bold)s, %(italic)s, %(cells)s)
+    INSERT INTO document_block (conversion_id, block_id, page, last_page, seq, kind, text, x0, top, x1,
+        bottom, font_size, bold, italic, cells)
+    VALUES (%(conversion)s, %(id)s, %(page)s, %(last_page)s, %(seq)s, %(kind)s, %(text)s, %(x0)s,
+        %(top)s, %(x1)s, %(bottom)s, %(font_size)s, %(bold)s, %(italic)s, %(cells)s)
 """
 # First in its transaction: the row stays locked until the blocks are in
 _DONE = """
@@ -81,8 +81,8 @@ _RUNNING_ON = """
         jsonb_path_query_array(cells, '$[*] ? (@.page == $page)', jsonb_build_object('page', %(page)s::int))
             AS cells
     FROM document_block
-    WHERE conversion_id = %(conversion)s AND kind = 'table' AND page < %(page)s
-        AND cells @> jsonb_build_array(jsonb_build_object('page', %(page)s::int))
+    WHERE conversion_id = %(conversion)s AND kind = 'table' AND last_page > page
+        AND page < %(page)s AND last_page >= %(page)s
     ORDER BY seq
 """
 
@@ -258,6 +258,7 @@ def _block_row(conversion_id: UUID, seq: int, block: Block) -> dict[str, Any]:
         "conversion": conversion_id,
         "id": block.id,
         "page": block.page,
+        "last_page": max([block.page, *(cell.page for cell in block.cells)]),
         "seq": seq,
         "kind": block.kind,
         "text": block.text,

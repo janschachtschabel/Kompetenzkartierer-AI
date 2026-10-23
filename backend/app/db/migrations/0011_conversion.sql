@@ -38,6 +38,8 @@ CREATE TABLE document_block (
     conversion_id uuid NOT NULL REFERENCES conversion (id) ON DELETE CASCADE,
     block_id text NOT NULL CHECK (block_id ~ '^p[0-9]+-b[0-9]+$'),
     page integer NOT NULL CHECK (page >= 1),
+    -- the page it ends on: a table joined over pages runs on to its last cell's
+    last_page integer NOT NULL,
     seq integer NOT NULL CHECK (seq >= 1),
     kind text NOT NULL CHECK (kind IN ('text', 'table', 'page_header', 'page_footer')),
     text text NOT NULL,
@@ -54,12 +56,15 @@ CREATE TABLE document_block (
     -- what the reader of a block takes for granted (app/conversion/base.py): its name names its
     -- page, and a table has a cell
     CHECK (block_id LIKE 'p' || page || '-b%'),
+    CHECK (last_page = page OR (kind = 'table' AND last_page > page)),
     CHECK ((kind = 'table') = (cells IS NOT NULL)),
     CHECK (kind <> 'table' OR CASE WHEN jsonb_typeof(cells) = 'array' THEN jsonb_array_length(cells) >= 1 END)
 );
 CREATE INDEX document_block_page ON document_block (conversion_id, page, seq);
--- the tables a page's table cells run on from (app/db/conversions.py, _RUNNING_ON)
-CREATE INDEX document_block_table ON document_block (conversion_id, page) WHERE kind = 'table';
+-- the tables that run on to a page (app/db/conversions.py, _RUNNING_ON): those that end on it
+-- or later, not every table before it with all its cells
+CREATE INDEX document_block_running_on ON document_block (conversion_id, last_page)
+    WHERE kind = 'table' AND last_page > page;
 
 -- The pages a conversion booked, once: a job run again books nothing more. Billable only for an
 -- engine that costs (pdfplumber does not); quotas follow with the accounting (plan M1, 5)
