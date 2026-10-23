@@ -15,6 +15,7 @@ BASE = "https://example.org/kk/"
         ("Rahmenlehrplan Mechatronik", "rahmenlehrplan-mechatronik"),
         ("Größe & Maß", "groesse-mass"),
         ("Übergänge", "uebergaenge"),
+        ("U\N{COMBINING DIAERESIS}berga\N{COMBINING DIAERESIS}nge", "uebergaenge"),  # decomposed
         ("Café", "cafe"),
         ("  LF 5 ", "lf-5"),
         ("3.2.1", "3-2-1"),
@@ -25,10 +26,18 @@ def test_a_slug_is_its_text_in_lowercase_ascii_words_parted_by_hyphens(text: str
     assert slug(text) == made
 
 
-@pytest.mark.parametrize("text", ["", " ", "\N{EM DASH}", "§"])
-def test_a_text_without_letters_or_digits_has_no_slug(text: str) -> None:
-    with pytest.raises(ValueError, match="no slug"):
+@pytest.mark.parametrize("text", ["", " ", "\N{EM DASH}", "§", "\N{GREEK SMALL LETTER ALPHA}", "\N{BULLET}"])
+def test_a_text_without_ascii_letters_or_digits_has_no_slug(text: str) -> None:
+    with pytest.raises(ValueError, match=r"no slug .* no ASCII letter or digit"):
         slug(text)
+
+
+def test_a_slug_keeps_a_hundred_signs_at_most_and_ends_on_a_word() -> None:
+    made = slug("Kernlehrplan " * 20)
+
+    assert len(made) <= 100
+    assert made.startswith("kernlehrplan-kernlehrplan")
+    assert not made.endswith("-")
 
 
 def test_a_work_is_named_by_its_country_and_short_title() -> None:
@@ -43,7 +52,17 @@ def test_a_document_is_named_by_its_issuer_short_title_and_edition() -> None:
     assert made == "https://example.org/kk/doc/msb-nrw/kernlehrplan-mathematik/2019"
 
 
-@pytest.mark.parametrize("base", ["https://example.org/kk", "example.org/kk/", "urn:kk:"])
+@pytest.mark.parametrize(
+    "base",
+    [
+        "https://example.org/kk",
+        "example.org/kk/",
+        "urn:kk:",
+        "https://user:secret@example.org/kk/",
+        "https://example.org/kk?draft=1/",
+        "https://example.org/kk#top/",
+    ],
+)
 def test_a_base_is_an_http_iri_ending_in_a_slash(base: str) -> None:
     with pytest.raises(ValueError, match="base"):
         work_iri(base, "DE-NW", "Kernlehrplan")
@@ -66,10 +85,22 @@ def test_a_node_needs_a_segment() -> None:
         node_iri("https://example.org/kk/doc/kmk/rlp/2018", [])
 
 
+def test_a_node_is_named_under_a_frozen_document_alone() -> None:
+    # a draft's urn:uuid takes no path: its nodes are named once it is frozen (plan M1 9.6)
+    with pytest.raises(ValueError, match="document"):
+        node_iri(draft_iri(UUID("01a16940-29e3-7bf4-86d3-421b72698f8e")), ["lf-5"])
+
+
 def test_siblings_take_their_codes_an_assigned_one_its_position_and_a_repeated_one_a_count() -> None:
     siblings = [("LF 5", False), ("3", True), ("LF 5", False), ("LF 5", False)]
 
     assert node_segments(siblings) == ["lf-5", "pos-3", "lf-5-2", "lf-5-3"]
+
+
+def test_a_code_without_an_ascii_letter_or_digit_gives_way_to_its_place() -> None:
+    siblings = [("\N{GREEK SMALL LETTER ALPHA}", False), ("LF 1", False), ("\N{BULLET}", False)]
+
+    assert node_segments(siblings) == ["pos-1", "lf-1", "pos-3"]
 
 
 def test_a_count_steps_past_a_code_a_sibling_holds_already() -> None:
