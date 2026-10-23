@@ -71,11 +71,10 @@ def stage(answers: list[str], *, output_tokens: int = 2_000) -> tuple[StageAgent
         return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, args)], usage=USAGE)
 
     built = build_agent(
-        FunctionModel(answer),
+        FunctionModel(answer, settings={"max_tokens": output_tokens}),
         schema=SCHEMA,
         name="titel",
         instructions="Nenne den Titel.",
-        output_tokens=output_tokens,
     )
     return built, seen
 
@@ -134,11 +133,10 @@ async def test_a_budget_that_holds_no_more_stops_the_call_before_the_request() -
 
 def gateway(handler: Callable[[httpx2.Request], Any]) -> StageAgent:
     model = build_model(
-        llm_settings(llm_provider="openai-compatible"), transport=httpx2.MockTransport(handler)
+        llm_settings(llm_provider="openai-compatible", llm_max_output_tokens=2_000),
+        transport=httpx2.MockTransport(handler),
     )
-    return build_agent(
-        model, schema=SCHEMA, name="titel", instructions="Nenne den Titel.", output_tokens=2_000
-    )
+    return build_agent(model, schema=SCHEMA, name="titel", instructions="Nenne den Titel.")
 
 
 def completion(
@@ -348,9 +346,7 @@ async def test_a_call_with_a_breakpoint_sends_it_behind_the_shared_opening() -> 
         return httpx2.Response(400, json={"error": {"message": "read", "type": "invalid_request_error"}})
 
     model = build_model(llm_settings(), transport=httpx2.MockTransport(read))
-    built = build_agent(
-        model, schema=SCHEMA, name="titel", instructions="Nenne den Titel.", output_tokens=2_000
-    )
+    built = build_agent(model, schema=SCHEMA, name="titel", instructions="Nenne den Titel.")
 
     with pytest.raises(ModelHTTPError):
         await ask(built, cached_up_to("Dokument\n", "Auftrag", model), meter=Ledger())
@@ -364,10 +360,25 @@ async def test_a_call_with_a_breakpoint_sends_it_behind_the_shared_opening() -> 
 def test_a_stage_takes_its_schema_s_name_as_openai_does() -> None:
     with pytest.raises(ValueError, match="name"):
         build_agent(
-            FunctionModel(lambda *_: ModelResponse(parts=[])),
+            FunctionModel(lambda *_: ModelResponse(parts=[]), settings={"max_tokens": 1_000}),
             schema=SCHEMA,
             name="x 4",
             instructions="",
-            output_tokens=1,
         )
     assert isinstance(stage(['{"title": "a"}'])[0].agent, Agent)
+
+
+def test_a_stage_reserves_the_cap_its_model_sends() -> None:
+    # a cap of the stage's own could hold less than a request of its model may cost
+    model = build_model(llm_settings(llm_max_output_tokens=4_321))
+
+    built = build_agent(model, schema=SCHEMA, name="titel", instructions="Nenne den Titel.")
+
+    assert built.output_tokens == 4_321
+
+
+def test_a_stage_needs_a_model_that_caps_its_answers() -> None:
+    with pytest.raises(ValueError, match="max_tokens"):
+        build_agent(
+            FunctionModel(lambda *_: ModelResponse(parts=[])), schema=SCHEMA, name="titel", instructions=""
+        )

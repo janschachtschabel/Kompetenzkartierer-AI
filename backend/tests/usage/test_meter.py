@@ -47,7 +47,10 @@ def a_stage(reports: Reports) -> StageAgent:
         )
 
     return build_agent(
-        FunctionModel(answer), schema=SCHEMA, name="titel", instructions="Nenne den Titel.", output_tokens=CAP
+        FunctionModel(answer, settings={"max_tokens": CAP}),
+        schema=SCHEMA,
+        name="titel",
+        instructions="Nenne den Titel.",
     )
 
 

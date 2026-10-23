@@ -68,13 +68,15 @@ class Answer:
     spent: Spent
 
 
-def build_agent(
-    model: Model, *, schema: Mapping[str, Any], name: str, instructions: str, output_tokens: int
-) -> StageAgent:
-    """The agent of a stage answering in ``schema``'s form, under the schema's ``name`` ("x4_aussagen");
-    ``output_tokens`` is the cap every request of it reserves (LLM_MAX_OUTPUT_TOKENS)."""
+def build_agent(model: Model, *, schema: Mapping[str, Any], name: str, instructions: str) -> StageAgent:
+    """The agent of a stage answering in ``schema``'s form, under the schema's ``name`` ("x4_aussagen").
+    Every request of it reserves the cap its model sends (``max_tokens``, LLM_MAX_OUTPUT_TOKENS in
+    app/llm/client.py); ValueError for a model that sends none - a request could cost anything."""
     if _NAME.fullmatch(name) is None:
         raise ValueError(f"{name!r}: a schema's name is letters, digits, _ and - (as OpenAI takes it)")
+    output_tokens = (model.settings or {}).get("max_tokens")
+    if output_tokens is None:
+        raise ValueError("the stage's model sends no max_tokens: its answers would have no cap to reserve")
     agent: Agent[None, dict[str, Any]] = Agent(
         model,
         output_type=StructuredDict(dict(schema), name=name),
