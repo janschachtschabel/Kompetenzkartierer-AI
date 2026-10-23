@@ -318,6 +318,27 @@ def test_a_sentence_printed_twice_over_to_look_bold_reads_once(tmp_path: Path) -
     assert [block.text for block in read(path).blocks] == [SENTENCE_READ]
 
 
+@pytest.mark.parametrize(
+    ("dropped", "reason"),
+    [
+        # finite, but its place over a tenth of its size is not
+        (b"BT /F1 0.01 Tf 1" + b"0" * 306 + b" 400 Td (Weit draussen) Tj ET\n", "off_page"),
+        (b"BT /F1 0." + b"0" * 309 + b"1 Tf 72 0 Td (Winzig) Tj ET\n", "tiny"),
+    ],
+    ids=["far_and_small", "of_no_size"],
+)
+def test_a_sign_far_out_or_of_next_to_no_size_is_dropped_not_measured_for_its_twin(
+    tmp_path: Path, dropped: bytes, reason: str
+) -> None:
+    path = tmp_path / "lehrplan.pdf"
+    path.write_bytes(pages_pdf([SENTENCE + dropped]))
+
+    conversion = read(path)
+
+    assert [block.text for block in conversion.blocks] == [SENTENCE_READ]
+    assert [finding.params["reason"] for finding in conversion.findings] == [reason]
+
+
 def test_a_sign_set_again_within_a_tenth_of_its_size_is_its_twin() -> None:
     signs = [
         sign(text="D", x0=72.0),

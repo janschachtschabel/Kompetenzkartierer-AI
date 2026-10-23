@@ -92,10 +92,8 @@ class PdfplumberEngine:
                     boxes = page.page_obj.cropbox, page.page_obj.mediabox, page.page_obj.rotate, page.mediabox
                 if len(signs) > max_signs:
                     raise TooDense(number, len(signs), max_signs)
-                twins = twin_signs(signs)
-                dropped, counted = dropped_signs(
-                    (sign for sign in signs if id(sign) not in twins), shown_box(*boxes)
-                )
+                dropped, counted = dropped_signs(signs, shown_box(*boxes))
+                twins = twin_signs(sign for sign in signs if id(sign) not in dropped)
                 with _reading():
                     read = read_page(page, dropped | twins)
                 built.append(page_of(read, counted))
@@ -147,14 +145,15 @@ def twin_signs(signs: Iterable[Mapping[str, Any]]) -> set[int]:
     within a tenth of the size - to look bold, or to weigh a page down: pdfium reads them once,
     pdfminer each time ("DDiiee"). A grid of a tenth of the size finds the one before in the cells
     around, so that a page of many signs costs no more than few - pdfplumber's dedupe_chars sorts
-    by index, 17 s for 30,000 signs."""
+    by index, 17 s for 30,000 signs. The signs are those kept, a point high and more, on the page;
+    one whose place in the grid is not finite all the same is no twin."""
     kept: defaultdict[tuple[Any, ...], list[Mapping[str, Any]]] = defaultdict(list)
     twins: set[int] = set()
     for sign in signs:
         size = sign["size"]
-        if not _finite((sign["x0"], sign["top"], size)) or size <= 0:
-            continue  # no place to be printed again at: dropped as it is
         near = TWIN * size
+        if not _finite((sign["x0"] / near, sign["top"] / near)):
+            continue
         kind = (sign["text"], sign["fontname"], size, sign["upright"])
         column, row = math.floor(sign["x0"] / near), math.floor(sign["top"] / near)
         cells = [(*kind, column + across, row + down) for across in (-1, 0, 1) for down in (-1, 0, 1)]
