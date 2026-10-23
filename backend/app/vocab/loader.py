@@ -7,7 +7,7 @@ SKOS core fields become columns; every other statement about a scheme or concept
 tables cannot hold faithfully (a concept in two schemes, two labels in one language, a
 broader concept that does not exist) is refused rather than trimmed. The lexicon - the
 sectors' terminology profiles and their cues - is read off the same files (app/vocab/lexicon.py),
-the model folders with their subfolders (a country's cues in profile/laender/).
+the profiles' with their subfolders (a country's cues in profile/laender/).
 """
 
 import hashlib
@@ -31,8 +31,11 @@ from app.vocab.lexicon import LexicalCue, TerminologyProfile, read_lexicon
 __all__ = ["MODEL_DIRS", "Concept", "Scheme", "Vocabulary", "VocabularyError", "read_vocabulary"]
 
 CUR = Namespace("https://w3id.org/wlo/curriculum/core#")
-# The folders pruefe.py reads as the model; examples and research material stay out
+# The folders that make the model, as pruefe.py names them; examples and research material
+# stay out. pruefe.py reads none of their subfolders; this reader reads the profiles' too, where
+# a country's cues stand (profile/laender/), and only theirs
 MODEL_DIRS = ("ontologie", "vokabulare", "profile")
+_WITH_SUBFOLDERS = frozenset({"profile"})
 SCHEME_CLASSES = frozenset({SKOS.ConceptScheme, CUR.CompetencyModel, CUR.LevelScheme, CUR.OperatorList})
 # Raised with every change to what the reader yields, so the same files load anew afterwards
 READER_FORMAT = 2
@@ -114,7 +117,8 @@ def _model_files(root: Path) -> list[Path]:
         raise VocabularyError(f"{root} is no folder: is ONTOLOGY_DIR the ontology folder?")
     paths: list[Path] = []
     for directory in MODEL_DIRS:
-        found = sorted((root / directory).rglob("*.ttl"))
+        glob = (root / directory).rglob if directory in _WITH_SUBFOLDERS else (root / directory).glob
+        found = sorted(glob("*.ttl"))
         if not found:
             raise VocabularyError(f"{root / directory} holds no Turtle files: is ONTOLOGY_DIR right?")
         paths.extend(found)

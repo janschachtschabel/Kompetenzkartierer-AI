@@ -119,6 +119,17 @@ def test_files_outside_the_model_directories_are_not_read(tmp_path: Path) -> Non
     assert EX + "green" not in read_vocabulary(root).concepts
 
 
+@pytest.mark.parametrize("folder", ["ontologie", "vokabulare"])
+def test_a_subfolder_of_the_core_s_model_folders_is_not_read(tmp_path: Path, folder: str) -> None:
+    # only the profiles' subfolders hold model files (profile/laender/); elsewhere one may hold
+    # an old copy, and pruefe.py checks none of them
+    root = vocabulary_dir(tmp_path)
+    (root / folder / "alt").mkdir()
+    (root / folder / "alt" / "farben.ttl").write_text(COLOURS.replace("ex:red", "ex:green"), encoding="utf-8")
+
+    assert EX + "green" not in read_vocabulary(root).concepts
+
+
 @pytest.mark.parametrize("folder", MODEL_DIRS)
 def test_a_missing_model_folder_is_refused(tmp_path: Path, folder: str) -> None:
     # a wrong ONTOLOGY_DIR read as a small vocabulary would retire everything else
