@@ -1,0 +1,140 @@
+"""What a conversion (X0) makes of a document: blocks with stable IDs (plan M1, 3.1; konzept §13.2).
+
+A block is a run of text set alike, or a table, on one page of the PDF. Its ID ``p<page>-b<n>``
+(cur-shapes.ttl) is what the stages after X0 answer with instead of inventing pages: the page is
+the physical one, from 1, and ``n`` counts the page's blocks in reading order, from 1. A table's
+cells are ``T<n>:r<i>c<j>`` (cur:tableCell, "T4:r3c2"): the table counted across the document in
+reading order, its row and column, all from 1. A table continued over a page break is one block on
+the page it begins; each cell keeps the page it stands on.
+
+Headers and footers are marked (``page_header``, ``page_footer``), not dropped; the printed page
+number goes beside the physical page. What the conversion noticed about the text - symbols it
+could not map, a text layer that looks broken - goes with it as findings.
+
+The models travel as JSON from the child process that converts (app/conversion/runners.py).
+The engines are named here and imported only when asked for: the API never loads a PDF library.
+"""
+
+import importlib
+import re
+from pathlib import Path
+from typing import Any, Literal, Protocol, Self
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+BLOCK_ID = re.compile(r"p[0-9]+-b[0-9]+")  # as cur-shapes.ttl writes it
+CELL_ID = re.compile(r"T([0-9]+):r([0-9]+)c([0-9]+)")
+BlockKind = Literal["text", "table", "page_header", "page_footer"]
+FindingCode = Literal["unmapped_symbol", "encoding_suspect"]
+# Each engine by the class that converts with it, imported when first asked for
+_ENGINES = {"pdfplumber": "app.conversion.pdfplumber_blocks:PdfplumberEngine"}
+
+
+def block_id(page: int, number: int) -> str:
+    if page < 1 or number < 1:
+        raise ValueError(f"pages and blocks count from 1, not page {page}, block {number}")
+    return f"p{page}-b{number}"
+
+
+def cell_id(table: int, row: int, column: int) -> str:
+    if min(table, row, column) < 1:
+        raise ValueError(f"tables, rows and columns count from 1, not T{table}:r{row}c{column}")
+    return f"T{table}:r{row}c{column}"
+
+
+class Cell(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    id: str
+    page: int = Field(ge=1)
+    row: int = Field(ge=1)
+    column: int = Field(ge=1)
+    text: str
+    header: bool
+
+    @model_validator(mode="after")
+    def _named_by_its_place(self) -> Self:
+        found = CELL_ID.fullmatch(self.id)
+        if found is None or (int(found[2]), int(found[3])) != (self.row, self.column):
+            raise ValueError(f"cell {self.id} is not that of row {self.row}, column {self.column}")
+        return self
+
+
+class Block(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    id: str
+    page: int = Field(ge=1)
+    kind: BlockKind
+    text: str
+    bbox: tuple[float, float, float, float]  # x0, top, x1, bottom in PDF points
+    font_size: float | None
+    bold: bool
+    italic: bool
+    cells: tuple[Cell, ...] = ()
+
+    @model_validator(mode="after")
+    def _named_by_its_page(self) -> Self:
+        if BLOCK_ID.fullmatch(self.id) is None:
+            raise ValueError(f"block {self.id} is not named p<page>-b<block>")
+        named = int(self.id[1 : self.id.index("-")])
+        if named != self.page:
+            raise ValueError(f"block {self.id} names page {named} but stands on page {self.page}")
+        if (self.kind == "table") != bool(self.cells):
+            raise ValueError(f"block {self.id}: a table holds cells, and only a table does")
+        return self
+
+
+class Finding(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    code: FindingCode
+    params: dict[str, Any]
+
+
+class Conversion(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    engine: str
+    engine_version: str
+    pages: int = Field(ge=0)
+    printed_pages: tuple[str | None, ...]  # the number printed on each page, where one is
+    blocks: tuple[Block, ...]
+    findings: tuple[Finding, ...] = ()
+
+    @model_validator(mode="after")
+    def _blocks_of_its_pages(self) -> Self:
+        if len(self.printed_pages) != self.pages:
+            raise ValueError(f"{len(self.printed_pages)} printed pages said for {self.pages} pages")
+        named: set[str] = set()
+        for block in self.blocks:
+            if block.id in named:
+                raise ValueError(f"block {block.id} is named twice")
+            if block.page > self.pages:
+                raise ValueError(f"block {block.id} stands on page {block.page} of {self.pages}")
+            named.add(block.id)
+        return self
+
+
+class Engine(Protocol):
+    name: str
+    version: str
+
+    def convert(self, path: Path) -> Conversion: ...
+
+
+class UnknownEngine(ValueError):
+    """No engine of this name is offered."""
+
+
+def offered_engines() -> tuple[str, ...]:
+    return tuple(_ENGINES)
+
+
+def engine(name: str) -> Engine:
+    """The engine ``name``, its library imported now."""
+    if name not in _ENGINES:
+        raise UnknownEngine(f"no engine {name!r}; offered: {', '.join(offered_engines())}")
+    module, _, cls = _ENGINES[name].partition(":")
+    made: Engine = getattr(importlib.import_module(module), cls)()
+    return made
