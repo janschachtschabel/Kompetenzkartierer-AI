@@ -8,8 +8,9 @@ import psycopg
 import pytest
 
 from app.db.migrate import migrate
+from app.domain.lexicon import active_cues
 from app.vocab.loader import read_vocabulary
-from app.vocab.lookup import by_notation, concept, profile_concepts, region_with_ancestors
+from app.vocab.lookup import by_notation, concept, cues_for, profile_concepts, region_with_ancestors
 from app.vocab.store import load_vocabulary
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
@@ -93,6 +94,28 @@ async def test_a_concept_is_found_by_its_notation_within_its_scheme(
 async def test_an_unknown_concept_is_none(connection: psycopg.AsyncConnection) -> None:
     assert await concept(connection, CV + "sec_nowhere") is None
     assert await by_notation(connection, CV + "EducationSectors", "nowhere") is None
+
+
+async def test_a_sector_s_cues_are_read_for_its_active_profile(connection: psycopg.AsyncConnection) -> None:
+    cues = await cues_for(connection, "school")
+    regions = await region_with_ancestors(connection, "DE-NW")
+
+    held = [found.cue for found in active_cues(cues, regions, None, None)]
+    named = {cue.iri for cue in held}
+    kernlehrplan = next(cue for cue in cues if cue.iri == SCHOOL + "cue-dt-kernlehrplan")
+
+    assert len(cues) == 487
+    assert SCHOOL + "cue-dt-kernlehrplan" in named  # Nordrhein-Westfalen's
+    assert SCHOOL + "cue-dt-lehrplanplus" not in named  # Bavaria's
+    assert (kernlehrplan.maps_to, kernlehrplan.scope_regions, kernlehrplan.strength) == (
+        (SCHOOL + "dt-Lehrplan",),
+        frozenset({REGION + "DE-NW"}),
+        0.95,
+    )
+
+
+async def test_a_sector_without_a_profile_has_no_cues(connection: psycopg.AsyncConnection) -> None:
+    assert await cues_for(connection, "kindergarten") == []
 
 
 async def test_a_region_comes_with_those_it_lies_in(connection: psycopg.AsyncConnection) -> None:

@@ -14,6 +14,8 @@ from typing import Any
 import psycopg
 from psycopg.rows import dict_row
 
+from app.domain.lexicon import Cue
+
 CUR = "https://w3id.org/wlo/curriculum/core#"
 REGIONS = "https://w3id.org/wlo/curriculum/region/Regions"
 _VALUE_CLASSES = {
@@ -55,6 +57,16 @@ _VALUES = """
 SELECT iri, types, broader FROM vocab_concept
 WHERE starts_with(iri, %s) AND retired_in IS NULL AND types && %s
 """
+_CUES = """
+SELECT c.iri, c.role_iri, c.kind_iri, c.maps_to, c.surface_form, c.pattern, c.layout_signal, c.also_maps_to,
+    c.scope_regions, c.scope_document_types, c.plan_generations, c.strength, c.verified, c.recognition_hints,
+    c.negative_hints
+FROM lexical_cue c
+JOIN terminology_profile p ON p.iri = c.profile_iri
+JOIN vocab_concept s ON s.iri = p.sector_iri
+WHERE s.notation = %s AND s.retired_in IS NULL AND p.retired_in IS NULL AND c.retired_in IS NULL
+ORDER BY c.iri
+"""
 _ANCESTORS = """
 WITH RECURSIVE up (iri, broader) AS (
     SELECT iri, broader FROM vocab_concept WHERE scheme_iri = %s AND notation = %s AND retired_in IS NULL
@@ -95,6 +107,38 @@ async def profile_concepts(
             if value_class in types:
                 grouped[name][iri] = tuple(broader)
     return ProfileConcepts(**grouped)
+
+
+async def cues_for(connection: psycopg.AsyncConnection, sector_notation: str) -> list[Cue]:
+    """The active cues of the sector's active profile (``school``), for its documents' active
+    profile (app/domain/lexicon.py); none where the sector has no profile."""
+    async with connection.cursor(row_factory=dict_row) as cursor:
+        await cursor.execute(_CUES, (sector_notation,))
+        rows = await cursor.fetchall()
+    return [
+        Cue(
+            iri=row["iri"],
+            role=row["role_iri"],
+            kind=row["kind_iri"],
+            maps_to=tuple(row["maps_to"]),
+            surface_form=row["surface_form"],
+            pattern=row["pattern"],
+            layout_signal=row["layout_signal"],
+            also_maps_to=tuple(row["also_maps_to"]),
+            scope_regions=frozenset(row["scope_regions"]),
+            scope_document_types=frozenset(row["scope_document_types"]),
+            plan_generations=frozenset(row["plan_generations"]),
+            strength=None if row["strength"] is None else float(row["strength"]),
+            verified=row["verified"],
+            recognition_hints=_texts(row["recognition_hints"]),
+            negative_hints=_texts(row["negative_hints"]),
+        )
+        for row in rows
+    ]
+
+
+def _texts(by_language: dict[str, list[str]]) -> tuple[str, ...]:
+    return tuple(text for language in sorted(by_language) for text in by_language[language])
 
 
 async def region_with_ancestors(connection: psycopg.AsyncConnection, notation: str) -> frozenset[str]:
