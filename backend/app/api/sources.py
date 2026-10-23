@@ -13,7 +13,6 @@ from typing import Annotated, Any
 from urllib.parse import urlsplit
 from uuid import UUID
 
-import psycopg
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from starlette.datastructures import UploadFile
@@ -21,10 +20,10 @@ from starlette.datastructures import UploadFile
 from app.api.body_limit import MIB
 from app.api.deps import require_account
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
+from app.api.limits import within_limit
 from app.core.auth import Principal, plain_text
 from app.core.logging import current_request_id
 from app.db.accounts import record_audit
-from app.db.rate_limits import RateLimited, take
 from app.db.sources import StoredFile, record_upload, record_url_source
 from app.jobs.queue import account_lane, enqueue
 from app.sources import fetch_job
@@ -126,7 +125,7 @@ async def upload_source(request: Request, who: Account) -> SourceOut:
     settings = request.app.state.settings
     assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
     async with request.app.state.pool.connection() as connection:
-        await _within_limit(
+        await within_limit(
             connection, who.account_id, "source.upload", settings.uploads_per_minute, "too_many_uploads"
         )
     async with request.form(max_files=1, max_fields=2) as form:
@@ -190,7 +189,7 @@ async def import_source(body: ImportIn, request: Request, who: Account) -> Impor
     settings = request.app.state.settings
     assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
     async with request.app.state.pool.connection() as connection:
-        await _within_limit(
+        await within_limit(
             connection, who.account_id, "source.import", settings.url_imports_per_minute, "too_many_imports"
         )
         # one transaction: never an entry without its job, nor a job without its entry
@@ -219,17 +218,6 @@ async def import_source(body: ImportIn, request: Request, who: Account) -> Impor
         file=None,
     )
     return ImportOut(source=source, job_id=job_id)
-
-
-async def _within_limit(
-    connection: psycopg.AsyncConnection, account_id: UUID, action: str, per_minute: int, code: str
-) -> None:
-    """Count the action against the account's limit, or answer 429 with when to try again."""
-    try:
-        await take(connection, account_id, action, per_minute=per_minute)
-    except RateLimited as limited:
-        retry = {"Retry-After": str(limited.retry_after_s)}
-        raise Refusal(429, code, "Too many of these for now; try again later.", retry) from None
 
 
 async def _read(upload: UploadFile, limit: int) -> bytes:
