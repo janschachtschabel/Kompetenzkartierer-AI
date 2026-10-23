@@ -2,9 +2,14 @@
 
 The conversion belongs to the entry's file, which entries of several accounts may share by its
 SHA-256; so it is reached through an entry, and who may ask for it and read it is who may read the
-entry's file (app/api/source_content.py). Asking starts the job source.convert and answers 202, or
-gives back the conversion there - waiting, running or done - with 200; a failed one is asked anew.
-Only a PDF is converted so far (Docling and OCR follow in 3b).
+entry's file (app/api/source_content.py). Its job is named only to those who may follow it - the
+account that started it, an admin (app/api/jobs.py); another sees the conversion's own state. That an
+account's own upload comes with a conversion already done tells it that the same file was here
+before: the price of converting a file once, whoever brings it.
+
+Asking starts the job source.convert and answers 202, or gives back the conversion there - waiting,
+running or done - with 200; a failed one is asked anew. Only a PDF is converted so far (Docling
+and OCR follow in 3b).
 """
 
 from datetime import datetime
@@ -53,6 +58,7 @@ class ConversionOut(BaseModel):
     # why it failed: unreadable, too_many_pages, needs_ocr, empty, timed_out, died, not_pdf, file_gone,
     # or the code of the job that ended without it (handler_error, cancelled, lease_lost)
     error_code: str | None
+    # the job converting it, for those who may follow it (GET /api/v1/jobs/{id}); else null
     job_id: UUID | None
     pages: int | None
     printed_pages: list[str | None] | None
@@ -108,7 +114,7 @@ async def ask_conversion(
         there = await conversion_for(connection, file_id, engine)
         if there is not None and there.status != "failed":
             response.status_code = 200
-            return _out(there)
+            return _out(there, who)
         settings = request.app.state.settings
         await within_limit(
             connection, who.account_id, KIND, settings.conversions_per_minute, "too_many_conversions"
@@ -136,7 +142,7 @@ async def ask_conversion(
         )
         started = await conversion_for(connection, file_id, engine)
     assert started is not None  # noqa: S101 - started in this transaction
-    return _out(started)
+    return _out(started, who)
 
 
 @router.get(
@@ -156,7 +162,7 @@ async def get_conversion(
 ) -> ConversionOut:
     async with request.app.state.pool.connection() as connection:
         state = await _conversion(connection, who, request, source_id, engine)
-    return _out(state)
+    return _out(state, who)
 
 
 @router.get(
@@ -206,14 +212,17 @@ def _file_of(row: dict[str, Any]) -> UUID:
     return file_id
 
 
-def _out(state: ConversionState) -> ConversionOut:
+def _out(state: ConversionState, who: Principal) -> ConversionOut:
+    follows = "admin" in who.roles or (
+        who.account_id is not None and state.job_lane == account_lane(who.account_id)
+    )
     return ConversionOut(
         id=state.id,
         engine=state.engine,  # the table's CHECK holds it to EngineName; pydantic checks it again
         engine_version=state.engine_version,
         status=state.status,
         error_code=state.error_code,
-        job_id=state.job_id,
+        job_id=state.job_id if follows else None,
         pages=state.pages,
         printed_pages=state.printed_pages,
         findings=[FindingOut(**finding) for finding in state.findings],

@@ -251,6 +251,26 @@ def test_an_entry_without_a_file_has_nothing_to_convert(
     assert (answer.status_code, answer.json()["code"]) == (404, "no_file")
 
 
+def test_another_account_holding_the_same_file_finds_the_same_conversion_but_not_its_job(
+    client: TestClient, migrated: str, owner: tuple[UUID, dict[str, str]]
+) -> None:
+    _, header = owner
+    first = client.post(f"/api/v1/sources/{upload(client, header)}/conversions", headers=header).json()
+    _, other = seed_account(migrated, "Kollegin", ["nutzer"])
+    _, admin = seed_account(migrated, "Betrieb", ["admin"])
+    twin = upload(client, other)  # the same bytes: the same file
+
+    asked = client.post(f"/api/v1/sources/{twin}/conversions", headers=other)
+    read = client.get(f"/api/v1/sources/{twin}/conversion", headers=other).json()
+    by_admin = client.get(f"/api/v1/sources/{twin}/conversion", headers=admin).json()
+
+    assert asked.status_code == 200 and asked.json()["id"] == first["id"]
+    # the job is the first account's: another one could neither follow nor cancel it (app/api/jobs.py)
+    assert (asked.json()["job_id"], read["job_id"]) == (None, None)
+    assert by_admin["job_id"] == first["job_id"]
+    assert len(jobs(migrated)) == 1
+
+
 def test_another_account_s_upload_is_no_entry_of_its_conversion(
     client: TestClient, migrated: str, owner: tuple[UUID, dict[str, str]]
 ) -> None:

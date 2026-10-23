@@ -41,6 +41,7 @@ FailureCode = Literal[
 _STATE = """
     SELECT c.id, c.source_file_id, c.engine, c.engine_version, c.status, c.error_code, c.account_id,
         c.job_id, j.status AS job_status, j.error ->> 'code' AS job_error, j.finished_at AS job_finished_at,
+        j.lane AS job_lane,
         c.pages, c.printed_pages, c.findings, c.created_at, c.finished_at
     FROM conversion c LEFT JOIN job j ON j.id = c.job_id
     WHERE c.source_file_id = %s AND c.engine = %s
@@ -87,6 +88,7 @@ class ConversionState:
     account_id: UUID | None
     job_id: UUID | None
     job_status: str | None
+    job_lane: str | None  # who started the job: who may follow it (app/api/jobs.py)
     pages: int | None
     printed_pages: list[str | None] | None
     findings: list[dict[str, Any]]
