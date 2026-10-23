@@ -1,9 +1,9 @@
 """Tables as pdfplumber finds them, and tables continued over a page break (plan M1, 3.2).
 
 pdfplumber finds a table by its ruling lines; a table without them reads as text. A cell's text
-is its words, the cell's own line breaks aside. The first row with text - an empty one above it
-is dropped - is the table's header where every sign in it is bold; the old app took any first row
-for one.
+is its words, the cell's own line breaks and control signs aside. The first row with text - an
+empty one above it is dropped - is the table's header where every sign in it is bold; the old app
+took any first row for one.
 
 A table that ends a page - running heads and feet aside - and one that begins the next with as
 many columns are one table where the second has no header row, or repeats the first one's: the
@@ -15,7 +15,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from app.conversion.layout import Box, RawBlock, RawCell, RawPage, style_of
+from app.conversion.layout import Box, RawBlock, RawCell, RawPage, clean_text, style_of
 
 _BODY = ("text", "table")  # what is no running head or foot
 
@@ -35,15 +35,13 @@ def table_block(table: FoundTable, chars: Sequence[Mapping[str, Any]], page: int
     bottom, text, fontname): rows of cells, empty rows dropped; None where no row is left - ruling
     lines around nothing."""
     rows: list[tuple[RawCell | None, ...]] = []
-    for cells, places in zip(table.texts, table.boxes, strict=True):
-        if all(not (cell or "").strip() for cell in cells):
+    for found, places in zip(table.texts, table.boxes, strict=True):
+        cells = [None if cell is None else " ".join(clean_text(cell).split()) for cell in found]
+        if not any(cells):
             continue
         header = not rows and _bold(chars, [place for place in places if place is not None])
         rows.append(
-            tuple(
-                None if cell is None else RawCell(text=" ".join(cell.split()), header=header, page=page)
-                for cell in cells
-            )
+            tuple(None if cell is None else RawCell(text=cell, header=header, page=page) for cell in cells)
         )
     if not rows:
         return None

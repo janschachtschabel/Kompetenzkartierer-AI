@@ -104,6 +104,15 @@ def test_a_cell_s_name_says_its_row_and_column() -> None:
         Cell(id="T1:r1c1", page=1, row=2, column=1, text="x", header=False)
 
 
+@pytest.mark.parametrize("sign", [chr(0), chr(0xD800), chr(0xDFFF)], ids=["nul", "high", "low"])
+def test_a_text_no_store_keeps_is_refused_in_a_block_and_a_cell(sign: str) -> None:
+    # PostgreSQL's text and jsonb keep neither: a fault of the engine fails in its child, not there
+    with pytest.raises(ValidationError, match="NUL"):
+        text_block(text=f"Lern{sign}feld")
+    with pytest.raises(ValidationError, match="NUL"):
+        Cell(id="T1:r1c1", page=1, row=1, column=1, text=f"Lern{sign}feld", header=False)
+
+
 def test_a_conversion_says_a_printed_page_or_none_for_each_page() -> None:
     with pytest.raises(ValidationError, match="printed"):
         a_conversion(printed_pages=["5"])

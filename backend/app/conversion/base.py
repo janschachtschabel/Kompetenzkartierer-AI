@@ -18,12 +18,13 @@ The engines are named here and imported only when asked for: the API never loads
 import importlib
 import re
 from pathlib import Path
-from typing import Any, Literal, Protocol, Self
+from typing import Annotated, Any, Literal, Protocol, Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
 BLOCK_ID = re.compile(r"p[0-9]+-b[0-9]+")  # as cur-shapes.ttl writes it
 CELL_ID = re.compile(r"T([0-9]+):r([0-9]+)c([0-9]+)")
+_UNSTORABLE = re.compile(f"[{chr(0)}{chr(0xD800)}-{chr(0xDFFF)}]")
 BlockKind = Literal["text", "table", "page_header", "page_footer"]
 EngineName = Literal["pdfplumber"]  # the engines offered, for the API's schema (a test compares)
 FindingCode = Literal["unmapped_symbol", "encoding_suspect"]
@@ -43,6 +44,17 @@ def cell_id(table: int, row: int, column: int) -> str:
     return f"T{table}:r{row}c{column}"
 
 
+def _storable(text: str) -> str:
+    """The engines clean their text (app/conversion/layout.py, clean_text); a sign left that no
+    store keeps is a fault of one, which fails here, in the converting child, not in the database."""
+    if _UNSTORABLE.search(text):
+        raise ValueError("a text holds a NUL or a lone surrogate, which PostgreSQL does not store")
+    return text
+
+
+StorableText = Annotated[str, AfterValidator(_storable)]
+
+
 class Cell(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -50,7 +62,7 @@ class Cell(BaseModel):
     page: int = Field(ge=1)
     row: int = Field(ge=1)
     column: int = Field(ge=1)
-    text: str
+    text: StorableText
     header: bool
 
     @model_validator(mode="after")
@@ -67,7 +79,7 @@ class Block(BaseModel):
     id: str
     page: int = Field(ge=1)
     kind: BlockKind
-    text: str
+    text: StorableText
     bbox: tuple[float, float, float, float]  # x0, top, x1, bottom in PDF points
     font_size: float | None
     bold: bool

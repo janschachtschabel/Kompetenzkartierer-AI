@@ -2,7 +2,8 @@
 
 An engine hands over words with their place and font, and tables with their rows; what follows -
 lines, blocks, headers and footers, tables continued over a page, names - works on these alone,
-so another engine (Docling, 3b) can hand over the same and get the same treatment.
+so another engine (Docling, 3b) can hand over the same and get the same treatment. A text an
+engine hands over is cleaned of control signs first (``clean_text``).
 """
 
 import re
@@ -16,6 +17,9 @@ Box = tuple[float, float, float, float]  # x0, top, x1, bottom in PDF points
 # "MinionPro-It"): capitalised, no small letter after them
 _BOLD = re.compile(r"(?i:bold|black|heavy|demi)|(?:Bd|Blk|Hv|Sb|Smbd)(?![a-z])")
 _ITALIC = re.compile(r"(?i:italic|oblique)|(?:It|Obl)(?![a-z])")
+# Control signs but the tab and the line breaks, and lone surrogates: no reader sees them, and
+# PostgreSQL's text and jsonb store no NUL, JSON no lone surrogate
+_UNSEEN = dict.fromkeys([*range(0x00, 0x09), 0x0B, 0x0C, *range(0x0E, 0x20), 0x7F, *range(0xD800, 0xE000)])
 
 
 @dataclass(frozen=True)
@@ -55,6 +59,12 @@ class RawPage:
     number: int  # from 1
     height: float
     blocks: list[RawBlock] = field(default_factory=list)
+
+
+def clean_text(text: str) -> str:
+    """The text as a reader sees it, without control signs and lone surrogates: an engine hands
+    over what the file's ToUnicode map says, ``<0000>`` too."""
+    return text.translate(_UNSEEN)
 
 
 def style_of(font: str) -> tuple[bool, bool]:

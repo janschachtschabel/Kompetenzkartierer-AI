@@ -2,7 +2,8 @@
 
 Per page: the tables pdfplumber finds by their ruling lines (app/conversion/tables.py), and the
 words outside them - a word whose middle lies in a table is the table's - with their font and
-size, grouped into lines and blocks (app/conversion/lines.py). What follows is the engine's no
+size, grouped into lines and blocks (app/conversion/lines.py). A word left without a sign once its
+control signs are cleaned off is none. What follows is the engine's no
 more (app/conversion/assemble.py). It reads no scan: the converting job asks the text layer first
 (app/conversion/text_layer.py).
 
@@ -25,7 +26,7 @@ import pdfplumber
 
 from app.conversion.assemble import assemble
 from app.conversion.base import Conversion
-from app.conversion.layout import Box, RawPage, Word
+from app.conversion.layout import Box, RawPage, Word, clean_text
 from app.conversion.lines import blocks_of
 from app.conversion.tables import FoundTable, table_block
 from app.conversion.text_layer import UnreadablePdf
@@ -97,22 +98,22 @@ def page_of(read: PageRead) -> RawPage:
     number = int(read.number)
     tables = [found for found in (table_block(table, read.chars, number) for table in read.tables) if found]
     boxes = [table.bbox for table in tables]
-    words = [
-        Word(
-            text=word["text"],
-            x0=float(word["x0"]),
-            x1=float(word["x1"]),
-            top=float(word["top"]),
-            bottom=float(word["bottom"]),
-            size=float(word["size"]),
-            font=str(word["fontname"]),
-        )
-        for word in read.words
-        if not _within(word, boxes)
-    ]
+    words = [word for word in map(_word, read.words) if word.text and not _within(word, boxes)]
     return RawPage(number, float(read.height), [*blocks_of(words, number), *tables])
 
 
-def _within(word: Mapping[str, Any], boxes: list[Box]) -> bool:
-    middle_x, middle_y = (word["x0"] + word["x1"]) / 2, (word["top"] + word["bottom"]) / 2
+def _word(found: Mapping[str, Any]) -> Word:
+    return Word(
+        text=clean_text(found["text"]),
+        x0=float(found["x0"]),
+        x1=float(found["x1"]),
+        top=float(found["top"]),
+        bottom=float(found["bottom"]),
+        size=float(found["size"]),
+        font=str(found["fontname"]),
+    )
+
+
+def _within(word: Word, boxes: list[Box]) -> bool:
+    middle_x, middle_y = (word.x0 + word.x1) / 2, (word.top + word.bottom) / 2
     return any(x0 <= middle_x <= x1 and top <= middle_y <= bottom for x0, top, x1, bottom in boxes)

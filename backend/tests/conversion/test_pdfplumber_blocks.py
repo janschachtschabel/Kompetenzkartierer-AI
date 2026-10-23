@@ -9,6 +9,7 @@ import pytest
 from app.conversion import pdfplumber_blocks
 from app.conversion.base import Conversion, engine
 from app.conversion.text_layer import UnreadablePdf
+from tests.conversion.raw_pdf import HELVETICA, SENTENCE, pdf_of, stream
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -71,6 +72,44 @@ def test_a_file_pdfplumber_cannot_read_is_unreadable_and_says_so_without_its_pat
         engine("pdfplumber").convert(broken)
 
     assert "geheim" not in str(refused.value)
+
+
+def mapped_pdf(target: bytes) -> bytes:
+    """A page whose second font's ToUnicode map makes "A" the sign ``target`` (hex)."""
+    cmap = (
+        b"/CIDInit /ProcSet findresource begin 12 dict begin begincmap /CMapName /T def "
+        b"1 begincodespacerange <00> <FF> endcodespacerange 1 beginbfchar <41> <%s> endbfchar endcmap "
+        b"CMapName currentdict /CMap defineresource pop end end" % target
+    )
+    return pdf_of(
+        [
+            b"<< /Type /Catalog /Pages 2 0 R >>",
+            b"<< /Type /Pages /Kids [4 0 R] /Count 1 >>",
+            HELVETICA,
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842]"
+            b" /Resources << /Font << /F1 3 0 R /F2 6 0 R >> >> /Contents 5 0 R >>",
+            stream(SENTENCE + b"BT /F2 11 Tf 72 600 Td (xAAAx AAA Wort) Tj ET\n"),
+            HELVETICA.removesuffix(b" >>") + b" /ToUnicode 7 0 R >>",
+            stream(cmap),
+        ]
+    )
+
+
+@pytest.mark.parametrize("target", [b"0000", b"D800"], ids=["nul", "surrogate"])
+def test_signs_no_store_keeps_leave_the_text_and_the_conversion_goes_as_json(
+    tmp_path: Path, target: bytes
+) -> None:
+    path = tmp_path / "lehrplan.pdf"
+    path.write_bytes(mapped_pdf(target))
+
+    conversion = engine("pdfplumber").convert(path)
+
+    mapped = conversion.blocks[-1].text
+    assert all(sign != chr(0) and not 0xD800 <= ord(sign) <= 0xDFFF for sign in mapped)
+    assert mapped.endswith(" Wort")
+    if target == b"0000":
+        assert mapped == "xx Wort"  # the word of nothing but them goes
+    assert Conversion.model_validate_json(conversion.model_dump_json()) == conversion
 
 
 def broken(*args: object, **kwargs: object) -> object:

@@ -74,6 +74,12 @@ def test_the_header_is_the_first_row_with_text_where_an_empty_one_stands_above()
     assert [[cell.header for cell in row if cell] for row in block.rows] == [[True, True], [False, False]]
 
 
+def test_a_cell_s_text_holds_no_control_sign() -> None:
+    found = table_block(found_table([[f"Lern{chr(0)}feld{chr(0x7F)}", chr(0) * 2]]), [], page=1)
+
+    assert found is not None and texts(found) == [["Lernfeld", ""]]
+
+
 def test_a_table_of_empty_rows_is_no_block() -> None:
     assert table_block(found_table([["", None], [" ", ""]]), [], page=7) is None
 
