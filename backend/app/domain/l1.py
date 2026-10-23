@@ -1,0 +1,114 @@
+"""The first layer of the core, as the pipeline and the editor hand it to the store (plan M1 4.5).
+
+A drafted node holds its statements and its children in their order: their positions are where
+they stand, from 1. Every statement keeps its wording, addressees and anchors, as the core's
+shapes demand (``cur:verbatim`` 1, ``cur:addressee`` and ``cur:anchor`` one at least); an anchor
+names its page, or the page the document prints, and the blocks it was found in. Values are IRIs:
+which ones the vocabularies hold, the store checks.
+
+A profile value - a node type, a statement's subkind, a document type - is one of its profile's
+and lies under the core value it refines (``skos:broader``): a ``schul:Inhaltsbereich`` is a
+``cv:fn_area``. What a profile holds comes from the vocabularies; the check takes it as given.
+"""
+
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
+from typing import Literal
+from uuid import UUID
+
+from app.domain.blocks import BLOCK_ID, CELL_ID
+
+ProfileProblem = Literal["not_in_profile", "wrong_core"]
+
+
+def check_profile_value(value: str, core: str, allowed: Mapping[str, Sequence[str]]) -> ProfileProblem | None:
+    """Why ``value`` may not stand for ``core``, or None where it may; ``allowed``: the profile's
+    values, each with the core values it lies under."""
+    if value not in allowed:
+        return "not_in_profile"
+    if core not in allowed[value]:
+        return "wrong_core"
+    return None
+
+
+@dataclass(frozen=True)
+class AnchorDraft:
+    """Where a value was found: a page or a printed page, and the blocks."""
+
+    block_ids: tuple[str, ...]
+    page_start: int | None
+    page_end: int | None = None
+    printed_page: str | None = None
+    quote: str | None = None
+    match_kind: str | None = None
+    match_score: float | None = None
+    table_cell: str | None = None
+    char_start: int | None = None
+    char_end: int | None = None
+
+    def __post_init__(self) -> None:
+        if self.page_start is None and self.printed_page is None:
+            raise ValueError("an anchor names its page or the page the document prints")
+        if self.page_start is not None and (
+            self.page_start < 1 or (self.page_end is not None and self.page_end < self.page_start)
+        ):
+            raise ValueError(f"no such page range: {self.page_start} to {self.page_end}")
+        if not self.block_ids or any(BLOCK_ID.fullmatch(block) is None for block in self.block_ids):
+            raise ValueError(f"an anchor names its blocks as p<page>-b<n>, not {self.block_ids}")
+        if self.match_score is not None and not 0 <= self.match_score <= 1:
+            raise ValueError(f"a match score lies between 0 and 1, not {self.match_score}")
+        if self.table_cell is not None and CELL_ID.fullmatch(self.table_cell) is None:
+            raise ValueError(f"a table cell is T<n>:r<i>c<j>, not {self.table_cell!r}")
+
+
+@dataclass(frozen=True)
+class StatementDraft:
+    """A statement of a node: its wording as the document gives it, and what it is."""
+
+    verbatim: str
+    kind: str
+    addressees: tuple[str, ...]
+    anchors: tuple[AnchorDraft, ...]
+    origin: str
+    review_status: str
+    language: str = "de"
+    lead_in: str | None = None
+    subkind: str | None = None
+    obligation: str | None = None
+    rule_id: str | None = None
+    details: Mapping[str, object] = field(default_factory=dict)
+    layout_markers: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.verbatim.strip():
+            raise ValueError("a statement has a wording")
+        if not self.addressees:
+            raise ValueError("a statement has an addressee at least")
+        if not self.anchors:
+            raise ValueError("a statement has an anchor at least: where in the source it stands")
+
+
+@dataclass(frozen=True)
+class NodeDraft:
+    """A node of the document's structure, with its statements and children in their order."""
+
+    function: str
+    origin: str
+    review_status: str
+    node_type: str | None = None
+    code: str | None = None
+    code_assigned: bool = False
+    original_title: str | None = None
+    title_language: str = "de"
+    obligation: str | None = None
+    scope_share: str | None = None
+    extraction_depth: str | None = None
+    applies_to: tuple[UUID, ...] = ()
+    rule_id: str | None = None
+    anchors: tuple[AnchorDraft, ...] = ()
+    statements: tuple[StatementDraft, ...] = ()
+    children: tuple["NodeDraft", ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.code_assigned and self.code is None:
+            raise ValueError("an assigned code is a code: the node's position")
