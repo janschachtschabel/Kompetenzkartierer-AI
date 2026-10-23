@@ -76,8 +76,10 @@ class Cell(BaseModel):
 
     @model_validator(mode="after")
     def _named_by_its_place(self) -> Self:
+        """Named as cell_id names it - no zero, no leading one - by its row and column."""
         found = CELL_ID.fullmatch(self.id)
-        if found is None or (int(found[2]), int(found[3])) != (self.row, self.column):
+        numbers = (0, 0, 0) if found is None else tuple(int(number) for number in found.groups())
+        if min(numbers) < 1 or self.id != cell_id(*numbers) or numbers[1:] != (self.row, self.column):
             raise ValueError(f"cell {self.id} is not that of row {self.row}, column {self.column}")
         return self
 
@@ -97,9 +99,13 @@ class Block(BaseModel):
 
     @model_validator(mode="after")
     def _named_by_its_page(self) -> Self:
-        if BLOCK_ID.fullmatch(self.id) is None:
-            raise ValueError(f"block {self.id} is not named p<page>-b<block>")
-        named = int(self.id[1 : self.id.index("-")])
+        """Named as block_id names it - the shapes' pattern lets "p01-b1" and "p1-b0" through,
+        which would name a block twice or none - by its page."""
+        named, number = (0, 0)
+        if BLOCK_ID.fullmatch(self.id) is not None:
+            named, number = (int(part) for part in self.id[1:].split("-b"))
+        if min(named, number) < 1 or self.id != block_id(named, number):
+            raise ValueError(f"block {self.id} is not named p<page>-b<block>, each counted from 1")
         if named != self.page:
             raise ValueError(f"block {self.id} names page {named} but stands on page {self.page}")
         if (self.kind == "table") != bool(self.cells):

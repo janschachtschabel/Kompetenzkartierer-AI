@@ -92,6 +92,19 @@ def test_a_block_s_name_says_its_page() -> None:
         text_block(page=1, id="p2-b1")
 
 
+@pytest.mark.parametrize("named", ["p01-b1", "p1-b01", "p1-b0"])
+def test_a_block_is_named_as_block_id_names_it(named: str) -> None:
+    # the pattern of the shapes lets these through; one block, one name
+    with pytest.raises(ValidationError, match=named):
+        text_block(id=named)
+
+
+@pytest.mark.parametrize("named", ["T01:r1c1", "T1:r01c1", "T0:r1c1"])
+def test_a_cell_is_named_as_cell_id_names_it(named: str) -> None:
+    with pytest.raises(ValidationError, match=named):
+        Cell(id=named, page=1, row=1, column=1, text="x", header=False)
+
+
 def test_a_table_holds_cells_and_only_a_table() -> None:
     assert table_block().cells[0].id == "T1:r1c1"
     with pytest.raises(ValidationError, match="cells"):
