@@ -11,13 +11,14 @@ half a line), and so does a mark far smaller than its word that comes before it;
 once every line stands, with the word they overlap most, since a mark raised to the line above
 may touch a word's end there as well. Then a single word far smaller than a line, a space apart
 from its words - a footnote's mark, "[1]" - stands on the line whose span holds its middle, and so
-does a single word far larger standing among its words, a formula's operator; but never where the
-larger covers the middle of another line too. Words far smaller, more than one, are a line of
-their own: a note in the margin, a label beside a title. Two words of one size are never glued:
-where lines are set tight, a word's edge meets one above by chance. Two words a gap narrower than a tenth of
-their size apart are one: pdfplumber parts a word where its font or size changes ("Lern" "feld",
-"CO" "2"). A line's size is that of most of its signs. No line runs across the gutter between
-two columns or into a note beside the text (app/conversion/gutters.py).
+do words far smaller between its words ("[1, 2]"), and a single word far larger among them, no
+further from one than their size - a formula's operator; but never where the larger covers the
+middle of another line too. Words far smaller beside a line, more than one, are a line of their
+own: a note in the margin, a label behind a title. Two words of one size are never glued: where
+lines are set tight, a word's edge meets one above by chance. Two words a gap narrower than a
+tenth of their size apart are one: pdfplumber parts a word where its font or size changes ("Lern"
+"feld", "CO" "2"). A line's size is that of most of its signs. No line runs across the gutter
+between two columns or into a note beside the text (app/conversion/gutters.py).
 
 A block is the lines below one another, close, overlapping across and set alike - the same size,
 bold and italic. A heading begins a block of its own however close the text below it stands, and
@@ -190,10 +191,11 @@ def _rows(words: Iterable[Word]) -> list[_Row]:
 def _home(first: _Script, own: _Row, rows: list[_Row], gone: set[int], middles: list[float]) -> _Row | None:
     """The line a single word far smaller or larger than its span stands on though it glues to none
     of its words - a footnote's mark a space before its note, "[1]" within a sentence, a formula's
-    large operator: the one line near whose span holds the middle of the word's. The larger of the
-    two covers the middle of no line but the other's - of all the page's lines, ``middles``: a
-    watermark, an initial, a symbol beside two lines does. Words far smaller, more than one, are a
-    line of their own: a note in the margin, a label beside a title."""
+    large operator no further from one of them than their size: the one line near whose span holds
+    the middle of the word's. Words far smaller, more than one, stand on it between its words alone
+    - "[1, 2]" within a sentence; beside it they are a line of their own: a note in the margin, a
+    label behind a title. The larger of the two covers the middle of no line but the other's - of
+    all the page's lines, ``middles``: a watermark, an initial, a symbol beside two lines does."""
     top, bottom = own.span
     begun = takewhile(lambda row: row.words[0].top < bottom, rows[first.begun :])
     near = [row for row in [*first.near, *begun] if row is not own and id(row) not in gone]
@@ -203,12 +205,12 @@ def _home(first: _Script, own: _Row, rows: list[_Row], gone: set[int], middles: 
         return None
     home = holding[0]
     height, own_height = home.span[1] - home.span[0], bottom - top
-    if len(own.words) != 1:  # words far smaller than a line, more than one: a note beside it, a label
+    if len(own.words) != 1 and not (height > TALL * own_height and _between(own, home)):
         return None
     if own_height > TALL * height:
-        # an operator stands among its line's words; a title beside a small label does not
+        # an operator stands among its line's words; a title a little off a small label does not
         large = own.words[0]
-        if not any(_distance(large, other) <= large.size for other in home.words):
+        if not any(_distance(large, other) <= other.size for other in home.words):
             return None
         larger = own.span
     elif height > TALL * own_height:
@@ -230,6 +232,13 @@ def _partners(script: _Script, rows: list[_Row], moved: set[int]) -> list[tuple[
         for other in row.words
         if _glued(script.word, other)
     ]
+
+
+def _between(own: _Row, home: _Row) -> bool:
+    """Whether words of ``home`` stand on either side of those of ``own``: within the line, not
+    beside it."""
+    first, last = min(word.x0 for word in own.words), max(word.x1 for word in own.words)
+    return any(other.x1 <= first for other in home.words) and any(other.x0 >= last for other in home.words)
 
 
 def _distance(word: Word, other: Word) -> float:

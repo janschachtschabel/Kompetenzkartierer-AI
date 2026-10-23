@@ -164,13 +164,24 @@ def test_a_small_mark_a_space_apart_inside_a_line_stands_on_it() -> None:
     assert [line.text for line in lines_of(words)] == ["Die Lernenden planen [1] ihre Arbeit."]
 
 
+def test_small_words_a_space_apart_between_words_of_a_line_stand_on_it() -> None:
+    # "[1, 2]" set at 7 points within a line of 11: a citation, its line's words on either side
+    words = row("Die Lernenden planen", 100)
+    words += row("[1, 2]", 101, x0=words[-1].x1 + 3.3, size=7)
+    words += row("ihre Arbeit.", 100, x0=words[-1].x1 + 3.3)
+
+    assert [line.text for line in lines_of(words)] == ["Die Lernenden planen [1, 2] ihre Arbeit."]
+
+
 @pytest.mark.parametrize(
     ("line", "size", "beside", "gap", "top", "small"),
     [
         ("Die Lernenden planen", 11.0, "Hinweis: vgl. Anlage 3", 13, 101, 7.0),  # a margin note 13 points off
         ("Rahmenlehrplan", 24.0, "Stand: 01.08.2026", 50, 108, 8.0),  # a label 50 points behind a title
+        ("Mechatronik", 24.0, "Stand: 01.08.2026", 13, 108, 8.0),  # nearer than the title's size
+        ("Ziele", 11.0, "vgl. Anlage 3", 8, 101, 7.0),  # a note beside a line of one word
     ],
-    ids=["margin-note", "label"],
+    ids=["margin-note", "label", "label-near", "note-beside-a-word"],
 )
 def test_words_far_smaller_beside_a_line_stay_a_line_of_their_own(
     line: str, size: float, beside: str, gap: float, top: float, small: float
@@ -195,6 +206,19 @@ def test_an_operator_far_larger_than_its_line_stands_on_it_where_it_covers_no_ot
     texts = [line.text for line in lines_of(words)]
 
     assert texts == ["Oben steht ein Satz.", "Es gilt F = S f(x) dx", "Unten steht ein Satz."]
+
+
+@pytest.mark.parametrize(("gap", "joins"), [(10, True), (12, False)])
+def test_an_operator_stands_on_its_line_where_it_is_no_further_from_its_words_than_their_size(
+    gap: float, joins: bool
+) -> None:
+    # a sign of 24 points behind words of 11: within their size it is theirs, beyond it a sign of its own
+    words = row("Die Summe", 100)
+    words.append(word("S", words[-1].x1 + gap, 94, size=24))
+
+    texts = sorted(line.text for line in lines_of(words))
+
+    assert texts == (["Die Summe S"] if joins else ["Die Summe", "S"])
 
 
 def test_lines_set_tighter_than_solid_keep_their_words_where_edges_meet_by_chance() -> None:
