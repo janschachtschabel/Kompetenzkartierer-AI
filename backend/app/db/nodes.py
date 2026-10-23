@@ -31,6 +31,7 @@ SELECT d.conversion_id, s.notation FROM document d JOIN vocab_concept s ON s.iri
 WHERE d.id = %s
 """
 _LOCK = "SELECT pg_advisory_xact_lock(hashtextextended('node-tree:' || %s::text, 0))"
+_RETIRED = "SELECT iri FROM vocab_concept WHERE iri = ANY(%s) AND retired_in IS NOT NULL ORDER BY iri LIMIT 1"
 _NEXT = """
 SELECT coalesce(max(position), 0) + 1 FROM node WHERE document_id = %s AND parent_id IS NOT DISTINCT FROM %s
 """
@@ -38,34 +39,37 @@ _NODE = """
 INSERT INTO node (id, document_id, parent_id, position, function_scheme, function_iri, node_type_iri, code,
     code_assigned, original_title, title_language, obligation_scheme, obligation_iri, scope_share_scheme,
     scope_share_iri, extraction_depth_scheme, extraction_depth_iri, applies_to, origin_scheme, origin_iri,
-    review_status_scheme, review_status_iri, rule_id)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    review_status_scheme, review_status_iri, rule_id, run_id)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
 _STATEMENT = """
 INSERT INTO statement (id, document_id, node_id, position, verbatim, language, lead_in, statement_kind_scheme,
     statement_kind_iri, subkind_iri, obligation_scheme, obligation_iri, origin_scheme, origin_iri,
-    review_status_scheme, review_status_iri, rule_id, text_hash, details, layout_markers)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    review_status_scheme, review_status_iri, rule_id, text_hash, details, layout_markers, run_id)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
 _ANCHOR = """
 INSERT INTO anchor (id, document_id, conversion_id, node_id, statement_id, page_start, page_end, printed_page,
     quote, match_kind_scheme, match_kind_iri, match_score, char_start, char_end, table_cell)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
+# each query of a tree asks who sees its document, all within one snapshot (read_tree)
 _VISIBLE = f"SELECT 1 FROM document d WHERE d.id = %(id)s AND {DOCUMENT_VISIBLE}"  # noqa: S608 - fixed parts
-_NODES = """
-SELECT id, parent_id, position, function_iri, node_type_iri, code, code_assigned, original_title, origin_iri,
-    review_status_iri, revision
-FROM node WHERE document_id = %s ORDER BY position
-"""
-_STATEMENTS = """
+_NODES = f"""
+SELECT n.id, n.parent_id, n.position, n.function_iri, n.node_type_iri, n.code, n.code_assigned,
+    n.original_title, n.origin_iri, n.review_status_iri, n.revision
+FROM node n JOIN document d ON d.id = n.document_id
+WHERE n.document_id = %(id)s AND {DOCUMENT_VISIBLE} ORDER BY n.position
+"""  # noqa: S608 - fixed parts
+_STATEMENTS = f"""
 SELECT s.id, s.node_id, s.position, s.verbatim, s.statement_kind_iri, s.subkind_iri, s.origin_iri,
     s.review_status_iri, s.text_hash, s.revision,
     array(
         SELECT a.addressee_iri FROM statement_addressee a WHERE a.statement_id = s.id ORDER BY 1
     ) AS addressees
-FROM statement s WHERE s.document_id = %s ORDER BY s.position
-"""
+FROM statement s JOIN document d ON d.id = s.document_id
+WHERE s.document_id = %(id)s AND {DOCUMENT_VISIBLE} ORDER BY s.position
+"""  # noqa: S608 - fixed parts
 
 
 @dataclass(frozen=True)
@@ -99,11 +103,17 @@ class TreeNode:
 
 
 async def write_subtree(
-    connection: psycopg.AsyncConnection, document_id: UUID, root: NodeDraft, *, parent_id: UUID | None = None
+    connection: psycopg.AsyncConnection,
+    document_id: UUID,
+    root: NodeDraft,
+    *,
+    parent_id: UUID | None = None,
+    run_id: UUID | None = None,
 ) -> UUID:
     """Write ``root`` with all it holds under ``parent_id`` (the document's top where None), after
-    the siblings there; its id. ProfileValueError, DocumentError or the database's error, and then
-    nothing of it is written."""
+    the siblings there, as the run ``run_id`` made it (one of the document's); its id.
+    ProfileValueError for a profile value the document's profile does not hold or a core value
+    retired, DocumentError or the database's error, and then nothing of it is written."""
     async with connection.transaction():
         cursor = await connection.execute(_DOCUMENT, (document_id,))
         found = await cursor.fetchone()
@@ -111,27 +121,47 @@ async def write_subtree(
             raise DocumentError(f"no document {document_id}")
         conversion_id, sector = found
         _check(root, await profile_concepts(connection, sector))
-        await connection.execute(_LOCK, (str(document_id),))
+        cursor = await connection.execute(_RETIRED, (sorted(_core_values(root)),))
+        if (retired := await cursor.fetchone()) is not None:
+            raise ProfileValueError("retired", retired[0])
+        await lock_tree(connection, document_id)
         cursor = await connection.execute(_NEXT, (document_id, parent_id))
         position = await cursor.fetchone()
         assert position is not None  # noqa: S101 - an aggregate yields its row
-        return await _Writer(connection, document_id, conversion_id).node(root, parent_id, int(position[0]))
+        writer = _Writer(connection, document_id, conversion_id, run_id)
+        return await writer.node(root, parent_id, int(position[0]))
+
+
+async def lock_tree(connection: psycopg.AsyncConnection, document_id: UUID) -> None:
+    """Wait for, then hold until the transaction ends, the lock all writes to the document's tree
+    share - subtrees written, nodes moved (migration l1_nodes); within a transaction alone."""
+    await connection.execute(_LOCK, (str(document_id),))
 
 
 async def read_tree(
     connection: psycopg.AsyncConnection, reader: Reader, document_id: UUID
 ) -> tuple[TreeNode, ...] | None:
     """The document's nodes from its top, each with its statements and children in their order;
-    None where ``reader`` does not see the document."""
-    cursor = await connection.execute(
-        _VISIBLE, {"id": document_id, "me": reader.account_id, "all": reader.sees_all}
-    )
+    None where ``reader`` does not see the document. Read in one snapshot: within the caller's
+    transaction, or one of its own that reads alone."""
+    if connection.info.transaction_status != psycopg.pq.TransactionStatus.IDLE:
+        return await _read_tree(connection, reader, document_id)
+    async with connection.transaction():
+        await connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
+        return await _read_tree(connection, reader, document_id)
+
+
+async def _read_tree(
+    connection: psycopg.AsyncConnection, reader: Reader, document_id: UUID
+) -> tuple[TreeNode, ...] | None:
+    params = {"id": document_id, "me": reader.account_id, "all": reader.sees_all}
+    cursor = await connection.execute(_VISIBLE, params)
     if await cursor.fetchone() is None:
         return None
     async with connection.cursor(row_factory=dict_row) as rows:
-        await rows.execute(_NODES, (document_id,))
+        await rows.execute(_NODES, params)
         nodes = await rows.fetchall()
-        await rows.execute(_STATEMENTS, (document_id,))
+        await rows.execute(_STATEMENTS, params)
         statements = await rows.fetchall()
     said: defaultdict[UUID, list[TreeStatement]] = defaultdict(list)
     for row in statements:
@@ -165,6 +195,24 @@ def _check(draft: NodeDraft, profile: ProfileConcepts | None) -> None:
         _check(child, profile)
 
 
+def _core_values(draft: NodeDraft) -> set[str]:
+    """The values of the core's fixed schemes the subtree names - functions, kinds, addressees,
+    origins and the like - which may be retired since its draft was made."""
+    values = {draft.function, draft.origin, draft.review_status}
+    values.update(value for value in (draft.obligation, draft.scope_share, draft.extraction_depth) if value)
+    anchors = list(draft.anchors)
+    for statement in draft.statements:
+        values.update((statement.kind, statement.origin, statement.review_status))
+        values.update((*statement.addressees, *statement.layout_markers))
+        if statement.obligation is not None:
+            values.add(statement.obligation)
+        anchors.extend(statement.anchors)
+    values.update(anchor.match_kind for anchor in anchors if anchor.match_kind)
+    for child in draft.children:
+        values |= _core_values(child)
+    return values
+
+
 def _pair(scheme: str, iri: str | None) -> tuple[str | None, str | None]:
     """A value of a fixed scheme as its two columns, or none."""
     return (None, None) if iri is None else (CV + scheme, iri)
@@ -175,6 +223,7 @@ class _Writer:
     connection: psycopg.AsyncConnection
     document_id: UUID
     conversion_id: UUID
+    run_id: UUID | None
 
     async def node(self, draft: NodeDraft, parent_id: UUID | None, position: int) -> UUID:
         node_id = await self._entity("node")
@@ -198,6 +247,7 @@ class _Writer:
                 *_pair("Origins", draft.origin),
                 *_pair("ReviewStatuses", draft.review_status),
                 draft.rule_id,
+                self.run_id,
             ),
         )
         for anchor in draft.anchors:
@@ -229,6 +279,7 @@ class _Writer:
                 text_hash(draft.verbatim),
                 Jsonb(dict(draft.details)),
                 list(draft.layout_markers),
+                self.run_id,
             ),
         )
         async with self.connection.cursor() as cursor:

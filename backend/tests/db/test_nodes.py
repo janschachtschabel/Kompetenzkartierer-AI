@@ -12,13 +12,13 @@ import pytest
 from app.core.ids import new_id
 from app.db.documents import DocumentError, ProfileValueError, create_document
 from app.db.migrate import migrate
-from app.db.nodes import read_tree, write_subtree
+from app.db.nodes import lock_tree, read_tree, write_subtree
 from app.db.source_queries import Reader
 from app.domain.l1 import AnchorDraft, NodeDraft, StatementDraft
 from app.domain.wording import text_hash
 from app.vocab.loader import read_vocabulary
 from app.vocab.store import load_vocabulary
-from tests.db.l1 import add_conversion
+from tests.db.l1 import add_conversion, add_run
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 
@@ -215,6 +215,56 @@ async def test_a_subtree_with_a_value_its_profile_does_not_hold_is_written_not_a
 
     assert refused.value.problem == problem
     assert await counts(connection) == (0, 0, 0, 0)
+
+
+async def test_a_subtree_with_a_retired_core_value_is_written_not_at_all(
+    connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    await connection.execute(
+        "UPDATE vocab_concept SET retired_in = 1 WHERE iri = %s", (CV + "addr_educator",)
+    )
+
+    with pytest.raises(ProfileValueError) as refused:
+        await write_subtree(connection, document.id, AREA)
+
+    assert (refused.value.problem, refused.value.value) == ("retired", CV + "addr_educator")
+    assert await counts(connection) == (0, 0, 0, 0)
+
+
+async def test_what_a_run_writes_names_the_run(
+    url: str, connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    with psycopg.connect(url, autocommit=True) as sync:
+        run = add_run(sync, document.id)
+
+    await write_subtree(connection, document.id, AREA, run_id=run)
+
+    cursor = await connection.execute(
+        "SELECT (SELECT array_agg(DISTINCT run_id) FROM node),"
+        " (SELECT array_agg(DISTINCT run_id) FROM statement)"
+    )
+    assert await cursor.fetchone() == ([run], [run])
+
+
+async def test_a_subtree_waits_for_another_write_to_its_document_s_tree(
+    url: str, connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    async with await psycopg.AsyncConnection.connect(url, autocommit=True) as other, other.transaction():
+        await lock_tree(other, document.id)  # as an editor moving a node holds it
+        await connection.execute("SET lock_timeout = '200ms'")
+        with pytest.raises(psycopg.errors.LockNotAvailable):
+            await write_subtree(connection, document.id, node())
+
+
+async def test_a_tree_is_read_within_a_transaction_already_open(
+    connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    await write_subtree(connection, document.id, AREA)
+
+    async with connection.transaction():
+        tree = await read_tree(connection, owner(document), document.id)
+
+    assert tree is not None and len(tree) == 1
 
 
 async def test_a_subtree_whose_anchor_names_no_block_of_the_conversion_is_written_not_at_all(

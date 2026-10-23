@@ -12,6 +12,7 @@ vocabulary's, its document type one of its sector's profile - each chosen only w
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 import psycopg
@@ -57,9 +58,10 @@ class DocumentError(Exception):
 
 
 class ProfileValueError(ValueError):
-    """A profile value that is none of the document's profile, or under another core value."""
+    """A value the document may not take: a profile value that is none of its profile's or under
+    another core value, or a core value retired from the vocabularies."""
 
-    def __init__(self, problem: ProfileProblem, value: str) -> None:
+    def __init__(self, problem: ProfileProblem | Literal["retired"], value: str) -> None:
         super().__init__(f"{value}: {problem}")
         self.problem = problem
         self.value = value
