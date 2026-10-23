@@ -1,6 +1,7 @@
 """What a conversion (X0) makes of a document: blocks with stable IDs (plan M1, 3.1; konzept §13.2)."""
 
 import re
+from typing import get_args
 
 import pytest
 from pydantic import ValidationError
@@ -11,6 +12,7 @@ from app.conversion.base import (
     Block,
     Cell,
     Conversion,
+    EngineName,
     Finding,
     UnknownEngine,
     block_id,
@@ -124,3 +126,7 @@ def test_the_register_offers_pdfplumber_and_names_what_it_offers_for_another() -
     assert offered_engines() == ("pdfplumber",)
     with pytest.raises(UnknownEngine, match="pdfplumber"):
         engine("docling")
+
+
+def test_the_api_names_the_engines_the_register_offers() -> None:
+    assert get_args(EngineName) == offered_engines()

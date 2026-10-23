@@ -25,6 +25,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 BLOCK_ID = re.compile(r"p[0-9]+-b[0-9]+")  # as cur-shapes.ttl writes it
 CELL_ID = re.compile(r"T([0-9]+):r([0-9]+)c([0-9]+)")
 BlockKind = Literal["text", "table", "page_header", "page_footer"]
+EngineName = Literal["pdfplumber"]  # the engines offered, for the API's schema (a test compares)
 FindingCode = Literal["unmapped_symbol", "encoding_suspect"]
 # Each engine by the class that converts with it, imported when first asked for
 _ENGINES = {"pdfplumber": "app.conversion.pdfplumber_blocks:PdfplumberEngine"}
