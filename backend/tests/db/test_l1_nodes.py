@@ -129,9 +129,9 @@ def test_two_takings_away_of_a_statement_s_last_two_anchors_or_addressees_wait_f
     with connection.transaction(), psycopg.connect(database_url, autocommit=True) as other:
         connection.execute(delete, first)
         connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        other.execute("SET lock_timeout = '200ms'")  # first: a wait in this one thread would never end
         with pytest.raises(errors.LockNotAvailable), other.transaction():
             other.execute(delete, second)
-            other.execute("SET lock_timeout = '200ms'")
             other.execute("SET CONSTRAINTS ALL IMMEDIATE")
 
 
