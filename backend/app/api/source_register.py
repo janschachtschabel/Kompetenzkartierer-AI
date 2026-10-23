@@ -21,12 +21,13 @@ from app.api.deps import principal, require_account
 from app.api.downloads import ObjectDownload
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.api.source_checks import CheckOut
+from app.api.source_content import EDITORS, content_row
 from app.api.sources import MAX_TITLE_SIGNS, SourceFileOut
 from app.core.auth import Principal, one_spelling, shows_whole, visible_only
 from app.core.logging import current_request_id
 from app.core.storage import ObjectNotFound
 from app.db.accounts import record_audit
-from app.db.source_queries import Filters, Reader, get_source, list_sources, ownerless_source, seed_of
+from app.db.source_queries import Filters, Reader, get_source, list_sources, seed_of
 from app.db.sources import sector_by_notation, update_source
 from app.db.url_checks import check_of
 from app.sources.register import (
@@ -43,7 +44,6 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["sources"], responses=AUTH_RESPONSES)
 Account = Annotated[Principal, Depends(require_account)]
 Country = Annotated[str, StringConstraints(pattern=r"^[A-Z]{2}(-[A-Z0-9]{1,3})?$")]
-EDITORS = frozenset({"redaktion", "admin"})
 # What only editors set: on what terms the document may be used, and who publishes it
 TERMS = frozenset({"rights_status", "rights_evidence", "source_type", "license"})
 # The terms whose new values the audit log keeps
@@ -315,25 +315,10 @@ DOWNLOAD_RESPONSES: dict[int | str, dict[str, Any]] = {
 async def get_register_file(
     source_id: UUID, request: Request, who: Annotated[Principal, Depends(principal)]
 ) -> ObjectDownload:
-    """Its owner and the editors get it; the file of an entry of no account goes, beside them, to
-    whom THIRD_PARTY_MARKDOWN names (``hidden``: nobody, ``accounts``, ``public``: visitors too).
-    Visitors only where PUBLIC_ACCESS lets them in at all: the stricter rule holds."""
-    settings = request.app.state.settings
-    opened_to = settings.third_party_markdown
-    to_visitors = opened_to == "public" and settings.public_access != "off"
+    """Its owner and the editors get it, and whom THIRD_PARTY_MARKDOWN names for an entry of no
+    account (app/api/source_content.py)."""
     async with request.app.state.pool.connection() as connection:
-        if who.anonymous:
-            row = await ownerless_source(connection, source_id) if to_visitors else None
-            if row is None:
-                raise HTTPException(401, "A token is needed.", headers={"WWW-Authenticate": "Bearer"})
-        else:
-            found = await get_source(connection, _reader(who), source_id)
-            if found is None:
-                raise HTTPException(404, "No such register entry.")
-            row = found[0]
-            own = row["owner_id"] is not None and row["owner_id"] == who.account_id
-            if not own and not who.roles & EDITORS and opened_to == "hidden":
-                raise Refusal(403, "file_hidden", "The file of this entry is for its editors only.")
+        row = await content_row(connection, who, request.app.state.settings, source_id)
     if row["storage_key"] is None:
         raise Refusal(404, "no_file", "The entry has no file yet.")
     try:
