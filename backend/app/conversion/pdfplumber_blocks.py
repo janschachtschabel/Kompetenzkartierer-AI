@@ -10,23 +10,22 @@ A sign no reader reads where it stands is dropped before words and tables are re
 of a table too - and counted on its page, by why: set upwards or turned (``vertical``: pdfplumber
 would splinter its words - "dna", "6202"), its middle outside what a viewer shows - the crop box,
 within the media box, turned with the page (``off_page``) - or smaller than a point (``tiny``): a
-way to hide text from
-a reader, not from a model, so it is said as a finding rather than lost unseen. A sign or a table
-at no finite point - a number of 400 digits in the content stream places it at NaN - is dropped
-so (``unplaced``). A sign printed again over itself, to look bold, is read once. A word left
-without a sign once its control signs are cleaned off is none.
+way to hide text from a reader, not from a model, so it is said as a finding rather than lost
+unseen. A sign or a table at no finite point - a number of 400 digits in the content stream
+places it at NaN - is dropped so (``unplaced``). A sign printed again over itself, to look bold,
+is read once. A word left without a sign once its control signs are cleaned off is none.
 
 The file is untrusted. Whatever pdfplumber or pdfminer raise while reading it makes it unreadable,
 said without its path; so only the library's own calls stand where that is caught. So do pages
 pdfplumber counts otherwise than the text layer did (a page tree of one page and three kids): the
 limit on pages was checked on the text layer's. They are counted as far as one more before
 pdfplumber builds them, which it does for every page the tree holds - and closing the file builds
-them too where none were. A page of more signs than the service takes is
-too dense (TooDense) - counted here, before its words and tables are read, since pdfium counts a
-text drawn many times at one place once and pdfminer reads each. What is built of what they read
-- which signs go, words, tables, lines and blocks - is ours, and its errors stay errors: in the
-converting child a crash, not a verdict on the file. A page is read, then built, then the next is
-read, so that the signs of one page at a time are held.
+them too where none were. A page of more signs than the service takes is too dense (TooDense) -
+counted here, before its words and tables are read, since pdfium counts a text drawn many times
+at one place once and pdfminer reads each. What is built of what they read (which signs go,
+words, tables, lines and blocks) is ours, and its errors stay errors: in the converting child a
+crash, not a verdict on the file. A page is read, then built, then the next is read, so that the
+signs of one page at a time are held.
 """
 
 import logging
