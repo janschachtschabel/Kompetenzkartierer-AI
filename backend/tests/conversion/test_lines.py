@@ -208,6 +208,19 @@ def test_an_operator_far_larger_than_its_line_stands_on_it_where_it_covers_no_ot
     assert texts == ["Oben steht ein Satz.", "Es gilt F = S f(x) dx", "Unten steht ein Satz."]
 
 
+@pytest.mark.parametrize(("gap", "joins"), [(6, True), (20, True), (21, False)])
+def test_a_heading_s_number_far_larger_than_it_stands_on_its_line_within_its_own_size(
+    gap: float, joins: bool
+) -> None:
+    # "3" in 20 points before "Ziele und Inhalte" in 11: the heading's number, however wide set
+    words = [word("3", 40, 95, size=20, font="Helvetica-Bold")]
+    words += row("Ziele und Inhalte", 100, x0=words[0].x1 + gap, font="Helvetica-Bold")
+
+    texts = sorted(line.text for line in lines_of(words))
+
+    assert texts == (["3 Ziele und Inhalte"] if joins else ["3", "Ziele und Inhalte"])
+
+
 @pytest.mark.parametrize(("gap", "joins"), [(10, True), (12, False)])
 def test_an_operator_stands_on_its_line_where_it_is_no_further_from_its_words_than_their_size(
     gap: float, joins: bool

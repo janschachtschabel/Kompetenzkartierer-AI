@@ -12,13 +12,14 @@ once every line stands, with the word they overlap most, since a mark raised to 
 may touch a word's end there as well. Then a single word far smaller than a line, a space apart
 from its words - a footnote's mark, "[1]" - stands on the line whose span holds its middle, and so
 do words far smaller between its words ("[1, 2]"), and a single word far larger among them, no
-further from one than their size - a formula's operator; but never where the larger covers the
-middle of another line too. Words far smaller beside a line, more than one, are a line of their
-own: a note in the margin, a label behind a title. Two words of one size are never glued: where
-lines are set tight, a word's edge meets one above by chance. Two words a gap narrower than a
-tenth of their size apart are one: pdfplumber parts a word where its font or size changes ("Lern"
-"feld", "CO" "2"). A line's size is that of most of its signs. No line runs across the gutter
-between two columns or into a note beside the text (app/conversion/gutters.py).
+further from one than their size - a formula's operator - or, a heading's number, than its own;
+but never where the larger covers the middle of another line too. Words far smaller beside a
+line, more than one, are a line of their own: a note in the margin, a label behind a title. Two
+words of one size are never glued: where lines are set tight, a word's edge meets one above by
+chance. Two words a gap narrower than a tenth of their size apart are one: pdfplumber parts a
+word where its font or size changes ("Lern" "feld", "CO" "2"). A line's size is that of most of
+its signs. No line runs across the gutter between two columns or into a note beside the text
+(app/conversion/gutters.py).
 
 A block is the lines below one another, close, overlapping across and set alike - the same size,
 bold and italic. A heading begins a block of its own however close the text below it stands, and
@@ -27,6 +28,7 @@ stand 3 points apart at 11 points, paragraphs 6 and more (the fixtures, and what
 The lines of a block keep their breaks: its text is the document's wording, line by line.
 """
 
+import re
 from bisect import bisect_left, bisect_right, insort
 from collections import Counter
 from collections.abc import Iterable
@@ -44,6 +46,7 @@ WORD_SPACE = 0.1  # times the larger size: two words a narrower gap apart are on
 GLUE_RATIO = 2.0  # times the size: a script glues to a word at most this much larger
 BLOCK_GAP = 0.5  # times the size: a line this close below another, set alike, goes on its block
 SIZE_TOLERANCE = 0.5  # points: sizes this close are one
+_NUMBER = re.compile(r"\d+(?:\.\d+)*\.?")  # a heading's number: "3", "3.", "2.1"
 
 
 @dataclass(frozen=True)
@@ -191,11 +194,12 @@ def _rows(words: Iterable[Word]) -> list[_Row]:
 def _home(first: _Script, own: _Row, rows: list[_Row], gone: set[int], middles: list[float]) -> _Row | None:
     """The line a single word far smaller or larger than its span stands on though it glues to none
     of its words - a footnote's mark a space before its note, "[1]" within a sentence, a formula's
-    large operator no further from one of them than their size: the one line near whose span holds
-    the middle of the word's. Words far smaller, more than one, stand on it between its words alone
-    - "[1, 2]" within a sentence; beside it they are a line of their own: a note in the margin, a
-    label behind a title. The larger of the two covers the middle of no line but the other's - of
-    all the page's lines, ``middles``: a watermark, an initial, a symbol beside two lines does."""
+    large operator no further from one of them than their size, a heading's large number no further
+    than its own: the one line near whose span holds the middle of the word's. Words far smaller,
+    more than one, stand on it between its words alone - "[1, 2]" within a sentence; beside it they
+    are a line of their own: a note in the margin, a label behind a title. The larger of the two
+    covers the middle of no line but the other's - of all the page's lines, ``middles``: a
+    watermark, an initial, a symbol beside two lines does."""
     top, bottom = own.span
     begun = takewhile(lambda row: row.words[0].top < bottom, rows[first.begun :])
     near = [row for row in [*first.near, *begun] if row is not own and id(row) not in gone]
@@ -208,9 +212,13 @@ def _home(first: _Script, own: _Row, rows: list[_Row], gone: set[int], middles: 
     if len(own.words) != 1 and not (height > TALL * own_height and _between(own, home)):
         return None
     if own_height > TALL * height:
-        # an operator stands among its line's words; a title a little off a small label does not
+        # an operator stands among its line's words, a heading's number as far off as it is large;
+        # a title a little off a small label does not
         large = own.words[0]
-        if not any(_distance(large, other) <= other.size for other in home.words):
+        numbered = _NUMBER.fullmatch(large.text) is not None
+        if not any(
+            _distance(large, other) <= (large.size if numbered else other.size) for other in home.words
+        ):
             return None
         larger = own.span
     elif height > TALL * own_height:
