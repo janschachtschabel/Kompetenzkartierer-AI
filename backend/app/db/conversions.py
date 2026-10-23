@@ -141,7 +141,12 @@ async def start_conversion(
     account_id: UUID | None,
     job_id: UUID,
 ) -> None:
-    """The conversion pending with ``job_id``: new under ``conversion_id``, or asked again."""
+    """The conversion pending with ``job_id``: new under ``conversion_id``, or asked again.
+
+    One done stays done (_START): the caller asks again only one it read as failed, under the
+    lock; an old job that ran on and wrote it done meanwhile leaves the new job nothing to write
+    (record_conversion), which ends it without a word on the conversion.
+    """
     await connection.execute(
         "INSERT INTO entity (id, kind) VALUES (%s, 'conversion') ON CONFLICT DO NOTHING", (conversion_id,)
     )

@@ -119,4 +119,6 @@ async def _fail(
         recorded = await record_failure(connection, conversion_id, job.id, code)
     if recorded:
         observe_conversion(engine, code)
+    else:
+        log.info("conversion %s no longer waits for job %s: its %s goes", conversion_id, job.id, code)
     raise PermanentError(code, MESSAGES[code])

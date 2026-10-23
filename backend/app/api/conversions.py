@@ -56,8 +56,9 @@ class ConversionOut(BaseModel):
     engine: EngineName
     engine_version: str | None
     status: ConversionStatus
-    # why it failed: unreadable, too_many_pages, needs_ocr, empty, timed_out, died, not_pdf, file_gone,
-    # or the code of the job that ended without it (handler_error, cancelled, lease_lost)
+    # why it failed: a FailureCode (app/db/conversions.py) - unreadable, too_many_pages, too_dense,
+    # needs_ocr, empty, timed_out, died, crashed, not_pdf, file_gone - or the code of the job that
+    # ended without it (handler_error, cancelled, lease_lost)
     error_code: str | None
     # the job converting it, for those who may follow it (GET /api/v1/jobs/{id}); else null
     job_id: UUID | None
