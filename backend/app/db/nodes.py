@@ -4,9 +4,10 @@ at all, and read back as a tree by those who see its document (app/db/documents.
 A subtree goes under a node of its document, or at its top, after the siblings there; the
 positions of its nodes and statements are where they stand in their drafts, from 1. A node type
 and a subkind are checked before anything is written: each is one of the document's sector's
-profile and refines the core value beside it (the database checks the latter as well). Anchors
-name blocks of the document's own conversion, by the database's keys. Writes to one document's
-tree wait for each other, as moves of its nodes do (migration l1_nodes).
+profile and refines the core value beside it (the database checks the latter as well), and no
+core value it names is retired. Anchors name blocks of the document's own conversion, by the
+database's keys. Writes to one document's tree wait for each other, as moves of its nodes do
+(``lock_tree``, migration l1_nodes).
 """
 
 from collections import defaultdict

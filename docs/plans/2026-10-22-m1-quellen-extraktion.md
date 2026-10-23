@@ -213,30 +213,57 @@ Nachtrag zur Umsetzung (23.10.):
   - `vocab_scheme_iri` entfällt, weil es `UNIQUE (scheme_iri, iri)` schon seit `sources` gibt.
   - Hilfsfunktionen `has_text` und `all_match`.
 - **Bereich eines Profils:** Den kennt nur das geladene `terminology_profile` (Bereich und Namensraum). Darauf bauen `profile_concepts(conn, sector_notation)`, `region_with_ancestors` und `cues_for` auf.
-- **Leser:** Er liest die Modellordner rekursiv, damit auch `profile/laender/` erfasst wird (Leserformat 2).
+- **Leser:**
+  - Er liest `ontologie/` und `vokabulare/` ohne Unterordner und nur `profile/` rekursiv, wo die Länderdateien liegen (`profile/laender/`); Leserformat 2.
+  - Literale liest er so, wie sie geschrieben sind: rdflib normalisiert beim Parsen sonst still (aus `"2023-08-01Z"^^xsd:date` würde `"2023-08-01"`). Der Schalter `rdflib.NORMALIZE_LITERALS` gilt prozessweit; der Leser läuft heute allein im Ladebefehl. Läuft rdflib einmal nebenläufig im selben Prozess (SHACL in Paket 8), ist das neu zu bewerten.
+  - Abgewiesen werden: zwei Profile eines Bereichs, ein Profil ohne Hinweis, ein Muster, das nicht auch mit Pythons `re` kompiliert, Layoutsignal, Orte, Regionen oder Dokumenttypen aus dem falschen Schema, ein Datum, das kein `xsd:date`, `gYearMonth` oder `gYear` ohne Zeitzone ist, und `scopeSector` mit einem fremden Bereich.
+- **Länderhinweise:** Eine Länderdatei hängt ihre Hinweise per `cur:hasCue` an das Profil ihres Bereichs und gibt ihnen ihre Region als Geltung. Ein eigenes Profil „Bereich + Land“ (konzept §12.4) gibt es nicht; das aktive Profil eines Dokuments sind so die Hinweise eines Profils.
+- **Speicher:** Beim Laden werden alle aktiven Profile zuerst zurückgezogen und die der Dateien per Upsert wiederbelebt. Nur so können zwei Profile ihre Bereiche tauschen.
 - **Domäne:**
   - Aufgeteilt in `wording.py` (`text_hash`), `iris.py`, `blocks.py` (Block- und Zellmuster, aus `conversion/base.py` verschoben), `l1.py` (Entwürfe, Profilprüfung, Wertelisten) und `lexicon.py`.
-  - Der Importwächter arbeitet mit einer Positivliste: Standardbibliothek und `regex`.
+  - Der Importwächter arbeitet mit einer Positivliste: Standardbibliothek und `regex`. Er löst relative Importe auf, meldet Aufrufe, die importieren (`import_module`, `__import__`), und prüft in einem frischen Interpreter, was der Import der Domäne lädt.
+  - Entwürfe nennen jeden Block, Adressaten und Geltungsbereich einmal, in der Reihenfolge der ersten Nennung. Ein Seitenende ohne Anfang und ein Wortlaut mit einzelnem Surrogat werden schon beim Entwurf abgewiesen.
 - **`text_hash`:**
-  - NFC, weiche Trennzeichen und Worttrennung am Zeilenende zusammengezogen, Striche vereinheitlicht, `casefold`, führende Nummerierung entfernt, Leerraum zusammengezogen.
-  - Ein Bindestrich in der Zeile und eine allein stehende Zahl bleiben erhalten.
+  - NFC, Striche vereinheitlicht, Formatzeichen (Nullbreite, BOM) entfernt, `casefold`, führende Nummerierung entfernt, Leerraum zusammengezogen.
+  - Worttrennung am Zeilenende: Zwischen einem Buchstaben und einem Kleinbuchstaben gehen Trennstrich (auch weich oder U+2010) und Umbruch weg. Vor einem Großbuchstaben oder zwischen Ziffern bleibt der Bindestrich, nur der Umbruch geht („E-Mail“, „5-6“).
+  - Nummerierung: ein- oder zweistellige Zahlen, bis zu drei Ebenen („1. a)“, „1.2.3“). „1.000“ und „100.“ bleiben, ein Buchstabe mit Punkt ist eine Abkürzung („z. B.“).
+  - Mehrdeutig bleibt, was wie beides aussieht: „3. Klasse“, „1.5 Stunden“ und „i. d. R.“ verlieren ihren ersten Teil, „Ein-“ / „und“ über den Zeilenumbruch wird ein Wort. `casefold` macht „Maße“ und „Masse“ gleich.
 - **IRIs:**
-  - Die Basis ist ein Parameter. `IRI_BASE`, die Vergabe beim Festschreiben sowie die IRIs von Aussagen und Fundstellen folgen mit 9.6.
-  - Knotensegmente entstehen aus dem Code; vergebene Codes heißen `pos-<n>`, Wiederholungen zählen weiter.
+  - Die Basis ist ein Parameter, eine http(s)-IRI mit Schrägstrich am Ende, ohne Zugangsdaten, Query oder Fragment. `IRI_BASE`, die Vergabe beim Festschreiben sowie die IRIs von Aussagen und Fundstellen folgen mit 9.6.
+  - Ein Slug liest zerlegte Umlaute wie zusammengesetzte und behält höchstens 100 Zeichen, bis zum letzten ganzen Wort.
+  - Knotensegmente entstehen aus dem Code allein (das Kern-Beispiel „1“ wird zu `…/1`, eindeutig über den Pfad); ein Typkürzel davor kann mit 9.6 kommen. Vergebene Codes und Codes ohne ASCII-Buchstaben oder -Ziffer („α“, „•“) heißen `pos-<Platz>`, sich treffende Segmente zählen weiter. Knoten-IRIs gibt es nur unter der http(s)-IRI eines festgeschriebenen Dokuments.
 - **Fundstelle:**
-  - Sie hängt mit genau einem Fremdschlüssel an Knoten, Aussage oder Rahmenteil desselben Dokuments. Ein Verweis auf `entity` würde verwaisen, weil Entity-Zeilen beim Löschen stehen bleiben.
-  - Ihre Blöcke sind über einen Fremdschlüssel Zeilen von `document_block` der Konvertierung des Dokuments.
-- **Prüfungen in der Datenbank:** Baum ohne Zyklus (mit Sperre je Dokument), Knotentyp unter der Funktion, Unterart unter der Art, mindestens ein Adressat beim Commit. Die Profilzugehörigkeit prüft das Repository.
+  - Sie hängt mit höchstens einem Fremdschlüssel an Knoten, Aussage, Rahmenteil oder Spezifikation desselben Dokuments; ohne Gegenstand steht sie für das Dokument selbst (wo X1 Titel und Daten las). Ein Verweis auf `entity` würde verwaisen, weil Entity-Zeilen beim Löschen stehen bleiben.
+  - Ihre Blöcke sind über einen Fremdschlüssel Zeilen von `document_block` der Konvertierung des Dokuments. Eine Fundstelle mit `cv:match_notFound` nennt ihre Seite und keinen Block (8.1, 9.4).
+- **Prüfungen in der Datenbank:**
+  - Der Baum hat keinen Zyklus. Prüft ein Constraint-Trigger nach jeder Anweisung, mit Sperre je Dokument; Verschieben unter `repeatable read` wird abgewiesen.
+  - Der Knotentyp liegt unter der Funktion und die Unterart unter der Art. Geprüft wird beim Schreiben einer Zeile; was ein späteres Neuladen der Vokabulare an `skos:broader` ändert, findet X5.
+  - Beim Commit hat jede Aussage mindestens einen Adressaten und eine Fundstelle (wie `StatementShape`).
+  - `applies_to` nennt Spezifikationen und Varianten des eigenen Dokuments, jede einmal. Sie bleiben, solange ein Knoten sie nennt (geprüft beim Commit). Gesperrt sind sie wie bei einem Fremdschlüssel, mit ihrem Dokument gehen sie.
+  - Layoutmerkmale stammen aus `cv:LayoutMarkers`, der Dokumenttyp ist ein `cur:DocumentType`. Ein Rahmenteil aus einer Regel nennt die Regel.
+  - Ein Wächtertest verlangt für jeden kaskadierenden Fremdschlüssel einen Index.
+  - Die Profilzugehörigkeit und zurückgezogene Kernwerte prüft das Repository.
 - **Einzelheiten:**
-  - `extraction_run` hat noch keinen Ausgang; der kommt mit 6.6.
+  - `extraction_run` hat noch keinen Ausgang; der kommt mit 6.6. Knoten, Aussagen und Rahmenteile nennen ihren Lauf (`run_id`, über `write_subtree(..., run_id=)`); wird ein Lauf gelöscht, bleiben sie ohne ihn, während die Befunde eines Laufs mit ihm gehen.
   - `newTerms` stehen als JSON in `document_profile`; Paket 10 löst sie bei Bedarf heraus.
-  - Den Schlüssel einer Spezifikation trägt `document_specification`.
-- **Sichtbarkeit:** Dokument und Baum lesen Eigentümer, Redaktion und Admin (`DOCUMENT_VISIBLE`). Regeln für Dritte folgen mit dem Editor (9).
+  - Eine Spezifikation gehört einem Dokument und geht mit ihm; ihr Schlüssel ist je Dokument eindeutig. `document_specification` entfällt: Eine Spezifikation über mehrere Dokumente kommt mit den Platzierungen in M2/M3.
+  - Das Dokument trägt seinen Herausgeber als Text (`issuer`) und `draft_iri = urn:uuid:<id>`. Eine IRI nennt jede Revision einmal (`UNIQUE (iri, revision)`), und `revision` zählt die Änderungen einer Zeile (9.3).
+  - Für später notiert: Den `focus_id` eines Befunds setzt X5 (8). Die Liste `educationSectors` sowie `targetsContent` und `checkedAbsent` kommen mit Paket 6 und 7.
+- **Sichtbarkeit:**
+  - Dokument und Baum lesen Eigentümer, Redaktion und Admin (`DOCUMENT_VISIBLE`, in jeder Abfrage). Regeln für Dritte folgen mit dem Editor (9).
+  - `create_document(connection, maker, *, third_party_content, …)` findet den Eintrag in SQL nur, wenn sein Inhalt dem Ersteller zu lesen ist: der eigene, für die Redaktion jeder, einer ohne Konto, wo `THIRD_PARTY_MARKDOWN` ihn Konten öffnet. Der Eintrag ist gesperrt, solange seine Rechte übernommen werden.
+  - Regionen müssen im aktiven Regionen-Vokabular stehen.
+  - `read_tree` liest in einem Snapshot (eigene Transaktion `REPEATABLE READ READ ONLY`, wo der Aufrufer keine hat).
+  - Das Typisieren sperrt das Dokument `FOR NO KEY UPDATE`, wartet also nicht auf Knoten, die gerade hineingeschrieben werden.
+  - `lock_tree` ist die Sperre, die alle Schreibzugriffe auf einen Baum teilen; auch die Verschiebungen des Editors nehmen sie.
 - **Aktives Profil:**
-  - Ein Hinweis gilt nach Region (mit Vorfahren, `land:DE` gilt also in jedem Land), Dokumenttyp und Plangeneration.
-  - Hinweise konkurrieren je Art und Wort, Muster oder Layout. Rang: mehr Geltungen vor geprüft vor Stärke.
-  - Bei Gleichstand mit anderem Ziel bleiben beide mit `tie`. Negative Hinweise gelten immer.
-  - Das Dokumentprofil legt Paket 6 beim Bau des Prompts darüber.
+  - `active_cues(cues, regions, document_type, plan_generation, *, wider_regions)`: `regions` sind die eigenen Regionen des Dokuments, `wider_regions` die, in denen sie liegen. Der Aufrufer trennt, was `region_with_ancestors` liefert. Ein Hinweis gilt, wenn seine Regionen eine der beiden Mengen schneiden.
+  - Ist Dokumenttyp oder Plangeneration unbekannt (None), gelten Hinweise dieser Geltung, bekommen aber keinen Rang. Eine bekannte, nicht passende Geltung schließt aus.
+  - Hinweise konkurrieren je Art und Wort, Muster oder Layout. Rang: eigene Region vor umfassender vor keiner (Land vor Deutschland vor Bereich), dann die Zahl der bekannten passenden Geltungen, dann geprüft, dann Stärke.
+  - Bei Gleichstand mit anderem Ziel bleiben beide mit `tie`. Negative Hinweise und Homonyme konkurrieren nicht und gelten immer.
+  - Ein `Cue` trägt Orte, Daten, die übrigen Geltungen und die Beispiele für den Prompt. Das Dokumentprofil legt Paket 6 beim Bau des Prompts darüber.
+  - Am echten Lexikon (5 Profile × 16 Länder) gelten 9.770 statt 9.272 Einträge. 17 entfallen, weil ein Hinweis für ganz Deutschland dem Landeshinweis auf demselben Wort mit demselben Ziel weicht.
+- **Paket 10:** `pruefe.py` liest keine Unterordner und sieht `profile/laender/` deshalb nie. Für 10.1 („pruefe.py OK“) muss es `profile/` rekursiv lesen.
 - **Muster:**
   - Sie laufen mit `regex` und einer Zeitgrenze von 50 ms (`PatternTimeout`).
   - Ein Datenwächter prüft die 46 Muster mit Beispielen: Sie treffen ihre positiven Beispiele und keines der negativen.
