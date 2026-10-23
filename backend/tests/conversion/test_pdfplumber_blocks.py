@@ -71,6 +71,25 @@ def test_two_columns_are_read_a_column_after_the_other_each_paragraph_whole(name
     assert all(block.bbox[2] < middle or block.bbox[0] > middle for block in conversion.blocks)
 
 
+INDENTED_PARAGRAPHS = [
+    *(f"Absatz {number}. {COMPETENCE}" for number in range(1, 5)),
+    f"Absatz 5 steht über beide Spalten. {COMPETENCE}",
+    "Absatz 6, links: Die Lernenden planen ihre Arbeit und prüfen sie im Team.",
+    "Absatz 7, rechts: Die Lernenden planen ihre Arbeit und prüfen sie im Team.",
+]
+
+
+def test_columns_part_where_a_first_line_is_indented_or_a_column_is_two_lines_short() -> None:
+    conversion = converted("columns_indented.pdf")
+
+    # paragraphs with no space between them are one block: the indent of a first line parts none
+    read = " ".join(" ".join(block.text.split()) for block in conversion.blocks)
+    assert read == " ".join(INDENTED_PARAGRAPHS)
+    middle = 595 / 2
+    across = [block.text for block in conversion.blocks if block.bbox[0] < middle < block.bbox[2]]
+    assert [" ".join(text.split()) for text in across] == [INDENTED_PARAGRAPHS[4]]  # the one set across
+
+
 def test_scripts_and_a_change_of_font_within_a_word_stay_in_their_word_and_block() -> None:
     conversion = converted("scripts.pdf")
 

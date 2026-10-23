@@ -16,6 +16,39 @@ def words_at(top: float, *placed: tuple[float, str]) -> list[Word]:
     return made
 
 
+LEFT, RIGHT = "die Lernenden planen ihre Arbeit", "und prüfen sie sorgfältig"
+
+
+def two_columns(top: float, right: float = 236, text: str = RIGHT) -> list[Word]:
+    """A line of two columns: the left one's words from 56 to 223.2, the right one's from ``right``."""
+    return words_at(top, (56, LEFT), (right, text))
+
+
+def test_a_gutter_the_page_has_parts_its_lines_however_their_columns_begin() -> None:
+    # three lines confirm the gutter, 12.8 points wide; a right column's first line indented by 12
+    # and a column of one line below a paragraph across both part where they cross it
+    words = [
+        *two_columns(100),
+        *two_columns(114),
+        *two_columns(128),
+        *two_columns(142, right=248),
+        *two_columns(156, text="Ende."),
+        *words_at(200, (56, "Ein Absatz über die ganze Breite, ohne Lücke in der Mitte.")),
+        *two_columns(244, right=248),
+    ]
+
+    texts = [line.text for line in lines_of(words)]
+
+    assert texts == [
+        *[LEFT, RIGHT] * 4,
+        LEFT,
+        "Ende.",
+        "Ein Absatz über die ganze Breite, ohne Lücke in der Mitte.",
+        LEFT,
+        RIGHT,
+    ]
+
+
 def test_the_marks_of_a_list_with_a_hanging_indent_stay_before_their_text() -> None:
     # the marks at 56, each item's text and its second line at 74: the text begins at one place
     words = [

@@ -8,6 +8,11 @@ Justified text spreads its spaces as wide where it is not hyphenated, but they w
 to line; a single wide space parts nothing. A list's text begins at one place behind its marks
 as well, but "•", "1.", "a)", "2.1" or "LF 1" are narrower than a column's line: a list, a table
 of contents, stays a column of its own with its marks.
+
+A gutter so found holds for the whole page: a line whose gap of 0.8 sizes crosses its strip
+parts there too, though no line near it shares the gap - the right column's first line indented,
+a column of a line or two below a paragraph across both. The gutters of one page are not those
+of the next: where a page holds a single line or two in a second column, nothing parts them.
 """
 
 from dataclasses import dataclass
@@ -45,14 +50,23 @@ def parts_of(rows: list[list[Word]]) -> list[list[list[Word]]]:
     """The parts of each row, its words left to right, that wide gaps and gutters part it into;
     the rows in order, top down."""
     gaps = [_wide_gaps(row) for row in rows]
+    gutters = [
+        gap
+        for index, found in enumerate(gaps)
+        for near in [
+            [*gaps[max(0, index - GUTTER_WINDOW) : index], *gaps[index + 1 : index + GUTTER_WINDOW + 1]]
+        ]
+        for gap in found
+        if sum(_shared(gap, other) for other in near) >= GUTTER_SUPPORT
+    ]
+    strips = _strips(gutters)
     parted: list[list[list[Word]]] = []
-    for index, row in enumerate(rows):
-        near = [*gaps[max(0, index - GUTTER_WINDOW) : index], *gaps[index + 1 : index + GUTTER_WINDOW + 1]]
+    for row, found in zip(rows, gaps, strict=True):
         # the words behind a gutter, by identity: a word printed twice over, to look bold, has a twin
         behind = {
             id(gap.after)
-            for gap in gaps[index]
-            if sum(_shared(gap, other) for other in near) >= GUTTER_SUPPORT
+            for gap in found
+            if any(gap.before.x1 < right and gap.after.x0 > left for left, right in strips)
         }
         parts: list[list[Word]] = [[]]
         for word in row:
@@ -61,6 +75,19 @@ def parts_of(rows: list[list[Word]]) -> list[list[list[Word]]]:
             parts[-1].append(word)
         parted.append(parts)
     return parted
+
+
+def _strips(gutters: list[_Gap]) -> list[tuple[float, float]]:
+    """The strips the page's gutters share: for each place a column begins, from the right end of
+    the line before it that reaches furthest. A gutter behind a short line spans most of the column
+    before it, whose wide spaces it would part."""
+    strips: list[tuple[float, float]] = []
+    for gap in sorted(gutters, key=lambda gap: gap.after.x0):
+        if strips and gap.after.x0 - strips[-1][1] <= GUTTER_ALIGN * gap.size:
+            strips[-1] = (max(strips[-1][0], gap.before.x1), strips[-1][1])
+        else:
+            strips.append((gap.before.x1, gap.after.x0))
+    return strips
 
 
 def _far_apart(before: Word, word: Word) -> bool:
@@ -93,7 +120,12 @@ def _shared(gap: _Gap, gaps: list[_Gap]) -> bool:
     its marks begins at one place too."""
     return any(
         other.between_text
-        and min(gap.after.x0, other.after.x0) > max(gap.before.x1, other.before.x1)
+        and _across(gap, other)
         and abs(gap.after.x0 - other.after.x0) <= GUTTER_ALIGN * max(gap.size, other.size)
         for other in gaps
     )
+
+
+def _across(gap: _Gap, other: _Gap) -> bool:
+    """Whether the two gaps share a strip of the page, across."""
+    return min(gap.after.x0, other.after.x0) > max(gap.before.x1, other.before.x1)

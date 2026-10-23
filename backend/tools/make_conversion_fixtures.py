@@ -54,6 +54,13 @@ COLUMN_PARAGRAPHS = [
     f"Absatz {number}. {COMPETENCE} Sie bewerten Lösungen nach Kosten, Sicherheit und Wartbarkeit."
     for number in range(1, 7)
 ]
+# The paragraphs of columns_indented.pdf, in reading order: four in columns, one across, two short
+INDENTED_PARAGRAPHS = [
+    *(f"Absatz {number}. {COMPETENCE}" for number in range(1, 5)),
+    f"Absatz 5 steht über beide Spalten. {COMPETENCE}",
+    "Absatz 6, links: Die Lernenden planen ihre Arbeit und prüfen sie im Team.",
+    "Absatz 7, rechts: Die Lernenden planen ihre Arbeit und prüfen sie im Team.",
+]
 
 
 def canvas_of(path: Path) -> Canvas:
@@ -107,6 +114,47 @@ def columns(path: Path, gutter: float) -> None:
     document.addPageTemplates([PageTemplate(id="columns", frames=frames)])
     paragraphs = [Paragraph(text, body) for text in COLUMN_PARAGRAPHS]
     document.build([*paragraphs[:3], FrameBreak(), *paragraphs[3:]])
+
+
+def columns_indented(path: Path) -> None:
+    """Two columns of justified text at 10 points, 12 apart, each paragraph's first line indented:
+    paragraphs 1-2 on the left, 3-4 on the right; below them a paragraph across both, and below
+    that two columns of two lines each, the short paragraphs 5 and 6."""
+    body = ParagraphStyle(
+        "indented", fontName="Helvetica", fontSize=10, leading=13, alignment=TA_JUSTIFY, firstLineIndent=12
+    )
+    gutter = 12
+    width = (WIDTH - 2 * LEFT - gutter) / 2
+    right = LEFT + width + gutter
+    top = HEIGHT - 25 * mm
+    flush = {"leftPadding": 0, "rightPadding": 0}
+    frames = [
+        Frame(LEFT, top - 200, width, 200, id="left", **flush),
+        Frame(right, top - 200, width, 200, id="right", **flush),
+        Frame(LEFT, top - 280, WIDTH - 2 * LEFT, 70, id="across", **flush),
+        Frame(LEFT, top - 330, width, 45, id="left_end", **flush),
+        Frame(right, top - 330, width, 45, id="right_end", **flush),
+    ]
+    document = BaseDocTemplate(str(path), pagesize=A4, invariant=1)
+    document.addPageTemplates([PageTemplate(id="indented", frames=frames)])
+    first, second, third, fourth, across, fifth, sixth = (
+        Paragraph(text, body) for text in INDENTED_PARAGRAPHS
+    )
+    document.build(
+        [
+            first,
+            second,
+            FrameBreak(),
+            third,
+            fourth,
+            FrameBreak(),
+            across,
+            FrameBreak(),
+            fifth,
+            FrameBreak(),
+            sixth,
+        ]
+    )
 
 
 def edges(path: Path) -> None:
@@ -211,6 +259,7 @@ FIXTURES: dict[str, Callable[[Path], None]] = {
     "scripts.pdf": scripts,
     "columns_12pt.pdf": lambda path: columns(path, 12),
     "columns_8mm.pdf": lambda path: columns(path, 8 * mm),
+    "columns_indented.pdf": columns_indented,
     "edges.pdf": edges,
     "tables.pdf": tables,
     "table_beside_text.pdf": table_beside_text,
