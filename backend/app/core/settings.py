@@ -168,6 +168,10 @@ class Settings(BaseSettings):
     ] = "Kompetenzkartierer-AI (+https://github.com/janschachtschabel/Kompetenzkartierer-AI)"
     # The least time between two requests of the check job to one host, across all workers
     check_host_interval_s: Annotated[float, Field(ge=0.5, le=60)] = 2.0
+    # The most pages of a PDF the conversion takes; a longer one is refused (too_many_pages)
+    max_pdf_pages: Annotated[int, Field(ge=1, le=5000)] = 800
+    # How long one conversion may take before its process is ended (timed_out)
+    convert_timeout_s: Annotated[float, Field(ge=1, le=7200)] = 900.0
     # The job kinds this worker takes, comma-separated (the conversion pods: source.convert);
     # empty for every kind it knows
     worker_kinds: Annotated[str, Field(pattern=rf"^({_JOB_KIND}(,{_JOB_KIND})*)?$")] = ""

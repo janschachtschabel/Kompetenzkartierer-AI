@@ -49,6 +49,21 @@ JOB_LEASES_EXPIRED = Counter(
 )
 
 
+# Conversions (X0) by engine and how they ended: done, or the reason they failed
+# (app/db/conversions.py FailureCode); and the pages of those done
+CONVERSIONS = Counter(
+    "kka_conversions_total", "Conversions by engine and how they ended", ["engine", "outcome"]
+)
+CONVERSION_PAGES = Counter("kka_conversion_pages_total", "Pages converted, by engine", ["engine"])
+
+
+def observe_conversion(engine: str, outcome: str, pages: int = 0) -> None:
+    """``engine`` is an offered one and ``outcome`` done or a FailureCode: fixed sets."""
+    CONVERSIONS.labels(engine, outcome).inc()
+    if pages:
+        CONVERSION_PAGES.labels(engine).inc(pages)
+
+
 def observe_job(kind: str, outcome: str, seconds: float) -> None:
     """``kind`` is a kind the worker has a handler for: a fixed set, so the series stay few."""
     JOBS.labels(kind, outcome).inc()
