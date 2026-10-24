@@ -270,6 +270,20 @@ def test_the_table_of_contents_is_read_with_its_pages_and_levels() -> None:
     assert found.contents.positions == frozenset({1, 2})  # its title with it
 
 
+def test_an_entry_is_read_with_its_runs_of_white_space_as_one() -> None:
+    # a converter's tabs and spaces: as one the entry's form is read in linear time
+    lines = ["1\tEinleitung    3", "2   Kompetenzen \t 4", "3  Anhang" + " " * 5000 + "5"]
+    contents = [block("p2-b1", "Inhalt", size=16), block("p2-b2", "\n".join(lines))]
+
+    found = skeleton([COVER, *contents, block("p5-b1", BODY)])
+
+    assert [(entry.title, entry.page) for entry in found.contents.entries] == [
+        ("1 Einleitung", "3"),
+        ("2 Kompetenzen", "4"),
+        ("3 Anhang", "5"),
+    ]
+
+
 def test_the_table_of_contents_is_never_a_heading_nor_what_stands_before_it() -> None:
     found = skeleton(contents_document())
 

@@ -2,7 +2,8 @@
 
 An entry is a line that ends in a page - behind a leader ("2.1 Ziele ..... 5", "Vorwort . . . iii"),
 or behind a numbered title without one ("2.1 Ziele 5"), or as a contents' pattern of the lexicon
-has it (a cue that occurs in the contents, ``cv:occ_toc``). Blocks most of whose lines are entries,
+has it (a cue that maps to the contents, ``cv:occ_toc``; one that only occurs in them is the word
+of a heading the contents name too, no entry's form). Blocks most of whose lines are entries,
 one after another (pages may part them), are the contents where they hold three entries at least,
 with a title right before them ("Inhalt", "Inhaltsverzeichnis"), and where their pages run as a
 contents' do: never back, within the document's pages, not all one - lines of numbers elsewhere
@@ -115,7 +116,8 @@ def _entries(block: Block, position: int, cues: Sequence[Cue], search: PatternSe
     """The entries of a block most of whose lines are entries; none of any other."""
     if block.kind != "text":
         return []
-    lines = [line.strip() for line in block.text.splitlines() if line.strip()]
+    # each run of white space as one: the entry's forms are then read in linear time
+    lines = [joined for line in block.text.splitlines() if (joined := " ".join(line.split()))]
     entries = [entry for line in lines if (entry := _entry(line, position, cues, search)) is not None]
     return entries if entries and 2 * len(entries) >= len(lines) else []
 
