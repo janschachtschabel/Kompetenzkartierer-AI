@@ -525,9 +525,14 @@ Nachtrag zur Umsetzung (24.10.):
   Auftrag (JobProgress) mit Rückfrage, danach „Abbruch angefordert“, dazu die Laufzeit. Kein
   automatischer Abbruch nach Höchstdauer (Messpunkt Paket 11: wie lange ein echter Lauf dauert).
 - **Oberfläche.** Start aus der fertigen Umwandlung (`ExtractionStart`: Bereich, Länder, das Land
-  des Eintrags vorgewählt), Dokumentseite `/dokumente/:id` (`DocumentView`), Dokumente in der
-  Quellansicht (`SourceDocuments`). Bereichsnamen an `cv:EducationSectors`, Laufzustände an
-  `RunState` gebunden (tests/documentWords.test.ts).
+  des Eintrags vorgewählt), Dokumentseite `/dokumente/:id` (`DocumentView` mit
+  `DocumentExtraction` und `DocumentRuns`), Dokumente in der Quellansicht (`SourceDocuments`, nur
+  bei einer PDF). Die Redaktion, die den Job nicht verfolgen darf, liest den Stand aus dem Dokument,
+  das nachgefragt wird, bis die Extraktion weiterrückt; Start und Ende sagt eine eigene Region,
+  JobProgress bleibt leise, sagt aber den Abbruchwunsch an. Gründe gescheiterter Läufe in eigenen
+  Worten, sonst als englisches Zitat. Eine selbst abgebrochene Umwandlung heißt „abgebrochen“,
+  nicht „gescheitert“. Bereichsnamen an `cv:EducationSectors`, Länder an `laender.ttl`,
+  Laufzustände an `RunState` gebunden (tests/documentWords.test.ts).
 
 ### Paket 8: X5 Prüfung mit SHACL und X6 Reparatur (5 PT)
 
