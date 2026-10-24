@@ -144,4 +144,15 @@ async function onSubmit(): Promise<void> {
   gap: var(--space-1);
   min-height: 24px;
 }
+
+/* The box beside its name, as .checkbox-field has it (style.css): the rule for every input would
+   stretch it across the column and push the name to the far end. WCAG 2.5.8: 24px at least. */
+.extraction-start__box input[type="checkbox"] {
+  flex: none;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
 </style>
