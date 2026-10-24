@@ -73,6 +73,22 @@ class WorkPackage:
             "job": self.job,
         }
 
+    @classmethod
+    def from_result(cls, kept: Mapping[str, Any]) -> "WorkPackage":
+        """The package as a run kept it (``as_result``), read back."""
+        return cls(
+            key=kept["key"],
+            node_id=None if kept["node_id"] is None else UUID(kept["node_id"]),
+            first=kept["first"],
+            last=kept["last"],
+            first_block=kept["first_block"],
+            last_block=kept["last_block"],
+            pages=(kept["pages"][0], kept["pages"][1]),
+            path=tuple(kept["path"]),
+            depth=kept["depth"],
+            job=kept["job"],
+        )
+
 
 def depth_of(given: str | None, function: str) -> Depth:
     """A node's own depth: the one given - set at the node, else its type's (a notation: full,

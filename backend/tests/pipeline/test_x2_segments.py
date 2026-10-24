@@ -84,6 +84,12 @@ def test_a_package_names_its_blocks_pages_and_path() -> None:
     }
 
 
+def test_a_package_kept_as_a_run_s_result_is_read_back_as_it_was() -> None:
+    packages = segments(BLOCKS, NODES)
+
+    assert [WorkPackage.from_result(item.as_result()) for item in packages] == packages
+
+
 def covered(blocks: list[Block], packages: list[WorkPackage]) -> list[int]:
     """How often each block of the text lies in a package."""
     text_positions = [
