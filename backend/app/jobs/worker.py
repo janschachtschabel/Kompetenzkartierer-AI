@@ -291,8 +291,10 @@ async def _serve() -> int:
             probes.should_exit = True
             await serving
     finally:
-        await model.close()
-        await pool.close()
+        try:
+            await model.close()
+        finally:
+            await pool.close()  # whatever the model's client did on closing
     # a supervisor restarts a worker that ended with an error
     return 1 if worker.broken else 0
 
