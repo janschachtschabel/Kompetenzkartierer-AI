@@ -5,11 +5,13 @@ it stands when the stage starts, so every unit of the stage reads the same bytes
 """
 
 from collections.abc import Sequence
+from typing import Any
 from uuid import UUID
 
 import psycopg
 
 from app.db.documents import DocumentError
+from app.db.frame_parts import FramePart
 from app.pipeline.prefix import Section
 from app.pipeline.x2_segments import SegmentNode, lineage, read_depth
 from app.vocab.lookup import REGIONS, by_notation, concept_texts
@@ -84,3 +86,32 @@ def sections(nodes: Sequence[SegmentNode], count: int) -> list[Section]:
     while open_ones:
         end(count)
     return sorted(found, key=lambda section: section.first)
+
+
+def choice_lists(parts: Sequence[FramePart]) -> str:
+    """The choice lists of X4's prefix from the document's frame parts (app/db/frame_parts.py,
+    in the order X3 wrote them): its competency models with their dimensions, its legend of
+    cross-cutting markers, its operators, each once; none where X3 found none."""
+    models = [_model(item.content) for item in parts if item.kind == "competencyModels"]
+    legend = [
+        f"- {item.content['marker']}: {item.content['label']}"
+        for item in parts
+        if item.kind == "crossCuttingLegend"
+    ]
+    operators = dict.fromkeys(item.content["lemma"] for item in parts if item.kind == "operators")
+    lines = ["Kompetenzmodelle:", *models] if models else []
+    if legend:
+        lines += ["Querschnittsmarker:", *legend]
+    if operators:
+        lines.append("Operatoren: " + ", ".join(operators))
+    return "\n".join(lines)
+
+
+def _model(content: dict[str, Any]) -> str:
+    dimensions = "; ".join(_dimension(given) for given in content["dimensions"])
+    return f"- {content['title']}" + (f": {dimensions}" if dimensions else "")
+
+
+def _dimension(given: dict[str, Any]) -> str:
+    named = f"{given['code']} {given['label']}" if given["code"] else given["label"]
+    return named + (f" (unter {given['parentLabel']})" if given["parentLabel"] else "")
