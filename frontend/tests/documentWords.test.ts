@@ -22,6 +22,13 @@ function sectorNotations(): string[] {
   return concepts.map(([, notation]) => notation).sort();
 }
 
+/** The notations of the regions in the core's vocabulary, which the backend checks a document's against. */
+function regionNotations(): string[] {
+  const source = readFileSync(join(process.cwd(), "..", "ontology", "vokabulare", "laender.ttl"), "utf8");
+  const concepts = [...source.matchAll(/skos:inScheme land:Regions[^.]*?skos:notation "([A-Z-]+)"/gs)];
+  return concepts.map(([, notation]) => notation).sort();
+}
+
 /** The values of RunState in backend app/db/runs.py. */
 function runStates(): string[] {
   const source = readFileSync(join(process.cwd(), "..", "backend", "app", "db", "runs.py"), "utf8");
@@ -39,6 +46,12 @@ describe("the words of a document", () => {
   it("name every sector of the vocabulary, and no other", () => {
     // a sector without words would be a choice the form does not offer
     expect(Object.keys(messages.documents.sectors).sort()).toEqual(sectorNotations());
+  });
+
+  it("offer every region of the vocabulary as a Land, and no other", () => {
+    // a Land the form offers that the vocabulary lacks would be refused (422 unknown_region)
+    expect(regionNotations()).toContain("DE-NW");
+    expect(Object.keys(messages.sources.countries).sort()).toEqual(regionNotations());
   });
 
   it("name every state a run is read in, and no other", () => {

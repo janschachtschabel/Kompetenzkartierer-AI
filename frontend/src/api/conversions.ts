@@ -3,6 +3,9 @@
 // whoever may read the entry's file may read its conversion (app/api/source_content.py).
 import { apiFetch } from "./http";
 
+/** The one type converted so far: the server refuses any other (422 not_pdf). */
+export const CONVERTED_MIME = "application/pdf";
+
 /** A failed conversion may be asked for again; a waiting or a done one comes back as it is. */
 export type ConversionStatus = "pending" | "done" | "failed";
 /** What a block is (backend app/conversion/base.py, BlockKind). */

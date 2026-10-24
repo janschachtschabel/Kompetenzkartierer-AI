@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "@/api";
 import { ApiError, type CurriculumDocument } from "@/api";
 import SourceDocuments from "@/components/SourceDocuments.vue";
-import { t } from "@/i18n/de";
+import { momentFormat, t } from "@/i18n/de";
 import { router } from "@/router";
 
 import { violations } from "./axe";
@@ -55,7 +55,7 @@ describe("the documents of a register entry", () => {
     const links = wrapper.findAll("li a");
     expect(links.map((link) => [link.text(), link.attributes("href")])).toEqual([
       ["Kernlehrplan Physik", "/dokumente/d2"],
-      [t("documents.untitled"), "/dokumente/d1"],
+      [t("documents.list.untitled", { made: momentFormat.format(new Date("2026-10-24T10:00:00Z")) }), "/dokumente/d1"],
     ]);
     expect(wrapper.findAll("li")[0].text()).toContain(t("documents.page.lastStatus", { status: t("jobs.status.running") }));
     expect(wrapper.findAll("li")[1].text()).toContain(t("documents.page.none"));

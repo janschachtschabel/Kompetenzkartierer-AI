@@ -16,7 +16,7 @@
  */
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
-import { ApiError, askConversion, getConversion, type Conversion } from "@/api";
+import { ApiError, askConversion, CONVERTED_MIME, getConversion, type Conversion } from "@/api";
 import AppIcon from "@/components/AppIcon.vue";
 import ConversionSummary from "@/components/ConversionSummary.vue";
 import ErrorState from "@/components/ErrorState.vue";
@@ -31,13 +31,10 @@ import { askWithBackoff, type JobWatch } from "@/jobWatch";
 import { sayAnew } from "@/liveRegion";
 import { failureNotice, type Notice } from "@/notice";
 
-/** The one type converted so far: the server refuses any other (422 not_pdf). */
-const PDF = "application/pdf";
-
 /** `country`: the entry's Land, chosen at the start of an extraction. */
 const props = defineProps<{ sourceId: string; mime: string; country?: string | null }>();
 
-const convertible = computed(() => props.mime === PDF);
+const convertible = computed(() => props.mime === CONVERTED_MIME);
 const conversion = ref<Conversion | null>(null);
 const loading = ref(convertible.value);
 /** None was asked for yet (404 no_conversion). */
@@ -51,6 +48,7 @@ const refusal = ref<Notice | null>(null);
 const busy = ref(false);
 const status = ref("");
 const heading = ref<HTMLElement | null>(null);
+const section = ref<HTMLElement | null>(null);
 /** The job that answered it is gone - another's, or one this reader may not follow. */
 const lostJob = ref<string | null>(null);
 // The latest answer counts: a reading asked for before a start is older than the start's answer
@@ -58,6 +56,8 @@ let generation = 0;
 let following: JobWatch | null = null;
 
 const failed = computed(() => conversion.value?.status === "failed");
+/** Failed by a cancel: the reader's own doing, said plainly - not as a failure. */
+const stopped = computed(() => failed.value && conversion.value?.error_code === "cancelled");
 /** Waiting with no job this reader can follow: the conversion itself is asked after. */
 const unfollowed = computed(() => {
   const state = conversion.value;
@@ -72,6 +72,7 @@ function refusedAs(error: unknown, status: number, code: string): boolean {
 /** What the page says of a conversion that came to its end while the reader was there. */
 function outcome(state: Conversion): string {
   if (state.status === "done") return t("conversions.done", { pages: state.pages ?? 0 });
+  if (state.status === "failed" && state.error_code === "cancelled") return t("conversions.stopped");
   if (state.status === "failed") return `${t("conversions.failed")} ${conversionFailureText(state.error_code)}`;
   return "";
 }
@@ -83,6 +84,8 @@ function say(message: string): void {
 /** The conversion as the server has it; `announce`: its job just ended, and how it ended is said. */
 async function load({ announce = false } = {}): Promise<void> {
   const mine = ++generation;
+  // the job's view goes with its state: the keyboard that rested in it goes to the section's heading
+  const focusWasHere = announce && (section.value?.contains(document.activeElement) ?? false);
   loading.value = true;
   failure.value = null;
   try {
@@ -92,6 +95,10 @@ async function load({ announce = false } = {}): Promise<void> {
     none.value = false;
     hidden.value = false;
     if (announce) say(outcome(found));
+    if (focusWasHere) {
+      await nextTick();
+      if (focusIsFree()) heading.value?.focus();
+    }
   } catch (error) {
     if (mine !== generation) return;
     conversion.value = null;
@@ -158,7 +165,7 @@ onUnmounted(() => following?.stop());
 </script>
 
 <template>
-  <section class="conversion" aria-labelledby="source-conversion">
+  <section ref="section" class="conversion" aria-labelledby="source-conversion">
     <!-- tabindex -1: where the keyboard goes once the button it pressed went with its state -->
     <h2 id="source-conversion" ref="heading" tabindex="-1">{{ t("conversions.heading") }}</h2>
     <p v-if="!convertible" class="conversion__note">{{ t("refusals.not_pdf") }}</p>
@@ -189,6 +196,7 @@ onUnmounted(() => following?.stop());
         <ConversionSummary :conversion="conversion" :source-id="sourceId" />
         <ExtractionStart :source-id="sourceId" :conversion-id="conversion.id" :country="country ?? null" />
       </template>
+      <p v-else-if="stopped" class="conversion__note">{{ t("conversions.stopped") }}</p>
       <p v-else class="conversion__failure">
         <AppIcon name="warning" />
         <span>{{ t("conversions.failed") }} {{ conversionFailureText(conversion.error_code) }}</span>

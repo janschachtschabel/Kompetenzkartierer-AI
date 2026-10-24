@@ -27,6 +27,10 @@ async function load(): Promise<void> {
   }
 }
 
+function moment(value: string): string {
+  return momentFormat.format(new Date(value));
+}
+
 onMounted(load);
 </script>
 
@@ -45,10 +49,11 @@ onMounted(load);
     <ul v-else class="documents__list">
       <li v-for="item in documents" :key="item.id" class="documents__item">
         <RouterLink :to="{ name: 'document', params: { id: item.id } }">
-          <bdi>{{ item.title || t("documents.untitled") }}</bdi>
+          <!-- one untitled is told from another by when it was made, in the link's name too -->
+          <bdi>{{ item.title || t("documents.list.untitled", { made: moment(item.created_at) }) }}</bdi>
         </RouterLink>
         <span class="documents__meta">
-          <time :datetime="item.created_at">{{ momentFormat.format(new Date(item.created_at)) }}</time>
+          <time :datetime="item.created_at">{{ moment(item.created_at) }}</time>
           ·
           {{
             item.extraction

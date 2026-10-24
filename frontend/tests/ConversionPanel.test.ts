@@ -152,11 +152,55 @@ describe("an entry's conversion", () => {
     expect(wrapper.text()).toContain(t("conversions.jobLabel"));
   });
 
-  it("says a conversion whose job was cancelled was stopped", async () => {
+  it("says plainly that a conversion whose job was cancelled was stopped, as the reader's own doing", async () => {
     vi.mocked(api.getConversion).mockResolvedValue(conversion({ status: "failed", error_code: "cancelled", pages: null }));
     const wrapper = await open();
 
-    expect(wrapper.text()).toContain(t("conversions.cancelled"));
+    expect(wrapper.text()).toContain(t("conversions.stopped"));
+    expect(wrapper.text()).not.toContain(t("conversions.failed"));
+    expect(wrapper.find(".conversion__failure").exists()).toBe(false);
+    expect(wrapper.find("[data-test=conversion-start]").exists()).toBe(true);
+  });
+
+  it("says a conversion cancelled while the reader was there as stopped, not failed", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    vi.mocked(api.getConversion)
+      .mockResolvedValueOnce(pending)
+      .mockResolvedValue(conversion({ status: "failed", error_code: "cancelled", pages: null }));
+    vi.spyOn(api, "getJob").mockResolvedValue({ ...job("cancelled"), kind: "source.convert", error_code: null });
+    const wrapper = await open();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    await flushPromises();
+
+    expect(status(wrapper).text()).toBe(t("conversions.stopped"));
+  });
+
+  it("keeps the keyboard in the section when the job it rested on has ended", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    vi.mocked(api.getConversion).mockResolvedValueOnce(pending).mockResolvedValue(conversion());
+    vi.spyOn(api, "getJob").mockResolvedValue({ ...job("done"), kind: "source.convert" });
+    const wrapper = await open();
+    (wrapper.get(".job").element as HTMLElement).focus();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    await flushPromises();
+
+    expect(document.activeElement).toBe(wrapper.get("#source-conversion").element);
+  });
+
+  it("offers the extraction under a finished conversion, the entry's Land chosen", async () => {
+    vi.mocked(api.getConversion).mockResolvedValue(conversion());
+    shown = mount(ConversionPanel, {
+      props: { sourceId: "s1", mime: PDF, country: "DE-BY" },
+      global: { plugins: [router] },
+      attachTo: document.body,
+    });
+    await flushPromises();
+
+    const start = shown.findComponent({ name: "ExtractionStart" });
+    expect(start.exists()).toBe(true);
+    expect(start.find<HTMLInputElement>("input[value=DE-BY]").element.checked).toBe(true);
   });
 
   it("says the job's end in the status, a failure with its reason", async () => {

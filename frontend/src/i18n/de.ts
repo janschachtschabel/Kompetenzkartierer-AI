@@ -350,6 +350,8 @@ export const messages = {
     showBlocks: "Blöcke ansehen",
     // the job was cancelled before it ended (a conversion's error_code "cancelled")
     cancelled: "Sie wurde abgebrochen. Starte sie neu, wenn du die Blöcke brauchst.",
+    // the same, on the entry's page, where the cancel is the reader's own doing: no failure
+    stopped: "Die Umwandlung wurde abgebrochen. Starte sie neu, wenn du die Blöcke brauchst.",
     // its job failed again and again on the service, not on the file (a conversion's "handler_error")
     handlerError:
       "Sie ist mehrmals gescheitert, ohne dass sich die Datei als Ursache zeigte. Versuch es später noch " +
@@ -652,7 +654,8 @@ export const messages = {
       heading: "Extraktion",
       intro:
         "Aus der fertigen Umwandlung wird ein Dokument; das Sprachmodell liest sein Profil und seine Gliederung. " +
-        "Je Dokument läuft höchstens eine Extraktion, und du kannst sie jederzeit abbrechen.",
+        "Für eine PDF läuft bei dir höchstens eine Extraktion zugleich – läuft schon eine, führt der Knopf zu ihr. " +
+        "Du kannst sie jederzeit abbrechen.",
       sector: "Bildungsbereich",
       sectorChoose: "Bereich wählen",
       sectorMissing: "Wähle den Bildungsbereich des Dokuments.",
@@ -698,6 +701,7 @@ export const messages = {
     },
     list: {
       heading: "Dokumente",
+      untitled: "Dokument ohne Titel vom {made}",
       empty: "Aus diesem Eintrag ist noch kein Dokument angelegt.",
       loadFailed: "Die Dokumente wurden nicht geladen.",
     },

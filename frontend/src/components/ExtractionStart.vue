@@ -6,7 +6,7 @@
  * for, the entry's own Land chosen already. A refusal - no budget, too many starts - is said
  * below the form, which keeps what was chosen.
  */
-import { computed, ref } from "vue";
+import { computed, nextTick, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { makeDocument, type Sector } from "@/api";
@@ -29,6 +29,7 @@ const REGIONS = Object.keys(messages.sources.countries);
 const sector = ref<Sector | "">("");
 const regions = ref<string[]>(props.country && REGIONS.includes(props.country) ? [props.country] : []);
 const sectorMissing = ref(false);
+const sectorField = ref<HTMLSelectElement | null>(null);
 const busy = ref(false);
 const failure = ref<Notice | null>(null);
 
@@ -39,7 +40,12 @@ async function onSubmit(): Promise<void> {
   if (busy.value) return; // the button stays focusable while busy, so it can be pressed again
   failure.value = null;
   sectorMissing.value = sector.value === "";
-  if (sector.value === "") return;
+  if (sector.value === "") {
+    // the field takes the keyboard: its name, that it is invalid and why are read there
+    await nextTick();
+    sectorField.value?.focus();
+    return;
+  }
   busy.value = true;
   try {
     const started = await makeDocument({
@@ -66,6 +72,7 @@ async function onSubmit(): Promise<void> {
         <label for="extraction-sector">{{ t("documents.start.sector") }}</label>
         <select
           id="extraction-sector"
+          ref="sectorField"
           v-model="sector"
           :aria-invalid="sectorMissing || undefined"
           :aria-describedby="sectorMissing ? 'extraction-sector-error' : undefined"

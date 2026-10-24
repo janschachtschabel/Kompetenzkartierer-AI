@@ -11,7 +11,7 @@
 import { onMounted, ref, watch } from "vue";
 import { RouterLink, useRouter, type RouteLocationRaw } from "vue-router";
 
-import { ApiError, getSource, MIB, type SeedFields, type SourceDetail } from "@/api";
+import { ApiError, CONVERTED_MIME, getSource, MIB, type SeedFields, type SourceDetail } from "@/api";
 import AcquisitionList from "@/components/AcquisitionList.vue";
 import ConversionPanel from "@/components/ConversionPanel.vue";
 import EmptyState from "@/components/EmptyState.vue";
@@ -166,7 +166,12 @@ function grades(seed: SeedFields): string | null {
         :mime="source.file.mime"
         :country="source.country"
       />
-      <SourceDocuments v-if="source.file" class="source__section" :source-id="source.id" />
+      <!-- documents are made of a conversion, and only a PDF is converted -->
+      <SourceDocuments
+        v-if="source.file?.mime === CONVERTED_MIME"
+        class="source__section"
+        :source-id="source.id"
+      />
 
       <section v-if="source.seed" class="source__section" aria-labelledby="source-seed">
         <h2 id="source-seed">{{ t("entryPage.seed.heading") }}</h2>

@@ -83,6 +83,8 @@ describe("the start of an extraction from a finished conversion", () => {
     expect(select.attributes("aria-invalid")).toBe("true");
     expect(wrapper.get(`#${select.attributes("aria-describedby")}`).text()).toBe(t("documents.start.sectorMissing"));
     expect(make).not.toHaveBeenCalled();
+    // its name, that it is invalid and why are read where the keyboard lands
+    expect(document.activeElement).toBe(select.element);
   });
 
   it("makes the document and goes to its page", async () => {

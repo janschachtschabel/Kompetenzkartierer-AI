@@ -7,6 +7,7 @@ import { messages, t } from "@/i18n/de";
 import { router } from "@/router";
 import SourceDetailView from "@/views/SourceDetailView.vue";
 
+import { conversion } from "./conversions";
 import { deferred, detail } from "./registerEntries";
 
 let shown: VueWrapper | null = null;
@@ -29,6 +30,7 @@ beforeEach(() => {
   vi.restoreAllMocks();
   // an entry with a file asks for its conversion: none, unless a test says otherwise
   vi.spyOn(api, "getConversion").mockRejectedValue(new ApiError("server", 404, "no_conversion"));
+  vi.spyOn(api, "listDocuments").mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -125,6 +127,27 @@ describe("a register entry's page", () => {
     await flushPromises();
     expect(wrapper.find("#source-conversion").exists()).toBe(false);
     expect(api.getConversion).not.toHaveBeenCalled();
+  });
+
+  it("lists the documents of a PDF's conversion, and offers its extraction for the entry's Land", async () => {
+    const pdf = { name: "physik.pdf", mime: "application/pdf", size: 8, sha256: "ab" };
+    vi.spyOn(api, "getSource").mockResolvedValue(detail({ country: "DE-BY", file: pdf }));
+    vi.mocked(api.getConversion).mockResolvedValue(conversion());
+    const wrapper = await open();
+
+    expect(wrapper.find("#source-documents").exists()).toBe(true);
+    expect(api.listDocuments).toHaveBeenCalledWith("s1");
+    expect(wrapper.find<HTMLInputElement>("input[value=DE-BY]").element.checked).toBe(true);
+  });
+
+  it("has no documents' section for a file that is no PDF: nothing is made of it", async () => {
+    const docx = { name: "physik.docx", mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", size: 8, sha256: "ab" };
+    vi.spyOn(api, "getSource").mockResolvedValue(detail({ file: docx }));
+
+    const wrapper = await open();
+
+    expect(wrapper.find("#source-documents").exists()).toBe(false);
+    expect(api.listDocuments).not.toHaveBeenCalled();
   });
 
   it("says an upload came as one, with no addresses to show", async () => {
