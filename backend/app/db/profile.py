@@ -18,6 +18,7 @@ from psycopg.types.json import Jsonb
 from app.db.anchors import CV, new_entity, write_anchor
 from app.db.documents import DocumentError
 from app.db.findings import Finding
+from app.db.runs import done_stages
 from app.domain.l1 import AnchorDraft, ProfileDraft
 
 _VALUES = """
@@ -137,6 +138,16 @@ async def holds_extraction(connection: psycopg.AsyncConnection, document_id: UUI
     )
     found = await cursor.fetchone()
     return bool(found and found[0])
+
+
+async def open_for_x1(connection: psycopg.AsyncConnection, document_id: UUID) -> bool:
+    """Lock the document for X1's write, in the caller's transaction, and say whether X1 may write it:
+    no run of X1 on it is done and nothing is written on it. A second job that asked meanwhile waits
+    for the first one's commit here and then sees it (read committed)."""
+    await connection.execute("SELECT 1 FROM document WHERE id = %s FOR NO KEY UPDATE", (document_id,))
+    if "X1" in await done_stages(connection, document_id):
+        return False
+    return not await holds_extraction(connection, document_id)
 
 
 async def suggest_work(

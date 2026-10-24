@@ -3,6 +3,7 @@ attempt a run of its own, written at once with its run's end under the attempt's
 after a break goes on from the last stage done; a spent budget ends the job and keeps what is done.
 A model stands in (FunctionModel), never a provider."""
 
+import asyncio
 import json
 import re
 from collections.abc import AsyncIterator
@@ -22,6 +23,8 @@ from app.core.storage import FileSystemStorage
 from app.core.storage_async import AsyncStorage
 from app.db.documents import Document
 from app.db.migrate import migrate
+from app.db.nodes import write_subtree
+from app.domain.l1 import NodeDraft
 from app.jobs.context import JobContext
 from app.jobs.handlers import make_handlers
 from app.jobs.outcome import PermanentError
@@ -72,9 +75,10 @@ BLOCKS = [
 class Model:
     """The model of both X1 questions: it answers each by the keys its prompt lists."""
 
-    def __init__(self, *, profile_out_of_form: bool = False) -> None:
+    def __init__(self, *, profile_out_of_form: bool = False, specifications: bool = True) -> None:
         self.asked: list[str] = []
         self.profile_out_of_form = profile_out_of_form
+        self.specifications = specifications
 
     def __call__(self, messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         prompt = str(messages[0].parts[-1].content)  # type: ignore[union-attr]
@@ -118,7 +122,7 @@ class Model:
                     },
                     "variants": [],
                 }
-            ],
+            ] if self.specifications else [],
             "termMappings": [],
             "newTerms": [],
         }  # fmt: skip
@@ -154,9 +158,7 @@ async def setup(
         yield pool, connection
 
 
-def context_of(
-    pool: AsyncConnectionPool, tmp_path: Path, model: Model | None, database_url: str
-) -> JobContext:
+def context_of(pool: AsyncConnectionPool, tmp_path: Path, model: Any, database_url: str) -> JobContext:
     function_model = None if model is None else FunctionModel(model, settings={"max_tokens": 4_000})
     return JobContext(
         pool=pool,
@@ -167,8 +169,19 @@ def context_of(
     )
 
 
-async def a_document(connection: psycopg.AsyncConnection, *, token_limit: int | None = None) -> Document:
-    document = await document_of(connection, BLOCKS, regions=("DE-NW",), printed_pages=[None, "1", "2"])
+# a document of no headings, whose profile names no specification: X1 writes no row X1 is told by
+PLAIN = [
+    block("p1-b1", "Kernlehrplan Physik"),
+    block("p1-b2", BODY),
+    block("p2-b1", BODY),
+    block("p3-b1", BODY),
+]
+
+
+async def a_document(
+    connection: psycopg.AsyncConnection, *, token_limit: int | None = None, blocks: list[Block] = BLOCKS
+) -> Document:
+    document = await document_of(connection, blocks, regions=("DE-NW",), printed_pages=[None, "1", "2"])
     await connection.execute(
         "INSERT INTO quota (account_id, token_limit) VALUES (%s, %s)", (document.owner_id, token_limit)
     )
@@ -324,16 +337,116 @@ async def test_a_job_without_a_model_or_a_document_ends_at_once(
     assert await rows(connection, "SELECT count(*) FROM extraction_run") == [(0,)]
 
 
-async def test_a_document_extracted_before_is_not_extracted_again(
+async def test_a_document_done_before_is_neither_asked_nor_written_again(
+    setup: Any, tmp_path: Path, database_url: str
+) -> None:
+    # a document without headings and specifications too: its X1 run says it is done
+    pool, connection = setup
+    document = await a_document(connection)
+    model = Model()
+    context = context_of(pool, tmp_path, model, database_url)
+    await extract_document(context, await a_job(connection, document.id, document.owner_id))
+    again = await a_job(connection, document.id, document.owner_id)
+
+    result = await extract_document(context, again)
+
+    assert model.asked == ["profile", "outline"]
+    assert result == {"document_id": str(document.id), "stages": ["X1", "X2"], "packages": 4}
+    assert await rows(connection, "SELECT count(*) FROM extraction_run WHERE job_id = %s", again.id) == [(0,)]
+
+
+async def test_a_new_job_goes_on_where_one_that_failed_stopped(
+    setup: Any, tmp_path: Path, database_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # a job that ends for good after X1 (attempts spent, a budget spent in a later stage)
+    pool, connection = setup
+    document = await a_document(connection)
+    model = Model()
+    context = context_of(pool, tmp_path, model, database_url)
+
+    async def broken(*_: Any) -> Any:
+        raise RuntimeError("the database went away")
+
+    with monkeypatch.context() as patched:
+        patched.setattr(run, "work_packages", broken)
+        with pytest.raises(RuntimeError):
+            await extract_document(context, await a_job(connection, document.id, document.owner_id))
+    later = await a_job(connection, document.id, document.owner_id)
+
+    result = await extract_document(context, later)
+
+    assert result["packages"] == 4
+    assert model.asked == ["profile", "outline"]  # X1 is not asked again
+    assert await rows(
+        connection,
+        "SELECT replace(stage_iri, %s, ''), outcome FROM extraction_run WHERE job_id = %s",
+        CV + "stage_",
+        later.id,
+    ) == [("X2", "done")]
+
+
+@pytest.mark.parametrize(
+    ("blocks", "specifications", "packages", "nodes"),
+    [(BLOCKS, True, 4, 3), (PLAIN, False, 1, 0)],
+    ids=["tree", "plain"],
+)
+async def test_two_jobs_on_one_document_write_it_once(
+    setup: Any,
+    tmp_path: Path,
+    database_url: str,
+    blocks: list[Block],
+    specifications: bool,
+    packages: int,
+    nodes: int,
+) -> None:
+    # both pass the first look before either writes: the write looks again under the document's lock
+    pool, connection = setup
+    document = await a_document(connection, blocks=blocks)
+    model = Model(specifications=specifications)
+    both_asked = asyncio.Barrier(2)
+
+    async def answer(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        if str(messages[0].parts[-1].content).startswith("=== AUSZUG"):  # type: ignore[union-attr]
+            await both_asked.wait()
+        return model(messages, info)
+
+    context = context_of(pool, tmp_path, answer, database_url)
+    first = await a_job(connection, document.id, document.owner_id)
+    second = await a_job(connection, document.id, document.owner_id)
+
+    results = await asyncio.gather(extract_document(context, first), extract_document(context, second))
+
+    assert [result["packages"] for result in results] == [packages, packages]
+    assert await rows(connection, "SELECT count(*) FROM node WHERE document_id = %s", document.id) == [
+        (nodes,)
+    ]
+    anchors = (
+        "SELECT count(*) FROM anchor WHERE document_id = %s AND node_id IS NULL AND specification_id IS NULL"
+    )
+    assert await rows(connection, anchors, document.id) == [(1,)]  # the document's own, once
+    outcomes = await rows(
+        connection,
+        "SELECT outcome, result ->> 'failure' FROM extraction_run WHERE document_id = %s AND stage_iri = %s"
+        " ORDER BY outcome",
+        document.id,
+        CV + "stage_X1",
+    )
+    assert outcomes == [("done", None), ("failed", "X1 of the document was written by another run meanwhile")]
+
+
+async def test_a_document_with_a_tree_no_extraction_wrote_is_not_extracted(
     setup: Any, tmp_path: Path, database_url: str
 ) -> None:
     pool, connection = setup
     document = await a_document(connection)
-    context = context_of(pool, tmp_path, Model(), database_url)
-    await extract_document(context, await a_job(connection, document.id, document.owner_id))
+    root = NodeDraft(function=CV + "fn_area", origin=CV + "orig_human", review_status=CV + "rev_proposed")
+    await write_subtree(connection, document.id, root)
 
     with pytest.raises(PermanentError) as ended:
-        await extract_document(context, await a_job(connection, document.id, document.owner_id))
+        await extract_document(
+            context_of(pool, tmp_path, Model(), database_url),
+            await a_job(connection, document.id, document.owner_id),
+        )
 
     assert ended.value.code == "document_has_tree"
 

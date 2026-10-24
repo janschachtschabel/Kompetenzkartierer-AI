@@ -34,8 +34,7 @@ _FINISH = """
     WHERE id = %s AND outcome IS NULL
 """
 _DONE = """
-    SELECT DISTINCT stage_iri FROM extraction_run
-    WHERE document_id = %s AND job_id = %s AND outcome = 'done'
+    SELECT DISTINCT stage_iri FROM extraction_run WHERE document_id = %s AND outcome = 'done'
 """
 
 
@@ -98,19 +97,20 @@ async def finish_run(
 
 
 async def stage_result(
-    connection: psycopg.AsyncConnection, document_id: UUID, job_id: UUID, stage: Stage
+    connection: psycopg.AsyncConnection, document_id: UUID, stage: Stage
 ) -> dict[str, Any] | None:
-    """What the job's run of ``stage`` on the document made, where one is done."""
+    """What the last run of ``stage`` done on the document made, where one is done."""
     cursor = await connection.execute(
-        "SELECT result FROM extraction_run WHERE document_id = %s AND job_id = %s AND stage_iri = %s"
-        " AND outcome = 'done' ORDER BY finished_at DESC LIMIT 1",
-        (document_id, job_id, _STAGE_IRI + stage),
+        "SELECT result FROM extraction_run WHERE document_id = %s AND stage_iri = %s AND outcome = 'done'"
+        " ORDER BY finished_at DESC LIMIT 1",
+        (document_id, _STAGE_IRI + stage),
     )
     found = await cursor.fetchone()
     return None if found is None else found[0]
 
 
-async def done_stages(connection: psycopg.AsyncConnection, document_id: UUID, job_id: UUID) -> set[str]:
-    """The stages the job has done on the document, by notation ("X1")."""
-    cursor = await connection.execute(_DONE, (document_id, job_id))
+async def done_stages(connection: psycopg.AsyncConnection, document_id: UUID) -> set[str]:
+    """The stages done on the document, by notation ("X1"), whichever job did them: a job after one
+    that ended for good goes on where it stopped."""
+    cursor = await connection.execute(_DONE, (document_id,))
     return {iri.removeprefix(_STAGE_IRI) for (iri,) in await cursor.fetchall()}

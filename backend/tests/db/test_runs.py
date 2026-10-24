@@ -79,7 +79,7 @@ async def test_a_run_is_started_and_ended_once_with_what_it_made(
     assert (ended, again) == (True, False)
 
 
-async def test_a_stage_is_done_for_a_job_once_one_of_its_runs_is(
+async def test_a_stage_is_done_for_a_document_once_a_run_of_any_job_is(
     connection: psycopg.AsyncConnection, made: dict[str, Any]
 ) -> None:
     job, other = await a_job(connection, made), await a_job(connection, made)
@@ -90,8 +90,9 @@ async def test_a_stage_is_done_for_a_job_once_one_of_its_runs_is(
     )
     await finish_run(connection, await start_run(connection, run_of(made, other, "X2")), "done")
 
-    assert await done_stages(connection, made["document"], job) == {"X1"}
-    assert await done_stages(connection, made["document"], other) == {"X2"}
+    assert await done_stages(connection, made["document"]) == {"X1", "X2"}
+    await finish_run(connection, await start_run(connection, run_of(made, job, "X4")), "failed")
+    assert await done_stages(connection, made["document"]) == {"X1", "X2"}  # a failed run is no done stage
 
 
 def test_a_run_names_a_stage_of_the_core() -> None:

@@ -2,7 +2,9 @@
 of the model, its skeleton built by the profile's document type, the headings the skeleton left
 untyped asked, and all of it written at once, with the run's end, under the attempt's lease.
 
-The stage writes onto a document X1 has not written (``document_has_tree``). Each request is
+The stage writes onto a document X1 has not written: one with a tree no run of X1 wrote ends the
+job (``document_has_tree``); where another job's run wrote X1 while this one asked, the write
+finds it under the document's lock, writes nothing and ends its run as failed. Each request is
 charged to the document's account (its owner's; the start, plan M1 7.5, decides who may run one)
 and kept as it came under the run (``runs/<run>/x1``). A budget spent ends the run as
 ``budget_exhausted`` and the job with it; an answer that never took its schema's form ends the
@@ -25,7 +27,7 @@ from app.conversion.base import Block
 from app.db.documents import Document
 from app.db.findings import Finding, add_findings
 from app.db.nodes import write_subtree
-from app.db.profile import holds_extraction, suggest_work, write_profile
+from app.db.profile import holds_extraction, open_for_x1, suggest_work, write_profile
 from app.db.runs import RunOutcome, RunStart, finish_run, start_run
 from app.domain.lexicon import Cue, active_cues
 from app.jobs.context import JobContext
@@ -60,6 +62,10 @@ PROMPT_VERSION = f"{x1_profile.PROMPT_VERSION}+{x1_outline.PROMPT_VERSION}"
 
 class _Unanswered(Exception):
     """No answer of a request took its schema's form, however often asked."""
+
+
+class _Superseded(Exception):
+    """Another run wrote X1 of the document while this one asked."""
 
 
 @dataclass(frozen=True)
@@ -128,6 +134,11 @@ async def run_x1(
     except BudgetExhausted as spent:
         await _end(context, run_id, "budget_exhausted", {})
         raise PermanentError("budget_exhausted", "the account's token budget is spent") from spent
+    except _Superseded:
+        await _end(
+            context, run_id, "failed", {"failure": "X1 of the document was written by another run meanwhile"}
+        )
+        return {"superseded": True}
     except _Unanswered as unanswered:
         await _end(context, run_id, "failed", {"failure": str(unanswered)[:2000]})
         raise PermanentError(
@@ -158,6 +169,8 @@ async def _stage(
     decisions, outline_findings = decide(skeleton, questions.asked, answers, questions.context)
     async with context.pool.connection() as connection, connection.transaction():
         await hold_lease(connection, job)
+        if not await open_for_x1(connection, document.id):
+            raise _Superseded
         keys, notes = await write_profile(connection, document.id, profile)
         findings = [*profile.findings, *notes, *outline_findings, *_slow_patterns(skeleton, document.id)]
         findings += await _work_suggested(connection, document, profile)

@@ -1,8 +1,10 @@
 """The job ``extract.run`` (plan M1 6.6): a document's stages one after the other - X1 (profile,
 skeleton, outline; app/pipeline/x1_stage.py), then X2 (work packages) - each stage of each attempt a
 run of its own (``extraction_run``), written at once with its run's end under the attempt's lease.
-An attempt after a break - a worker gone, an error asked again - goes on from the last stage this
-job finished; a stage cut off midway left nothing, its run open. Paket 7 and 8 hang X3 to X5 on.
+A job goes on from the last stage done on the document - an attempt after a break (a worker gone,
+an error asked again), or a new job after one that ended for good (its attempts spent, its budget
+spent); a stage cut off midway left nothing. A document done is neither asked about nor written
+again. Paket 7 and 8 hang X3 to X5 on.
 
 Payload: ``{"document_id": "<uuid>"}``; what it ends with: the document, its stages, the number of
 X2's packages (which X2's run holds, plan M1 6, Festlegung 3).
@@ -32,7 +34,7 @@ async def extract_document(context: JobContext, job: Job) -> dict[str, Any]:
         document = None if document_id is None else await document_for_job(connection, document_id)
         if document is None:
             raise PermanentError("document_gone", "the document to extract is gone")
-        done = await done_stages(connection, document.id, job.id)
+        done = await done_stages(connection, document.id)
         blocks = await all_blocks(connection, document.conversion_id)
         printed = await printed_pages(connection, document.conversion_id)
     if "X1" not in done:
@@ -51,9 +53,9 @@ async def extract_document(context: JobContext, job: Job) -> dict[str, Any]:
             await hold_lease(connection, job)
             await finish_run(connection, run_id, "done", {"packages": [item.as_result() for item in found]})
         packages = len(found)
-    else:  # the attempt before ended its last stage, not its job
+    else:  # done before: by the attempt before, or by an earlier job
         async with context.pool.connection() as connection:
-            made = await stage_result(connection, document.id, job.id, "X2")
+            made = await stage_result(connection, document.id, "X2")
         packages = len((made or {}).get("packages", []))
     return {"document_id": str(document.id), "stages": list(STAGES), "packages": packages}
 
