@@ -11,11 +11,12 @@ contents' do: never back, within the document's pages, not all one - lines of nu
 is the depth of its numbering; an entry without one has none, since a block's lines share their
 indentation. The contents are never a section of the document (the old app's lesson: they became
 a root with the headings again as children), and a heading they name is one whatever its type
-(app/pipeline/skeleton.py). Where the title pages end, the first run of entries says that is
-read or stands within the first FRONT_PAGES pages: there, where it has a title or is read up
-front - contents behind a long foreword have their title; else nowhere. A run neither read nor
-up front (an annex's with the gazette's pages) says nothing, and no run after the one that
-decides (a list of figures, an annex's contents) moves the end.
+(app/pipeline/skeleton.py). Where the title pages end, the document's first run of three
+entries at least says, whatever it is, and no run after it (a list of figures, an annex's
+contents): they end there where its pages are read and it has a title or stands within the
+first FRONT_PAGES pages (contents behind a long foreword have their title), or where it has
+a title and stands within them though its pages are refused; else nowhere - doubt makes a
+heading of the title pages, never title pages of the headings.
 """
 
 import re
@@ -29,7 +30,7 @@ from app.domain.lexicon import Cue
 from app.pipeline.patterns import PatternSearch
 
 LEAST_ENTRIES = 3
-FRONT_PAGES = 5  # contents within them, untitled, are the title pages' own
+FRONT_PAGES = 5  # contents within them end the title pages untitled, or titled though refused
 OUTSIDE = frozenset({"page_header", "page_footer"})  # the kinds of block no part of the text is
 
 # A numbering that leads a title: "1", "1.2", "1.2." - two digits a part, so a year leads none -
@@ -89,7 +90,7 @@ def find_contents(blocks: Sequence[Block], cues: Sequence[Cue], search: PatternS
     entries: list[TocEntry] = []
     positions: set[int] = set()
     front_end: int | None = None
-    decided = False
+    first_run = True
     for run in runs:
         listed = [entry for _, found in run for entry in found]
         if len(listed) < LEAST_ENTRIES:
@@ -98,11 +99,11 @@ def find_contents(blocks: Sequence[Block], cues: Sequence[Cue], search: PatternS
         before = order.index(first) - 1
         titled = before >= 0 and _TITLE.fullmatch(blocks[order[before]].text.strip()) is not None
         paged = _paged(listed, pages)
-        front = blocks[first].page <= FRONT_PAGES
-        if not decided and (paged or front):
-            # a later run (an annex's) moves no end; one deep in, not read, decides nothing
-            decided = True
-            front_end = first if titled or (paged and front) else None  # its title is before it
+        if first_run:  # a later one (an annex's contents) moves no end
+            first_run = False
+            front = blocks[first].page <= FRONT_PAGES
+            if (paged and (titled or front)) or (titled and front):
+                front_end = first  # its title is before it
         if not paged:
             continue
         if titled:

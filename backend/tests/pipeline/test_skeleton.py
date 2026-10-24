@@ -442,6 +442,73 @@ def test_untitled_contents_read_past_the_first_pages_leave_the_title_pages_to_no
     assert titles(found) == ["Vorwort", "1 Einleitung", "2 Ziele", "3 Anhang", "A1 Formblatt"]
 
 
+REAL = {"1 Einleitung", "2 Kompetenzen", "3 Inhalte", "4 Anhang", "A1 Formblatt"}
+
+
+def behind_a_foreword(first_run: list[Block]) -> list[Block]:
+    """A foreword of five pages, a first run of entries on page 7, the sections, and an annex's titled
+    contents on page 13 whose pages are read."""
+    blocks = [COVER, block("p2-b1", "Vorwort", size=16), block("p2-b2", BODY)]
+    blocks += [block(f"p{page}-b1", BODY) for page in range(3, 7)]
+    return [
+        *blocks,
+        *first_run,
+        block("p8-b1", "1 Einleitung", size=16),
+        block("p8-b2", BODY),
+        block("p10-b1", "2 Kompetenzen", size=16),
+        block("p10-b2", BODY),
+        block("p12-b1", "3 Inhalte", size=16),
+        block("p12-b2", BODY),
+        block("p13-b1", "4 Anhang", size=16),
+        block("p13-b2", "Inhalt", size=16),
+        block("p13-b3", "A1 Formblatt ..... 14\nA2 Zeugnis ..... 15\nA3 Stundentafel ..... 16"),
+        block("p14-b1", "A1 Formblatt", size=14),
+        block("p16-b1", BODY),
+    ]
+
+
+ENTRIES = "1 Einleitung ..... 8\n2 Kompetenzen ..... 10\n3 Inhalte ..... 12\n4 Anhang ..... 17"
+
+
+@pytest.mark.parametrize(
+    "first_run",
+    [
+        # the contents titled, their pages refused (one past the document's sixteen)
+        [block("p7-b1", "Inhalt", size=16), block("p7-b2", ENTRIES)],
+        # the same, the title in the entries' block
+        [block("p7-b1", "Inhalt\n" + ENTRIES)],
+        # no contents: a learning fields' overview with its hours as text
+        [block("p7-b1", "1 Den Betrieb erkunden 80\n2 Kunden beraten 60\n3 Waren annehmen 40")],
+    ],
+    ids=["titled", "title_within", "overview"],
+)
+def test_the_first_run_of_entries_decides_the_title_pages_and_an_annex_s_contents_after_it_do_not(
+    first_run: list[Block],
+) -> None:
+    found = skeleton(behind_a_foreword(first_run))
+
+    assert found.contents.front_end is None  # not read deep in: they end nowhere
+    assert set(titles(found)) >= REAL
+
+
+@pytest.mark.parametrize("page", [3, 5])
+def test_untitled_contents_read_up_front_end_the_title_pages(page: int) -> None:
+    blocks = [COVER, block("p2-b1", "Vorwort", size=16), block("p2-b2", BODY)]
+    blocks += [block(f"p{between}-b1", BODY) for between in range(3, page)]
+    blocks += [
+        block(f"p{page}-b1", "1 Einleitung ..... 6\n2 Ziele ..... 7\n3 Inhalte ..... 8"),
+        block("p6-b1", "1 Einleitung", size=16),
+        block("p7-b1", "2 Ziele", size=16),
+        block("p8-b1", "3 Inhalte", size=16),
+        block("p8-b2", BODY),
+    ]
+
+    found = skeleton(blocks)
+
+    assert titles(found) == ["1 Einleitung", "2 Ziele", "3 Inhalte"]
+    assert found.contents.front_end == len(blocks) - 5
+
+
 def test_contents_of_roman_pages_alone_are_contents() -> None:
     # a front matter's own: "iii" is no page a document's count can be held against
     lines = "Vorwort ..... iii\nGeleitwort ..... iv\nEinführung ..... v"
