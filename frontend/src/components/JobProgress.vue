@@ -54,12 +54,18 @@ const cancelling = ref(false);
 const cancelFailure = ref("");
 // the cancel taken: an answer to a question asked before it does not undo it
 const asked = ref(false);
+// the stop asked for is said once: by the keyboard landing on its note, else in the region
+const noteSays = ref(false);
 // when the page last heard of the job - every 8 seconds at most while it is open: how long it
 // has waited or run is counted to then
 const now = ref(Date.now());
 const root = ref<HTMLElement | null>(null);
+const line = ref<HTMLElement | null>(null);
 const askedNote = ref<HTMLElement | null>(null);
+const cancelButton = ref<HTMLElement | null>(null);
 let watch: JobWatch | null = null;
+// the page is told of the end once, whether a question or the cancel's answer brought it
+let endedSaid = false;
 
 // a job just started waits for a worker until the server says otherwise
 const status = computed<JobStatus>(() => job.value?.status ?? "queued");
@@ -86,7 +92,10 @@ const cancelAsked = computed(() => open.value && (asked.value || job.value?.canc
 const runtimeText = computed(() => {
   const state = job.value;
   if (state?.status === "running" && state.started_at) return lasted("running", state.started_at);
-  if (state?.status === "queued" && open.value) return lasted("waiting", state.created_at);
+  // one handed back waits again: since when it was made says nothing of how long it waits
+  if (state?.status === "queued" && open.value) {
+    return state.attempts > 0 ? t("jobs.waitingAgain") : lasted("waiting", state.created_at);
+  }
   return "";
 });
 
@@ -103,18 +112,31 @@ function lasted(how: "running" | "waiting", since: string): string {
 const announcement = computed(() => {
   const label = isolate(props.label);
   if (trouble.value) return t("jobs.announce", { label, status: t("jobs.trouble") });
-  if (props.quiet) return cancelAsked.value ? t("jobs.cancel.requested") : "";
+  const stopSaid = cancelAsked.value && !noteSays.value;
+  if (props.quiet) return stopSaid ? t("jobs.cancel.requested") : "";
   if (goneText.value) return t("jobs.announce", { label, status: goneText.value });
   if (!job.value) return ""; // nothing to say before the first answer
   const line = t("jobs.announce", { label, status: t(`jobs.status.${status.value}`) });
-  if (failure.value) return `${line} ${failure.value}`;
-  return cancelAsked.value ? `${line}. ${t("jobs.cancel.requested")}` : line;
+  if (failure.value) return `${line}. ${failure.value}`;
+  return stopSaid ? `${line}. ${t("jobs.cancel.requested")}` : line;
 });
 
-// a question still open when the job ends meanwhile asks about nothing
-watchValue(open, (still) => {
-  if (!still) asking.value = false;
+// The job's end takes its note, its button, its question with it: the keyboard that rested on
+// one stays at the job, where nothing took it meanwhile; a question still open asks about nothing
+watchValue(open, async (still) => {
+  if (still) return;
+  const inside = root.value?.contains(document.activeElement) ?? false;
+  asking.value = false;
+  if (!inside) return;
+  await nextTick();
+  if (focusIsFree()) line.value?.focus();
 });
+
+function ended(state: Job): void {
+  if (endedSaid) return;
+  endedSaid = true;
+  emit("ended", state);
+}
 
 function askCancel(): void {
   if (!cancelling.value) asking.value = true;
@@ -127,17 +149,19 @@ async function cancel(): Promise<void> {
   try {
     // the state it answers is the job's from now; the watch goes on until it has ended
     const answer = await cancelJob(props.jobId);
+    // the keyboard rests on the button that goes with this answer, or nowhere: it goes to what
+    // says how the job stands now - the note reads the stop out, the region need not say it too
+    const leaving = focusIsFree() || document.activeElement === cancelButton.value;
+    noteSays.value = leaving && !hasEnded(answer.status);
     asked.value = true;
     job.value = answer;
     if (hasEnded(answer.status)) {
       // a waiting job ended at once: the page hears now, and no answer asked before undoes it
       watch?.stop();
-      emit("ended", answer);
+      ended(answer);
     }
-    // the button went with the state it belonged to: the keyboard goes to what says how the job
-    // stands now, where it was left on nothing
     await nextTick();
-    if (focusIsFree()) (askedNote.value ?? root.value)?.focus();
+    if (leaving && focusIsFree()) (askedNote.value ?? line.value)?.focus();
   } catch (error) {
     cancelFailure.value = cancelRefusal(error);
   } finally {
@@ -157,7 +181,7 @@ onMounted(() => {
       job.value = state;
       now.value = Date.now();
       trouble.value = false;
-      if (hasEnded(state.status)) emit("ended", state);
+      if (hasEnded(state.status)) ended(state);
     },
     onGone: (why) => {
       gone.value = why;
@@ -174,9 +198,9 @@ onUnmounted(() => watch?.stop());
 </script>
 
 <template>
-  <div ref="root" class="job" tabindex="-1">
-    <!-- tabindex -1: where the keyboard goes once a cancel ended the job at once -->
-    <p class="job__line">
+  <div ref="root" class="job">
+    <!-- tabindex -1: where the keyboard goes once what it rested on went with the job's state -->
+    <p ref="line" class="job__line" tabindex="-1">
       <span v-if="!gone" class="status-badge" :class="TONE[status]">{{ t(`jobs.status.${status}`) }}</span>
       <bdi class="job__label">{{ label }}</bdi>
     </p>
@@ -192,6 +216,7 @@ onUnmounted(() => watch?.stop());
       <!-- aria-disabled, not disabled: a disabled button drops the focus it holds -->
       <button
         v-if="cancellable"
+        ref="cancelButton"
         type="button"
         class="btn secondary"
         data-test="job-cancel"

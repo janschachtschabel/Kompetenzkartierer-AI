@@ -42,6 +42,23 @@ async function confirmCancel(wrapper: ReturnType<typeof shown>): Promise<void> {
   await flushPromises();
 }
 
+/** As confirmCancel, the reader going on to another control while the cancel is on its way. */
+async function confirmCancelGoingOn(wrapper: ReturnType<typeof shown>, answer: Job): Promise<HTMLButtonElement> {
+  let reply: (value: Job) => void = () => undefined;
+  vi.mocked(api.cancelJob).mockReturnValue(new Promise<Job>((resolve) => (reply = resolve)));
+  const elsewhere = document.body.appendChild(document.createElement("button"));
+  (cancelButton(wrapper).element as HTMLButtonElement).focus();
+  await cancelButton(wrapper).trigger("click");
+  (document.querySelector("[data-test=confirm]") as HTMLButtonElement).click();
+  await flushPromises();
+  elsewhere.focus();
+  reply(answer);
+  await flushPromises();
+  return elsewhere;
+}
+
+const line = (wrapper: ReturnType<typeof shown>) => wrapper.get(".job__line").element;
+
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(NOW);
@@ -107,7 +124,9 @@ describe("a job cancelled from the page", () => {
     expect(cancel).toHaveBeenCalledWith("j1");
     expect(cancelButton(wrapper).exists()).toBe(false);
     expect(wrapper.get("[data-test=job-cancel-asked]").text()).toBe(t("jobs.cancel.requested"));
-    expect(wrapper.get("[role=status]").text()).toContain(t("jobs.cancel.requested"));
+    // said once: the keyboard lands on the note, which reads it; the region does not say it again
+    expect(document.activeElement).toBe(wrapper.get("[data-test=job-cancel-asked]").element);
+    expect(wrapper.get("[role=status]").text()).not.toContain(t("jobs.cancel.requested"));
   });
 
   it.each([
@@ -153,10 +172,10 @@ describe("a job cancelled from the page", () => {
 });
 
 describe("a cancel as the page around it sees it", () => {
-  it("is announced though the page announces the job's states itself", async () => {
+  it("is announced where the keyboard went elsewhere, though the page says the job's states itself", async () => {
     const asked = job("running", { cancel_requested: true });
     vi.spyOn(api, "getJob").mockResolvedValueOnce(job("running")).mockResolvedValue(asked);
-    vi.spyOn(api, "cancelJob").mockResolvedValue(asked);
+    vi.spyOn(api, "cancelJob");
     const wrapper = mount(JobProgress, {
       props: { jobId: "j1", label: "Umwandlung", quiet: true },
       attachTo: document.body,
@@ -164,22 +183,33 @@ describe("a cancel as the page around it sees it", () => {
     await vi.advanceTimersByTimeAsync(1000);
     expect(wrapper.get("[role=status]").text()).toBe("");
 
-    await confirmCancel(wrapper);
+    const elsewhere = await confirmCancelGoingOn(wrapper, asked);
 
     expect(wrapper.get("[role=status]").text()).toContain(t("jobs.cancel.requested"));
+    expect(document.activeElement).toBe(elsewhere); // where the reader went, not taken back
   });
 
   it("says the stop as a sentence of its own after the job's state", async () => {
     const asked = job("running", { cancel_requested: true });
     vi.spyOn(api, "getJob").mockResolvedValueOnce(job("running")).mockResolvedValue(asked);
-    vi.spyOn(api, "cancelJob").mockResolvedValue(asked);
+    vi.spyOn(api, "cancelJob");
     const wrapper = shown("Physik");
     await vi.advanceTimersByTimeAsync(1000);
 
-    await confirmCancel(wrapper);
+    await confirmCancelGoingOn(wrapper, asked);
 
-    const line = t("jobs.announce", { label: "\u2068Physik\u2069", status: t("jobs.status.running") });
-    expect(wrapper.get("[role=status]").text()).toBe(`${line}. ${t("jobs.cancel.requested")}`);
+    const said = t("jobs.announce", { label: "\u2068Physik\u2069", status: t("jobs.status.running") });
+    expect(wrapper.get("[role=status]").text()).toBe(`${said}. ${t("jobs.cancel.requested")}`);
+  });
+
+  it("says a failure as a sentence of its own after the job's state", async () => {
+    vi.spyOn(api, "getJob").mockResolvedValue(job("failed", { error_code: "handler_error" }));
+    const wrapper = shown("Physik");
+
+    await vi.advanceTimersByTimeAsync(1000);
+
+    const said = t("jobs.announce", { label: "\u2068Physik\u2069", status: t("jobs.status.failed") });
+    expect(wrapper.get("[role=status]").text()).toBe(`${said}. ${t("jobs.failures.handler_error")}`);
   });
 
   it("keeps the keyboard at the job once the cancel's button has gone", async () => {
@@ -203,7 +233,7 @@ describe("a cancel as the page around it sees it", () => {
     await confirmCancel(wrapper);
 
     expect(wrapper.emitted("ended")).toHaveLength(1);
-    expect(document.activeElement).toBe(wrapper.element);
+    expect(document.activeElement).toBe(line(wrapper));
     await vi.advanceTimersByTimeAsync(30_000); // no question asked after: a waiting answer would undo it
     expect(wrapper.emitted("ended")).toHaveLength(1);
     expect(wrapper.find(".status-badge").text()).toBe(t("jobs.status.cancelled"));
@@ -226,7 +256,10 @@ describe("a cancel as the page around it sees it", () => {
 
     expect(cancelButton(wrapper).exists()).toBe(false);
     expect(wrapper.find("[data-test=job-cancel-asked]").exists()).toBe(true);
-    expect(wrapper.get("[role=status]").text()).toContain(t("jobs.cancel.requested"));
+    // the region says the state the later answer gave, and not that the stop is off
+    expect(wrapper.get("[role=status]").text()).toBe(
+      t("jobs.announce", { label: "\u2068Lehrplan Physik\u2069", status: t("jobs.status.running") }),
+    );
   });
 
   it("closes its question when the job ends meanwhile", async () => {
@@ -242,7 +275,96 @@ describe("a cancel as the page around it sees it", () => {
   });
 });
 
+describe("the keyboard and the page as the job ends", () => {
+  it("tells the page once when a question asked before the cancel brought the end first", async () => {
+    let early: (value: Job) => void = () => undefined;
+    let reply: (value: Job) => void = () => undefined;
+    vi.spyOn(api, "getJob")
+      .mockResolvedValueOnce(job("running"))
+      .mockImplementationOnce(() => new Promise<Job>((resolve) => (early = resolve)));
+    vi.spyOn(api, "cancelJob").mockReturnValue(new Promise<Job>((resolve) => (reply = resolve)));
+    const wrapper = shown();
+    await vi.advanceTimersByTimeAsync(3000); // the second question is on its way
+    await cancelButton(wrapper).trigger("click");
+    (document.querySelector("[data-test=confirm]") as HTMLButtonElement).click();
+    await flushPromises();
+
+    early(job("cancelled", { cancel_requested: true }));
+    await flushPromises();
+    reply(job("cancelled", { cancel_requested: true }));
+    await flushPromises();
+
+    expect(wrapper.emitted("ended")).toHaveLength(1);
+  });
+
+  it("keeps the keyboard at the job when the note it rested on goes with the job's end", async () => {
+    const asked = job("running", { cancel_requested: true });
+    vi.spyOn(api, "getJob")
+      .mockResolvedValueOnce(job("running"))
+      .mockResolvedValueOnce(asked)
+      .mockResolvedValue(job("cancelled", { cancel_requested: true }));
+    vi.spyOn(api, "cancelJob").mockResolvedValue(asked);
+    const wrapper = shown();
+    await vi.advanceTimersByTimeAsync(1000);
+    await confirmCancel(wrapper);
+    expect(document.activeElement).toBe(wrapper.get("[data-test=job-cancel-asked]").element);
+
+    await vi.advanceTimersByTimeAsync(8000);
+    await flushPromises();
+
+    expect(wrapper.find("[data-test=job-cancel-asked]").exists()).toBe(false);
+    expect(document.activeElement).toBe(line(wrapper));
+  });
+
+  it("keeps the keyboard at the job when its open question closes with the job's end", async () => {
+    vi.spyOn(api, "getJob").mockResolvedValueOnce(job("running")).mockResolvedValue(job("done"));
+    const wrapper = shown();
+    await vi.advanceTimersByTimeAsync(1000);
+    (cancelButton(wrapper).element as HTMLButtonElement).focus();
+    await cancelButton(wrapper).trigger("click");
+
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(dialog()).toBeNull();
+    expect(document.activeElement).toBe(line(wrapper));
+  });
+
+  it("takes the keyboard nowhere when the job ends where it rested on nothing of the job", async () => {
+    vi.spyOn(api, "getJob").mockResolvedValueOnce(job("running")).mockResolvedValue(job("done"));
+    const wrapper = shown();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(document.activeElement).toBe(document.body);
+
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(wrapper.find(".status-badge").text()).toBe(t("jobs.status.done"));
+    expect(document.activeElement).toBe(document.body); // no jump to the job the reader was not at
+  });
+
+  it("leaves the keyboard where the reader took it when the job ends", async () => {
+    vi.spyOn(api, "getJob").mockResolvedValueOnce(job("running")).mockResolvedValue(job("done"));
+    const wrapper = shown();
+    await vi.advanceTimersByTimeAsync(1000);
+    const elsewhere = document.body.appendChild(document.createElement("button"));
+    elsewhere.focus();
+
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(wrapper.find(".status-badge").text()).toBe(t("jobs.status.done"));
+    expect(document.activeElement).toBe(elsewhere);
+  });
+});
+
 describe("how long a job has waited or run", () => {
+  it("says a job handed back waits for its next try, not since it was made", async () => {
+    vi.spyOn(api, "getJob").mockResolvedValue(job("queued", { attempts: 1, created_at: "2026-10-24T09:00:00Z" }));
+    const wrapper = shown();
+
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(wrapper.get("[data-test=job-runtime]").text()).toBe(t("jobs.waitingAgain"));
+  });
+
   it("counts hours and minutes past an hour", async () => {
     vi.spyOn(api, "getJob")
       .mockResolvedValueOnce(job("running", { started_at: "2026-10-24T09:48:00Z" }))
@@ -267,7 +389,7 @@ describe("how long a job has waited or run", () => {
   });
 
   it("says how long a waiting job has waited: one that hangs there shows it", async () => {
-    vi.spyOn(api, "getJob").mockResolvedValue(job("queued", { created_at: "2026-10-24T11:48:00Z" }));
+    vi.spyOn(api, "getJob").mockResolvedValue(job("queued", { attempts: 0, created_at: "2026-10-24T11:48:00Z" }));
     const wrapper = shown();
 
     await vi.advanceTimersByTimeAsync(1000);
