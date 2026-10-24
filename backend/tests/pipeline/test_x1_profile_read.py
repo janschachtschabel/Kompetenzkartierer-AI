@@ -132,6 +132,12 @@ def test_the_wording_of_dates_and_of_where_the_document_holds_is_kept_for_the_ru
         ("2019-08", "2019-08"),
         ("Schuljahr 2019/20", "2019"),
         ("Schuljahr 2019-20", "2019"),  # no month 20: the year
+        ("Schuljahr 2011-12", "2011"),  # a school year, its second part the next: no December
+        ("2011-12-01", "2011-12-01"),
+        ("STAND: M\u00c4RZ 2019", "2019-03"),
+        ("1. Augu\u017ft 2019", "2019"),  # re.I takes a long s for s: no month as written
+        ("Jun\u0131 2019", "2019"),
+        ("Apr\u0130l 2019", "2019"),
         ("Ausgabe 20\uff11\uff19", None),  # digits of another script: none the column takes
         ("13.2019", "2019"),
         ("31.02.2019", None),  # no such day

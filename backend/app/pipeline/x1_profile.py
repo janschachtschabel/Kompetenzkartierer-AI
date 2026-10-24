@@ -28,18 +28,19 @@ _MONTHS = {
 _MONTH = "|".join(_MONTHS)
 _Parts = tuple[str, int | str, int | str | None]
 # The wordings of a date, the fullest first; the first that is found decides. Digits are ASCII's,
-# as the columns take them, and a month is one of twelve: "2019-20" falls through to its year
+# as the columns take them, and a month is one of twelve: "2019-20" falls through to its year,
+# as does a school year ("2011-12") and a month's name re.I finds that is none as written
 _NUM = "0?[1-9]|1[0-2]"
-_DATES: list[tuple[re.Pattern[str], Callable[[re.Match[str]], _Parts]]] = [
+_DATES: list[tuple[re.Pattern[str], Callable[[re.Match[str]], _Parts | None]]] = [
     (
         re.compile(rf"\b([0-9]{{1,2}})\.\s*({_MONTH})\s+([0-9]{{4}})\b", re.I),
-        lambda m: (m[3], _MONTHS[m[2].lower()], m[1]),
+        lambda m: _named(m[3], m[2], m[1]),
     ),
     (re.compile(rf"\b([0-9]{{1,2}})\.({_NUM})\.([0-9]{{4}})\b"), lambda m: (m[3], m[2], m[1])),
     (re.compile(r"\b([0-9]{4})-(0[1-9]|1[0-2])-([0-9]{2})\b"), lambda m: (m[1], m[2], m[3])),
-    (re.compile(rf"\b({_MONTH})\s+([0-9]{{4}})\b", re.I), lambda m: (m[2], _MONTHS[m[1].lower()], None)),
+    (re.compile(rf"\b({_MONTH})\s+([0-9]{{4}})\b", re.I), lambda m: _named(m[2], m[1], None)),
     (re.compile(rf"\b({_NUM})\.([0-9]{{4}})\b"), lambda m: (m[2], m[1], None)),
-    (re.compile(r"\b([0-9]{4})-(0[1-9]|1[0-2])\b"), lambda m: (m[1], m[2], None)),
+    (re.compile(r"\b([0-9]{4})-(0[1-9]|1[0-2])\b"), lambda m: _year_month(m[1], m[2])),
 ]
 _YEAR = re.compile(r"\b((?:19|20)[0-9]{2})\b")
 # The columns' lengths (0013_l1_documents.sql)
@@ -74,10 +75,22 @@ def parse_date(wording: str | None) -> str | None:
     if wording is None:
         return None
     for pattern, parts in _DATES:
-        if (found := pattern.search(wording)) is not None:
-            return _date(*parts(found))
+        if (found := pattern.search(wording)) is not None and (given := parts(found)) is not None:
+            return _date(*given)
     year = _YEAR.search(wording)
     return None if year is None else year[1]
+
+
+def _named(year: str, month: str, day: str | None) -> _Parts | None:
+    """A date by a month's name; None where the name is none of the twelve as written: re.I
+    matches a long s as s, a dotless i as i."""
+    number = _MONTHS.get(month.lower())
+    return None if number is None else (year, number, day)
+
+
+def _year_month(year: str, month: str) -> _Parts | None:
+    """A month of a year; None for a school year, whose second part is the next year's."""
+    return None if int(month) == (int(year) + 1) % 100 else (year, month, None)
 
 
 def read_profile(answer: Mapping[str, Any], context: ProfileContext) -> Profile:
