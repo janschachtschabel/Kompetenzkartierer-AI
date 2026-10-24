@@ -162,8 +162,10 @@ class _Reading:
         self.findings.append(Finding(rule, severity, self.context.document_id, message, path, details))
 
     def text(self, value: str | None, most: int, path: str) -> str | None:
-        """Wording as given; None where it is blank, cut to ``most`` signs with a finding."""
-        if value is None or not value.strip():
+        """Wording as given, its edges trimmed - so a cut never leaves it blank -; None where it is
+        blank, cut to ``most`` signs with a finding."""
+        value = None if value is None else value.strip()
+        if not value:
             return None
         if len(value) > most:
             self.note("x1.value_cut", "info", path, f"cut to its {most} signs", length=len(value))

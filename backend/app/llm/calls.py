@@ -32,7 +32,7 @@ from pydantic_ai.output import StructuredDict
 from app.core.metrics import observe_llm_request
 from app.llm.attempts import Attempts, never_sent
 from app.llm.metering import Meter, Spent, estimate_input
-from app.llm.schema import schema_errors
+from app.llm.schema import schema_errors, storable
 
 log = logging.getLogger(__name__)
 
@@ -97,7 +97,8 @@ def build_agent(model: Model, *, schema: Mapping[str, Any], name: str, instructi
         errors = schema_errors(schema, output)
         if errors:
             raise ModelRetry("The answer is out of the schema's form:\n" + "\n".join(errors))
-        return output
+        kept: dict[str, Any] = storable(output)  # what a stage writes of it, the store takes
+        return kept
 
     return StageAgent(agent, schema, instructions, output_tokens)
 

@@ -59,6 +59,18 @@ def load_schema(directory: Path, name: str) -> dict[str, Any]:
     return loaded
 
 
+def storable(value: Any) -> Any:
+    """An answer as the store takes it: in every text of it a NUL - JSON carries one, PostgreSQL
+    takes it in neither text nor jsonb - or a lone surrogate made the replacement sign."""
+    if isinstance(value, str):
+        return value.replace("\x00", "\ufffd").encode("utf-8", "replace").decode("utf-8")
+    if isinstance(value, dict):
+        return {storable(key): storable(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [storable(item) for item in value]
+    return value
+
+
 def schema_errors(schema: Mapping[str, Any], value: Any) -> list[str]:
     """What in ``value`` is out of the schema's form, each with its place ("$.items[1].n: an
     integer"); empty where nothing is. At most MOST_ERRORS."""

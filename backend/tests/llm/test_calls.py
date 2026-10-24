@@ -97,6 +97,15 @@ async def test_an_answer_of_the_schema_s_form_is_reserved_before_and_booked_afte
     assert json.loads(raw)[0]["usage"]["input_tokens"] == 100  # the answer with its usage, as it came
 
 
+async def test_an_answer_s_text_no_store_keeps_is_made_storable() -> None:
+    # a NUL passes the JSON reader; PostgreSQL takes it in neither text nor jsonb
+    built, _ = stage(['{"title": "Zah\\u0000len"}'])
+
+    answer = await ask(built, "Das Dokument.", meter=Ledger())
+
+    assert answer.output == {"title": "Zah�len"}
+
+
 async def test_an_answer_out_of_form_is_asked_again_each_time_reserved_anew() -> None:
     built, seen = stage(['{"title": 3}', '{"title": "Zahlen"}'])
     ledger, kept = Ledger(), Kept()

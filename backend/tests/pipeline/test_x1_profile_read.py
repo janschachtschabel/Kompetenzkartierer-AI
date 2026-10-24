@@ -254,6 +254,17 @@ def test_blank_wording_is_none_and_overlong_wording_is_cut_with_a_finding() -> N
     assert rules(profile) == [("x1.value_cut", "info", "$.document.title")]
 
 
+def test_wording_is_cut_after_its_edges_are_trimmed_so_a_cut_never_leaves_it_blank() -> None:
+    made = answer(issuerText=" " * 500 + "Ministerium")
+    made["specifications"][0]["title"] = "\n" * 1000 + "Physik"
+
+    profile = read_profile(made, CONTEXT)
+
+    assert profile.issuer == "Ministerium"
+    assert profile.specifications[0].title == "Physik"
+    assert profile.findings == ()
+
+
 def test_a_code_left_open_is_none_without_a_finding() -> None:
     made = copy.deepcopy(ANSWER)
     made["specifications"][0]["applicability"] |= {"formality": None, "timeKind": None}
