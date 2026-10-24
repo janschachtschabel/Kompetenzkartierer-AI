@@ -394,10 +394,10 @@ Nachtrag zur Umsetzung (24.10.):
   wird die Titelei zu Überschriften, nie die Überschriften zu Titelei (drei Prüfrunden hatten die
   Entscheidung je einem späteren Lauf überlassen, jeder öffnete einen Totalverlust).
   Verzeichnismuster sind Hinweise mit `mapsTo cv:occ_toc`; `occursIn cv:occ_toc` tragen Wörter
-  von Überschriften, die auch im Verzeichnis stehen. Verzeichniszeilen werden mit einfachem Leerraum gelesen (sonst quadratisch).
-  Läuft das Muster eines Homonyms oder eines starken Hinweises zu lange, typisiert keine Regel.
-  Das zweite Gerüst liest nach dem Dokumenttyp der Redaktion, wo sie einen gesetzt hat, sonst nach
-  dem aus X1.
+  von Überschriften, die auch im Verzeichnis stehen. Verzeichniszeilen werden mit einfachem
+  Leerraum gelesen (sonst quadratisch). Läuft das Muster eines Homonyms oder eines starken
+  Hinweises zu lange, typisiert keine Regel. Das zweite Gerüst liest nach dem Dokumenttyp der
+  Redaktion, wo sie einen gesetzt hat, sonst nach dem aus X1.
 - **X1 Profil (6.2).** Auszug: Anfang bis 8 000 Zeichen, Verzeichnis, Geltungsstellen ±1 Block bis
   4 000 Zeichen. Befunde statt Absturz (`x1.unknown_key`, `unknown_value`, `unknown_block`,
   `duplicate_key`, `blank_value`, `value_cut`); Regionen und Bereich bleiben die der Anlage
