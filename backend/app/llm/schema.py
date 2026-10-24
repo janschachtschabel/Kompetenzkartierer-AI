@@ -59,11 +59,15 @@ def load_schema(directory: Path, name: str) -> dict[str, Any]:
     return loaded
 
 
+# a NUL, or a lone surrogate: a str holds a character beyond the BMP as one, so any is half a pair
+_UNSTORABLE = re.compile("[\x00\ud800-\udfff]")
+
+
 def storable(value: Any) -> Any:
     """An answer as the store takes it: in every text of it a NUL - JSON carries one, PostgreSQL
     takes it in neither text nor jsonb - or a lone surrogate made the replacement sign."""
     if isinstance(value, str):
-        return value.replace("\x00", "\ufffd").encode("utf-8", "replace").decode("utf-8")
+        return _UNSTORABLE.sub("\ufffd", value)
     if isinstance(value, dict):
         return {storable(key): storable(item) for key, item in value.items()}
     if isinstance(value, list):

@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 
 from app.core.settings import REPOSITORY_ONTOLOGY
-from app.llm.schema import KNOWN_KEYWORDS, KNOWN_TYPES, SCHEMA_DIR, load_schema, schema_errors
+from app.llm.schema import KNOWN_KEYWORDS, KNOWN_TYPES, SCHEMA_DIR, load_schema, schema_errors, storable
 
 SCHEMAS = REPOSITORY_ONTOLOGY / SCHEMA_DIR
 SCHEMA = {
@@ -126,3 +126,12 @@ def test_a_stage_s_schema_is_read_by_its_name() -> None:
         load_schema(SCHEMAS, "x9-nichts")
     with pytest.raises(ValueError, match="name"):
         load_schema(SCHEMAS, "../profile/schule")
+
+
+def test_a_text_the_store_takes_not_is_made_storable_wherever_it_stands() -> None:
+    # a NUL and a lone surrogate - half a pair, no character - each become the replacement sign
+    nul, lone, sign = chr(0), chr(0xD800), chr(0xFFFD)
+
+    made = storable({"a" + nul: ["b" + lone + "c", 3, None, {"d": lone}]})
+
+    assert made == {"a" + sign: ["b" + sign + "c", 3, None, {"d": sign}]}
