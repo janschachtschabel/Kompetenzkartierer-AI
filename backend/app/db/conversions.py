@@ -75,6 +75,10 @@ _BLOCKS = """
     SELECT block_id, page, kind, text, x0, top, x1, bottom, font_size, bold, italic, cells
     FROM document_block WHERE conversion_id = %s AND page = %s ORDER BY seq
 """
+_ALL_BLOCKS = """
+    SELECT block_id, page, kind, text, x0, top, x1, bottom, font_size, bold, italic, cells
+    FROM document_block WHERE conversion_id = %s ORDER BY seq
+"""
 # A table joined over a page break is one block, on its first page; a later page holds its cells
 _RUNNING_ON = """
     SELECT block_id, page,
@@ -221,20 +225,28 @@ async def record_failure(
 async def blocks_on_page(connection: psycopg.AsyncConnection, conversion_id: UUID, page: int) -> list[Block]:
     cursor = connection.cursor(row_factory=dict_row)
     await cursor.execute(_BLOCKS, (conversion_id, page))
-    return [
-        Block(
-            id=row["block_id"],
-            page=row["page"],
-            kind=row["kind"],
-            text=row["text"],
-            bbox=(row["x0"], row["top"], row["x1"], row["bottom"]),
-            font_size=row["font_size"],
-            bold=row["bold"],
-            italic=row["italic"],
-            cells=tuple(Cell.model_validate(cell) for cell in row["cells"] or ()),
-        )
-        for row in await cursor.fetchall()
-    ]
+    return [_block(row) for row in await cursor.fetchall()]
+
+
+async def all_blocks(connection: psycopg.AsyncConnection, conversion_id: UUID) -> list[Block]:
+    """Every block of the conversion in the order it is read (``seq``), headers and footers too."""
+    cursor = connection.cursor(row_factory=dict_row)
+    await cursor.execute(_ALL_BLOCKS, (conversion_id,))
+    return [_block(row) for row in await cursor.fetchall()]
+
+
+def _block(row: dict[str, Any]) -> Block:
+    return Block(
+        id=row["block_id"],
+        page=row["page"],
+        kind=row["kind"],
+        text=row["text"],
+        bbox=(row["x0"], row["top"], row["x1"], row["bottom"]),
+        font_size=row["font_size"],
+        bold=row["bold"],
+        italic=row["italic"],
+        cells=tuple(Cell.model_validate(cell) for cell in row["cells"] or ()),
+    )
 
 
 @dataclass(frozen=True)

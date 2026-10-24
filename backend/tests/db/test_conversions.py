@@ -9,6 +9,7 @@ import pytest
 from app.conversion.base import Block, Cell, Conversion, Finding
 from app.core.ids import new_id
 from app.db.conversions import (
+    all_blocks,
     blocks_on_page,
     conversion_for,
     conversion_target,
@@ -124,6 +125,8 @@ async def test_a_conversion_done_keeps_its_blocks_text_and_pages_and_books_them_
     ]
     assert await blocks_on_page(connection, conversion_id, 1) == list(converted().blocks[:2])
     assert [block.id for block in await blocks_on_page(connection, conversion_id, 2)] == ["p2-b1"]
+    # the stages after X0 read them all, in the order they are read (plan M1 6.1)
+    assert await all_blocks(connection, conversion_id) == list(converted().blocks)
     cursor = await connection.execute(
         "SELECT pages, billable FROM conversion_usage WHERE conversion_id = %s", (conversion_id,)
     )
