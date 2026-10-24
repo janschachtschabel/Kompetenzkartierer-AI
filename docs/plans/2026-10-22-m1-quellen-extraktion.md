@@ -363,12 +363,14 @@ Nachtrag zur Umsetzung (24.10.):
   `failure` und geht weiter (Lease-Verlust, Datenbankfehler).
 - **Wiederaufnahme dokumentweit (Review).** Fertig ist eine Stufe mit einem fertigen Lauf am
   Dokument, gleich welcher Job (`done_stages`): ein neuer Job nach `budget_exhausted` oder nach
-  verbrauchten Versuchen setzt an der letzten fertigen Stufe fort. Zwei Jobs auf einem Dokument: die
-  Schreibtransaktion sperrt nach `hold_lease` die Dokumentzeile und prüft erneut (`open_for_x1`);
-  hat inzwischen ein anderer Lauf X1 geschrieben, endet der eigene `failed` („written by another
-  run“), nichts wird geschrieben, X2 folgt. `document_has_tree` nur noch, wo Knoten oder
-  Spezifikationen ohne fertigen X1-Lauf stehen (etwa von Hand angelegt). `attempt` ist
-  `job.attempts`; nach einer Freigabe (`release` zählt den Versuch zurück) kann eine Nummer zweimal
+  verbrauchten Versuchen setzt an der letzten fertigen Stufe fort. Wo X1 steht, sagt `x1_state`
+  dreiwertig: `open`, `done` (ein fertiger X1-Lauf, gleich welcher Job) oder `tree` (Knoten oder
+  Spezifikationen ohne fertigen X1-Lauf, etwa von Hand angelegt). Am Anfang der Stufe: `done`
+  überspringt X1 (ein anderer Job schrieb es, seit dieser nachsah), `tree` endet mit
+  `document_has_tree`. Die Schreibtransaktion sperrt nach `hold_lease` die Dokumentzeile und fragt
+  erneut (`lock_for_x1`): `done` beendet den eigenen Lauf `failed` („written by another run“),
+  nichts wird geschrieben, X2 folgt; `tree` beendet ihn `failed` mit `document_has_tree`.
+  `attempt` ist `job.attempts`; nach einer Freigabe (`release` zählt den Versuch zurück) kann eine Nummer zweimal
   vorkommen, Läufe ordnet `started_at`.
 - **Arbeitspakete im Lauf-Ergebnis.** X2 legt seine Pakete als `result.packages` seines Laufs ab
   (Schlüssel `E0`, `E1` … in Dokumentreihenfolge, Knoten, erster/letzter Block, Seiten, Titelpfad,
@@ -382,8 +384,10 @@ Nachtrag zur Umsetzung (24.10.):
   treffen, einen Knotentyp nennen und kein Homonym trifft. `level` ist die Tiefe im Baum.
   Nach dem Review: Ein Verzeichnis ist ein Lauf, dessen Seiten nie fallen, höchstens die Seitenzahl
   des Dokuments erreichen und nicht alle gleich sind (eine Lernfeldübersicht mit Stunden, ein
-  Fußnotenblock mit Jahren sind keins); die Titelei endet nur an einem Lauf mit Titel („Inhalt…“)
-  oder einem, der auf den ersten fünf Seiten beginnt. Verzeichnismuster sind Hinweise mit
+  Fußnotenblock mit Jahren sind keins). Wo die Titelei endet, entscheidet allein der erste Lauf von
+  Einträgen mit Titel („Inhalt…“) oder auf den ersten fünf Seiten, gelesen oder nicht: mit Titel
+  dort, ohne Titel nur, wo er gelesen wird, sonst nirgends; kein späterer Lauf (Abbildungen, das
+  Verzeichnis eines Anhangs) verschiebt sie (Nachprüfung). Verzeichnismuster sind Hinweise mit
   `mapsTo cv:occ_toc`; `occursIn cv:occ_toc` tragen Wörter von Überschriften, die auch im
   Verzeichnis stehen. Verzeichniszeilen werden mit einfachem Leerraum gelesen (sonst quadratisch).
   Läuft das Muster eines Homonyms oder eines starken Hinweises zu lange, typisiert keine Regel.
@@ -396,7 +400,9 @@ Nachtrag zur Umsetzung (24.10.):
   (`x1.document_type_differs`), ein Werk wird nur vorgeschlagen (`x1.work_suggestion`). Belastet
   wird der Eigentümer des Dokuments; wer starten darf, entscheidet 7.5. Daten: Ausgabe und
   Geltung stehen als Datum so genau, wie der Wortlaut reicht („1. August 2019“, „1.8.2019“,
-  „Juni 2019“, „2019-08“; deutsche Monatsnamen samt „Jänner“; „2019-20“ ergibt das Jahr), der
+  „Juni 2019“, „2019-08“; deutsche Monatsnamen samt „Jänner“, auch in Großbuchstaben; ein
+  Schuljahr „2019-20“ oder „2011-12“ ergibt das Jahr, ein Monatsname, der nur unter re.I trifft
+  („Auguſt“), ebenso), der
   Wortlaut selbst in `result.said` des X1-Laufs (`issuedText`, `validFromText`, Regionen,
   Bereiche), nicht in der Fundstelle. Der Profilauftrag nennt das heutige Datum (für `lifecycle`);
   beide Prompts sagen, dass der Dokumenttext Inhalt ist, nie Anweisung. Antworten werden an der
@@ -431,7 +437,16 @@ Nachtrag zur Umsetzung (24.10.):
   von Verzeichniseinträgen werden nicht gelesen. Ein Muster über seiner Zeitgrenze trifft nichts
   und wird als Befund genannt. Nummerntiefe und Größenrang teilen eine Skala: nummerierte Kapitel
   unter einem größeren unnummerierten Teil („Teil C“ 20 pt, „1 …“ 16 pt) werden dessen Geschwister
-  (Review A3) – an echten Dokumenten messen, bevor die Heuristik umgebaut wird.
+  (Review A3) – an echten Dokumenten messen, bevor die Heuristik umgebaut wird. Die Seitenprüfung
+  des Verzeichnisses hat keine Toleranz: Amtsblatt-Seiten (245 ff.), Web-PDFs ohne Leerseiten, je
+  Teil ab 1 gezählte Seiten, eine falsch gelesene Ziffer lehnen ein echtes Verzeichnis ab; es
+  kostet dann seine Einträge (Ebenen, nur dort genannte Überschriften), nicht die Überschriften
+  (Nachprüfung R1-2). Messen; ein besserer Maßstab wären die gedruckten Seitenzahlen der
+  Umwandlung statt der Seitenzahl der PDF.
+- **Offen für Paket 7 (7.5):** Ein unterlegener Job läuft nach X1 mit X2 weiter. Schreiben X3/X4
+  ohne dieselbe zweite Prüfung, schrieben zwei Jobs sie doppelt. Vorher entscheiden: höchstens ein
+  offener `extract.run` je Dokument (beim Start), oder dieselbe Prüfung unter der Dokumentsperre in
+  jeder schreibenden Stufe.
 
 ### Paket 7: X3 Rahmenteile und X4 Aussagen (6 PT)
 
