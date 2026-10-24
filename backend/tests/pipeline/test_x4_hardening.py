@@ -4,6 +4,7 @@ error the job's with its cause; at most the pool's connections but one at a time
 unit's reading names its unit; a stage that cannot be set up ends its run. A model stands in."""
 
 import asyncio
+import traceback
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -106,6 +107,30 @@ async def test_the_error_that_ended_the_units_keeps_its_cause(
         )
 
     assert isinstance(ended.value.__cause__, OSError)
+
+
+async def test_the_error_that_ended_the_units_keeps_the_one_it_was_raised_in_handling(
+    setup: Any, tmp_path: Path, database_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pool, connection = setup
+    document = await a_document(connection, blocks=FIELDS)
+
+    async def refused(*_: Any, **__: Any) -> int:
+        try:
+            raise OSError("the database went away")
+        except OSError:
+            raise RuntimeError("the write was refused")  # noqa: B904 - raised in handling, no cause
+
+    monkeypatch.setattr(x4_statements, "write_unit", refused)
+    with pytest.raises(RuntimeError) as ended:
+        await extract_document(
+            context_of(pool, tmp_path, Model(), database_url),
+            await a_job(connection, document.id, document.owner_id),
+        )
+
+    logged = "".join(traceback.format_exception(ended.value))  # as the worker logs it
+    assert "OSError: the database went away" in logged
+    assert "ExceptionGroup" not in logged
 
 
 async def test_no_more_units_are_asked_at_once_than_the_pool_leaves_beside_the_worker(

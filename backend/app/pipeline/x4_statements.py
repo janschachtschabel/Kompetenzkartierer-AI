@@ -113,13 +113,16 @@ class _Units:
         gate = asyncio.Semaphore(
             max(1, min(context.settings.extract_concurrency, context.settings.db_pool_max_size - 1))
         )
+        failed: Exception | None = None
         try:
             async with asyncio.TaskGroup() as group:
                 for unit in units:
                     group.create_task(self._unit(unit, gate, stage))
         except ExceptionGroup as broken:  # the first error ended the others: it is the run's
-            first = broken.exceptions[0]
-            raise first from first.__cause__  # with what it was raised from
+            failed = broken.exceptions[0]
+        if failed is not None:
+            # raised outside the handler: its cause and the error it was raised in handling stay its own
+            raise failed
         return await self._end()
 
     async def _unit(self, unit: WorkPackage, gate: asyncio.Semaphore, stage: StageAgent) -> None:
