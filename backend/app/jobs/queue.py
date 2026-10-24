@@ -9,8 +9,11 @@ cancel. Only the claim holding the lease can finish a job: a worker that lost it
 slow, cut off) gets ``LeaseLost`` and must drop its result, another worker has the job by then.
 ``requeue_expired`` hands expired leases back to the queue while attempts remain. A job keeps
 the trace id of the request that enqueued it and reports its progress under its lease
-(``report_progress``). Each function is one statement, or one transaction (``claim``), so it
-holds on any connection; every time is the database's ``now()``.
+(``report_progress``). A job may carry a unique key no two waiting or running jobs share
+(migration 0018): ``enqueue`` of a key whose job is open raises ``OpenJob`` with that job.
+Each function is one statement, or one transaction (``claim``), so it holds on any connection
+- but ``enqueue`` of a key, which looks for the open job after its insert gave way; every time
+is the database's ``now()``.
 """
 
 import re
@@ -77,8 +80,33 @@ _TAKE = """
 """
 
 
+class OpenJob(Exception):
+    """A job of the key is waiting or running: ``job_id``. None is made beside it."""
+
+    def __init__(self, job_id: UUID) -> None:
+        super().__init__(f"job {job_id} of the key is waiting or running")
+        self.job_id = job_id
+
+
 class LeaseLost(Exception):
     """The job's lease is no longer this worker's: it expired, or the job ended."""
+
+
+_KEY_TRIES = 3
+_ENQUEUE = """
+    WITH known AS (
+        -- only a lane nobody has: ON CONFLICT alone waited on a claim stamping the lane
+        INSERT INTO job_lane (lane) SELECT %(lane)s
+        WHERE NOT EXISTS (SELECT 1 FROM job_lane WHERE lane = %(lane)s)
+        ON CONFLICT DO NOTHING
+    )
+    INSERT INTO job (id, kind, lane, payload, max_attempts, run_after, trace_id, unique_key)
+    VALUES (%(id)s, %(kind)s, %(lane)s, %(payload)s, %(attempts)s,
+        now() + make_interval(secs => %(after)s), %(trace)s, %(key)s)
+    ON CONFLICT (unique_key) WHERE unique_key IS NOT NULL AND status IN ('queued', 'running')
+    DO NOTHING
+    RETURNING id
+"""
 
 
 @dataclass(frozen=True)
@@ -107,34 +135,52 @@ async def enqueue(
     *,
     max_attempts: int = 3,
     run_after_s: float = 0,
+    unique_key: str | None = None,
 ) -> UUID:
     """A new waiting job; ``max_attempts`` is 1 to 100. It keeps the trace id of the request
     being served, if any - without a tracing header its request id: the worker writes the
-    job's lines with it."""
+    job's lines with it. With ``unique_key`` (1 to 200 signs) and a job of that key waiting
+    or running, none is made: ``OpenJob`` names that one. A start beside it in another
+    transaction waits on its row in the unique index, then gives way to it or, rolled back,
+    takes the key (read committed)."""
     job_id = new_id()
-    await connection.execute(
-        """
-        WITH known AS (
-            -- only a lane nobody has: ON CONFLICT alone waited on a claim stamping the lane
-            INSERT INTO job_lane (lane) SELECT %(lane)s
-            WHERE NOT EXISTS (SELECT 1 FROM job_lane WHERE lane = %(lane)s)
-            ON CONFLICT DO NOTHING
-        )
-        INSERT INTO job (id, kind, lane, payload, max_attempts, run_after, trace_id)
-        VALUES (%(id)s, %(kind)s, %(lane)s, %(payload)s, %(attempts)s,
-            now() + make_interval(secs => %(after)s), %(trace)s)
-        """,
-        {
-            "id": job_id,
-            "kind": kind,
-            "lane": lane,
-            "payload": Jsonb(payload or {}),
-            "attempts": max_attempts,
-            "after": run_after_s,
-            "trace": _request_trace(),
-        },
+    values = {
+        "id": job_id,
+        "kind": kind,
+        "lane": lane,
+        "payload": Jsonb(payload or {}),
+        "attempts": max_attempts,
+        "after": run_after_s,
+        "trace": _request_trace(),
+        "key": unique_key,
+    }
+    # the open job may end between the insert that gave way and the look for it: once more
+    for _ in range(_KEY_TRIES):
+        cursor = await connection.execute(_ENQUEUE, values)
+        if await cursor.fetchone() is not None:
+            return job_id
+        assert unique_key is not None  # noqa: S101 - only a key's open job makes the insert give way
+        if (open_id := await open_job(connection, unique_key)) is not None:
+            raise OpenJob(open_id)
+    raise RuntimeError(f"the open job of {unique_key!r} kept ending while a new one was asked")
+
+
+async def open_job(connection: psycopg.AsyncConnection, unique_key: str) -> UUID | None:
+    """The job of the key waiting or running, if any."""
+    cursor = await connection.execute(
+        "SELECT id FROM job WHERE unique_key = %s AND status IN ('queued', 'running')", (unique_key,)
     )
-    return job_id
+    found = await cursor.fetchone()
+    return None if found is None else found[0]
+
+
+async def last_job(connection: psycopg.AsyncConnection, unique_key: str) -> UUID | None:
+    """The key's latest job, whatever became of it; None before its first."""
+    cursor = await connection.execute(
+        "SELECT id FROM job WHERE unique_key = %s ORDER BY created_at DESC, id DESC LIMIT 1", (unique_key,)
+    )
+    found = await cursor.fetchone()
+    return None if found is None else found[0]
 
 
 def _request_trace() -> str | None:
