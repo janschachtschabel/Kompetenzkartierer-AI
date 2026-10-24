@@ -163,6 +163,36 @@ describe("a document's work packages", () => {
     expect(document.activeElement).toBe(wrapper.get("#document-units").element);
   });
 
+  it("leaves a retry a later reading overtook to that reading: no failure said, the keyboard to the heading", async () => {
+    let failRetry: (error: Error) => void = () => undefined;
+    let answerLater: (units: Unit[]) => void = () => undefined;
+    vi.spyOn(api, "getUnits")
+      .mockResolvedValueOnce(UNITS)
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockReturnValueOnce(new Promise<Unit[]>((_, reject) => (failRetry = reject)))
+      .mockReturnValueOnce(new Promise<Unit[]>((resolve) => (answerLater = resolve)));
+    const wrapper = open();
+    await flushPromises();
+    await wrapper.setProps({ refresh: 1 });
+    await flushPromises();
+    const notice = () => wrapper.get(".page-notice__text").element.textContent;
+    const first = notice();
+    const retry = wrapper.get(".page-notice button");
+    (retry.element as HTMLElement).focus();
+
+    await retry.trigger("click");
+    await wrapper.setProps({ refresh: 2 }); // the extraction moved on while the retry asked
+    failRetry(new TypeError("Failed to fetch"));
+    await flushPromises();
+
+    expect(notice()).toBe(first); // the retry's answer was dropped: nothing is said again
+    answerLater([...UNITS]); // a reading's own list, as every answer brings
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain(t("documents.units.loadFailed"));
+    expect(document.activeElement).toBe(wrapper.get("#document-units").element);
+  });
+
   it("drops an answer that came after a later one", async () => {
     let first: (units: Unit[]) => void = () => undefined;
     vi.spyOn(api, "getUnits")

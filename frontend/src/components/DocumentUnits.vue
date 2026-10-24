@@ -6,7 +6,8 @@
  * moves on); the list shown stays meanwhile, and stays where a later reading fails, said beside it.
  * The latest reading counts: an answer overtaken by a later question is dropped. A retry the reader
  * asks for shows its waiting where nothing is shown yet, says a failure again even in the same
- * words, and takes the keyboard to the section's heading once its button went with the notice.
+ * words, and takes the keyboard to the section's heading once its button went with the notice; a
+ * retry a later reading overtook leaves both to that reading.
  */
 import { computed, onMounted, ref, watch } from "vue";
 
@@ -32,17 +33,19 @@ let retriedFrom: Element | null | undefined;
 const read = computed(() => (units.value ?? []).filter((unit) => unit.state === "done" || unit.state === "open"));
 const done = computed(() => read.value.filter((unit) => unit.state === "done").length);
 
-async function load(): Promise<void> {
+/** Whether its answer counted: false where a later reading overtook it. */
+async function load(): Promise<boolean> {
   const mine = ++generation;
   try {
     const found = await getUnits(props.documentId);
-    if (mine !== generation) return;
+    if (mine !== generation) return false;
     units.value = found;
     failure.value = null;
   } catch (error) {
-    if (mine !== generation) return;
+    if (mine !== generation) return false;
     failure.value = failureNotice(error, t("documents.units.loadFailed"));
   }
+  return true;
 }
 
 /** A reading the reader asked for; a reading as the extraction moves on stays without either. */
@@ -50,7 +53,8 @@ async function retry(): Promise<void> {
   retriedFrom = document.activeElement;
   const before = failure.value;
   if (units.value === null) failure.value = null; // the waiting shows, and the alert comes again
-  await load();
+  // overtaken: the later reading says how it went, and takes the keyboard on where it brings the list
+  if (!(await load())) return;
   if (failure.value && before && units.value !== null) {
     failure.value = { ...failure.value, text: sayAnew(before.text, failure.value.text) };
   }
