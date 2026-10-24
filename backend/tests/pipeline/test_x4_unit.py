@@ -12,7 +12,7 @@ import psycopg
 import pytest
 
 from app.db.findings import Finding
-from app.db.nodes import write_subtree
+from app.db.nodes import lock_tree, write_subtree
 from app.db.runs import RunStart, start_run
 from app.db.units import UnitTaken, done_units, mark_unit
 from app.domain.l1 import AnchorDraft, NodeDraft, StatementDraft
@@ -175,7 +175,7 @@ async def test_of_two_writers_of_one_unit_side_by_side_the_second_waits_and_give
     setup: Any, database_url: str
 ) -> None:
     # two jobs on one document: its statements would meet the first one's at their positions, so the
-    # mark is met first, and the second waits there
+    # second waits at the tree's lock and meets the mark before them
     _, connection = setup
     document, job, node, run = await ready(connection)
     other = await a_job(connection, document.id, document.owner_id)
@@ -207,6 +207,36 @@ async def test_of_two_writers_of_one_unit_side_by_side_the_second_waits_and_give
     assert [
         (position, verbatim) for _, position, verbatim, _ in await statements_of(connection, document)
     ] == [(1, "erklären")]
+
+
+async def test_a_unit_at_a_node_waits_for_the_tree_before_it_holds_a_row_of_it(
+    setup: Any, database_url: str
+) -> None:
+    # whoever writes a tree takes its lock first (migration l1_nodes): a unit marked first would hold
+    # its node's row (the mark's key) while it waits, and an editor taking that node away under the
+    # tree's lock would wait for the unit in turn
+    _, connection = setup
+    document, job, node, run = await ready(connection)
+    editor = await psycopg.AsyncConnection.connect(database_url)
+    writer = await psycopg.AsyncConnection.connect(database_url, autocommit=True)
+    try:
+        async with editor.transaction():
+            await lock_tree(editor, document.id)
+            unit, given = package("E2", node), read(statement("erklären"))
+            writing = asyncio.create_task(write_unit(writer, job, document, unit, given, first=1, run_id=run))
+            await waiting_on_a_lock(connection, writer.info.backend_pid)
+            try:
+                async with editor.transaction():  # a savepoint: the tree's lock stays held
+                    await editor.execute("SELECT 1 FROM node WHERE id = %s FOR UPDATE NOWAIT", (node,))
+                free = True
+            except psycopg.errors.LockNotAvailable:
+                free = False
+        written = await asyncio.wait_for(writing, 10)
+    finally:
+        await editor.close()
+        await writer.close()
+
+    assert (free, written) == (True, 1)  # the node's row was free while the unit waited
 
 
 async def test_a_unit_marked_by_another_writer_gives_way_with_what_it_wrote(setup: Any) -> None:
