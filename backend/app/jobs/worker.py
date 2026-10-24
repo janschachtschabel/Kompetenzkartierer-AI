@@ -43,8 +43,9 @@ Handler = Callable[[Job], Coroutine[Any, Any, Result]]
 # How long a cancelled handler may take to unwind before its job goes back anyway: the deployment
 # kills the pod at the end of its grace, and a kill would count the attempt after all
 RELEASE_WAIT_S = 2.0
-# How long a cancelled handler may take to stop before its job ends cancelled anyway: a call that
-# ignores its cancel, or work in a thread, would hold the job and this worker's place
+# How long a cancelled handler may take to stop - a third of the lease where that is shorter -
+# before its job ends cancelled anyway, or one whose lease is lost is left: a call that ignores
+# its cancel, or one slow to unwind (a shielded booking, a rollback), would hold this worker's place
 CANCEL_WAIT_S = 5.0
 
 
@@ -131,17 +132,21 @@ class Worker:
             written = await self._write(job, None, ending)
             observe_job(job.kind, ending if written else "lost", elapsed)
             return
-        if ending == "cancelled" and not (await asyncio.wait({task}, timeout=CANCEL_WAIT_S))[0]:
-            # the handler does not stop: the job ends cancelled all the same, this worker takes the
-            # next, and what the handler still writes finds its lease gone
+        # a third of the lease at most: the beat that told of the cancel or the loss has just
+        # renewed it, so a job that ends cancelled is ended by this worker, not by a sweep
+        wait_s = min(CANCEL_WAIT_S, self.lease_s / 3)
+        if ending in ("cancelled", "lost") and not (await asyncio.wait({task}, timeout=wait_s))[0]:
+            # the handler does not stop: a cancelled job ends cancelled all the same, this worker
+            # takes the next, and what the handler still writes finds its lease gone
             log.warning(
-                "job %s (%s) did not stop within %.0f s of its cancel; it ends cancelled",
+                "job %s (%s) did not stop within %.1f s of its %s; it is left to unwind",
                 job.id,
                 job.kind,
-                CANCEL_WAIT_S,
+                wait_s,
+                "cancel" if ending == "cancelled" else "lost lease",
             )
             _unwind(job, task)
-            written = await self._write(job, None, ending)
+            written = ending == "cancelled" and await self._write(job, None, ending)
             observe_job(job.kind, ending if written else "lost", time.perf_counter() - started)
             return
         outcomes: tuple[Outcome] = await asyncio.gather(task, return_exceptions=True)
