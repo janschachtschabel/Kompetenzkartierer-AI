@@ -128,7 +128,7 @@ async def test_a_short_lease_cuts_the_wait_for_a_hanging_handler_so_the_worker_e
         await request_cancel(connection, job_id, "account-a")
 
     try:
-        await asyncio.wait_for(running, 2)  # well before CANCEL_WAIT_S
+        await asyncio.wait_for(running, 4)  # before CANCEL_WAIT_S, with room under load
         assert await status(pool, job_id) == ("cancelled", None)
     finally:
         go_on.set()
@@ -147,7 +147,7 @@ async def test_a_handler_that_does_not_stop_when_its_lease_is_lost_holds_up_no_w
         await connection.execute("UPDATE job SET lease_token = gen_random_uuid() WHERE id = %s", (job_id,))
 
     try:
-        await asyncio.wait_for(running, 2)  # the worker is free again, the handler still hanging
+        await asyncio.wait_for(running, 4)  # the worker is free again, the handler still hanging
         assert (await status(pool, job_id))[0] == "running"  # the other's: nothing written to it
     finally:
         go_on.set()

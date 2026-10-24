@@ -132,8 +132,9 @@ class Worker:
             written = await self._write(job, None, ending)
             observe_job(job.kind, ending if written else "lost", elapsed)
             return
-        # a third of the lease at most: the beat that told of the cancel or the loss has just
-        # renewed it, so a job that ends cancelled is ended by this worker, not by a sweep
+        # a third of the lease at most: the beat that told of the cancel has just renewed it, so a
+        # job that ends cancelled is ended by this worker, not by a sweep; a lost lease is not
+        # written, the bound only frees this worker
         wait_s = min(CANCEL_WAIT_S, self.lease_s / 3)
         if ending in ("cancelled", "lost") and not (await asyncio.wait({task}, timeout=wait_s))[0]:
             # the handler does not stop: a cancelled job ends cancelled all the same, this worker
@@ -268,6 +269,9 @@ def _unwind(job: Job, handler: asyncio.Task[Any]) -> None:
 
 def _report_unwinding(job: Job, handler: asyncio.Task[Any]) -> None:
     if handler.cancelled() or handler.exception() is None:
+        return
+    if isinstance(handler.exception(), LeaseLost):  # what a handler left to unwind is meant to meet
+        log.info("the handler of job %s (%s) stopped at its lease", job.id, job.kind)
         return
     log.warning(
         "the handler of job %s (%s) failed while it stopped: %s",
