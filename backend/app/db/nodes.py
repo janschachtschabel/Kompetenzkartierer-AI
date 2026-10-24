@@ -19,7 +19,7 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
-from app.core.ids import new_id
+from app.db.anchors import new_entity, write_anchor
 from app.db.documents import DOCUMENT_VISIBLE, DocumentError, ProfileValueError
 from app.db.source_queries import Reader
 from app.domain.l1 import AnchorDraft, NodeDraft, StatementDraft, check_profile_value
@@ -48,11 +48,6 @@ INSERT INTO statement (id, document_id, node_id, position, verbatim, language, l
     statement_kind_iri, subkind_iri, obligation_scheme, obligation_iri, origin_scheme, origin_iri,
     review_status_scheme, review_status_iri, rule_id, text_hash, details, layout_markers, run_id)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-"""
-_ANCHOR = """
-INSERT INTO anchor (id, document_id, conversion_id, node_id, statement_id, page_start, page_end, printed_page,
-    quote, match_kind_scheme, match_kind_iri, match_score, char_start, char_end, table_cell)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
 # each query of a tree asks who sees its document, all within one snapshot (read_tree)
 _VISIBLE = f"SELECT 1 FROM document d WHERE d.id = %(id)s AND {DOCUMENT_VISIBLE}"  # noqa: S608 - fixed parts
@@ -296,33 +291,14 @@ class _Writer:
     async def anchor(
         self, draft: AnchorDraft, *, node_id: UUID | None = None, statement_id: UUID | None = None
     ) -> None:
-        anchor_id = await self._entity("anchor")
-        await self.connection.execute(
-            _ANCHOR,
-            (
-                anchor_id,
-                self.document_id,
-                self.conversion_id,
-                node_id,
-                statement_id,
-                draft.page_start,
-                draft.page_end,
-                draft.printed_page,
-                draft.quote,
-                *_pair("MatchKinds", draft.match_kind),
-                draft.match_score,
-                draft.char_start,
-                draft.char_end,
-                draft.table_cell,
-            ),
+        await write_anchor(
+            self.connection,
+            self.document_id,
+            self.conversion_id,
+            draft,
+            node_id=node_id,
+            statement_id=statement_id,
         )
-        async with self.connection.cursor() as cursor:
-            await cursor.executemany(
-                "INSERT INTO anchor_block (anchor_id, conversion_id, block_id) VALUES (%s, %s, %s)",
-                [(anchor_id, self.conversion_id, block) for block in draft.block_ids],
-            )
 
     async def _entity(self, kind: str) -> UUID:
-        made = new_id()
-        await self.connection.execute("INSERT INTO entity (id, kind) VALUES (%s, %s)", (made, kind))
-        return made
+        return await new_entity(self.connection, kind)
