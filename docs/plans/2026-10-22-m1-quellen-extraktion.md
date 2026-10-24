@@ -543,6 +543,43 @@ Nachtrag zur Umsetzung (24.10.):
 - **Offen für 7b.** Den Grund des letzten Fehlschlags auf der Dokumentseite zeigen: heute steht nach
   dem Neuladen nur „Letzte Extraktion: Fehlgeschlagen“, der Grund wird nur angesagt, solange die
   Seite den Job verfolgt (Browser-Probe 7a); `extraction` trüge dazu den Code des Jobs.
+  **Erledigt in 7b** (`extraction.error_code`, für alle Leser).
+
+**Nachtrag 7b – X3, X4, Budget in X4, Arbeitspakete (24.10.)**
+
+- **Dateien.** Statt `x3_frame.py`: `x3_stage.py` (Lauf), `x3_read.py` (Antwort), `prompts/x3.py`;
+  X4 in `x4_statements.py` (Lauf, Parallelität), `x4_question.py` (Frage je Einheit), `x4_read.py`,
+  `x4_unit.py` (Schreiben), `prompts/x4.py`. Gemeinsam: `statement_read.py` (Aussageobjekt beider
+  Schemas), `prompts/statements.py` (Regeln, Unterarten mit Profilhinweisen), `unit_prefix.py`
+  (Profiltext, Abschnitte, Auswahllisten), `unit_question.py` (Präfixplan), `lexicon_excerpt.py`,
+  `ground.py` und `asking.py` (aus X1 herausgelöst).
+- **Einheit atomar, einmal je Dokument.** Tabelle `extraction_unit` (Migration 0019); eine Einheit
+  schreibt Aussagen, Befunde und ihre Markierung in einer Transaktion unter der Lease. An einem
+  bestehenden Knoten markiert sie zuerst, damit ein zweiter Schreiber an der Markierung wartet und
+  weicht (seine Aussagen kollidierten sonst an den Positionen); ohne Knoten (Dokument ohne
+  Überschriften) legt sie einen eigenen Knoten an (`x4.unit_without_node`, Herkunft Regel).
+  Positionen je Teil eines Knotens: Teil · 10 000 + i – die Reihenfolge bleibt, wann auch immer die
+  Teile fertig werden; Paket 9 darf neu nummerieren.
+- **Präfix.** X3 und X4 lesen dasselbe Dokument mit Profiltext (aus dem Speicher, mit den eigenen
+  Bezeichnungen aus X1); X4 zusätzlich die Auswahllisten aus X3 und die Unterarten des Profils mit
+  ihren Hinweisen (stehen fürs Cache vor dem Haltepunkt). X3 fragt immer einmal, auch ohne
+  Rahmenabschnitt (Modelle und Operatoren können überall stehen).
+- **Abweichungen.** Herkunft der X4-Aussagen `cv:orig_model` (nicht `orig_source` wie im Beispiel
+  `ohm-kette.ttl`); Werte aus dem Umfeld werden nicht gespeichert (Befund
+  `x4.value_from_surroundings`), die Vererbung bleibt abgefragt (konzept §7) – statt
+  `inherited`/`rule` aus 7.3. `budget_exhausted` ist ein Job-Fehlercode (`jobMessages.ts`),
+  kein Abweisungscode (`refusals.ts`, so in 7.6 genannt). Codes der Rahmenteile bleiben Notationen
+  wie gegeben. Neuer Fehlercode `prefix_too_long` (kein Fenster passt, vor dem Lauf).
+- **Budget mitten in X4.** Reicht der Rest für die nächste Reservierung nicht, beginnt kein Paket
+  mehr; die laufenden werden fertig und geschrieben; Lauf `budget_exhausted`, ein neuer Job fragt nur
+  die offenen. Ein Paket mit Antwort außer Form oder für eine andere Einheit bleibt offen
+  (`x4.unanswered`), Lauf gescheitert (`model_unanswered`). Parallelität
+  `min(EXTRACT_CONCURRENCY, DB_POOL_MAX_SIZE − 1)` – jede Einheit hält eine Verbindung zugleich.
+- **Oberfläche.** Abschnitt „Arbeitspakete“ (`DocumentUnits.vue`, `GET /documents/{id}/units`),
+  neu gelesen bei jedem Fortschritt des verfolgten Jobs (`JobProgress` meldet `progress`); die
+  Region der Extraktion sagt jeden Schrittwechsel einmal, nicht jede gezählte Einheit.
+- **Grenzen.** Ein X3-Aufruf kann bei langen Operatorenlisten an der Ausgabegrenze scheitern; der
+  Lexikonausschnitt findet Hinweise nur über Wort oder Muster im Text (Messpunkte Paket 11).
 
 ### Paket 8: X5 Prüfung mit SHACL und X6 Reparatur (5 PT)
 

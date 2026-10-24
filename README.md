@@ -137,8 +137,10 @@ ungültig.
   Dokument und Job), als Modelljob zugelassen (403 `no_budget`, 429 `too_many_jobs` /
   `too_many_starts`). `POST /api/v1/documents/{id}/extraction` startet sie neu, nur durch den
   Eigentümer (403 `not_owner`) und solange er den Inhalt des Eintrags lesen darf (403
-  `file_hidden`); `GET /api/v1/documents?source_id=…`, `/documents/{id}`, `/documents/{id}/runs`
-  lesen sie (die Job-ID nur für Eigentümer und Admins). Je Dokument wartet oder läuft höchstens
+  `file_hidden`); `GET /api/v1/documents?source_id=…`, `/documents/{id}`, `/documents/{id}/runs`,
+  `/documents/{id}/units` lesen sie (die Job-ID nur für Eigentümer und Admins, den Fehlercode des
+  letzten Jobs, `extraction.error_code`, alle Leser; `units`: die Arbeitspakete mit Stand `done`
+  samt Zahl der Aussagen, `open`, `frame` oder `none`, vor X2 leer). Je Dokument wartet oder läuft höchstens
   ein Extraktionsjob (`job.unique_key`, Migration 0018): ein Start dabei gibt den laufenden zurück
   (200); ebenso ein neues Dokument desselben Eintrags und derselben Konvertierung, solange eines
   des Kontos daraus extrahiert wird – dann 200 mit diesem (`made: false`).
@@ -150,18 +152,29 @@ ungültig.
   Modellanfrage – auch eine Wiederholung – reserviert er nicht mehr (`check_lease` im Zähler).
   Ein Worker, der gar nicht mehr schlägt,
   endet über die Prüfung abgelaufener Leases ebenso `cancelled`.
-- Extraktion (X1, X2): Der Job `extract.run` (`{"document_id": …}`) bestimmt für ein Dokument per
+- Extraktion (X1–X4): Der Job `extract.run` (`{"document_id": …}`) bestimmt für ein Dokument per
   Sprachmodell das Dokumentprofil (Titel, Typ, Geltung,
   Spezifikationen, eigene Begriffe), baut das Gerüst ohne Modell aus Verzeichnis, Layout und
   Lexikon, lässt nur die Überschriften ohne starkes Muster vom Modell einordnen und teilt den
-  Text in Arbeitspakete (X2). Jede Stufe jedes Versuchs ist ein eigener Lauf (`extraction_run`)
-  und schreibt ihr Ergebnis auf einmal; ein neuer Versuch oder ein neuer Job auf demselben
-  Dokument macht nach der letzten fertigen Stufe weiter, zwei gleichzeitige schreiben X1 einmal.
-  Fortschritt: `extract_profile`, `extract_outline`, `extract_segments`. Endet mit
-  `budget_exhausted` (Budget aufgebraucht, Fertiges bleibt), `model_unanswered` (keine Antwort im
-  Schema), `model_not_configured` (kein `OPENAI_API_KEY` im Worker), `document_gone` oder
-  `document_has_tree` (Knoten oder Spezifikationen stehen schon, aber keine Extraktion schrieb
-  sie). Der Worker startet auch ohne
+  Text in Arbeitspakete (X2). X3 liest mit einer Anfrage die Rahmenteile (Kompetenz- und
+  Niveaumodelle, Operatoren, Querschnittslegende, Regeln, Ziele und Aufträge der Rahmenabschnitte;
+  Tabelle `frame_part`, Migration 0015). X4 liest je Arbeitspaket mit Aussagen eine Anfrage, alle
+  hinter demselben Präfix (Dokument, Profil, Auswahllisten aus X3, Cache-Haltepunkt danach), bis zu
+  `EXTRACT_CONCURRENCY` (Standard 4, 1–16; nie mehr als `DB_POOL_MAX_SIZE` − 1) zugleich. Jedes
+  Paket wird für sich geschrieben, sobald es beantwortet ist (`extraction_unit`, Migration 0019):
+  Wortlautfelder nur, wenn sie in den Blöcken der Aussage stehen, Herkunft Modell, Prüfstand
+  vorgeschlagen. Jede Stufe jedes Versuchs ist ein eigener Lauf (`extraction_run`); X1 bis X3
+  schreiben ihr Ergebnis auf einmal, X4 je Paket. Ein neuer Versuch oder ein neuer Job auf
+  demselben Dokument macht nach der letzten fertigen Stufe weiter, in X4 mit den offenen Paketen;
+  zwei gleichzeitige schreiben jede Stufe und jedes Paket einmal.
+  Fortschritt: `extract_profile`, `extract_outline`, `extract_segments`, `extract_frame`,
+  `extract_statements` (fertig/gesamt). Endet mit
+  `budget_exhausted` (Budget aufgebraucht: in X4 beginnt kein Paket mehr, die laufenden werden
+  fertig, Fertiges bleibt), `model_unanswered` (keine Antwort im Schema; in X4 bleiben nur solche
+  Pakete offen), `model_not_configured` (kein `OPENAI_API_KEY` im Worker), `prefix_too_long`
+  (nicht einmal ein Abschnitt passt neben Titelei und Rahmenteilen ins Kontextfenster),
+  `document_gone` oder `document_has_tree` (Knoten oder Spezifikationen stehen schon, aber keine
+  Extraktion schrieb sie). Der Worker startet auch ohne
   Schlüssel; das Modell entsteht beim ersten Job, der es braucht.
 - Erster Admin: `python -m app.bootstrap NAME` gibt das Token einmal auf stdout aus. Interaktiv
   ausführen (`docker compose run`, `kubectl exec -it`), nicht als Job, dessen Ausgabe ein
@@ -228,7 +241,8 @@ Kosten des Modells: Ein Konto ohne Quote darf nichts verbrauchen, auch ein Admin
   gebucht und als geschätzt gekennzeichnet wird die Reservierung einer gesendeten Anfrage ohne
   Antwort, einer Antwort ohne Nutzungsangabe und einer Antwort, die kein Modell lesen konnte. Die
   letzte lässt den Aufruf scheitern. Eine Anfrage, die nie hinausging (keine Verbindung), kostet
-  nichts.
+  nichts. In X4 hält ein Job bis zu `EXTRACT_CONCURRENCY` Reservierungen zugleich; reicht der Rest
+  für die nächste nicht, beginnt kein Paket mehr.
 - Bei 429, 5xx und einem nicht erreichten Anbieter wartet der Aufruf selbst, höchstens zweimal:
   so lange wie `Retry-After`, sonst 20 bzw. 40 s, nie länger als 60 s. Bei `insufficient_quota`
   wartet er nicht.
