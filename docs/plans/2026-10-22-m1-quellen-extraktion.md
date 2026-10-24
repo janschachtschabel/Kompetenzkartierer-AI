@@ -316,7 +316,7 @@ Nachtrag zur Umsetzung (24.10.):
 - **Tabellen (5.4):**
   - `quota`: Ohne Zeile gilt die Grenze 0, `NULL` heißt unbegrenzt, für jede Rolle.
   - `llm_usage` hat keinen Fremdschlüssel auf Job und Lauf, damit sie überdauert, wie das Audit-Log. Das Konto bleibt, solange es Verbrauch hat. `estimated` hat keinen Standard: Der Schreiber sagt es.
-  - `usage_reservation` hält Job und Konto, bis sie gebucht ist (Fremdschlüssel ohne `ON DELETE`, also NO ACTION wie überall). Sie trägt Zweck, Modell und Lauf für die Buchung.
+  - `usage_reservation` hält Job und Konto, bis sie gebucht ist (Fremdschlüssel ohne `ON DELETE`, also NO ACTION, der Standard von PostgreSQL). Sie trägt Zweck, Modell und Lauf für die Buchung.
   - Ein Index auf jedem `account_id` und auf `job_id`.
 - **Ledger (5.5):**
   - Rest = Grenze − Σ Verbrauch − Σ Reservierungen, summiert unter `SELECT … FROM quota … FOR UPDATE` und nur unter `read committed` (`read_committed_alone`). Es gibt keinen Zähler, der von den Zeilen abweichen kann. `simplify:` Die Summen lesen alle Zeilen eines Kontos, das kann später eine laufende Summe übernehmen.
@@ -336,9 +336,10 @@ Nachtrag zur Umsetzung (24.10.):
   - Das Image kopiert `ontology/schemas` (`SCHEMA_DIR`).
   - Die Seitengrenze ist nur eine Spalte. Durchgesetzt wird sie mit der ersten abrechenbaren Engine (3b).
 - **Festlegungen für Paket 6, aus dem Review:**
-  - `book_abandoned(job_id)` läuft am Ende jedes Modelljobs, ob Erfolg, Fehler oder Rückgabe, in der Transaktion, die den Job unter seiner Lease beendet (`complete`, `fail`, `release`, `requeue_expired`). Dann nimmt es alles, was ein Abbruch zwischen Reservierung und Buchung liegen ließ, und nie eine Reservierung des nächsten Versuchs.
-  - Jeder Versuch eines Modelljobs bekommt seinen eigenen Lauf (`extraction_run`). Die Rohantworten zweier Versuche, die sich nach einem Lease-Verlust kurz überschneiden, liegen so unter verschiedenen Schlüsseln.
-  - Die Stufe wertet `Answer.failure` aus: Eine am Deckel abgeschnittene Antwort ist ein Signal für `LLM_MAX_OUTPUT_TOKENS`, keine Formfrage.
+  - `book_abandoned(job_id)` läuft am Ende jedes Versuchs eines Modelljobs, in der Transaktion, die ihn unter seiner Lease beendet: `complete`, `mark_cancelled`, `fail`, `release`. Dann nimmt es alles, was ein Abbruch zwischen Reservierung und Buchung liegen ließ, und nie eine Reservierung des nächsten Versuchs.
+  - `requeue_expired` beendet abgelaufene Leases ohne Lease und gibt heute nur Statuswerte zurück. Für Modelljobs gibt es dort `RETURNING id, status` und in derselben Transaktion ein mengenweises `book_abandoned` (`DELETE … WHERE job_id = ANY (%s)`). Ein wartender Job, den `request_cancel` beendet, hält keine Reservierung eines laufenden Versuchs. Die seines beendeten Vorversuchs hat dessen Ende gebucht. Was ein Vorversuch nach dem Verlust seiner Lease noch reserviert, bucht er selbst, sobald die Antwort kommt.
+  - Jede Stufe jedes Versuchs bekommt ihren eigenen Lauf (`extraction_run`, je Stufe wie 6.6). Die Rohantworten zweier Versuche, die sich nach einem Lease-Verlust kurz überschneiden, liegen so unter verschiedenen Schlüsseln.
+  - `Answer.failure` ist heute der Text der Meldung von pydantic-ai. Unterscheidet die Stufe danach, etwa eine am Deckel abgeschnittene Antwort (ein Signal für `LLM_MAX_OUTPUT_TOKENS`) von einer, die nie in Form kam, liefert `calls.py` dafür eine stabile Art mit: den Ausnahmetyp und den `finish_reason` der letzten Antwort.
 
 ### Paket 6: X1 Dokumentprofil, Gerüst und X2 Segmente (6 PT)
 

@@ -53,7 +53,8 @@ async def admit_model_job(
 ) -> None:
     """Admit a start of a model job of ``kinds`` - the job kinds that call the model - or raise
     NoBudget, TooManyJobs or RateLimited (app/db/rate_limits.py). ValueError outside a
-    transaction: the lock would go before the job is enqueued."""
+    transaction: the lock would go before the job is enqueued; psycopg's InvalidTransactionState
+    under any isolation but read committed."""
     if connection.info.transaction_status != TransactionStatus.INTRANS:
         raise ValueError("a model job is admitted in the transaction that enqueues it")
     await connection.execute(_READ_COMMITTED)
