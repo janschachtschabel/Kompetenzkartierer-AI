@@ -4,7 +4,8 @@ and its blocks, without the model.
 The blocks before the first heading are the title pages (E0, typed: X3 reads them for the frame).
 Each node's own text runs from its heading's block to the next heading - its first child's, its
 sibling's or one further up - so the text between a section's heading and its first subsection is
-read once, with the section. A node's depth is its type's (``cur:extractionDepth``), else its
+read once, with the section. A node's depth is the one set at it (the editors'), else its type's
+(``cur:extractionDepth``), else its
 function's - a frame part typed, a non-curricular part skipped, any other read in full - and a
 section skipped takes its sections with it (a foreword's, an appendix's parts). The depth names
 the package's job: statements (full), frame (typed), none (skip); a package of a heading alone
@@ -15,7 +16,7 @@ counts; 15 is not measured, a point of Paket 11). A document without headings is
 read in full. The keys - E0, E1, … in the document's order - are the run's (plan M1 6, Festlegung 3).
 """
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
 from uuid import UUID
@@ -25,7 +26,7 @@ import psycopg
 from app.conversion.base import Block
 from app.db.headings import node_headings
 from app.pipeline.toc import OUTSIDE
-from app.vocab.lookup import concept_texts
+from app.vocab.lookup import ConceptText, concept_texts
 
 MOST_PAGES = 15
 Depth = Literal["full", "typed", "skip"]
@@ -121,16 +122,18 @@ async def work_packages(
             heading.id,
             heading.parent_id,
             positions[heading.block_id],
-            depth_of(
-                texts[heading.node_type_iri].depth if heading.node_type_iri in texts else None,
-                heading.function_iri,
-            ),
+            depth_of(heading.depth or _type_depth(texts, heading.node_type_iri), heading.function_iri),
             heading.title,
         )
         for heading in headings
         if heading.block_id in positions
     ]
     return segments(blocks, nodes)
+
+
+def _type_depth(texts: Mapping[str, ConceptText], node_type: str | None) -> str | None:
+    found = texts.get(node_type) if node_type is not None else None
+    return None if found is None else found.depth
 
 
 def _package(

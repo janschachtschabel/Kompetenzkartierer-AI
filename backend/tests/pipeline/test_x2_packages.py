@@ -100,3 +100,25 @@ async def test_a_document_s_packages_follow_its_nodes_at_their_headings(
         ("E3", "p3-b1", "typed", "frame", ("Leistungsbewertung",)),  # the Rahmenteil's depth: typed
     ]
     assert packages[1].node_id == headings[0].id
+
+
+async def test_a_depth_set_at_a_node_comes_before_its_type_s(connection: psycopg.AsyncConnection) -> None:
+    # the editors skip a section its type would have read in full (konzept §5.3)
+    document = await document_of(connection, BLOCKS)
+    skipped = node(
+        "Kompetenzen",
+        "p2-b1",
+        2,
+        "fn_area",
+        node_type=SCHOOL + "Inhaltsbereich",
+        extraction_depth=CV + "depth_skip",
+    )
+    async with connection.transaction():
+        await write_subtree(connection, document.id, skipped)
+
+    packages = await work_packages(connection, document.id, BLOCKS)
+
+    assert [(item.key, item.depth, item.job) for item in packages] == [
+        ("E0", "typed", "frame"),
+        ("E1", "skip", "none"),
+    ]
