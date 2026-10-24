@@ -387,13 +387,14 @@ Nachtrag zur Umsetzung (24.10.):
   Nach dem Review: Ein Verzeichnis ist ein Lauf, dessen Seiten nie fallen, höchstens die Seitenzahl
   des Dokuments erreichen und nicht alle gleich sind (eine Lernfeldübersicht mit Stunden, ein
   Fußnotenblock mit Jahren sind keins). Wo die Titelei endet, entscheidet allein der erste Lauf von
-  Einträgen, der gelesen wird oder auf den ersten fünf Seiten steht: dort, wo er einen Titel
-  („Inhalt…“) hat oder vorn gelesen wird (ein Verzeichnis hinter langem Vorwort trägt seinen
-  Titel), sonst nirgends. Ein Lauf weder gelesen noch vorn (das Verzeichnis eines Anhangs mit
-  Amtsblatt-Seiten) entscheidet nichts, und kein Lauf nach dem entscheidenden (Abbildungen, ein
-  Anhang) verschiebt das Ende (Nach- und Abschlussprüfung). Verzeichnismuster sind Hinweise mit
-  `mapsTo cv:occ_toc`; `occursIn cv:occ_toc` tragen Wörter von Überschriften, die auch im
-  Verzeichnis stehen. Verzeichniszeilen werden mit einfachem Leerraum gelesen (sonst quadratisch).
+  Einträgen des Dokuments, was immer er ist, und kein Lauf danach (Abbildungen, das Verzeichnis
+  eines Anhangs): dort, wo seine Seiten gelesen werden und er einen Titel („Inhalt…“) hat oder auf
+  den ersten fünf Seiten steht (ein Verzeichnis hinter langem Vorwort trägt seinen Titel), oder wo
+  er mit Titel vorn steht, auch wenn seine Seiten abgelehnt werden; sonst nirgends. Im Zweifel
+  wird die Titelei zu Überschriften, nie die Überschriften zu Titelei (drei Prüfrunden hatten die
+  Entscheidung je einem späteren Lauf überlassen, jeder öffnete einen Totalverlust).
+  Verzeichnismuster sind Hinweise mit `mapsTo cv:occ_toc`; `occursIn cv:occ_toc` tragen Wörter
+  von Überschriften, die auch im Verzeichnis stehen. Verzeichniszeilen werden mit einfachem Leerraum gelesen (sonst quadratisch).
   Läuft das Muster eines Homonyms oder eines starken Hinweises zu lange, typisiert keine Regel.
   Das zweite Gerüst liest nach dem Dokumenttyp der Redaktion, wo sie einen gesetzt hat, sonst nach
   dem aus X1.
@@ -444,13 +445,15 @@ Nachtrag zur Umsetzung (24.10.):
   (Review A3) – an echten Dokumenten messen, bevor die Heuristik umgebaut wird. Die Seitenprüfung
   des Verzeichnisses hat keine Toleranz: Amtsblatt-Seiten (245 ff.), Web-PDFs ohne Leerseiten, je
   Teil ab 1 gezählte Seiten, eine falsch gelesene Ziffer lehnen ein echtes Verzeichnis ab; es
-  kostet dann seine Einträge (Ebenen, nur dort genannte Überschriften), nicht die Überschriften
-  (Nachprüfung R1-2). Messen; ein besserer Maßstab wären die gedruckten Seitenzahlen der
-  Umwandlung statt der Seitenzahl der PDF. Zwei Restfälle der Titelei-Regel, bewusst offen: ein
-  gelesenes Verzeichnis mit Titel weit hinten als einziges (etwa nur das eines Anhangs) beendet
-  die Titelei dort, was davor steht, wird keine Überschrift; ein abgelehnter Lauf ohne Titel vorn
-  (eine Stundenübersicht als Text, Fußnoten mit Jahren) vor dem echten Verzeichnis lässt sie
-  nirgends enden, die Titelei liefert dann Schein-Überschriften. Beides an echten Dokumenten zählen.
+  kostet dann seine Einträge (Ebenen, nur dort genannte Überschriften) und, steht es hinten,
+  Schein-Überschriften aus der Titelei, nicht die Überschriften (Nachprüfung R1-2). Messen; ein
+  besserer Maßstab wären die gedruckten Seitenzahlen der Umwandlung statt der Seitenzahl der PDF.
+  Restfälle der Titelei-Regel, bewusst offen: ein gelesenes Verzeichnis mit Titel weit hinten als
+  einziges (etwa nur das eines Anhangs) beendet die Titelei dort, was davor steht, wird keine
+  Überschrift (Beschluss A1, der einzige Weg zum Verlust); geht dem echten Verzeichnis ein anderer
+  Lauf voraus – abgelehnt ohne Titel vorn (eine Stundenübersicht als Text, Fußnoten mit Jahren),
+  gelesen ohne Titel hinten (Fußnoten mit Seitenverweisen im Vorwort) oder abgelehnt hinten –,
+  endet sie nirgends, die Titelei liefert dann Schein-Überschriften. An echten Dokumenten zählen.
 - **Offen für Paket 7 (7.5):** Ein unterlegener Job läuft nach X1 mit X2 weiter. Schreiben X3/X4
   ohne dieselbe zweite Prüfung, schrieben zwei Jobs sie doppelt. Vorher entscheiden: höchstens ein
   offener `extract.run` je Dokument (beim Start), oder dieselbe Prüfung unter der Dokumentsperre in
