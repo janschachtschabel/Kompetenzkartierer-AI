@@ -21,7 +21,7 @@ from pydantic_ai.usage import RequestUsage
 from app.conversion.base import Block
 from app.core.storage import FileSystemStorage
 from app.core.storage_async import AsyncStorage
-from app.db.documents import Document
+from app.db.documents import Document, set_document_type
 from app.db.migrate import migrate
 from app.db.nodes import write_subtree
 from app.domain.l1 import NodeDraft
@@ -43,6 +43,7 @@ pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 ONTOLOGY = Path(__file__).resolve().parents[3] / "ontology"
 CV = "https://w3id.org/wlo/curriculum/vocab#"
 SCHOOL = "https://w3id.org/wlo/curriculum/profile/school#"
+VOCATIONAL = "https://w3id.org/wlo/curriculum/profile/vocational#"
 BODY = "Die Schülerinnen und Schüler beschreiben, wie Licht sich ausbreitet, und erklären Schatten."
 
 
@@ -75,10 +76,17 @@ BLOCKS = [
 class Model:
     """The model of both X1 questions: it answers each by the keys its prompt lists."""
 
-    def __init__(self, *, profile_out_of_form: bool = False, specifications: bool = True) -> None:
+    def __init__(
+        self,
+        *,
+        profile_out_of_form: bool = False,
+        specifications: bool = True,
+        document_type: str = "Lehrplan",
+    ) -> None:
         self.asked: list[str] = []
         self.profile_out_of_form = profile_out_of_form
         self.specifications = specifications
+        self.document_type = document_type  # the label of the type it reads
 
     def __call__(self, messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         prompt = str(messages[0].parts[-1].content)  # type: ignore[union-attr]
@@ -92,7 +100,7 @@ class Model:
     def profile(self, prompt: str) -> dict[str, Any]:
         if self.profile_out_of_form:
             return {"document": {}}
-        lehrplan = re.search(r"^(D\d+): Lehrplan\b", prompt, re.M)
+        lehrplan = re.search(rf"^(D\d+): {re.escape(self.document_type)}\b", prompt, re.M)
         assert lehrplan is not None
         return {
             "document": {
@@ -129,13 +137,12 @@ class Model:
 
     def outline(self, prompt: str) -> dict[str, Any]:
         area = re.search(r"^(T\d+): Kompetenzbereich\b", prompt, re.M)
-        assert area is not None
         asked = re.findall(r"^(H\d+) \| ", prompt, re.M)
         return {
             "headings": [
                 {
                     "headingId": key,
-                    "nodeType": area[1] if key == "H1" else None,
+                    "nodeType": area[1] if area is not None and key == "H1" else None,
                     "nodeFunction": "area" if key == "H1" else "frame",
                     "appliesTo": [],
                     "scopeShare": None,
@@ -305,6 +312,41 @@ async def test_a_stage_that_breaks_ends_its_run_and_is_asked_again(
 
     assert await rows(connection, "SELECT outcome, result ->> 'failure' FROM extraction_run") == [
         ("failed", "RuntimeError")
+    ]
+
+
+async def test_the_headings_are_read_by_the_type_the_editors_set_not_by_x1_s(
+    setup: Any, tmp_path: Path, database_url: str
+) -> None:
+    # "CE 01" is a Curriculare Einheit in a Pflege-Rahmenplan alone (vocational#c-ce-1)
+    pool, connection = setup
+    blocks = [
+        block("p1-b1", "Rahmenplan der Fachkommission", size=24),
+        block("p2-b1", "CE 01 Ausbildungsstart", size=16),
+        block("p2-b2", BODY),
+        block("p3-b1", BODY),
+    ]
+    document = await document_of(connection, blocks, sector="vocational", regions=())
+    await connection.execute(
+        "INSERT INTO quota (account_id, token_limit) VALUES (%s, NULL)", (document.owner_id,)
+    )
+    await set_document_type(connection, document.id, VOCATIONAL + "dt-PflegeRahmenplan")
+    model = Model(document_type="Ausbildungsordnung")  # X1 reads it otherwise
+
+    await extract_document(
+        context_of(pool, tmp_path, model, database_url),
+        await a_job(connection, document.id, document.owner_id),
+    )
+
+    assert await rows(
+        connection,
+        "SELECT node_type_iri, replace(origin_iri, %s, '') FROM node WHERE document_id = %s",
+        CV,
+        document.id,
+    ) == [(VOCATIONAL + "CurriculareEinheit", "orig_rule")]
+    assert model.asked == ["profile"]  # typed by its pattern: nothing left to ask
+    assert await rows(connection, "SELECT document_type_iri FROM document WHERE id = %s", document.id) == [
+        (VOCATIONAL + "dt-PflegeRahmenplan",)
     ]
 
 
