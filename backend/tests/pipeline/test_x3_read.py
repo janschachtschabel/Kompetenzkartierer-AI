@@ -151,7 +151,8 @@ def test_a_statement_of_the_frame_stands_at_the_node_of_its_range_one_outside_is
         FRAME: ["Die Leistung wird bewertet.", "beschreiben"],
         OTHER_FRAME: ["Querschnitt beachten."],
     }
-    assert rules(read.findings) == ["x3.statement_outside_frame", "x3.statement_outside_frame"]
+    # the title pages are a range of the frame, but no node holds a statement of them; E1 is X4's
+    assert rules(read.findings) == ["x3.statement_without_node", "x3.statement_outside_frame"]
 
 
 def test_a_statement_points_to_content_at_its_own_node_by_its_position() -> None:

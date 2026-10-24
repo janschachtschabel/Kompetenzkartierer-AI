@@ -87,14 +87,16 @@ def _placed(
     placed: dict[UUID, list[StatementDraft]] = {}
     at_node: list[tuple[UUID, int] | None] = []  # each statement's node and position there
     for statement in read:
-        node = next(
-            (item.node_id for item in ranges if item.first <= statement.first <= item.last),
-            None,
-        )
+        holding = next((item for item in ranges if item.first <= statement.first <= item.last), None)
+        node = None if holding is None else holding.node_id
         if node is None:
             block = statement.draft.anchors[0].block_ids[0]
-            message = "a statement outside the frame's ranges: X4 reads it"
-            reading.note("statement_outside_frame", "warning", "$.statements", message, block=block)
+            if holding is None:
+                message = "a statement outside the frame's ranges: X4 reads it"
+                reading.note("statement_outside_frame", "warning", "$.statements", message, block=block)
+            else:  # the title pages: read for their models and lists alone
+                message = "a statement of the title pages, which no node holds"
+                reading.note("statement_without_node", "warning", "$.statements", message, block=block)
             at_node.append(None)
             continue
         placed.setdefault(node, []).append(statement.draft)

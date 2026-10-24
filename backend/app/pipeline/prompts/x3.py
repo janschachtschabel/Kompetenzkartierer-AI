@@ -32,7 +32,8 @@ Regeln:
 - rules: Regeln zu Wahl, Voraussetzung, Abschluss, Anrechnung und Fortschritt im Wortlaut, ihre Zahlen
   gelesen; was die Regel nicht sagt, ist null.
 - statements: nur Bildungsziele, Aufträge und Grundsätze aus den Rahmenbereichen, die der Auftrag
-  nennt. Die Aussagen der übrigen Abschnitte liest ein anderer Schritt.
+  nennt, nicht aus denen „ohne Aussagen“ (der Titelei). Die Aussagen der übrigen Abschnitte liest ein
+  anderer Schritt.
 - evidenceBlockIds, evidenceBlockId und blockIds sind Kennungen von Blöcken des Dokuments (p…-b…),
   nie Seitenzahlen.
 
@@ -44,7 +45,9 @@ def frame_task(ranges: Sequence[WorkPackage], subkinds: str, excerpt: str) -> st
     list of statement subkinds (prompts/statements.py), ``excerpt`` the lexicon's lines."""
     listed = "".join(
         f"{item.key} | {_PATH.join(item.path) or 'Titelei'}"
-        f" | Blöcke {item.first_block} bis {item.last_block}\n"
+        f" | Blöcke {item.first_block} bis {item.last_block}"
+        # the title pages have no node to hold a statement: their models and lists are read alone
+        + (" | ohne Aussagen\n" if item.node_id is None else "\n")
         for item in ranges
     )
     parts = [

@@ -112,7 +112,8 @@ async def test_the_frame_is_asked_once_behind_the_prefix_and_written_with_its_an
     assert "=== DOKUMENTPROFIL ===\nTitel: Kernlehrplan für die Sekundarstufe I Physik\n" in frame
     assert "=== AUSWAHLLISTEN ===" not in frame  # X3 makes them
     assert (
-        "E0 | Titelei | Blöcke p1-b1 bis p1-b2\nE3 | Leistungsbewertung | Blöcke p3-b1 bis p3-b2\n" in frame
+        "E0 | Titelei | Blöcke p1-b1 bis p1-b2 | ohne Aussagen\n"
+        "E3 | Leistungsbewertung | Blöcke p3-b1 bis p3-b2\n" in frame
     )
     assert "U1: " in frame  # the school's statement subkinds, keyed, with their profile's hints:
     assert "Kompetenzerwartung (Aussageart learningOutcome) — Ergebnisorientierte" in frame

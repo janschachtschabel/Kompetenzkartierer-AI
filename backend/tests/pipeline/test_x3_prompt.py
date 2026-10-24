@@ -80,7 +80,7 @@ def test_the_task_names_the_frame_s_ranges_the_subkinds_and_the_lexicon() -> Non
 
     assert task == (
         "=== RAHMENBEREICHE ===\n"
-        "E0 | Titelei | Blöcke p1-b1 bis p1-b2\n"
+        "E0 | Titelei | Blöcke p1-b1 bis p1-b2 | ohne Aussagen\n"
         "E3 | Hinweise / Leistungsbewertung | Blöcke p3-b1 bis p3-b9\n"
         "\n=== AUSSAGE-UNTERARTEN (statementSubkind) ===\n"
         "U1: Kompetenzerwartung (Aussageart learningOutcome)\n"
