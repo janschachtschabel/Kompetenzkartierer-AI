@@ -137,11 +137,13 @@ ungültig.
   Spezifikationen, eigene Begriffe), baut das Gerüst ohne Modell aus Verzeichnis, Layout und
   Lexikon, lässt nur die Überschriften ohne starkes Muster vom Modell einordnen und teilt den
   Text in Arbeitspakete (X2). Jede Stufe jedes Versuchs ist ein eigener Lauf (`extraction_run`)
-  und schreibt ihr Ergebnis auf einmal; ein neuer Versuch macht nach der letzten fertigen Stufe
-  weiter. Fortschritt: `extract_profile`, `extract_outline`, `extract_segments`. Endet mit
+  und schreibt ihr Ergebnis auf einmal; ein neuer Versuch oder ein neuer Job auf demselben
+  Dokument macht nach der letzten fertigen Stufe weiter, zwei gleichzeitige schreiben X1 einmal.
+  Fortschritt: `extract_profile`, `extract_outline`, `extract_segments`. Endet mit
   `budget_exhausted` (Budget aufgebraucht, Fertiges bleibt), `model_unanswered` (keine Antwort im
   Schema), `model_not_configured` (kein `OPENAI_API_KEY` im Worker), `document_gone` oder
-  `document_has_tree` (das Dokument wurde schon extrahiert). Der Worker startet auch ohne
+  `document_has_tree` (Knoten oder Spezifikationen stehen schon, aber keine Extraktion schrieb
+  sie). Der Worker startet auch ohne
   Schlüssel; das Modell entsteht beim ersten Job, der es braucht.
 - Erster Admin: `python -m app.bootstrap NAME` gibt das Token einmal auf stdout aus. Interaktiv
   ausführen (`docker compose run`, `kubectl exec -it`), nicht als Job, dessen Ausgabe ein

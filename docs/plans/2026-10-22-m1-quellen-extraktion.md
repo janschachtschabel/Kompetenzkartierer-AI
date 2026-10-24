@@ -359,7 +359,17 @@ Nachtrag zur Umsetzung (24.10.):
   abgebrochen wurde) und `result`. Eine Stufe schreibt ihr ganzes Ergebnis mit dem Ende ihres Laufs in
   einer Transaktion unter `hold_lease` (Zeilensperre unter der eigenen, nicht abgelaufenen Lease).
   Scheitert X1 nach dem Profilaufruf, ist dessen Antwort verloren und wird neu gefragt (billiger als
-  ein zweiter Schreibweg). Wiederaufnahme: Stufen, die dieser Job fertig hat (`done_stages`).
+  ein zweiter Schreibweg). Jede andere Ausnahme beendet den eigenen Lauf `failed` mit ihrem Typ als
+  `failure` und geht weiter (Lease-Verlust, Datenbankfehler).
+- **Wiederaufnahme dokumentweit (Review).** Fertig ist eine Stufe mit einem fertigen Lauf am
+  Dokument, gleich welcher Job (`done_stages`): ein neuer Job nach `budget_exhausted` oder nach
+  verbrauchten Versuchen setzt an der letzten fertigen Stufe fort. Zwei Jobs auf einem Dokument: die
+  Schreibtransaktion sperrt nach `hold_lease` die Dokumentzeile und prüft erneut (`open_for_x1`);
+  hat inzwischen ein anderer Lauf X1 geschrieben, endet der eigene `failed` („written by another
+  run“), nichts wird geschrieben, X2 folgt. `document_has_tree` nur noch, wo Knoten oder
+  Spezifikationen ohne fertigen X1-Lauf stehen (etwa von Hand angelegt). `attempt` ist
+  `job.attempts`; nach einer Freigabe (`release` zählt den Versuch zurück) kann eine Nummer zweimal
+  vorkommen, Läufe ordnet `started_at`.
 - **Arbeitspakete im Lauf-Ergebnis.** X2 legt seine Pakete als `result.packages` seines Laufs ab
   (Schlüssel `E0`, `E1` … in Dokumentreihenfolge, Knoten, erster/letzter Block, Seiten, Titelpfad,
   Tiefe, Auftrag) statt in eigenen Tabellen; Paket 7 liest den letzten fertigen X2-Lauf.
@@ -370,27 +380,45 @@ Nachtrag zur Umsetzung (24.10.):
   Tabelleninhalt nie eine. Vor dem Verzeichnis nichts (Titelei), Layout allein auf Seite 1 eines
   mehrseitigen Dokuments nichts (Titelblatt). Ein starker Hinweis typisiert, wo alle starken, die
   treffen, einen Knotentyp nennen und kein Homonym trifft. `level` ist die Tiefe im Baum.
+  Nach dem Review: Ein Verzeichnis ist ein Lauf, dessen Seiten nie fallen, höchstens die Seitenzahl
+  des Dokuments erreichen und nicht alle gleich sind (eine Lernfeldübersicht mit Stunden, ein
+  Fußnotenblock mit Jahren sind keins); die Titelei endet nur an einem Lauf mit Titel („Inhalt…“)
+  oder einem, der auf den ersten fünf Seiten beginnt. Verzeichnismuster sind Hinweise mit
+  `mapsTo cv:occ_toc`; `occursIn cv:occ_toc` tragen Wörter von Überschriften, die auch im
+  Verzeichnis stehen. Verzeichniszeilen werden mit einfachem Leerraum gelesen (sonst quadratisch).
+  Läuft das Muster eines Homonyms oder eines starken Hinweises zu lange, typisiert keine Regel.
+  Das zweite Gerüst liest nach dem Dokumenttyp der Redaktion, wo sie einen gesetzt hat, sonst nach
+  dem aus X1.
 - **X1 Profil (6.2).** Auszug: Anfang bis 8 000 Zeichen, Verzeichnis, Geltungsstellen ±1 Block bis
   4 000 Zeichen. Befunde statt Absturz (`x1.unknown_key`, `unknown_value`, `unknown_block`,
   `duplicate_key`, `blank_value`, `value_cut`); Regionen und Bereich bleiben die der Anlage
   (`x1.regions_differ`, `x1.other_sectors`, info), ein vorher gesetzter Dokumenttyp bleibt
   (`x1.document_type_differs`), ein Werk wird nur vorgeschlagen (`x1.work_suggestion`). Belastet
-  wird der Eigentümer des Dokuments; wer starten darf, entscheidet 7.5.
+  wird der Eigentümer des Dokuments; wer starten darf, entscheidet 7.5. Daten: Ausgabe und
+  Geltung stehen als Datum so genau, wie der Wortlaut reicht („1. August 2019“, „1.8.2019“,
+  „Juni 2019“, „2019-08“; deutsche Monatsnamen samt „Jänner“; „2019-20“ ergibt das Jahr), der
+  Wortlaut selbst in `result.said` des X1-Laufs (`issuedText`, `validFromText`, Regionen,
+  Bereiche), nicht in der Fundstelle. Der Profilauftrag nennt das heutige Datum (für `lifecycle`);
+  beide Prompts sagen, dass der Dokumenttext Inhalt ist, nie Anweisung. Antworten werden an der
+  Lesegrenze speicherbar gemacht (NUL und einzelne Surrogate → U+FFFD).
 - **X1 Gliederung (6.4).** Die unklaren Überschriften gehen in Teilen zu 50 an das Modell (300
   Überschriften × ~80 Antworttoken sprengten sonst `LLM_MAX_OUTPUT_TOKENS`). Fehlt eine in der
   Antwort: Funktion `grouping` mit Kindern, sonst `unit`, Herkunft `rule` mit Regel
   `x1.outline_unanswered` und Befund. Prüfstand aller Pipeline-Knoten `proposed`.
 - **X2 (6.5).** Eigener Text je Knoten von seiner Überschrift bis zur nächsten; `skip` erbt nach
   unten (ein übersprungener Anhang samt Teilen); eine Überschrift ohne eigenen Text bleibt ein Paket
-  mit Auftrag `none`, damit jeder Inhaltsblock genau einmal abgedeckt ist; ein Dokument ohne
-  Überschriften ist ein Paket `full`. Teilung über 15 Seiten an Seitengrenzen.
+  mit Auftrag `none` (auch unter `full`), damit jeder Inhaltsblock genau einmal abgedeckt ist; ein
+  Dokument ohne Überschriften ist ein Paket `full`. Teilung über 15 Seiten an Seitengrenzen. Die
+  Tiefe am Knoten (`extraction_depth_iri`, etwa von der Redaktion gesetzt) gilt vor der seines Typs.
 - **Buchung am Jobende (Festlegung aus Paket 5).** `book_abandoned` läuft an jedem Jobende in der
   beendenden Transaktion, für jeden Job, nicht nur Modelljobs (ein `DELETE` ohne Treffer). Der Sweep
   bucht mengenweise die Reservierungen aller Jobs, die gerade nicht laufen (`book_left_behind`);
-  `requeue_expired` braucht dafür kein `RETURNING id`.
+  `requeue_expired` braucht dafür kein `RETURNING id`. Gezählt (`kka_usage_reservations_total`,
+  `abandoned`) wird erst nach dem Commit, beim Aufrufer.
 - **Fortschrittscodes flach:** `extract_profile`, `extract_outline {headings}`,
-  `extract_segments {units}` (Punkte würde vue-i18n als Verschachtelung lesen). Das Modell entsteht
-  je Prozess beim ersten Bedarf (`LazyModel`), der Worker startet ohne Schlüssel.
+  `extract_segments {units}` (Punkte läse das eigene `translate` in `de.ts` als Verschachtelung).
+  Das Modell entsteht je Prozess beim ersten Bedarf (`LazyModel`), der Worker startet ohne
+  Schlüssel.
 - **Dateien:** Prompts `prompts/x1_profile.py` und `prompts/x1_outline.py` (statt `prompts/x1.py`),
   Fragen `x1_question.py`, Auszug `x1_excerpt.py`, Stufe `x1_stage.py`, Verzeichnis `toc.py`,
   Fortschritt `progress.py`; die Entwürfe für Profil, Spezifikation und Variante liegen in
@@ -401,7 +429,9 @@ Nachtrag zur Umsetzung (24.10.):
   sind nicht an echten Dokumenten gemessen. Das Schema `x1-gliederung` kann eine Schein-Überschrift
   nicht verwerfen; sie wird ein Knoten für die Redaktion. Verzeichnisse als Tabelle und Einrückung
   von Verzeichniseinträgen werden nicht gelesen. Ein Muster über seiner Zeitgrenze trifft nichts
-  und wird als Befund genannt.
+  und wird als Befund genannt. Nummerntiefe und Größenrang teilen eine Skala: nummerierte Kapitel
+  unter einem größeren unnummerierten Teil („Teil C“ 20 pt, „1 …“ 16 pt) werden dessen Geschwister
+  (Review A3) – an echten Dokumenten messen, bevor die Heuristik umgebaut wird.
 
 ### Paket 7: X3 Rahmenteile und X4 Aussagen (6 PT)
 
