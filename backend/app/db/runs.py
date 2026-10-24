@@ -8,6 +8,7 @@ run of its own, and skips the stages ``done_stages`` names.
 """
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Literal, get_args
 from uuid import UUID
 
@@ -18,6 +19,8 @@ from app.core.ids import new_id
 
 # As migration 0017 lists them (tests/db/test_runs_schema.py)
 RunOutcome = Literal["done", "failed", "budget_exhausted"]
+# How a run stands as its reader sees it: its outcome, else running or left with its attempt
+RunState = Literal["done", "failed", "budget_exhausted", "running", "abandoned"]
 # The stages of the core's scheme cv:Stages, by their notation
 Stage = Literal["X0", "X1", "X2", "X3", "X4", "X5", "X6", "N1", "N2", "G1"]
 STAGES = "https://w3id.org/wlo/curriculum/vocab#Stages"
@@ -120,3 +123,37 @@ async def done_stages(connection: psycopg.AsyncConnection, document_id: UUID) ->
     that ended for good goes on where it stopped."""
     cursor = await connection.execute(_DONE, (document_id,))
     return {iri.removeprefix(_STAGE_IRI) for (iri,) in await cursor.fetchall()}
+
+@dataclass(frozen=True)
+class RunView:
+    stage: str  # its notation, "X1"
+    attempt: int | None
+    state: RunState
+    started_at: datetime
+    finished_at: datetime | None
+    failure: str | None  # what broke a failed run, by its type ("LeaseLost")
+
+
+# a run without an outcome runs while its job runs that very attempt; otherwise it was left with it
+_RUNS = """
+SELECT r.stage_iri, r.attempt, r.outcome, r.started_at, r.finished_at, r.result ->> 'failure',
+    j.status = 'running' AND j.attempts = r.attempt
+FROM extraction_run r LEFT JOIN job j ON j.id = r.job_id
+WHERE r.document_id = %s ORDER BY r.started_at, r.id
+"""
+
+
+async def runs_of(connection: psycopg.AsyncConnection, document_id: UUID) -> list[RunView]:
+    """The document's runs in the order they began, each with how it stands."""
+    cursor = await connection.execute(_RUNS, (document_id,))
+    return [
+        RunView(
+            stage=iri.removeprefix(_STAGE_IRI),
+            attempt=attempt,
+            state=outcome or ("running" if running else "abandoned"),
+            started_at=started,
+            finished_at=finished,
+            failure=failure,
+        )
+        for iri, attempt, outcome, started, finished, failure, running in await cursor.fetchall()
+    ]

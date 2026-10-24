@@ -9,7 +9,7 @@ import psycopg
 import pytest
 
 from app.db.migrate import migrate
-from app.db.runs import RunOutcome, RunStart, Stage, done_stages, finish_run, stage_result, start_run
+from app.db.runs import RunOutcome, RunStart, Stage, done_stages, finish_run, runs_of, stage_result, start_run
 from app.jobs.queue import account_lane, enqueue
 from tests.db.l1 import CV, add_conversion, add_document, seed_vocabulary
 
@@ -110,6 +110,43 @@ async def test_a_stage_s_result_is_what_its_last_done_run_made(
 
     assert await stage_result(connection, made["document"], "X2") == {"units": 5}
     assert await stage_result(connection, made["document"], "X1") is None  # no run of it is done
+
+
+async def test_a_document_s_runs_are_read_with_their_state_in_the_order_they_began(
+    connection: psycopg.AsyncConnection, made: dict[str, Any]
+) -> None:
+    # a run without an outcome runs only while its job runs that very attempt; else it was left
+    ended, running = await a_job(connection, made), await a_job(connection, made)
+    finished = [
+        (run_of(made, ended, "X1"), "done", {}),
+        (run_of(made, ended, "X2"), "failed", {"failure": "LeaseLost"}),
+        (run_of(made, ended, "X2", attempt=2), "budget_exhausted", {}),
+    ]
+    for run, outcome, made_by_it in finished:
+        await finish_run(connection, await start_run(connection, run), cast(RunOutcome, outcome), made_by_it)
+    await start_run(connection, run_of(made, ended, "X2", attempt=3))  # its job was cancelled
+    await connection.execute(
+        "UPDATE job SET status = 'cancelled', finished_at = now() WHERE id = %s", (ended,)
+    )
+    await connection.execute(
+        "UPDATE job SET status = 'running', attempts = 2, lease_owner = 'w1',"
+        " lease_token = gen_random_uuid(), lease_expires_at = now() + interval '1 minute' WHERE id = %s",
+        (running,),
+    )
+    await start_run(connection, run_of(made, running, "X1", attempt=1))  # an attempt before: left
+    await start_run(connection, run_of(made, running, "X1", attempt=2))
+
+    runs = await runs_of(connection, made["document"])
+
+    assert [(run.stage, run.attempt, run.state, run.failure, run.finished_at is None) for run in runs] == [
+        ("X1", 1, "done", None, False),
+        ("X2", 1, "failed", "LeaseLost", False),
+        ("X2", 2, "budget_exhausted", None, False),
+        ("X2", 3, "abandoned", None, True),
+        ("X1", 1, "abandoned", None, True),
+        ("X1", 2, "running", None, True),
+    ]
+    assert await runs_of(connection, UUID(int=1)) == []
 
 
 def test_a_run_names_a_stage_of_the_core() -> None:
