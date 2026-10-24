@@ -24,7 +24,7 @@ function document_(changes: Partial<CurriculumDocument> = {}): CurriculumDocumen
     sector: "school",
     regions: ["DE-NW"],
     created_at: "2026-10-24T10:00:00Z",
-    extraction: { job_id: "j1", status: "done" },
+    extraction: { job_id: "j1", status: "done", error_code: null },
     ...changes,
   };
 }
@@ -59,7 +59,13 @@ async function open(id = "d1"): Promise<VueWrapper> {
 beforeEach(() => {
   vi.restoreAllMocks();
   vi.spyOn(api, "getJob").mockResolvedValue(job("queued"));
+  vi.spyOn(api, "getUnits").mockResolvedValue([]);
 });
+
+/** The extraction's job running at a step it reports. */
+function at(code: string, params: Record<string, number> = {}): Job {
+  return { ...job("running", "j1"), progress: { code, params } };
+}
 
 afterEach(() => {
   shown?.unmount();
@@ -105,7 +111,7 @@ describe("a document's page", () => {
   });
 
   it("follows the extraction waiting or running, and offers no new start beside it", async () => {
-    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "running" } }));
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "running", error_code: null } }));
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
 
     const wrapper = await open();
@@ -115,7 +121,7 @@ describe("a document's page", () => {
   });
 
   it("starts the extraction again where it ended, and follows the new one", async () => {
-    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "cancelled" } }));
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "cancelled", error_code: null } }));
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
     const start = vi.spyOn(api, "startExtraction").mockResolvedValue(job("queued"));
     const wrapper = await open();
@@ -138,6 +144,81 @@ describe("a document's page", () => {
     await flushPromises();
 
     expect(wrapper.get("[role=alert]").text()).toContain(t("refusals.too_many_starts"));
+  });
+
+  it("shows the document's work packages between its extraction and its runs", async () => {
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_());
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    vi.mocked(api.getUnits).mockResolvedValue([
+      { key: "E1", path: ["Kompetenzen"], pages: [2, 3], state: "done", statements: 3 },
+    ]);
+
+    const wrapper = await open();
+
+    const headings = wrapper.findAll("h2").map((heading) => heading.attributes("id"));
+    expect(headings).toEqual(["document-facts", "document-extraction", "document-units", "document-runs"]);
+    expect(wrapper.get("section[aria-labelledby=document-units]").text()).toContain("Kompetenzen");
+  });
+
+  it("reads the work packages again as the extraction moves on", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "running", error_code: null } }));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    vi.mocked(api.getJob)
+      .mockResolvedValueOnce(at("extract_statements", { done: 0, total: 2 }))
+      .mockResolvedValue(at("extract_statements", { done: 1, total: 2 }));
+    await open();
+    expect(api.getUnits).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(2000);
+    await flushPromises();
+
+    expect(api.getUnits).toHaveBeenCalledTimes(3); // once a step reported: the first, then the next
+  });
+
+  it("says each step the extraction moves to, once, and not each package it counts", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "running", error_code: null } }));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    vi.mocked(api.getJob)
+      .mockResolvedValueOnce(at("extract_frame"))
+      .mockResolvedValueOnce(at("extract_statements", { done: 0, total: 2 }))
+      .mockResolvedValue(at("extract_statements", { done: 1, total: 2 }));
+    const wrapper = await open();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(extractionStatus(wrapper)).toBe(t("jobs.progress.extract_frame"));
+    await vi.advanceTimersByTimeAsync(2000);
+    const statements = t("jobs.progress.extract_statements", { done: 0, total: 2 });
+    expect(extractionStatus(wrapper)).toBe(statements);
+    await vi.advanceTimersByTimeAsync(4000);
+
+    expect(extractionStatus(wrapper)).toBe(statements); // the count shows in the job, not said
+  });
+
+  it("says why the last extraction failed, to an editor too", async () => {
+    const failed = { job_id: null, status: "failed" as const, error_code: "budget_exhausted" };
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ own: false, extraction: failed }));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+
+    const wrapper = await open();
+
+    const note = extraction(wrapper).get("[data-test=extraction-last]").text();
+    expect(note).toBe(
+      `${t("documents.page.lastStatus", { status: t("jobs.status.failed") })}. ${jobFailureText("budget_exhausted")}`,
+    );
+  });
+
+  it("says no reason for an extraction that did not fail", async () => {
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_());
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+
+    const wrapper = await open();
+
+    expect(extraction(wrapper).get("[data-test=extraction-last]").text()).toBe(
+      t("documents.page.lastStatus", { status: t("jobs.status.done") }),
+    );
   });
 
   it("offers another's document no start", async () => {
@@ -180,12 +261,12 @@ describe("a document's page", () => {
 describe("a document's extraction followed on its page", () => {
   it("is read by an editor from the document while it runs, the job not theirs to follow", async () => {
     vi.useFakeTimers();
-    const running = document_({ own: false, extraction: { job_id: null, status: "running" } });
+    const running = document_({ own: false, extraction: { job_id: null, status: "running", error_code: null } });
     const get = vi
       .spyOn(api, "getDocument")
       .mockResolvedValueOnce(running)
       .mockResolvedValueOnce(running)
-      .mockResolvedValue(document_({ own: false, extraction: { job_id: null, status: "done" } }));
+      .mockResolvedValue(document_({ own: false, extraction: { job_id: null, status: "done", error_code: null } }));
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
     const getJob = vi.spyOn(api, "getJob");
 
@@ -205,7 +286,7 @@ describe("a document's extraction followed on its page", () => {
 
   it("goes on asking after the document when its job is gone from the reader", async () => {
     vi.useFakeTimers();
-    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "running" } }));
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "running", error_code: null } }));
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
     vi.spyOn(api, "getJob").mockRejectedValue(new ApiError("server", 404, "no_job"));
 
@@ -221,8 +302,8 @@ describe("a document's extraction followed on its page", () => {
     vi.useFakeTimers();
     const get = vi
       .spyOn(api, "getDocument")
-      .mockResolvedValueOnce(document_({ extraction: { job_id: "j1", status: "running" } }))
-      .mockResolvedValue(document_({ extraction: { job_id: "j1", status: "failed" } }));
+      .mockResolvedValueOnce(document_({ extraction: { job_id: "j1", status: "running", error_code: null } }))
+      .mockResolvedValue(document_({ extraction: { job_id: "j1", status: "failed", error_code: null } }));
     const later: Run[] = [...RUNS, { ...RUNS[1], attempt: 2, state: "failed", failure: "LeaseLost" }];
     vi.spyOn(api, "getRuns").mockResolvedValueOnce(RUNS).mockResolvedValue(later);
     vi.spyOn(api, "getJob").mockResolvedValue({ ...job("failed", "j1"), error_code: "model_not_configured" });
@@ -242,7 +323,7 @@ describe("a document's extraction followed on its page", () => {
   });
 
   it("takes the keyboard to the extraction's heading once the start's button has gone, and says it started", async () => {
-    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "cancelled" } }));
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "cancelled", error_code: null } }));
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
     vi.spyOn(api, "startExtraction").mockResolvedValue(job("queued"));
     const wrapper = await open();
@@ -258,9 +339,9 @@ describe("a document's extraction followed on its page", () => {
 
   it("offers the start again once the extraction it started has ended", async () => {
     vi.useFakeTimers();
-    const ended = document_({ extraction: { job_id: "j2", status: "done" } });
+    const ended = document_({ extraction: { job_id: "j2", status: "done", error_code: null } });
     vi.spyOn(api, "getDocument")
-      .mockResolvedValueOnce(document_({ extraction: { job_id: "j1", status: "cancelled" } }))
+      .mockResolvedValueOnce(document_({ extraction: { job_id: "j1", status: "cancelled", error_code: null } }))
       .mockResolvedValue(ended);
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
     vi.spyOn(api, "startExtraction").mockResolvedValue(job("queued"));
@@ -277,7 +358,7 @@ describe("a document's extraction followed on its page", () => {
   });
 
   it("starts once however often its button is pressed while the start is on its way", async () => {
-    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "cancelled" } }));
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "cancelled", error_code: null } }));
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
     const start = vi.spyOn(api, "startExtraction").mockReturnValue(new Promise<Job>(() => undefined));
     const wrapper = await open();
@@ -291,7 +372,7 @@ describe("a document's extraction followed on its page", () => {
   it("does not follow on another document the job a start of the one before gave back late", async () => {
     let late: (value: Job) => void = () => undefined;
     vi.spyOn(api, "getDocument").mockImplementation((id) =>
-      Promise.resolve(document_({ id, title: id, extraction: { job_id: `job-of-${id}`, status: "cancelled" } })),
+      Promise.resolve(document_({ id, title: id, extraction: { job_id: `job-of-${id}`, status: "cancelled", error_code: null } })),
     );
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
     vi.spyOn(api, "startExtraction").mockReturnValue(new Promise<Job>((resolve) => (late = resolve)));
@@ -338,8 +419,8 @@ describe("a document's extraction asked after on its page", () => {
   it("says to an editor that the extraction ended", async () => {
     vi.useFakeTimers();
     vi.spyOn(api, "getDocument")
-      .mockResolvedValueOnce(document_({ own: false, extraction: { job_id: null, status: "running" } }))
-      .mockResolvedValue(document_({ own: false, extraction: { job_id: null, status: "done" } }));
+      .mockResolvedValueOnce(document_({ own: false, extraction: { job_id: null, status: "running", error_code: null } }))
+      .mockResolvedValue(document_({ own: false, extraction: { job_id: null, status: "done", error_code: null } }));
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
     const wrapper = await open();
 
@@ -353,8 +434,8 @@ describe("a document's extraction asked after on its page", () => {
   it("asks after the document again when a job it started is gone from the reader", async () => {
     vi.useFakeTimers();
     vi.spyOn(api, "getDocument")
-      .mockResolvedValueOnce(document_({ extraction: { job_id: "j1", status: "cancelled" } }))
-      .mockResolvedValue(document_({ extraction: { job_id: "j2", status: "running" } }));
+      .mockResolvedValueOnce(document_({ extraction: { job_id: "j1", status: "cancelled", error_code: null } }))
+      .mockResolvedValue(document_({ extraction: { job_id: "j2", status: "running", error_code: null } }));
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
     vi.spyOn(api, "startExtraction").mockResolvedValue(job("queued"));
     vi.spyOn(api, "getJob").mockRejectedValue(new ApiError("server", 404, "no_job"));
@@ -372,8 +453,8 @@ describe("a document's extraction asked after on its page", () => {
 
   it("goes on asking after an editor's document whose state came back as it was", async () => {
     vi.useFakeTimers();
-    const running = document_({ own: false, extraction: { job_id: null, status: "running" } });
-    const queued = document_({ own: false, extraction: { job_id: null, status: "queued" } });
+    const running = document_({ own: false, extraction: { job_id: null, status: "running", error_code: null } });
+    const queued = document_({ own: false, extraction: { job_id: null, status: "queued", error_code: null } });
     const get = vi
       .spyOn(api, "getDocument")
       .mockResolvedValueOnce({ ...running }) // the page
@@ -393,7 +474,7 @@ describe("a document's extraction asked after on its page", () => {
 
   it("goes on asking when the server is away a moment, and stops once the page is left", async () => {
     vi.useFakeTimers();
-    const running = document_({ own: false, extraction: { job_id: null, status: "running" } });
+    const running = document_({ own: false, extraction: { job_id: null, status: "running", error_code: null } });
     const get = vi
       .spyOn(api, "getDocument")
       .mockResolvedValueOnce(running)
@@ -414,7 +495,7 @@ describe("a document's extraction asked after on its page", () => {
 
   it("leaves the keyboard where the reader took it while the start was on its way", async () => {
     let reply: (value: Job) => void = () => undefined;
-    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "cancelled" } }));
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "cancelled", error_code: null } }));
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
     vi.spyOn(api, "startExtraction").mockReturnValue(new Promise<Job>((resolve) => (reply = resolve)));
     const wrapper = await open();
@@ -431,8 +512,8 @@ describe("a document's extraction asked after on its page", () => {
   it("leaves the keyboard where the reader took it once the extraction ended", async () => {
     vi.useFakeTimers();
     vi.spyOn(api, "getDocument")
-      .mockResolvedValueOnce(document_({ extraction: { job_id: "j1", status: "running" } }))
-      .mockResolvedValue(document_({ extraction: { job_id: "j1", status: "done" } }));
+      .mockResolvedValueOnce(document_({ extraction: { job_id: "j1", status: "running", error_code: null } }))
+      .mockResolvedValue(document_({ extraction: { job_id: "j1", status: "done", error_code: null } }));
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
     vi.spyOn(api, "getJob").mockResolvedValue(job("done", "j1"));
     const wrapper = await open();
@@ -440,7 +521,7 @@ describe("a document's extraction asked after on its page", () => {
     const elsewhere = wrapper.get("[data-test=document-source]").element as HTMLElement;
     vi.mocked(api.getDocument).mockImplementation(() => {
       elsewhere.focus(); // the reader goes on while the page reads the document again
-      return Promise.resolve(document_({ extraction: { job_id: "j1", status: "done" } }));
+      return Promise.resolve(document_({ extraction: { job_id: "j1", status: "done", error_code: null } }));
     });
 
     await vi.advanceTimersByTimeAsync(1000);
@@ -453,7 +534,7 @@ describe("a document's extraction asked after on its page", () => {
     vi.useFakeTimers();
     let reread: (value: CurriculumDocument) => void = () => undefined;
     vi.spyOn(api, "getDocument")
-      .mockResolvedValueOnce(document_({ extraction: { job_id: "j1", status: "cancelled" } }))
+      .mockResolvedValueOnce(document_({ extraction: { job_id: "j1", status: "cancelled", error_code: null } }))
       .mockReturnValue(new Promise<CurriculumDocument>((resolve) => (reread = resolve)));
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
     vi.spyOn(api, "startExtraction").mockResolvedValue(job("queued"));
@@ -466,14 +547,14 @@ describe("a document's extraction asked after on its page", () => {
 
     expect(wrapper.find("[data-test=extraction-resume]").exists()).toBe(false);
     expect(wrapper.get(".status-badge").text()).toBe(t("jobs.status.done"));
-    reread(document_({ extraction: { job_id: "j2", status: "done" } }));
+    reread(document_({ extraction: { job_id: "j2", status: "done", error_code: null } }));
     await flushPromises();
     expect(wrapper.find("[data-test=extraction-resume]").exists()).toBe(true);
   });
 
   it("says, where a start led to an extraction that ran already, that it is that one, and says it once", async () => {
     ledHere();
-    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "running" } }));
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "running", error_code: null } }));
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
 
     const wrapper = await open();
@@ -488,7 +569,7 @@ describe("a document's extraction asked after on its page", () => {
 
   it("reads anew for each document it moves to whether a start led there", async () => {
     vi.spyOn(api, "getDocument").mockImplementation((id) =>
-      Promise.resolve(document_({ id, title: id, extraction: { job_id: `job-of-${id}`, status: "running" } })),
+      Promise.resolve(document_({ id, title: id, extraction: { job_id: `job-of-${id}`, status: "running", error_code: null } })),
     );
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
     const wrapper = await open("d1");

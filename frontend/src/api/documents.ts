@@ -20,8 +20,24 @@ export interface CurriculumDocument {
   regions: string[];
   created_at: string;
   /** The latest extraction job, whatever became of it; its id only for who may follow it - the
-   * owner, an admin - null for an editor, who reads the status. */
-  extraction: { job_id: string | null; status: JobStatus } | null;
+   * owner, an admin - null for an editor, who reads the status; why it failed, for every reader. */
+  extraction: { job_id: string | null; status: JobStatus; error_code: string | null } | null;
+}
+
+/** How far X4 has come with a unit: done, open; read typed by X3 (frame), or not at all (none). */
+export type UnitState = "done" | "open" | "frame" | "none";
+
+/** One of X2's work packages of a document (backend app/pipeline/x2_segments.py). */
+export interface Unit {
+  /** "E0", "E1" … in the document's order; E0 the title pages. */
+  key: string;
+  /** The titles from the top down to its section; none for the title pages, or a document of no headings. */
+  path: string[];
+  /** Its first and last page. */
+  pages: [number, number];
+  state: UnitState;
+  /** The statements X4 wrote of it, once it is done. */
+  statements: number | null;
 }
 
 export interface DocumentStarted {
@@ -75,6 +91,11 @@ export function getDocument(id: string): Promise<CurriculumDocument> {
 /** The runs of the document's stages, in the order they began. */
 export function getRuns(id: string): Promise<Run[]> {
   return apiFetch<Run[]>(`${documentPath(id)}/runs`);
+}
+
+/** The document's units, in its order; none before X2 has parted it. */
+export function getUnits(id: string): Promise<Unit[]> {
+  return apiFetch<Unit[]>(`${documentPath(id)}/units`);
 }
 
 function documentPath(id: string): string {

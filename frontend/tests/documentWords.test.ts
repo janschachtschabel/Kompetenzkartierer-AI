@@ -12,7 +12,8 @@ type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const typesFollow: [
   Same<api.Sector, keyof typeof messages.documents.sectors>,
   Same<api.RunState, keyof typeof messages.documents.runStates>,
-] = [true, true];
+  Same<api.UnitState, keyof typeof messages.documents.units.states>,
+] = [true, true, true];
 
 /** The notations of cv:EducationSectors in the core's vocabulary, as the backend loads them. */
 function sectorNotations(): string[] {
@@ -36,6 +37,20 @@ function runStates(): string[] {
   return [...literal.matchAll(/"([^"]+)"/g)].map(([, value]) => value).sort();
 }
 
+/** The values of UnitState in backend app/pipeline/units.py. */
+function unitStates(): string[] {
+  const source = readFileSync(join(process.cwd(), "..", "backend", "app", "pipeline", "units.py"), "utf8");
+  const literal = /^UnitState = Literal\[([^\]]*)\]/m.exec(source)?.[1] ?? "";
+  return [...literal.matchAll(/"([^"]+)"/g)].map(([, value]) => value).sort();
+}
+
+/** The stages the backend's extraction job runs (STAGES in app/pipeline/run.py). */
+function extractionStages(): string[] {
+  const source = readFileSync(join(process.cwd(), "..", "backend", "app", "pipeline", "run.py"), "utf8");
+  const tuple = /^STAGES = \(([^)]*)\)/m.exec(source)?.[1] ?? "";
+  return [...tuple.matchAll(/"([^"]+)"/g)].map(([, value]) => value);
+}
+
 describe("the words of a document", () => {
   it("read the vocabulary's sectors and the backend's run states", () => {
     expect(sectorNotations()).toContain("school");
@@ -56,5 +71,15 @@ describe("the words of a document", () => {
 
   it("name every state a run is read in, and no other", () => {
     expect(Object.keys(messages.documents.runStates).sort()).toEqual(runStates());
+  });
+
+  it("name every state of a work package, and no other", () => {
+    expect(unitStates()).toContain("frame");
+    expect(Object.keys(messages.documents.units.states).sort()).toEqual(unitStates());
+  });
+
+  it("name every stage the extraction runs", () => {
+    expect(extractionStages()).toContain("X1");
+    for (const stage of extractionStages()) expect(Object.keys(messages.documents.stages)).toContain(stage);
   });
 });

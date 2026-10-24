@@ -647,6 +647,8 @@ export const messages = {
     stages: {
       X1: "Profil und Gliederung",
       X2: "Arbeitspakete",
+      X3: "Rahmenteile",
+      X4: "Aussagen",
     },
     runStates: {
       done: "fertig",
@@ -660,11 +662,36 @@ export const messages = {
     runFailures: {
       LeaseLost: "Der Lauf ging nicht weiter: Der Auftrag wurde abgebrochen oder vom Server neu vergeben.",
     },
+    // A document's work packages (DocumentUnits.vue, backend app/pipeline/units.py)
+    units: {
+      heading: "Arbeitspakete",
+      table: "Arbeitspakete des Dokuments",
+      loading: "Die Arbeitspakete werden geladen.",
+      loadFailed: "Die Arbeitspakete ließen sich nicht laden.",
+      noneTitle: "Noch keine Arbeitspakete",
+      noneBody: "Sie stehen fest, sobald die Extraktion das Dokument geteilt hat.",
+      columns: { key: "Paket", path: "Abschnitt", pages: "Seiten", state: "Stand" },
+      // E0: what stands before the first heading; a document without headings is one package
+      titlePages: "Titelei",
+      wholeDocument: "Ganzes Dokument",
+      page: "S. {first}",
+      pages: "S. {first}–{last}",
+      states: {
+        done: "fertig, {statements} {statements|Aussage|Aussagen}",
+        open: "offen",
+        frame: "Rahmenteil, wird typisiert gelesen",
+        none: "wird nicht gelesen",
+      },
+      // the packages whose statements the extraction reads
+      summary: "{done} von {total} {total|Paket|Paketen} mit Aussagen fertig.",
+    },
     untitled: "Dokument ohne Titel",
     start: {
       heading: "Extraktion",
       intro:
-        "Aus der fertigen Umwandlung wird ein Dokument; das Sprachmodell liest sein Profil und seine Gliederung. " +
+        "Aus der fertigen Umwandlung wird ein Dokument; das Sprachmodell liest sein Profil, seine Gliederung, " +
+        "seine Rahmenteile und die Aussagen jedes Arbeitspakets. Fertige Pakete bleiben, auch wenn die " +
+        "Extraktion abbricht; ein neuer Start setzt dort fort. " +
         "Für eine PDF läuft bei dir höchstens eine Extraktion zugleich – läuft schon eine, führt der Knopf zu ihr. " +
         "Du kannst sie jederzeit abbrechen.",
       sector: "Bildungsbereich",

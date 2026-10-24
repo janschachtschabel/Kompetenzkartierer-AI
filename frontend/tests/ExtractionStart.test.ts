@@ -32,7 +32,7 @@ function started(): DocumentStarted {
       sector: "school",
       regions: ["DE-NW"],
       created_at: "2026-10-24T12:00:00Z",
-      extraction: { job_id: "j1", status: "queued" },
+      extraction: { job_id: "j1", status: "queued", error_code: null },
     },
     job: {
       id: "j1",

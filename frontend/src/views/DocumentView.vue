@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
  * One document made of an entry's conversion (plan M1 7.5, 7a): what it is for, its extraction
- * (DocumentExtraction: followed, cancelled, started again) and the runs of its stages
- * (DocumentRuns). The page reads the document again when its extraction has moved on.
+ * (DocumentExtraction: followed, cancelled, started again), its work packages (DocumentUnits) and
+ * the runs of its stages (DocumentRuns). The page reads the document again when its extraction
+ * has moved on, its work packages at each progress too.
  */
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
@@ -10,6 +11,7 @@ import { RouterLink } from "vue-router";
 import { ApiError, getDocument, getRuns, type CurriculumDocument, type Run } from "@/api";
 import DocumentExtraction from "@/components/DocumentExtraction.vue";
 import DocumentRuns from "@/components/DocumentRuns.vue";
+import DocumentUnits from "@/components/DocumentUnits.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
@@ -29,6 +31,8 @@ const failure = ref<Notice | null>(null);
 let generation = 0;
 // The start form led here to an extraction that ran already for the PDF (ExtractionStart.vue)
 const led = ref(false);
+// bumped as the extraction moves on: the work packages are read again
+const unitsRead = ref(0);
 
 /** Whether a start led here, said once: read again later, or come back to, the page no longer says so. */
 function ledHere(): boolean {
@@ -64,6 +68,11 @@ async function load(): Promise<void> {
   } finally {
     if (mine === generation) loading.value = false;
   }
+}
+
+function moved(): void {
+  unitsRead.value++;
+  void load();
 }
 
 function moment(value: string): string {
@@ -131,8 +140,10 @@ watch(
         class="document__section"
         :document="document_"
         :led="led"
-        @changed="load()"
+        @changed="moved()"
+        @progressed="unitsRead++"
       />
+      <DocumentUnits :key="document_.id" class="document__section" :document-id="document_.id" :refresh="unitsRead" />
       <DocumentRuns class="document__section" :runs="runs" />
     </template>
   </div>

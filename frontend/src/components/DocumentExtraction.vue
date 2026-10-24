@@ -9,13 +9,23 @@
  *
  * Started, ended - followed or asked after: said once in a region that is there from the start;
  * JobProgress shows its states without announcing them, the region going with it once the job
- * has ended. The page reads the document again when the extraction has moved on (`changed`),
+ * has ended. Each step the followed job moves to - a stage, not each package it counts - is said
+ * there once, and the page is told of every progress (`progressed`: its work packages are read
+ * again). The page reads the document again when the extraction has moved on (`changed`),
  * and the keyboard goes to the section's heading where what it rested on went with the state it
  * belonged to. `led`: the start form led here to an extraction that ran already for the PDF.
  */
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
-import { ApiError, getDocument, startExtraction, type CurriculumDocument, type Job, type JobStatus } from "@/api";
+import {
+  ApiError,
+  getDocument,
+  startExtraction,
+  type CurriculumDocument,
+  type Job,
+  type JobProgressNote,
+  type JobStatus,
+} from "@/api";
 import { isolate } from "@/bidi";
 import AppIcon from "@/components/AppIcon.vue";
 import JobProgress from "@/components/JobProgress.vue";
@@ -23,12 +33,13 @@ import NoticeText from "@/components/NoticeText.vue";
 import { focusIsFree } from "@/focusRescue";
 import { t } from "@/i18n/de";
 import { jobFailureText } from "@/jobMessages";
+import { progressText } from "@/jobProgress";
 import { askWithBackoff, hasEnded, type JobWatch } from "@/jobWatch";
 import { sayAnew } from "@/liveRegion";
 import { failureNotice, type Notice } from "@/notice";
 
 const props = defineProps<{ document: CurriculumDocument; led?: boolean }>();
-const emit = defineEmits<{ changed: [] }>();
+const emit = defineEmits<{ changed: []; progressed: [] }>();
 
 /** The job a start from here gave back, followed until the page reads the document again -
  * once it has ended too, so its end shows until the document says how the extraction stands. */
@@ -43,6 +54,8 @@ const heading = ref<HTMLElement | null>(null);
 // the keyboard was in the section when the extraction moved on: it stays there once it has
 let focusWasHere = false;
 let asking: JobWatch | null = null;
+// the step of the followed job said last: a count within it is shown, not said
+let stepSaid = "";
 
 const latest = computed(() => props.document.extraction);
 const open = computed(() => latest.value !== null && !hasEnded(latest.value.status));
@@ -55,6 +68,12 @@ const followed = computed(() => {
 /** Waiting or running with no job to follow: the status the document gives, asked after. */
 const unfollowed = computed(() => open.value && followed.value === null);
 const label = computed(() => t("documents.page.jobLabel"));
+/** How the last extraction ended, and why where it failed: the document names the code to every reader. */
+const lastLine = computed(() => {
+  if (!latest.value) return t("documents.page.none");
+  const line = t("documents.page.lastStatus", { status: t(`jobs.status.${latest.value.status}`) });
+  return latest.value.status === "failed" ? `${line}. ${jobFailureText(latest.value.error_code)}` : line;
+});
 
 function say(message: string): void {
   status.value = sayAnew(status.value, message);
@@ -72,6 +91,12 @@ function outcome(job: Job): string {
 function movedOn(): void {
   focusWasHere = section.value?.contains(document.activeElement) ?? false;
   emit("changed");
+}
+
+function onProgress(progress: JobProgressNote): void {
+  if (progress.code !== stepSaid && progressText(progress)) say(progressText(progress));
+  stepSaid = progress.code;
+  emit("progressed");
 }
 
 function onEnded(job: Job): void {
@@ -161,15 +186,18 @@ onUnmounted(() => asking?.stop());
     <!-- tabindex -1: where the keyboard goes once what it pressed went with its state -->
     <h2 id="document-extraction" ref="heading" tabindex="-1">{{ t("documents.page.extraction") }}</h2>
     <p v-if="led" class="extraction__note" data-test="extraction-led">{{ t("documents.page.ledToRunning") }}</p>
-    <JobProgress v-if="followed" :key="followed" :job-id="followed" :label="label" quiet @ended="onEnded" @gone="onGone" />
+    <JobProgress
+      v-if="followed"
+      :key="followed"
+      :job-id="followed"
+      :label="label"
+      quiet
+      @ended="onEnded"
+      @gone="onGone"
+      @progress="onProgress"
+    />
     <template v-else>
-      <p class="extraction__note">
-        {{
-          latest
-            ? t("documents.page.lastStatus", { status: t(`jobs.status.${latest.status}`) })
-            : t("documents.page.none")
-        }}
-      </p>
+      <p class="extraction__note" data-test="extraction-last">{{ lastLine }}</p>
       <p v-if="unfollowed" class="extraction__note">{{ t("documents.page.following") }}</p>
       <div v-else-if="document.own" class="extraction__start">
         <p v-if="startFailure" class="field__error" role="alert">

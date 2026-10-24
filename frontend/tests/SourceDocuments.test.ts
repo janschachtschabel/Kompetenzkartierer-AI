@@ -45,7 +45,7 @@ afterEach(() => {
 describe("the documents of a register entry", () => {
   it("lists the entry's documents as the server gives them, each with its extraction", async () => {
     const list = vi.spyOn(api, "listDocuments").mockResolvedValue([
-      made("d2", { title: "Kernlehrplan Physik", extraction: { job_id: "j2", status: "running" } }),
+      made("d2", { title: "Kernlehrplan Physik", extraction: { job_id: "j2", status: "running", error_code: null } }),
       made("d1"),
     ]);
 
