@@ -33,7 +33,7 @@ class NodeHeading:
     node_type_iri: str | None
     title: str
     block_id: str
-    depth: str | None  # the depth set at the node, where it differs from its type's
+    depth: str | None  # the depth set at the node (a notation), where one is: it comes first
 
 
 async def node_headings(connection: psycopg.AsyncConnection, document_id: UUID) -> list[NodeHeading]:

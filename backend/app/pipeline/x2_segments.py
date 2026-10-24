@@ -5,9 +5,9 @@ The blocks before the first heading are the title pages (E0, typed: X3 reads the
 Each node's own text runs from its heading's block to the next heading - its first child's, its
 sibling's or one further up - so the text between a section's heading and its first subsection is
 read once, with the section. A node's depth is the one set at it (the editors'), else its type's
-(``cur:extractionDepth``), else its
-function's - a frame part typed, a non-curricular part skipped, any other read in full - and a
-section skipped takes its sections with it (a foreword's, an appendix's parts). The depth names
+(``cur:extractionDepth``), else its function's - a frame part typed, a non-curricular part
+skipped, any other read in full - and a section skipped takes its sections with it (a
+foreword's, an appendix's parts). The depth names
 the package's job: statements (full), frame (typed), none (skip); a package of a heading alone
 has nothing to read either, and stays a package, so every block of the text lies in exactly one.
 A package over MOST_PAGES pages is parted at page boundaries, never within a block: a node's own
@@ -41,7 +41,7 @@ class SegmentNode:
     id: UUID
     parent_id: UUID | None
     position: int  # of its heading's block among the conversion's blocks
-    depth: Depth  # its own: its type's or its function's (depth_of)
+    depth: Depth  # its own: the one set at it, its type's or its function's (depth_of)
     title: str
 
 
@@ -74,11 +74,11 @@ class WorkPackage:
         }
 
 
-def depth_of(type_depth: str | None, function: str) -> Depth:
-    """A node's own depth: its type's where it has one (a notation: full, typed, skip), else its
-    function's."""
-    if type_depth in _JOBS:
-        return type_depth
+def depth_of(given: str | None, function: str) -> Depth:
+    """A node's own depth: the one given - set at the node, else its type's (a notation: full,
+    typed, skip) - else its function's."""
+    if given in _JOBS:
+        return given
     return _BY_FUNCTION.get(function, "full")
 
 
