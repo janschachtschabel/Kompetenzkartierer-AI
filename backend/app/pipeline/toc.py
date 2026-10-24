@@ -11,8 +11,10 @@ contents' do: never back, within the document's pages, not all one - lines of nu
 is the depth of its numbering; an entry without one has none, since a block's lines share their
 indentation. The contents are never a section of the document (the old app's lesson: they became
 a root with the headings again as children), and a heading they name is one whatever its type
-(app/pipeline/skeleton.py). The first contents with a title, or within the first FRONT_PAGES
-pages, end the title pages; contents later on (a list of figures) end nothing.
+(app/pipeline/skeleton.py). The first run of entries with a title, or within the first
+FRONT_PAGES pages, says where the title pages end, whether its pages are read or not: with a
+title, there; without one, there only where they are read, else nowhere. No run later on (a
+list of figures, an annex's contents) ends them.
 """
 
 import re
@@ -86,17 +88,23 @@ def find_contents(blocks: Sequence[Block], cues: Sequence[Cue], search: PatternS
     entries: list[TocEntry] = []
     positions: set[int] = set()
     front_end: int | None = None
+    decided = False
     for run in runs:
         listed = [entry for _, found in run for entry in found]
-        if len(listed) < LEAST_ENTRIES or not _paged(listed, pages):
+        if len(listed) < LEAST_ENTRIES:
             continue
         first = run[0][0]
         before = order.index(first) - 1
         titled = before >= 0 and _TITLE.fullmatch(blocks[order[before]].text.strip()) is not None
+        paged = _paged(listed, pages)
+        if not decided and (titled or blocks[first].page <= FRONT_PAGES):
+            # the contents up front, read or not: a later run (an annex's) ends no title pages
+            decided = True
+            front_end = first if titled or paged else None  # the title before it is theirs too
+        if not paged:
+            continue
         if titled:
             positions.add(order[before])
-        if front_end is None and (titled or blocks[first].page <= FRONT_PAGES):
-            front_end = first  # the title before it is the contents' too
         positions.update(position for position, _ in run)
         entries.extend(listed)
     return Contents(tuple(entries), frozenset(positions), front_end)

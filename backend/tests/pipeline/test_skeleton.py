@@ -359,11 +359,64 @@ def test_titled_contents_end_the_title_pages_however_far_in_they_stand() -> None
     assert titles(found) == ["1 Ziele"]
 
 
+def annexed(front_title: bool) -> list[Block]:
+    """Contents up front whose pages run past the document's twelve (a web PDF without its blank
+    pages), and an annex with titled contents of its own on page 10."""
+    front = "1 Einleitung ..... 3\n2 Kompetenzen ..... 6\n3 Inhalte ..... 9\n4 Anhang ..... 14"
+    annex = "A1 Formblatt ..... 11\nA2 Zeugnis ..... 12\nA3 Stundentafel ..... 12"
+    title = [block("p2-b1", "Inhalt", size=16)] if front_title else []
+    return [
+        COVER,
+        *title,
+        block("p2-b2", front),
+        block("p3-b1", "1 Einleitung", size=16),
+        block("p3-b2", BODY),
+        block("p5-b1", "2 Kompetenzen", size=16),
+        block("p5-b2", BODY),
+        block("p8-b1", "3 Inhalte", size=16),
+        block("p8-b2", BODY),
+        block("p10-b1", "4 Anhang", size=16),
+        block("p10-b2", "Inhalt", size=16),
+        block("p10-b3", annex),
+        block("p11-b1", "A1 Formblatt", size=14),
+        block("p12-b1", BODY),
+    ]
+
+
+@pytest.mark.parametrize("front_title", [True, False], ids=["titled", "untitled"])
+def test_contents_up_front_whose_pages_are_not_read_leave_the_title_pages_to_no_later_contents(
+    front_title: bool,
+) -> None:
+    # the first contents decide where the title pages end - titled, there; else, nowhere
+    found = skeleton(annexed(front_title))
+
+    assert titles(found) == ["1 Einleitung", "2 Kompetenzen", "3 Inhalte", "4 Anhang", "A1 Formblatt"]
+    annex = ["A1 Formblatt", "A2 Zeugnis", "A3 Stundentafel"]
+    assert [entry.title for entry in found.contents.entries] == annex
+    assert found.contents.front_end == (2 if front_title else None)
+
+
+def test_contents_of_roman_pages_alone_are_contents() -> None:
+    # a front matter's own: "iii" is no page a document's count can be held against
+    lines = "Vorwort ..... iii\nGeleitwort ..... iv\nEinführung ..... v"
+    blocks = [COVER, block("p2-b1", "Inhalt", size=16), block("p2-b2", lines), block("p3-b1", BODY)]
+
+    found = skeleton(blocks)
+
+    assert [(entry.title, entry.page) for entry in found.contents.entries] == [
+        ("Vorwort", "iii"),
+        ("Geleitwort", "iv"),
+        ("Einführung", "v"),
+    ]
+
+
 def test_a_table_is_never_contents() -> None:
-    # the learning fields' overview of a Rahmenlehrplan: numbered rows ending in hours
-    overview = table("p3-b1", 1, [["1", "Den Betrieb erkunden", "80"], ["2", "Kunden beraten", "60"],
-                                  ["3", "Waren annehmen", "40"]])  # fmt: skip
+    # numbered rows whose last numbers rise as a contents' pages do (a learning fields' overview with
+    # its weeks): a table is not read as contents
+    overview = table("p3-b1", 1, [["1", "Den Betrieb erkunden", "4"], ["2", "Kunden beraten", "6"],
+                                  ["3", "Waren annehmen", "9"]])  # fmt: skip
     blocks = [COVER, block("p2-b1", "Teil I Vorbemerkungen", size=16), block("p2-b2", BODY), overview]
+    blocks.append(block("p9-b1", BODY))
 
     found = skeleton(blocks)
 
@@ -658,7 +711,8 @@ def test_a_block_most_of_whose_lines_are_no_entries_is_no_contents() -> None:
     entries = [block("p2-b1", "1 Einleitung 3"), block("p2-b2", "2 Ziele 5")]
     note = block("p2-b3", "Die Hinweise\nstehen im Anhang\n3 Seiten 9")
 
-    found = skeleton([COVER, *entries, note, block("p3-b1", "1 Einleitung", size=16)])
+    # the pages the lines name stand: only the majority of lines tells the note from the contents
+    found = skeleton([COVER, *entries, note, block("p3-b1", "1 Einleitung", size=16), block("p9-b1", BODY)])
 
     assert found.contents.entries == ()
 
