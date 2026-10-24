@@ -132,8 +132,21 @@ ungültig.
   mit `too_dense`, länger als `CONVERT_TIMEOUT_S` (900 s) mit `timed_out`. Die Umwandlung läuft
   in einem eigenen Kindprozess, den Abbruch, Frist und Lease-Verlust beenden; dafür eigene
   Worker mit `WORKER_KINDS=source.convert` vorsehen, ein Job je Pod.
-- Extraktion (X1, X2): Der Job `extract.run` (`{"document_id": …}`; der Start per API folgt mit
-  M1 Paket 7) bestimmt für ein Dokument per Sprachmodell das Dokumentprofil (Titel, Typ, Geltung,
+- Dokumente: `POST /api/v1/documents` (`source_id`, `conversion_id`, `sector`, `regions`) legt aus
+  der fertigen Umwandlung eines Eintrags ein Dokument an und startet seine Extraktion (202 mit
+  Dokument und Job), als Modelljob zugelassen (403 `no_budget`, 429 `too_many_jobs` /
+  `too_many_starts`). `POST /api/v1/documents/{id}/extraction` startet sie neu, nur durch den
+  Eigentümer (403 `not_owner`); `GET /api/v1/documents?source_id=…`, `/documents/{id}`,
+  `/documents/{id}/runs` lesen sie. Je Dokument wartet oder läuft höchstens eine Extraktion
+  (`job.unique_key`, Migration 0018): ein Start dabei gibt die laufende zurück (200).
+- Abbrechen: `POST /api/v1/jobs/{id}/cancel` (Eigentümer des Jobs oder Admin, in der Oberfläche
+  der Knopf „Abbrechen“ an jedem Auftrag). Ein wartender Job endet sofort, ein laufender beim
+  nächsten Herzschlag seines Workers; hält der Handler dann nicht an, endet der Job nach
+  `CANCEL_WAIT_S` (5 s) trotzdem `cancelled`, und was der Handler danach noch schreibt, findet
+  seine Lease nicht mehr. Ein Worker, der gar nicht mehr schlägt, endet über die Prüfung
+  abgelaufener Leases ebenso `cancelled`.
+- Extraktion (X1, X2): Der Job `extract.run` (`{"document_id": …}`) bestimmt für ein Dokument per
+  Sprachmodell das Dokumentprofil (Titel, Typ, Geltung,
   Spezifikationen, eigene Begriffe), baut das Gerüst ohne Modell aus Verzeichnis, Layout und
   Lexikon, lässt nur die Überschriften ohne starkes Muster vom Modell einordnen und teilt den
   Text in Arbeitspakete (X2). Jede Stufe jedes Versuchs ist ein eigener Lauf (`extraction_run`)

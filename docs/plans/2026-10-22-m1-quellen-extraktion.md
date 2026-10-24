@@ -466,7 +466,8 @@ Nachtrag zur Umsetzung (24.10.):
 - **Offen für Paket 7 (7.5):** Ein unterlegener Job läuft nach X1 mit X2 weiter. Schreiben X3/X4
   ohne dieselbe zweite Prüfung, schrieben zwei Jobs sie doppelt. Vorher entscheiden: höchstens ein
   offener `extract.run` je Dokument (beim Start), oder dieselbe Prüfung unter der Dokumentsperre in
-  jeder schreibenden Stufe.
+  jeder schreibenden Stufe. **Entschieden in 7a:** höchstens ein offener Lauf je Dokument, von der
+  Datenbank erzwungen (Nachtrag Paket 7a).
 
 ### Paket 7: X3 Rahmenteile und X4 Aussagen (6 PT)
 
@@ -478,6 +479,38 @@ Nachtrag zur Umsetzung (24.10.):
 | 7.4 | Anbindung Abrechnung | Reservierung vor jedem Versuch (Paket 5) | Budgetende mitten in X4: fertige Einheiten bleiben, Rest offen, Lauf fortsetzbar | `pytest -m pg tests/pipeline/test_x4_budget.py` |
 | 7.5 | Start über die API | `POST /api/v1/documents` (aus einer Konvertierung, Bereich, Land) → 202 mit Dokument und Job; `GET /api/v1/documents/{id}/runs` | Konto, Budget, Rate-Limit (401/403/429); fremde Konvertierung 404 | `pytest tests/api/test_documents.py` |
 | 7.6 | Oberfläche Lauf | `views/DocumentView.vue` (Stufe, Fortschritt, fertige Einheiten schon während des Laufs), `refusals.ts` für `budget_exhausted` | Zustände; `role="status"` nur bei Stufenwechsel; axe ohne Befund | `vitest run`, Browser-Probe mit Mock-Modell |
+
+**Nachtrag 7a – Start und Abbruch (24.10.)**
+
+- **Schnitt.** Paket 7 ist geteilt: 7a (dieser Nachtrag) – ein offener Lauf je Dokument, Start
+  über die API (7.5), Abbruch, die Dokumentseite ohne Einheiten (Teil von 7.6); 7b – X3, X4 und das
+  Budget mitten in X4 (7.1–7.4), fertige Einheiten auf der Dokumentseite. Grund: Steuerung und
+  Stufen getrennt, der Nutzer wünschte das Abbruchmanagement gleich mit, kleinere Prüfrunden.
+- **Ein offener Lauf je Dokument (Variante A).** `job.unique_key` (Migration 0018) mit
+  partiellem Unique-Index über wartende und laufende Jobs; Schlüssel `extract.run:<Dokument>`
+  (`app/pipeline/extraction.py`, damit die API die Pipeline nicht lädt). `enqueue(unique_key=…)`
+  weicht per `ON CONFLICT` und meldet den offenen Job (`OpenJob`); ein Start daneben in einer
+  anderen Anfrage wartet auf dessen Zeile und weicht dann. Die zweite Prüfung in X1 unter der
+  Dokumentsperre bleibt als zweite Linie.
+- **Start (7.5).** `POST /api/v1/documents` legt das Dokument an und startet seine Extraktion in
+  einer Transaktion samt Zulassung (eine Abweisung nimmt das Dokument mit zurück).
+  `POST /documents/{id}/extraction` ist idempotent wie der Umwandlungsstart: läuft eine, 200 mit
+  ihr – auch wenn die Zulassung abweisen würde (sie zu verfolgen kostet nichts). Starten darf nur
+  der Eigentümer (er wird belastet); wer das Dokument sieht, liest es und seine Läufe.
+  Abweichung: die Route gibt den Job selbst zurück, nicht `{job}`.
+- **Läufe lesen.** `GET /documents/{id}/runs`: ein Lauf ohne Ausgang „läuft“ nur, solange sein Job
+  genau diesen Versuch fährt, sonst `abandoned`; keine neue Ausgangsart (Migration 0017 bleibt).
+- **Abbruch.** Vorhanden waren API (`POST /jobs/{id}/cancel`), Herzschlag und Sweep. Neu: Nach dem
+  Abbruchwunsch wartet der Worker höchstens `CANCEL_WAIT_S` (5 s) auf den Handler und schreibt dann
+  `cancelled`; vorher wartete er ohne Frist, ein hängender Handler (Aufruf, der den Abbruch
+  übergeht, Arbeit im Thread) hielt Job und Worker-Platz, bis die Lease ablief. Der Handler läuft
+  abgekoppelt aus; seine Schreibversuche scheitern an der Lease. Oberfläche: „Abbrechen“ an jedem
+  Auftrag (JobProgress) mit Rückfrage, danach „Abbruch angefordert“, dazu die Laufzeit. Kein
+  automatischer Abbruch nach Höchstdauer (Messpunkt Paket 11: wie lange ein echter Lauf dauert).
+- **Oberfläche.** Start aus der fertigen Umwandlung (`ExtractionStart`: Bereich, Länder, das Land
+  des Eintrags vorgewählt), Dokumentseite `/dokumente/:id` (`DocumentView`), Dokumente in der
+  Quellansicht (`SourceDocuments`). Bereichsnamen an `cv:EducationSectors`, Laufzustände an
+  `RunState` gebunden (tests/documentWords.test.ts).
 
 ### Paket 8: X5 Prüfung mit SHACL und X6 Reparatur (5 PT)
 
