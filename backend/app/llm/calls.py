@@ -212,7 +212,10 @@ async def _attempt(
             async with stage.agent.iter(content, model_settings=breakpoint_settings(content)) as run:
                 async for node in run:
                     if Agent.is_model_request_node(node):
-                        estimate = estimate_input(
+                        # the tokenizer over the whole conversation, the document with it: beside
+                        # the event loop, which a unit asking beside this one needs meanwhile
+                        estimate = await asyncio.to_thread(
+                            estimate_input,
                             run.all_messages(),
                             node.request,
                             instructions=stage.instructions,

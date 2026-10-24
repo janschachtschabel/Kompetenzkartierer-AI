@@ -4,6 +4,7 @@ anybody reads them."""
 
 import asyncio
 import json
+import threading
 from collections.abc import Callable
 from typing import Any
 
@@ -95,6 +96,24 @@ async def test_an_answer_of_the_schema_s_form_is_reserved_before_and_booked_afte
     assert answer.spent == ledger.booked[0][1]
     [raw] = kept.answers
     assert json.loads(raw)[0]["usage"]["input_tokens"] == 100  # the answer with its usage, as it came
+
+
+async def test_a_request_s_input_is_counted_beside_the_event_loop(monkeypatch: pytest.MonkeyPatch) -> None:
+    # the whole document is counted before each request: X4 asks several units at once (plan M1 7b)
+    loop_thread = threading.get_ident()
+    counted_in: list[int] = []
+    estimate = calls.estimate_input
+
+    def counted(*args: Any, **kwargs: Any) -> int:
+        counted_in.append(threading.get_ident())
+        return estimate(*args, **kwargs)
+
+    monkeypatch.setattr(calls, "estimate_input", counted)
+    built, _ = stage(['{"title": "Zahlen"}'])
+
+    await ask(built, "Das Dokument.", meter=Ledger())
+
+    assert counted_in and loop_thread not in counted_in
 
 
 async def test_an_answer_s_text_no_store_keeps_is_made_storable() -> None:
