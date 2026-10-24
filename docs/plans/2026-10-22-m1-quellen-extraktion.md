@@ -555,15 +555,21 @@ Nachtrag zur Umsetzung (24.10.):
   `ground.py` und `asking.py` (aus X1 herausgelöst).
 - **Einheit atomar, einmal je Dokument.** Tabelle `extraction_unit` (Migration 0019); eine Einheit
   schreibt Aussagen, Befunde und ihre Markierung in einer Transaktion unter der Lease. An einem
-  bestehenden Knoten markiert sie zuerst, damit ein zweiter Schreiber an der Markierung wartet und
-  weicht (seine Aussagen kollidierten sonst an den Positionen); ohne Knoten (Dokument ohne
-  Überschriften) legt sie einen eigenen Knoten an (`x4.unit_without_node`, Herkunft Regel).
+  bestehenden Knoten nimmt sie erst die Baumsperre (wie jeder Schreiber eines Baums, Migration 0014;
+  auch `append_statements` nimmt sie), dann die Markierung: ein zweiter Schreiber wartet an der
+  Sperre und weicht an der Markierung (seine Aussagen kollidierten sonst an den Positionen); ohne
+  Knoten (Dokument ohne Überschriften) legt sie einen eigenen Knoten an (`x4.unit_without_node`,
+  Herkunft Regel). Gelöschte Läufe oder Knoten lassen die Markierung stehen (`ON DELETE SET NULL`).
+  Rahmenteile tragen ihre Reihenfolge in `frame_part.position` (nicht in der Id).
   Positionen je Teil eines Knotens: Teil · 10 000 + i – die Reihenfolge bleibt, wann auch immer die
   Teile fertig werden; Paket 9 darf neu nummerieren.
 - **Präfix.** X3 und X4 lesen dasselbe Dokument mit Profiltext (aus dem Speicher, mit den eigenen
   Bezeichnungen aus X1); X4 zusätzlich die Auswahllisten aus X3 und die Unterarten des Profils mit
   ihren Hinweisen (stehen fürs Cache vor dem Haltepunkt). X3 fragt immer einmal, auch ohne
-  Rahmenabschnitt (Modelle und Operatoren können überall stehen).
+  Rahmenabschnitt (Modelle und Operatoren können überall stehen). Folgezeilen eines Blocks stehen
+  um zwei Leerzeichen eingerückt (keine Dokumentzeile steht, wo der Prompt seine Teile markiert);
+  jede gelesene Antwort nimmt sie aus ihren Texten wieder heraus (`prefix.as_written`), daher
+  `x1-profile/3`.
 - **Abweichungen.** Herkunft der X4-Aussagen `cv:orig_model` (nicht `orig_source` wie im Beispiel
   `ohm-kette.ttl`); Werte aus dem Umfeld werden nicht gespeichert (Befund
   `x4.value_from_surroundings`), die Vererbung bleibt abgefragt (konzept §7) – statt
