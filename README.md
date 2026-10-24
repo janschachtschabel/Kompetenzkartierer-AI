@@ -136,15 +136,19 @@ ungültig.
   der fertigen Umwandlung eines Eintrags ein Dokument an und startet seine Extraktion (202 mit
   Dokument und Job), als Modelljob zugelassen (403 `no_budget`, 429 `too_many_jobs` /
   `too_many_starts`). `POST /api/v1/documents/{id}/extraction` startet sie neu, nur durch den
-  Eigentümer (403 `not_owner`); `GET /api/v1/documents?source_id=…`, `/documents/{id}`,
-  `/documents/{id}/runs` lesen sie. Je Dokument wartet oder läuft höchstens eine Extraktion
-  (`job.unique_key`, Migration 0018): ein Start dabei gibt die laufende zurück (200).
+  Eigentümer (403 `not_owner`) und solange er den Inhalt des Eintrags lesen darf (403
+  `file_hidden`); `GET /api/v1/documents?source_id=…`, `/documents/{id}`, `/documents/{id}/runs`
+  lesen sie (die Job-ID nur für Eigentümer und Admins). Je Dokument wartet oder läuft höchstens
+  ein Extraktionsjob (`job.unique_key`, Migration 0018): ein Start dabei gibt den laufenden zurück
+  (200); ebenso ein neues Dokument derselben Konvertierung, solange eines des Kontos aus ihr
+  extrahiert wird – dann 200 mit diesem.
 - Abbrechen: `POST /api/v1/jobs/{id}/cancel` (Eigentümer des Jobs oder Admin, in der Oberfläche
   der Knopf „Abbrechen“ an jedem Auftrag). Ein wartender Job endet sofort, ein laufender beim
-  nächsten Herzschlag seines Workers; hält der Handler dann nicht an, endet der Job nach
-  `CANCEL_WAIT_S` (5 s) trotzdem `cancelled`, und was der Handler danach noch schreibt, findet
-  seine Lease nicht mehr. Ein Worker, der gar nicht mehr schlägt, endet über die Prüfung
-  abgelaufener Leases ebenso `cancelled`.
+  nächsten Herzschlag seines Workers (alle `JOB_LEASE_S`/3); hält der Handler dann nicht an,
+  endet der Job nach `CANCEL_WAIT_S` (5 s, bei kürzerer Lease einem Drittel von ihr) trotzdem
+  `cancelled`. Was der Handler danach noch schreibt, findet seine Lease nicht mehr, und eine
+  Modellanfrage stellt er nicht mehr (`check_lease`). Ein Worker, der gar nicht mehr schlägt,
+  endet über die Prüfung abgelaufener Leases ebenso `cancelled`.
 - Extraktion (X1, X2): Der Job `extract.run` (`{"document_id": …}`) bestimmt für ein Dokument per
   Sprachmodell das Dokumentprofil (Titel, Typ, Geltung,
   Spezifikationen, eigene Begriffe), baut das Gerüst ohne Modell aus Verzeichnis, Layout und

@@ -466,8 +466,10 @@ Nachtrag zur Umsetzung (24.10.):
 - **Offen für Paket 7 (7.5):** Ein unterlegener Job läuft nach X1 mit X2 weiter. Schreiben X3/X4
   ohne dieselbe zweite Prüfung, schrieben zwei Jobs sie doppelt. Vorher entscheiden: höchstens ein
   offener `extract.run` je Dokument (beim Start), oder dieselbe Prüfung unter der Dokumentsperre in
-  jeder schreibenden Stufe. **Entschieden in 7a:** höchstens ein offener Lauf je Dokument, von der
-  Datenbank erzwungen (Nachtrag Paket 7a).
+  jeder schreibenden Stufe. **Entschieden in 7a:** höchstens ein offener Job je Dokument, von der
+  Datenbank erzwungen (Nachtrag Paket 7a). Nach einem Abbruch kann der alte Handler noch
+  auslaufen; darum schreibt jede schreibende Stufe (X3/X4 in 7b) in einer Transaktion mit
+  `hold_lease`, und vor jeder Modellanfrage prüft der Lauf die Lease (`check_lease`).
 
 ### Paket 7: X3 Rahmenteile und X4 Aussagen (6 PT)
 
@@ -486,7 +488,7 @@ Nachtrag zur Umsetzung (24.10.):
   über die API (7.5), Abbruch, die Dokumentseite ohne Einheiten (Teil von 7.6); 7b – X3, X4 und das
   Budget mitten in X4 (7.1–7.4), fertige Einheiten auf der Dokumentseite. Grund: Steuerung und
   Stufen getrennt, der Nutzer wünschte das Abbruchmanagement gleich mit, kleinere Prüfrunden.
-- **Ein offener Lauf je Dokument (Variante A).** `job.unique_key` (Migration 0018) mit
+- **Ein offener Job je Dokument (Variante A).** `job.unique_key` (Migration 0018) mit
   partiellem Unique-Index über wartende und laufende Jobs; Schlüssel `extract.run:<Dokument>`
   (`app/pipeline/extraction.py`, damit die API die Pipeline nicht lädt). `enqueue(unique_key=…)`
   weicht per `ON CONFLICT` und meldet den offenen Job (`OpenJob`); ein Start daneben in einer
@@ -495,16 +497,31 @@ Nachtrag zur Umsetzung (24.10.):
 - **Start (7.5).** `POST /api/v1/documents` legt das Dokument an und startet seine Extraktion in
   einer Transaktion samt Zulassung (eine Abweisung nimmt das Dokument mit zurück).
   `POST /documents/{id}/extraction` ist idempotent wie der Umwandlungsstart: läuft eine, 200 mit
-  ihr – auch wenn die Zulassung abweisen würde (sie zu verfolgen kostet nichts). Starten darf nur
-  der Eigentümer (er wird belastet); wer das Dokument sieht, liest es und seine Läufe.
-  Abweichung: die Route gibt den Job selbst zurück, nicht `{job}`.
+  ihr – auch wenn die Zulassung abweisen würde (sie zu verfolgen kostet nichts). Ebenso
+  `POST /documents`: wird ein Dokument desselben Kontos aus derselben Konvertierung gerade
+  extrahiert, 200 mit diesem Dokument und seinem Job statt eines zweiten (Formular doppelt
+  abgeschickt, Anfrage wiederholt) – ein PDF wird je Konto nicht zweimal zugleich bezahlt; nach
+  dem Ende dieser Extraktion darf ein weiteres Dokument entstehen (anderer Bereich, andere Länder).
+  Beides wird unter der Sperre der Zulassung nachgesehen, auch wo sie abweist: ein Start daneben in
+  einer anderen Anfrage wird so gefunden (Review 7a B1/B3). Starten darf nur der Eigentümer (er
+  wird belastet), und nur, solange er den Inhalt des Eintrags lesen darf wie bei der Anlage (403
+  `file_hidden`); wer das Dokument sieht, liest es und seine Läufe. Abweichungen: die Route gibt
+  den Job selbst zurück, nicht `{job}`; das Dokument nennt seine letzte Extraktion als
+  `extraction: {job_id, status}` (nicht `extraction_job`), die `job_id` nur für Eigentümer und
+  Admins, die sie verfolgen dürfen – die Redaktion liest den Status.
 - **Läufe lesen.** `GET /documents/{id}/runs`: ein Lauf ohne Ausgang „läuft“ nur, solange sein Job
-  genau diesen Versuch fährt, sonst `abandoned`; keine neue Ausgangsart (Migration 0017 bleibt).
+  genau diesen Versuch fährt und seither kein Lauf desselben Jobs begann (ein `release` zählt den
+  Versuch zurück, der nächste fährt dieselbe Nummer), sonst `abandoned`; keine neue Ausgangsart
+  (Migration 0017 bleibt). Ein abgekoppelter Handler, der an die Lease stößt, beendet noch seinen
+  eigenen Lauf `failed` (`LeaseLost`) – sein Lauf, keine Stufe.
 - **Abbruch.** Vorhanden waren API (`POST /jobs/{id}/cancel`), Herzschlag und Sweep. Neu: Nach dem
-  Abbruchwunsch wartet der Worker höchstens `CANCEL_WAIT_S` (5 s) auf den Handler und schreibt dann
-  `cancelled`; vorher wartete er ohne Frist, ein hängender Handler (Aufruf, der den Abbruch
-  übergeht, Arbeit im Thread) hielt Job und Worker-Platz, bis die Lease ablief. Der Handler läuft
-  abgekoppelt aus; seine Schreibversuche scheitern an der Lease. Oberfläche: „Abbrechen“ an jedem
+  Abbruchwunsch wartet der Worker höchstens `CANCEL_WAIT_S` (5 s, bei kürzerer Lease ein Drittel
+  von ihr) auf den Handler und schreibt dann `cancelled`; vorher wartete er ohne Frist, ein
+  hängender Handler (Aufruf, der den Abbruch übergeht, langsames Aufräumen) hielt Job und
+  Worker-Platz, bis die Lease ablief. Ebenso nach verlorener Lease. Der Handler läuft abgekoppelt
+  aus; seine Schreibversuche scheitern an der Lease, und vor jeder Modellanfrage prüft X1 sie
+  (`check_lease`), so dass er nichts mehr fragt und kostet. Einen laufenden Job erreicht der
+  Abbruch beim nächsten Herzschlag (alle `JOB_LEASE_S`/3, 20 s bei 60 s). Oberfläche: „Abbrechen“ an jedem
   Auftrag (JobProgress) mit Rückfrage, danach „Abbruch angefordert“, dazu die Laufzeit. Kein
   automatischer Abbruch nach Höchstdauer (Messpunkt Paket 11: wie lange ein echter Lauf dauert).
 - **Oberfläche.** Start aus der fertigen Umwandlung (`ExtractionStart`: Bereich, Länder, das Land
