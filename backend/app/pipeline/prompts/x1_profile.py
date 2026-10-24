@@ -13,7 +13,7 @@ from datetime import date
 from app.domain.lexicon import HOMONYM, NEGATIVE, ActiveCue
 from app.vocab.lookup import ConceptText
 
-PROMPT_VERSION = "x1-profile/2"
+PROMPT_VERSION = "x1-profile/3"
 SCHEMA = "x1-dokumentprofil"  # ontology/schemas/<SCHEMA>.schema.json
 SCHEMA_NAME = "x1_dokumentprofil"  # as the provider is told it
 

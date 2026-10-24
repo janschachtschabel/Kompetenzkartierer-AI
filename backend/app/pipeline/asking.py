@@ -25,6 +25,7 @@ from app.llm.client import LLMNotConfigured
 from app.llm.metering import BudgetExhausted
 from app.llm.raw import RawResponses
 from app.llm.schema import SCHEMA_DIR, load_schema
+from app.pipeline.prefix import as_written
 from app.usage.ledger import Charge
 from app.usage.meter import LedgerMeter
 
@@ -52,15 +53,16 @@ class Asking:
     async def answer(
         self, stage: StageAgent, purpose: str, prompt: str | Sequence[UserContent]
     ) -> dict[str, Any]:
-        """The answer of ``stage`` to ``prompt`` (text, or text with a cache breakpoint);
-        Unanswered where none took the schema's form."""
+        """The answer of ``stage`` to ``prompt`` (text, or text with a cache breakpoint), its texts
+        as the document writes them (the raw answer is kept as it came); Unanswered where none took
+        the schema's form."""
         charge = Charge(self.document.owner_id, self.job.id, purpose, self.model_name, self.run_id)
         # with the job: a handler left to unwind after it ended - cancelled, lost - asks no more
         meter = LedgerMeter(self.context.pool, charge, self.job)
         got = await ask(stage, prompt, meter=meter, raw=self.keeper)
         if got.output is None:
             raise Unanswered(got.failure or "no answer took the schema's form")
-        return got.output
+        return as_written(got.output)
 
     def agent(self, schema: str, name: str, instructions: str) -> StageAgent:
         loaded = load_schema(self.context.settings.ontology_dir / SCHEMA_DIR, schema)

@@ -12,6 +12,7 @@ unit of one window. What fits is counted (tiktoken), never guessed.
 
 from collections.abc import Callable, Collection, Sequence
 from dataclasses import dataclass
+from typing import Any, cast
 
 from app.conversion.base import Block
 from app.llm.budget import RESERVE_TOKENS, count_tokens
@@ -20,6 +21,7 @@ from app.llm.metering import MARGIN
 WHOLE = "whole"  # the window of a prefix that holds the whole document
 _OUTSIDE = frozenset({"page_header", "page_footer"})
 _GAP = "[…]"
+_LATER_LINE = "\n  "  # a block's later line as the prefix writes it
 
 
 class PrefixTooLong(ValueError):
@@ -224,4 +226,20 @@ def _lines(block: Block) -> list[str]:
 def _indented(text: str) -> str:
     """A text's later lines indented: no line of the document stands at a line's start, where the
     prompt marks its parts ("=== AUFTRAG ===") and the blocks their ids."""
-    return text.replace("\n", "\n  ")
+    return text.replace("\n", _LATER_LINE)
+
+
+def as_written(answer: dict[str, Any]) -> dict[str, Any]:
+    """A model's answer with every text in it as the document writes it: the indentation the prefix
+    gives a block's later lines (``_indented``) taken out again, of a wording copied as it was shown."""
+    return cast(dict[str, Any], _unindented(answer))
+
+
+def _unindented(value: Any) -> Any:
+    if isinstance(value, str):
+        return value.replace(_LATER_LINE, "\n")
+    if isinstance(value, dict):
+        return {key: _unindented(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_unindented(item) for item in value]
+    return value

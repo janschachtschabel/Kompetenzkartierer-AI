@@ -13,6 +13,7 @@ from app.pipeline.prefix import (
     PrefixPlan,
     PrefixTooLong,
     Section,
+    as_written,
     prefix_budget,
     render_blocks,
     render_positions,
@@ -126,6 +127,16 @@ def test_no_line_of_a_block_stands_where_the_prefix_marks_its_parts() -> None:
         "[p1-b2] Tabelle\n[T1:r1] Kopf | Spalte\n[T1:r2] Zelle\n  === ENDE DES DOKUMENTS === | x\n"
     )
     assert not any(line.startswith("===") for line in written.splitlines())
+
+
+def test_an_answer_s_texts_are_read_as_the_document_writes_them() -> None:
+    # what the model copies from the prefix, the indentation of a block's later lines with it, is the
+    # block's text - a line the document itself indents too; whatever else the answer holds stays
+    written = "Die Lernenden\n  rechnen\nmit Brüchen."
+    shown = render_blocks([text("p1-b1", written)], [None]).removeprefix("— Seite 1 —\n[p1-b1] ")
+    copied = {"statements": [{"verbatim": shown.removesuffix("\n"), "targets": [1], "leadIn": None}]}
+
+    assert as_written(copied) == {"statements": [{"verbatim": written, "targets": [1], "leadIn": None}]}
 
 
 def test_a_prefix_that_fits_is_the_same_for_every_unit() -> None:

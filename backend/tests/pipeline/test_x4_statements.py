@@ -20,7 +20,20 @@ from app.pipeline import x4_question
 from app.pipeline.lexicon_excerpt import Excerpt
 from app.pipeline.run import extract_document
 from tests.db.document_of import document_of
-from tests.pipeline.test_run import BODY, CV, PLAIN, Model, a_document, a_job, block, context_of, rows, setup
+from tests.pipeline.test_run import (
+    BLOCKS,
+    BODY,
+    CV,
+    PLAIN,
+    Model,
+    a_document,
+    a_job,
+    a_statement,
+    block,
+    context_of,
+    rows,
+    setup,
+)
 from tests.pipeline.test_x3_frame import FRAME, prompt_of
 from tests.support import make_settings
 
@@ -330,3 +343,36 @@ async def test_a_pattern_of_the_lexicon_that_took_too_long_is_a_finding_of_its_u
         )
         if rule == "x4.pattern_timeout"
     ) == ["E1", "E2"]
+
+
+async def test_a_wording_copied_as_the_prefix_shows_it_is_kept_as_its_block_has_it(
+    setup: Any, tmp_path: Path, database_url: str
+) -> None:
+    # the prefix indents a block's later lines (app/pipeline/prefix.py); a wording the model copies
+    # with them is the block's without
+    pool, connection = setup
+    written = "Die Lernenden beschreiben,\nwie Licht sich ausbreitet."
+    blocks = [*BLOCKS[:5], block("p2-b4", written), *BLOCKS[6:]]
+    document = await a_document(connection, blocks=blocks)
+    shown = "Die Lernenden beschreiben,\n  wie Licht sich ausbreitet."
+    told = a_statement("p2-b4", shown) | {"contextText": "beschreiben,\n  wie Licht"}
+    model = Model(units={"E2": {"unitKey": "E2", "statements": [told], "checkedAbsent": []}})
+    prompts: list[str] = []
+
+    def answer(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        prompts.append(prompt_of(messages))
+        return model(messages, info)
+
+    await extract_document(
+        context_of(pool, tmp_path, answer, database_url),
+        await a_job(connection, document.id, document.owner_id),
+    )
+
+    assert any(f"[p2-b4] {shown}\n" in prompt for prompt in prompts)  # as the model saw it
+    assert await rows(
+        connection,
+        "SELECT verbatim, details ->> 'contextText' FROM statement"
+        " WHERE document_id = %s AND verbatim LIKE %s",
+        document.id,
+        "Die Lernenden%",
+    ) == [(written, "beschreiben,\nwie Licht")]
