@@ -1,7 +1,8 @@
 """Documents and their extraction through the API (plan M1 7.5, 7a): a document is made of an entry's
 finished conversion and its extraction started at once; a start of a document whose extraction is
-waiting or running gives that one back; only the owner, who is charged, starts; who may read the
-document reads it and its runs."""
+waiting or running gives that one back, as does a document asked of a conversion one of the
+account's documents is being extracted from; only the owner, who is charged, starts; who may read
+the document reads it and its runs."""
 
 from collections.abc import Iterator
 from pathlib import Path
@@ -14,12 +15,13 @@ from fastapi.testclient import TestClient
 from psycopg.types.json import Jsonb
 
 from app.api import documents as documents_api
+from app.api import limits
 from app.api.app import create_app
 from app.db.migrate import migrate
 from app.pipeline.extraction import KIND, unique_key
 from app.vocab.loader import read_vocabulary
 from app.vocab.store import load_vocabulary
-from tests.db.l1 import CV, add_conversion, add_entity
+from tests.db.l1 import CV, add_conversion, add_document, add_entity
 from tests.support import make_settings, seed_account, selector_client
 
 pytestmark = pytest.mark.pg
@@ -159,6 +161,99 @@ def end_job(url: str, job_id: str, status: str) -> None:
         connection.execute("UPDATE job SET status = %s, finished_at = now() WHERE id = %s", (status, job_id))
 
 
+def spend_all(url: str, owner: UUID) -> None:
+    with psycopg.connect(url, autocommit=True) as connection:
+        connection.execute("UPDATE quota SET token_limit = 0 WHERE account_id = %s", (owner,))
+
+
+def test_a_document_asked_of_a_conversion_whose_extraction_waits_gives_that_one_back(
+    client: TestClient, url: str
+) -> None:
+    # one extraction of the same PDF at a time for an account: a second form sent, a request sent
+    # again, is led to the one waiting or running - whatever sector it names
+    owner, header = an_account(url)
+    made = a_conversion(url, owner)
+    started = make(client, url, header, made)
+    starts = rows(url, "SELECT count(*) FROM rate_event")[0][0]
+
+    again = client.post("/api/v1/documents", headers=header, json=asked(made, sector="vocational"))
+
+    assert again.status_code == 200, again.text
+    assert (again.json()["document"]["id"], again.json()["job"]["id"]) == (
+        started["document"]["id"],
+        started["job"]["id"],
+    )
+    assert again.json()["document"]["sector"] == "school"
+    assert rows(url, "SELECT count(*) FROM document") == [(1,)]
+    assert rows(url, "SELECT count(*) FROM job") == [(1,)]
+    assert rows(url, "SELECT count(*) FROM rate_event")[0][0] == starts  # rolled back, admission and all
+    assert rows(url, "SELECT count(*) FROM audit_log WHERE action = 'document.create'") == [(1,)]
+
+
+def test_a_document_asked_while_the_extraction_runs_is_led_to_it_though_the_budget_is_spent(
+    client: TestClient, url: str
+) -> None:
+    owner, header = an_account(url)
+    made = a_conversion(url, owner)
+    started = make(client, url, header, made)
+    spend_all(url, owner)
+
+    again = client.post("/api/v1/documents", headers=header, json=asked(made))
+
+    assert (again.status_code, again.json()["document"]["id"]) == (200, started["document"]["id"])
+
+
+def test_a_document_asked_beside_another_made_meanwhile_is_led_to_that_one(
+    client: TestClient, url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # two requests side by side: the second looks once the admission's lock is its, and finds the
+    # first's document, committed while it waited for that lock
+    owner, header = an_account(url)
+    made = a_conversion(url, owner)
+    first: list[UUID] = []
+    admit = limits.admit_model_start
+
+    async def first_one_commits_meanwhile(*args: Any, **kwargs: Any) -> None:
+        with psycopg.connect(url, autocommit=True) as connection:
+            first.append(add_document(connection, made))
+            connection.execute(
+                "INSERT INTO job_lane (lane) VALUES (%s) ON CONFLICT DO NOTHING", (str(owner),)
+            )
+            connection.execute(
+                "INSERT INTO job (id, kind, lane, payload, unique_key)"
+                " VALUES (gen_random_uuid(), %s, %s, '{}', %s)",
+                (KIND, str(owner), unique_key(first[0])),
+            )
+        await admit(*args, **kwargs)
+
+    monkeypatch.setattr("app.api.documents.admit_model_start", first_one_commits_meanwhile)
+
+    again = client.post("/api/v1/documents", headers=header, json=asked(made))
+
+    assert (again.status_code, again.json()["document"]["id"]) == (200, str(first[0]))
+    assert rows(url, "SELECT count(*) FROM document") == [(1,)]
+
+
+def test_a_document_of_the_conversion_is_made_again_once_its_extraction_ended_or_by_another(
+    client: TestClient, url: str
+) -> None:
+    owner, header = an_account(url)
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+    made, other = a_conversion(url, owner), a_conversion(url, owner, b"\x02" * 32)
+    started = make(client, url, header, made)
+
+    by_editor = client.post("/api/v1/documents", headers=editor, json=asked(made))
+    of_another_pdf = client.post("/api/v1/documents", headers=header, json=asked(other))
+    end_job(url, started["job"]["id"], "cancelled")
+    again = client.post("/api/v1/documents", headers=header, json=asked(made, sector="vocational"))
+
+    assert by_editor.status_code == 202, by_editor.text  # the editor's own, charged to the editor
+    assert of_another_pdf.status_code == 202, of_another_pdf.text
+    assert again.status_code == 202, again.text
+    assert again.json()["document"]["id"] != started["document"]["id"]
+    assert rows(url, "SELECT count(*) FROM document") == [(4,)]
+
+
 def test_a_start_while_the_extraction_waits_or_runs_gives_that_one_back(client: TestClient, url: str) -> None:
     owner, header = an_account(url)
     started = make(client, url, header, a_conversion(url, owner))
@@ -220,11 +315,6 @@ def test_a_start_that_meets_one_started_beside_it_gives_that_one_back_and_takes_
     assert rows(url, "SELECT count(*) FROM rate_event")[0][0] == starts
 
 
-def spend_all(url: str, owner: UUID) -> None:
-    with psycopg.connect(url, autocommit=True) as connection:
-        connection.execute("UPDATE quota SET token_limit = 0 WHERE account_id = %s", (owner,))
-
-
 def test_a_start_while_the_extraction_runs_gives_it_back_though_the_budget_is_spent(
     client: TestClient, url: str
 ) -> None:
@@ -268,7 +358,9 @@ def test_a_document_and_its_list_are_read_by_who_sees_them(client: TestClient, u
     _, editor = an_account(url, "Redaktion", ("redaktion",))
     _, stranger = an_account(url, "Fremde")
     made = a_conversion(url, owner)
-    first, second = make(client, url, header, made), make(client, url, header, made)
+    first = make(client, url, header, made)
+    end_job(url, first["job"]["id"], "cancelled")  # a second document of the conversion after it
+    second = make(client, url, header, made)
     path = f"/api/v1/documents/{first['document']['id']}"
 
     own = client.get("/api/v1/documents", headers=header, params={"source_id": str(made["source"])})

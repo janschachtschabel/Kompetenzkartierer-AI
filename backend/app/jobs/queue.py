@@ -89,6 +89,8 @@ class OpenJob(Exception):
 
 
 JobStatus = Literal["queued", "running", "done", "failed", "cancelled"]
+# a job waiting or running: of a unique key, one at a time
+OPEN_STATUSES: frozenset[JobStatus] = frozenset({"queued", "running"})
 
 
 class LeaseLost(Exception):

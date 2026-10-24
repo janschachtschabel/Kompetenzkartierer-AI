@@ -12,7 +12,7 @@ vocabulary's, its document type one of its sector's profile - each chosen only w
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 import psycopg
@@ -38,6 +38,10 @@ _VISIBLE = f"""
 SELECT {_COLUMNS} FROM document d
 WHERE {DOCUMENT_VISIBLE} AND (%(source)s::uuid IS NULL OR d.source_id = %(source)s)
 ORDER BY d.created_at DESC, d.id DESC LIMIT %(limit)s
+"""  # noqa: S608 - fixed parts
+_MADE_OF = f"""
+SELECT {_COLUMNS} FROM document d WHERE d.owner_id = %(owner)s AND d.conversion_id = %(conversion)s
+ORDER BY d.created_at DESC, d.id DESC
 """  # noqa: S608 - fixed parts
 # The entry whose content the maker may read, as app/api/source_content.py has it: its own, every
 # entry for the editors, one of no account where its content is open to accounts. Locked, so
@@ -169,8 +173,21 @@ async def documents_of(
     """The documents ``reader`` sees, of one entry where ``source_id`` names it; the newest first,
     ``limit`` at most."""
     params = {"me": reader.account_id, "all": reader.sees_all, "source": source_id, "limit": limit}
+    return await _documents(connection, _VISIBLE, params)
+
+
+async def documents_made_of(
+    connection: psycopg.AsyncConnection, owner_id: UUID, conversion_id: UUID
+) -> list[Document]:
+    """The documents of ``owner_id``'s made of the conversion, the newest first."""
+    return await _documents(connection, _MADE_OF, {"owner": owner_id, "conversion": conversion_id})
+
+
+async def _documents(
+    connection: psycopg.AsyncConnection, query: str, params: dict[str, Any]
+) -> list[Document]:
     async with connection.cursor(row_factory=dict_row) as cursor:
-        await cursor.execute(_VISIBLE, params)
+        await cursor.execute(query, params)
         rows = await cursor.fetchall()
     return [Document(**{**row, "regions": tuple(row["regions"])}) for row in rows]
 

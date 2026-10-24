@@ -3,7 +3,12 @@ their extraction started at once; started again where it ended; read with their 
 
 One extraction of a document waits or runs at a time (job.unique_key): a start while one does gives
 that one back (200), as a conversion asked again does; the database holds to it beside a start
-in another request. Only the document's owner starts its extraction - the owner is charged for it
+in another request. So does an account's document asked of a conversion one of its documents is
+being extracted from: the form sent twice, a request sent again, is led to that document (200);
+once that extraction has ended another document of it may be made (another sector, other Länder).
+Both are looked for once the admission's lock is held, and also where it refuses: what started
+beside the request is followed whatever the admission says. Only the document's owner starts its
+extraction - the owner is charged for it
 (plan M1 5.6) and follows its job in their own lane; another who sees the document (editors) is
 told 403, one who does not the 404 of no document. A start is admitted as a model job (budget,
 jobs in flight, starts a minute) in the transaction that makes it, so a refusal takes the
@@ -11,6 +16,7 @@ document back too. Who may read a document reads its runs (app/db/documents.py, 
 its job is followed and cancelled at /api/v1/jobs (app/api/jobs.py).
 """
 
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 from typing import Annotated
 from uuid import UUID
@@ -26,11 +32,19 @@ from app.api.limits import admit_model_start
 from app.api.source_content import EDITORS
 from app.core.auth import Principal
 from app.core.logging import current_request_id
+from app.core.settings import Settings
 from app.db.accounts import record_audit
-from app.db.documents import Document, DocumentError, create_document, documents_of, get_document
+from app.db.documents import (
+    Document,
+    DocumentError,
+    create_document,
+    documents_made_of,
+    documents_of,
+    get_document,
+)
 from app.db.runs import RunState, runs_of
 from app.db.source_queries import Reader
-from app.jobs.queue import JobStatus, OpenJob, account_lane, enqueue, last_jobs, open_job
+from app.jobs.queue import OPEN_STATUSES, JobStatus, OpenJob, account_lane, enqueue, last_jobs, open_job
 from app.jobs.state import job_state
 from app.pipeline.extraction import KIND, unique_key
 from app.sources.register import EDUCATION_SECTORS
@@ -94,41 +108,60 @@ class RunOut(BaseModel):
     summary="Make a document of an entry's finished conversion and start its extraction",
     status_code=202,
     responses={
+        200: {
+            "model": StartedOut,
+            "description": "The caller's document of it being extracted: none is made",
+        },
         **START_REFUSALS,
         404: {"model": ErrorBody, "description": "no_conversion: no finished conversion the caller may read"},
         422: {"model": ErrorBody, "description": "unknown_sector, unknown_region"},
     },
 )
-async def make_document(body: DocumentRequest, request: Request, who: Account) -> StartedOut:
+async def make_document(
+    body: DocumentRequest, request: Request, response: Response, who: Account
+) -> StartedOut:
     assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
-    settings = request.app.state.settings
-    async with request.app.state.pool.connection() as connection, connection.transaction():
+    owner, settings = who.account_id, request.app.state.settings
+    async with request.app.state.pool.connection() as connection:
         try:
-            document = await create_document(
-                connection,
-                _reader(who),
-                third_party_content=settings.third_party_markdown != "hidden",
-                source_id=body.source_id,
-                conversion_id=body.conversion_id,
-                sector=body.sector,
-                regions=body.regions,
-            )
-        except DocumentError as refused:
-            raise _refusal(refused) from None
-        await admit_model_start(connection, who.account_id, settings)
-        job_id = await _enqueue(connection, who.account_id, document.id)
-        await record_audit(
-            connection,
-            who.account_id,
-            who.name,
-            "document.create",
-            f"document:{document.id}",
-            {"source": str(body.source_id), "conversion": str(body.conversion_id), "job": str(job_id)},
-            current_request_id(),
-        )
+            async with connection.transaction():
+                try:
+                    document = await create_document(
+                        connection,
+                        _reader(who),
+                        third_party_content=settings.third_party_markdown != "hidden",
+                        source_id=body.source_id,
+                        conversion_id=body.conversion_id,
+                        sector=body.sector,
+                        regions=body.regions,
+                    )
+                except DocumentError as refused:
+                    raise _refusal(refused) from None
+                await _admit(
+                    connection,
+                    owner,
+                    settings,
+                    lambda: _being_extracted(connection, owner, body.conversion_id),
+                )
+                job_id = await _enqueue(connection, owner, document.id)
+                await record_audit(
+                    connection,
+                    owner,
+                    who.name,
+                    "document.create",
+                    f"document:{document.id}",
+                    {
+                        "source": str(body.source_id),
+                        "conversion": str(body.conversion_id),
+                        "job": str(job_id),
+                    },
+                    current_request_id(),
+                )
+        except _BeingExtracted as found:  # rolled back, the document asked and its admission with it
+            response.status_code = 200
+            document, job_id = found.document, found.job_id
         [out] = await _outs(connection, [document], who)
-        job = await _job(connection, job_id, who)
-    return StartedOut(document=out, job=job)
+        return StartedOut(document=out, job=await _job(connection, job_id, who))
 
 
 @router.post(
@@ -151,10 +184,9 @@ async def start_extraction(document_id: UUID, request: Request, response: Respon
                 document = await _visible(connection, who, document_id)
                 if document.owner_id != who.account_id:
                     raise Refusal(403, "not_owner", "Only the document's owner starts its extraction.")
-                # looked for first: the one waiting or running is followed whatever the admission says
-                if (open_id := await open_job(connection, unique_key(document.id))) is not None:
-                    raise OpenJob(open_id)
-                await admit_model_start(connection, who.account_id, request.app.state.settings)
+                key = unique_key(document.id)
+                settings = request.app.state.settings
+                await _admit(connection, who.account_id, settings, lambda: _open(connection, key))
                 job_id = await _enqueue(connection, who.account_id, document.id)
                 await record_audit(
                     connection,
@@ -222,6 +254,46 @@ async def _visible(connection: psycopg.AsyncConnection, who: Principal, document
     if document is None:
         raise Refusal(404, "no_document", "No such document.")
     return document
+
+
+class _BeingExtracted(Exception):
+    """The caller's document of the conversion asked whose extraction waits or runs."""
+
+    def __init__(self, document: Document, job_id: UUID) -> None:
+        super().__init__(f"document {document.id} is being extracted")
+        self.document = document
+        self.job_id = job_id
+
+
+async def _admit(
+    connection: psycopg.AsyncConnection,
+    account_id: UUID,
+    settings: Settings,
+    look: Callable[[], Awaitable[None]],
+) -> None:
+    """Admit the start as a model job, then ``look`` for an extraction it would stand beside -
+    under the admission's lock, so one started in another request is seen; where the admission
+    refuses too, so following one waiting or running asks for nothing (``look`` raises)."""
+    try:
+        await admit_model_start(connection, account_id, settings)
+    except Refusal:
+        await look()
+        raise
+    await look()
+
+
+async def _open(connection: psycopg.AsyncConnection, key: str) -> None:
+    if (open_id := await open_job(connection, key)) is not None:
+        raise OpenJob(open_id)
+
+
+async def _being_extracted(connection: psycopg.AsyncConnection, owner: UUID, conversion_id: UUID) -> None:
+    made = await documents_made_of(connection, owner, conversion_id)
+    latest = await last_jobs(connection, [unique_key(document.id) for document in made])
+    for document in made:
+        found = latest.get(unique_key(document.id))
+        if found is not None and found[1] in OPEN_STATUSES:
+            raise _BeingExtracted(document, found[0])
 
 
 async def _enqueue(connection: psycopg.AsyncConnection, owner: UUID, document_id: UUID) -> UUID:
