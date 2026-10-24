@@ -28,7 +28,7 @@ from app.domain.l1 import NodeDraft
 from app.jobs.context import JobContext
 from app.jobs.handlers import make_handlers
 from app.jobs.outcome import PermanentError
-from app.jobs.queue import Job, account_lane, claim, enqueue
+from app.jobs.queue import Job, LeaseLost, account_lane, claim, enqueue
 from app.pipeline import run, x1_stage
 from app.pipeline.run import KIND, extract_document
 from app.usage.admission import MODEL_JOB_KINDS
@@ -367,6 +367,68 @@ async def test_a_spent_budget_ends_the_job_and_writes_nothing_of_the_stage(
     assert await rows(connection, "SELECT title FROM document WHERE id = %s", document.id) == [(None,)]
 
 
+def is_profile(messages: list[ModelMessage]) -> bool:
+    return str(messages[0].parts[-1].content).startswith("=== AUSZUG")  # type: ignore[union-attr]
+
+
+async def test_a_budget_spent_before_the_outline_is_asked_writes_nothing_of_the_stage(
+    setup: Any, tmp_path: Path, database_url: str
+) -> None:
+    # another job of the account spends it while the profile is asked: the profile is not written alone
+    pool, connection = setup
+    document = await a_document(connection)
+    job = await a_job(connection, document.id, document.owner_id)
+    model = Model()
+
+    async def answer(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        if is_profile(messages):
+            await connection.execute(
+                "UPDATE quota SET token_limit = 2000 WHERE account_id = %s", (document.owner_id,)
+            )
+        return model(messages, info)
+
+    with pytest.raises(PermanentError) as ended:
+        await extract_document(context_of(pool, tmp_path, answer, database_url), job)
+
+    assert ended.value.code == "budget_exhausted"
+    assert model.asked == ["profile"]
+    assert await rows(connection, "SELECT outcome FROM extraction_run WHERE job_id = %s", job.id) == [
+        ("budget_exhausted",)
+    ]
+    assert await rows(connection, "SELECT title FROM document WHERE id = %s", document.id) == [(None,)]
+    assert await rows(connection, "SELECT count(*) FROM node WHERE document_id = %s", document.id) == [(0,)]
+    assert await rows(connection, "SELECT purpose FROM llm_usage WHERE job_id = %s", job.id) == [
+        ("x1.profile",)  # what was asked is charged
+    ]
+
+
+async def test_an_attempt_that_lost_its_lease_while_it_asked_writes_nothing(
+    setup: Any, tmp_path: Path, database_url: str
+) -> None:
+    # the lease runs out while the outline is asked: the job is another worker's by the write
+    pool, connection = setup
+    document = await a_document(connection)
+    job = await a_job(connection, document.id, document.owner_id)
+    model = Model()
+
+    async def answer(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        if not is_profile(messages):
+            await connection.execute(
+                "UPDATE job SET lease_expires_at = now() - interval '1 second' WHERE id = %s", (job.id,)
+            )
+        return model(messages, info)
+
+    with pytest.raises(LeaseLost):
+        await extract_document(context_of(pool, tmp_path, answer, database_url), job)
+
+    assert model.asked == ["profile", "outline"]
+    assert await rows(
+        connection, "SELECT outcome, result ->> 'failure' FROM extraction_run WHERE job_id = %s", job.id
+    ) == [("failed", "LeaseLost")]
+    assert await rows(connection, "SELECT title FROM document WHERE id = %s", document.id) == [(None,)]
+    assert await rows(connection, "SELECT count(*) FROM node WHERE document_id = %s", document.id) == [(0,)]
+
+
 async def test_an_answer_never_in_form_fails_the_stage(setup: Any, tmp_path: Path, database_url: str) -> None:
     pool, connection = setup
     document = await a_document(connection)
@@ -467,7 +529,7 @@ async def test_two_jobs_on_one_document_write_it_once(
     both_asked = asyncio.Barrier(2)
 
     async def answer(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
-        if str(messages[0].parts[-1].content).startswith("=== AUSZUG"):  # type: ignore[union-attr]
+        if is_profile(messages):
             await both_asked.wait()
         return model(messages, info)
 
