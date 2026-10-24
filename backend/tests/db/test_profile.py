@@ -232,6 +232,8 @@ async def test_a_work_of_the_same_title_and_region_is_suggested(connection: psyc
     await add_work(connection, "Kernlehrplan Physik", "DE-HE")
 
     assert await suggest_work(connection, "kernlehrplan physik", ("DE-NW",)) == work
+    for edged in ("Kernlehrplan Physik\n", "\tKernlehrplan Physik"):  # a title copied with its line's edge
+        assert await suggest_work(connection, edged, ("DE-NW",)) == work
     assert await suggest_work(connection, "Kernlehrplan Chemie", ("DE-NW",)) is None
     assert await suggest_work(connection, "Kernlehrplan Physik", ("DE-BY",)) is None
     assert await suggest_work(connection, "Kernlehrplan Physik", ()) is None

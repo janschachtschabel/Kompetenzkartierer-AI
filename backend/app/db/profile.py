@@ -37,8 +37,8 @@ _VARIANT = """
 INSERT INTO variant (id, specification_id, key, label, variant_kind_scheme, variant_kind_iri)
 VALUES (%s, %s, %s, %s, %s, %s)
 """
-# a title as works and documents are compared: in one case, its spaces one
-_SAME_TITLE = "lower(regexp_replace(btrim({}), '\\s+', ' ', 'g'))"
+# a title as works and documents are compared: in one case, each run of space one, none at its edges
+_SAME_TITLE = "lower(btrim(regexp_replace({}, '\\s+', ' ', 'g')))"
 _WORK = f"""
 SELECT id FROM work WHERE region = ANY (%s) AND {_SAME_TITLE.format("title")} = {_SAME_TITLE.format("%s")}
 ORDER BY created_at, id LIMIT 1
