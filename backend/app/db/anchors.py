@@ -1,5 +1,5 @@
-"""Anchors (cur:SourceAnchor) as the first layer writes them (0015): of one node, statement or
-specification of a document - or, naming none, of the document itself - with their blocks of the
+"""Anchors (cur:SourceAnchor) as the first layer writes them (0015): of one node, statement, frame part
+or specification of a document - or, naming none, of the document itself - with their blocks of the
 document's conversion. Each row of the layer is an entity first (0013)."""
 
 from uuid import UUID
@@ -11,10 +11,10 @@ from app.domain.l1 import AnchorDraft
 
 CV = "https://w3id.org/wlo/curriculum/vocab#"
 _ANCHOR = """
-INSERT INTO anchor (id, document_id, conversion_id, node_id, statement_id, specification_id, page_start,
-    page_end, printed_page, quote, match_kind_scheme, match_kind_iri, match_score, char_start, char_end,
-    table_cell)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+INSERT INTO anchor (id, document_id, conversion_id, node_id, statement_id, frame_part_id, specification_id,
+    page_start, page_end, printed_page, quote, match_kind_scheme, match_kind_iri, match_score, char_start,
+    char_end, table_cell)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
 
 
@@ -33,6 +33,7 @@ async def write_anchor(
     *,
     node_id: UUID | None = None,
     statement_id: UUID | None = None,
+    frame_part_id: UUID | None = None,
     specification_id: UUID | None = None,
 ) -> UUID:
     """The anchor ``draft`` of the one row it names, or of the document where it names none."""
@@ -46,6 +47,7 @@ async def write_anchor(
             conversion_id,
             node_id,
             statement_id,
+            frame_part_id,
             specification_id,
             draft.page_start,
             draft.page_end,
