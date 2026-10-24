@@ -664,6 +664,31 @@ def test_a_pattern_that_takes_too_long_types_nothing_and_is_named() -> None:
     assert found.timeouts == frozenset({"slow"})
 
 
+@pytest.mark.parametrize(
+    ("slow", "rule"),
+    [
+        (own_cue("slow", r"(x+x+x+x+)+y", "T", strength=0.5, role=HOMONYM), None),  # it may have found it
+        (own_cue("slow", r"(x+x+x+x+)+y", "U"), None),  # it may have named another type
+        (own_cue("slow", r"(x+x+x+x+)+y", "U", strength=0.5), "strong"),  # it types nothing
+    ],
+    ids=["homonym", "strong", "weak"],
+)
+def test_a_cue_that_takes_too_long_and_may_have_said_otherwise_leaves_the_type_to_the_model(
+    slow: Cue, rule: str | None
+) -> None:
+    strong = own_cue("strong", r"^x+$", "T")
+
+    paragraphs = [block(f"p2-b{number}", BODY) for number in range(2, 5)]
+    found = skeleton(
+        [COVER, block("p2-b1", "x" * 190, size=16), *paragraphs],
+        active_cues([slow, strong], frozenset(), None, None),
+        frozenset({"T", "U"}),
+    )
+
+    assert found.timeouts == frozenset({"slow"})
+    assert typed(found) == [("x" * 190, "T" if rule else None, rule)]
+
+
 def test_a_heading_is_a_plain_value() -> None:
     # the stage writes it as the run's result and builds nodes from it
     heading = skeleton(headed("Einleitung")).headings[0]

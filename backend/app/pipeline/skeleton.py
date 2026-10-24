@@ -18,8 +18,9 @@ of a smaller level; its level as the skeleton gives it is its depth in that tree
 A strong cue - of STRONG at least, a threshold not yet measured (konzept §20.6) - types a heading
 where all such cues that find it name one node type, and no homonym finds it: the node then
 comes from a rule, the cue's IRI its rule. Cues tied for their word name other targets, so they
-type nothing unless those agree on the node type. Any other heading's type is left to the model
-(X1, plan M1 6.4).
+type nothing unless those agree on the node type. Where the pattern of a homonym or a strong cue
+took too long, it may have found any heading and said otherwise: no heading is typed by a rule.
+Any other heading's type is left to the model (X1, plan M1 6.4).
 A heading's code is its numbering, else - where a pattern found it - the number behind the word
 that leads it ("Lernfeld 5:" 5, "Kompetenzbereich III" III), else its place among its siblings,
 assigned (app/domain/iris.py). Its title is its wording, its lines joined by a space.
@@ -110,7 +111,13 @@ def build_skeleton(
     ]
     found = _candidates(blocks, contents, body, heading_cues, search)
     headings = _tree(found, _raw_levels(found))
-    typed = [_with_type(heading, item, node_types) for heading, item in zip(headings, found, strict=True)]
+    # a homonym or a strong cue whose pattern took too long may have found any heading and said
+    # otherwise: none is typed by a rule
+    unsure = any(item.cue.iri in search.timeouts and _may_type(item) for item in heading_cues)
+    typed = [
+        heading if unsure else _with_type(heading, item, node_types)
+        for heading, item in zip(headings, found, strict=True)
+    ]
     return Skeleton(tuple(typed), contents, body, frozenset(search.timeouts))
 
 
@@ -237,6 +244,10 @@ def _printed_code(item: _Found) -> str | None:
         return item.number
     designated = _DESIGNATOR.match(item.title) if item.matched else None
     return None if designated is None else designated[1]
+
+
+def _may_type(found: ActiveCue) -> bool:
+    return found.cue.role == HOMONYM or (found.cue.strength or 0.0) >= STRONG
 
 
 def _with_type(heading: Heading, item: _Found, node_types: Collection[str]) -> Heading:
