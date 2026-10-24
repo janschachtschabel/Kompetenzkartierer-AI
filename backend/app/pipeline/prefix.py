@@ -53,7 +53,7 @@ def prefix_budget(context_tokens: int, max_output_tokens: int) -> int:
 
 def render_blocks(blocks: Sequence[Block], printed_pages: Sequence[str | None]) -> str:
     """The blocks as the prefix writes them, every one of them."""
-    return _render(blocks, range(len(blocks)), printed_pages)
+    return render_positions(blocks, range(len(blocks)), printed_pages)
 
 
 class PrefixPlan:
@@ -89,7 +89,7 @@ class PrefixPlan:
     def for_position(self, position: int) -> Prefix:
         """The prefix of a unit at ``position``; PrefixTooLong where no window fits."""
         if self._whole is None:
-            body = _render(self._blocks, range(len(self._blocks)), self._printed)
+            body = render_positions(self._blocks, range(len(self._blocks)), self._printed)
             self._whole = Prefix(f"=== DOKUMENT ===\n{body}{self._tail}", WHOLE)
         if self._fits(self._whole.text):
             return self._whole
@@ -134,7 +134,7 @@ class PrefixPlan:
             "=== DOKUMENT (gekürzt) ===\n"
             "Hier stehen die Titelei, das Verzeichnis, die Rahmenteile und der Abschnitt"
             f" „{chosen.title}“ mit seinen Nachbarn; die übrigen Abschnitte nennt die Gliederung.\n"
-            f"{_render(self._blocks, sorted(kept), self._printed)}"
+            f"{render_positions(self._blocks, sorted(kept), self._printed)}"
             f"=== GLIEDERUNG ===\n{outline}{self._tail}"
         )
         prefix = Prefix(text, chosen.key)
@@ -172,7 +172,11 @@ def _tail(profile: str, lists: str) -> str:
     return "".join(parts) + "=== ENDE DES DOKUMENTS ===\n"
 
 
-def _render(blocks: Sequence[Block], positions: Sequence[int] | range, printed: Sequence[str | None]) -> str:
+def render_positions(
+    blocks: Sequence[Block], positions: Sequence[int] | range, printed: Sequence[str | None]
+) -> str:
+    """The blocks at ``positions`` (in order) as the prefix writes them, a gap marked where they
+    leave text out between them."""
     lines: list[str] = []
     page = 0
     previous = -1
