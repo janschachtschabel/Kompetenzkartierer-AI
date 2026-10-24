@@ -122,12 +122,14 @@ def without_long_prefix(path: str) -> str:
 
 class FileSystemStorage:
     def __init__(self, root: Path) -> None:
-        self.root = _plain_resolved(root)
+        # in the long form where STORAGE_DIR names it so: its files are reached past MAX_PATH
+        self.root = root.resolve()
+        self._plain_root = _plain_form(self.root)
 
     def _path(self, key: str) -> Path:
-        path = _plain_resolved(self.root / check_key(key))
+        path = (self.root / check_key(key)).resolve()
         # a checked key has no "..", but a link inside the root may lead out of it
-        if not path.is_relative_to(self.root):
+        if not _plain_form(path).is_relative_to(self._plain_root):
             raise InvalidKey(f"not a storage key: {key[:80]!r}")
         return path
 
@@ -190,11 +192,10 @@ class FileSystemStorage:
         return path
 
 
-def _plain_resolved(path: Path) -> Path:
-    """``path`` resolved, in its plain form on Windows: the root and every key's path compare alike,
-    whether the root was named in the long form or resolve kept it there."""
-    resolved = path.resolve()
-    return Path(without_long_prefix(str(resolved))) if os.name == "nt" else resolved
+def _plain_form(path: Path) -> Path:
+    """``path`` in its plain form on Windows, to compare: resolve keeps the long form of a root
+    named in it, and may take it in a race (``without_long_prefix``)."""
+    return Path(without_long_prefix(str(path))) if os.name == "nt" else path
 
 
 def _sync_folder(folder: Path) -> None:

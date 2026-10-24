@@ -189,6 +189,7 @@ def test_a_root_named_in_the_long_form_takes_keys(tmp_path: Path) -> None:
 
     assert storage.get("runs/r1/x4/1.json") == b"{}"
     assert (tmp_path / "objects" / "runs" / "r1" / "x4" / "1.json").read_bytes() == b"{}"
+    assert str(storage.root).startswith("\\\\?\\")  # its files are reached in the long form
 
 
 @pytest.mark.skipif(os.name != "posix", reason="a folder is synced on POSIX systems only")
