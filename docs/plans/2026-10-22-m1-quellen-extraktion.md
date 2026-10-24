@@ -370,8 +370,10 @@ Nachtrag zur Umsetzung (24.10.):
   `document_has_tree`. Die Schreibtransaktion sperrt nach `hold_lease` die Dokumentzeile und fragt
   erneut (`lock_for_x1`): `done` beendet den eigenen Lauf `failed` („written by another run“),
   nichts wird geschrieben, X2 folgt; `tree` beendet ihn `failed` mit `document_has_tree`.
-  `attempt` ist `job.attempts`; nach einer Freigabe (`release` zählt den Versuch zurück) kann eine Nummer zweimal
-  vorkommen, Läufe ordnet `started_at`.
+  `attempt` ist `job.attempts`; nach einer Freigabe (`release` zählt den Versuch zurück) kann eine
+  Nummer zweimal vorkommen, Läufe ordnet `started_at`. `x1_state` liest beides in einer Anweisung
+  (ein Snapshot): X1 schreibt Baum und Laufende zugleich, eine Abfrage in zwei Schritten sah sonst
+  den Baum ohne den Lauf (Abschlussprüfung).
 - **Arbeitspakete im Lauf-Ergebnis.** X2 legt seine Pakete als `result.packages` seines Laufs ab
   (Schlüssel `E0`, `E1` … in Dokumentreihenfolge, Knoten, erster/letzter Block, Seiten, Titelpfad,
   Tiefe, Auftrag) statt in eigenen Tabellen; Paket 7 liest den letzten fertigen X2-Lauf.
