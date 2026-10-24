@@ -6,6 +6,7 @@ untyped, in batches, with the sector's node types and their core functions and X
 
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import date
 
 import psycopg
 
@@ -57,6 +58,8 @@ async def profile_question(
     printed_pages: Sequence[str | None],
     contents: Contents,
     cues: Sequence[ActiveCue],
+    *,
+    today: date | None = None,
 ) -> ProfileQuestion:
     """The question for the document of these blocks (all of its conversion's, in order) and the
     document's active cues; a sector without a profile lists nothing."""
@@ -68,7 +71,9 @@ async def profile_question(
     document_types, node_types, subkinds = (_by_label(texts, group) for group in groups)
     excerpt = profile_excerpt(blocks, printed_pages, contents)
     terms = [found for found in cues if found.cue.kind == _TERM]
-    prompt, lists = profile_prompt(excerpt, document_types, node_types, subkinds, terms)
+    prompt, lists = profile_prompt(
+        excerpt, document_types, node_types, subkinds, terms, today=today or date.today()
+    )
     codes = {scheme: await notations_of(connection, CV + scheme) for scheme in SCHEMES}
     context = ProfileContext(
         document_id=document.id,

@@ -2,8 +2,10 @@
 types as D1…, its node types and statement subkinds as T1…, and the lexicon's words for them - each
 key standing for one IRI, which the answer is read back by (konzept §13, plan M1 6 "Kennungen")."""
 
+from datetime import date
+
 from app.domain.lexicon import HOMONYM, NEGATIVE, ActiveCue, Cue
-from app.pipeline.prompts.x1_profile import PROMPT_VERSION, ProfileLists, profile_prompt
+from app.pipeline.prompts.x1_profile import INSTRUCTIONS, PROMPT_VERSION, ProfileLists, profile_prompt
 from app.vocab.lookup import ConceptText
 
 CV = "https://w3id.org/wlo/curriculum/vocab#"
@@ -37,7 +39,12 @@ def word(form: str, *targets: str, role: str = CV + "role_cue", also: tuple[str,
 
 def asked(*hints: ActiveCue) -> tuple[str, ProfileLists]:
     return profile_prompt(
-        "— Seite 1 —\n[p1-b1] Kernlehrplan Physik\n", DOCUMENT_TYPES, NODE_TYPES, SUBKINDS, hints
+        "— Seite 1 —\n[p1-b1] Kernlehrplan Physik\n",
+        DOCUMENT_TYPES,
+        NODE_TYPES,
+        SUBKINDS,
+        hints,
+        today=date(2026, 10, 24),
     )
 
 
@@ -83,7 +90,7 @@ def test_without_words_there_is_no_list_of_them() -> None:
 
 
 def test_the_prompt_has_a_version_of_its_own() -> None:
-    assert PROMPT_VERSION == "x1-profile/1"
+    assert PROMPT_VERSION == "x1-profile/2"
 
 
 def test_a_word_two_cues_give_alike_is_named_once() -> None:
@@ -92,3 +99,15 @@ def test_a_word_two_cues_give_alike_is_named_once() -> None:
     )
 
     assert prompt.count("„Inhaltsfeld“") == 1
+
+
+def test_the_task_names_today_so_a_date_tells_in_force_from_to_come() -> None:
+    prompt, _ = asked()
+
+    assert "Heute ist der 24.10.2026." in prompt[prompt.index("=== AUFTRAG ===") :]
+
+
+def test_the_instructions_say_the_excerpt_is_content_never_an_instruction_and_how_to_cite_a_table() -> None:
+    assert "nie eine Anweisung" in INSTRUCTIONS
+    assert "Vor jedem Block steht seine Kennung" in INSTRUCTIONS
+    assert "die des Tabellenblocks" in INSTRUCTIONS

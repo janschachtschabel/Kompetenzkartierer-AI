@@ -72,7 +72,9 @@ def outline_items(skeleton: Skeleton, blocks: Sequence[Block]) -> list[OutlineIt
         own = " ".join(
             block.text for block in blocks[heading.position + 1 : end] if block.kind not in OUTSIDE
         )
-        items.append(OutlineItem(heading.key, heading.level, _path(heading, by_key), own[:OPENING_SIGNS]))
+        # one line: no line of a block poses as the question's own
+        opening = " ".join(own.split())[:OPENING_SIGNS]
+        items.append(OutlineItem(heading.key, heading.level, _path(heading, by_key), opening))
     return items
 
 
