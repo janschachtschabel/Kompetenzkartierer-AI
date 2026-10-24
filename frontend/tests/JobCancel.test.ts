@@ -34,6 +34,14 @@ function shown(label = "Lehrplan Physik") {
 const cancelButton = (wrapper: ReturnType<typeof shown>) => wrapper.find("[data-test=job-cancel]");
 const dialog = () => document.querySelector("[role=dialog]");
 
+/** Presses the job's cancel, its button focused as a click leaves it, and says yes. */
+async function confirmCancel(wrapper: ReturnType<typeof shown>): Promise<void> {
+  (cancelButton(wrapper).element as HTMLButtonElement).focus();
+  await cancelButton(wrapper).trigger("click");
+  (document.querySelector("[data-test=confirm]") as HTMLButtonElement).click();
+  await flushPromises();
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(NOW);
@@ -141,5 +149,129 @@ describe("a job cancelled from the page", () => {
     expect(await violations(wrapper.html())).toEqual([]);
     await cancelButton(wrapper).trigger("click");
     expect(await violations(document.body.innerHTML)).toEqual([]);
+  });
+});
+
+describe("a cancel as the page around it sees it", () => {
+  it("is announced though the page announces the job's states itself", async () => {
+    const asked = job("running", { cancel_requested: true });
+    vi.spyOn(api, "getJob").mockResolvedValueOnce(job("running")).mockResolvedValue(asked);
+    vi.spyOn(api, "cancelJob").mockResolvedValue(asked);
+    const wrapper = mount(JobProgress, {
+      props: { jobId: "j1", label: "Umwandlung", quiet: true },
+      attachTo: document.body,
+    });
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(wrapper.get("[role=status]").text()).toBe("");
+
+    await confirmCancel(wrapper);
+
+    expect(wrapper.get("[role=status]").text()).toContain(t("jobs.cancel.requested"));
+  });
+
+  it("says the stop as a sentence of its own after the job's state", async () => {
+    const asked = job("running", { cancel_requested: true });
+    vi.spyOn(api, "getJob").mockResolvedValueOnce(job("running")).mockResolvedValue(asked);
+    vi.spyOn(api, "cancelJob").mockResolvedValue(asked);
+    const wrapper = shown("Physik");
+    await vi.advanceTimersByTimeAsync(1000);
+
+    await confirmCancel(wrapper);
+
+    const line = t("jobs.announce", { label: "\u2068Physik\u2069", status: t("jobs.status.running") });
+    expect(wrapper.get("[role=status]").text()).toBe(`${line}. ${t("jobs.cancel.requested")}`);
+  });
+
+  it("keeps the keyboard at the job once the cancel's button has gone", async () => {
+    const asked = job("running", { cancel_requested: true });
+    vi.spyOn(api, "getJob").mockResolvedValueOnce(job("running")).mockResolvedValue(asked);
+    vi.spyOn(api, "cancelJob").mockResolvedValue(asked);
+    const wrapper = shown();
+    await vi.advanceTimersByTimeAsync(1000);
+
+    await confirmCancel(wrapper);
+
+    expect(document.activeElement).toBe(wrapper.get("[data-test=job-cancel-asked]").element);
+  });
+
+  it("tells the page at once that the cancel ended a waiting job, and once", async () => {
+    vi.spyOn(api, "getJob").mockResolvedValue(job("queued"));
+    vi.spyOn(api, "cancelJob").mockResolvedValue(job("cancelled", { cancel_requested: true }));
+    const wrapper = shown();
+    await vi.advanceTimersByTimeAsync(1000);
+
+    await confirmCancel(wrapper);
+
+    expect(wrapper.emitted("ended")).toHaveLength(1);
+    expect(document.activeElement).toBe(wrapper.element);
+    await vi.advanceTimersByTimeAsync(30_000); // no question asked after: a waiting answer would undo it
+    expect(wrapper.emitted("ended")).toHaveLength(1);
+    expect(wrapper.find(".status-badge").text()).toBe(t("jobs.status.cancelled"));
+  });
+
+  it("is not undone by an answer to a question asked before it", async () => {
+    let late: (value: Job) => void = () => undefined;
+    const asked = job("running", { cancel_requested: true });
+    vi.spyOn(api, "getJob")
+      .mockResolvedValueOnce(job("running"))
+      .mockImplementationOnce(() => new Promise<Job>((resolve) => (late = resolve)))
+      .mockResolvedValue(asked);
+    vi.spyOn(api, "cancelJob").mockResolvedValue(asked);
+    const wrapper = shown();
+    await vi.advanceTimersByTimeAsync(3000); // the second question is on its way
+
+    await confirmCancel(wrapper);
+    late(job("running"));
+    await flushPromises();
+
+    expect(cancelButton(wrapper).exists()).toBe(false);
+    expect(wrapper.find("[data-test=job-cancel-asked]").exists()).toBe(true);
+    expect(wrapper.get("[role=status]").text()).toContain(t("jobs.cancel.requested"));
+  });
+
+  it("closes its question when the job ends meanwhile", async () => {
+    vi.spyOn(api, "getJob").mockResolvedValueOnce(job("running")).mockResolvedValue(job("done"));
+    const wrapper = shown();
+    await vi.advanceTimersByTimeAsync(1000);
+    await cancelButton(wrapper).trigger("click");
+    expect(dialog()).not.toBeNull();
+
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(dialog()).toBeNull();
+  });
+});
+
+describe("how long a job has waited or run", () => {
+  it("counts hours and minutes past an hour", async () => {
+    vi.spyOn(api, "getJob")
+      .mockResolvedValueOnce(job("running", { started_at: "2026-10-24T09:48:00Z" }))
+      .mockResolvedValue(job("running", { started_at: "2026-10-24T10:00:00Z" }));
+    const wrapper = shown();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(wrapper.get("[data-test=job-runtime]").text()).toBe(t("jobs.runningForHours", { hours: 2, minutes: 12 }));
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(wrapper.get("[data-test=job-runtime]").text()).toBe(t("jobs.runningForHoursOnly", { hours: 2 }));
+  });
+
+  it("goes on with the clock between two answers", async () => {
+    vi.spyOn(api, "getJob").mockResolvedValue(job("running", { started_at: "2026-10-24T11:59:30Z" }));
+    const wrapper = shown();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(wrapper.get("[data-test=job-runtime]").text()).toBe(t("jobs.runningJustNow"));
+
+    await vi.advanceTimersByTimeAsync(61_000);
+
+    expect(wrapper.get("[data-test=job-runtime]").text()).toBe(t("jobs.runningFor", { minutes: 1 }));
+  });
+
+  it("says how long a waiting job has waited: one that hangs there shows it", async () => {
+    vi.spyOn(api, "getJob").mockResolvedValue(job("queued", { created_at: "2026-10-24T11:48:00Z" }));
+    const wrapper = shown();
+
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(wrapper.get("[data-test=job-runtime]").text()).toBe(t("jobs.waitingFor", { minutes: 12 }));
   });
 });

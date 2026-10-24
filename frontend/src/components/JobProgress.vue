@@ -8,15 +8,17 @@
  *
  * A job waiting or running can be cancelled from here, after a question (plan M1
  * 7a): a waiting one ends at once, a running one stops at its worker's next
- * heartbeat and within seconds even where its work does not stop by itself. Until
- * it has ended the page says the stop is asked for; how long a running job has
- * run tells whether to.
+ * heartbeat, a few seconds later at most even where its work does not stop by
+ * itself. Until it has ended the page says the stop is asked for - announced also
+ * where the page around says the job's states itself (`quiet`): the stop is the
+ * reader's own doing. How long a job has waited or run tells whether to.
  */
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch as watchValue } from "vue";
 
 import { ApiError, cancelJob, type Job, type JobStatus } from "@/api";
 import { isolate } from "@/bidi";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
+import { focusIsFree } from "@/focusRescue";
 import { t, type MessageParams } from "@/i18n/de";
 import { jobFailureText } from "@/jobMessages";
 import { JOB_PROGRESS } from "@/jobProgress";
@@ -50,8 +52,13 @@ const gone = ref<JobGone | null>(null);
 const asking = ref(false);
 const cancelling = ref(false);
 const cancelFailure = ref("");
-// when the page last heard of the job: how long it has run is counted to then
-const heardAt = ref(Date.now());
+// the cancel taken: an answer to a question asked before it does not undo it
+const asked = ref(false);
+// when the page last heard of the job - every 8 seconds at most while it is open: how long it
+// has waited or run is counted to then
+const now = ref(Date.now());
+const root = ref<HTMLElement | null>(null);
+const askedNote = ref<HTMLElement | null>(null);
 let watch: JobWatch | null = null;
 
 // a job just started waits for a worker until the server says otherwise
@@ -73,25 +80,40 @@ const progressText = computed(() => {
   return t(`jobs.progress.${progress.code}`, params);
 });
 const open = computed(() => !gone.value && job.value !== null && !hasEnded(status.value));
-const cancellable = computed(() => open.value && job.value?.cancel_requested === false);
-const cancelAsked = computed(() => open.value && job.value?.cancel_requested === true);
-// by the minutes begun; the server's clock and the page's may differ a little
+const cancellable = computed(() => open.value && !asked.value && job.value?.cancel_requested === false);
+const cancelAsked = computed(() => open.value && (asked.value || job.value?.cancel_requested === true));
+// in whole minutes and hours; the server's clock and the page's may differ a little
 const runtimeText = computed(() => {
-  const started = job.value?.started_at;
-  if (status.value !== "running" || !started) return "";
-  const minutes = Math.floor((heardAt.value - Date.parse(started)) / 60_000);
-  return minutes < 1 ? t("jobs.runningJustNow") : t("jobs.runningFor", { minutes });
+  const state = job.value;
+  if (state?.status === "running" && state.started_at) return lasted("running", state.started_at);
+  if (state?.status === "queued" && open.value) return lasted("waiting", state.created_at);
+  return "";
 });
+
+function lasted(how: "running" | "waiting", since: string): string {
+  const minutes = Math.floor((now.value - Date.parse(since)) / 60_000);
+  if (minutes < 1) return t(`jobs.${how}JustNow`);
+  if (minutes < 60) return t(`jobs.${how}For`, { minutes });
+  const hours = Math.floor(minutes / 60);
+  return minutes % 60
+    ? t(`jobs.${how}ForHours`, { hours, minutes: minutes % 60 })
+    : t(`jobs.${how}ForHoursOnly`, { hours });
+}
 // Each change of what the page shows, and only a change: the same state again reads the same.
 const announcement = computed(() => {
   const label = isolate(props.label);
   if (trouble.value) return t("jobs.announce", { label, status: t("jobs.trouble") });
-  if (props.quiet) return "";
+  if (props.quiet) return cancelAsked.value ? t("jobs.cancel.requested") : "";
   if (goneText.value) return t("jobs.announce", { label, status: goneText.value });
   if (!job.value) return ""; // nothing to say before the first answer
   const line = t("jobs.announce", { label, status: t(`jobs.status.${status.value}`) });
   if (failure.value) return `${line} ${failure.value}`;
-  return cancelAsked.value ? `${line} ${t("jobs.cancel.requested")}` : line;
+  return cancelAsked.value ? `${line}. ${t("jobs.cancel.requested")}` : line;
+});
+
+// a question still open when the job ends meanwhile asks about nothing
+watchValue(open, (still) => {
+  if (!still) asking.value = false;
 });
 
 function askCancel(): void {
@@ -104,7 +126,18 @@ async function cancel(): Promise<void> {
   cancelFailure.value = "";
   try {
     // the state it answers is the job's from now; the watch goes on until it has ended
-    job.value = await cancelJob(props.jobId);
+    const answer = await cancelJob(props.jobId);
+    asked.value = true;
+    job.value = answer;
+    if (hasEnded(answer.status)) {
+      // a waiting job ended at once: the page hears now, and no answer asked before undoes it
+      watch?.stop();
+      emit("ended", answer);
+    }
+    // the button went with the state it belonged to: the keyboard goes to what says how the job
+    // stands now, where it was left on nothing
+    await nextTick();
+    if (focusIsFree()) (askedNote.value ?? root.value)?.focus();
   } catch (error) {
     cancelFailure.value = cancelRefusal(error);
   } finally {
@@ -122,7 +155,7 @@ onMounted(() => {
   watch = watchJob(props.jobId, {
     onState: (state) => {
       job.value = state;
-      heardAt.value = Date.now();
+      now.value = Date.now();
       trouble.value = false;
       if (hasEnded(state.status)) emit("ended", state);
     },
@@ -141,7 +174,8 @@ onUnmounted(() => watch?.stop());
 </script>
 
 <template>
-  <div class="job">
+  <div ref="root" class="job" tabindex="-1">
+    <!-- tabindex -1: where the keyboard goes once a cancel ended the job at once -->
     <p class="job__line">
       <span v-if="!gone" class="status-badge" :class="TONE[status]">{{ t(`jobs.status.${status}`) }}</span>
       <bdi class="job__label">{{ label }}</bdi>
@@ -149,7 +183,9 @@ onUnmounted(() => watch?.stop());
     <p v-if="progressText" class="job__progress">{{ progressText }}</p>
     <p v-if="runtimeText" class="job__progress" data-test="job-runtime">{{ runtimeText }}</p>
     <p v-if="failure" class="job__failure">{{ failure }}</p>
-    <p v-if="cancelAsked" class="job__note" data-test="job-cancel-asked">{{ t("jobs.cancel.requested") }}</p>
+    <p v-if="cancelAsked" ref="askedNote" class="job__note" tabindex="-1" data-test="job-cancel-asked">
+      {{ t("jobs.cancel.requested") }}
+    </p>
     <p v-if="gone" class="job__note">{{ goneText }}</p>
     <p v-else-if="trouble" class="job__note">{{ t("jobs.trouble") }}</p>
     <div v-if="cancellable || cancelFailure" class="job__actions">
