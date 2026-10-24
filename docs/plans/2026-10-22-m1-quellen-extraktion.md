@@ -387,12 +387,14 @@ Nachtrag zur Umsetzung (24.10.):
   Nach dem Review: Ein Verzeichnis ist ein Lauf, dessen Seiten nie fallen, höchstens die Seitenzahl
   des Dokuments erreichen und nicht alle gleich sind (eine Lernfeldübersicht mit Stunden, ein
   Fußnotenblock mit Jahren sind keins). Wo die Titelei endet, entscheidet allein der erste Lauf von
-  Einträgen des Dokuments, was immer er ist, und kein Lauf danach (Abbildungen, das Verzeichnis
-  eines Anhangs): dort, wo seine Seiten gelesen werden und er einen Titel („Inhalt…“) hat oder auf
-  den ersten fünf Seiten steht (ein Verzeichnis hinter langem Vorwort trägt seinen Titel), oder wo
-  er mit Titel vorn steht, auch wenn seine Seiten abgelehnt werden; sonst nirgends. Im Zweifel
-  wird die Titelei zu Überschriften, nie die Überschriften zu Titelei (drei Prüfrunden hatten die
-  Entscheidung je einem späteren Lauf überlassen, jeder öffnete einen Totalverlust).
+  mindestens drei Einträgen des Dokuments, was immer er ist, und kein Lauf danach (Abbildungen,
+  das Verzeichnis eines Anhangs): dort, wo seine Seiten gelesen werden und er einen Titel
+  („Inhalt…“) hat oder auf den ersten fünf Seiten steht (ein Verzeichnis hinter langem Vorwort
+  trägt seinen Titel), oder wo er mit Titel vorn steht, auch wenn seine Seiten abgelehnt werden;
+  sonst nirgends. Im Zweifel wird die Titelei zu Überschriften; Überschriften werden Titelei nur
+  auf den ersten fünf Seiten (ein erster Lauf dort, der kein Verzeichnis ist) und im Restfall A1
+  unten (drei Prüfrunden hatten die Entscheidung je einem späteren Lauf überlassen, jeder öffnete
+  einen Totalverlust).
   Verzeichnismuster sind Hinweise mit `mapsTo cv:occ_toc`; `occursIn cv:occ_toc` tragen Wörter
   von Überschriften, die auch im Verzeichnis stehen. Verzeichniszeilen werden mit einfachem
   Leerraum gelesen (sonst quadratisch). Läuft das Muster eines Homonyms oder eines starken
@@ -445,15 +447,22 @@ Nachtrag zur Umsetzung (24.10.):
   (Review A3) – an echten Dokumenten messen, bevor die Heuristik umgebaut wird. Die Seitenprüfung
   des Verzeichnisses hat keine Toleranz: Amtsblatt-Seiten (245 ff.), Web-PDFs ohne Leerseiten, je
   Teil ab 1 gezählte Seiten, eine falsch gelesene Ziffer lehnen ein echtes Verzeichnis ab; es
-  kostet dann seine Einträge (Ebenen, nur dort genannte Überschriften) und, steht es hinten,
-  Schein-Überschriften aus der Titelei, nicht die Überschriften (Nachprüfung R1-2). Messen; ein
-  besserer Maßstab wären die gedruckten Seitenzahlen der Umwandlung statt der Seitenzahl der PDF.
-  Restfälle der Titelei-Regel, bewusst offen: ein gelesenes Verzeichnis mit Titel weit hinten als
-  einziges (etwa nur das eines Anhangs) beendet die Titelei dort, was davor steht, wird keine
-  Überschrift (Beschluss A1, der einzige Weg zum Verlust); geht dem echten Verzeichnis ein anderer
+  kostet dann seine Einträge (Ebenen, nur dort genannte Überschriften) und, steht es hinten oder
+  ohne Titel, Schein-Überschriften aus der Titelei, nicht die Überschriften (Nachprüfung R1-2).
+  Messen; ein besserer Maßstab wären die gedruckten Seitenzahlen der Umwandlung statt der
+  Seitenzahl der PDF. Restfälle der Titelei-Regel, bewusst offen: (A1) ein gelesenes Verzeichnis
+  mit Titel weit hinten als erster Lauf von mindestens drei Einträgen – das eines Anhangs, eines
+  Kapitels oder eines Teils, wo das vordere nicht gelesen wird (als Tabelle, ohne Leitpunkte und
+  Nummer, in Läufe unter drei Einträgen zerteilt) – beendet die Titelei dort, was davor steht, wird
+  keine Überschrift: der einzige Verlust über die ersten fünf Seiten hinaus; auf ihnen beendet sie
+  auch ein erster Lauf, der kein Verzeichnis ist (Fußnoten mit Seitenverweisen, eine „Gliederung“
+  mit Stunden), und die Überschriften davor fallen weg; geht dem echten Verzeichnis ein anderer
   Lauf voraus – abgelehnt ohne Titel vorn (eine Stundenübersicht als Text, Fußnoten mit Jahren),
   gelesen ohne Titel hinten (Fußnoten mit Seitenverweisen im Vorwort) oder abgelehnt hinten –,
-  endet sie nirgends, die Titelei liefert dann Schein-Überschriften. An echten Dokumenten zählen.
+  endet sie nirgends, die Titelei liefert dann Schein-Überschriften. Zwei ältere Grenzen: jeder
+  gelesene Lauf fällt aus den Überschriften, auch einer, der keins ist (drei Überschriften
+  hintereinander mit Zahlen am Ende, „Inhalt“ als echte Überschrift darüber); ein Titel wird nur
+  als ganze Zeile erkannt („Inhaltsverzeichnis:“ nicht). Alles an echten Dokumenten zählen.
 - **Offen für Paket 7 (7.5):** Ein unterlegener Job läuft nach X1 mit X2 weiter. Schreiben X3/X4
   ohne dieselbe zweite Prüfung, schrieben zwei Jobs sie doppelt. Vorher entscheiden: höchstens ein
   offener `extract.run` je Dokument (beim Start), oder dieselbe Prüfung unter der Dokumentsperre in

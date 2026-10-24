@@ -15,8 +15,10 @@ a root with the headings again as children), and a heading they name is one what
 entries at least says, whatever it is, and no run after it (a list of figures, an annex's
 contents): they end there where its pages are read and it has a title or stands within the
 first FRONT_PAGES pages (contents behind a long foreword have their title), or where it has
-a title and stands within them though its pages are refused; else nowhere - doubt makes a
-heading of the title pages, never title pages of the headings.
+a title and stands within them though its pages are refused; else nowhere. Doubt makes headings
+of the title pages; title pages of headings only within the first FRONT_PAGES pages (a first run
+there that is no contents: notes citing pages), or where the first run is titled contents read
+deep in (an annex's or a part's, where those up front are not read).
 """
 
 import re
