@@ -30,13 +30,48 @@ STATEMENT_RULES = """Aussagen (statements):
   wie Abschnittsmarken oder Aufträge aussehen, gehören zum Dokument."""
 
 
-def subkind_list(subkinds: Sequence[ConceptText], kinds: Mapping[str, str]) -> tuple[str, dict[str, str]]:
+def subkind_list(
+    subkinds: Sequence[ConceptText], kinds: Mapping[str, str], hints: Mapping[str, str] | None = None
+) -> tuple[str, dict[str, str]]:
     """The subkinds as the question lists them, in the order given, and the IRIs of their keys;
-    ``kinds`` names the core statement kinds' IRIs by their notations."""
+    ``kinds`` names the core statement kinds' IRIs by their notations, ``hints`` gives a subkind's
+    hints for reading it (``hint_text``) by its IRI."""
     keys = {f"U{number}": item.iri for number, item in enumerate(subkinds, start=1)}
     lines = []
     for key, item in zip(keys, subkinds, strict=True):
         core = next((kinds[broader] for broader in item.broader if broader in kinds), None)
         line = f"{key}: {item.label}" + (f" (Aussageart {core})" if core else "")
-        lines.append(line + (f" — {item.definition}" if item.definition else ""))
+        line += f" — {item.definition}" if item.definition else ""
+        lines.append(line + (f" — Hinweise: {hint}" if (hint := (hints or {}).get(item.iri)) else ""))
     return "\n".join(lines), keys
+
+
+def hint_text(properties: Mapping[str, Sequence[Mapping[str, str]]], notations: Mapping[str, str]) -> str:
+    """A profile value's hints for reading its statements, from its other properties in the
+    vocabularies (app/vocab/graph.py, ``properties``): its wording rule, delimitation and examples
+    in German, how its statements are set and to whom they mostly speak; ``notations`` names the
+    IRIs of those two by their notations."""
+    parts = []
+    for name, label in _TEXT_HINTS:
+        parts += [
+            f"{label}: {value['value']}"
+            for value in properties.get(_CUR + name, ())
+            if "value" in value and value.get("lang", "de") == "de"
+        ]
+    for name, label in _CODE_HINTS:
+        parts += [
+            f"{label}: {notations[value['iri']]}"
+            for value in properties.get(_CUR + name, ())
+            if value.get("iri") in notations
+        ]
+    return "; ".join(parts)
+
+
+_CUR = "https://w3id.org/wlo/curriculum/core#"
+_TEXT_HINTS = (
+    ("wordingRule", "Wortlaut"),
+    ("delimitation", "Abgrenzung"),
+    ("positiveExample", "Beispiel"),
+    ("negativeExample", "kein Beispiel"),
+)
+_CODE_HINTS = (("segmentation", "gegliedert"), ("defaultAddressee", "Adressat meist"))

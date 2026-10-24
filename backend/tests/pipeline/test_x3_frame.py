@@ -105,7 +105,10 @@ async def test_the_frame_is_asked_once_behind_the_prefix_and_written_with_its_an
     assert (
         "E0 | Titelei | Blöcke p1-b1 bis p1-b2\nE3 | Leistungsbewertung | Blöcke p3-b1 bis p3-b2\n" in frame
     )
-    assert "U1: " in frame  # the school's statement subkinds, keyed
+    assert "U1: " in frame  # the school's statement subkinds, keyed, with their profile's hints:
+    assert "Kompetenzerwartung (Aussageart learningOutcome) — Ergebnisorientierte" in frame
+    assert "— Hinweise: Wortlaut: Wortlaut wörtlich ohne den gemeinsamen Einleitungssatz" in frame
+    assert "gegliedert: bullet; Adressat meist: learner\n" in frame
     assert await rows(
         connection,
         "SELECT p.part_kind, p.content, array_agg(b.block_id ORDER BY b.block_id), r.stage_iri"

@@ -5,7 +5,7 @@ statement subkinds keyed U1 … with the core kind each refines, the lexicon exc
 from uuid import UUID
 
 from app.pipeline.prompts import x3
-from app.pipeline.prompts.statements import STATEMENT_RULES, subkind_list
+from app.pipeline.prompts.statements import STATEMENT_RULES, hint_text, subkind_list
 from app.pipeline.x2_segments import WorkPackage
 from app.vocab.lookup import ConceptText
 
@@ -39,6 +39,33 @@ def test_the_subkinds_are_keyed_with_the_core_kind_each_refines() -> None:
         "U2: Auftrag (Aussageart mandate)"
     )
     assert keys == {"U1": SCHOOL + "Kompetenzerwartung", "U2": SCHOOL + "Auftrag"}
+
+
+def test_a_subkind_carries_its_profile_s_hints_for_reading_it() -> None:
+    cur = "https://w3id.org/wlo/curriculum/core#"
+    properties = {
+        cur + "wordingRule": [{"value": "Ohne den Einleitungssatz.", "lang": "de"}],
+        cur + "positiveExample": [{"value": "„beschreiben den Zusammenhang“", "lang": "de"}],
+        cur + "negativeExample": [
+            {"value": "„Stromkreise“", "lang": "de"},
+            {"value": "“circuits”", "lang": "en"},
+        ],
+        cur + "defaultAddressee": [{"iri": CV + "addr_learner"}],
+        cur + "segmentation": [{"iri": CV + "seg_bullet"}],
+        cur + "extractionDepth": [{"iri": CV + "depth_full"}],  # no hint for reading statements
+    }
+
+    hint = hint_text(properties, {CV + "addr_learner": "learner", CV + "seg_bullet": "bullet"})
+    text, _ = subkind_list(
+        [subkind("Kompetenzerwartung", "kind_learningOutcome")], KINDS, {SCHOOL + "Kompetenzerwartung": hint}
+    )
+
+    assert hint == (
+        "Wortlaut: Ohne den Einleitungssatz.; Beispiel: „beschreiben den Zusammenhang“;"
+        " kein Beispiel: „Stromkreise“; gegliedert: bullet; Adressat meist: learner"
+    )
+    assert text == f"U1: Kompetenzerwartung (Aussageart learningOutcome) — Hinweise: {hint}"
+    assert hint_text({}, {}) == ""
 
 
 def test_the_task_names_the_frame_s_ranges_the_subkinds_and_the_lexicon() -> None:

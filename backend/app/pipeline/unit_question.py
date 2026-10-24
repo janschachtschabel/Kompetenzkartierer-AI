@@ -16,15 +16,17 @@ from app.jobs.outcome import PermanentError
 from app.llm.client import context_tokens
 from app.llm.settings import LLMSettings
 from app.pipeline.prefix import Prefix, PrefixPlan, PrefixTooLong, prefix_budget
-from app.pipeline.prompts.statements import subkind_list
+from app.pipeline.prompts.statements import hint_text, subkind_list
 from app.pipeline.unit_prefix import profile_text, sections
 from app.pipeline.x1_question import by_label
 from app.pipeline.x2_segments import segment_nodes
-from app.vocab.lookup import concept_texts, notations_of, profile_concepts
+from app.vocab.graph import Properties
+from app.vocab.lookup import concept_texts, notations_by_iri, notations_of, profile_concepts
 
 CV = "https://w3id.org/wlo/curriculum/vocab#"
 # the schemes the statement object's enums name (x-cv-scheme)
 STATEMENT_SCHEMES = ("StatementKinds", "Addressees", "Obligations", "LayoutMarkers")
+_PROPERTIES = "SELECT iri, properties FROM vocab_concept WHERE iri = ANY(%s)"
 
 
 @dataclass(frozen=True)
@@ -76,7 +78,19 @@ async def statement_lists(connection: psycopg.AsyncConnection, sector: str) -> S
     node_types: Mapping[str, Sequence[str]] = values.node_types if values is not None else {}
     texts = await concept_texts(connection, [*subkinds, *node_types])
     kinds = await notations_of(connection, CV + "StatementKinds")
-    text, keys = subkind_list(by_label(texts, subkinds), {iri: notation for notation, iri in kinds.items()})
+    cursor = await connection.execute(_PROPERTIES, (list(subkinds),))
+    properties: dict[str, Properties] = {iri: given for iri, given in await cursor.fetchall()}
+    named = {
+        value["iri"]
+        for given in properties.values()
+        for listed in given.values()
+        for value in listed
+        if "iri" in value
+    }
+    notations = await notations_by_iri(connection, named)
+    hints = {iri: hint_text(given, notations) for iri, given in properties.items()}
+    kind_names = {iri: notation for notation, iri in kinds.items()}
+    text, keys = subkind_list(by_label(texts, subkinds), kind_names, hints)
     names = {iri: f"{texts[iri].label} ({key})" for key, iri in keys.items()}
     names |= {iri: f"{texts[iri].label} (Gliederungsebene)" for iri in node_types if iri in texts}
     codes = {scheme: await notations_of(connection, CV + scheme) for scheme in STATEMENT_SCHEMES}
