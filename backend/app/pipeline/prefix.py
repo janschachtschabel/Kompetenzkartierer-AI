@@ -211,8 +211,17 @@ def render_positions(
 
 def _lines(block: Block) -> list[str]:
     if block.kind != "table":
-        return [f"[{block.id}] {block.text}"]
+        return [f"[{block.id}] {_indented(block.text)}"]
     rows: dict[str, list[str]] = {}
     for cell in sorted(block.cells, key=lambda cell: (cell.row, cell.column)):
         rows.setdefault(cell.id[: cell.id.rindex("c")], []).append(cell.text)
-    return [f"[{block.id}] Tabelle", *(f"[{row}] {' | '.join(values)}" for row, values in rows.items())]
+    return [
+        f"[{block.id}] Tabelle",
+        *(f"[{row}] {_indented(' | '.join(values))}" for row, values in rows.items()),
+    ]
+
+
+def _indented(text: str) -> str:
+    """A text's later lines indented: no line of the document stands at a line's start, where the
+    prompt marks its parts ("=== AUFTRAG ===") and the blocks their ids."""
+    return text.replace("\n", "\n  ")
