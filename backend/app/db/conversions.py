@@ -235,6 +235,13 @@ async def all_blocks(connection: psycopg.AsyncConnection, conversion_id: UUID) -
     return [_block(row) for row in await cursor.fetchall()]
 
 
+async def printed_pages(connection: psycopg.AsyncConnection, conversion_id: UUID) -> list[str | None]:
+    """The page each physical page prints, as the conversion read it (None where it prints none)."""
+    cursor = await connection.execute("SELECT printed_pages FROM conversion WHERE id = %s", (conversion_id,))
+    found = await cursor.fetchone()
+    return [] if found is None or found[0] is None else list(found[0])
+
+
 def _block(row: dict[str, Any]) -> Block:
     return Block(
         id=row["block_id"],

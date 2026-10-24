@@ -152,6 +152,12 @@ async def get_document(
     return await _document(connection, _VISIBLE_BY_ID, document_id, reader)
 
 
+async def document_for_job(connection: psycopg.AsyncConnection, document_id: UUID) -> Document | None:
+    """The document, for a job that works on it: whom it may be started for is checked when it is
+    started (plan M1 7.5), so the job reads it as it stands."""
+    return await _document(connection, _BY_ID, document_id)
+
+
 async def set_document_type(connection: psycopg.AsyncConnection, document_id: UUID, type_iri: str) -> None:
     """Type the document with one of its sector's active document types; ProfileValueError for any
     other, DocumentError for a document that is none."""

@@ -14,12 +14,14 @@ class UnknownJobKind(ValueError):
 
 def make_handlers(context: JobContext) -> dict[str, Handler]:
     from app.conversion import job as convert_job
+    from app.pipeline import run as extract_run
     from app.sources import check_job, fetch_job
 
     return {
         fetch_job.KIND: partial(fetch_job.fetch_source, context),
         check_job.KIND: partial(check_job.check_sources, context),
         convert_job.KIND: partial(convert_job.convert_source, context),
+        extract_run.KIND: partial(extract_run.extract_document, context),
     }
 
 

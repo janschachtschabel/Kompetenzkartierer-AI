@@ -112,6 +112,13 @@ async def by_notation(
     return await _entry(connection, query, (scheme_iri, notation))
 
 
+async def terminology_profile(connection: psycopg.AsyncConnection, sector_notation: str) -> str | None:
+    """The IRI of the sector's active profile, which a run reads with (its ``profile_version``)."""
+    cursor = await connection.execute(_PROFILE.replace("p.namespace", "p.iri"), (sector_notation,))
+    found = await cursor.fetchone()
+    return None if found is None else str(found[0])
+
+
 async def profile_concepts(
     connection: psycopg.AsyncConnection, sector_notation: str
 ) -> ProfileConcepts | None:

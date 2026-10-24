@@ -126,6 +126,19 @@ async def write_profile(
     return keys, notes
 
 
+async def holds_extraction(connection: psycopg.AsyncConnection, document_id: UUID) -> bool:
+    """Whether X1 wrote the document already: it holds a specification or a node. X1 writes onto
+    a document of none - a tree is written after the siblings there (app/db/nodes.py), and a
+    second profile would meet the first one's keys."""
+    cursor = await connection.execute(
+        "SELECT EXISTS (SELECT FROM node WHERE document_id = %(id)s)"
+        " OR EXISTS (SELECT FROM specification WHERE document_id = %(id)s)",
+        {"id": document_id},
+    )
+    found = await cursor.fetchone()
+    return bool(found and found[0])
+
+
 async def suggest_work(
     connection: psycopg.AsyncConnection, title: str, regions: Sequence[str]
 ) -> UUID | None:

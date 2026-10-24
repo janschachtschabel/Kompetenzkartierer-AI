@@ -20,8 +20,8 @@ from app.db.rate_limits import take
 from app.jobs.queue import account_lane
 from app.usage.ledger import usage_of
 
-# The job kinds that call the model: none yet, X1 is the first (plan M1, Paket 6)
-MODEL_JOB_KINDS: frozenset[str] = frozenset()
+# The job kinds that call the model (app/pipeline/run.py; a literal, as the default binds at import)
+MODEL_JOB_KINDS: frozenset[str] = frozenset({"extract.run"})
 # The old app's answer to a client starting too many: come back in a minute
 JOBS_RETRY_AFTER_S = 60
 _READ_COMMITTED = "SELECT read_committed_alone('a model job''s admission')"
