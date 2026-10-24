@@ -569,7 +569,8 @@ Nachtrag zur Umsetzung (24.10.):
   Rahmenabschnitt (Modelle und Operatoren können überall stehen). Folgezeilen eines Blocks stehen
   um zwei Leerzeichen eingerückt (keine Dokumentzeile steht, wo der Prompt seine Teile markiert);
   jede gelesene Antwort nimmt sie aus ihren Texten wieder heraus (`prefix.as_written`), daher
-  `x1-profile/3`.
+  `x1-profile/3`. Wortlaut des Dokuments in Profil und Auswahllisten (Titel, Bezeichnungen,
+  Marker, Labels, Operatoren) steht dort einzeilig.
 - **Abweichungen.** Herkunft der X4-Aussagen `cv:orig_model` (nicht `orig_source` wie im Beispiel
   `ohm-kette.ttl`); Werte aus dem Umfeld werden nicht gespeichert (Befund
   `x4.value_from_surroundings`), die Vererbung bleibt abgefragt (konzept §7) – statt
@@ -587,6 +588,9 @@ Nachtrag zur Umsetzung (24.10.):
   Region der Extraktion sagt jeden Schrittwechsel einmal, nicht jede gezählte Einheit.
 - **Grenzen.** Ein X3-Aufruf kann bei langen Operatorenlisten an der Ausgabegrenze scheitern; der
   Lexikonausschnitt findet Hinweise nur über Wort oder Muster im Text (Messpunkte Paket 11).
+- **Offen für Paket 9.** Löscht die Redaktion den Knoten einer Einheit, während diese an der
+  Baumsperre wartet, scheitert die Markierung am Fremdschlüssel (allgemeiner Fehler, Versuche bis zur
+  Grenze) – wie bei einem vor X4 gelöschten Knoten; dann als eigener Fehlercode abbilden.
 
 ### Paket 8: X5 Prüfung mit SHACL und X6 Reparatur (5 PT)
 
