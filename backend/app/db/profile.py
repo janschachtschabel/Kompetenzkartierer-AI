@@ -19,7 +19,6 @@ from psycopg.types.json import Jsonb
 from app.db.anchors import CV, new_entity, write_anchor
 from app.db.documents import DocumentError
 from app.db.findings import Finding
-from app.db.runs import done_stages
 from app.domain.l1 import AnchorDraft, ProfileDraft
 
 _VALUES = """
@@ -131,24 +130,26 @@ async def write_profile(
 X1State = Literal["open", "done", "tree"]
 
 
+# one statement, one snapshot: X1 commits its tree and its run's end at once, and a look in two
+# could see the tree without the run between them
+_X1_STATE = (
+    "SELECT EXISTS (SELECT FROM extraction_run WHERE document_id = %(id)s AND stage_iri = %(x1)s"
+    " AND outcome = 'done'),"
+    " EXISTS (SELECT FROM node WHERE document_id = %(id)s)"
+    " OR EXISTS (SELECT FROM specification WHERE document_id = %(id)s)"
+)
+
+
 async def x1_state(connection: psycopg.AsyncConnection, document_id: UUID) -> X1State:
-    """Where X1 of the document stands: ``done`` where a run of X1 on it is, whichever job's;
+    """Where X1 of the document stands: ``done`` where a run of X1 on it is done, whichever job's;
     ``tree`` where it holds a node or a specification no run of X1 wrote (set up by hand) - X1
     writes onto a document of none: a tree is written after the siblings there (app/db/nodes.py),
     and a second profile would meet the first one's keys; else ``open``."""
-    if "X1" in await done_stages(connection, document_id):
-        return "done"
-    return "tree" if await _holds_any(connection, document_id) else "open"
-
-
-async def _holds_any(connection: psycopg.AsyncConnection, document_id: UUID) -> bool:
-    cursor = await connection.execute(
-        "SELECT EXISTS (SELECT FROM node WHERE document_id = %(id)s)"
-        " OR EXISTS (SELECT FROM specification WHERE document_id = %(id)s)",
-        {"id": document_id},
-    )
+    cursor = await connection.execute(_X1_STATE, {"id": document_id, "x1": CV + "stage_X1"})
     found = await cursor.fetchone()
-    return bool(found and found[0])
+    assert found is not None  # noqa: S101 - a SELECT of EXISTS always has its row
+    done, held = found
+    return "done" if done else "tree" if held else "open"
 
 
 async def lock_for_x1(connection: psycopg.AsyncConnection, document_id: UUID) -> X1State:

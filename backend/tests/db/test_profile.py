@@ -2,9 +2,9 @@
 specifications with their variants and anchors, the terms of its own; a document type set before
 stays, and a work of the same title and region is only suggested."""
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 import psycopg
@@ -14,7 +14,8 @@ from psycopg.rows import dict_row
 from app.conversion.base import Block
 from app.db.documents import Document, set_document_type
 from app.db.migrate import migrate
-from app.db.profile import suggest_work, write_profile
+from app.db.profile import suggest_work, write_profile, x1_state
+from app.db.runs import RunStart, finish_run, start_run
 from app.domain.l1 import ProfileDraft, SpecificationDraft, VariantDraft
 from app.vocab.loader import read_vocabulary
 from app.vocab.store import load_vocabulary
@@ -237,3 +238,34 @@ async def test_a_work_of_the_same_title_and_region_is_suggested(connection: psyc
     assert await suggest_work(connection, "Kernlehrplan Chemie", ("DE-NW",)) is None
     assert await suggest_work(connection, "Kernlehrplan Physik", ("DE-BY",)) is None
     assert await suggest_work(connection, "Kernlehrplan Physik", ()) is None
+
+
+class CommitsAfterTheFirst:
+    """A connection on which, right after its first statement, another transaction commits."""
+
+    def __init__(self, connection: psycopg.AsyncConnection, then: Callable[[], Awaitable[None]]) -> None:
+        self._connection, self._then, self._first = connection, then, True
+
+    async def execute(self, *given: Any, **named: Any) -> Any:
+        cursor = await self._connection.execute(*given, **named)
+        if self._first:
+            self._first = False
+            await self._then()
+        return cursor
+
+
+async def test_where_x1_stands_is_read_at_one_moment(
+    connection: psycopg.AsyncConnection, document: Document, database_url: str
+) -> None:
+    # another job's X1 commits its profile and its run's end at once: a look sees both or neither,
+    # never the profile without the run (a tree no extraction wrote)
+    async def x1_of_another_job() -> None:
+        async with await psycopg.AsyncConnection.connect(database_url) as other, other.transaction():
+            await write_profile(other, document.id, draft())
+            run = await start_run(other, RunStart(document.id, None, None, "X1", None, None, None, None))
+            await finish_run(other, run, "done", {})
+
+    looked = await x1_state(cast(Any, CommitsAfterTheFirst(connection, x1_of_another_job)), document.id)
+
+    assert looked == "open"  # as it stood at the look
+    assert await x1_state(connection, document.id) == "done"
