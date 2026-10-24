@@ -30,7 +30,13 @@ def document(connection: psycopg.Connection) -> Any:
 
 
 def add_run(connection: psycopg.Connection, document: Any, **columns: Any) -> None:
-    values = {"document_id": document, "stage_scheme": CV + "Stages", "stage_iri": CV + "stage_X1"} | columns
+    # a start fixed before the ends the tests give: now() would pass them once the day is on
+    values = {
+        "document_id": document,
+        "stage_scheme": CV + "Stages",
+        "stage_iri": CV + "stage_X1",
+        "started_at": "2026-10-24T11:00:00Z",
+    } | columns
     names = ", ".join(values)
     marks = ", ".join(["%s"] * len(values))
     connection.execute(
