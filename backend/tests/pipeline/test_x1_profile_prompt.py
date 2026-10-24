@@ -90,7 +90,8 @@ def test_without_words_there_is_no_list_of_them() -> None:
 
 
 def test_the_prompt_has_a_version_of_its_own() -> None:
-    # /3: the excerpt indents a block's later lines (app/pipeline/prefix.py)
+    # /3: the excerpt indents a block's later lines, and the answer is read back without them
+    # (app/pipeline/prefix.py)
     assert PROMPT_VERSION == "x1-profile/3"
 
 
