@@ -29,7 +29,7 @@ from app.api.deps import require_account
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.api.jobs import JobOut, job_out
 from app.api.limits import admit_model_start
-from app.api.source_content import EDITORS
+from app.api.source_content import EDITORS, content_row
 from app.core.auth import Principal
 from app.core.logging import current_request_id
 from app.core.settings import Settings
@@ -56,7 +56,7 @@ Notation = Annotated[str, StringConstraints(min_length=1, max_length=40)]
 MOST_LISTED = 100
 
 START_REFUSALS: dict[int | str, dict[str, object]] = {
-    403: {"model": ErrorBody, "description": "no_budget: no tokens left; not_owner: another's document"},
+    403: {"model": ErrorBody, "description": "no_budget: no tokens left"},
     429: {"model": ErrorBody, "description": "too_many_jobs, too_many_starts: wait and try again"},
 }
 
@@ -171,6 +171,11 @@ async def make_document(
     responses={
         200: {"model": JobOut, "description": "The extraction waiting or running: no new one is made"},
         **START_REFUSALS,
+        403: {
+            "model": ErrorBody,
+            "description": "no_budget: no tokens left; not_owner: another's document; "
+            "file_hidden: the entry's content is no longer the owner's to read",
+        },
         404: {"model": ErrorBody, "description": "no_document: none the caller may read"},
     },
 )
@@ -184,8 +189,10 @@ async def start_extraction(document_id: UUID, request: Request, response: Respon
                 document = await _visible(connection, who, document_id)
                 if document.owner_id != who.account_id:
                     raise Refusal(403, "not_owner", "Only the document's owner starts its extraction.")
-                key = unique_key(document.id)
                 settings = request.app.state.settings
+                # the entry's content read as when the document was made: 403 file_hidden, 404 once not
+                await content_row(connection, who, settings, document.source_id)
+                key = unique_key(document.id)
                 await _admit(connection, who.account_id, settings, lambda: _open(connection, key))
                 job_id = await _enqueue(connection, who.account_id, document.id)
                 await record_audit(

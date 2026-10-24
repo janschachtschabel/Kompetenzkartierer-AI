@@ -406,6 +406,26 @@ def test_a_restart_beside_a_job_in_flight_or_past_the_starts_a_minute_is_refused
     assert rows(url, "SELECT count(*) FROM job WHERE unique_key IS NOT NULL") == [(1,)]
 
 
+def test_a_restart_needs_the_entry_s_content_still_readable_by_its_owner(
+    client: TestClient, url: str, tmp_path: Path
+) -> None:
+    # made while the content of entries of no account was open to accounts; closed since
+    # (THIRD_PARTY_MARKDOWN=hidden, the client's): the extraction does not go on reading it
+    owner, header = an_account(url)
+    made = a_conversion(url, owner)
+    with psycopg.connect(url, autocommit=True) as connection:
+        connection.execute("UPDATE source SET owner_id = NULL WHERE id = %s", (made["source"],))
+    opened = make_settings(database_url=url, storage_dir=tmp_path, third_party_markdown="accounts")
+    with selector_client(create_app(opened), base_url=PUBLIC) as while_open:
+        started = make(while_open, url, header, made)
+    end_job(url, started["job"]["id"], "cancelled")
+
+    again = client.post(f"/api/v1/documents/{started['document']['id']}/extraction", headers=header)
+
+    assert (again.status_code, again.json()["code"]) == (403, "file_hidden")
+    assert rows(url, "SELECT count(*) FROM job") == [(1,)]
+
+
 def end_job_of_lane(url: str, lane: str) -> None:
     with psycopg.connect(url, autocommit=True) as connection:
         connection.execute(
