@@ -320,3 +320,32 @@ async def test_a_booking_commits_on_a_connection_that_does_not(database_url: str
             assert connection.info.transaction_status == TransactionStatus.IDLE
             cursor = await setup.execute("SELECT count(*) FROM llm_usage")
             assert await cursor.fetchone() == (1,)
+
+
+async def test_a_booking_whose_commit_failed_is_counted_once_it_is_booked(
+    connection: psycopg.AsyncConnection,
+) -> None:
+    # asked again after a failed commit, a booking counted before its commit would count twice
+    account = await an_account(connection, token_limit=1_000)
+    reservation = await reserve(
+        connection, await a_charge(connection, account), input_tokens=10, output_tokens=10
+    )
+    await connection.execute(
+        "CREATE FUNCTION refuse_usage() RETURNS trigger LANGUAGE plpgsql AS"
+        " $$ BEGIN RAISE EXCEPTION 'refused at commit (invented)'; END $$"
+    )
+    await connection.execute(
+        "CREATE CONSTRAINT TRIGGER refuse_at_commit AFTER INSERT ON llm_usage"
+        " DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION refuse_usage()"
+    )
+    spent = Spent(input_tokens=5, output_tokens=5, requests=1)
+    before = reservations("booked")
+
+    with pytest.raises(errors.RaiseException, match="refused at commit"):
+        await book(connection, reservation, spent)
+
+    assert reservations("booked") == before
+    assert (await usage_of(connection, account)).tokens_held == 20  # still held
+    await connection.execute("DROP TRIGGER refuse_at_commit ON llm_usage")
+    assert await book(connection, reservation, spent) is True
+    assert reservations("booked") == before + 1
