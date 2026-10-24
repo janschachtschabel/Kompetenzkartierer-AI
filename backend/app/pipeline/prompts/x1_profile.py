@@ -66,7 +66,8 @@ def profile_prompt(
             for number, item in enumerate([*node_types, *subkinds], start=1)
         ),
     ]
-    words = [line for found in cues if (line := _word(found, keys)) is not None]
+    # each line once: a word's cues of several roles or scopes may say the same
+    words = list(dict.fromkeys(line for found in cues if (line := _word(found, keys)) is not None))
     if words:
         parts.append("=== BEKANNTE BEZEICHNUNGEN ===\n" + "".join(words))
     parts.append(

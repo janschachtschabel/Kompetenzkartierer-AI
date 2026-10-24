@@ -84,3 +84,11 @@ def test_without_words_there_is_no_list_of_them() -> None:
 
 def test_the_prompt_has_a_version_of_its_own() -> None:
     assert PROMPT_VERSION == "x1-profile/1"
+
+
+def test_a_word_two_cues_give_alike_is_named_once() -> None:
+    prompt, _ = asked(
+        word("Inhaltsfeld", SCHOOL + "Inhaltsbereich"), word("Inhaltsfeld", SCHOOL + "Inhaltsbereich")
+    )
+
+    assert prompt.count("„Inhaltsfeld“") == 1
