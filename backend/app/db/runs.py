@@ -124,6 +124,7 @@ async def done_stages(connection: psycopg.AsyncConnection, document_id: UUID) ->
     cursor = await connection.execute(_DONE, (document_id,))
     return {iri.removeprefix(_STAGE_IRI) for (iri,) in await cursor.fetchall()}
 
+
 @dataclass(frozen=True)
 class RunView:
     stage: str  # its notation, "X1"
