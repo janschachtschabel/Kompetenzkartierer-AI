@@ -642,6 +642,11 @@ export const messages = {
       running: "läuft",
       abandoned: "abgebrochen",
     },
+    // why a run failed, where it names a type of failure rather than a code (DocumentRuns.vue); the
+    // codes are a job's (jobs.failures), anything else the server's words, quoted
+    runFailures: {
+      LeaseLost: "Der Lauf ging nicht weiter: Der Auftrag wurde abgebrochen oder von einem anderen Worker übernommen.",
+    },
     untitled: "Dokument ohne Titel",
     start: {
       heading: "Extraktion",
@@ -673,6 +678,9 @@ export const messages = {
       jobLabel: "Extraktion",
       none: "Noch keine Extraktion.",
       lastStatus: "Letzte Extraktion: {status}",
+      // its job is another's to follow, or gone: the document is asked after (DocumentExtraction.vue)
+      following: "Der Stand wird weiter abgefragt, bis die Extraktion endet.",
+      started: "Die Extraktion ist gestartet; ihr Stand steht hier.",
       resume: "Extraktion fortsetzen",
       resumeFailed: "Die Extraktion wurde nicht gestartet.",
       notOwn: "Die Extraktion startet nur, wer das Dokument angelegt hat.",

@@ -19,8 +19,9 @@ export interface CurriculumDocument {
   /** ISO 3166-2 codes, "DE" for all Länder. */
   regions: string[];
   created_at: string;
-  /** The latest extraction job, whatever became of it. */
-  extraction: { job_id: string; status: JobStatus } | null;
+  /** The latest extraction job, whatever became of it; its id only for who may follow it - the
+   * owner, an admin - null for an editor, who reads the status. */
+  extraction: { job_id: string | null; status: JobStatus } | null;
 }
 
 export interface DocumentStarted {
