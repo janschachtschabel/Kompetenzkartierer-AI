@@ -4,11 +4,14 @@ it, the sections its windows are cut by, the choice lists X3 read. Each is read 
 it stands when the stage starts, so every unit of the stage reads the same bytes.
 """
 
+from collections.abc import Sequence
 from uuid import UUID
 
 import psycopg
 
 from app.db.documents import DocumentError
+from app.pipeline.prefix import Section
+from app.pipeline.x2_segments import SegmentNode, lineage, read_depth
 from app.vocab.lookup import REGIONS, by_notation, concept_texts
 
 _PROFILE = """
@@ -58,3 +61,26 @@ async def profile_text(connection: psycopg.AsyncConnection, document_id: UUID) -
         lines.append("Eigene Bezeichnungen des Dokuments:")
         lines.extend(own)
     return "\n".join(lines)
+
+
+def sections(nodes: Sequence[SegmentNode], count: int) -> list[Section]:
+    """The sections of the document's nodes at their headings (app/pipeline/x2_segments.py,
+    segment_nodes) among its ``count`` blocks, in the reading order: each from its heading to before
+    the next heading of its level or one above, a frame part where X2 reads it typed."""
+    by_id = {node.id: node for node in nodes}
+    found: list[Section] = []
+    open_ones: list[tuple[SegmentNode, int]] = []  # the sections not yet ended, the deepest last
+
+    def end(before: int) -> None:
+        node, level = open_ones.pop()
+        frame = read_depth(node, by_id) == "typed"
+        found.append(Section(str(node.id), node.title, level, node.position, before - 1, frame))
+
+    for node in sorted(nodes, key=lambda node: node.position):
+        level = len(list(lineage(node, by_id)))
+        while open_ones and open_ones[-1][1] >= level:
+            end(node.position)
+        open_ones.append((node, level))
+    while open_ones:
+        end(count)
+    return sorted(found, key=lambda section: section.first)

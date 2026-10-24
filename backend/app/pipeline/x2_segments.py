@@ -99,8 +99,8 @@ def segments(blocks: Sequence[Block], nodes: Sequence[SegmentNode]) -> list[Work
     for at, node in enumerate(ordered):
         end = ordered[at + 1].position if at + 1 < len(ordered) else len(blocks)
         own = [place for place in text if node.position <= place < end]
-        path = tuple(reversed([up.title for up in _up(node, by_id)]))
-        depth: Depth = "skip" if any(up.depth == "skip" for up in _up(node, by_id)) else node.depth
+        path = tuple(reversed([up.title for up in lineage(node, by_id)]))
+        depth = read_depth(node, by_id)
         for part in _by_pages(blocks, own):
             number += 1
             # a heading alone - its first child follows at once - leaves nothing to ask about
@@ -179,7 +179,13 @@ def _by_pages(blocks: Sequence[Block], own: Sequence[int]) -> Iterator[list[int]
         yield part
 
 
-def _up(node: SegmentNode, by_id: dict[UUID, SegmentNode]) -> Iterator[SegmentNode]:
+def read_depth(node: SegmentNode, by_id: Mapping[UUID, SegmentNode]) -> Depth:
+    """How deep the node's own text is read: skipped where it or a section it lies in is skipped,
+    else by its own depth."""
+    return "skip" if any(up.depth == "skip" for up in lineage(node, by_id)) else node.depth
+
+
+def lineage(node: SegmentNode, by_id: Mapping[UUID, SegmentNode]) -> Iterator[SegmentNode]:
     """The node and those it lies under, from it up."""
     current: SegmentNode | None = node
     while current is not None:
