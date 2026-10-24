@@ -43,6 +43,9 @@ Handler = Callable[[Job], Coroutine[Any, Any, Result]]
 # How long a cancelled handler may take to unwind before its job goes back anyway: the deployment
 # kills the pod at the end of its grace, and a kill would count the attempt after all
 RELEASE_WAIT_S = 2.0
+# How long a cancelled handler may take to stop before its job ends cancelled anyway: a call that
+# ignores its cancel, or work in a thread, would hold the job and this worker's place
+CANCEL_WAIT_S = 5.0
 
 
 class Worker:
@@ -122,11 +125,24 @@ class Worker:
         if ending == "released":
             # handed back whatever the handler does with its cancel; its outcome is not wanted,
             # but a failure on the way out is said, by its type - asyncio would log its words
-            task.add_done_callback(lambda finished: _report_unwinding(job, finished))
+            _unwind(job, task)
             await asyncio.wait({task}, timeout=RELEASE_WAIT_S)
             elapsed = time.perf_counter() - started
             written = await self._write(job, None, ending)
             observe_job(job.kind, ending if written else "lost", elapsed)
+            return
+        if ending == "cancelled" and not (await asyncio.wait({task}, timeout=CANCEL_WAIT_S))[0]:
+            # the handler does not stop: the job ends cancelled all the same, this worker takes the
+            # next, and what the handler still writes finds its lease gone
+            log.warning(
+                "job %s (%s) did not stop within %.0f s of its cancel; it ends cancelled",
+                job.id,
+                job.kind,
+                CANCEL_WAIT_S,
+            )
+            _unwind(job, task)
+            written = await self._write(job, None, ending)
+            observe_job(job.kind, ending if written else "lost", time.perf_counter() - started)
             return
         outcomes: tuple[Outcome] = await asyncio.gather(task, return_exceptions=True)
         [outcome] = outcomes
@@ -233,6 +249,16 @@ def _how_it_ended(outcome: Outcome) -> str:
     if isinstance(outcome, BaseException):
         return "error"
     return "done"
+
+
+# handlers left to unwind after their job ended, held until they do: the loop keeps weak ones
+_UNWINDING: set[asyncio.Task[Any]] = set()
+
+
+def _unwind(job: Job, handler: asyncio.Task[Any]) -> None:
+    _UNWINDING.add(handler)
+    handler.add_done_callback(_UNWINDING.discard)
+    handler.add_done_callback(lambda finished: _report_unwinding(job, finished))
 
 
 def _report_unwinding(job: Job, handler: asyncio.Task[Any]) -> None:
