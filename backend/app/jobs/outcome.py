@@ -4,7 +4,8 @@ A ``PermanentError`` ends the job; any other error is retried, keeping only the 
 its text may quote input. A result that is no JSON, or JSON the database refuses, fails the job
 (``result_not_storable``): another attempt would return the same. A database away for a moment
 gets WRITE_ATTEMPTS tries; past them the outcome is lost, and the job runs again once its lease
-expires.
+expires. The same transaction books the reservations the attempt left open - a request sent and
+never answered, as the model layer's (plan M1, Nachtrag 5): a job of no model holds none.
 """
 
 import asyncio
@@ -16,6 +17,7 @@ import psycopg
 from psycopg_pool import AsyncConnectionPool
 
 from app.jobs.queue import Job, LeaseLost, complete, fail, mark_cancelled, release
+from app.usage.ledger import book_abandoned
 
 log = logging.getLogger("app.jobs.worker")  # the worker's lines, wherever they are written
 
@@ -70,11 +72,13 @@ async def write_outcome(
     """
     for attempt in range(1, WRITE_ATTEMPTS + 1):
         try:
-            async with pool.connection() as connection:
+            async with pool.connection() as connection, connection.transaction():
                 if ending == "released":
                     await release(connection, job)
                 else:
                     await _record(connection, job, outcome, cancelled=ending == "cancelled")
+                # under the lease that ends the attempt: what it left open, never the next one's
+                await book_abandoned(connection, job.id)
             return True
         except LeaseLost:
             log.warning("lost the lease of job %s (%s) at its end; its outcome is dropped", job.id, job.kind)

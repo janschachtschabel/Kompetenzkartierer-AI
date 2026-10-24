@@ -16,9 +16,9 @@ from psycopg.pq import TransactionStatus
 from app.core.ids import new_id
 from app.db.accounts import create_account
 from app.db.migrate import migrate
-from app.jobs.queue import account_lane, enqueue
+from app.jobs.queue import account_lane, claim, complete, enqueue
 from app.llm.metering import BudgetExhausted, Spent
-from app.usage.ledger import Charge, Usage, book, book_abandoned, reserve, usage_of
+from app.usage.ledger import Charge, Usage, book, book_abandoned, book_left_behind, reserve, usage_of
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 
@@ -349,3 +349,26 @@ async def test_a_booking_whose_commit_failed_is_counted_once_it_is_booked(
     await connection.execute("DROP TRIGGER refuse_at_commit ON llm_usage")
     assert await book(connection, reservation, spent) is True
     assert reservations("booked") == before + 1
+
+
+async def test_the_reservations_of_jobs_not_running_are_booked_as_abandoned_those_of_one_running_are_not(
+    connection: psycopg.AsyncConnection,
+) -> None:
+    # a job handed back after its lease ran out, or ended by a cancel or a dead worker, holds no attempt
+    account = await an_account(connection, token_limit=10_000)
+    waiting, running, done = [await a_charge(connection, account) for _ in range(3)]
+    for charge in (waiting, running, done):
+        await reserve(connection, charge, input_tokens=100, output_tokens=100)
+    claimed = []
+    while (job := await claim(connection, "w1", ["extraction.x1"], 60)) is not None:
+        claimed.append(job)
+    await connection.execute("UPDATE job SET status = 'queued', lease_owner = NULL, lease_token = NULL,"
+                             " lease_expires_at = NULL WHERE id = %s", (waiting.job_id,))  # fmt: skip
+    await complete(connection, next(job for job in claimed if job.id == done.job_id), None)
+
+    taken = await book_left_behind(connection)
+
+    assert taken == 2
+    cursor = await connection.execute("SELECT job_id FROM usage_reservation")
+    assert await cursor.fetchall() == [(running.job_id,)]
+    assert await book_left_behind(connection) == 0

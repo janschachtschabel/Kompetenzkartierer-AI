@@ -33,6 +33,7 @@ from app.core.metrics import observe_expired_leases, observe_job
 from app.core.tracing import continue_trace, end_trace
 from app.jobs.outcome import Ending, Outcome, PermanentError, Result, one_line, say_failure, write_outcome
 from app.jobs.queue import Job, LeaseLost, claim, heartbeat, requeue_expired
+from app.usage.ledger import book_left_behind
 
 __all__ = ["Handler", "PermanentError", "Result", "Worker", "main"]
 
@@ -214,6 +215,8 @@ class Worker:
         try:
             async with self.pool.connection() as connection:
                 handed_back = await requeue_expired(connection)
+                # what attempts of dead workers held: their jobs run no attempt now
+                await book_left_behind(connection)
         except (psycopg.Error, PoolTimeout) as error:
             log.warning("could not look for expired leases: %s", one_line(error))
             return

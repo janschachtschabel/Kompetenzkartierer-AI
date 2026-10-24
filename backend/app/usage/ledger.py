@@ -59,6 +59,16 @@ _BOOK_ABANDONED = """
         output_tokens, requests, unanswered_requests, estimated)
     SELECT account_id, job_id, run_id, purpose, model, input_tokens, 0, output_tokens, 0, 1, true FROM taken
 """
+# The same for every job no attempt runs of: handed back after its lease ran out, or ended
+_BOOK_LEFT_BEHIND = """
+    WITH taken AS (
+        DELETE FROM usage_reservation r USING job j WHERE j.id = r.job_id AND j.status <> 'running'
+        RETURNING r.account_id, r.job_id, r.run_id, r.purpose, r.model, r.input_tokens, r.output_tokens
+    )
+    INSERT INTO llm_usage (account_id, job_id, run_id, purpose, model, input_tokens, cached_input_tokens,
+        output_tokens, requests, unanswered_requests, estimated)
+    SELECT account_id, job_id, run_id, purpose, model, input_tokens, 0, output_tokens, 0, 1, true FROM taken
+"""
 _LIMITS = "SELECT token_limit, page_limit FROM quota WHERE account_id = %s"
 _SET_LIMITS = """
     INSERT INTO quota (account_id, token_limit, page_limit) VALUES (%(account)s, %(tokens)s, %(pages)s)
@@ -186,6 +196,17 @@ async def book_abandoned(connection: psycopg.AsyncConnection, job_id: UUID) -> i
     how many it took. In the caller's transaction: the one that ends the job, under its lease,
     so that it takes no reservation of the job's next attempt."""
     cursor = await connection.execute(_BOOK_ABANDONED, (job_id,))
+    observe_reservations("abandoned", cursor.rowcount)
+    return cursor.rowcount
+
+
+async def book_left_behind(connection: psycopg.AsyncConnection) -> int:
+    """Book the open reservations of every job that is not running as book_abandoned does; how many
+    it took. A job's end books its own (app/jobs/outcome.py); this takes what an attempt left when
+    its worker died or lost its lease - the job handed back, or ended without another attempt. A
+    job running holds its attempt's: those stay. A worker that lost its lease and answers later
+    finds its reservation booked (``book``, late)."""
+    cursor = await connection.execute(_BOOK_LEFT_BEHIND)
     observe_reservations("abandoned", cursor.rowcount)
     return cursor.rowcount
 
