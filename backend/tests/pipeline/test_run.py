@@ -1,4 +1,4 @@
-"""The job extract.run (plan M1 6.6, 7b): X1 to X3 of a document one after the other, each stage of each
+"""The job extract.run (plan M1 6.6, 7b): X1 to X4 of a document one after the other, each stage of each
 attempt a run of its own, written at once with its run's end under the attempt's lease; an attempt
 after a break goes on from the last stage done; a spent budget ends the job and keeps what is done.
 A model stands in (FunctionModel), never a provider."""
@@ -80,9 +80,20 @@ EMPTY_FRAME: dict[str, Any] = {
 }  # fmt: skip
 
 
+def a_statement(block_id: str, verbatim: str) -> dict[str, Any]:
+    """A statement of a learning outcome as X3 and X4 answer it."""
+    return {
+        "blockIds": [block_id], "verbatim": verbatim, "leadIn": None, "statementKind": "learningOutcome",
+        "statementSubkind": None, "addressee": "learner", "obligation": None, "layoutMarkers": [],
+        "codeText": None, "levelText": None, "timeText": None, "contextText": None, "referenceMarker": None,
+        "exampleText": None, "purposeText": None, "crossCuttingMarkers": [], "targetsContent": [],
+    }  # fmt: skip
+
+
 class Model:
-    """The model of X1's questions and X3's: it answers each by the keys its prompt lists, X3's
-    with ``frame`` (none found where not given)."""
+    """The model of X1's questions, X3's and X4's: it answers each by the keys its prompt lists,
+    X3's with ``frame`` (none found where not given), a unit's with ``units`` (by its key) or else a
+    statement at its first block. ``asked`` are the questions of X1 and X3, ``units`` the units asked."""
 
     def __init__(
         self,
@@ -91,12 +102,15 @@ class Model:
         specifications: bool = True,
         document_type: str = "Lehrplan",
         frame: dict[str, Any] | None = None,
+        units: dict[str, dict[str, Any]] | None = None,
     ) -> None:
         self.asked: list[str] = []
+        self.units: list[str] = []
         self.profile_out_of_form = profile_out_of_form
         self.specifications = specifications
         self.document_type = document_type  # the label of the type it reads
         self.frame = EMPTY_FRAME if frame is None else frame
+        self.answers = units or {}
 
     def __call__(self, messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         prompt = str(messages[0].parts[-1].content)  # type: ignore[union-attr]
@@ -105,11 +119,22 @@ class Model:
             question, answer = "profile", self.profile(prompt)
         elif "=== RAHMENBEREICHE ===" in prompt:
             question, answer = "frame", self.frame
+        elif "=== EINHEIT ===" in prompt:
+            question, answer = "unit", self.unit(prompt)
         else:
             question, answer = "outline", self.outline(prompt)
-        self.asked.append(question)
+        if question != "unit":
+            self.asked.append(question)
         usage = RequestUsage(input_tokens=1_000, output_tokens=100)
         return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, json.dumps(answer))], usage=usage)
+
+    def unit(self, prompt: str) -> dict[str, Any]:
+        found = re.search(r"^=== EINHEIT ===\n(E\d+) \| .* \| Blöcke (\S+) bis", prompt, re.M)
+        assert found is not None
+        key, first = found[1], found[2]
+        self.units.append(key)
+        given = {"unitKey": key, "statements": [a_statement(first, f"Aussage {key}")], "checkedAbsent": []}
+        return self.answers.get(key, given)
 
     def profile(self, prompt: str) -> dict[str, Any]:
         if self.profile_out_of_form:
@@ -231,7 +256,7 @@ async def test_a_document_is_extracted_stage_by_stage_each_a_run(
 
     result = await extract_document(context_of(pool, tmp_path, model, database_url), job)
 
-    assert result == {"document_id": str(document.id), "stages": ["X1", "X2", "X3"], "packages": 4}
+    assert result == {"document_id": str(document.id), "stages": ["X1", "X2", "X3", "X4"], "packages": 4}
     assert model.asked == ["profile", "outline", "frame"]
     assert await rows(
         connection,
@@ -239,7 +264,12 @@ async def test_a_document_is_extracted_stage_by_stage_each_a_run(
         " ORDER BY started_at",
         CV + "stage_",
         job.id,
-    ) == [("X1", 1, "done", "gpt-6-luna"), ("X2", 1, "done", None), ("X3", 1, "done", "gpt-6-luna")]
+    ) == [
+        ("X1", 1, "done", "gpt-6-luna"),
+        ("X2", 1, "done", None),
+        ("X3", 1, "done", "gpt-6-luna"),
+        ("X4", 1, "done", "gpt-6-luna"),
+    ]
     [(title, document_type, valid_from)] = await rows(
         connection, "SELECT title, document_type_iri, valid_from FROM document WHERE id = %s", document.id
     )
@@ -268,17 +298,23 @@ async def test_a_document_is_extracted_stage_by_stage_each_a_run(
         ("E0", "frame"), ("E1", "statements"), ("E2", "statements"), ("E3", "frame"),
     ]  # fmt: skip
     [(progress,)] = await rows(connection, "SELECT progress FROM job WHERE id = %s", job.id)
-    assert progress == {"code": "extract_frame", "params": {}}
+    assert progress == {"code": "extract_statements", "params": {"done": 2, "total": 2}}
     spent = await rows(
         connection,
         "SELECT purpose, sum(requests) FROM llm_usage WHERE job_id = %s GROUP BY purpose ORDER BY purpose",
         job.id,
     )
-    assert spent == [("x1.outline", 1), ("x1.profile", 1), ("x3.frame", 1)]
+    assert spent == [("x1.outline", 1), ("x1.profile", 1), ("x3.frame", 1), ("x4.unit", 2)]
     kept = sorted(
         path.relative_to(tmp_path / "store").parts[2:] for path in (tmp_path / "store").rglob("*.json")
     )
-    assert kept == [("x1", "1.json"), ("x1", "2.json"), ("x3", "1.json")]  # as they came, under their runs
+    assert kept == [
+        ("x1", "1.json"),
+        ("x1", "2.json"),
+        ("x3", "1.json"),
+        ("x4", "1.json"),
+        ("x4", "2.json"),
+    ]  # as they came, under their runs
 
 
 async def test_an_attempt_after_a_break_goes_on_from_the_last_stage_done(
@@ -299,7 +335,7 @@ async def test_an_attempt_after_a_break_goes_on_from_the_last_stage_done(
             await extract_document(context, job)
     again = await extract_document(context, job)
 
-    assert again["stages"] == ["X1", "X2", "X3"]
+    assert again["stages"] == ["X1", "X2", "X3", "X4"]
     assert model.asked == ["profile", "outline", "frame"]  # X1 was done: not asked again
     assert await rows(
         connection,
@@ -307,7 +343,12 @@ async def test_an_attempt_after_a_break_goes_on_from_the_last_stage_done(
         " ORDER BY started_at",
         CV + "stage_",
         job.id,
-    ) == [("X1", "done"), ("X2", "done"), ("X3", "done")]  # the broken attempt started no run of X2
+    ) == [
+        ("X1", "done"),
+        ("X2", "done"),
+        ("X3", "done"),
+        ("X4", "done"),
+    ]  # the broken attempt started no run of X2
     [(nodes,)] = await rows(connection, "SELECT count(*) FROM node WHERE document_id = %s", document.id)
     assert nodes == 3  # written once
 
@@ -593,7 +634,11 @@ async def test_a_document_done_before_is_neither_asked_nor_written_again(
     result = await extract_document(context, again)
 
     assert model.asked == asked
-    assert result == {"document_id": str(document.id), "stages": ["X1", "X2", "X3"], "packages": packages}
+    assert result == {
+        "document_id": str(document.id),
+        "stages": ["X1", "X2", "X3", "X4"],
+        "packages": packages,
+    }
     assert await rows(connection, "SELECT count(*) FROM extraction_run WHERE job_id = %s", again.id) == [(0,)]
 
 
@@ -625,12 +670,12 @@ async def test_a_new_job_goes_on_where_one_that_failed_stopped(
         " ORDER BY started_at",
         CV + "stage_",
         later.id,
-    ) == [("X2", "done"), ("X3", "done")]
+    ) == [("X2", "done"), ("X3", "done"), ("X4", "done")]
 
 
 @pytest.mark.parametrize(
     ("blocks", "specifications", "packages", "nodes"),
-    [(BLOCKS, True, 4, 3), (PLAIN, False, 1, 0)],
+    [(BLOCKS, True, 4, 3), (PLAIN, False, 1, 1)],  # plain: the node X4 gives its one unit, once
     ids=["tree", "plain"],
 )
 async def test_two_jobs_on_one_document_write_it_once(
@@ -665,6 +710,7 @@ async def test_two_jobs_on_one_document_write_it_once(
     ]
     anchors = (
         "SELECT count(*) FROM anchor WHERE document_id = %s AND node_id IS NULL AND specification_id IS NULL"
+        " AND statement_id IS NULL AND frame_part_id IS NULL"
     )
     assert await rows(connection, anchors, document.id) == [(1,)]  # the document's own, once
     outcomes = await rows(

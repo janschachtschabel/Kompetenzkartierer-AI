@@ -481,13 +481,16 @@ export const messages = {
     progress: {
       checking: "{done} von {total} {total|Adresse|Adressen} angesehen",
       converting: "Die Datei wird in Blöcke umgewandelt; bei einer großen Datei dauert das einige Minuten.",
-      // extract.run: the stages X1 to X3 of a document
+      // extract.run: the stages X1 to X4 of a document
       extract_profile: "Das Sprachmodell liest Titel, Geltung und Begriffe des Dokuments.",
       // a count of 0 too: the lexicon's patterns may type every heading
       extract_outline: "Die Gliederung wird gebaut. Überschriften, die das Sprachmodell einordnet: {headings}.",
       extract_segments: "Das Dokument wird in {units} {units|Arbeitspaket|Arbeitspakete} geteilt.",
       extract_frame:
         "Das Sprachmodell liest die Rahmenteile: Kompetenzmodelle, Operatoren, Legenden, Regeln und Ziele.",
+      // a unit is done once written: those done stay when the job stops
+      extract_statements:
+        "Das Sprachmodell liest die Aussagen der Arbeitspakete: {done} von {total} {total|Paket|Paketen} fertig.",
     },
     trouble: "Der Server antwortet gerade nicht; der Stand wird weiter abgefragt.",
     // why there is nothing left to ask (jobWatch.ts, JobGone); for a fetch and the seed's check alike

@@ -74,11 +74,20 @@ async def x3_run(connection: Any, document: Any) -> list[tuple[Any, ...]]:
     )
 
 
+def frame_of(asked: list[str]) -> str:
+    [frame] = [prompt for prompt in asked if "=== RAHMENBEREICHE ===" in prompt]
+    return frame
+
+
 async def written(connection: Any, document: Any) -> tuple[Any, Any]:
     [(parts,)] = await rows(connection, "SELECT count(*) FROM frame_part WHERE document_id = %s", document.id)
     [(statements,)] = await rows(
-        connection, "SELECT count(*) FROM statement WHERE document_id = %s", document.id
-    )
+        connection,
+        "SELECT count(*) FROM statement s JOIN extraction_run r ON r.id = s.run_id"
+        " WHERE s.document_id = %s AND r.stage_iri = %s",
+        document.id,
+        CV + "stage_X3",
+    )  # X3's: X4 writes the units' after it
     return parts, statements
 
 
@@ -97,7 +106,7 @@ async def test_the_frame_is_asked_once_behind_the_prefix_and_written_with_its_an
 
     await extract_document(context_of(pool, tmp_path, answer, database_url), job)
 
-    frame = asked[-1]
+    frame = frame_of(asked)
     assert frame.startswith("=== DOKUMENT ===\n")  # the whole document fits: every unit reads the same bytes
     assert "[p3-b2] Die Schülerinnen und Schüler" in frame
     assert "=== DOKUMENTPROFIL ===\nTitel: Kernlehrplan für die Sekundarstufe I Physik\n" in frame
@@ -137,10 +146,11 @@ async def test_the_frame_is_asked_once_behind_the_prefix_and_written_with_its_an
         connection,
         "SELECT n.original_title, s.position, s.verbatim, replace(s.origin_iri, %s, ''),"
         " replace(s.review_status_iri, %s, '') FROM statement s JOIN node n ON n.id = s.node_id"
-        " WHERE s.document_id = %s",
+        " JOIN extraction_run r ON r.id = s.run_id WHERE s.document_id = %s AND r.stage_iri = %s",
         CV,
         CV,
         document.id,
+        CV + "stage_X3",
     ) == [
         (
             "Leistungsbewertung",
@@ -180,7 +190,7 @@ async def test_a_run_of_x3_done_while_this_one_asked_is_found_at_the_write(
 
     result = await extract_document(context_of(pool, tmp_path, answer, database_url), job)
 
-    assert result["stages"] == ["X1", "X2", "X3"]
+    assert result["stages"] == ["X1", "X2", "X3", "X4"]
     assert [(outcome, result.get("failure")) for outcome, result in await x3_run(connection, document)] == [
         ("failed", "X3 of the document was written by another run meanwhile"),  # this one's, begun first
         ("done", None),
@@ -303,7 +313,7 @@ async def test_the_lexicon_excerpt_holds_the_cues_of_the_type_x1_read_that_bear_
         await a_job(connection, document.id, document.owner_id),
     )
 
-    lexicon = asked[-1].split("=== LEXIKON ===\n", 1)[1].split("=== AUFTRAG ===", 1)[0]
+    lexicon = frame_of(asked).split("=== LEXIKON ===\n", 1)[1].split("=== AUFTRAG ===", 1)[0]
     assert (
         "Satzmuster /^(Die )?(Schülerinnen und Schüler|Lernenden|SuS)\\b/ → Kompetenzerwartung (U" in lexicon
     )

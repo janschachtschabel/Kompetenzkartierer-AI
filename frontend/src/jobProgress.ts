@@ -11,4 +11,5 @@ export const JOB_PROGRESS: Readonly<Record<string, readonly string[]>> = {
   extract_outline: ["headings"],
   extract_segments: ["units"],
   extract_frame: [],
+  extract_statements: ["done", "total"],
 };

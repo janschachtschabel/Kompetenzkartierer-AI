@@ -24,8 +24,8 @@ from app.vocab.graph import Properties
 from app.vocab.lookup import concept_texts, notations_by_iri, notations_of, profile_concepts
 
 CV = "https://w3id.org/wlo/curriculum/vocab#"
-# the schemes the statement object's enums name (x-cv-scheme)
-STATEMENT_SCHEMES = ("StatementKinds", "Addressees", "Obligations", "LayoutMarkers")
+# the schemes the statement object's enums name (x-cv-scheme), and checkedAbsent's
+STATEMENT_SCHEMES = ("StatementKinds", "Addressees", "Obligations", "LayoutMarkers", "DockingPoints")
 _PROPERTIES = "SELECT iri, properties FROM vocab_concept WHERE iri = ANY(%s)"
 
 
