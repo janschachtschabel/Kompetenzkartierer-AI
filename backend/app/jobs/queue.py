@@ -17,7 +17,7 @@ is the database's ``now()``.
 """
 
 import re
-from collections.abc import Collection
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
 from uuid import UUID
@@ -86,6 +86,9 @@ class OpenJob(Exception):
     def __init__(self, job_id: UUID) -> None:
         super().__init__(f"job {job_id} of the key is waiting or running")
         self.job_id = job_id
+
+
+JobStatus = Literal["queued", "running", "done", "failed", "cancelled"]
 
 
 class LeaseLost(Exception):
@@ -175,13 +178,21 @@ async def open_job(connection: psycopg.AsyncConnection, unique_key: str) -> UUID
     return None if found is None else found[0]
 
 
-async def last_job(connection: psycopg.AsyncConnection, unique_key: str) -> UUID | None:
-    """The key's latest job, whatever became of it; None before its first."""
-    cursor = await connection.execute(
-        "SELECT id FROM job WHERE unique_key = %s ORDER BY created_at DESC, id DESC LIMIT 1", (unique_key,)
-    )
-    found = await cursor.fetchone()
-    return None if found is None else found[0]
+# the latest job of each key (index job_by_key); a key's open job is its latest, for none is
+# made beside it and an ended one never opens again
+_LATEST = """
+SELECT DISTINCT ON (unique_key) unique_key, id, status FROM job WHERE unique_key = ANY(%s)
+ORDER BY unique_key, created_at DESC, id DESC
+"""
+
+
+async def last_jobs(
+    connection: psycopg.AsyncConnection, unique_keys: Sequence[str]
+) -> dict[str, tuple[UUID, JobStatus]]:
+    """Each key's latest job and its status, whatever became of it; a key before its first is
+    not there."""
+    cursor = await connection.execute(_LATEST, (list(unique_keys),))
+    return {key: (job_id, status) for key, job_id, status in await cursor.fetchall()}
 
 
 def _request_trace() -> str | None:

@@ -10,11 +10,12 @@ import pytest
 
 from app.db.migrate import migrate
 from app.jobs import queue
-from app.jobs.queue import OpenJob, claim, complete, enqueue, last_job, open_job, request_cancel
+from app.jobs.queue import OpenJob, claim, complete, enqueue, last_jobs, open_job, request_cancel
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 
 KEY = "extract.run:01900000-0000-7000-8000-000000000001"
+OTHER = "extract.run:01900000-0000-7000-8000-000000000002"
 
 
 @pytest.fixture
@@ -74,7 +75,7 @@ async def test_once_its_job_has_ended_the_key_takes_a_new_one(connect: Any) -> N
     newest = await enqueue(db, "test.work", "account-a", unique_key=KEY)
 
     assert await open_job(db, KEY) == newest
-    assert await last_job(db, KEY) == newest
+    assert await last_jobs(db, [KEY, OTHER]) == {KEY: (newest, "queued")}
     assert len({done, cancelled, newest}) == 3
 
 
@@ -82,7 +83,7 @@ async def test_a_key_without_any_job_has_none(connect: Any) -> None:
     db = await connect()
 
     assert await open_job(db, KEY) is None
-    assert await last_job(db, KEY) is None
+    assert await last_jobs(db, [KEY]) == {}
 
 
 async def test_jobs_without_a_key_are_made_as_ever(connect: Any) -> None:

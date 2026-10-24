@@ -12,7 +12,7 @@ its job is followed and cancelled at /api/v1/jobs (app/api/jobs.py).
 """
 
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated
 from uuid import UUID
 
 import psycopg
@@ -30,7 +30,7 @@ from app.db.accounts import record_audit
 from app.db.documents import Document, DocumentError, create_document, documents_of, get_document
 from app.db.runs import RunState, runs_of
 from app.db.source_queries import Reader
-from app.jobs.queue import OpenJob, account_lane, enqueue, open_job
+from app.jobs.queue import JobStatus, OpenJob, account_lane, enqueue, last_jobs, open_job
 from app.jobs.state import job_state
 from app.pipeline.extraction import KIND, unique_key
 from app.sources.register import EDUCATION_SECTORS
@@ -58,7 +58,7 @@ class DocumentRequest(BaseModel):
 
 class ExtractionRef(BaseModel):
     job_id: UUID
-    status: Literal["queued", "running", "done", "failed", "cancelled"]
+    status: JobStatus
 
 
 class DocumentOut(BaseModel):
@@ -241,22 +241,13 @@ async def _job(connection: psycopg.AsyncConnection, job_id: UUID, who: Principal
     return job_out(state)
 
 
-# the latest extraction job of each document, by its key (index job_by_key)
-_LATEST = """
-SELECT DISTINCT ON (unique_key) unique_key, id, status FROM job WHERE unique_key = ANY(%s)
-ORDER BY unique_key, created_at DESC, id DESC
-"""
-
-
 async def _outs(
     connection: psycopg.AsyncConnection, documents: list[Document], who: Principal
 ) -> list[DocumentOut]:
     """The documents as the API gives them, in two queries however many they are."""
     sectors = {iri: notation for notation, iri in (await notations_of(connection, EDUCATION_SECTORS)).items()}
-    cursor = await connection.execute(_LATEST, ([unique_key(document.id) for document in documents],))
-    latest = {
-        key: ExtractionRef(job_id=job_id, status=status) for key, job_id, status in await cursor.fetchall()
-    }
+    found = await last_jobs(connection, [unique_key(document.id) for document in documents])
+    latest = {key: ExtractionRef(job_id=job_id, status=status) for key, (job_id, status) in found.items()}
     return [
         DocumentOut(
             id=document.id,
