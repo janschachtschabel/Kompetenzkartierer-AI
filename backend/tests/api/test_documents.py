@@ -482,6 +482,20 @@ def test_the_extraction_s_job_is_named_to_those_who_may_follow_it_its_status_to_
     assert client.get(f"/api/v1/jobs/{job}", headers=editor).status_code == 404  # whom it is kept from
 
 
+def test_a_document_keeps_the_notation_of_a_sector_retired_since(client: TestClient, url: str) -> None:
+    owner, header = an_account(url)
+    started = make(client, url, header, a_conversion(url, owner))
+    with psycopg.connect(url, autocommit=True) as connection:
+        connection.execute(
+            "UPDATE vocab_concept SET retired_in = (SELECT max(id) FROM vocab_release) WHERE iri = %s",
+            (CV + "sec_school",),
+        )
+
+    answer = client.get(f"/api/v1/documents/{started['document']['id']}", headers=header)
+
+    assert answer.json()["sector"] == "school"
+
+
 def add_run(url: str, document: str, job: str, stage: str, attempt: int, outcome: str | None = None,
             failure: str | None = None) -> None:  # fmt: skip
     with psycopg.connect(url, autocommit=True) as connection:

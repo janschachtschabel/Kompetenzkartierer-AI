@@ -47,8 +47,7 @@ from app.db.source_queries import Reader
 from app.jobs.queue import OPEN_STATUSES, JobStatus, OpenJob, account_lane, enqueue, last_jobs, open_job
 from app.jobs.state import job_state
 from app.pipeline.extraction import KIND, unique_key
-from app.sources.register import EDUCATION_SECTORS
-from app.vocab.lookup import notations_of
+from app.vocab.lookup import notations_by_iri
 
 router = APIRouter(prefix="/api/v1", tags=["documents"], responses=AUTH_RESPONSES)
 Account = Annotated[Principal, Depends(require_account)]
@@ -325,7 +324,7 @@ async def _outs(
     connection: psycopg.AsyncConnection, documents: list[Document], who: Principal
 ) -> list[DocumentOut]:
     """The documents as the API gives them, in two queries however many they are."""
-    sectors = {iri: notation for notation, iri in (await notations_of(connection, EDUCATION_SECTORS)).items()}
+    sectors = await notations_by_iri(connection, {document.sector_iri for document in documents})
     found = await last_jobs(connection, [unique_key(document.id) for document in documents])
 
     def extraction(document: Document) -> ExtractionRef | None:

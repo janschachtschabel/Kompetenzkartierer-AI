@@ -223,6 +223,15 @@ async def notations_of(connection: psycopg.AsyncConnection, scheme_iri: str) -> 
     return {str(notation): str(iri) for notation, iri in await cursor.fetchall()}
 
 
+async def notations_by_iri(connection: psycopg.AsyncConnection, iris: Collection[str]) -> dict[str, str]:
+    """The notations of these concepts by their IRIs, retired ones too: what a document took when
+    it was made stays named as it was."""
+    cursor = await connection.execute(
+        "SELECT iri, notation FROM vocab_concept WHERE iri = ANY(%s) AND notation IS NOT NULL", (list(iris),)
+    )
+    return {str(iri): str(notation) for iri, notation in await cursor.fetchall()}
+
+
 async def region_with_ancestors(connection: psycopg.AsyncConnection, notation: str) -> frozenset[str]:
     """The active region of this notation ("DE-NW") and those it lies in ("DE"); none if unknown.
     One set: for ``active_cues`` the caller parts the region itself from those it lies in
