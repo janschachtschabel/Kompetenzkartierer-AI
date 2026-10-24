@@ -29,7 +29,7 @@ from app.jobs.context import JobContext
 from app.jobs.handlers import make_handlers
 from app.jobs.outcome import PermanentError
 from app.jobs.queue import Job, account_lane, claim, enqueue
-from app.pipeline import run
+from app.pipeline import run, x1_stage
 from app.pipeline.run import KIND, extract_document
 from app.usage.admission import MODEL_JOB_KINDS
 from app.vocab.loader import read_vocabulary
@@ -284,9 +284,28 @@ async def test_an_attempt_after_a_break_goes_on_from_the_last_stage_done(
         " ORDER BY started_at",
         CV + "stage_",
         job.id,
-    ) == [("X1", "done"), ("X2", None), ("X2", "done")]  # the broken attempt's run never ended
+    ) == [("X1", "done"), ("X2", "done")]  # the broken attempt started no run of X2
     [(nodes,)] = await rows(connection, "SELECT count(*) FROM node WHERE document_id = %s", document.id)
     assert nodes == 3  # written once
+
+
+async def test_a_stage_that_breaks_ends_its_run_and_is_asked_again(
+    setup: Any, tmp_path: Path, database_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pool, connection = setup
+    document = await a_document(connection)
+    job = await a_job(connection, document.id, document.owner_id)
+
+    async def refused(*_: Any) -> Any:
+        raise RuntimeError("the database refused the write")
+
+    monkeypatch.setattr(x1_stage, "write_profile", refused)
+    with pytest.raises(RuntimeError):
+        await extract_document(context_of(pool, tmp_path, Model(), database_url), job)
+
+    assert await rows(connection, "SELECT outcome, result ->> 'failure' FROM extraction_run") == [
+        ("failed", "RuntimeError")
+    ]
 
 
 async def test_a_spent_budget_ends_the_job_and_writes_nothing_of_the_stage(

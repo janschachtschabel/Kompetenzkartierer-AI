@@ -144,6 +144,9 @@ async def run_x1(
         raise PermanentError(
             "model_unanswered", "the model's answer never took its schema's form"
         ) from unanswered
+    except Exception as error:  # the attempt is asked again: its run ends here, by what broke it
+        await _end(context, run_id, "failed", {"failure": type(error).__name__})
+        raise
 
 
 async def _stage(

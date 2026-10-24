@@ -10,9 +10,11 @@ Payload: ``{"document_id": "<uuid>"}``; what it ends with: the document, its sta
 X2's packages (which X2's run holds, plan M1 6, Festlegung 3).
 """
 
+from collections.abc import Sequence
 from typing import Any
 from uuid import UUID
 
+from app.conversion.base import Block
 from app.db.conversions import all_blocks, printed_pages
 from app.db.documents import document_for_job
 from app.db.runs import RunStart, done_stages, finish_run, stage_result, start_run
@@ -39,25 +41,34 @@ async def extract_document(context: JobContext, job: Job) -> dict[str, Any]:
         printed = await printed_pages(connection, document.conversion_id)
     if "X1" not in done:
         await run_x1(context, job, document, blocks, printed)
-    packages = 0
     if "X2" not in done:
-        async with context.pool.connection() as connection:
-            start = RunStart(
-                document.id, job.id, job.attempts, "X2", None, None, None, await current_release(connection)
-            )
-            run_id = await start_run(connection, start)
-        async with context.pool.connection() as connection:
-            found = await work_packages(connection, document.id, blocks)
-            await report(connection, job, "extract_segments", units=len(found))
-        async with context.pool.connection() as connection, connection.transaction():
-            await hold_lease(connection, job)
-            await finish_run(connection, run_id, "done", {"packages": [item.as_result() for item in found]})
-        packages = len(found)
+        packages = await _run_x2(context, job, document.id, blocks)
     else:  # done before: by the attempt before, or by an earlier job
         async with context.pool.connection() as connection:
             made = await stage_result(connection, document.id, "X2")
         packages = len((made or {}).get("packages", []))
     return {"document_id": str(document.id), "stages": list(STAGES), "packages": packages}
+
+
+async def _run_x2(context: JobContext, job: Job, document_id: UUID, blocks: Sequence[Block]) -> int:
+    """X2 of the document: its work packages, written as its run's result; how many."""
+    async with context.pool.connection() as connection:
+        found = await work_packages(connection, document_id, blocks)
+        # the lease first: an attempt that lost it starts no run that would never end
+        await report(connection, job, "extract_segments", units=len(found))
+        start = RunStart(
+            document_id, job.id, job.attempts, "X2", None, None, None, await current_release(connection)
+        )
+        run_id = await start_run(connection, start)
+    try:
+        async with context.pool.connection() as connection, connection.transaction():
+            await hold_lease(connection, job)
+            await finish_run(connection, run_id, "done", {"packages": [item.as_result() for item in found]})
+    except Exception as error:  # the attempt is asked again: its run ends here, by what broke it
+        async with context.pool.connection() as connection:
+            await finish_run(connection, run_id, "failed", {"failure": type(error).__name__})
+        raise
+    return len(found)
 
 
 def _document_id(payload: dict[str, Any]) -> UUID | None:
