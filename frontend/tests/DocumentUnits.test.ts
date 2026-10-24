@@ -117,6 +117,52 @@ describe("a document's work packages", () => {
     expect(wrapper.text()).toContain(t("documents.units.loadFailed"));
   });
 
+  it("shows the waiting again for a retry of the first reading, and its failure once more", async () => {
+    let fail: (error: Error) => void = () => undefined;
+    vi.spyOn(api, "getUnits")
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockReturnValueOnce(new Promise<Unit[]>((_, reject) => (fail = reject)));
+    const wrapper = open();
+    await flushPromises();
+
+    await wrapper.get("button").trigger("click");
+    expect(wrapper.find("[role=alert]").exists()).toBe(false);
+    expect(wrapper.text()).toContain(t("documents.units.loading"));
+    fail(new TypeError("Failed to fetch"));
+    await flushPromises();
+
+    expect(wrapper.get("[role=alert]").text()).toContain(t("documents.units.loadFailed"));
+  });
+
+  it("says a later reading's failure anew when a retry fails again", async () => {
+    vi.spyOn(api, "getUnits").mockResolvedValueOnce(UNITS).mockRejectedValue(new TypeError("Failed to fetch"));
+    const wrapper = open();
+    await flushPromises();
+    await wrapper.setProps({ refresh: 1 });
+    await flushPromises();
+    const notice = () => wrapper.get(".page-notice__text").element.textContent;
+    const first = notice();
+
+    await wrapper.get(".page-notice button").trigger("click");
+    await flushPromises();
+
+    expect(notice()).not.toBe(first); // the same words, changed for the eye's unseen: read out again
+    expect(notice()?.trim()).toBe(first?.trim());
+  });
+
+  it("takes the keyboard to the section's heading once a retry brought the list", async () => {
+    vi.spyOn(api, "getUnits").mockRejectedValueOnce(new TypeError("Failed to fetch")).mockResolvedValue(UNITS);
+    const wrapper = open();
+    await flushPromises();
+    const retry = wrapper.get("button").element as HTMLElement;
+    retry.focus();
+
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+
+    expect(document.activeElement).toBe(wrapper.get("#document-units").element);
+  });
+
   it("drops an answer that came after a later one", async () => {
     let first: (units: Unit[]) => void = () => undefined;
     vi.spyOn(api, "getUnits")

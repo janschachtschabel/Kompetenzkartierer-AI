@@ -67,6 +67,11 @@ const followed = computed(() => {
 });
 /** Waiting or running with no job to follow: the status the document gives, asked after. */
 const unfollowed = computed(() => open.value && followed.value === null);
+// a job followed anew - started again, or the document's next - has said no step yet, though it
+// may begin at the one the job before ended on
+watch(followed, () => {
+  stepSaid = "";
+});
 const label = computed(() => t("documents.page.jobLabel"));
 /** How the last extraction ended, and why where it failed: the document names the code to every reader. */
 const lastLine = computed(() => {
@@ -94,7 +99,8 @@ function movedOn(): void {
 }
 
 function onProgress(progress: JobProgressNote): void {
-  if (progress.code !== stepSaid && progressText(progress)) say(progressText(progress));
+  const words = progressText(progress);
+  if (progress.code !== stepSaid && words) say(words);
   stepSaid = progress.code;
   emit("progressed");
 }

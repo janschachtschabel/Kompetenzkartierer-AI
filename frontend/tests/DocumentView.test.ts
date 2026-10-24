@@ -197,6 +197,34 @@ describe("a document's page", () => {
     expect(extractionStatus(wrapper)).toBe(statements); // the count shows in the job, not said
   });
 
+  it("says the first step of a job started again, though the one before ended on that step", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(api, "getDocument")
+      .mockResolvedValueOnce(document_({ extraction: { job_id: "j1", status: "running", error_code: null } }))
+      .mockResolvedValue(document_({ extraction: { job_id: "j1", status: "failed", error_code: "budget_exhausted" } }));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    const statements = at("extract_statements", { done: 1, total: 2 });
+    let asked = 0;
+    vi.mocked(api.getJob).mockImplementation(async (id) =>
+      id === "j2"
+        ? { ...statements, id: "j2" }
+        : asked++ === 0
+          ? statements
+          : { ...statements, status: "failed", error_code: "budget_exhausted" },
+    );
+    vi.spyOn(api, "startExtraction").mockResolvedValue(job("queued"));
+    const wrapper = await open();
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(2000);
+    await flushPromises();
+
+    await wrapper.get("[data-test=extraction-resume]").trigger("click");
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(extractionStatus(wrapper)).toBe(t("jobs.progress.extract_statements", { done: 1, total: 2 }));
+  });
+
   it("says why the last extraction failed, to an editor too", async () => {
     const failed = { job_id: null, status: "failed" as const, error_code: "budget_exhausted" };
     vi.spyOn(api, "getDocument").mockResolvedValue(document_({ own: false, extraction: failed }));
