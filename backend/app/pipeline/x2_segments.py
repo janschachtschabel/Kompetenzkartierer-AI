@@ -114,10 +114,18 @@ async def work_packages(
 ) -> list[WorkPackage]:
     """The work packages of the document as its tree stands: its nodes at their headings in the
     store, their types' depths from the vocabularies; ``blocks`` are its conversion's, in order."""
+    return segments(blocks, await segment_nodes(connection, document_id, blocks))
+
+
+async def segment_nodes(
+    connection: psycopg.AsyncConnection, document_id: UUID, blocks: Sequence[Block]
+) -> list[SegmentNode]:
+    """The document's nodes at their headings among ``blocks`` (its conversion's, in order), each
+    with its own depth; a node anchored at no block of them is left out."""
     headings = await node_headings(connection, document_id)
     texts = await concept_texts(connection, sorted({h.node_type_iri for h in headings if h.node_type_iri}))
     positions = {block.id: at for at, block in enumerate(blocks)}
-    nodes = [
+    return [
         SegmentNode(
             heading.id,
             heading.parent_id,
@@ -128,7 +136,6 @@ async def work_packages(
         for heading in headings
         if heading.block_id in positions
     ]
-    return segments(blocks, nodes)
 
 
 def _type_depth(texts: Mapping[str, ConceptText], node_type: str | None) -> str | None:
