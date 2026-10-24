@@ -142,7 +142,8 @@ async def enqueue(
     job's lines with it. With ``unique_key`` (1 to 200 signs) and a job of that key waiting
     or running, none is made: ``OpenJob`` names that one. A start beside it in another
     transaction waits on its row in the unique index, then gives way to it or, rolled back,
-    takes the key (read committed)."""
+    takes the key - under read committed, as a model job's admission has it; a stricter
+    isolation raises psycopg's SerializationFailure there instead."""
     job_id = new_id()
     values = {
         "id": job_id,

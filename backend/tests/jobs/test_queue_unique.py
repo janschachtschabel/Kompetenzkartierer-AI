@@ -9,6 +9,7 @@ import psycopg
 import pytest
 
 from app.db.migrate import migrate
+from app.jobs import queue
 from app.jobs.queue import OpenJob, claim, complete, enqueue, last_job, open_job, request_cancel
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
@@ -92,6 +93,16 @@ async def test_jobs_without_a_key_are_made_as_ever(connect: Any) -> None:
     assert len(made) == 3
 
 
+async def waiting_on_a_lock(look: psycopg.AsyncConnection, pid: int) -> None:
+    for _ in range(200):
+        cursor = await look.execute("SELECT wait_event_type FROM pg_stat_activity WHERE pid = %s", (pid,))
+        found = await cursor.fetchone()
+        if found is not None and found[0] == "Lock":
+            return
+        await asyncio.sleep(0.05)
+    raise AssertionError("the second start never waited on the first's row")
+
+
 @pytest.mark.parametrize("first_commits", [True, False], ids=["committed", "rolled-back"])
 async def test_of_two_starts_side_by_side_one_makes_the_job(connect: Any, first_commits: bool) -> None:
     # the second waits on the first's row in the unique index, then sees what became of it
@@ -108,8 +119,7 @@ async def test_of_two_starts_side_by_side_one_makes_the_job(connect: Any, first_
         return made
 
     second = asyncio.create_task(second_start())
-    await asyncio.sleep(0.3)
-    assert not second.done()  # waiting on the first's row
+    await waiting_on_a_lock(await connect(), second_db.info.backend_pid)
     await (first_db.commit() if first_commits else first_db.rollback())
     outcome = await asyncio.wait_for(second, 10)
 
@@ -118,3 +128,42 @@ async def test_of_two_starts_side_by_side_one_makes_the_job(connect: Any, first_
     else:
         assert outcome != first and not isinstance(outcome, OpenJob)
     assert await count(await connect(), KEY) == 1
+
+
+async def test_a_start_whose_open_job_ends_before_it_looks_for_it_makes_the_new_job(
+    connect: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db, other = await connect(), await connect()
+    first = await enqueue(db, "test.work", "account-a", unique_key=KEY)
+    looked: list[str] = []
+
+    async def ended_meanwhile(connection: psycopg.AsyncConnection, key: str) -> Any:
+        if not looked:  # the insert gave way to it; it ends before the look
+            await other.execute(
+                "UPDATE job SET status = 'cancelled', finished_at = now() WHERE id = %s", (first,)
+            )
+        looked.append(key)
+        return await open_job(connection, key)
+
+    monkeypatch.setattr(queue, "open_job", ended_meanwhile)
+
+    made = await enqueue(db, "test.work", "account-a", unique_key=KEY)
+
+    assert made != first and await open_job(db, KEY) == made
+    assert looked == [KEY]
+
+
+async def test_a_start_that_never_finds_the_job_it_gave_way_to_gives_up(
+    connect: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    db = await connect()
+    await enqueue(db, "test.work", "account-a", unique_key=KEY)
+
+    async def never(connection: psycopg.AsyncConnection, key: str) -> None:
+        return None
+
+    monkeypatch.setattr(queue, "open_job", never)
+
+    with pytest.raises(RuntimeError, match="kept ending"):
+        await enqueue(db, "test.work", "account-a", unique_key=KEY)
+    assert await count(db, KEY) == 1
