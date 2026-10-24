@@ -14,7 +14,8 @@ from pydantic_ai.models.function import AgentInfo
 
 from app.jobs.outcome import PermanentError
 from app.jobs.queue import LeaseLost
-from app.pipeline import asking, x4_statements
+from app.llm.schema import load_schema
+from app.pipeline import x4_statements
 from app.pipeline.run import extract_document
 from tests.llm.test_client import llm_settings
 from tests.pipeline.test_run import (
@@ -156,14 +157,14 @@ async def test_a_stage_whose_question_cannot_be_set_up_ends_its_run_as_failed(
 ) -> None:
     pool, connection = setup
     document = await a_document(connection, blocks=FIELDS)
-    load = asking.load_schema
+    load = load_schema
 
     def missing(directory: Any, name: str) -> Any:
         if name == "x4-aussagen":
             raise FileNotFoundError(name)
         return load(directory, name)
 
-    monkeypatch.setattr(asking, "load_schema", missing)
+    monkeypatch.setattr("app.pipeline.asking.load_schema", missing)
     with pytest.raises(FileNotFoundError):
         await extract_document(
             context_of(pool, tmp_path, Model(), database_url),
