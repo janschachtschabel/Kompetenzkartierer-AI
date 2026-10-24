@@ -234,7 +234,12 @@ def test_a_run_names_its_stage_and_ends_after_it_began(
     with pytest.raises(errors.ForeignKeyViolation):
         add_run(CV + "sec_school")
     with pytest.raises(errors.CheckViolation):
-        add_run(CV + "stage_X1", started_at="2026-10-23T12:00:00Z", finished_at="2026-10-23T11:00:00Z")
+        add_run(
+            CV + "stage_X1",
+            started_at="2026-10-23T12:00:00Z",
+            finished_at="2026-10-23T11:00:00Z",
+            outcome="done",
+        )
 
 
 def test_a_work_has_a_title_and_one_iri_names_one_work(connection: psycopg.Connection) -> None:
