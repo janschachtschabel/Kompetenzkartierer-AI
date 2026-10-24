@@ -17,6 +17,7 @@ from app.vocab.lookup import (
     concept_texts,
     cues_for,
     current_release,
+    notations_of,
     profile_concepts,
     region_with_ancestors,
 )
@@ -220,3 +221,17 @@ async def test_the_current_release_is_the_last_loaded(connection: psycopg.AsyncC
 
     assert latest is not None
     assert await current_release(connection) == latest[0]
+
+
+async def test_a_scheme_s_active_values_are_found_by_their_notations(
+    connection: psycopg.AsyncConnection,
+) -> None:
+    # as an output schema's enums name them (x1-dokumentprofil: legalForm)
+    await connection.execute("UPDATE vocab_concept SET retired_in = 1 WHERE iri = %s", (CV + "lf_statute",))
+
+    forms = await notations_of(connection, CV + "LegalForms")
+
+    assert forms["ordinance"] == CV + "lf_ordinance"
+    assert forms["unknown"] == CV + "lf_unknown"
+    assert "statute" not in forms
+    assert await notations_of(connection, CV + "NoSuchScheme") == {}

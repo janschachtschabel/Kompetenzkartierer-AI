@@ -204,6 +204,16 @@ async def current_release(connection: psycopg.AsyncConnection) -> int | None:
     return None if row is None else row[0]
 
 
+async def notations_of(connection: psycopg.AsyncConnection, scheme_iri: str) -> dict[str, str]:
+    """The scheme's active concepts by their notations, as an output schema's enums name them."""
+    cursor = await connection.execute(
+        "SELECT notation, iri FROM vocab_concept"
+        " WHERE scheme_iri = %s AND notation IS NOT NULL AND retired_in IS NULL",
+        (scheme_iri,),
+    )
+    return {str(notation): str(iri) for notation, iri in await cursor.fetchall()}
+
+
 async def region_with_ancestors(connection: psycopg.AsyncConnection, notation: str) -> frozenset[str]:
     """The active region of this notation ("DE-NW") and those it lies in ("DE"); none if unknown.
     One set: for ``active_cues`` the caller parts the region itself from those it lies in
