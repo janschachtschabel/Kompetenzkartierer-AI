@@ -180,7 +180,8 @@ async def open_job(connection: psycopg.AsyncConnection, unique_key: str) -> UUID
 
 # the latest job of each key (index job_by_key), by when it was made
 _LATEST = """
-SELECT DISTINCT ON (unique_key) unique_key, id, status, error->>'code' FROM job WHERE unique_key = ANY(%s)
+SELECT DISTINCT ON (unique_key) unique_key, id, status, CASE WHEN status = 'failed' THEN error->>'code' END
+FROM job WHERE unique_key = ANY(%s)
 ORDER BY unique_key, created_at DESC, id DESC
 """
 

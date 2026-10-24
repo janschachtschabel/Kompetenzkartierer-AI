@@ -571,6 +571,22 @@ def test_why_the_extraction_failed_is_said_to_every_reader(client: TestClient, u
     }  # fmt: skip
 
 
+def test_a_job_done_after_a_failed_attempt_says_no_reason(client: TestClient, url: str) -> None:
+    # the queue keeps an attempt's error on the job; it is the job's reason once it failed for good
+    owner, header = an_account(url)
+    started = make(client, url, header, a_conversion(url, owner))
+    with psycopg.connect(url, autocommit=True) as connection:
+        connection.execute(
+            "UPDATE job SET status = 'done', finished_at = now(),"
+            ' error = \'{"code": "handler_error", "message": "once"}\' WHERE id = %s',
+            (started["job"]["id"],),
+        )
+
+    document = client.get(f"/api/v1/documents/{started['document']['id']}", headers=header).json()
+
+    assert document["extraction"]["error_code"] is None
+
+
 def test_a_document_keeps_the_notation_of_a_sector_retired_since(client: TestClient, url: str) -> None:
     owner, header = an_account(url)
     started = make(client, url, header, a_conversion(url, owner))
