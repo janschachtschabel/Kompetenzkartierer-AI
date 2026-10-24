@@ -132,6 +132,17 @@ ungültig.
   mit `too_dense`, länger als `CONVERT_TIMEOUT_S` (900 s) mit `timed_out`. Die Umwandlung läuft
   in einem eigenen Kindprozess, den Abbruch, Frist und Lease-Verlust beenden; dafür eigene
   Worker mit `WORKER_KINDS=source.convert` vorsehen, ein Job je Pod.
+- Extraktion (X1, X2): Der Job `extract.run` (`{"document_id": …}`; der Start per API folgt mit
+  M1 Paket 7) bestimmt für ein Dokument per Sprachmodell das Dokumentprofil (Titel, Typ, Geltung,
+  Spezifikationen, eigene Begriffe), baut das Gerüst ohne Modell aus Verzeichnis, Layout und
+  Lexikon, lässt nur die Überschriften ohne starkes Muster vom Modell einordnen und teilt den
+  Text in Arbeitspakete (X2). Jede Stufe jedes Versuchs ist ein eigener Lauf (`extraction_run`)
+  und schreibt ihr Ergebnis auf einmal; ein neuer Versuch macht nach der letzten fertigen Stufe
+  weiter. Fortschritt: `extract_profile`, `extract_outline`, `extract_segments`. Endet mit
+  `budget_exhausted` (Budget aufgebraucht, Fertiges bleibt), `model_unanswered` (keine Antwort im
+  Schema), `model_not_configured` (kein `OPENAI_API_KEY` im Worker), `document_gone` oder
+  `document_has_tree` (das Dokument wurde schon extrahiert). Der Worker startet auch ohne
+  Schlüssel; das Modell entsteht beim ersten Job, der es braucht.
 - Erster Admin: `python -m app.bootstrap NAME` gibt das Token einmal auf stdout aus. Interaktiv
   ausführen (`docker compose run`, `kubectl exec -it`), nicht als Job, dessen Ausgabe ein
   Log-System sammelt. Exit-Code 0: angelegt; 2: es gibt schon einen Admin, der sich anmelden
@@ -208,8 +219,10 @@ Kosten des Modells: Ein Konto ohne Quote darf nichts verbrauchen, auch ein Admin
   `MAX_JOBS_IN_FLIGHT` (Standard 20) dürfen warten oder laufen, sonst 429 `too_many_jobs` mit
   `Retry-After: 60`. Höchstens `MODEL_STARTS_PER_MINUTE` (Standard 10) Starts je Minute, sonst 429
   `too_many_starts`.
-- Modelljobs gibt es ab X1 (Paket 6). Dann bucht auch ein abgebrochener Job seine offenen
-  Reservierungen als geschätzten Verbrauch.
+- Modelljob ist `extract.run`. Endet ein Versuch eines Jobs (fertig, gescheitert, abgebrochen,
+  zurückgegeben), bucht dieselbe Transaktion seine offenen Reservierungen als geschätzten
+  Verbrauch. Starb ein Worker oder verlor er die Lease, bucht sie die Prüfung abgelaufener Leases:
+  die Reservierungen jedes Jobs, der gerade nicht läuft.
 - Metriken: `kka_llm_requests_total`, `kka_llm_tokens_total`, `kka_usage_reservations_total`.
 
 Objektspeicher: `STORAGE_BACKEND` (`fs` | `s3`, Standard `fs`). Mit `fs` braucht der Speicher

@@ -352,6 +352,57 @@ Nachtrag zur Umsetzung (24.10.):
 | 6.5 | X2 Segmente | `app/pipeline/x2_segments.py` (Einheiten mit Blockbereich; über ~15 Seiten an Unterknoten teilen; Extraktionstiefe skip/typed/full) | Einheiten decken alle Inhaltsblöcke genau einmal; `skip` erzeugt keinen Auftrag, `typed` keinen Aussagen-Auftrag | `pytest tests/pipeline/test_x2_segments.py` |
 | 6.6 | Lauf-Rahmen | `app/pipeline/run.py` (Job `extract.run`, Stufen nacheinander, `extraction_run` je Stufe, Fortschrittscodes, Wiederaufnahme ab der letzten fertigen Stufe), Wächter Fortschrittscodes ↔ Frontend | Abbruch zwischen Stufen; keine fertige Stufe doppelt; Budget erschöpft → `budget_exhausted`, Teilergebnis bleibt | `pytest -m pg tests/pipeline/test_run.py` |
 
+**Nachtrag zur Umsetzung (24.10.)**
+
+- **Stufen und Läufe.** `extract.run` kennt X1 und X2. Je Stufe und Versuch ein Lauf; Migration 0017
+  ergänzt `attempt`, `outcome` (`done`, `failed`, `budget_exhausted`; leer, solange er läuft oder
+  abgebrochen wurde) und `result`. Eine Stufe schreibt ihr ganzes Ergebnis mit dem Ende ihres Laufs in
+  einer Transaktion unter `hold_lease` (Zeilensperre unter der eigenen, nicht abgelaufenen Lease).
+  Scheitert X1 nach dem Profilaufruf, ist dessen Antwort verloren und wird neu gefragt (billiger als
+  ein zweiter Schreibweg). Wiederaufnahme: Stufen, die dieser Job fertig hat (`done_stages`).
+- **Arbeitspakete im Lauf-Ergebnis.** X2 legt seine Pakete als `result.packages` seines Laufs ab
+  (Schlüssel `E0`, `E1` … in Dokumentreihenfolge, Knoten, erster/letzter Block, Seiten, Titelpfad,
+  Tiefe, Auftrag) statt in eigenen Tabellen; Paket 7 liest den letzten fertigen X2-Lauf.
+- **Gerüst (6.3).** Testbeispiel korrigiert: „Inhaltsfeld 3: …“ (der Hinweis verlangt `[:.]`) →
+  `schul:Inhaltsbereich`. Nummerierung allein macht keine Überschrift (nur mit fett oder größer);
+  Muster zählen nur, wenn sie einen Knotentyp des Profils nennen; eine Tabelle ist Überschrift, wo
+  ein solches Muster ihre erste Zelle trifft (KMK-RLP setzen Lernfelder als Tabelle), sonst ist
+  Tabelleninhalt nie eine. Vor dem Verzeichnis nichts (Titelei), Layout allein auf Seite 1 eines
+  mehrseitigen Dokuments nichts (Titelblatt). Ein starker Hinweis typisiert, wo alle starken, die
+  treffen, einen Knotentyp nennen und kein Homonym trifft. `level` ist die Tiefe im Baum.
+- **X1 Profil (6.2).** Auszug: Anfang bis 8 000 Zeichen, Verzeichnis, Geltungsstellen ±1 Block bis
+  4 000 Zeichen. Befunde statt Absturz (`x1.unknown_key`, `unknown_value`, `unknown_block`,
+  `duplicate_key`, `blank_value`, `value_cut`); Regionen und Bereich bleiben die der Anlage
+  (`x1.regions_differ`, `x1.other_sectors`, info), ein vorher gesetzter Dokumenttyp bleibt
+  (`x1.document_type_differs`), ein Werk wird nur vorgeschlagen (`x1.work_suggestion`). Belastet
+  wird der Eigentümer des Dokuments; wer starten darf, entscheidet 7.5.
+- **X1 Gliederung (6.4).** Die unklaren Überschriften gehen in Teilen zu 50 an das Modell (300
+  Überschriften × ~80 Antworttoken sprengten sonst `LLM_MAX_OUTPUT_TOKENS`). Fehlt eine in der
+  Antwort: Funktion `grouping` mit Kindern, sonst `unit`, Herkunft `rule` mit Regel
+  `x1.outline_unanswered` und Befund. Prüfstand aller Pipeline-Knoten `proposed`.
+- **X2 (6.5).** Eigener Text je Knoten von seiner Überschrift bis zur nächsten; `skip` erbt nach
+  unten (ein übersprungener Anhang samt Teilen); eine Überschrift ohne eigenen Text bleibt ein Paket
+  mit Auftrag `none`, damit jeder Inhaltsblock genau einmal abgedeckt ist; ein Dokument ohne
+  Überschriften ist ein Paket `full`. Teilung über 15 Seiten an Seitengrenzen.
+- **Buchung am Jobende (Festlegung aus Paket 5).** `book_abandoned` läuft an jedem Jobende in der
+  beendenden Transaktion, für jeden Job, nicht nur Modelljobs (ein `DELETE` ohne Treffer). Der Sweep
+  bucht mengenweise die Reservierungen aller Jobs, die gerade nicht laufen (`book_left_behind`);
+  `requeue_expired` braucht dafür kein `RETURNING id`.
+- **Fortschrittscodes flach:** `extract_profile`, `extract_outline {headings}`,
+  `extract_segments {units}` (Punkte würde vue-i18n als Verschachtelung lesen). Das Modell entsteht
+  je Prozess beim ersten Bedarf (`LazyModel`), der Worker startet ohne Schlüssel.
+- **Dateien:** Prompts `prompts/x1_profile.py` und `prompts/x1_outline.py` (statt `prompts/x1.py`),
+  Fragen `x1_question.py`, Auszug `x1_excerpt.py`, Stufe `x1_stage.py`, Verzeichnis `toc.py`,
+  Fortschritt `progress.py`; die Entwürfe für Profil, Spezifikation und Variante liegen in
+  `app/domain/l1.py` (die Datenbankschicht importiert nie die Pipeline). Tests unter
+  `tests/pipeline/` (u. a. `test_x1_profile_read.py`, `test_x1_question.py`, `test_x1_outline*.py`,
+  `test_x2_*.py`, `test_run.py`) und `tests/db/test_profile.py`.
+- **Grenzen und Messpunkte (Paket 11):** Überschriftenerkennung, die Schwelle 0,9 und die 15 Seiten
+  sind nicht an echten Dokumenten gemessen. Das Schema `x1-gliederung` kann eine Schein-Überschrift
+  nicht verwerfen; sie wird ein Knoten für die Redaktion. Verzeichnisse als Tabelle und Einrückung
+  von Verzeichniseinträgen werden nicht gelesen. Ein Muster über seiner Zeitgrenze trifft nichts
+  und wird als Befund genannt.
+
 ### Paket 7: X3 Rahmenteile und X4 Aussagen (6 PT)
 
 | # | Aufgabe | Dateien | Test zuerst | Nachweis |
