@@ -168,6 +168,9 @@ class Settings(BaseSettings):
     max_jobs_in_flight: Annotated[int, Field(ge=1, le=1000)] = 20
     # Model jobs an account may start per minute; more are answered 429 (too_many_starts)
     model_starts_per_minute: Annotated[int, Field(ge=1)] = 10
+    # Units X4 asks the model about at once within one job (app/pipeline/x4_statements.py); each
+    # holds its reservation while it waits, so more of them spend an account's budget faster
+    extract_concurrency: Annotated[int, Field(ge=1, le=16)] = 4
     # Who the register's requests say they are (source.fetch, source.check): the product token
     # robots.txt knows us by, then where to reach the operators; printable ASCII, as a header
     # holds it - and no space at its end, which h11 refuses in a header's value

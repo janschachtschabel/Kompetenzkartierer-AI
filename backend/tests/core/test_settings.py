@@ -438,9 +438,24 @@ def test_model_jobs_are_limited_by_default() -> None:
     assert (settings.max_jobs_in_flight, settings.model_starts_per_minute) == (20, 10)
 
 
+def test_x4_asks_four_units_at_once_by_default() -> None:
+    assert make_settings().extract_concurrency == 4
+
+
+@pytest.mark.parametrize("value", [1, 16])
+def test_x4_asks_one_to_sixteen_units_at_once(value: int) -> None:
+    assert make_settings(extract_concurrency=value).extract_concurrency == value
+
+
 @pytest.mark.parametrize(
     ("variable", "value"),
-    [("MAX_JOBS_IN_FLIGHT", "0"), ("MAX_JOBS_IN_FLIGHT", "1001"), ("MODEL_STARTS_PER_MINUTE", "0")],
+    [
+        ("MAX_JOBS_IN_FLIGHT", "0"),
+        ("MAX_JOBS_IN_FLIGHT", "1001"),
+        ("MODEL_STARTS_PER_MINUTE", "0"),
+        ("EXTRACT_CONCURRENCY", "0"),
+        ("EXTRACT_CONCURRENCY", "17"),
+    ],
 )
 def test_the_limits_of_model_jobs_are_bounded(
     monkeypatch: pytest.MonkeyPatch, variable: str, value: str
