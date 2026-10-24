@@ -135,10 +135,13 @@ class RunView:
     failure: str | None  # what broke a failed run, by its type ("LeaseLost")
 
 
-# a run without an outcome runs while its job runs that very attempt; otherwise it was left with it
+# a run without an outcome runs while its job runs that very attempt and began no run since - a
+# release counts the attempt back, so the next claim runs its number again; otherwise it was left
 _RUNS = """
 SELECT r.stage_iri, r.attempt, r.outcome, r.started_at, r.finished_at, r.result ->> 'failure',
-    j.status = 'running' AND j.attempts = r.attempt
+    j.status = 'running' AND j.attempts = r.attempt AND NOT EXISTS (
+        SELECT 1 FROM extraction_run later
+        WHERE later.job_id = r.job_id AND (later.started_at, later.id) > (r.started_at, r.id))
 FROM extraction_run r LEFT JOIN job j ON j.id = r.job_id
 WHERE r.document_id = %s ORDER BY r.started_at, r.id
 """

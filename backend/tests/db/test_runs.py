@@ -10,7 +10,7 @@ import pytest
 
 from app.db.migrate import migrate
 from app.db.runs import RunOutcome, RunStart, Stage, done_stages, finish_run, runs_of, stage_result, start_run
-from app.jobs.queue import account_lane, enqueue
+from app.jobs.queue import account_lane, claim, enqueue, release
 from tests.db.l1 import CV, add_conversion, add_document, seed_vocabulary
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
@@ -147,6 +147,26 @@ async def test_a_document_s_runs_are_read_with_their_state_in_the_order_they_beg
         ("X1", 2, "running", None, True),
     ]
     assert await runs_of(connection, UUID(int=1)) == []
+
+
+async def test_a_run_of_an_attempt_handed_back_does_not_run_beside_the_next_of_its_number(
+    connection: psycopg.AsyncConnection, made: dict[str, Any]
+) -> None:
+    # a stopping worker's release counts the attempt back: the next claim runs its number again
+    job = await a_job(connection, made)
+    for worker in ("w1", "w2"):
+        claimed = await claim(connection, worker, ("extract.run",), 30)
+        assert claimed is not None and claimed.attempts == 1
+        await start_run(connection, run_of(made, job, "X1", attempt=claimed.attempts))
+        if worker == "w1":
+            await release(connection, claimed)
+    # begun in one moment, the one begun after by id runs; another job's run is not this one's
+    await connection.execute("UPDATE extraction_run SET started_at = now() - interval '1 minute'")
+    await start_run(connection, run_of(made, await a_job(connection, made), "X2"))
+
+    runs = await runs_of(connection, made["document"])
+
+    assert [(run.attempt, run.state) for run in runs] == [(1, "abandoned"), (1, "running"), (1, "abandoned")]
 
 
 def test_a_run_names_a_stage_of_the_core() -> None:
