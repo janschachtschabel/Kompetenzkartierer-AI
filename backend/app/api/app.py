@@ -10,6 +10,7 @@ from app import __version__
 from app.api import (
     accounts,
     conversions,
+    documents,
     internal,
     jobs,
     source_checks,
@@ -46,6 +47,7 @@ TAGS = [
     {"name": "jobs", "description": "Fetching, converting, extracting run as jobs: their state, a cancel."},
     {"name": "sources", "description": "The register of curriculum documents: uploads and their files."},
     {"name": "conversions", "description": "A register file converted into named blocks (X0), page by page."},
+    {"name": "documents", "description": "Documents of a conversion and their extraction, one at a time."},
 ]
 
 
@@ -94,6 +96,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(source_register.router)
     app.include_router(source_checks.router)
     app.include_router(conversions.router)
+    app.include_router(documents.router)
     app.add_middleware(internal.InternalOnly, port=settings.internal_port)
     # an upload takes a file and the form around it; every other body is JSON
     upload_limit = (settings.max_upload_mb + 1) * MIB

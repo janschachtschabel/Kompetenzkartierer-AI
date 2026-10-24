@@ -48,7 +48,7 @@ class JobOut(BaseModel):
 @router.get("/jobs/{job_id}", summary="The state of a job")
 async def get_job(job_id: UUID, request: Request, who: Account) -> JobOut:
     async with request.app.state.pool.connection() as connection:
-        return _out(await _visible(connection, job_id, _lane(who)))
+        return job_out(await _visible(connection, job_id, _lane(who)))
 
 
 @router.post("/jobs/{job_id}/cancel", summary="Cancel a waiting job, or ask a running one to stop")
@@ -70,7 +70,7 @@ async def cancel_job(job_id: UUID, request: Request, who: Account) -> JobOut:
         )
         state = await job_state(connection, job_id, lane)
     assert state is not None  # noqa: S101 - jobs are not deleted
-    return _out(state)
+    return job_out(state)
 
 
 def _lane(who: Principal) -> str | None:
@@ -89,5 +89,5 @@ async def _visible(connection: psycopg.AsyncConnection, job_id: UUID, lane: str 
     return state
 
 
-def _out(state: JobState) -> JobOut:
+def job_out(state: JobState) -> JobOut:
     return JobOut.model_validate(state.__dict__)

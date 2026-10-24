@@ -21,12 +21,12 @@ from app.db.runs import RunStart, done_stages, finish_run, stage_result, start_r
 from app.jobs.context import JobContext
 from app.jobs.outcome import PermanentError
 from app.jobs.queue import Job, hold_lease
+from app.pipeline.extraction import KIND as KIND
 from app.pipeline.progress import report
 from app.pipeline.x1_stage import run_x1
 from app.pipeline.x2_segments import work_packages
 from app.vocab.lookup import current_release
 
-KIND = "extract.run"
 STAGES = ("X1", "X2")
 
 
