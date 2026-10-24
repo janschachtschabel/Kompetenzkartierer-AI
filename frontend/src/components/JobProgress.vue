@@ -12,6 +12,7 @@ import type { Job, JobStatus } from "@/api";
 import { isolate } from "@/bidi";
 import { t, type MessageParams } from "@/i18n/de";
 import { jobFailureText } from "@/jobMessages";
+import { JOB_PROGRESS } from "@/jobProgress";
 import { hasEnded, watchJob, type JobGone, type JobWatch } from "@/jobWatch";
 
 const props = defineProps<{
@@ -35,9 +36,6 @@ const TONE: Record<JobStatus, string> = {
   cancelled: "warning",
 };
 
-// The progress codes the page has words for, with the numbers each needs (jobs.progress)
-const PROGRESS: Readonly<Record<string, readonly string[]>> = { checking: ["done", "total"], converting: [] };
-
 const job = ref<Job | null>(null);
 const trouble = ref(false);
 const gone = ref<JobGone | null>(null);
@@ -50,7 +48,7 @@ const goneText = computed(() => (gone.value ? t(`jobs.goneReasons.${gone.value}`
 // How far the job has come, shown and not announced: a check counts its addresses one by one
 const progressText = computed(() => {
   const progress = job.value?.progress;
-  const needed = progress ? PROGRESS[progress.code] : undefined;
+  const needed = progress ? JOB_PROGRESS[progress.code] : undefined;
   if (!progress || !needed) return "";
   const params: MessageParams = {};
   for (const name of needed) {

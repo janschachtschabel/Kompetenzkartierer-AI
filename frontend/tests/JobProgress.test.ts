@@ -182,6 +182,21 @@ describe("a job's progress", () => {
     expect(wrapper.get(".job__progress").text()).toBe(t("jobs.progress.converting"));
   });
 
+  it("shows how far an extraction has come", async () => {
+    vi.spyOn(api, "getJob").mockResolvedValue({
+      ...job("running"),
+      kind: "extract.run",
+      progress: { code: "extract_outline", params: { headings: 1 } },
+    });
+    const wrapper = shown("Kernlehrplan Physik");
+
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(wrapper.get(".job__progress").text()).toBe(
+      "Die Gliederung wird gebaut; das Sprachmodell ordnet 1 Überschrift ein.",
+    );
+  });
+
   it("shows no progress it has no words for, nor one whose numbers are missing", async () => {
     vi.spyOn(api, "getJob")
       .mockResolvedValueOnce({ ...job("running"), progress: { code: "sorting", params: { page: 3 } } })

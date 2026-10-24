@@ -453,6 +453,11 @@ export const messages = {
     progress: {
       checking: "{done} von {total} {total|Adresse|Adressen} angesehen",
       converting: "Die Datei wird in Blöcke umgewandelt; bei einer großen Datei dauert das einige Minuten.",
+      // extract.run: the stages X1 and X2 of a document
+      extract_profile: "Das Sprachmodell liest Titel, Geltung und Begriffe des Dokuments.",
+      extract_outline:
+        "Die Gliederung wird gebaut; das Sprachmodell ordnet {headings} {headings|Überschrift|Überschriften} ein.",
+      extract_segments: "Das Dokument wird in {units} {units|Arbeitspaket|Arbeitspakete} geteilt.",
     },
     trouble: "Der Server antwortet gerade nicht; der Stand wird weiter abgefragt.",
     // why there is nothing left to ask (jobWatch.ts, JobGone); for a fetch and the seed's check alike
@@ -521,6 +526,17 @@ export const messages = {
         "Versuch es später noch einmal.",
       result_not_storable: "Das Ergebnis ließ sich nicht speichern. Melde das bitte der Administration.",
       lease_lost: "Der Auftrag wurde unterbrochen, weil sein Dienst ausfiel. Versuch es noch einmal.",
+      // extract.run (backend app/pipeline/run.py, x1_stage.py)
+      budget_exhausted:
+        "Das Token-Budget deines Kontos ist aufgebraucht; die Extraktion wurde angehalten. Was schon fertig war, " +
+        "bleibt erhalten. Bitte die Administration um mehr Budget.",
+      model_unanswered:
+        "Das Sprachmodell hat auch nach mehreren Versuchen keine verwertbare Antwort geliefert. Starte die " +
+        "Extraktion später noch einmal; scheitert sie wieder, melde es der Administration.",
+      model_not_configured: "Für das Sprachmodell ist kein Zugang eingerichtet. Melde das bitte der Administration.",
+      document_gone: "Das Dokument gibt es nicht mehr; die Extraktion ist entfallen.",
+      document_has_tree:
+        "Dieses Dokument ist schon extrahiert. Für eine neue Extraktion lege aus der Quelle ein neues Dokument an.",
     },
   },
   dialog: {

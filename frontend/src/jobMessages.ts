@@ -26,6 +26,12 @@ export const JOB_FAILURE_CODES = [
   "crashed",
   "not_pdf",
   "file_gone",
+  // extract.run (backend app/pipeline/run.py, app/pipeline/x1_stage.py)
+  "budget_exhausted",
+  "model_unanswered",
+  "model_not_configured",
+  "document_gone",
+  "document_has_tree",
   // any job (app/jobs/outcome.py, app/jobs/queue.py)
   "handler_error",
   "result_not_storable",
