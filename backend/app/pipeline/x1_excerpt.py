@@ -2,8 +2,8 @@
 opening of the text - blocks from the first up to OPENING_SIGNS, the first however long - its table
 of contents wherever it stands, and the passages that say when and for whom it holds ("tritt … in
 Kraft", "gilt für", transitions), each with the blocks beside it, in the document's order up to
-VALIDITY_SIGNS beside the rest. Written as the prefix writes blocks (app/pipeline/prefix.py): each
-line led by its block id, the pages marked, what lies between marked left out.
+VALIDITY_SIGNS beside the rest, one too long passed over. Written as the prefix writes blocks
+(app/pipeline/prefix.py): each block led by its id, the pages marked, what lies between marked left out.
 """
 
 import re
@@ -36,7 +36,7 @@ def profile_excerpt(blocks: Sequence[Block], printed_pages: Sequence[str | None]
         passage = {order[near] for near in range(max(at - 1, 0), min(at + 2, len(order)))} - chosen
         more = sum(len(blocks[near].text) for near in passage)
         if passages + more > VALIDITY_SIGNS:
-            break
+            continue  # a shorter one later may hold the date: "tritt am … in Kraft"
         chosen |= passage
         passages += more
     return render_positions(blocks, sorted(chosen), printed_pages)

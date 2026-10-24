@@ -94,3 +94,14 @@ def test_a_passage_s_neighbour_is_the_text_beside_it_not_a_header() -> None:
     excerpt = profile_excerpt(blocks, [None, None], NO_CONTENTS)
 
     assert "[p1-b10] " in excerpt and "[p2-b2] Nach dem Kopf" in excerpt
+
+
+def test_a_passage_too_long_is_passed_over_and_a_later_one_still_read() -> None:
+    blocks = paragraphs(20)
+    blocks[10] = block("p1-b11", "Dieser Lehrplan gilt für alle Schulformen. " + "z" * 4500)
+    blocks[15] = block("p1-b16", "Er tritt am 1. August 2027 in Kraft.")
+
+    excerpt = profile_excerpt(blocks, [None], NO_CONTENTS)
+
+    assert "[p1-b11] " not in excerpt
+    assert "[p1-b16] Er tritt am 1. August 2027 in Kraft." in excerpt
