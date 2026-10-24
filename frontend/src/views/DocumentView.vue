@@ -30,9 +30,14 @@ let generation = 0;
 // The start form led here to an extraction that ran already for the PDF (ExtractionStart.vue)
 const led = ref(false);
 
+/** Whether a start led here, said once: read again later, or come back to, the page no longer says so. */
 function ledHere(): boolean {
   const state: unknown = window.history.state;
-  return typeof state === "object" && state !== null && (state as Record<string, unknown>).ledToRunning === true;
+  if (typeof state !== "object" || state === null || (state as Record<string, unknown>).ledToRunning !== true) {
+    return false;
+  }
+  window.history.replaceState({ ...state, ledToRunning: undefined }, "");
+  return true;
 }
 
 const heading = computed(() => (document_.value ? document_.value.title || t("documents.untitled") : ""));

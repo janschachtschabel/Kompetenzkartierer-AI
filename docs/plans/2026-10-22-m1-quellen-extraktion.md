@@ -538,7 +538,11 @@ Nachtrag zur Umsetzung (24.10.):
   – der Fokus auf seinem Hinweis liest ihn, wo der Fokus woanders ist, die Region. Gründe gescheiterter Läufe in eigenen
   Worten, sonst als englisches Zitat. Eine selbst abgebrochene Umwandlung heißt „abgebrochen“,
   nicht „gescheitert“. Bereichsnamen an `cv:EducationSectors`, Länder an `laender.ttl`,
-  Laufzustände an `RunState` gebunden (tests/documentWords.test.ts).
+  Laufzustände an `RunState` gebunden (tests/documentWords.test.ts). Der Hinweis „lief schon“
+  nach dem Formular steht einmal (History-State, beim Lesen verbraucht) und wird angesagt.
+- **Offen für 7b.** Den Grund des letzten Fehlschlags auf der Dokumentseite zeigen: heute steht nach
+  dem Neuladen nur „Letzte Extraktion: Fehlgeschlagen“, der Grund wird nur angesagt, solange die
+  Seite den Job verfolgt (Browser-Probe 7a); `extraction` trüge dazu den Code des Jobs.
 
 ### Paket 8: X5 Prüfung mit SHACL und X6 Reparatur (5 PT)
 

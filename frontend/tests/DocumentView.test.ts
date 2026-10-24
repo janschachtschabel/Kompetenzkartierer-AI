@@ -66,7 +66,12 @@ afterEach(() => {
   shown = null;
   vi.useRealTimers();
   document.body.innerHTML = "";
+  window.history.replaceState({ ...window.history.state, ledToRunning: undefined }, "");
 });
+
+function ledHere(): void {
+  window.history.replaceState({ ...window.history.state, ledToRunning: true }, "");
+}
 
 const extraction = (wrapper: VueWrapper) => wrapper.get("section[aria-labelledby=document-extraction]");
 const extractionStatus = (wrapper: VueWrapper) => extraction(wrapper).get("[data-test=extraction-status]").text();
@@ -466,15 +471,34 @@ describe("a document's extraction asked after on its page", () => {
     expect(wrapper.find("[data-test=extraction-resume]").exists()).toBe(true);
   });
 
-  it("says, where a start led to an extraction that ran already, that it is that one", async () => {
-    window.history.replaceState({ ...window.history.state, ledToRunning: true }, "");
+  it("says, where a start led to an extraction that ran already, that it is that one, and says it once", async () => {
+    ledHere();
     vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "running" } }));
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
 
     const wrapper = await open();
 
     expect(extraction(wrapper).text()).toContain(t("documents.page.ledToRunning"));
-    window.history.replaceState({ ...window.history.state, ledToRunning: undefined }, "");
+    expect(extractionStatus(wrapper)).toBe(t("documents.page.ledToRunning"));
+    wrapper.unmount();
+    shown = null;
+    const again = await open(); // the page read again later, or come back to: no longer so
+    expect(extraction(again).text()).not.toContain(t("documents.page.ledToRunning"));
+  });
+
+  it("reads anew for each document it moves to whether a start led there", async () => {
+    vi.spyOn(api, "getDocument").mockImplementation((id) =>
+      Promise.resolve(document_({ id, title: id, extraction: { job_id: `job-of-${id}`, status: "running" } })),
+    );
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    const wrapper = await open("d1");
+    expect(extraction(wrapper).text()).not.toContain(t("documents.page.ledToRunning"));
+
+    ledHere();
+    await wrapper.setProps({ id: "d2" });
+    await flushPromises();
+
+    expect(extraction(wrapper).text()).toContain(t("documents.page.ledToRunning"));
   });
 });
 

@@ -119,6 +119,20 @@ describe("the start of an extraction from a finished conversion", () => {
     expect(push).toHaveBeenCalledWith({ name: "document", params: { id: "d1" }, state: { ledToRunning: true } });
   });
 
+  it("takes an answer that does not say whether it made the document for one it made", async () => {
+    const older: Partial<DocumentStarted> = started();
+    delete older.made; // as a server from before the field answers
+    vi.spyOn(api, "makeDocument").mockResolvedValue(older as DocumentStarted);
+    const push = vi.spyOn(router, "push").mockResolvedValue(undefined);
+    const wrapper = open("DE-NW");
+
+    await wrapper.get("#extraction-sector").setValue("school");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(push).toHaveBeenCalledWith({ name: "document", params: { id: "d1" } });
+  });
+
   it("makes one document however often it is sent while the first is on its way", async () => {
     const make = vi.spyOn(api, "makeDocument").mockReturnValue(new Promise<DocumentStarted>(() => undefined));
     const wrapper = open("DE-NW");

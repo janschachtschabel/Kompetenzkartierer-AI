@@ -54,8 +54,10 @@ const cancelling = ref(false);
 const cancelFailure = ref("");
 // the cancel taken: an answer to a question asked before it does not undo it
 const asked = ref(false);
-// the stop asked for is said once: by the keyboard landing on its note, else in the region
+// the stop asked for is said once: by the keyboard landing on its note, else in the region; the
+// job's end likewise, by the keyboard landing on its line
 const noteSays = ref(false);
+const lineSays = ref(false);
 // when the page last heard of the job - every 8 seconds at most while it is open: how long it
 // has waited or run is counted to then
 const now = ref(Date.now());
@@ -112,6 +114,7 @@ function lasted(how: "running" | "waiting", since: string): string {
 const announcement = computed(() => {
   const label = isolate(props.label);
   if (trouble.value) return t("jobs.announce", { label, status: t("jobs.trouble") });
+  if (lineSays.value) return "";
   const stopSaid = cancelAsked.value && !noteSays.value;
   if (props.quiet) return stopSaid ? t("jobs.cancel.requested") : "";
   if (goneText.value) return t("jobs.announce", { label, status: goneText.value });
@@ -122,14 +125,18 @@ const announcement = computed(() => {
 });
 
 // The job's end takes its note, its button, its question with it: the keyboard that rested on
-// one stays at the job, where nothing took it meanwhile; a question still open asks about nothing
+// one stays at the job, where nothing took it meanwhile; a question still open asks about nothing.
+// Quiet, the page around says the end and takes the keyboard to its own heading.
 watchValue(open, async (still) => {
   if (still) return;
-  const inside = root.value?.contains(document.activeElement) ?? false;
+  const active = document.activeElement;
+  const inside = root.value?.contains(active) ?? false;
   asking.value = false;
-  if (!inside) return;
+  if (!inside || props.quiet) return;
+  lineSays.value = active !== line.value;
   await nextTick();
-  if (focusIsFree()) line.value?.focus();
+  if (lineSays.value && focusIsFree()) line.value?.focus();
+  lineSays.value &&= document.activeElement === line.value;
 });
 
 function ended(state: Job): void {
@@ -149,19 +156,25 @@ async function cancel(): Promise<void> {
   try {
     // the state it answers is the job's from now; the watch goes on until it has ended
     const answer = await cancelJob(props.jobId);
+    if (endedSaid && !hasEnded(answer.status)) return; // the end a question brought stands
     // the keyboard rests on the button that goes with this answer, or nowhere: it goes to what
     // says how the job stands now - the note reads the stop out, the region need not say it too
     const leaving = focusIsFree() || document.activeElement === cancelButton.value;
-    noteSays.value = leaving && !hasEnded(answer.status);
+    const endsNow = hasEnded(answer.status);
+    noteSays.value = leaving && !endsNow;
+    lineSays.value = leaving && endsNow && !props.quiet;
     asked.value = true;
     job.value = answer;
-    if (hasEnded(answer.status)) {
+    if (endsNow) {
       // a waiting job ended at once: the page hears now, and no answer asked before undoes it
       watch?.stop();
       ended(answer);
     }
     await nextTick();
-    if (leaving && focusIsFree()) (askedNote.value ?? line.value)?.focus();
+    if (leaving && focusIsFree() && (noteSays.value || lineSays.value)) (askedNote.value ?? line.value)?.focus();
+    // where the keyboard did not get there, the region says it after all
+    noteSays.value &&= document.activeElement === askedNote.value;
+    lineSays.value &&= document.activeElement === line.value;
   } catch (error) {
     cancelFailure.value = cancelRefusal(error);
   } finally {

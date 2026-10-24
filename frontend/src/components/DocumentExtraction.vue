@@ -13,9 +13,9 @@
  * and the keyboard goes to the section's heading where what it rested on went with the state it
  * belonged to. `led`: the start form led here to an extraction that ran already for the PDF.
  */
-import { computed, nextTick, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
-import { ApiError, getDocument, startExtraction, type CurriculumDocument, type Job } from "@/api";
+import { ApiError, getDocument, startExtraction, type CurriculumDocument, type Job, type JobStatus } from "@/api";
 import { isolate } from "@/bidi";
 import AppIcon from "@/components/AppIcon.vue";
 import JobProgress from "@/components/JobProgress.vue";
@@ -60,8 +60,12 @@ function say(message: string): void {
   status.value = sayAnew(status.value, message);
 }
 
+function stateLine(status: JobStatus): string {
+  return t("jobs.announce", { label: isolate(label.value), status: t(`jobs.status.${status}`) });
+}
+
 function outcome(job: Job): string {
-  const line = t("jobs.announce", { label: isolate(label.value), status: t(`jobs.status.${job.status}`) });
+  const line = stateLine(job.status);
   return job.status === "failed" ? `${line}. ${jobFailureText(job.error_code)}` : line;
 }
 
@@ -109,7 +113,7 @@ function follow(): JobWatch {
       if (!wanted()) return false;
       if (found.extraction?.status === was) return true;
       const now = found.extraction?.status;
-      if (now && hasEnded(now)) say(t("jobs.announce", { label: isolate(label.value), status: t(`jobs.status.${now}`) }));
+      if (now && hasEnded(now)) say(stateLine(now));
       movedOn();
       return false;
     } catch (error) {
@@ -142,6 +146,12 @@ watch(
     if (focusIsFree()) heading.value?.focus();
   },
 );
+
+onMounted(async () => {
+  if (!props.led) return;
+  await nextTick(); // the region is in the page: a change of its text is heard
+  say(t("documents.page.ledToRunning"));
+});
 
 onUnmounted(() => asking?.stop());
 </script>
