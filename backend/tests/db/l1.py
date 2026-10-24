@@ -21,7 +21,12 @@ CONCEPTS: dict[str, list[tuple[str, list[str], list[str]]]] = {
     CV + "DocumentBindings": [(CV + "bind_binding", [], [])],
     CV + "Lifecycles": [(CV + "life_inForce", [], [])],
     CV + "VariantKinds": [(CV + "var_track", [], [])],
-    CV + "Stages": [(CV + "stage_X1", [], []), (CV + "stage_X2", [], []), (CV + "stage_X4", [], [])],
+    CV + "Stages": [
+        (CV + "stage_X1", [], []),
+        (CV + "stage_X2", [], []),
+        (CV + "stage_X3", [], []),
+        (CV + "stage_X4", [], []),
+    ],
     CV + "NodeFunctions": [(CV + "fn_area", [], []), (CV + "fn_unit", [], [])],
     CV + "StatementKinds": [(CV + "kind_learningOutcome", [], []), (CV + "kind_content", [], [])],
     CV + "Addressees": [(CV + "addr_learner", [], []), (CV + "addr_teacher", [], [])],
@@ -32,6 +37,7 @@ CONCEPTS: dict[str, list[tuple[str, list[str], list[str]]]] = {
     CV + "ScopeShares": [(CV + "share_core", [], [])],
     CV + "MatchKinds": [(CV + "match_exact", [], [])],
     CV + "LayoutMarkers": [(CV + "mark_bold", [], [])],
+    CV + "DockingPoints": [(CV + "dock_level", [], []), (CV + "dock_time", [], [])],
     SCHOOL + "NodeTypes": [(SCHOOL + "Inhaltsbereich", [CUR + "NodeType"], [CV + "fn_area"])],
     SCHOOL + "StatementSubkinds": [
         (SCHOOL + "Kompetenzerwartung", [CUR + "StatementSubkind"], [CV + "kind_learningOutcome"])
