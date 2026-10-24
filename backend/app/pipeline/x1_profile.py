@@ -27,19 +27,21 @@ _MONTHS = {
 }  # fmt: skip
 _MONTH = "|".join(_MONTHS)
 _Parts = tuple[str, int | str, int | str | None]
-# The wordings of a date, the fullest first; the first that is found decides
+# The wordings of a date, the fullest first; the first that is found decides. Digits are ASCII's,
+# as the columns take them, and a month is one of twelve: "2019-20" falls through to its year
+_NUM = "0?[1-9]|1[0-2]"
 _DATES: list[tuple[re.Pattern[str], Callable[[re.Match[str]], _Parts]]] = [
     (
-        re.compile(rf"\b(\d{{1,2}})\.\s*({_MONTH})\s+(\d{{4}})\b", re.I),
+        re.compile(rf"\b([0-9]{{1,2}})\.\s*({_MONTH})\s+([0-9]{{4}})\b", re.I),
         lambda m: (m[3], _MONTHS[m[2].lower()], m[1]),
     ),
-    (re.compile(r"\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b"), lambda m: (m[3], m[2], m[1])),
-    (re.compile(r"\b(\d{4})-(\d{2})-(\d{2})\b"), lambda m: (m[1], m[2], m[3])),
-    (re.compile(rf"\b({_MONTH})\s+(\d{{4}})\b", re.I), lambda m: (m[2], _MONTHS[m[1].lower()], None)),
-    (re.compile(r"\b(\d{1,2})\.(\d{4})\b"), lambda m: (m[2], m[1], None)),
-    (re.compile(r"\b(\d{4})-(\d{2})\b"), lambda m: (m[1], m[2], None)),
+    (re.compile(rf"\b([0-9]{{1,2}})\.({_NUM})\.([0-9]{{4}})\b"), lambda m: (m[3], m[2], m[1])),
+    (re.compile(r"\b([0-9]{4})-(0[1-9]|1[0-2])-([0-9]{2})\b"), lambda m: (m[1], m[2], m[3])),
+    (re.compile(rf"\b({_MONTH})\s+([0-9]{{4}})\b", re.I), lambda m: (m[2], _MONTHS[m[1].lower()], None)),
+    (re.compile(rf"\b({_NUM})\.([0-9]{{4}})\b"), lambda m: (m[2], m[1], None)),
+    (re.compile(r"\b([0-9]{4})-(0[1-9]|1[0-2])\b"), lambda m: (m[1], m[2], None)),
 ]
-_YEAR = re.compile(r"\b((?:19|20)\d{2})\b")
+_YEAR = re.compile(r"\b((?:19|20)[0-9]{2})\b")
 # The columns' lengths (0013_l1_documents.sql)
 _TITLE, _ISSUER, _EDITION, _KEY, _FIELD, _LABEL = 1000, 500, 200, 100, 2000, 500
 
