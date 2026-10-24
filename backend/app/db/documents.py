@@ -34,6 +34,11 @@ _COLUMNS = """
 """
 _BY_ID = f"SELECT {_COLUMNS} FROM document d WHERE d.id = %(id)s"  # noqa: S608 - fixed parts
 _VISIBLE_BY_ID = f"{_BY_ID} AND {DOCUMENT_VISIBLE}"
+_VISIBLE = f"""
+SELECT {_COLUMNS} FROM document d
+WHERE {DOCUMENT_VISIBLE} AND (%(source)s::uuid IS NULL OR d.source_id = %(source)s)
+ORDER BY d.created_at DESC, d.id DESC LIMIT %(limit)s
+"""  # noqa: S608 - fixed parts
 # The entry whose content the maker may read, as app/api/source_content.py has it: its own, every
 # entry for the editors, one of no account where its content is open to accounts. Locked, so
 # its rights and its conversion stay what the document takes from them
@@ -156,6 +161,18 @@ async def get_document(
 ) -> Document | None:
     """The document, if ``reader`` sees it."""
     return await _document(connection, _VISIBLE_BY_ID, document_id, reader)
+
+
+async def documents_of(
+    connection: psycopg.AsyncConnection, reader: Reader, *, source_id: UUID | None = None, limit: int = 100
+) -> list[Document]:
+    """The documents ``reader`` sees, of one entry where ``source_id`` names it; the newest first,
+    ``limit`` at most."""
+    params = {"me": reader.account_id, "all": reader.sees_all, "source": source_id, "limit": limit}
+    async with connection.cursor(row_factory=dict_row) as cursor:
+        await cursor.execute(_VISIBLE, params)
+        rows = await cursor.fetchall()
+    return [Document(**{**row, "regions": tuple(row["regions"])}) for row in rows]
 
 
 async def document_for_job(connection: psycopg.AsyncConnection, document_id: UUID) -> Document | None:

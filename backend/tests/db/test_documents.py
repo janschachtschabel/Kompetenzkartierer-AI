@@ -14,6 +14,7 @@ from app.db.documents import (
     DocumentError,
     ProfileValueError,
     create_document,
+    documents_of,
     get_document,
     set_document_type,
 )
@@ -90,6 +91,30 @@ async def test_a_document_is_made_of_an_entry_whose_content_its_maker_may_read(
     of_seed = await make(connection, seed, third_party_content=True)
 
     assert (by_editor.owner_id, of_seed.owner_id) == (editor.account_id, seed["owner"])
+
+
+async def test_the_documents_a_reader_sees_are_listed_newest_first(
+    url: str, connection: psycopg.AsyncConnection, made: dict[str, uuid.UUID]
+) -> None:
+    first, second = await make(connection, made), await make(connection, made)
+    with psycopg.connect(url, autocommit=True) as sync:
+        other = add_conversion(sync, b"\x03" * 32)
+    theirs = await make(connection, other)
+    owner, editor = Reader(made["owner"], sees_all=False), Reader(new_id(), sees_all=True)
+
+    listed = {
+        "own": await documents_of(connection, owner),
+        "all": await documents_of(connection, editor),
+        "of_source": await documents_of(connection, editor, source_id=other["source"]),
+        "capped": await documents_of(connection, owner, limit=1),
+    }
+
+    assert {name: [found.id for found in documents] for name, documents in listed.items()} == {
+        "own": [second.id, first.id],
+        "all": [theirs.id, second.id, first.id],
+        "of_source": [theirs.id],
+        "capped": [second.id],
+    }
 
 
 async def test_a_document_refused_says_why_by_its_code(
