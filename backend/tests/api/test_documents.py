@@ -342,15 +342,76 @@ def test_a_new_start_is_admitted_as_any_model_job(client: TestClient, url: str) 
 def test_only_the_owner_starts_an_extraction(client: TestClient, url: str) -> None:
     owner, header = an_account(url)
     _, editor = an_account(url, "Redaktion", ("redaktion",))
+    _, admin = an_account(url, "Admin", ("admin",))
     _, stranger = an_account(url, "Fremde")
     started = make(client, url, header, a_conversion(url, owner))
     path = f"/api/v1/documents/{started['document']['id']}/extraction"
     end_job(url, started["job"]["id"], "cancelled")
 
-    by_editor, by_stranger = client.post(path, headers=editor), client.post(path, headers=stranger)
+    by_editor, by_admin = client.post(path, headers=editor), client.post(path, headers=admin)
+    by_stranger = client.post(path, headers=stranger)
 
     assert (by_editor.status_code, by_editor.json()["code"]) == (403, "not_owner")
+    assert (by_admin.status_code, by_admin.json()["code"]) == (403, "not_owner")  # charged to the owner
     assert (by_stranger.status_code, by_stranger.json()["code"]) == (404, "no_document")
+
+
+@pytest.fixture
+def tight(url: str, tmp_path: Path) -> Iterator[TestClient]:
+    # one model job in flight and one start a minute for an account
+    settings = make_settings(
+        database_url=url, storage_dir=tmp_path, max_jobs_in_flight=1, model_starts_per_minute=1
+    )
+    with selector_client(create_app(settings), base_url=PUBLIC) as test_client:
+        yield test_client
+
+
+def test_a_document_beside_a_job_in_flight_or_past_the_starts_a_minute_is_refused_and_nothing_made(
+    tight: TestClient, url: str
+) -> None:
+    owner, header = an_account(url)
+    first, second, third = (a_conversion(url, owner, bytes([n]) * 32) for n in (1, 2, 3))
+    started = make(tight, url, header, first)
+
+    in_flight = tight.post("/api/v1/documents", headers=header, json=asked(second))
+    end_job(url, started["job"]["id"], "done")
+    past_the_minute = tight.post("/api/v1/documents", headers=header, json=asked(third))
+
+    assert (in_flight.status_code, in_flight.json()["code"]) == (429, "too_many_jobs")
+    assert (past_the_minute.status_code, past_the_minute.json()["code"]) == (429, "too_many_starts")
+    assert "Retry-After" in in_flight.headers and "Retry-After" in past_the_minute.headers
+    assert rows(url, "SELECT count(*) FROM document") == [(1,)]
+    assert rows(url, "SELECT count(*) FROM job") == [(1,)]
+
+
+def test_a_restart_beside_a_job_in_flight_or_past_the_starts_a_minute_is_refused(
+    tight: TestClient, url: str
+) -> None:
+    owner, header = an_account(url)
+    started = make(tight, url, header, a_conversion(url, owner))
+    path = f"/api/v1/documents/{started['document']['id']}/extraction"
+    end_job(url, started["job"]["id"], "cancelled")
+    with psycopg.connect(url, autocommit=True) as connection:  # another model job of the account runs
+        connection.execute(
+            "INSERT INTO job (id, kind, lane, payload) VALUES (gen_random_uuid(), %s, %s, '{}')",
+            (KIND, str(owner)),
+        )
+
+    in_flight = tight.post(path, headers=header)
+    end_job_of_lane(url, str(owner))
+    past_the_minute = tight.post(path, headers=header)
+
+    assert (in_flight.status_code, in_flight.json()["code"]) == (429, "too_many_jobs")
+    assert (past_the_minute.status_code, past_the_minute.json()["code"]) == (429, "too_many_starts")
+    assert rows(url, "SELECT count(*) FROM job WHERE unique_key IS NOT NULL") == [(1,)]
+
+
+def end_job_of_lane(url: str, lane: str) -> None:
+    with psycopg.connect(url, autocommit=True) as connection:
+        connection.execute(
+            "UPDATE job SET status = 'done', finished_at = now() WHERE lane = %s AND status = 'queued'",
+            (lane,),
+        )
 
 
 def test_a_document_and_its_list_are_read_by_who_sees_them(client: TestClient, url: str) -> None:
