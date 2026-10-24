@@ -4,10 +4,11 @@ own blocks - a value from the surroundings is inherited, never stored as wording
 vocabularies' IRIs, a subkind only under its kind; origin model, proposed; in the document's order,
 the content they point to by their place in it; at most MOST_STATEMENTS."""
 
+from dataclasses import replace
 from typing import Any
 from uuid import UUID
 
-from app.conversion.base import Block
+from app.conversion.base import Block, Cell
 from app.domain.l1 import AnchorDraft
 from app.pipeline.statement_read import MOST_STATEMENTS, StatementContext, read_statements
 
@@ -230,3 +231,69 @@ def test_a_wording_too_long_for_the_store_is_left_out_a_lead_in_cut() -> None:
     [statement] = read
     assert statement.draft.lead_in == "y" * 2_000
     assert rules(findings) == ["x4.statement_too_long", "x4.value_cut"]
+
+
+def test_a_blank_wording_is_left_out_as_none() -> None:
+    read, findings = read_statements([given(verbatim="  ")], CONTEXT, within=None)
+
+    assert (read, rules(findings)) == ([], ["x4.statement_without_wording"])
+
+
+def table(block_id: str, rows: list[list[str]]) -> Block:
+    """A table whose first row is its header, as the conversion marks it."""
+    page = int(block_id[1 : block_id.index("-")])
+    cells = tuple(
+        Cell(id=f"T1:r{r}c{c}", page=page, row=r, column=c, text=value, header=r == 1)
+        for r, row in enumerate(rows, start=1)
+        for c, value in enumerate(row, start=1)
+    )
+    return Block(
+        id=block_id, page=page, kind="table", text="\n".join(" | ".join(row) for row in rows),
+        bbox=(0, 0, 1, 1), font_size=None, bold=False, italic=False, cells=cells,
+    )  # fmt: skip
+
+
+def test_in_a_table_a_value_stands_only_in_the_statement_s_own_row_not_its_header() -> None:
+    # the level a column's header names is inherited (konzept §13.1), not the statement's wording
+    grid = table(
+        "p1-b1",
+        [["Kompetenzen", "Klasse 7/8"], ["beschreiben Licht", "Optik"], ["erklären Schatten", "Mechanik"]],
+    )
+    context = replace(CONTEXT, blocks=[grid])
+    asked = given(
+        blockIds=["p1-b1"], verbatim="beschreiben Licht", levelText="Klasse 7/8", contextText="Optik"
+    )
+
+    # one over two rows, which no row holds alone: the table's body, its header still not
+    over_rows = given(blockIds=["p1-b1"], verbatim="beschreiben Licht Optik erklären", levelText="Klasse 7/8")
+
+    read, findings = read_statements(
+        [asked, given(blockIds=["p1-b1"], contextText="Mechanik"), over_rows], context, within=None
+    )
+
+    assert [dict(statement.draft.details) for statement in read] == [{"contextText": "Optik"}, {}, {}]
+    assert rules(findings) == ["x4.value_from_surroundings"] * 3
+
+
+def test_a_value_parted_at_a_line_s_end_or_by_a_soft_hyphen_stands_in_its_block() -> None:
+    parted = block(
+        "p1-b1", "Sie beschreiben in Alltags-\nsituationen und Na\N{SOFT HYPHEN}tur, was Licht tut."
+    )
+    context = replace(CONTEXT, blocks=[parted])
+
+    read, findings = read_statements(
+        [
+            given(blockIds=["p1-b1"], contextText="in Alltagssituationen", exampleText="Natur"),
+            given(blockIds=["p1-b1"], contextText="in Alltags-\nsituationen"),  # as the model copied it
+        ],
+        context,
+        within=None,
+    )
+
+    assert ([dict(statement.draft.details) for statement in read], findings) == (
+        [
+            {"contextText": "in Alltagssituationen", "exampleText": "Natur"},
+            {"contextText": "in Alltags-\nsituationen"},
+        ],
+        [],
+    )

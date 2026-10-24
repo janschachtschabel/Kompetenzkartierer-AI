@@ -4,9 +4,10 @@ object both schemas share.
 A statement stands in blocks of the document's conversion, and - where the request asked about a
 range of them (X4's unit) - of that range; others are left out with a finding, and a statement of
 none is. A wording field (the code, level, time, context, reference, example and purpose as written)
-holds only where it stands in the statement's own blocks, in any case and spacing: what the model
-took from a heading or the surroundings would be inherited (konzept §7), never stored as the
-statement's wording. Codes become the vocabularies' IRIs - a statement of a kind or addressee no
+holds only where it stands in the statement's own blocks - of a table, the rows holding its wording,
+never the header -, compared as wordings are (``folded``: case, spacing, a word parted at a line's
+end): what the model took from a heading, a column's head or the surroundings would be inherited
+(konzept §7), never stored as the statement's wording. Codes become the vocabularies' IRIs - a statement of a kind or addressee no
 active value names is left out, an obligation or layout marker of none unset -, a subkind holds only
 by a key the question listed and under the statement's kind. Each is the model's, proposed. They
 come in the document's order (by their first block, the answer's among equals), each pointing to the
@@ -21,6 +22,7 @@ from uuid import UUID
 from app.conversion.base import Block
 from app.db.findings import Finding
 from app.domain.l1 import AnchorDraft, Severity, StatementDraft, check_profile_value
+from app.domain.wording import folded
 from app.pipeline.x1_outline import MODEL, PROPOSED
 
 MOST_STATEMENTS = 500
@@ -122,8 +124,11 @@ class Reading:
         if not blocks:
             self.note("statement_without_block", "warning", path, "no block of it holds the statement")
             return None
-        if not verbatim or len(verbatim) > _MOST_VERBATIM:
-            self.note("statement_too_long", "warning", f"{path}.verbatim", "no wording the store holds")
+        if not verbatim:
+            self.note("statement_without_wording", "warning", f"{path}.verbatim", "a statement of no wording")
+            return None
+        if len(verbatim) > _MOST_VERBATIM:
+            self.note("statement_too_long", "warning", f"{path}.verbatim", "longer than the store holds")
             return None
         kind = self.code("StatementKinds", given["statementKind"], f"{path}.statementKind")
         addressee = self.code("Addressees", given["addressee"], f"{path}.addressee")
@@ -143,7 +148,7 @@ class Reading:
             lead_in=self.text(given["leadIn"], f"{path}.leadIn"),
             subkind=self.subkind(given["statementSubkind"], kind, f"{path}.statementSubkind"),
             obligation=self.code("Obligations", given["obligation"], f"{path}.obligation"),
-            details=self.details(given, blocks, path),
+            details=self.details(given, blocks, verbatim, path),
             layout_markers=tuple(marker for marker in markers if marker is not None),
         )
         return ReadStatement(draft, min(self.position(block) for block in blocks))
@@ -206,14 +211,17 @@ class Reading:
             return value[:_MOST_TEXT]
         return value
 
-    def details(self, given: Mapping[str, Any], blocks: Sequence[str], path: str) -> dict[str, Any]:
-        # a table's text holds its cells' (app/conversion/assemble.py)
-        own = _plain(" ".join(self.context.blocks[self.position(block)].text for block in blocks))
+    def details(
+        self, given: Mapping[str, Any], blocks: Sequence[str], verbatim: str, path: str
+    ) -> dict[str, Any]:
+        own = folded(
+            " ".join(_own_text(self.context.blocks[self.position(block)], verbatim) for block in blocks)
+        )
         details: dict[str, Any] = {}
         for name in WORDING_FIELDS:
             if (value := self.text(given[name], f"{path}.{name}")) is None:
                 continue
-            if _plain(value) in own:
+            if folded(value) in own:
                 details[name] = value
             else:
                 message = "a value not in the statement's blocks: inherited, not its wording"
@@ -224,6 +232,16 @@ class Reading:
         return details
 
 
-def _plain(text: str) -> str:
-    """Text as wording fields are compared: in one case, each run of space one."""
-    return " ".join(text.split()).casefold()
+def _own_text(block: Block, verbatim: str) -> str:
+    """What of a block is a statement's own: of a table, the rows of its body that hold the
+    statement's wording - all of its body where none does -, never its header, whose values the
+    statement inherits (konzept §13.1); any other block whole."""
+    if block.kind != "table" or not block.cells:
+        return block.text
+    rows: dict[int, list[str]] = {}
+    for cell in sorted(block.cells, key=lambda cell: (cell.row, cell.column)):
+        if not cell.header:
+            rows.setdefault(cell.row, []).append(cell.text)
+    body = [" ".join(cells) for cells in rows.values()]
+    wording = folded(verbatim)
+    return " ".join([row for row in body if wording in folded(row)] or body)

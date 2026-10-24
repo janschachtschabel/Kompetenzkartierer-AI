@@ -48,12 +48,23 @@ _SPACE = re.compile(r"\s+")
 
 def normalized(verbatim: str) -> str:
     """The wording as its hash takes it."""
-    text: str = _FORMAT.sub("", unicodedata.normalize("NFC", verbatim))  # regex is untyped
-    text = _DASHES.sub("-", _BROKEN.sub("-", _PARTED.sub("", text)).replace(_SOFT_HYPHEN, ""))
-    text = unicodedata.normalize("NFC", text.casefold())
+    text = _fold(verbatim)
     if (numbering := _NUMBERING.match(text)) is not None:
         text = text[numbering.end() :]
     return _SPACE.sub(" ", text).strip()
+
+
+def folded(text: str) -> str:
+    """Text as wordings are compared, its numbering kept: a value read from a statement ("(3)")
+    against the text of the blocks it stands in."""
+    return _SPACE.sub(" ", _fold(text)).strip()
+
+
+def _fold(text: str) -> str:
+    """Everything ``normalized`` does but the numbering and the spaces."""
+    text = _FORMAT.sub("", unicodedata.normalize("NFC", text))  # regex is untyped
+    text = _DASHES.sub("-", _BROKEN.sub("-", _PARTED.sub("", text)).replace(_SOFT_HYPHEN, ""))
+    return unicodedata.normalize("NFC", text.casefold())
 
 
 def text_hash(verbatim: str) -> str:
