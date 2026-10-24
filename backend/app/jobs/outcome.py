@@ -16,6 +16,7 @@ from typing import Any, Literal
 import psycopg
 from psycopg_pool import AsyncConnectionPool
 
+from app.core.metrics import observe_reservations
 from app.jobs.queue import Job, LeaseLost, complete, fail, mark_cancelled, release
 from app.usage.ledger import book_abandoned
 
@@ -78,7 +79,8 @@ async def write_outcome(
                 else:
                     await _record(connection, job, outcome, cancelled=ending == "cancelled")
                 # under the lease that ends the attempt: what it left open, never the next one's
-                await book_abandoned(connection, job.id)
+                abandoned = await book_abandoned(connection, job.id)
+            observe_reservations("abandoned", abandoned)  # once it is written
             return True
         except LeaseLost:
             log.warning("lost the lease of job %s (%s) at its end; its outcome is dropped", job.id, job.kind)

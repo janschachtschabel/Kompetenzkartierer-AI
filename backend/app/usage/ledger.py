@@ -194,9 +194,9 @@ async def book(connection: psycopg.AsyncConnection, reservation: Reservation, sp
 async def book_abandoned(connection: psycopg.AsyncConnection, job_id: UUID) -> int:
     """Book the job's open reservations as spent and estimated, each a request nobody answered;
     how many it took. In the caller's transaction: the one that ends the job, under its lease,
-    so that it takes no reservation of the job's next attempt."""
+    so that it takes no reservation of the job's next attempt. The caller counts them once that
+    commits (``observe_reservations``): a rollback takes the booking along."""
     cursor = await connection.execute(_BOOK_ABANDONED, (job_id,))
-    observe_reservations("abandoned", cursor.rowcount)
     return cursor.rowcount
 
 
@@ -205,9 +205,9 @@ async def book_left_behind(connection: psycopg.AsyncConnection) -> int:
     it took. A job's end books its own (app/jobs/outcome.py); this takes what an attempt left when
     its worker died or lost its lease - the job handed back, or ended without another attempt. A
     job running holds its attempt's: those stay. A worker that lost its lease and answers later
-    finds its reservation booked (``book``, late)."""
+    finds its reservation booked (``book``, late). The caller counts them once its transaction
+    commits, as for book_abandoned."""
     cursor = await connection.execute(_BOOK_LEFT_BEHIND)
-    observe_reservations("abandoned", cursor.rowcount)
     return cursor.rowcount
 
 

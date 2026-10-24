@@ -7,7 +7,9 @@ from collections.abc import AsyncIterator
 from typing import Any
 from uuid import UUID
 
+import psycopg
 import pytest
+from prometheus_client import REGISTRY
 from psycopg_pool import AsyncConnectionPool
 
 from app.core.ids import new_id
@@ -16,7 +18,7 @@ from app.db.migrate import migrate
 from app.jobs.outcome import Ending, Outcome, PermanentError, write_outcome
 from app.jobs.queue import Job, account_lane, claim, enqueue
 from app.jobs.worker import Worker
-from app.usage.ledger import Charge, reserve
+from app.usage.ledger import Charge, book_abandoned, book_left_behind, reserve
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 KIND = "extract.run"
@@ -103,4 +105,71 @@ async def test_the_sweep_books_what_an_attempt_of_a_dead_worker_left_open(pool: 
     stop.set()
     await asyncio.wait_for(running, 5)
 
+    assert await held_and_booked(pool, job.id) == (0, [(300, 200, 1, True)])
+
+
+def abandoned() -> float:
+    return REGISTRY.get_sample_value("kka_usage_reservations_total", {"outcome": "abandoned"}) or 0.0
+
+
+async def expire(pool: AsyncConnectionPool, job: Job) -> None:
+    async with pool.connection() as connection:
+        await connection.execute(
+            "UPDATE job SET lease_expires_at = now() - interval '1 s' WHERE id = %s", (job.id,)
+        )
+
+
+async def sweep_once(pool: AsyncConnectionPool) -> None:
+    stop = asyncio.Event()
+    worker = Worker(pool, {"test.other": lambda job: asyncio.sleep(0)}, owner="w2", poll_s=0.05)
+    running = asyncio.create_task(worker.run(stop))
+    await asyncio.sleep(0.3)
+    stop.set()
+    await asyncio.wait_for(running, 5)
+
+
+async def test_an_end_counts_what_it_booked_once_it_is_written(
+    pool: AsyncConnectionPool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # the database drops the first write after its booking: that booking went with it and counts not
+    job = await a_running_job_holding(pool)
+    dropped: list[int] = []
+
+    async def then_dropped(connection: Any, job_id: UUID) -> int:
+        taken = await book_abandoned(connection, job_id)
+        if not dropped:
+            dropped.append(taken)
+            raise psycopg.OperationalError("the connection was lost")
+        return taken
+
+    monkeypatch.setattr("app.jobs.outcome.book_abandoned", then_dropped)
+    before = abandoned()
+
+    assert await write_outcome(pool, job, {"done": True}, None, lease_s=0.09)
+
+    assert dropped == [1]
+    assert abandoned() - before == 1
+    assert await held_and_booked(pool, job.id) == (0, [(300, 200, 1, True)])
+
+
+async def test_the_sweep_counts_what_it_booked_once_it_is_written(
+    pool: AsyncConnectionPool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    job = await a_running_job_holding(pool)
+    await expire(pool, job)
+
+    async def then_dropped(connection: Any) -> int:
+        await book_left_behind(connection)
+        raise psycopg.OperationalError("the connection was lost")
+
+    with monkeypatch.context() as patched:
+        patched.setattr("app.jobs.worker.book_left_behind", then_dropped)
+        before = abandoned()
+        await sweep_once(pool)
+        assert abandoned() == before  # nothing was written
+        assert await held_and_booked(pool, job.id) == (1, [])
+
+    await sweep_once(pool)
+
+    assert abandoned() - before == 1
     assert await held_and_booked(pool, job.id) == (0, [(300, 200, 1, True)])

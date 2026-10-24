@@ -270,7 +270,8 @@ def reservations(outcome: str) -> float:
 
 
 async def test_reservations_are_counted_by_what_became_of_them(connection: psycopg.AsyncConnection) -> None:
-    # held, refused for the budget, booked - or late, where it was booked as abandoned before
+    # held, refused for the budget, booked - or late, where it was booked as abandoned before; the
+    # abandoned ones count where the job's end commits (tests/jobs/test_end_booking.py)
     outcomes = ("held", "refused", "booked", "late", "abandoned")
     before = {outcome: reservations(outcome) for outcome in outcomes}
     account = await an_account(connection, token_limit=1_000)
@@ -288,7 +289,7 @@ async def test_reservations_are_counted_by_what_became_of_them(connection: psyco
         "refused": 1,
         "booked": 1,
         "late": 1,
-        "abandoned": 1,
+        "abandoned": 0,
     }
 
 
