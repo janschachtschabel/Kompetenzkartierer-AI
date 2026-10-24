@@ -169,6 +169,28 @@ describe("a job's progress", () => {
     expect(heard).not.toContain("12");
   });
 
+  it("tells the page of each progress that is new, not of the same one again", async () => {
+    const at = (code: string, done: number): Job => ({
+      ...job("running"),
+      kind: "extract.run",
+      progress: { code, params: { done, total: 3 } },
+    });
+    vi.spyOn(api, "getJob")
+      .mockResolvedValueOnce(at("extract_statements", 0))
+      .mockResolvedValueOnce(at("extract_statements", 0))
+      .mockResolvedValue(at("extract_statements", 1));
+    const wrapper = shown();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(2000);
+    await vi.advanceTimersByTimeAsync(4000);
+
+    expect(wrapper.emitted("progress")).toEqual([
+      [{ code: "extract_statements", params: { done: 0, total: 3 } }],
+      [{ code: "extract_statements", params: { done: 1, total: 3 } }],
+    ]);
+  });
+
   it("shows that a conversion is under way, a progress that needs no numbers", async () => {
     vi.spyOn(api, "getJob").mockResolvedValue({
       ...job("running"),

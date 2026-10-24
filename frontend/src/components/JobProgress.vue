@@ -15,13 +15,13 @@
  */
 import { computed, nextTick, onMounted, onUnmounted, ref, watch as watchValue } from "vue";
 
-import { ApiError, cancelJob, type Job, type JobStatus } from "@/api";
+import { ApiError, cancelJob, type Job, type JobProgressNote, type JobStatus } from "@/api";
 import { isolate } from "@/bidi";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import { focusIsFree } from "@/focusRescue";
-import { t, type MessageParams } from "@/i18n/de";
+import { t } from "@/i18n/de";
 import { jobFailureText } from "@/jobMessages";
-import { JOB_PROGRESS } from "@/jobProgress";
+import { progressText } from "@/jobProgress";
 import { hasEnded, watchJob, type JobGone, type JobWatch } from "@/jobWatch";
 
 const props = defineProps<{
@@ -34,7 +34,8 @@ const props = defineProps<{
    */
   quiet?: boolean;
 }>();
-const emit = defineEmits<{ ended: [job: Job]; gone: [why: JobGone] }>();
+// progress: each new one the job reports, for a page that follows more than the job (DocumentView)
+const emit = defineEmits<{ ended: [job: Job]; gone: [why: JobGone]; progress: [progress: JobProgressNote] }>();
 
 // The pill by what the state means (style.css, .status-badge); the word in it carries the meaning
 const TONE: Record<JobStatus, string> = {
@@ -68,25 +69,15 @@ const cancelButton = ref<HTMLElement | null>(null);
 let watch: JobWatch | null = null;
 // the page is told of the end once, whether a question or the cancel's answer brought it
 let endedSaid = false;
+// the progress the page was told of last, as the server wrote it
+let progressSaid = "";
 
 // a job just started waits for a worker until the server says otherwise
 const status = computed<JobStatus>(() => job.value?.status ?? "queued");
 const failure = computed(() => (status.value === "failed" ? jobFailureText(job.value?.error_code ?? null) : ""));
 const goneText = computed(() => (gone.value ? t(`jobs.goneReasons.${gone.value}`) : ""));
 // How far the job has come, shown and not announced: a check counts its addresses one by one
-const progressText = computed(() => {
-  const progress = job.value?.progress;
-  // its own codes only: "constructor" is every object's
-  const needed = progress && Object.hasOwn(JOB_PROGRESS, progress.code) ? JOB_PROGRESS[progress.code] : undefined;
-  if (!progress || !needed) return "";
-  const params: MessageParams = {};
-  for (const name of needed) {
-    const value = progress.params[name];
-    if (typeof value !== "number") return "";
-    params[name] = value;
-  }
-  return t(`jobs.progress.${progress.code}`, params);
-});
+const progressLine = computed(() => progressText(job.value?.progress));
 const open = computed(() => !gone.value && job.value !== null && !hasEnded(status.value));
 const cancellable = computed(() => open.value && !asked.value && job.value?.cancel_requested === false);
 const cancelAsked = computed(() => open.value && (asked.value || job.value?.cancel_requested === true));
@@ -194,6 +185,9 @@ onMounted(() => {
       job.value = state;
       now.value = Date.now();
       trouble.value = false;
+      const progress = state.progress ? JSON.stringify(state.progress) : "";
+      if (state.progress && progress !== progressSaid) emit("progress", state.progress);
+      progressSaid = progress;
       if (hasEnded(state.status)) ended(state);
     },
     onGone: (why) => {
@@ -217,7 +211,7 @@ onUnmounted(() => watch?.stop());
       <span v-if="!gone" class="status-badge" :class="TONE[status]">{{ t(`jobs.status.${status}`) }}</span>
       <bdi class="job__label">{{ label }}</bdi>
     </p>
-    <p v-if="progressText" class="job__progress">{{ progressText }}</p>
+    <p v-if="progressLine" class="job__progress">{{ progressLine }}</p>
     <p v-if="runtimeText" class="job__progress" data-test="job-runtime">{{ runtimeText }}</p>
     <p v-if="failure" class="job__failure">{{ failure }}</p>
     <p v-if="cancelAsked" ref="askedNote" class="job__note" tabindex="-1" data-test="job-cancel-asked">
