@@ -253,8 +253,12 @@ async def _serve() -> int:
     from app.jobs.context import JobContext
     from app.jobs.handlers import make_handlers, select_handlers
     from app.jobs.probes import probe_server, start_serving
+    from app.llm.client import LazyModel
+    from app.llm.settings import LLMSettings
 
     settings = Settings()
+    llm = LLMSettings()
+    model = LazyModel(llm)
     stop = asyncio.Event()
     _stop_on_signals(stop)
     # Its jobs read and write objects: without its store the worker does not start (the error
@@ -263,7 +267,7 @@ async def _serve() -> int:
     pool = create_pool(settings)
     await pool.open(wait=False)
     try:
-        context = JobContext(pool=pool, storage=storage, settings=settings)
+        context = JobContext(pool=pool, storage=storage, settings=settings, llm=llm, model=model)
         handlers = select_handlers(make_handlers(context), settings.worker_kind_list)
         if not handlers:
             log.warning("no job handlers are registered: the worker idles")
@@ -286,6 +290,7 @@ async def _serve() -> int:
             probes.should_exit = True
             await serving
     finally:
+        await model.close()
         await pool.close()
     # a supervisor restarts a worker that ended with an error
     return 1 if worker.broken else 0

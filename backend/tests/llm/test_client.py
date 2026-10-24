@@ -15,6 +15,7 @@ from pydantic_ai.providers.openai import OpenAIProvider
 from app.core.tracing import CLIENT_TRACE, continue_trace, end_trace
 from app.llm.client import (
     DEFAULT_CONTEXT_TOKENS,
+    LazyModel,
     LLMNotConfigured,
     build_model,
     check_reasoning_effort,
@@ -224,3 +225,27 @@ def test_the_context_window_is_the_setting_else_the_model_s_else_the_default() -
 def test_no_model_without_a_key() -> None:
     with pytest.raises(LLMNotConfigured, match="OPENAI_API_KEY"):
         build_model(llm_settings(openai_api_key=None))
+
+
+async def test_the_process_s_model_is_built_when_first_asked_for_and_once() -> None:
+    # a worker starts, and runs jobs that need no model, without a key
+    unset = LazyModel(llm_settings(openai_api_key=None))
+    with pytest.raises(LLMNotConfigured):
+        unset()
+    lazy = LazyModel(llm_settings(), transport=httpx2.MockTransport(lambda request: httpx2.Response(401)))
+
+    first = lazy()
+
+    assert lazy() is first
+    assert lazy.settings.openai_model == "gpt-6-luna"
+
+
+async def test_the_process_s_model_is_closed_with_it() -> None:
+    lazy = LazyModel(llm_settings(), transport=httpx2.MockTransport(lambda request: httpx2.Response(401)))
+    await lazy.close()  # never built: nothing to close
+    model = lazy()
+
+    await lazy.close()
+
+    assert model.client.is_closed()
+    assert lazy() is not model  # asked again, it is built anew

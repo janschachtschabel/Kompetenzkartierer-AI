@@ -98,6 +98,27 @@ def build_model(
     return OpenAIChatModel(settings.openai_model, provider=provider, settings=chat, profile=profile)
 
 
+class LazyModel:
+    """The process's model, built when a job first asks for it - a worker starts, and runs the jobs
+    that need none, without a key; asked for while none is set, LLMNotConfigured - and closed with
+    the process (``close``), its HTTP client's connections let go."""
+
+    def __init__(self, settings: LLMSettings, *, transport: httpx2.AsyncBaseTransport | None = None) -> None:
+        self.settings = settings
+        self._transport = transport
+        self._model: OpenAIResponsesModel | OpenAIChatModel | None = None
+
+    def __call__(self) -> OpenAIResponsesModel | OpenAIChatModel:
+        if self._model is None:
+            self._model = build_model(self.settings, transport=self._transport)
+        return self._model
+
+    async def close(self) -> None:
+        if self._model is not None:
+            model, self._model = self._model, None
+            await model.client.close()
+
+
 async def _carry_trace(request: httpx2.Request) -> None:
     """The client's request hook: the trace of the request or job the call is made for."""
     request.headers.update(outgoing_headers())
