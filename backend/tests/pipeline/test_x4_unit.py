@@ -3,6 +3,7 @@ statements at its node from where its part of the node begins, its findings, its
 of it; a unit of no node (a document without headings) gets a node of its own; a unit marked by
 another writer gives way."""
 
+import asyncio
 from dataclasses import replace
 from typing import Any
 from uuid import UUID
@@ -20,6 +21,7 @@ from app.pipeline.statement_read import ReadStatement
 from app.pipeline.x2_segments import WorkPackage
 from app.pipeline.x4_read import UnitReading
 from app.pipeline.x4_unit import first_position, write_unit
+from tests.db.test_units import waiting_on_a_lock
 from tests.pipeline.test_run import CV, a_document, a_job, rows, setup
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
@@ -169,6 +171,42 @@ async def test_a_unit_of_no_node_in_a_document_of_no_title_is_named_the_document
     ) == [("Dokument",)]
 
 
+async def test_of_two_writers_of_one_unit_side_by_side_the_second_waits_and_gives_way(
+    setup: Any, database_url: str
+) -> None:
+    # its statements would meet the first one's at their positions: the mark is met first
+    _, connection = setup
+    document, job, node, run = await ready(connection)
+    first = await psycopg.AsyncConnection.connect(database_url)
+    second = await psycopg.AsyncConnection.connect(database_url, autocommit=True)
+    try:
+        async with first.transaction():
+            await write_unit(
+                first, job, document, package("E2", node), read(statement("erklären")), first=1, run_id=run
+            )
+            writing = asyncio.create_task(
+                write_unit(
+                    second,
+                    job,
+                    document,
+                    package("E2", node),
+                    read(statement("erklären")),
+                    first=1,
+                    run_id=run,
+                )
+            )
+            await waiting_on_a_lock(connection, second.info.backend_pid)
+        with pytest.raises(UnitTaken):
+            await asyncio.wait_for(writing, 10)
+    finally:
+        await first.close()
+        await second.close()
+
+    assert [
+        (position, verbatim) for _, position, verbatim, _ in await statements_of(connection, document)
+    ] == [(1, "erklären")]
+
+
 async def test_a_unit_marked_by_another_writer_gives_way_with_what_it_wrote(setup: Any) -> None:
     _, connection = setup
     document, job, node, run = await ready(connection)
@@ -183,16 +221,17 @@ async def test_a_unit_marked_by_another_writer_gives_way_with_what_it_wrote(setu
 
 
 async def test_a_unit_whose_mark_is_refused_writes_nothing_of_it(setup: Any) -> None:
-    # the mark comes last: what was written before it is taken back with it
+    # a unit of no node is marked after its node and statements: they are taken back with it
     _, connection = setup
-    document, job, node, run = await ready(connection)
+    document, job, _, run = await ready(connection)
     no_docking_point = (CV + "addr_learner",)
 
     with pytest.raises(psycopg.errors.CheckViolation):
         refused = read(statement("erklären"), absent=no_docking_point)
-        await write_unit(connection, job, document, package("E2", node), refused, first=1, run_id=run)
+        await write_unit(connection, job, document, package("E1", None), refused, first=1, run_id=run)
 
     assert await statements_of(connection, document) == []
+    assert await rows(connection, "SELECT count(*) FROM node WHERE document_id = %s", document.id) == [(1,)]
     assert await done_units(connection, document.id) == {}
 
 

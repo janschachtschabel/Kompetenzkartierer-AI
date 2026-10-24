@@ -5,8 +5,10 @@ A unit's statements stand at its node, from where its part of the node begins: a
 pages (app/pipeline/x2_segments.py) has a range of PART positions for each of its parts, so the
 document's order holds however and whenever the parts are written. A unit of no node - a document
 without headings is one unit - gets a node of its own, the rule's, named by the document's title.
-A statement points to the content it names by that content's position. The mark comes last: one
-the unit has already (another writer's) gives way with all it wrote (UnitTaken).
+A statement points to the content it names by that content's position. A unit marked already
+(another writer's) gives way with all it wrote (UnitTaken); at a node that stands the mark comes
+first, so a writer beside this one waits for it there - its statements would otherwise meet this
+one's at their positions first.
 """
 
 from collections.abc import Sequence
@@ -65,23 +67,37 @@ async def write_unit(
                 anchors=(AnchorDraft((unit.first_block,), page_start=unit.pages[0]),),
                 statements=tuple(drafts),
             )
+            # a node of its own: its statements meet no other writer's, the mark names it
             node_id = await write_subtree(connection, document.id, node, run_id=run_id)
+            await _mark(connection, document, unit, read, node_id, len(drafts), run_id)
         else:
-            node_id = unit.node_id
+            # the mark first: a writer beside this one waits at it, not at the statements' positions
+            await _mark(connection, document, unit, read, unit.node_id, len(drafts), run_id)
             await append_statements(
-                connection, document.id, node_id, drafts, first_position=first, run_id=run_id
+                connection, document.id, unit.node_id, drafts, first_position=first, run_id=run_id
             )
         await add_findings(connection, document.id, run_id, read.findings)
-        await mark_unit(
-            connection,
-            document.id,
-            unit.key,
-            run_id=run_id,
-            node_id=node_id,
-            statements=len(drafts),
-            checked_absent=read.checked_absent,
-        )
     return len(drafts)
+
+
+async def _mark(
+    connection: psycopg.AsyncConnection,
+    document: Document,
+    unit: WorkPackage,
+    read: UnitReading,
+    node_id: UUID,
+    statements: int,
+    run_id: UUID,
+) -> None:
+    await mark_unit(
+        connection,
+        document.id,
+        unit.key,
+        run_id=run_id,
+        node_id=node_id,
+        statements=statements,
+        checked_absent=read.checked_absent,
+    )
 
 
 def _pointing(draft: StatementDraft, targets: list[int]) -> StatementDraft:
