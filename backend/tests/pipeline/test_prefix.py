@@ -8,7 +8,7 @@ from typing import Literal
 import pytest
 
 from app.conversion.base import Block, Cell
-from app.pipeline.prefix import WHOLE, PrefixPlan, PrefixTooLong, Section, render_blocks
+from app.pipeline.prefix import WHOLE, PrefixPlan, PrefixTooLong, Section, prefix_budget, render_blocks
 
 Kind = Literal["text", "table", "page_header", "page_footer"]
 
@@ -152,3 +152,8 @@ def test_a_window_keeps_the_contents_wherever_they_stand() -> None:
 def test_a_document_too_long_for_any_window_is_refused() -> None:
     with pytest.raises(PrefixTooLong):
         plan(budget=200).for_position(8)
+
+
+def test_a_prefix_may_hold_the_window_less_the_rest_of_a_request_and_the_answer_a_tenth_beside() -> None:
+    # gpt-6-luna's 272,000 with the answer's cap of 16,000 and the 17,000 a request needs beside
+    assert prefix_budget(272_000, 16_000) == 217_272
