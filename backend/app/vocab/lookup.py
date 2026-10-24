@@ -63,10 +63,12 @@ _ENTRY = (
     "SELECT iri, scheme_iri, types, notation, pref_labels, broader, retired_in IS NOT NULL AS retired"
     " FROM vocab_concept"
 )
-_PROFILE = """
-SELECT p.namespace FROM terminology_profile p JOIN vocab_concept s ON s.iri = p.sector_iri
+_ACTIVE_PROFILE = """
+FROM terminology_profile p JOIN vocab_concept s ON s.iri = p.sector_iri
 WHERE s.notation = %s AND s.retired_in IS NULL AND p.retired_in IS NULL
 """
+_PROFILE = "SELECT p.namespace" + _ACTIVE_PROFILE
+_PROFILE_IRI = "SELECT p.iri" + _ACTIVE_PROFILE
 _VALUES = """
 SELECT iri, types, broader FROM vocab_concept
 WHERE starts_with(iri, %s) AND retired_in IS NULL AND types && %s
@@ -114,7 +116,7 @@ async def by_notation(
 
 async def terminology_profile(connection: psycopg.AsyncConnection, sector_notation: str) -> str | None:
     """The IRI of the sector's active profile, which a run reads with (its ``profile_version``)."""
-    cursor = await connection.execute(_PROFILE.replace("p.namespace", "p.iri"), (sector_notation,))
+    cursor = await connection.execute(_PROFILE_IRI, (sector_notation,))
     found = await cursor.fetchone()
     return None if found is None else str(found[0])
 
