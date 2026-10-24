@@ -2,7 +2,8 @@
 at all, and read back as a tree by those who see its document (app/db/documents.py).
 
 A subtree goes under a node of its document, or at its top, after the siblings there; the
-positions of its nodes and statements are where they stand in their drafts, from 1. A node type
+positions of its nodes and statements are where they stand in their drafts, from 1. Statements are
+also added to a node that stands, from a position the caller gives (X4's units). A node type
 and a subkind are checked before anything is written: each is one of the document's sector's
 profile and refines the core value beside it (the database checks the latter as well), and no
 core value it names is retired. Anchors name blocks of the document's own conversion, by the
@@ -11,6 +12,7 @@ database's keys. Writes to one document's tree wait for each other, as moves of 
 """
 
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
@@ -32,6 +34,7 @@ SELECT d.conversion_id, s.notation FROM document d JOIN vocab_concept s ON s.iri
 WHERE d.id = %s
 """
 _LOCK = "SELECT lock_node_tree(%s)"  # the lock the database's guards take (migration l1_nodes)
+_OF_DOCUMENT = "SELECT 1 FROM node WHERE id = %s AND document_id = %s"
 _RETIRED = "SELECT iri FROM vocab_concept WHERE iri = ANY(%s) AND retired_in IS NOT NULL ORDER BY iri LIMIT 1"
 _NEXT = """
 SELECT coalesce(max(position), 0) + 1 FROM node WHERE document_id = %s AND parent_id IS NOT DISTINCT FROM %s
@@ -111,21 +114,48 @@ async def write_subtree(
     ProfileValueError for a profile value the document's profile does not hold or a core value
     retired, DocumentError or the database's error, and then nothing of it is written."""
     async with connection.transaction():
-        cursor = await connection.execute(_DOCUMENT, (document_id,))
-        found = await cursor.fetchone()
-        if found is None:
-            raise DocumentError(f"no document {document_id}")
-        conversion_id, sector = found
+        conversion_id, sector = await _document(connection, document_id)
         _check(root, await profile_concepts(connection, sector))
-        cursor = await connection.execute(_RETIRED, (sorted(_core_values(root)),))
-        if (retired := await cursor.fetchone()) is not None:
-            raise ProfileValueError("retired", retired[0])
+        await _none_retired(connection, _core_values(root))
         await lock_tree(connection, document_id)
         cursor = await connection.execute(_NEXT, (document_id, parent_id))
         position = await cursor.fetchone()
         assert position is not None  # noqa: S101 - an aggregate yields its row
         writer = _Writer(connection, document_id, conversion_id, run_id)
         return await writer.node(root, parent_id, int(position[0]))
+
+
+async def append_statements(
+    connection: psycopg.AsyncConnection,
+    document_id: UUID,
+    node_id: UUID,
+    statements: Sequence[StatementDraft],
+    *,
+    first_position: int,
+    run_id: UUID | None = None,
+) -> list[UUID]:
+    """Write ``statements`` at the node ``node_id`` of the document, from ``first_position`` on, as
+    the run ``run_id`` made them; their ids. Checked as a subtree's are - ProfileValueError for a
+    subkind the profile does not hold for its kind or a core value retired, DocumentError for a node
+    the document does not hold - and then nothing of them is written. No tree lock: the positions
+    are the caller's, and the statements' key on the node holds it until the commit, so the units
+    of one document write side by side."""
+    async with connection.transaction():
+        conversion_id, sector = await _document(connection, document_id)
+        profile = await profile_concepts(connection, sector)
+        _check_statements(statements, {} if profile is None else profile.subkinds)
+        values: set[str] = set()
+        for statement in statements:
+            values |= _statement_values(statement)
+        await _none_retired(connection, values)
+        cursor = await connection.execute(_OF_DOCUMENT, (node_id, document_id))
+        if await cursor.fetchone() is None:
+            raise DocumentError(f"no node {node_id} in document {document_id}")
+        writer = _Writer(connection, document_id, conversion_id, run_id)
+        return [
+            await writer.statement(statement, node_id, first_position + place)
+            for place, statement in enumerate(statements)
+        ]
 
 
 async def lock_tree(connection: psycopg.AsyncConnection, document_id: UUID) -> None:
@@ -176,20 +206,38 @@ async def _read_tree(
     return tuple(built(row) for row in under[None])
 
 
+async def _document(connection: psycopg.AsyncConnection, document_id: UUID) -> tuple[UUID, str]:
+    """The document's conversion and the notation of its sector; DocumentError for none."""
+    cursor = await connection.execute(_DOCUMENT, (document_id,))
+    found = await cursor.fetchone()
+    if found is None:
+        raise DocumentError(f"no document {document_id}")
+    return found[0], found[1]
+
+
+async def _none_retired(connection: psycopg.AsyncConnection, values: set[str]) -> None:
+    cursor = await connection.execute(_RETIRED, (sorted(values),))
+    if (retired := await cursor.fetchone()) is not None:
+        raise ProfileValueError("retired", retired[0])
+
+
 def _check(draft: NodeDraft, profile: ProfileConcepts | None) -> None:
     node_types = {} if profile is None else profile.node_types
-    subkinds = {} if profile is None else profile.subkinds
     if draft.node_type is not None and (
         problem := check_profile_value(draft.node_type, draft.function, node_types)
     ):
         raise ProfileValueError(problem, draft.node_type)
-    for statement in draft.statements:
+    _check_statements(draft.statements, {} if profile is None else profile.subkinds)
+    for child in draft.children:
+        _check(child, profile)
+
+
+def _check_statements(statements: Sequence[StatementDraft], subkinds: Mapping[str, tuple[str, ...]]) -> None:
+    for statement in statements:
         if statement.subkind is not None and (
             problem := check_profile_value(statement.subkind, statement.kind, subkinds)
         ):
             raise ProfileValueError(problem, statement.subkind)
-    for child in draft.children:
-        _check(child, profile)
 
 
 def _core_values(draft: NodeDraft) -> set[str]:
@@ -197,16 +245,21 @@ def _core_values(draft: NodeDraft) -> set[str]:
     origins and the like - which may be retired since its draft was made."""
     values = {draft.function, draft.origin, draft.review_status}
     values.update(value for value in (draft.obligation, draft.scope_share, draft.extraction_depth) if value)
-    anchors = list(draft.anchors)
+    values.update(anchor.match_kind for anchor in draft.anchors if anchor.match_kind)
     for statement in draft.statements:
-        values.update((statement.kind, statement.origin, statement.review_status))
-        values.update((*statement.addressees, *statement.layout_markers))
-        if statement.obligation is not None:
-            values.add(statement.obligation)
-        anchors.extend(statement.anchors)
-    values.update(anchor.match_kind for anchor in anchors if anchor.match_kind)
+        values |= _statement_values(statement)
     for child in draft.children:
         values |= _core_values(child)
+    return values
+
+
+def _statement_values(statement: StatementDraft) -> set[str]:
+    """The core values a statement names, its anchors' too."""
+    values = {statement.kind, statement.origin, statement.review_status}
+    values.update((*statement.addressees, *statement.layout_markers))
+    if statement.obligation is not None:
+        values.add(statement.obligation)
+    values.update(anchor.match_kind for anchor in statement.anchors if anchor.match_kind)
     return values
 
 
@@ -255,7 +308,7 @@ class _Writer:
             await self.node(child, node_id, place)
         return node_id
 
-    async def statement(self, draft: StatementDraft, node_id: UUID, position: int) -> None:
+    async def statement(self, draft: StatementDraft, node_id: UUID, position: int) -> UUID:
         statement_id = await self._entity("statement")
         await self.connection.execute(
             _STATEMENT,
@@ -287,6 +340,7 @@ class _Writer:
             )
         for anchor in draft.anchors:
             await self.anchor(anchor, statement_id=statement_id)
+        return statement_id
 
     async def anchor(
         self, draft: AnchorDraft, *, node_id: UUID | None = None, statement_id: UUID | None = None
