@@ -7,11 +7,12 @@ none is. A wording field (the code, level, time, context, reference, example and
 holds only where it stands in the statement's own blocks - of a table, the rows holding its wording,
 never the header -, compared as wordings are (``folded``: case, spacing, a word parted at a line's
 end): what the model took from a heading, a column's head or the surroundings would be inherited
-(konzept §7), never stored as the statement's wording. Codes become the vocabularies' IRIs - a statement of a kind or addressee no
-active value names is left out, an obligation or layout marker of none unset -, a subkind holds only
-by a key the question listed and under the statement's kind. Each is the model's, proposed. They
-come in the document's order (by their first block, the answer's among equals), each pointing to the
-content statements it names by their place in that order; at most MOST_STATEMENTS of them.
+(konzept §7), never stored as the statement's wording. Codes become the vocabularies' IRIs - a
+statement of a kind or addressee no active value names is left out, an obligation or layout marker
+of none unset -, a subkind holds only by a key the question listed and under the statement's kind.
+Each is the model's, proposed. They come in the document's order (by their first block, the
+answer's among equals), each pointing to the content statements it names by their place in that
+order; at most MOST_STATEMENTS of them.
 """
 
 from collections.abc import Mapping, Sequence
