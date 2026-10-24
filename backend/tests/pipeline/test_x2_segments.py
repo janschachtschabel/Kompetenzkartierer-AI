@@ -147,3 +147,17 @@ def test_a_package_ends_at_its_last_block_of_the_text_not_at_a_footer() -> None:
 
 def test_the_nodes_may_come_in_any_order() -> None:
     assert segments(BLOCKS, list(reversed(NODES))) == segments(BLOCKS, NODES)
+
+
+def test_a_heading_with_no_text_of_its_own_asks_for_nothing_however_deep_it_is_read() -> None:
+    # "1 Kompetenzbereiche" followed at once by "1.1 Optik": a statement call would read a title alone
+    blocks = [text("p1-b1", "1 Kompetenzbereiche"), text("p1-b2", "1.1 Optik"), text("p1-b3")]
+    nodes = [
+        SegmentNode(uuid(1), None, 0, "full", "Kompetenzbereiche"),
+        SegmentNode(uuid(2), uuid(1), 1, "full", "Optik"),
+    ]
+
+    assert shape(segments(blocks, nodes)) == [
+        ("E1", uuid(1), 0, 0, "full", "none"),
+        ("E2", uuid(2), 1, 2, "full", "statements"),
+    ]

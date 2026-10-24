@@ -102,7 +102,9 @@ def segments(blocks: Sequence[Block], nodes: Sequence[SegmentNode]) -> list[Work
         depth: Depth = "skip" if any(up.depth == "skip" for up in _up(node, by_id)) else node.depth
         for part in _by_pages(blocks, own):
             number += 1
-            packages.append(_package(blocks, f"E{number}", node.id, part, path, depth))
+            # a heading alone - its first child follows at once - leaves nothing to ask about
+            job: Job | None = "none" if part == [node.position] else None
+            packages.append(_package(blocks, f"E{number}", node.id, part, path, depth, job))
     return packages
 
 
@@ -138,10 +140,20 @@ def _package(
     part: Sequence[int],
     path: tuple[str, ...],
     depth: Depth,
+    job: Job | None = None,
 ) -> WorkPackage:
     first, last = blocks[part[0]], blocks[part[-1]]
     return WorkPackage(
-        key, node_id, part[0], part[-1], first.id, last.id, (first.page, last.page), path, depth, _JOBS[depth]
+        key,
+        node_id,
+        part[0],
+        part[-1],
+        first.id,
+        last.id,
+        (first.page, last.page),
+        path,
+        depth,
+        job or _JOBS[depth],
     )
 
 
