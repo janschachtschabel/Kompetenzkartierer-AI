@@ -7,8 +7,8 @@ cues for headings or codes finds it that names a node type of the profile; it is
 bold or larger; the contents name it (app/pipeline/toc.py); it is set larger than the body by
 LARGER; it is bold, 80 signs at most, and the text after it is not. What layout alone makes a
 heading is none on the first page of a document of more pages - the title page, its title set
-larger than any heading - and nothing before the contents that end the title pages is a heading
-(app/pipeline/toc.py). A table
+larger than any heading - and nothing before the end of the title pages is a heading
+(app/pipeline/toc.py says where they end). A table
 is a heading where a pattern finds its first cell (a learning field set as a table, "Lernfeld 5:
 …"); its content is never one. Headers and footers are no text.
 The level is the depth of a heading's numbering, else its entry's in the contents, else the rank

@@ -11,10 +11,11 @@ contents' do: never back, within the document's pages, not all one - lines of nu
 is the depth of its numbering; an entry without one has none, since a block's lines share their
 indentation. The contents are never a section of the document (the old app's lesson: they became
 a root with the headings again as children), and a heading they name is one whatever its type
-(app/pipeline/skeleton.py). The first run of entries with a title, or within the first
-FRONT_PAGES pages, says where the title pages end, whether its pages are read or not: with a
-title, there; without one, there only where they are read, else nowhere. No run later on (a
-list of figures, an annex's contents) ends them.
+(app/pipeline/skeleton.py). Where the title pages end, the first run of entries says that is
+read or stands within the first FRONT_PAGES pages: there, where it has a title or is read up
+front - contents behind a long foreword have their title; else nowhere. A run neither read nor
+up front (an annex's with the gazette's pages) says nothing, and no run after the one that
+decides (a list of figures, an annex's contents) moves the end.
 """
 
 import re
@@ -52,7 +53,7 @@ class TocEntry:
 class Contents:
     entries: tuple[TocEntry, ...]
     positions: frozenset[int]  # the blocks the contents fill, their title with them
-    front_end: int | None = None  # where the title pages end: the first block of the contents that end them
+    front_end: int | None = None  # where the title pages end: the first block of the run that decides it
 
 
 def leading_number(text: str) -> str | None:
@@ -97,10 +98,11 @@ def find_contents(blocks: Sequence[Block], cues: Sequence[Cue], search: PatternS
         before = order.index(first) - 1
         titled = before >= 0 and _TITLE.fullmatch(blocks[order[before]].text.strip()) is not None
         paged = _paged(listed, pages)
-        if not decided and (titled or blocks[first].page <= FRONT_PAGES):
-            # the contents up front, read or not: a later run (an annex's) ends no title pages
+        front = blocks[first].page <= FRONT_PAGES
+        if not decided and (paged or front):
+            # a later run (an annex's) moves no end; one deep in, not read, decides nothing
             decided = True
-            front_end = first if titled or paged else None  # the title before it is theirs too
+            front_end = first if titled or (paged and front) else None  # its title is before it
         if not paged:
             continue
         if titled:

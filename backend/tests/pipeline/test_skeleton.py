@@ -396,6 +396,52 @@ def test_contents_up_front_whose_pages_are_not_read_leave_the_title_pages_to_no_
     assert found.contents.front_end == (2 if front_title else None)
 
 
+def test_titled_contents_deep_in_whose_pages_are_not_read_end_no_title_pages() -> None:
+    # no contents up front; an annex's on page 9 with the gazette's pages (245 ff.)
+    blocks = [
+        COVER,
+        block("p2-b1", "1 Einleitung", size=16),
+        block("p2-b2", BODY),
+        block("p4-b1", "2 Kompetenzen", size=16),
+        block("p4-b2", BODY),
+        block("p7-b1", "3 Inhalte", size=16),
+        block("p7-b2", BODY),
+        block("p9-b1", "4 Anhang", size=16),
+        block("p9-b2", "Inhalt", size=16),
+        block("p9-b3", "A1 Formblatt ..... 245\nA2 Zeugnis ..... 247\nA3 Stundentafel ..... 249"),
+        block("p10-b1", "A1 Formblatt", size=14),
+        block("p12-b1", BODY),
+    ]
+
+    found = skeleton(blocks)
+
+    assert found.contents.front_end is None
+    assert {"1 Einleitung", "2 Kompetenzen", "3 Inhalte", "4 Anhang", "A1 Formblatt"} <= set(titles(found))
+
+
+def test_untitled_contents_read_past_the_first_pages_leave_the_title_pages_to_no_later_contents() -> None:
+    # a foreword of four pages, untitled contents on page 6, an annex's titled contents on page 10
+    blocks = [COVER, block("p2-b1", "Vorwort", size=16), block("p2-b2", BODY)]
+    blocks += [block(f"p{page}-b1", BODY) for page in range(3, 6)]
+    blocks += [
+        block("p6-b1", "1 Einleitung ..... 7\n2 Ziele ..... 8\n3 Anhang ..... 10"),
+        block("p7-b1", "1 Einleitung", size=16),
+        block("p7-b2", BODY),
+        block("p8-b1", "2 Ziele", size=16),
+        block("p8-b2", BODY),
+        block("p10-b1", "3 Anhang", size=16),
+        block("p10-b2", "Inhalt", size=16),
+        block("p10-b3", "A1 Formblatt ..... 11\nA2 Zeugnis ..... 12\nA3 Stundentafel ..... 12"),
+        block("p11-b1", "A1 Formblatt", size=14),
+        block("p12-b1", BODY),
+    ]
+
+    found = skeleton(blocks)
+
+    assert found.contents.front_end is None
+    assert titles(found) == ["Vorwort", "1 Einleitung", "2 Ziele", "3 Anhang", "A1 Formblatt"]
+
+
 def test_contents_of_roman_pages_alone_are_contents() -> None:
     # a front matter's own: "iii" is no page a document's count can be held against
     lines = "Vorwort ..... iii\nGeleitwort ..... iv\nEinführung ..... v"
