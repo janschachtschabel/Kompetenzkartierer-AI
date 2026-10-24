@@ -132,7 +132,7 @@ def test_the_wording_of_dates_and_of_where_the_document_holds_is_kept_for_the_ru
         ("2019-08", "2019-08"),
         ("Schuljahr 2019/20", "2019"),
         ("Schuljahr 2019-20", "2019"),  # no month 20: the year
-        ("Ausgabe 20１９", None),  # digits of another script: none the column takes
+        ("Ausgabe 20\uff11\uff19", None),  # digits of another script: none the column takes
         ("13.2019", "2019"),
         ("31.02.2019", None),  # no such day
         ("ab dem nächsten Schuljahr", None),
