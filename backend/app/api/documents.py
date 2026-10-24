@@ -49,6 +49,7 @@ from app.db.source_queries import Reader
 from app.jobs.queue import JobStatus, OpenJob, account_lane, enqueue, last_jobs, open_job, open_jobs
 from app.jobs.state import job_state
 from app.pipeline.extraction import KIND, unique_key
+from app.pipeline.units import UnitState, document_units
 from app.vocab.lookup import notations_by_iri
 
 router = APIRouter(prefix="/api/v1", tags=["documents"], responses=AUTH_RESPONSES)
@@ -106,6 +107,14 @@ class RunOut(BaseModel):
     started_at: datetime
     finished_at: datetime | None
     failure: str | None
+
+
+class UnitOut(BaseModel):
+    key: str  # "E0", "E1" … in the document's order (X2's)
+    path: list[str]  # the titles from the top down to its section
+    pages: list[int]  # its first and last page
+    state: UnitState
+    statements: int | None  # what X4 wrote of it, once done
 
 
 @router.post(
@@ -247,6 +256,27 @@ async def read_runs(document_id: UUID, request: Request, who: Account) -> list[R
     async with request.app.state.pool.connection() as connection:
         await _visible(connection, who, document_id)
         return [RunOut.model_validate(run.__dict__) for run in await runs_of(connection, document_id)]
+
+
+@router.get(
+    "/documents/{document_id}/units",
+    summary="The document's units, each with how far the extraction has come with it",
+    responses={404: {"model": ErrorBody, "description": "no_document: none the caller may read"}},
+)
+async def read_units(document_id: UUID, request: Request, who: Account) -> list[UnitOut]:
+    async with request.app.state.pool.connection() as connection:
+        await _visible(connection, who, document_id)
+        units = await document_units(connection, document_id)
+    return [
+        UnitOut(
+            key=unit.key,
+            path=list(unit.path),
+            pages=list(unit.pages),
+            state=unit.state,
+            statements=unit.statements,
+        )
+        for unit in units
+    ]
 
 
 def _reader(who: Principal) -> Reader:
