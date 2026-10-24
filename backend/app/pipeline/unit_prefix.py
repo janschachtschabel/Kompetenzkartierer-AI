@@ -45,7 +45,7 @@ async def profile_text(connection: psycopg.AsyncConnection, document_id: UUID) -
     def label(iri: str) -> str:
         return texts[iri].label if iri in texts else iri
 
-    lines = [f"Titel: {title}"] if title else []
+    lines = [f"Titel: {_one_line(title)}"] if title else []
     if document_type:
         lines.append(f"Dokumenttyp: {label(document_type)}")
     lines.append(f"Bildungsbereich: {label(sector)}")
@@ -54,11 +54,13 @@ async def profile_text(connection: psycopg.AsyncConnection, document_id: UUID) -
     if specifications:
         lines.append("Spezifikationen:")
         lines.extend(
-            f"- {key} ({kind}): {named_as}" + (f"; Fach/Feld: {field}" if field else "")
+            f"- {key} ({kind}): {_one_line(named_as)}" + (f"; Fach/Feld: {_one_line(field)}" if field else "")
             for key, kind, named_as, field in specifications
         )
     # each once: X1 may name a term at each block it found it in
-    own = dict.fromkeys(f"- „{term['documentTerm']}“ → {label(term['mapsTo'])}" for term in terms or [])
+    own = dict.fromkeys(
+        f"- „{_one_line(term['documentTerm'])}“ → {label(term['mapsTo'])}" for term in terms or []
+    )
     if own:
         lines.append("Eigene Bezeichnungen des Dokuments:")
         lines.extend(own)
@@ -94,11 +96,11 @@ def choice_lists(parts: Sequence[FramePart]) -> str:
     cross-cutting markers, its operators, each once; none where X3 found none."""
     models = [_model(item.content) for item in parts if item.kind == "competencyModels"]
     legend = [
-        f"- {item.content['marker']}: {item.content['label']}"
+        f"- {_one_line(item.content['marker'])}: {_one_line(item.content['label'])}"
         for item in parts
         if item.kind == "crossCuttingLegend"
     ]
-    operators = dict.fromkeys(item.content["lemma"] for item in parts if item.kind == "operators")
+    operators = dict.fromkeys(_one_line(item.content["lemma"]) for item in parts if item.kind == "operators")
     lines = ["Kompetenzmodelle:", *models] if models else []
     if legend:
         lines += ["Querschnittsmarker:", *legend]
@@ -109,9 +111,15 @@ def choice_lists(parts: Sequence[FramePart]) -> str:
 
 def _model(content: dict[str, Any]) -> str:
     dimensions = "; ".join(_dimension(given) for given in content["dimensions"])
-    return f"- {content['title']}" + (f": {dimensions}" if dimensions else "")
+    return f"- {_one_line(content['title'])}" + (f": {dimensions}" if dimensions else "")
 
 
 def _dimension(given: dict[str, Any]) -> str:
     named = f"{given['code']} {given['label']}" if given["code"] else given["label"]
-    return named + (f" (unter {given['parentLabel']})" if given["parentLabel"] else "")
+    return _one_line(named) + (f" (unter {_one_line(given['parentLabel'])})" if given["parentLabel"] else "")
+
+
+def _one_line(wording: str) -> str:
+    """A wording of the document as a list entry of the prefix: on one line, its spaces and line ends
+    one space each - a later line of it would stand where the prompt marks its parts."""
+    return " ".join(wording.split())
