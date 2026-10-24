@@ -537,8 +537,10 @@ export const messages = {
         "Extraktion später noch einmal; scheitert sie wieder, melde es der Administration.",
       model_not_configured: "Für das Sprachmodell ist kein Zugang eingerichtet. Melde das bitte der Administration.",
       document_gone: "Das Dokument gibt es nicht mehr; die Extraktion ist entfallen.",
+      // a document the extraction wrote ends done: this one holds what no extraction wrote
       document_has_tree:
-        "Dieses Dokument ist schon extrahiert. Für eine neue Extraktion lege aus der Quelle ein neues Dokument an.",
+        "Am Dokument stehen schon Knoten oder Spezifikationen, die keine Extraktion angelegt hat; die " +
+        "Extraktion schreibt nur in ein Dokument ohne sie. Lege dafür aus der Quelle ein neues Dokument an.",
     },
   },
   dialog: {
