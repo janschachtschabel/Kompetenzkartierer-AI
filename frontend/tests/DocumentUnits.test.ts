@@ -148,6 +148,13 @@ describe("a document's work packages", () => {
 
     expect(notice()).not.toBe(first); // the same words, changed for the eye's unseen: read out again
     expect(notice()?.trim()).toBe(first?.trim());
+    await wrapper.setProps({ refresh: 2 }); // readings as the extraction moves on: the retry was answered
+    await flushPromises();
+    const later = notice();
+    await wrapper.setProps({ refresh: 3 });
+    await flushPromises();
+
+    expect(notice()).toBe(later); // not said again
   });
 
   it("takes the keyboard to the section's heading once a retry brought the list", async () => {
@@ -191,6 +198,37 @@ describe("a document's work packages", () => {
 
     expect(wrapper.text()).not.toContain(t("documents.units.loadFailed"));
     expect(document.activeElement).toBe(wrapper.get("#document-units").element);
+  });
+
+  it("says a failure anew for a retry a later reading answered first, and leaves the keyboard be", async () => {
+    let failRetry: (error: Error) => void = () => undefined;
+    vi.spyOn(api, "getUnits")
+      .mockResolvedValueOnce(UNITS)
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockReturnValueOnce(new Promise<Unit[]>((_, reject) => (failRetry = reject)))
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce([...UNITS]);
+    const wrapper = open();
+    await flushPromises();
+    await wrapper.setProps({ refresh: 1 });
+    await flushPromises();
+    const notice = () => wrapper.get(".page-notice__text").element.textContent;
+    const first = notice();
+    const retry = wrapper.get(".page-notice button");
+    (retry.element as HTMLElement).focus();
+
+    await retry.trigger("click");
+    await wrapper.setProps({ refresh: 2 }); // the extraction moved on: its reading fails as the retry's would
+    await flushPromises();
+
+    expect(notice()).not.toBe(first); // the same words, said again for the retry
+    expect(notice()?.trim()).toBe(first?.trim());
+    failRetry(new TypeError("Failed to fetch"));
+    await wrapper.setProps({ refresh: 3 }); // a later reading brings the list: the retry was answered before
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain(t("documents.units.loadFailed"));
+    expect(document.activeElement).not.toBe(wrapper.get("#document-units").element);
   });
 
   it("drops an answer that came after a later one", async () => {
