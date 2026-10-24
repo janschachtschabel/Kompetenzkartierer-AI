@@ -33,7 +33,7 @@ from app.db.runs import RunOutcome, RunStart, finish_run, start_run
 from app.domain.lexicon import Cue, active_cues
 from app.jobs.context import JobContext
 from app.jobs.outcome import PermanentError
-from app.jobs.queue import Job, hold_lease
+from app.jobs.queue import Job, check_lease, hold_lease
 from app.llm.calls import StageAgent, ask, build_agent
 from app.llm.client import LLMNotConfigured
 from app.llm.metering import BudgetExhausted
@@ -96,6 +96,9 @@ class _Asking:
     keeper: RawResponses
 
     async def answer(self, stage: StageAgent, purpose: str, prompt: str) -> dict[str, Any]:
+        # a handler left to unwind after its job ended - cancelled, or its lease lost - asks no more
+        async with self.context.pool.connection() as connection:
+            await check_lease(connection, self.job)
         charge = Charge(self.document.owner_id, self.job.id, purpose, self.model_name, self.run_id)
         got = await ask(stage, prompt, meter=LedgerMeter(self.context.pool, charge), raw=self.keeper)
         if got.output is None:

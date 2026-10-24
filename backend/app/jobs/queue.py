@@ -227,15 +227,25 @@ async def heartbeat(connection: psycopg.AsyncConnection, job: Job, lease_s: floa
     return bool(found[0])
 
 
+_HELD = (
+    "SELECT 1 FROM job WHERE id = %s AND lease_token = %s AND status = 'running' AND lease_expires_at > now()"
+)
+
+
 async def hold_lease(connection: psycopg.AsyncConnection, job: Job) -> None:
     """Lock the job's row for the caller's transaction while the attempt holds its lease, so what
     the transaction writes is the attempt's: a sweep that would hand the job back, or another
     end of it, waits for the commit. Raises ``LeaseLost`` where the lease is gone or ran out."""
-    cursor = await connection.execute(
-        "SELECT 1 FROM job WHERE id = %s AND lease_token = %s AND status = 'running'"
-        " AND lease_expires_at > now() FOR NO KEY UPDATE",
-        (job.id, job.lease_token),
-    )
+    cursor = await connection.execute(f"{_HELD} FOR NO KEY UPDATE", (job.id, job.lease_token))
+    if await cursor.fetchone() is None:
+        raise LeaseLost(str(job.id))
+
+
+async def check_lease(connection: psycopg.AsyncConnection, job: Job) -> None:
+    """Raise ``LeaseLost`` unless the attempt still holds its lease: looked at before work that
+    costs - a model's request - so a handler left to unwind after its job ended, cancelled or
+    lost, spends nothing more."""
+    cursor = await connection.execute(_HELD, (job.id, job.lease_token))
     if await cursor.fetchone() is None:
         raise LeaseLost(str(job.id))
 

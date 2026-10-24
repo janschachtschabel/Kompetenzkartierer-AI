@@ -29,7 +29,7 @@ from app.jobs.context import JobContext
 from app.jobs.handlers import make_handlers
 from app.jobs.outcome import PermanentError
 from app.jobs.queue import Job, LeaseLost, account_lane, claim, enqueue
-from app.pipeline import run, x1_stage
+from app.pipeline import run, x1_outline, x1_stage
 from app.pipeline.run import KIND, extract_document
 from app.pipeline.x2_segments import work_packages
 from app.usage.admission import MODEL_JOB_KINDS
@@ -428,6 +428,32 @@ async def test_an_attempt_that_lost_its_lease_while_it_asked_writes_nothing(
     ) == [("failed", "LeaseLost")]
     assert await rows(connection, "SELECT title FROM document WHERE id = %s", document.id) == [(None,)]
     assert await rows(connection, "SELECT count(*) FROM node WHERE document_id = %s", document.id) == [(0,)]
+
+
+async def test_an_attempt_whose_job_ended_while_it_asked_asks_the_model_nothing_more(
+    setup: Any, tmp_path: Path, database_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # cancelled while the first of the outline's questions is asked, its handler left to unwind
+    # (plan M1 7a): the next one is neither asked nor charged
+    monkeypatch.setattr(x1_outline, "OUTLINE_BATCH", 1)
+    pool, connection = setup
+    document = await a_document(connection)
+    job = await a_job(connection, document.id, document.owner_id)
+    model = Model()
+
+    async def answer(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        if not is_profile(messages):
+            await connection.execute(
+                "UPDATE job SET status = 'cancelled', finished_at = now(), lease_token = NULL WHERE id = %s",
+                (job.id,),
+            )
+        return model(messages, info)
+
+    with pytest.raises(LeaseLost):
+        await extract_document(context_of(pool, tmp_path, answer, database_url), job)
+
+    assert model.asked == ["profile", "outline"]
+    assert await rows(connection, "SELECT count(*) FROM llm_usage WHERE job_id = %s", job.id) == [(2,)]
 
 
 @pytest.mark.parametrize(
