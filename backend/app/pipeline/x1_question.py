@@ -35,6 +35,8 @@ SCHEMES = (
     "LegalForms", "DocumentBindings", "Lifecycles", "EducationSectors", "Formalities", "TimeKinds",
     "VariantKinds", "NodeFunctions",
 )  # fmt: skip
+# the schemes the x1-gliederung schema's enums name
+OUTLINE_SCHEMES = ("NodeFunctions", "ScopeShares")
 _TERM = CV + "ck_term"
 
 
@@ -117,7 +119,7 @@ async def outline_questions(
         document_id=document.id,
         types=types,
         functions_of=functions_of,
-        codes={"NodeFunctions": functions, "ScopeShares": await notations_of(connection, CV + "ScopeShares")},
+        codes={scheme: await notations_of(connection, CV + scheme) for scheme in OUTLINE_SCHEMES},
         specifications=frozenset(key for key, _ in specifications),
     )
     return OutlineQuestions(prompts, [item.key for item in items], context)
