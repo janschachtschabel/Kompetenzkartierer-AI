@@ -182,19 +182,32 @@ describe("a job's progress", () => {
     expect(wrapper.get(".job__progress").text()).toBe(t("jobs.progress.converting"));
   });
 
-  it("shows how far an extraction has come", async () => {
+  it("shows how far an extraction has come, with no heading left to the model too", async () => {
     vi.spyOn(api, "getJob").mockResolvedValue({
       ...job("running"),
       kind: "extract.run",
-      progress: { code: "extract_outline", params: { headings: 1 } },
+      progress: { code: "extract_outline", params: { headings: 0 } },
     });
     const wrapper = shown("Kernlehrplan Physik");
 
     await vi.advanceTimersByTimeAsync(1000);
 
     expect(wrapper.get(".job__progress").text()).toBe(
-      "Die Gliederung wird gebaut; das Sprachmodell ordnet 1 Überschrift ein.",
+      "Die Gliederung wird gebaut. Überschriften, die das Sprachmodell einordnet: 0.",
     );
+  });
+
+  it("shows no progress for a code named as what every object has", async () => {
+    vi.spyOn(api, "getJob").mockResolvedValue({
+      ...job("running"),
+      progress: { code: "constructor", params: {} },
+    });
+    const wrapper = shown();
+
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(wrapper.find(".job__progress").exists()).toBe(false);
+    expect(wrapper.get(".status-badge").text()).toBe(t("jobs.status.running"));
   });
 
   it("shows no progress it has no words for, nor one whose numbers are missing", async () => {

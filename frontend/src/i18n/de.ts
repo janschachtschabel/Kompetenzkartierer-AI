@@ -455,8 +455,8 @@ export const messages = {
       converting: "Die Datei wird in Blöcke umgewandelt; bei einer großen Datei dauert das einige Minuten.",
       // extract.run: the stages X1 and X2 of a document
       extract_profile: "Das Sprachmodell liest Titel, Geltung und Begriffe des Dokuments.",
-      extract_outline:
-        "Die Gliederung wird gebaut; das Sprachmodell ordnet {headings} {headings|Überschrift|Überschriften} ein.",
+      // a count of 0 too: the lexicon's patterns may type every heading
+      extract_outline: "Die Gliederung wird gebaut. Überschriften, die das Sprachmodell einordnet: {headings}.",
       extract_segments: "Das Dokument wird in {units} {units|Arbeitspaket|Arbeitspakete} geteilt.",
     },
     trouble: "Der Server antwortet gerade nicht; der Stand wird weiter abgefragt.",
@@ -527,9 +527,11 @@ export const messages = {
       result_not_storable: "Das Ergebnis ließ sich nicht speichern. Melde das bitte der Administration.",
       lease_lost: "Der Auftrag wurde unterbrochen, weil sein Dienst ausfiel. Versuch es noch einmal.",
       // extract.run (backend app/pipeline/run.py, x1_stage.py)
+      // charged to the document's owner, whoever started it; a new start goes on from the last stage done
       budget_exhausted:
-        "Das Token-Budget deines Kontos ist aufgebraucht; die Extraktion wurde angehalten. Was schon fertig war, " +
-        "bleibt erhalten. Bitte die Administration um mehr Budget.",
+        "Das Token-Budget des Kontos, dem das Dokument gehört, ist aufgebraucht; die Extraktion ist beendet. " +
+        "Was schon fertig war, bleibt erhalten: Mit mehr Budget setzt ein neuer Start dort fort, wo sie endete. " +
+        "Bitte die Administration um mehr Budget.",
       model_unanswered:
         "Das Sprachmodell hat auch nach mehreren Versuchen keine verwertbare Antwort geliefert. Starte die " +
         "Extraktion später noch einmal; scheitert sie wieder, melde es der Administration.",

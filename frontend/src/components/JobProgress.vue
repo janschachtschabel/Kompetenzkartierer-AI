@@ -48,7 +48,8 @@ const goneText = computed(() => (gone.value ? t(`jobs.goneReasons.${gone.value}`
 // How far the job has come, shown and not announced: a check counts its addresses one by one
 const progressText = computed(() => {
   const progress = job.value?.progress;
-  const needed = progress ? JOB_PROGRESS[progress.code] : undefined;
+  // its own codes only: "constructor" is every object's
+  const needed = progress && Object.hasOwn(JOB_PROGRESS, progress.code) ? JOB_PROGRESS[progress.code] : undefined;
   if (!progress || !needed) return "";
   const params: MessageParams = {};
   for (const name of needed) {
