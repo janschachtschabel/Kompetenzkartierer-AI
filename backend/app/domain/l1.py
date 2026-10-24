@@ -15,7 +15,7 @@ and lies under the core value it refines (``skos:broader``): a ``schul:Inhaltsbe
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from app.domain.blocks import BLOCK_ID, CELL_ID
@@ -142,3 +142,46 @@ class NodeDraft:
         object.__setattr__(self, "applies_to", _once(self.applies_to))
         if self.code_assigned and self.code is None:
             raise ValueError("an assigned code is a code: the node's position")
+
+
+@dataclass(frozen=True)
+class VariantDraft:
+    """A variant of a specification (a track, a focus): its key, its label as written, its kind."""
+
+    key: str
+    label: str
+    kind: str
+
+
+@dataclass(frozen=True)
+class SpecificationDraft:
+    """What a document stands for - a subject's curriculum, an occupation's - with its applicability
+    (codes as IRIs, wording as written), the blocks it was read from and its variants."""
+
+    key: str
+    kind: SpecificationKind
+    title: str
+    field_text: str | None
+    applicability: Mapping[str, Any]
+    evidence: tuple[str, ...]
+    variants: tuple[VariantDraft, ...] = ()
+
+
+@dataclass(frozen=True)
+class ProfileDraft:
+    """A document's profile as X1 reads it: its own values (dates as YYYY, YYYY-MM or YYYY-MM-DD),
+    the blocks they were read from, its specifications, and the terms of its own it uses."""
+
+    title: str | None
+    document_type: str | None
+    legal_form: str | None
+    binding: str | None
+    lifecycle: str | None
+    issuer: str | None
+    edition: str | None
+    issued: str | None
+    valid_from: str | None
+    evidence: tuple[str, ...]
+    specifications: tuple[SpecificationDraft, ...]
+    term_mappings: tuple[Mapping[str, Any], ...]
+    new_terms: tuple[Mapping[str, Any], ...]

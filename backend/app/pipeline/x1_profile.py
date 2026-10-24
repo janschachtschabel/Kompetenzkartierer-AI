@@ -14,11 +14,11 @@ import re
 from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from app.db.findings import Finding
-from app.domain.l1 import Severity
+from app.domain.l1 import ProfileDraft, Severity, SpecificationDraft, SpecificationKind, VariantDraft
 from app.pipeline.prompts.x1_profile import ProfileLists
 
 _MONTHS = {
@@ -58,40 +58,12 @@ class ProfileContext:
 
 
 @dataclass(frozen=True)
-class Variant:
-    key: str
-    label: str
-    kind: str  # a cv:VariantKinds IRI
+class Profile(ProfileDraft):
+    """The draft with what it was read from - the wording of its dates and of where the document
+    holds, for the run's result - and the findings of the reading."""
 
-
-@dataclass(frozen=True)
-class Specification:
-    key: str
-    kind: str  # its core class: curriculum, competencyFramework, …
-    title: str
-    field_text: str | None
-    applicability: dict[str, Any]  # its codes as IRIs, its wording as given
-    evidence: tuple[str, ...]
-    variants: tuple[Variant, ...]
-
-
-@dataclass(frozen=True)
-class Profile:
-    title: str | None
-    document_type: str | None
-    legal_form: str | None
-    binding: str | None
-    lifecycle: str | None
-    issuer: str | None
-    edition: str | None
-    issued: str | None
-    valid_from: str | None
-    evidence: tuple[str, ...]
-    specifications: tuple[Specification, ...]
-    term_mappings: tuple[dict[str, Any], ...]
-    new_terms: tuple[dict[str, Any], ...]
-    said: dict[str, Any]  # the wording the values were read from, for the run's result
-    findings: tuple[Finding, ...] = field(default=())
+    said: Mapping[str, Any] = field(default_factory=dict)
+    findings: tuple[Finding, ...] = ()
 
 
 def parse_date(wording: str | None) -> str | None:
@@ -242,8 +214,8 @@ class _Reading:
                 "x1.other_sectors", "info", path, "the document reads as of other sectors too", sectors=others
             )
 
-    def specifications(self, given: Sequence[Mapping[str, Any]]) -> list[Specification]:
-        made: list[Specification] = []
+    def specifications(self, given: Sequence[Mapping[str, Any]]) -> list[SpecificationDraft]:
+        made: list[SpecificationDraft] = []
         for at, item in enumerate(given):
             path = f"$.specifications[{at}]"
             key = self._unique(item["key"], {made_one.key for made_one in made}, f"{path}.key")
@@ -252,9 +224,9 @@ class _Reading:
                 continue
             applicability = item["applicability"]
             made.append(
-                Specification(
+                SpecificationDraft(
                     key=key,
-                    kind=item["kind"],
+                    kind=cast(SpecificationKind, item["kind"]),  # the schema's enum
                     title=title,
                     field_text=self.text(item["fieldText"], _FIELD, f"{path}.fieldText"),
                     applicability={
@@ -280,15 +252,15 @@ class _Reading:
             )
         return made
 
-    def _variants(self, given: Sequence[Mapping[str, Any]], within: str) -> list[Variant]:
-        made: list[Variant] = []
+    def _variants(self, given: Sequence[Mapping[str, Any]], within: str) -> list[VariantDraft]:
+        made: list[VariantDraft] = []
         for at, item in enumerate(given):
             path = f"{within}.variants[{at}]"
             key = self._unique(item["key"], {variant.key for variant in made}, f"{path}.key")
             label = self._titled(item["label"], _LABEL, f"{path}.label")
             kind = self.code("VariantKinds", item["variantKind"], f"{path}.variantKind")
             if key is not None and label is not None and kind is not None:
-                made.append(Variant(key, label, kind))
+                made.append(VariantDraft(key, label, kind))
         return made
 
     def _unique(self, value: str, taken: Collection[str], path: str) -> str | None:

@@ -8,8 +8,9 @@ from uuid import UUID
 
 import pytest
 
+from app.domain.l1 import SpecificationDraft, VariantDraft
 from app.pipeline.prompts.x1_profile import ProfileLists
-from app.pipeline.x1_profile import ProfileContext, Specification, Variant, parse_date, read_profile
+from app.pipeline.x1_profile import ProfileContext, parse_date, read_profile
 
 CV = "https://w3id.org/wlo/curriculum/vocab#"
 SCHOOL = "https://w3id.org/wlo/curriculum/profile/school#"
@@ -142,7 +143,7 @@ def test_a_date_is_read_from_its_wording_as_far_as_it_goes(wording: str | None, 
 def test_specifications_with_their_variants_are_read_their_values_coded() -> None:
     [specification] = read_profile(ANSWER, CONTEXT).specifications
 
-    assert specification == Specification(
+    assert specification == SpecificationDraft(
         key="S1",
         kind="curriculum",
         title="Physik",
@@ -157,7 +158,7 @@ def test_specifications_with_their_variants_are_read_their_values_coded() -> Non
             "targetGroupText": None,
         },
         evidence=("p1-b1",),
-        variants=(Variant("V1", "G9", CV + "var_track"),),
+        variants=(VariantDraft("V1", "G9", CV + "var_track"),),
     )
 
 
