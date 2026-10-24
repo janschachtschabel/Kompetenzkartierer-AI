@@ -54,7 +54,13 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 
 
 class DocumentError(Exception):
-    """A document that cannot be made or changed as asked: its conversion, sector or id."""
+    """A document that cannot be made or changed as asked: its conversion, sector or id. ``code``
+    says why it was not made, for an answer that never compares words: ``no_conversion``,
+    ``unknown_sector`` or ``unknown_region``; None for a change."""
+
+    def __init__(self, message: str, code: str | None = None) -> None:
+        super().__init__(message)
+        self.code = code
 
 
 class ProfileValueError(ValueError):
@@ -116,14 +122,14 @@ async def create_document(
         )
         entry = await cursor.fetchone()
         if entry is None:  # none, or none the maker may read: alike to the maker
-            raise DocumentError("no finished conversion of this entry's file")
+            raise DocumentError("no finished conversion of this entry's file", "no_conversion")
         sector_iri = await sector_by_notation(connection, sector)
         if sector_iri is None:
-            raise DocumentError(f"no sector {sector!r}")
+            raise DocumentError(f"no sector {sector!r}", "unknown_sector")
         cursor = await connection.execute(_KNOWN_REGIONS, (REGIONS, regions))
         unknown = sorted(set(regions) - {row[0] for row in await cursor.fetchall()})
         if unknown:
-            raise DocumentError(f"no region {', '.join(unknown)}")
+            raise DocumentError(f"no region {', '.join(unknown)}", "unknown_region")
         await connection.execute("INSERT INTO entity (id, kind) VALUES (%s, 'document')", (document_id,))
         await connection.execute(
             _INSERT,

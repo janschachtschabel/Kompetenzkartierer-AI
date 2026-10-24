@@ -92,6 +92,25 @@ async def test_a_document_is_made_of_an_entry_whose_content_its_maker_may_read(
     assert (by_editor.owner_id, of_seed.owner_id) == (editor.account_id, seed["owner"])
 
 
+async def test_a_document_refused_says_why_by_its_code(
+    connection: psycopg.AsyncConnection, made: dict[str, uuid.UUID]
+) -> None:
+    # the API answers by the code, never by the words
+    refusals: list[dict[str, Any]] = [
+        {"reader": Reader(new_id(), sees_all=False)},  # an entry the maker may not read
+        {"sector": "kindergarten"},
+        {"regions": ("DE-NW", "ZZ")},
+    ]
+    codes = []
+    for refusal in refusals:
+        reader = refusal.pop("reader", None)
+        with pytest.raises(DocumentError) as refused:
+            await make(connection, made, reader, **refusal)
+        codes.append(refused.value.code)
+
+    assert codes == ["no_conversion", "unknown_sector", "unknown_region"]
+
+
 async def test_a_document_s_regions_are_regions_the_vocabulary_holds_each_once(
     connection: psycopg.AsyncConnection, made: dict[str, uuid.UUID]
 ) -> None:
