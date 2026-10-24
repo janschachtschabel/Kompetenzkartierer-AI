@@ -9,7 +9,7 @@ import pytest
 from pydantic_ai import Agent
 from pydantic_ai.exceptions import ModelHTTPError
 
-from app.llm.attempts import Attempts
+from app.llm.attempts import Attempts, never_sent
 from app.llm.client import build_model
 from tests.llm.test_client import Recorder, llm_settings
 
@@ -50,3 +50,23 @@ async def test_calls_side_by_side_count_apart_and_none_outside_counts() -> None:
     await refused(model)  # counted by nobody
 
     assert (first.sent, second.sent, len(recorder.requests)) == (1, 2, 4)
+
+
+def test_a_request_failed_in_connecting_is_told_by_its_chain_as_python_shows_it() -> None:
+    def raised(how: str) -> BaseException:
+        try:
+            try:
+                raise httpx2.ConnectError("refused")
+            except httpx2.ConnectError as connect:
+                if how == "from":
+                    raise RuntimeError("wrapped") from connect
+                if how == "during":
+                    raise RuntimeError("wrapped")  # noqa: B904 - the implicit chain is what is tried
+                raise RuntimeError("anew") from None
+        except RuntimeError as error:
+            return error
+        raise AssertionError("nothing raised")
+
+    assert never_sent(raised("from"))
+    assert never_sent(raised("during"))
+    assert not never_sent(raised("none"))  # the chain Python shows ends at the error itself

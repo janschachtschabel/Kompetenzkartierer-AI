@@ -149,7 +149,8 @@ async def ask(
     every answer kept in ``raw`` before it is checked. A request the provider was never reached
     with is asked again as a busy provider's is. BudgetExhausted where the budget holds no further
     request; ModelHTTPError where the provider refused for good; ModelAPIError where it was never
-    reached; UnexpectedModelBehavior for an answer no model could read; whatever else failed."""
+    reached; UnexpectedModelBehavior - or, on the Responses API, the library's own error - for an
+    answer no model could read; whatever else failed. Each with the error it was raised from."""
     spent = Spent()
     attempt = 0
     while True:
@@ -160,12 +161,12 @@ async def ask(
             spent += refused.spent
             wait = wait_after(refused.error, attempt)
             if wait is None:
-                raise refused.error from None
+                raise refused.error from refused.error.__cause__
         except _NotSent as unsent:
             spent += unsent.spent
             wait = _wait(attempt)
             if wait is None:
-                raise unsent.error from None
+                raise unsent.error from unsent.error.__cause__
         attempt += 1
         await _sleep(wait)
 

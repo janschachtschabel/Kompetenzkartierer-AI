@@ -16,6 +16,7 @@ from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.usage import RequestUsage
 
 from app.llm import calls
+from app.llm.attempts import never_sent
 from app.llm.calls import StageAgent, ask, breakpoint_settings, build_agent, cached_up_to, wait_after
 from app.llm.client import build_model
 from app.llm.metering import BudgetExhausted, Spent
@@ -233,6 +234,8 @@ def waited(monkeypatch: pytest.MonkeyPatch) -> list[float]:
 
     async def sleep(seconds: float) -> None:
         slept.append(seconds)
+        # a call that waits on and on would hang the suite: no test waits this often
+        assert len(slept) <= 5, f"waited {len(slept)} times"
 
     monkeypatch.setattr(calls, "_sleep", sleep)
     monkeypatch.setattr(calls, "_draw", lambda: 0.0)
@@ -279,10 +282,11 @@ async def test_a_busy_provider_s_retry_after_sets_the_wait(waited: list[float]) 
 async def test_a_provider_busy_three_times_fails_the_call(waited: list[float]) -> None:
     ledger = Ledger()
 
-    with pytest.raises(ModelHTTPError):
+    with pytest.raises(ModelHTTPError) as caught:
         await ask(gateway(lambda _: httpx2.Response(503, json=BUSY)), "Text", meter=ledger)
 
     assert (waited, len(ledger.booked)) == ([20.0, 40.0], 3)
+    assert caught.value.__cause__ is not None  # the SDK's error, as pydantic-ai raised it
 
 
 async def test_a_spent_quota_at_the_provider_is_not_waited_on(waited: list[float]) -> None:
@@ -418,11 +422,12 @@ async def test_a_provider_never_reached_fails_the_call_after_two_waits(waited: l
     def refused(request: httpx2.Request) -> httpx2.Response:
         raise httpx2.ConnectError("connection refused", request=request)
 
-    with pytest.raises(ModelAPIError):
+    with pytest.raises(ModelAPIError) as caught:
         await ask(gateway(refused), "Text", meter=ledger)
 
     assert waited == [20.0, 40.0]
     assert ledger.booked == [(1, Spent()), (2, Spent()), (3, Spent())]
+    assert never_sent(caught.value)  # the client's error stays its cause, for the job's log
 
 
 async def test_an_answer_no_model_could_read_books_its_reservation_and_fails_the_call() -> None:
@@ -524,3 +529,34 @@ async def test_a_call_cancelled_before_its_request_went_out_books_nothing() -> N
         await task
 
     assert ledger.booked == [(1, Spent())]
+
+
+async def test_what_an_attempt_spent_before_its_request_never_went_out_counts_in_the_call(
+    waited: list[float],
+) -> None:
+    # out of form, then no connection for the retry, then asked anew and answered
+    ledger = Ledger()
+    replies: list[Any] = [completion("Zahlen") | {"choices": [bad_choice()]}, "refuse", completion("Zahlen")]
+
+    def answer(request: httpx2.Request) -> httpx2.Response:
+        reply = replies.pop(0)
+        if reply == "refuse":
+            raise httpx2.ConnectError("no connection", request=request)
+        return httpx2.Response(200, json=reply)
+
+    built = gateway(answer)
+    result = await ask(built, "Text", meter=ledger)
+
+    assert result.output == {"title": "Zahlen"}
+    assert waited == [20.0]
+    assert result.spent.requests == 2
+
+
+def bad_choice() -> dict[str, Any]:
+    """A choice whose tool call gives the title as a number: out of the schema's form."""
+    call = {"id": "t1", "type": "function", "function": {"name": "final_result", "arguments": '{"title": 3}'}}
+    return {
+        "index": 0,
+        "finish_reason": "tool_calls",
+        "message": {"role": "assistant", "content": None, "tool_calls": [call]},
+    }

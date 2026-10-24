@@ -38,15 +38,18 @@ _UNSENT = (httpx2.ConnectError, httpx2.ConnectTimeout, httpx2.PoolTimeout)
 
 
 def never_sent(error: BaseException) -> bool:
-    """Whether ``error``, or one it was raised from or while handling, failed a request before it
-    went out - the SDK and pydantic-ai wrap the client's error twice."""
+    """Whether ``error``, or one it was raised from or while handling - its chain as Python shows
+    it - failed a request before it went out: the SDK and pydantic-ai wrap the client's error twice."""
     seen: set[int] = set()
     current: BaseException | None = error
     while current is not None and id(current) not in seen:
         if isinstance(current, _UNSENT):
             return True
         seen.add(id(current))
-        current = current.__cause__ or current.__context__
+        if current.__cause__ is not None:
+            current = current.__cause__
+        else:
+            current = None if current.__suppress_context__ else current.__context__
     return False
 
 
