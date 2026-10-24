@@ -9,7 +9,7 @@ import psycopg
 import pytest
 
 from app.db.documents import DocumentError, ProfileValueError
-from app.db.nodes import append_statements, write_subtree
+from app.db.nodes import append_statements, lock_tree, write_subtree
 from app.db.tree import read_tree
 from tests.db.test_nodes import CV, SCHOOL, anchor, connection, document, node, owner, statement, url
 
@@ -143,3 +143,14 @@ async def test_statements_are_added_in_the_caller_s_transaction(
             raise RuntimeError("the unit broke after it")
 
     assert await statements_of(connection, document) == []
+
+
+async def test_statements_added_wait_for_another_write_to_the_document_s_tree(
+    connection: psycopg.AsyncConnection, document: Any, unit_node: Any, url: str
+) -> None:
+    # every write to a tree shares its lock (plan M1 4.6): an editor renumbering the node's statements
+    async with await psycopg.AsyncConnection.connect(url, autocommit=True) as other, other.transaction():
+        await lock_tree(other, document.id)
+        await connection.execute("SET lock_timeout = '200ms'")
+        with pytest.raises(psycopg.errors.LockNotAvailable):
+            await append_statements(connection, document.id, unit_node, [statement("Gut.")], first_position=1)

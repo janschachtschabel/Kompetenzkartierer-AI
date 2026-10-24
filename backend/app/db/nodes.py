@@ -86,9 +86,9 @@ async def append_statements(
     """Write ``statements`` at the node ``node_id`` of the document, from ``first_position`` on, as
     the run ``run_id`` made them; their ids. Checked as a subtree's are - ProfileValueError for a
     subkind the profile does not hold for its kind or a core value retired, DocumentError for a node
-    the document does not hold - and then nothing of them is written. No tree lock: the positions
-    are the caller's, and the statements' key on the node holds it until the commit, so the units
-    of one document write side by side."""
+    the document does not hold - and then nothing of them is written. They wait for, and then hold,
+    the tree's lock as every write to it does (``lock_tree``): an editor renumbering the node's
+    statements and a unit adding to it take turns."""
     async with connection.transaction():
         conversion_id, sector = await _document(connection, document_id)
         profile = await profile_concepts(connection, sector)
@@ -97,6 +97,7 @@ async def append_statements(
         for statement in statements:
             values |= _statement_values(statement)
         await _none_retired(connection, values)
+        await lock_tree(connection, document_id)
         cursor = await connection.execute(_OF_DOCUMENT, (node_id, document_id))
         if await cursor.fetchone() is None:
             raise DocumentError(f"no node {node_id} in document {document_id}")
