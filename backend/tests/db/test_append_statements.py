@@ -9,7 +9,8 @@ import psycopg
 import pytest
 
 from app.db.documents import DocumentError, ProfileValueError
-from app.db.nodes import append_statements, read_tree, write_subtree
+from app.db.nodes import append_statements, write_subtree
+from app.db.tree import read_tree
 from tests.db.test_nodes import CV, SCHOOL, anchor, connection, document, node, owner, statement, url
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]

@@ -13,8 +13,9 @@ import pytest
 from app.core.ids import new_id
 from app.db.documents import DocumentError, ProfileValueError, create_document
 from app.db.migrate import migrate
-from app.db.nodes import lock_tree, read_tree, write_subtree
+from app.db.nodes import lock_tree, write_subtree
 from app.db.source_queries import Reader
+from app.db.tree import read_tree
 from app.domain.l1 import AnchorDraft, NodeDraft, StatementDraft
 from app.domain.wording import text_hash
 from app.vocab.loader import read_vocabulary

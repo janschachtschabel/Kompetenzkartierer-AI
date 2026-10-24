@@ -11,9 +11,10 @@ import pytest
 
 from app.conversion.base import Block
 from app.db.migrate import migrate
-from app.db.nodes import read_tree, write_subtree
+from app.db.nodes import write_subtree
 from app.db.profile import write_profile
 from app.db.source_queries import Reader
+from app.db.tree import read_tree
 from app.domain.l1 import ProfileDraft, SpecificationDraft
 from app.pipeline.skeleton import build_skeleton
 from app.pipeline.x1_outline import OUTLINE_BATCH, build_tree, decide
