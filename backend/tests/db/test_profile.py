@@ -269,3 +269,12 @@ async def test_where_x1_stands_is_read_at_one_moment(
 
     assert looked == "open"  # as it stood at the look
     assert await x1_state(connection, document.id) == "done"
+
+
+async def test_a_profile_no_run_of_x1_wrote_is_a_tree_x1_does_not_write_onto(
+    connection: psycopg.AsyncConnection, document: Document
+) -> None:
+    # specifications without a node: a second profile would meet the first one's keys
+    await write_profile(connection, document.id, draft())
+
+    assert await x1_state(connection, document.id) == "tree"

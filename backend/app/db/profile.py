@@ -19,6 +19,7 @@ from psycopg.types.json import Jsonb
 from app.db.anchors import CV, new_entity, write_anchor
 from app.db.documents import DocumentError
 from app.db.findings import Finding
+from app.db.runs import stage_iri
 from app.domain.l1 import AnchorDraft, ProfileDraft
 
 _VALUES = """
@@ -145,7 +146,7 @@ async def x1_state(connection: psycopg.AsyncConnection, document_id: UUID) -> X1
     ``tree`` where it holds a node or a specification no run of X1 wrote (set up by hand) - X1
     writes onto a document of none: a tree is written after the siblings there (app/db/nodes.py),
     and a second profile would meet the first one's keys; else ``open``."""
-    cursor = await connection.execute(_X1_STATE, {"id": document_id, "x1": CV + "stage_X1"})
+    cursor = await connection.execute(_X1_STATE, {"id": document_id, "x1": stage_iri("X1")})
     found = await cursor.fetchone()
     assert found is not None  # noqa: S101 - a SELECT of EXISTS always has its row
     done, held = found

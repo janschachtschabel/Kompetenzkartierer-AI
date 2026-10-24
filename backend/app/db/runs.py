@@ -23,6 +23,12 @@ Stage = Literal["X0", "X1", "X2", "X3", "X4", "X5", "X6", "N1", "N2", "G1"]
 STAGES = "https://w3id.org/wlo/curriculum/vocab#Stages"
 _STAGE_IRI = "https://w3id.org/wlo/curriculum/vocab#stage_"
 
+
+def stage_iri(stage: Stage) -> str:
+    """The IRI of a stage of cv:Stages by its notation ("X1")."""
+    return _STAGE_IRI + stage
+
+
 _START = """
     INSERT INTO extraction_run (id, document_id, job_id, attempt, stage_scheme, stage_iri, model,
         prompt_version, profile_version, lexicon_release, raw_response_key)
@@ -71,7 +77,7 @@ async def start_run(connection: psycopg.AsyncConnection, run: RunStart) -> UUID:
                 "job": run.job_id,
                 "attempt": run.attempt,
                 "scheme": STAGES,
-                "stage": _STAGE_IRI + run.stage,
+                "stage": stage_iri(run.stage),
                 "model": run.model,
                 "prompt": run.prompt_version,
                 "profile": run.profile_version,
@@ -103,7 +109,7 @@ async def stage_result(
     cursor = await connection.execute(
         "SELECT result FROM extraction_run WHERE document_id = %s AND stage_iri = %s AND outcome = 'done'"
         " ORDER BY finished_at DESC LIMIT 1",
-        (document_id, _STAGE_IRI + stage),
+        (document_id, stage_iri(stage)),
     )
     found = await cursor.fetchone()
     return None if found is None else found[0]
