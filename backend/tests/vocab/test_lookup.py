@@ -20,6 +20,7 @@ from app.vocab.lookup import (
     notations_of,
     profile_concepts,
     region_with_ancestors,
+    terminology_profile,
 )
 from app.vocab.store import load_vocabulary
 from tests.vocab.model import LEXICON_CORE, PROFILE_PREFIXES, SCHOOL_PROFILE, write_model
@@ -215,12 +216,23 @@ async def test_a_profile_value_is_read_as_a_prompt_lists_it(connection: psycopg.
     assert SCHOOL + "Keiner" not in texts
 
 
-async def test_the_current_release_is_the_last_loaded(connection: psycopg.AsyncConnection) -> None:
-    cursor = await connection.execute("SELECT max(id) FROM vocab_release")
-    latest = await cursor.fetchone()
+async def test_the_current_release_is_the_last_loaded(database_url: str, tmp_path: Path) -> None:
+    migrate(database_url)
+    async with await psycopg.AsyncConnection.connect(database_url, autocommit=True) as opened:
+        before = await current_release(opened)
+        first = load_vocabulary(database_url, read_vocabulary(ONTOLOGY)).release_id
+        other = write_model(tmp_path, LEXICON_CORE, {"schule.ttl": SCHOOL_PROFILE})
+        second = load_vocabulary(database_url, read_vocabulary(other)).release_id
 
-    assert latest is not None
-    assert await current_release(connection) == latest[0]
+        assert before is None  # nothing loaded yet
+        assert first != second
+        assert await current_release(opened) == second
+
+
+async def test_a_sector_s_active_profile_is_named_by_its_iri(connection: psycopg.AsyncConnection) -> None:
+    # what a run records as its profile_version
+    assert await terminology_profile(connection, "school") == SCHOOL + "Terminology"
+    assert await terminology_profile(connection, "kindergarten") is None
 
 
 async def test_a_scheme_s_active_values_are_found_by_their_notations(

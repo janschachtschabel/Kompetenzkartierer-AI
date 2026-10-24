@@ -9,7 +9,7 @@ import psycopg
 import pytest
 
 from app.db.migrate import migrate
-from app.db.runs import RunStart, Stage, done_stages, finish_run, start_run
+from app.db.runs import RunOutcome, RunStart, Stage, done_stages, finish_run, stage_result, start_run
 from app.jobs.queue import account_lane, enqueue
 from tests.db.l1 import CV, add_conversion, add_document, seed_vocabulary
 
@@ -93,6 +93,23 @@ async def test_a_stage_is_done_for_a_document_once_a_run_of_any_job_is(
     assert await done_stages(connection, made["document"]) == {"X1", "X2"}
     await finish_run(connection, await start_run(connection, run_of(made, job, "X4")), "failed")
     assert await done_stages(connection, made["document"]) == {"X1", "X2"}  # a failed run is no done stage
+
+
+async def test_a_stage_s_result_is_what_its_last_done_run_made(
+    connection: psycopg.AsyncConnection, made: dict[str, Any]
+) -> None:
+    job, other = await a_job(connection, made), await a_job(connection, made)
+    runs: list[tuple[RunStart, RunOutcome, dict[str, int]]] = [
+        (run_of(made, job, "X2"), "done", {"units": 3}),
+        (run_of(made, other, "X2"), "done", {"units": 5}),
+        (run_of(made, other, "X2", 2), "failed", {"units": 7}),
+        (run_of(made, job, "X1"), "failed", {"asked": 1}),
+    ]
+    for run, outcome, made_by_it in runs:
+        await finish_run(connection, await start_run(connection, run), outcome, made_by_it)
+
+    assert await stage_result(connection, made["document"], "X2") == {"units": 5}
+    assert await stage_result(connection, made["document"], "X1") is None  # no run of it is done
 
 
 def test_a_run_names_a_stage_of_the_core() -> None:
