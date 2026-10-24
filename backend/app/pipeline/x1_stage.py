@@ -3,8 +3,9 @@ of the model, its skeleton built by the profile's document type, the headings th
 untyped asked, and all of it written at once, with the run's end, under the attempt's lease.
 
 The stage writes onto a document X1 has not written: one with a tree no run of X1 wrote ends the
-job (``document_has_tree``); where another job's run wrote X1 while this one asked, the write
-finds it under the document's lock, writes nothing and ends its run as failed. Each request is
+job (``document_has_tree``), found at the start or under the document's lock at the write. Where
+another job's run wrote X1 since this job looked, the stage is passed over; while this one asked,
+the write finds it under the lock, writes nothing and ends its run as failed. Each request is
 charged to the document's account (its owner's; the start, plan M1 7.5, decides who may run one)
 and kept as it came under the run (``runs/<run>/x1``). A budget spent ends the run as
 ``budget_exhausted`` and the job with it; an answer that never took its schema's form ends the
@@ -27,7 +28,7 @@ from app.conversion.base import Block
 from app.db.documents import Document
 from app.db.findings import Finding, add_findings
 from app.db.nodes import write_subtree
-from app.db.profile import holds_extraction, open_for_x1, suggest_work, write_profile
+from app.db.profile import lock_for_x1, suggest_work, write_profile, x1_state
 from app.db.runs import RunOutcome, RunStart, finish_run, start_run
 from app.domain.lexicon import Cue, active_cues
 from app.jobs.context import JobContext
@@ -58,6 +59,7 @@ from app.vocab.lookup import (
 )
 
 PROMPT_VERSION = f"{x1_profile.PROMPT_VERSION}+{x1_outline.PROMPT_VERSION}"
+_TREE = "nodes or specifications stand on the document that no extraction wrote"
 
 
 class _Unanswered(Exception):
@@ -111,8 +113,11 @@ async def run_x1(
     """X1 of the document of these blocks (all of its conversion's, in order); the run's result."""
     model, model_name = _model(context)
     async with context.pool.connection() as connection:
-        if await holds_extraction(connection, document.id):
-            raise PermanentError("document_has_tree", "the document was extracted before: its tree stands")
+        state = await x1_state(connection, document.id)
+        if state == "tree":
+            raise PermanentError("document_has_tree", _TREE)
+        if state == "done":  # by another job's run since this one looked (app/pipeline/run.py)
+            return {"done_before": True}
         await report(connection, job, "extract_profile")
         ground = await _ground(connection, document)
         start = RunStart(
@@ -144,6 +149,9 @@ async def run_x1(
         raise PermanentError(
             "model_unanswered", "the model's answer never took its schema's form"
         ) from unanswered
+    except PermanentError as ended:
+        await _end(context, run_id, "failed", {"failure": ended.code})
+        raise
     except Exception as error:  # the attempt is asked again: its run ends here, by what broke it
         await _end(context, run_id, "failed", {"failure": type(error).__name__})
         raise
@@ -174,8 +182,11 @@ async def _stage(
     decisions, outline_findings = decide(skeleton, questions.asked, answers, questions.context)
     async with context.pool.connection() as connection, connection.transaction():
         await hold_lease(connection, job)
-        if not await open_for_x1(connection, document.id):
+        state = await lock_for_x1(connection, document.id)
+        if state == "done":
             raise _Superseded
+        if state == "tree":
+            raise PermanentError("document_has_tree", _TREE)
         keys, notes = await write_profile(connection, document.id, profile)
         findings = [*profile.findings, *notes, *outline_findings, *_slow_patterns(skeleton, document.id)]
         findings += await _work_suggested(connection, document, profile)

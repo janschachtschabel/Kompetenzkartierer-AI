@@ -10,6 +10,7 @@ X1 writes its stage at once (plan M1 6, Festlegung 1).
 """
 
 from collections.abc import Sequence
+from typing import Literal
 from uuid import UUID
 
 import psycopg
@@ -127,10 +128,20 @@ async def write_profile(
     return keys, notes
 
 
-async def holds_extraction(connection: psycopg.AsyncConnection, document_id: UUID) -> bool:
-    """Whether X1 wrote the document already: it holds a specification or a node. X1 writes onto
-    a document of none - a tree is written after the siblings there (app/db/nodes.py), and a
-    second profile would meet the first one's keys."""
+X1State = Literal["open", "done", "tree"]
+
+
+async def x1_state(connection: psycopg.AsyncConnection, document_id: UUID) -> X1State:
+    """Where X1 of the document stands: ``done`` where a run of X1 on it is, whichever job's;
+    ``tree`` where it holds a node or a specification no run of X1 wrote (set up by hand) - X1
+    writes onto a document of none: a tree is written after the siblings there (app/db/nodes.py),
+    and a second profile would meet the first one's keys; else ``open``."""
+    if "X1" in await done_stages(connection, document_id):
+        return "done"
+    return "tree" if await _holds_any(connection, document_id) else "open"
+
+
+async def _holds_any(connection: psycopg.AsyncConnection, document_id: UUID) -> bool:
     cursor = await connection.execute(
         "SELECT EXISTS (SELECT FROM node WHERE document_id = %(id)s)"
         " OR EXISTS (SELECT FROM specification WHERE document_id = %(id)s)",
@@ -140,14 +151,12 @@ async def holds_extraction(connection: psycopg.AsyncConnection, document_id: UUI
     return bool(found and found[0])
 
 
-async def open_for_x1(connection: psycopg.AsyncConnection, document_id: UUID) -> bool:
-    """Lock the document for X1's write, in the caller's transaction, and say whether X1 may write it:
-    no run of X1 on it is done and nothing is written on it. A second job that asked meanwhile waits
-    for the first one's commit here and then sees it (read committed)."""
+async def lock_for_x1(connection: psycopg.AsyncConnection, document_id: UUID) -> X1State:
+    """Lock the document for X1's write, in the caller's transaction, and say where X1 stands
+    (x1_state): X1 writes where it is open. A second job that asked meanwhile waits for the first
+    one's commit here and then sees it (read committed)."""
     await connection.execute("SELECT 1 FROM document WHERE id = %s FOR NO KEY UPDATE", (document_id,))
-    if "X1" in await done_stages(connection, document_id):
-        return False
-    return not await holds_extraction(connection, document_id)
+    return await x1_state(connection, document_id)
 
 
 async def suggest_work(

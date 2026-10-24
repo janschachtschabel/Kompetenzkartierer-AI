@@ -557,13 +557,17 @@ async def test_two_jobs_on_one_document_write_it_once(
     assert outcomes == [("done", None), ("failed", "X1 of the document was written by another run meanwhile")]
 
 
+def by_hand() -> NodeDraft:
+    """A root the editors set up."""
+    return NodeDraft(function=CV + "fn_area", origin=CV + "orig_human", review_status=CV + "rev_proposed")
+
+
 async def test_a_document_with_a_tree_no_extraction_wrote_is_not_extracted(
     setup: Any, tmp_path: Path, database_url: str
 ) -> None:
     pool, connection = setup
     document = await a_document(connection)
-    root = NodeDraft(function=CV + "fn_area", origin=CV + "orig_human", review_status=CV + "rev_proposed")
-    await write_subtree(connection, document.id, root)
+    await write_subtree(connection, document.id, by_hand())
 
     with pytest.raises(PermanentError) as ended:
         await extract_document(
@@ -572,6 +576,57 @@ async def test_a_document_with_a_tree_no_extraction_wrote_is_not_extracted(
         )
 
     assert ended.value.code == "document_has_tree"
+
+
+async def test_a_job_that_finds_x1_written_since_it_looked_goes_on_with_x2(
+    setup: Any, tmp_path: Path, database_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # another job wrote X1 between this one's look at the stages done and its start of X1
+    pool, connection = setup
+    document = await a_document(connection)
+    model = Model()
+    context = context_of(pool, tmp_path, model, database_url)
+    await extract_document(context, await a_job(connection, document.id, document.owner_id))
+    later = await a_job(connection, document.id, document.owner_id)
+
+    async def as_read_before(*_: Any) -> set[str]:
+        return set()  # the look before the other job's commit
+
+    monkeypatch.setattr(run, "done_stages", as_read_before)
+    result = await extract_document(context, later)
+
+    assert result["packages"] == 4
+    assert model.asked == ["profile", "outline"]  # the other job's alone
+    assert await rows(
+        connection,
+        "SELECT replace(stage_iri, %s, '') FROM extraction_run WHERE job_id = %s",
+        CV + "stage_",
+        later.id,
+    ) == [("X2",)]
+
+
+async def test_a_tree_set_up_by_hand_while_x1_asks_ends_the_job_and_x1_writes_nothing(
+    setup: Any, tmp_path: Path, database_url: str
+) -> None:
+    pool, connection = setup
+    document = await a_document(connection)
+    job = await a_job(connection, document.id, document.owner_id)
+    model = Model()
+
+    async def answer(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        if not is_profile(messages):
+            await write_subtree(connection, document.id, by_hand())
+        return model(messages, info)
+
+    with pytest.raises(PermanentError) as ended:
+        await extract_document(context_of(pool, tmp_path, answer, database_url), job)
+
+    assert ended.value.code == "document_has_tree"
+    assert await rows(
+        connection, "SELECT outcome, result ->> 'failure' FROM extraction_run WHERE job_id = %s", job.id
+    ) == [("failed", "document_has_tree")]
+    assert await rows(connection, "SELECT title FROM document WHERE id = %s", document.id) == [(None,)]
+    assert await rows(connection, "SELECT count(*) FROM node WHERE document_id = %s", document.id) == [(1,)]
 
 
 async def test_the_extraction_is_a_model_job_the_worker_knows(
