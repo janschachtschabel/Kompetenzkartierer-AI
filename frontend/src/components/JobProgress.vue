@@ -5,11 +5,18 @@
  * while it is not. Each change of state is announced in a region that is there
  * from the start - one created with its first text is often not read - and only
  * a change: the same state again says nothing new.
+ *
+ * A job waiting or running can be cancelled from here, after a question (plan M1
+ * 7a): a waiting one ends at once, a running one stops at its worker's next
+ * heartbeat and within seconds even where its work does not stop by itself. Until
+ * it has ended the page says the stop is asked for; how long a running job has
+ * run tells whether to.
  */
 import { computed, onMounted, onUnmounted, ref } from "vue";
 
-import type { Job, JobStatus } from "@/api";
+import { ApiError, cancelJob, type Job, type JobStatus } from "@/api";
 import { isolate } from "@/bidi";
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import { t, type MessageParams } from "@/i18n/de";
 import { jobFailureText } from "@/jobMessages";
 import { JOB_PROGRESS } from "@/jobProgress";
@@ -39,6 +46,12 @@ const TONE: Record<JobStatus, string> = {
 const job = ref<Job | null>(null);
 const trouble = ref(false);
 const gone = ref<JobGone | null>(null);
+// the cancel: its question open, its request on the way, why it was not taken
+const asking = ref(false);
+const cancelling = ref(false);
+const cancelFailure = ref("");
+// when the page last heard of the job: how long it has run is counted to then
+const heardAt = ref(Date.now());
 let watch: JobWatch | null = null;
 
 // a job just started waits for a worker until the server says otherwise
@@ -59,6 +72,16 @@ const progressText = computed(() => {
   }
   return t(`jobs.progress.${progress.code}`, params);
 });
+const open = computed(() => !gone.value && job.value !== null && !hasEnded(status.value));
+const cancellable = computed(() => open.value && job.value?.cancel_requested === false);
+const cancelAsked = computed(() => open.value && job.value?.cancel_requested === true);
+// by the minutes begun; the server's clock and the page's may differ a little
+const runtimeText = computed(() => {
+  const started = job.value?.started_at;
+  if (status.value !== "running" || !started) return "";
+  const minutes = Math.floor((heardAt.value - Date.parse(started)) / 60_000);
+  return minutes < 1 ? t("jobs.runningJustNow") : t("jobs.runningFor", { minutes });
+});
 // Each change of what the page shows, and only a change: the same state again reads the same.
 const announcement = computed(() => {
   const label = isolate(props.label);
@@ -67,13 +90,39 @@ const announcement = computed(() => {
   if (goneText.value) return t("jobs.announce", { label, status: goneText.value });
   if (!job.value) return ""; // nothing to say before the first answer
   const line = t("jobs.announce", { label, status: t(`jobs.status.${status.value}`) });
-  return failure.value ? `${line} ${failure.value}` : line;
+  if (failure.value) return `${line} ${failure.value}`;
+  return cancelAsked.value ? `${line} ${t("jobs.cancel.requested")}` : line;
 });
+
+function askCancel(): void {
+  if (!cancelling.value) asking.value = true;
+}
+
+async function cancel(): Promise<void> {
+  asking.value = false;
+  cancelling.value = true;
+  cancelFailure.value = "";
+  try {
+    // the state it answers is the job's from now; the watch goes on until it has ended
+    job.value = await cancelJob(props.jobId);
+  } catch (error) {
+    cancelFailure.value = cancelRefusal(error);
+  } finally {
+    cancelling.value = false;
+  }
+}
+
+function cancelRefusal(error: unknown): string {
+  if (error instanceof ApiError && error.status === 409) return t("jobs.cancel.ended");
+  if (error instanceof ApiError && error.status === 404) return t("jobs.cancel.gone");
+  return t("jobs.cancel.failed");
+}
 
 onMounted(() => {
   watch = watchJob(props.jobId, {
     onState: (state) => {
       job.value = state;
+      heardAt.value = Date.now();
       trouble.value = false;
       if (hasEnded(state.status)) emit("ended", state);
     },
@@ -98,10 +147,36 @@ onUnmounted(() => watch?.stop());
       <bdi class="job__label">{{ label }}</bdi>
     </p>
     <p v-if="progressText" class="job__progress">{{ progressText }}</p>
+    <p v-if="runtimeText" class="job__progress" data-test="job-runtime">{{ runtimeText }}</p>
     <p v-if="failure" class="job__failure">{{ failure }}</p>
+    <p v-if="cancelAsked" class="job__note" data-test="job-cancel-asked">{{ t("jobs.cancel.requested") }}</p>
     <p v-if="gone" class="job__note">{{ goneText }}</p>
     <p v-else-if="trouble" class="job__note">{{ t("jobs.trouble") }}</p>
+    <div v-if="cancellable || cancelFailure" class="job__actions">
+      <!-- aria-disabled, not disabled: a disabled button drops the focus it holds -->
+      <button
+        v-if="cancellable"
+        type="button"
+        class="btn secondary"
+        data-test="job-cancel"
+        :aria-label="t('jobs.cancel.name', { label })"
+        :aria-disabled="cancelling || undefined"
+        @click="askCancel"
+      >
+        {{ t("jobs.cancel.button") }}
+      </button>
+      <p v-if="cancelFailure" class="job__failure" role="alert" data-test="job-cancel-failed">{{ cancelFailure }}</p>
+    </div>
     <p class="visually-hidden" role="status">{{ announcement }}</p>
+    <ConfirmDialog
+      v-if="asking"
+      :title="t('jobs.cancel.title')"
+      :message="t('jobs.cancel.message', { label })"
+      :confirm-label="t('jobs.cancel.confirm')"
+      :cancel-label="t('jobs.cancel.keep')"
+      @confirm="cancel"
+      @cancel="asking = false"
+    />
   </div>
 </template>
 
@@ -134,5 +209,13 @@ onUnmounted(() => watch?.stop());
   margin: var(--space-0) 0 0;
   color: var(--text-muted);
   font-size: var(--step--1);
+}
+
+.job__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  margin: var(--space-1) 0 0;
 }
 </style>

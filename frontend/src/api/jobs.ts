@@ -22,3 +22,11 @@ export interface Job {
 export function getJob(id: string): Promise<Job> {
   return apiFetch<Job>(`/api/v1/jobs/${encodeURIComponent(id)}`);
 }
+
+/**
+ * Cancels the job: a waiting one ends at once, a running one is asked to stop and does at its
+ * worker's next heartbeat, within seconds (backend app/jobs/worker.py). 409 once it has ended.
+ */
+export function cancelJob(id: string): Promise<Job> {
+  return apiFetch<Job>(`/api/v1/jobs/${encodeURIComponent(id)}/cancel`, { method: "POST" });
+}

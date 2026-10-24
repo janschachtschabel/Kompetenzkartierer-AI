@@ -18,6 +18,8 @@ const props = withDefaults(
     title: string;
     message: string;
     confirmLabel?: string;
+    /** The answer that leaves things as they are, where "Abbrechen" would say the opposite. */
+    cancelLabel?: string;
     /** False for a question whose answer adds something rather than removes it. */
     danger?: boolean;
     confirmDisabled?: boolean;
@@ -54,7 +56,7 @@ onMounted(async () => {
     <slot />
     <div class="dialog__actions">
       <button ref="cancelButton" type="button" class="btn secondary" data-test="cancel" @click="emit('cancel')">
-        {{ t("dialog.cancel") }}
+        {{ cancelLabel ?? t("dialog.cancel") }}
       </button>
       <button
         type="button"

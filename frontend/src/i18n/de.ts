@@ -449,6 +449,23 @@ export const messages = {
     },
     // what a screen reader hears on each change
     announce: "{label}: {status}",
+    // how long a running job has run, by the minutes begun (JobProgress.vue)
+    runningFor: "läuft seit {minutes} {minutes|Minute|Minuten}",
+    runningJustNow: "läuft seit weniger als einer Minute",
+    // a cancel from the page: asked first, then followed until the job has ended (JobProgress.vue)
+    cancel: {
+      button: "Abbrechen",
+      name: "Auftrag „{label}“ abbrechen",
+      title: "Auftrag abbrechen?",
+      message:
+        "„{label}“ wird beendet. Was schon fertig ist, bleibt erhalten; du kannst den Auftrag danach neu starten.",
+      confirm: "Auftrag abbrechen",
+      keep: "Weiterlaufen lassen",
+      requested: "Abbruch angefordert – der Auftrag endet in wenigen Sekunden.",
+      ended: "Der Auftrag ist schon beendet.",
+      gone: "Den Auftrag gibt es nicht mehr, oder er ist nicht deiner.",
+      failed: "Der Abbruch hat nicht geklappt. Versuch es gleich noch einmal.",
+    },
     // how far a job has come, as it reports it (JobProgress.vue, PROGRESS)
     progress: {
       checking: "{done} von {total} {total|Adresse|Adressen} angesehen",
