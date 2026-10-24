@@ -456,6 +456,29 @@ async def test_an_attempt_whose_job_ended_while_it_asked_asks_the_model_nothing_
     assert await rows(connection, "SELECT count(*) FROM llm_usage WHERE job_id = %s", job.id) == [(2,)]
 
 
+async def test_an_attempt_whose_job_ended_asks_no_retry_of_the_question_it_was_on(
+    setup: Any, tmp_path: Path, database_url: str
+) -> None:
+    # the profile's answer out of form is asked again (OUTPUT_RETRIES): not once the job has ended
+    pool, connection = setup
+    document = await a_document(connection)
+    job = await a_job(connection, document.id, document.owner_id)
+    model = Model(profile_out_of_form=True)
+
+    async def answer(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        await connection.execute(
+            "UPDATE job SET status = 'cancelled', finished_at = now(), lease_token = NULL WHERE id = %s",
+            (job.id,),
+        )
+        return model(messages, info)
+
+    with pytest.raises(LeaseLost):
+        await extract_document(context_of(pool, tmp_path, answer, database_url), job)
+
+    assert model.asked == ["profile"]
+    assert await rows(connection, "SELECT count(*) FROM llm_usage WHERE job_id = %s", job.id) == [(1,)]
+
+
 @pytest.mark.parametrize(
     ("lost", "x2"),
     [
