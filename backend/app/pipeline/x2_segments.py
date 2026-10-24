@@ -7,9 +7,9 @@ sibling's or one further up - so the text between a section's heading and its fi
 read once, with the section. A node's depth is the one set at it (the editors'), else its type's
 (``cur:extractionDepth``), else its function's - a frame part typed, a non-curricular part
 skipped, any other read in full - and a section skipped takes its sections with it (a
-foreword's, an appendix's parts). The depth names
-the package's job: statements (full), frame (typed), none (skip); a package of a heading alone
-has nothing to read either, and stays a package, so every block of the text lies in exactly one.
+foreword's, an appendix's parts). The depth names the package's job: statements (full), frame
+(typed), none (skip); a package of a heading alone has nothing to read either, and stays a
+package, so every block of the text lies in exactly one.
 A package over MOST_PAGES pages is parted at page boundaries, never within a block: a node's own
 text holds no subsection to part it at, those follow it (konzept: page ranges, never fixed token
 counts; 15 is not measured, a point of Paket 11). A document without headings is one package,
