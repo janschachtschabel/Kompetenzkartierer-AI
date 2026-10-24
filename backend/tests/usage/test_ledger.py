@@ -11,6 +11,7 @@ import psycopg
 import pytest
 from prometheus_client import REGISTRY
 from psycopg import errors
+from psycopg.pq import TransactionStatus
 
 from app.core.ids import new_id
 from app.db.accounts import create_account
@@ -305,3 +306,17 @@ async def test_a_reservation_or_booking_inside_another_transaction_is_refused(da
             await reserve(connection, charge, input_tokens=10, output_tokens=10)
         with pytest.raises(ValueError, match="transaction of its own"):
             await book(connection, reservation, Spent(input_tokens=5, output_tokens=5, requests=1))
+
+
+async def test_a_booking_commits_on_a_connection_that_does_not(database_url: str) -> None:
+    # a statement there opens a transaction the caller could still roll back, the booking with it
+    migrate(database_url)
+    async with await psycopg.AsyncConnection.connect(database_url, autocommit=True) as setup:
+        charge = await a_charge(setup, await an_account(setup, token_limit=1_000))
+        reservation = await reserve(setup, charge, input_tokens=10, output_tokens=10)
+        async with await psycopg.AsyncConnection.connect(database_url) as connection:
+            await book(connection, reservation, Spent(input_tokens=5, output_tokens=5, requests=1))
+
+            assert connection.info.transaction_status == TransactionStatus.IDLE
+            cursor = await setup.execute("SELECT count(*) FROM llm_usage")
+            assert await cursor.fetchone() == (1,)

@@ -66,7 +66,8 @@ LLM_REQUESTS = Counter(
 )
 LLM_TOKENS = Counter("kka_llm_tokens_total", "Tokens of the language model's requests by kind", ["kind"])
 # Reservations of an account's budget by what became of them: held, refused (the budget did not
-# hold them), booked, late (booked once more after its job's were booked as abandoned) or abandoned
+# hold them), booked, late (booked already: as abandoned with its job, or by a booking asked
+# again after its commit's answer was lost) or abandoned
 USAGE_RESERVATIONS = Counter(
     "kka_usage_reservations_total", "Reservations of the model's budget by what became of them", ["outcome"]
 )

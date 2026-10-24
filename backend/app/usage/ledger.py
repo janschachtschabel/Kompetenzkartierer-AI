@@ -157,24 +157,26 @@ async def reserve(
 
 
 async def book(connection: psycopg.AsyncConnection, reservation: Reservation, spent: Spent) -> bool:
-    """Book ``spent`` in the reservation's place, in a statement of its own; False where it was
+    """Book ``spent`` in the reservation's place, in a transaction of its own; False where it was
     booked already (by ``book_abandoned``, for a job given up on), and nothing is booked again."""
     _alone(connection, "a booking")
-    cursor = await connection.execute(
-        _BOOK,
-        {
-            "id": reservation.id,
-            "input": spent.input_tokens,
-            "cached": spent.cached_input_tokens,
-            "output": spent.output_tokens,
-            "requests": spent.requests,
-            "unanswered": spent.unanswered_requests,
-            "estimated": spent.estimated,
-            "spent": spent != Spent(),
-        },
-    )
-    row = await cursor.fetchone()
+    async with connection.transaction():
+        cursor = await connection.execute(
+            _BOOK,
+            {
+                "id": reservation.id,
+                "input": spent.input_tokens,
+                "cached": spent.cached_input_tokens,
+                "output": spent.output_tokens,
+                "requests": spent.requests,
+                "unanswered": spent.unanswered_requests,
+                "estimated": spent.estimated,
+                "spent": spent != Spent(),
+            },
+        )
+        row = await cursor.fetchone()
     assert row is not None  # noqa: S101 - an aggregate always has its row
+    # counted once committed: a booking whose commit failed is asked again, and counts then
     observe_reservations("booked" if row[0] else "late")
     return bool(row[0])
 
