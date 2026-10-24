@@ -31,6 +31,7 @@ from app.jobs.outcome import PermanentError
 from app.jobs.queue import Job, LeaseLost, account_lane, claim, enqueue
 from app.pipeline import run, x1_stage
 from app.pipeline.run import KIND, extract_document
+from app.pipeline.x2_segments import work_packages
 from app.usage.admission import MODEL_JOB_KINDS
 from app.vocab.loader import read_vocabulary
 from app.vocab.store import load_vocabulary
@@ -429,6 +430,49 @@ async def test_an_attempt_that_lost_its_lease_while_it_asked_writes_nothing(
     assert await rows(connection, "SELECT count(*) FROM node WHERE document_id = %s", document.id) == [(0,)]
 
 
+@pytest.mark.parametrize(
+    ("lost", "x2"),
+    [
+        # it runs out after the progress is noted (which the token alone passes): the run ends
+        (
+            "UPDATE job SET lease_expires_at = now() - interval '1 second' WHERE id = %s",
+            [("X2", "failed", "LeaseLost")],
+        ),
+        # another worker has it before: the progress note finds that, and no run begins
+        ("UPDATE job SET lease_token = gen_random_uuid() WHERE id = %s", []),
+    ],
+    ids=["ran_out", "taken"],
+)
+async def test_an_attempt_that_loses_its_lease_in_x2_ends_its_run_or_starts_none(
+    setup: Any,
+    tmp_path: Path,
+    database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+    lost: str,
+    x2: list[tuple[str, str, str]],
+) -> None:
+    pool, connection = setup
+    document = await a_document(connection)
+    job = await a_job(connection, document.id, document.owner_id)
+
+    async def then_lost(*given: Any) -> Any:
+        found = await work_packages(*given)
+        await connection.execute(lost, (job.id,))
+        return found
+
+    monkeypatch.setattr(run, "work_packages", then_lost)
+    with pytest.raises(LeaseLost):
+        await extract_document(context_of(pool, tmp_path, Model(), database_url), job)
+
+    assert await rows(
+        connection,
+        "SELECT replace(stage_iri, %s, ''), outcome, result ->> 'failure' FROM extraction_run"
+        " WHERE job_id = %s ORDER BY started_at",
+        CV + "stage_",
+        job.id,
+    ) == [("X1", "done", None), *x2]
+
+
 async def test_an_answer_never_in_form_fails_the_stage(setup: Any, tmp_path: Path, database_url: str) -> None:
     pool, connection = setup
     document = await a_document(connection)
@@ -460,21 +504,32 @@ async def test_a_job_without_a_model_or_a_document_ends_at_once(
     assert await rows(connection, "SELECT count(*) FROM extraction_run") == [(0,)]
 
 
+@pytest.mark.parametrize(
+    ("blocks", "specifications", "asked", "packages"),
+    [(BLOCKS, True, ["profile", "outline"], 4), (PLAIN, False, ["profile"], 1)],
+    ids=["tree", "plain"],
+)
 async def test_a_document_done_before_is_neither_asked_nor_written_again(
-    setup: Any, tmp_path: Path, database_url: str
+    setup: Any,
+    tmp_path: Path,
+    database_url: str,
+    blocks: list[Block],
+    specifications: bool,
+    asked: list[str],
+    packages: int,
 ) -> None:
     # a document without headings and specifications too: its X1 run says it is done
     pool, connection = setup
-    document = await a_document(connection)
-    model = Model()
+    document = await a_document(connection, blocks=blocks)
+    model = Model(specifications=specifications)
     context = context_of(pool, tmp_path, model, database_url)
     await extract_document(context, await a_job(connection, document.id, document.owner_id))
     again = await a_job(connection, document.id, document.owner_id)
 
     result = await extract_document(context, again)
 
-    assert model.asked == ["profile", "outline"]
-    assert result == {"document_id": str(document.id), "stages": ["X1", "X2"], "packages": 4}
+    assert model.asked == asked
+    assert result == {"document_id": str(document.id), "stages": ["X1", "X2"], "packages": packages}
     assert await rows(connection, "SELECT count(*) FROM extraction_run WHERE job_id = %s", again.id) == [(0,)]
 
 
