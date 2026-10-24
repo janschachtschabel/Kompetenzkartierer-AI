@@ -75,6 +75,8 @@ class ExtractionRef(BaseModel):
     # the job, for those who may follow it (GET /api/v1/jobs/{id}): its owner, an admin; else null
     job_id: UUID | None
     status: JobStatus
+    # why it failed, to every reader: a code says nothing kept from them (the page words it)
+    error_code: str | None
 
 
 class DocumentOut(BaseModel):
@@ -349,9 +351,10 @@ async def _outs(
     def extraction(document: Document) -> ExtractionRef | None:
         if (latest := found.get(unique_key(document.id))) is None:
             return None
-        job_id, status = latest
         follows = "admin" in who.roles or document.owner_id == who.account_id
-        return ExtractionRef(job_id=job_id if follows else None, status=status)
+        return ExtractionRef(
+            job_id=latest.id if follows else None, status=latest.status, error_code=latest.error_code
+        )
 
     return [
         DocumentOut(
