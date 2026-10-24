@@ -174,9 +174,11 @@ async def test_a_unit_of_no_node_in_a_document_of_no_title_is_named_the_document
 async def test_of_two_writers_of_one_unit_side_by_side_the_second_waits_and_gives_way(
     setup: Any, database_url: str
 ) -> None:
-    # its statements would meet the first one's at their positions: the mark is met first
+    # two jobs on one document: its statements would meet the first one's at their positions, so the
+    # mark is met first, and the second waits there
     _, connection = setup
     document, job, node, run = await ready(connection)
+    other = await a_job(connection, document.id, document.owner_id)
     first = await psycopg.AsyncConnection.connect(database_url)
     second = await psycopg.AsyncConnection.connect(database_url, autocommit=True)
     try:
@@ -187,7 +189,7 @@ async def test_of_two_writers_of_one_unit_side_by_side_the_second_waits_and_give
             writing = asyncio.create_task(
                 write_unit(
                     second,
-                    job,
+                    other,
                     document,
                     package("E2", node),
                     read(statement("erklären")),

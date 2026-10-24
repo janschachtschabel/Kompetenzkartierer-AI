@@ -284,9 +284,11 @@ async def test_a_run_of_x4_done_while_this_one_asked_passes_the_stage_over(
     pool, connection = setup
     document = await a_document(connection)
     model = Model()
+    ended: list[bool] = []  # once: the units are asked side by side
 
     async def answer(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
-        if "=== EINHEIT ===" in prompt_of(messages) and not model.units:  # another job's run of X4 ends first
+        if "=== EINHEIT ===" in prompt_of(messages) and not ended:  # another job's run of X4 ends first
+            ended.append(True)
             other = RunStart(document.id, None, None, "X4", None, None, None, None)
             await finish_run(connection, await start_run(connection, other), "done", {})
         return model(messages, info)

@@ -56,6 +56,13 @@ class UnitQuestions:
     statements: StatementContext  # what every unit's answer is read against
     _counting: asyncio.Lock = field(default_factory=asyncio.Lock)
 
+    async def check(self, units: Sequence[WorkPackage]) -> None:
+        """Count the prefix of each of ``units``; PermanentError (prefix_too_long) for the first that
+        no window fits. Each window is counted once: the questions reuse them."""
+        for unit in units:
+            async with self._counting:
+                await asyncio.to_thread(prefix_at, self.plan, unit.first)
+
     async def question(self, unit: WorkPackage) -> UnitQuestion:
         """The question for ``unit``; PermanentError (prefix_too_long) where no window fits."""
         async with self._counting:

@@ -5,7 +5,8 @@ read in full - asked of the model, a request a unit, behind the prefix the units
 
 Units are asked side by side, at most EXTRACT_CONCURRENCY of them, and never more than the
 database's pool leaves beside the worker's own work: each holds one connection at a time. A job
-asks only the units still open - an earlier job's done stay done (extraction_unit). A budget spent
+asks only the units still open - an earlier job's done stay done (extraction_unit) -, and none where
+no window of the document fits one of them (``prefix_too_long``, before the run). A budget spent
 lets no further unit begin: those asked are answered and written, then the run ends as
 ``budget_exhausted`` and the job with it, and a job with budget goes on with the rest. A unit whose
 answer never took its form, or answered for another unit, stays open while the others go on; the
@@ -58,9 +59,15 @@ async def run_x4(
         packages = [WorkPackage.from_result(item) for item in (kept or {}).get("packages", [])]
         units = [item for item in packages if item.job == "statements"]
         done = len(units) - len(open_units := await _open(connection, document, units))
+        # the lease first; in a block of its own, which ends the hold on the job's row
         await report(connection, job, "extract_statements", done=done, total=len(units))
+    async with context.pool.connection() as connection:
         ground = await ground_of(connection, document)
         questions = await unit_questions(connection, context.llm, document, blocks, printed, ground, model)
+    # every open unit's window, before any is asked: one that fits none ends the job at once,
+    # rather than a run later with the units asked beside it cut off and paid for
+    await questions.check(open_units)
+    async with context.pool.connection() as connection:
         start = RunStart(
             document.id,
             job.id,
@@ -74,8 +81,7 @@ async def run_x4(
         run_id = await start_run(connection, start)
     keeper = RawResponses(context.storage.sync, run_id, "x4")
     asking = Asking(context, job, document, run_id, model, model_name, keeper)
-    stage = asking.agent(x4.SCHEMA, x4.SCHEMA_NAME, x4.INSTRUCTIONS)
-    work = _Units(asking, stage, questions, packages, len(units), done)
+    work = _Units(asking, questions, packages, len(units), done)
     return await ended(context, run_id, "X4", work.run(open_units))
 
 
@@ -92,7 +98,6 @@ class _Units:
     """One run's units being asked and written."""
 
     asking: Asking
-    stage: StageAgent
     questions: UnitQuestions
     packages: Sequence[WorkPackage]  # all of X2's, for the parts of a node
     total: int
@@ -103,6 +108,7 @@ class _Units:
 
     async def run(self, units: Sequence[WorkPackage]) -> dict[str, Any]:
         context = self.asking.context
+        stage = self.asking.agent(x4.SCHEMA, x4.SCHEMA_NAME, x4.INSTRUCTIONS)
         # each unit asking holds one connection at a time; the worker's own work needs another
         gate = asyncio.Semaphore(
             max(1, min(context.settings.extract_concurrency, context.settings.db_pool_max_size - 1))
@@ -110,18 +116,19 @@ class _Units:
         try:
             async with asyncio.TaskGroup() as group:
                 for unit in units:
-                    group.create_task(self._unit(unit, gate))
+                    group.create_task(self._unit(unit, gate, stage))
         except ExceptionGroup as broken:  # the first error ended the others: it is the run's
-            raise broken.exceptions[0] from None
+            first = broken.exceptions[0]
+            raise first from first.__cause__  # with what it was raised from
         return await self._end()
 
-    async def _unit(self, unit: WorkPackage, gate: asyncio.Semaphore) -> None:
+    async def _unit(self, unit: WorkPackage, gate: asyncio.Semaphore, stage: StageAgent) -> None:
         async with gate:
             if self.spent is not None:
                 return
             question = await self.questions.question(unit)
             try:
-                answer = await self.asking.answer(self.stage, "x4.unit", question.prompt)
+                answer = await self.asking.answer(stage, "x4.unit", question.prompt)
                 read = read_unit(answer, self.questions.statements, unit)
             except BudgetExhausted as spent:
                 self.spent = spent
@@ -129,7 +136,9 @@ class _Units:
             except (Unanswered, WrongUnit):
                 self.unanswered.append(unit.key)
                 return
-            read = replace(read, findings=[*question.findings, *read.findings])
+            # a unit's findings name it: one answer's paths are no document's (X6 repairs by unit)
+            named = [replace(found, details={**found.details, "unit": unit.key}) for found in read.findings]
+            read = replace(read, findings=[*question.findings, *named])
             context, job, document = self.asking.context, self.asking.job, self.asking.document
             async with context.pool.connection() as connection:
                 first = first_position(unit, self.packages)
