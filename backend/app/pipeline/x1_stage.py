@@ -30,7 +30,7 @@ from app.db.findings import Finding, add_findings
 from app.db.nodes import write_subtree
 from app.db.profile import lock_for_x1, suggest_work, write_profile, x1_state
 from app.db.runs import RunOutcome, RunStart, finish_run, start_run
-from app.domain.lexicon import Cue, active_cues
+from app.domain.lexicon import active_cues
 from app.jobs.context import JobContext
 from app.jobs.outcome import PermanentError
 from app.jobs.queue import Job, hold_lease
@@ -39,6 +39,7 @@ from app.llm.client import LLMNotConfigured
 from app.llm.metering import BudgetExhausted
 from app.llm.raw import RawResponses
 from app.llm.schema import SCHEMA_DIR, load_schema
+from app.pipeline.ground import Ground, ground_of
 from app.pipeline.progress import report
 from app.pipeline.prompts import x1_outline, x1_profile
 from app.pipeline.skeleton import Skeleton, build_skeleton
@@ -47,16 +48,6 @@ from app.pipeline.x1_profile import Profile, read_profile
 from app.pipeline.x1_question import outline_questions, profile_question
 from app.usage.ledger import Charge
 from app.usage.meter import LedgerMeter
-from app.vocab.lookup import (
-    REGIONS,
-    by_notation,
-    concept,
-    cues_for,
-    current_release,
-    profile_concepts,
-    region_with_ancestors,
-    terminology_profile,
-)
 
 PROMPT_VERSION = f"{x1_profile.PROMPT_VERSION}+{x1_outline.PROMPT_VERSION}"
 _TREE = "nodes or specifications stand on the document that no extraction wrote"
@@ -68,19 +59,6 @@ class _Unanswered(Exception):
 
 class _Superseded(Exception):
     """Another run wrote X1 of the document while this one asked."""
-
-
-@dataclass(frozen=True)
-class _Ground:
-    """What the stage reads the document with: its sector's cues and node types, its regions."""
-
-    sector: str
-    cues: list[Cue]
-    regions: frozenset[str]
-    wider: frozenset[str]
-    node_types: frozenset[str]
-    profile: str | None
-    release: int | None
 
 
 @dataclass(frozen=True)
@@ -121,7 +99,7 @@ async def run_x1(
         if state == "done":  # by another job's run since this one looked (app/pipeline/run.py)
             return {"done_before": True}
         await report(connection, job, "extract_profile")
-        ground = await _ground(connection, document)
+        ground = await ground_of(connection, document)
         start = RunStart(
             document.id,
             job.id,
@@ -160,7 +138,7 @@ async def run_x1(
 
 
 async def _stage(
-    asking: _Asking, blocks: Sequence[Block], printed: Sequence[str | None], ground: _Ground
+    asking: _Asking, blocks: Sequence[Block], printed: Sequence[str | None], ground: Ground
 ) -> dict[str, Any]:
     context, job, document = asking.context, asking.job, asking.document
     found = active_cues(ground.cues, ground.regions, None, None, wider_regions=ground.wider)
@@ -212,27 +190,6 @@ def _model(context: JobContext) -> tuple[Model, str]:
         return context.model(), context.llm.openai_model
     except LLMNotConfigured as error:
         raise PermanentError("model_not_configured", "no key for the language model is set") from error
-
-
-async def _ground(connection: psycopg.AsyncConnection, document: Document) -> _Ground:
-    sector = await concept(connection, document.sector_iri)
-    notation = sector.notation if sector is not None and sector.notation is not None else ""
-    own: set[str] = set()
-    every: set[str] = set()
-    for region in document.regions:
-        if (entry := await by_notation(connection, REGIONS, region)) is not None:
-            own.add(entry.iri)
-        every |= await region_with_ancestors(connection, region)
-    values = await profile_concepts(connection, notation)
-    return _Ground(
-        sector=notation,
-        cues=await cues_for(connection, notation),
-        regions=frozenset(own),
-        wider=frozenset(every - own),
-        node_types=frozenset(values.node_types) if values is not None else frozenset(),
-        profile=await terminology_profile(connection, notation),
-        release=await current_release(connection),
-    )
 
 
 def _slow_patterns(skeleton: Skeleton, document_id: UUID) -> list[Finding]:
