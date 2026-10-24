@@ -8,7 +8,15 @@ from typing import Literal
 import pytest
 
 from app.conversion.base import Block, Cell
-from app.pipeline.prefix import WHOLE, PrefixPlan, PrefixTooLong, Section, prefix_budget, render_blocks
+from app.pipeline.prefix import (
+    WHOLE,
+    PrefixPlan,
+    PrefixTooLong,
+    Section,
+    prefix_budget,
+    render_blocks,
+    render_positions,
+)
 
 Kind = Literal["text", "table", "page_header", "page_footer"]
 
@@ -157,3 +165,44 @@ def test_a_document_too_long_for_any_window_is_refused() -> None:
 def test_a_prefix_may_hold_the_window_less_the_rest_of_a_request_and_the_answer_a_tenth_beside() -> None:
     # gpt-6-luna's 272,000 with the answer's cap of 16,000 and the 17,000 a request needs beside
     assert prefix_budget(272_000, 16_000) == 217_272
+
+
+def test_a_section_whose_neighbours_do_not_fit_is_read_alone() -> None:
+    # D has no subsections: the least that holds it is D alone beside the frame
+    budget, alone = whole_length(), None
+    while True:
+        try:
+            alone = plan(budget=budget).for_position(14)
+        except PrefixTooLong:
+            break
+        budget -= 50
+    assert alone is not None
+
+    assert alone.window == "D"
+    assert "D" * 300 in alone.text and "C" * 300 not in alone.text
+    assert "„Abschnitt D“;" in alone.text and "Nachbarn" not in alone.text  # it says what it holds
+
+
+def test_a_prefix_is_counted_once_for_each_text_it_may_be() -> None:
+    counted: list[int] = []
+
+    def count(text: str) -> int:
+        counted.append(len(text))
+        return len(text)
+
+    blocks, sections = document()
+    budget = whole_length() - 200
+    shared = PrefixPlan(
+        blocks, [None] * 7, sections, profile="", lists="", always={1}, budget=budget, count=count
+    )
+    first = shared.for_position(8)
+    counted_once = len(counted)
+
+    assert shared.for_position(9) == first
+    assert len(counted) == counted_once
+
+
+def test_blocks_left_out_before_the_first_shown_are_marked() -> None:
+    blocks = [text("p1-b1", "Titel"), text("p1-b2", "Vorwort"), text("p1-b3", "Inhalt")]
+
+    assert render_positions(blocks, [2], [None]).startswith("[…]\n— Seite 1 —\n[p1-b3] Inhalt")

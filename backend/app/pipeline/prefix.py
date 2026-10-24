@@ -1,6 +1,6 @@
 """The prefix every request about a document's units shares (plan M1 6.1, Lesekontext; konzept §13.1).
 
-It holds the document as its blocks - each line led by its block id, a table by its rows, the pages
+It holds the document as its blocks - each led by its id, a table's rows by theirs, the pages
 marked, headers and footers left out - then the document profile from X1 and the choice lists from
 X3, in that order; the cache breakpoint goes behind it (app/llm/calls.py, ``cached_up_to``) and the
 task of a unit after it. While the whole fits, the prefix is the same bytes for every unit of the
@@ -58,7 +58,11 @@ def render_blocks(blocks: Sequence[Block], printed_pages: Sequence[str | None]) 
 
 class PrefixPlan:
     """The prefixes of one document's units: ``for_position`` gives the one a unit beginning at
-    that block reads. ``always`` are positions every window keeps (the table of contents)."""
+    that block reads. ``always`` are positions every window keeps (the table of contents).
+
+    Counting is CPU work (the tokenizer over the whole document, then over windows): a caller
+    in the event loop runs ``for_position`` by ``asyncio.to_thread``. Each text is counted once.
+    """
 
     def __init__(
         self,
@@ -85,6 +89,7 @@ class PrefixPlan:
                 self._head |= set(range(section.first, section.last + 1))
         self._whole: Prefix | None = None
         self._windows: dict[str, Prefix] = {}
+        self._fitting: dict[str, bool] = {}  # by text
 
     def for_position(self, position: int) -> Prefix:
         """The prefix of a unit at ``position``; PrefixTooLong where no window fits."""
@@ -130,10 +135,11 @@ class PrefixPlan:
         for section in window:
             kept |= set(range(section.first, section.last + 1))
         outline = "".join("  " * (section.level - 1) + section.title + "\n" for section in self._sections)
+        neighbours = " mit seinen Nachbarn" if len(window) > 1 else ""
         text = (
             "=== DOKUMENT (gekürzt) ===\n"
             "Hier stehen die Titelei, das Verzeichnis, die Rahmenteile und der Abschnitt"
-            f" „{chosen.title}“ mit seinen Nachbarn; die übrigen Abschnitte nennt die Gliederung.\n"
+            f" „{chosen.title}“{neighbours}; die übrigen Abschnitte nennt die Gliederung.\n"
             f"{render_positions(self._blocks, sorted(kept), self._printed)}"
             f"=== GLIEDERUNG ===\n{outline}{self._tail}"
         )
@@ -142,7 +148,9 @@ class PrefixPlan:
         return prefix
 
     def _fits(self, text: str) -> bool:
-        return self._count(text) <= self._budget
+        if (known := self._fitting.get(text)) is None:
+            known = self._fitting[text] = self._count(text) <= self._budget
+        return known
 
 
 def _window_key(chosen: Section, window: Sequence[Section]) -> str:
@@ -176,7 +184,7 @@ def render_positions(
     blocks: Sequence[Block], positions: Sequence[int] | range, printed: Sequence[str | None]
 ) -> str:
     """The blocks at ``positions`` (in order) as the prefix writes them, a gap marked where they
-    leave text out between them."""
+    leave text out, before the first of them too."""
     lines: list[str] = []
     page = 0
     previous = -1
@@ -190,7 +198,7 @@ def render_positions(
             for between in range(previous + 1, position)
             if between not in chosen
         )
-        if previous >= 0 and skipped:
+        if skipped:
             lines.append(_GAP)
         previous = position
         if block.page != page:
