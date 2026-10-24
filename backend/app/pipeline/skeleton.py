@@ -7,7 +7,8 @@ cues for headings or codes finds it that names a node type of the profile; it is
 bold or larger; the contents name it (app/pipeline/toc.py); it is set larger than the body by
 LARGER; it is bold, 80 signs at most, and the text after it is not. What layout alone makes a
 heading is none on the first page of a document of more pages - the title page, its title set
-larger than any heading - and nothing before the contents is a heading: the title pages. A table
+larger than any heading - and nothing before the contents that end the title pages is a heading
+(app/pipeline/toc.py). A table
 is a heading where a pattern finds its first cell (a learning field set as a table, "Lernfeld 5:
 …"); its content is never one. Headers and footers are no text.
 The level is the depth of a heading's numbering, else its entry's in the contents, else the rank
@@ -134,7 +135,7 @@ def _candidates(
     search: PatternSearch,
 ) -> list[_Found]:
     order = [position for position, block in enumerate(blocks) if block.kind not in OUTSIDE]
-    start = min(contents.positions, default=0)
+    start = contents.front_end if contents.front_end is not None else 0
     entries = {title_key(entry.title): entry for entry in contents.entries}
     pages = max((block.page for block in blocks), default=1)
     found: list[_Found] = []

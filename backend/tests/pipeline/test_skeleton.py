@@ -237,7 +237,7 @@ CONTENTS = (
     "2 Kompetenzen ..... 4\n"
     "2.1 Wahrnehmung und Messung . . . . 5\n"
     "3 GRUNDSÄTZE ....... 9\n"  # set in capitals, named in the body's case
-    "Anhang ..... 12"
+    "Anhang ..... 9"
 )
 
 
@@ -265,7 +265,7 @@ def test_the_table_of_contents_is_read_with_its_pages_and_levels() -> None:
         TocEntry("2 Kompetenzen", "4", 1, 2),
         TocEntry("2.1 Wahrnehmung und Messung", "5", 2, 2),
         TocEntry("3 GRUNDSÄTZE", "9", 1, 2),
-        TocEntry("Anhang", "12", None, 2),  # no numbering, no level
+        TocEntry("Anhang", "9", None, 2),  # no numbering, no level
     )
     assert found.contents.positions == frozenset({1, 2})  # its title with it
 
@@ -288,6 +288,63 @@ def test_what_stands_before_the_contents_is_no_heading() -> None:
     assert titles(skeleton(blocks))[0] == "1 Einleitung"
 
 
+def test_lines_of_numbers_later_in_the_text_never_make_what_stands_before_them_title_pages() -> None:
+    # a KMK Rahmenlehrplan: its contents without leaders go unread; the learning fields' overview
+    # unruled comes as text, its hours where pages would stand; a block of notes; a list of figures
+    overview = (
+        "1 Die eigene Rolle im Betrieb mitgestalten 80\n2 Büroprozesse gestalten 80\n3 Aufträge bearbeiten 80"
+    )
+    notes = "1 Vgl. Beschluss der KMK vom 2007\n2 Ebd., S. 12\n3 Handreichung der KMK 2021"
+    figures = "1 Abbildung Lernfelder 3\n2 Abbildung Zeitrichtwerte 5\n3 Abbildung Prüfungen 7"
+    history = "1 Erlass vom 2005\n2 Ergänzt im Jahr 2012\n3 Neu gefasst 2019"  # rising, past the pages
+    hours = "1 Kunden beraten 4\n2 Waren annehmen 4\n3 Lager führen 4"  # all one page
+    annexes = "1 Anlage Stundentafel 5\n2 Anlage Zeugnis 3\n3 Anlage Formblatt 7"  # back a page
+    blocks = [
+        COVER,
+        block("p2-b1", "Teil I Vorbemerkungen", size=16),
+        block("p2-b2", BODY),
+        block("p3-b1", "Teil II Bildungsauftrag", size=16),
+        block("p3-b2", BODY),
+        block("p6-b1", notes),
+        block("p6-b2", BODY),
+        block("p6-b3", history),
+        block("p6-b4", BODY),
+        block("p6-b5", hours),
+        block("p6-b6", BODY),
+        block("p6-b7", annexes),
+        block("p7-b1", "Teil V Lernfelder", size=16),
+        block("p7-b2", overview),
+        block("p8-b1", BODY),
+        block("p8-b2", figures),
+        block("p9-b1", BODY),
+    ]
+
+    found = skeleton(blocks)
+
+    assert titles(found) == ["Teil I Vorbemerkungen", "Teil II Bildungsauftrag", "Teil V Lernfelder"]
+    # pages that fall, or run past the document's, are no contents; a list of figures is, late
+    assert [entry.title for entry in found.contents.entries] == [
+        "1 Abbildung Lernfelder",
+        "2 Abbildung Zeitrichtwerte",
+        "3 Abbildung Prüfungen",
+    ]
+
+
+def test_titled_contents_end_the_title_pages_however_far_in_they_stand() -> None:
+    # a foreword of six pages, then the contents under their title
+    blocks = [COVER, block("p2-b1", "Vorwort", size=16), block("p2-b2", BODY)]
+    blocks += [block(f"p{page}-b1", BODY) for page in range(3, 7)]
+    blocks += [
+        block("p7-b1", "Inhalt", size=16),
+        block("p7-b2", "1 Ziele ..... 8\n2 Inhalte ..... 9\n3 Methoden ..... 10"),
+    ]
+    blocks += [block("p8-b1", "1 Ziele", size=16), block("p10-b1", BODY)]
+
+    found = skeleton(blocks)
+
+    assert titles(found) == ["1 Ziele"]
+
+
 def test_a_table_is_never_contents() -> None:
     # the learning fields' overview of a Rahmenlehrplan: numbered rows ending in hours
     overview = table("p3-b1", 1, [["1", "Den Betrieb erkunden", "80"], ["2", "Kunden beraten", "60"],
@@ -307,8 +364,9 @@ def test_contents_of_one_line_a_block_are_contents_from_three_lines_on() -> None
         block("p2-b3", "2.1 Sprache 6"),
     ]
 
-    three = skeleton([COVER, *entries, block("p3-b1", "1 Einleitung", size=16)])
-    two = skeleton([COVER, *entries[:2], block("p3-b1", "1 Einleitung", size=16)])
+    rest = [block("p3-b1", "1 Einleitung", size=16), block("p6-b1", BODY)]  # the pages the entries name
+    three = skeleton([COVER, *entries, *rest])
+    two = skeleton([COVER, *entries[:2], *rest])
 
     assert [entry.title for entry in three.contents.entries] == [
         "1 Einleitung",
@@ -319,7 +377,7 @@ def test_contents_of_one_line_a_block_are_contents_from_three_lines_on() -> None
     assert two.contents.entries == ()
     # text between them parts them: two and one are no contents
     parted = [*entries[:2], block("p2-b4", BODY), block("p2-b5", "3 Sprache 6")]
-    assert skeleton([COVER, *parted, block("p3-b1", "1 Einleitung", size=16)]).contents.entries == ()
+    assert skeleton([COVER, *parted, *rest]).contents.entries == ()
 
 
 def test_a_heading_without_a_printed_code_gets_its_place_among_its_siblings() -> None:
@@ -571,6 +629,7 @@ def test_a_contents_pattern_of_the_lexicon_reads_contents_the_others_miss() -> N
     # the last a line the pattern finds without a page behind it
     lines = ["Kapitel 1 Ziele 3", "Kapitel 2 Inhalte 5", "Kapitel 3 Methoden 8", "Kapitel 4 Anhang"]
     blocks = [COVER, *(block(f"p2-b{number}", line) for number, line in enumerate(lines, start=1))]
+    blocks.append(block("p8-b1", BODY))  # the pages the entries name
 
     found = skeleton(blocks, active_cues([chapters], frozenset(), None, None))
 

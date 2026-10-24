@@ -4,23 +4,28 @@ An entry is a line that ends in a page - behind a leader ("2.1 Ziele ..... 5", "
 or behind a numbered title without one ("2.1 Ziele 5"), or as a contents' pattern of the lexicon
 has it (a cue that occurs in the contents, ``cv:occ_toc``). Blocks most of whose lines are entries,
 one after another (pages may part them), are the contents where they hold three entries at least,
-with a title right before them ("Inhalt", "Inhaltsverzeichnis"). An entry's level is the depth of
-its numbering; an entry without one has none, since a block's lines share their indentation.
-The contents are never a section of the document (the old app's lesson: they became a root with
-the headings again as children); they stand among the title pages, and a heading they name is
-one whatever its type (app/pipeline/skeleton.py).
+with a title right before them ("Inhalt", "Inhaltsverzeichnis"), and where their pages run as a
+contents' do: never back, within the document's pages, not all one - lines of numbers elsewhere
+(a learning fields' overview with its hours, notes with their years) are none. An entry's level
+is the depth of its numbering; an entry without one has none, since a block's lines share their
+indentation. The contents are never a section of the document (the old app's lesson: they became
+a root with the headings again as children), and a heading they name is one whatever its type
+(app/pipeline/skeleton.py). The first contents with a title, or within the first FRONT_PAGES
+pages, end the title pages; contents later on (a list of figures) end nothing.
 """
 
 import re
 import unicodedata
 from collections.abc import Sequence
 from dataclasses import dataclass
+from itertools import pairwise
 
 from app.conversion.base import Block
 from app.domain.lexicon import Cue
 from app.pipeline.patterns import PatternSearch
 
 LEAST_ENTRIES = 3
+FRONT_PAGES = 5  # contents within them, untitled, are the title pages' own
 OUTSIDE = frozenset({"page_header", "page_footer"})  # the kinds of block no part of the text is
 
 # A numbering that leads a title: "1", "1.2", "1.2." - two digits a part, so a year leads none -
@@ -44,6 +49,7 @@ class TocEntry:
 class Contents:
     entries: tuple[TocEntry, ...]
     positions: frozenset[int]  # the blocks the contents fill, their title with them
+    front_end: int | None = None  # where the title pages end: the first block of the contents that end them
 
 
 def leading_number(text: str) -> str | None:
@@ -75,17 +81,34 @@ def find_contents(blocks: Sequence[Block], cues: Sequence[Cue], search: PatternS
             runs[-1].append((position, found))
         elif runs[-1]:
             runs.append([])
+    pages = max((block.page for block in blocks), default=0)
     entries: list[TocEntry] = []
     positions: set[int] = set()
+    front_end: int | None = None
     for run in runs:
-        if sum(len(found) for _, found in run) < LEAST_ENTRIES:
+        listed = [entry for _, found in run for entry in found]
+        if len(listed) < LEAST_ENTRIES or not _paged(listed, pages):
             continue
-        before = order.index(run[0][0]) - 1
-        if before >= 0 and _TITLE.fullmatch(blocks[order[before]].text.strip()):
+        first = run[0][0]
+        before = order.index(first) - 1
+        titled = before >= 0 and _TITLE.fullmatch(blocks[order[before]].text.strip()) is not None
+        if titled:
             positions.add(order[before])
+        if front_end is None and (titled or blocks[first].page <= FRONT_PAGES):
+            front_end = first  # the title before it is the contents' too
         positions.update(position for position, _ in run)
-        entries.extend(entry for _, found in run for entry in found)
-    return Contents(tuple(entries), frozenset(positions))
+        entries.extend(listed)
+    return Contents(tuple(entries), frozenset(positions), front_end)
+
+
+def _paged(entries: Sequence[TocEntry], pages: int) -> bool:
+    """Whether the entries' pages run as a contents' do: never back, within the document, not all
+    one page; Roman numerals alone are the front matter's own."""
+    numbers = [int(entry.page) for entry in entries if entry.page.isdigit()]
+    if not numbers:
+        return True
+    rising = all(earlier <= later for earlier, later in pairwise(numbers))
+    return rising and max(numbers) <= pages and len(set(numbers)) > 1
 
 
 def _entries(block: Block, position: int, cues: Sequence[Cue], search: PatternSearch) -> list[TocEntry]:
