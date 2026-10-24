@@ -27,6 +27,13 @@ const missing = ref(false);
 const failure = ref<Notice | null>(null);
 // The latest question counts: an answer for a document left meanwhile is dropped
 let generation = 0;
+// The start form led here to an extraction that ran already for the PDF (ExtractionStart.vue)
+const led = ref(false);
+
+function ledHere(): boolean {
+  const state: unknown = window.history.state;
+  return typeof state === "object" && state !== null && (state as Record<string, unknown>).ledToRunning === true;
+}
 
 const heading = computed(() => (document_.value ? document_.value.title || t("documents.untitled") : ""));
 const regions = computed(() =>
@@ -58,7 +65,10 @@ function moment(value: string): string {
   return momentFormat.format(new Date(value));
 }
 
-onMounted(load);
+onMounted(() => {
+  led.value = ledHere();
+  void load();
+});
 // The tab names the document once it is known; until then the router's name for the page stands
 watch(heading, (name) => {
   if (name) document.title = pageTitle(name);
@@ -67,6 +77,7 @@ watch(
   () => props.id,
   () => {
     document_.value = null;
+    led.value = ledHere();
     void load();
   },
 );
@@ -110,7 +121,13 @@ watch(
         </dl>
       </section>
       <!-- keyed: what a start of the document before gave back late stays with that one -->
-      <DocumentExtraction :key="document_.id" class="document__section" :document="document_" @changed="load()" />
+      <DocumentExtraction
+        :key="document_.id"
+        class="document__section"
+        :document="document_"
+        :led="led"
+        @changed="load()"
+      />
       <DocumentRuns class="document__section" :runs="runs" />
     </template>
   </div>

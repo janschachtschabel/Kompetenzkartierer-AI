@@ -27,6 +27,8 @@ export interface CurriculumDocument {
 export interface DocumentStarted {
   document: CurriculumDocument;
   job: Job;
+  /** False where the account's document of the entry being extracted came back instead (200). */
+  made: boolean;
 }
 
 /** How a run of a stage stands: its outcome, else running, or left with its attempt. */

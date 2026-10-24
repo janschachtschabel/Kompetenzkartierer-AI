@@ -29,9 +29,11 @@ function knownReason(failure: string): string | null {
   return JOB_CODES.has(failure) ? jobFailureText(failure) : null;
 }
 
+/** By signs, not UTF-16 units: no sign is cut in two. */
 function shortened(failure: string): string {
-  if (failure.length <= MOST_SIGNS) return failure;
-  const cut = failure.slice(0, MOST_SIGNS);
+  const signs = Array.from(failure);
+  if (signs.length <= MOST_SIGNS) return failure;
+  const cut = signs.slice(0, MOST_SIGNS).join("");
   const space = cut.lastIndexOf(" ");
   return `${space > MOST_SIGNS / 2 ? cut.slice(0, space) : cut}…`;
 }

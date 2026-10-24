@@ -140,14 +140,15 @@ ungültig.
   `file_hidden`); `GET /api/v1/documents?source_id=…`, `/documents/{id}`, `/documents/{id}/runs`
   lesen sie (die Job-ID nur für Eigentümer und Admins). Je Dokument wartet oder läuft höchstens
   ein Extraktionsjob (`job.unique_key`, Migration 0018): ein Start dabei gibt den laufenden zurück
-  (200); ebenso ein neues Dokument derselben Konvertierung, solange eines des Kontos aus ihr
-  extrahiert wird – dann 200 mit diesem.
+  (200); ebenso ein neues Dokument desselben Eintrags und derselben Konvertierung, solange eines
+  des Kontos daraus extrahiert wird – dann 200 mit diesem (`made: false`).
 - Abbrechen: `POST /api/v1/jobs/{id}/cancel` (Eigentümer des Jobs oder Admin, in der Oberfläche
   der Knopf „Abbrechen“ an jedem Auftrag). Ein wartender Job endet sofort, ein laufender beim
   nächsten Herzschlag seines Workers (alle `JOB_LEASE_S`/3); hält der Handler dann nicht an,
   endet der Job nach `CANCEL_WAIT_S` (5 s, bei kürzerer Lease einem Drittel von ihr) trotzdem
   `cancelled`. Was der Handler danach noch schreibt, findet seine Lease nicht mehr, und eine
-  Modellanfrage stellt er nicht mehr (`check_lease`). Ein Worker, der gar nicht mehr schlägt,
+  Modellanfrage – auch eine Wiederholung – reserviert er nicht mehr (`check_lease` im Zähler).
+  Ein Worker, der gar nicht mehr schlägt,
   endet über die Prüfung abgelaufener Leases ebenso `cancelled`.
 - Extraktion (X1, X2): Der Job `extract.run` (`{"document_id": …}`) bestimmt für ein Dokument per
   Sprachmodell das Dokumentprofil (Titel, Typ, Geltung,

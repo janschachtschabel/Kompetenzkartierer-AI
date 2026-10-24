@@ -47,6 +47,7 @@ function started(): DocumentStarted {
       started_at: null,
       finished_at: null,
     },
+    made: true,
   };
 }
 
@@ -104,6 +105,29 @@ describe("the start of an extraction from a finished conversion", () => {
       regions: ["DE", "DE-NW"],
     });
     expect(push).toHaveBeenCalledWith({ name: "document", params: { id: "d1" } });
+  });
+
+  it("goes to the extraction that ran already for the PDF, and tells its page so", async () => {
+    vi.spyOn(api, "makeDocument").mockResolvedValue({ ...started(), made: false });
+    const push = vi.spyOn(router, "push").mockResolvedValue(undefined);
+    const wrapper = open("DE-NW");
+
+    await wrapper.get("#extraction-sector").setValue("vocational");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(push).toHaveBeenCalledWith({ name: "document", params: { id: "d1" }, state: { ledToRunning: true } });
+  });
+
+  it("makes one document however often it is sent while the first is on its way", async () => {
+    const make = vi.spyOn(api, "makeDocument").mockReturnValue(new Promise<DocumentStarted>(() => undefined));
+    const wrapper = open("DE-NW");
+    await wrapper.get("#extraction-sector").setValue("school");
+
+    await wrapper.get("form").trigger("submit");
+    await wrapper.get("form").trigger("submit");
+
+    expect(make).toHaveBeenCalledTimes(1);
   });
 
   it("says a refusal in its own words and keeps what was chosen", async () => {

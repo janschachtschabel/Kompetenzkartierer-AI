@@ -222,7 +222,7 @@ describe("a document's extraction followed on its page", () => {
     vi.spyOn(api, "getRuns").mockResolvedValueOnce(RUNS).mockResolvedValue(later);
     vi.spyOn(api, "getJob").mockResolvedValue({ ...job("failed", "j1"), error_code: "model_not_configured" });
     const wrapper = await open();
-    (wrapper.get(".job").element as HTMLElement).focus(); // the keyboard rests in the job
+    (wrapper.get(".job__line").element as HTMLElement).focus(); // the keyboard rests in the job
 
     await vi.advanceTimersByTimeAsync(1000);
     await flushPromises();
@@ -329,6 +329,155 @@ describe("a document's extraction followed on its page", () => {
   });
 });
 
+describe("a document's extraction asked after on its page", () => {
+  it("says to an editor that the extraction ended", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(api, "getDocument")
+      .mockResolvedValueOnce(document_({ own: false, extraction: { job_id: null, status: "running" } }))
+      .mockResolvedValue(document_({ own: false, extraction: { job_id: null, status: "done" } }));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    const wrapper = await open();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    await flushPromises();
+
+    const said = t("jobs.announce", { label: isolate(t("documents.page.jobLabel")), status: t("jobs.status.done") });
+    expect(extractionStatus(wrapper)).toBe(said);
+  });
+
+  it("asks after the document again when a job it started is gone from the reader", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(api, "getDocument")
+      .mockResolvedValueOnce(document_({ extraction: { job_id: "j1", status: "cancelled" } }))
+      .mockResolvedValue(document_({ extraction: { job_id: "j2", status: "running" } }));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    vi.spyOn(api, "startExtraction").mockResolvedValue(job("queued"));
+    vi.spyOn(api, "getJob").mockRejectedValue(new ApiError("server", 404, "no_job"));
+    const wrapper = await open();
+
+    await wrapper.get("[data-test=extraction-resume]").trigger("click");
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(1000); // the job answers 404
+    await flushPromises();
+
+    expect(api.getDocument).toHaveBeenCalledTimes(2);
+    expect(extraction(wrapper).text()).toContain(t("documents.page.following"));
+    expect(wrapper.find("[data-test=extraction-resume]").exists()).toBe(false);
+  });
+
+  it("goes on asking after an editor's document whose state came back as it was", async () => {
+    vi.useFakeTimers();
+    const running = document_({ own: false, extraction: { job_id: null, status: "running" } });
+    const queued = document_({ own: false, extraction: { job_id: null, status: "queued" } });
+    const get = vi
+      .spyOn(api, "getDocument")
+      .mockResolvedValueOnce({ ...running }) // the page
+      .mockResolvedValueOnce({ ...queued }) // the question: it moved, the page reads it again
+      .mockResolvedValueOnce({ ...running }) // and gets it as it was, running again
+      .mockImplementation(() => Promise.resolve({ ...running }));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    await open();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    await flushPromises();
+    const asked = get.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    expect(get.mock.calls.length).toBeGreaterThan(asked);
+  });
+
+  it("goes on asking when the server is away a moment, and stops once the page is left", async () => {
+    vi.useFakeTimers();
+    const running = document_({ own: false, extraction: { job_id: null, status: "running" } });
+    const get = vi
+      .spyOn(api, "getDocument")
+      .mockResolvedValueOnce(running)
+      .mockRejectedValueOnce(new ApiError("server", 503, "service_unavailable"))
+      .mockResolvedValue(running);
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    const wrapper = await open();
+
+    await vi.advanceTimersByTimeAsync(1000); // 503
+    await vi.advanceTimersByTimeAsync(2000); // asked again
+    expect(get).toHaveBeenCalledTimes(3);
+    wrapper.unmount();
+    shown = null;
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    expect(get).toHaveBeenCalledTimes(3);
+  });
+
+  it("leaves the keyboard where the reader took it while the start was on its way", async () => {
+    let reply: (value: Job) => void = () => undefined;
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "cancelled" } }));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    vi.spyOn(api, "startExtraction").mockReturnValue(new Promise<Job>((resolve) => (reply = resolve)));
+    const wrapper = await open();
+    await wrapper.get("[data-test=extraction-resume]").trigger("click");
+    const elsewhere = wrapper.get("[data-test=document-source]").element as HTMLElement;
+    elsewhere.focus();
+
+    reply(job("queued"));
+    await flushPromises();
+
+    expect(document.activeElement).toBe(elsewhere);
+  });
+
+  it("leaves the keyboard where the reader took it once the extraction ended", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(api, "getDocument")
+      .mockResolvedValueOnce(document_({ extraction: { job_id: "j1", status: "running" } }))
+      .mockResolvedValue(document_({ extraction: { job_id: "j1", status: "done" } }));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    vi.spyOn(api, "getJob").mockResolvedValue(job("done", "j1"));
+    const wrapper = await open();
+    (wrapper.get(".job__line").element as HTMLElement).focus();
+    const elsewhere = wrapper.get("[data-test=document-source]").element as HTMLElement;
+    vi.mocked(api.getDocument).mockImplementation(() => {
+      elsewhere.focus(); // the reader goes on while the page reads the document again
+      return Promise.resolve(document_({ extraction: { job_id: "j1", status: "done" } }));
+    });
+
+    await vi.advanceTimersByTimeAsync(1000);
+    await flushPromises();
+
+    expect(document.activeElement).toBe(elsewhere);
+  });
+
+  it("shows the job it started as ended until the page has read the document again", async () => {
+    vi.useFakeTimers();
+    let reread: (value: CurriculumDocument) => void = () => undefined;
+    vi.spyOn(api, "getDocument")
+      .mockResolvedValueOnce(document_({ extraction: { job_id: "j1", status: "cancelled" } }))
+      .mockReturnValue(new Promise<CurriculumDocument>((resolve) => (reread = resolve)));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    vi.spyOn(api, "startExtraction").mockResolvedValue(job("queued"));
+    vi.spyOn(api, "getJob").mockResolvedValue(job("done"));
+    const wrapper = await open();
+    await wrapper.get("[data-test=extraction-resume]").trigger("click");
+    await flushPromises();
+
+    await vi.advanceTimersByTimeAsync(1000); // ended; the document is on its way
+
+    expect(wrapper.find("[data-test=extraction-resume]").exists()).toBe(false);
+    expect(wrapper.get(".status-badge").text()).toBe(t("jobs.status.done"));
+    reread(document_({ extraction: { job_id: "j2", status: "done" } }));
+    await flushPromises();
+    expect(wrapper.find("[data-test=extraction-resume]").exists()).toBe(true);
+  });
+
+  it("says, where a start led to an extraction that ran already, that it is that one", async () => {
+    window.history.replaceState({ ...window.history.state, ledToRunning: true }, "");
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { job_id: "j1", status: "running" } }));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+
+    const wrapper = await open();
+
+    expect(extraction(wrapper).text()).toContain(t("documents.page.ledToRunning"));
+    window.history.replaceState({ ...window.history.state, ledToRunning: undefined }, "");
+  });
+});
+
 describe("why a run failed", () => {
   it("is said in the page's words where it knows them, else quoted as the server wrote it", async () => {
     const sentence = "X1 of the document was written by another run meanwhile";
@@ -348,5 +497,22 @@ describe("why a run failed", () => {
     expect(reasons[2].get("q").attributes("lang")).toBe("en");
     expect(reasons[2].get("q").text()).toBe(sentence);
     expect(reasons[3].get("q").text().length).toBeLessThanOrEqual(201);
+  });
+
+  it("cuts a long sentence at a word and no sign in two, and quotes a name every object has", async () => {
+    const words = `${"Wort ".repeat(39)}Wortende${"x".repeat(30)}`;
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_());
+    vi.spyOn(api, "getRuns").mockResolvedValue([
+      { ...RUNS[1], state: "failed", failure: words },
+      { ...RUNS[1], state: "failed", failure: `a${"\u{1F600}".repeat(150)}` },
+      { ...RUNS[1], state: "failed", failure: "constructor" },
+    ]);
+
+    const wrapper = await open();
+
+    const reasons = wrapper.findAll("tbody tr").map((row) => row.findAll("td")[5]);
+    expect(reasons[0].get("q").text()).toBe(`${"Wort ".repeat(38)}Wort…`);
+    expect([...reasons[1].get("q").text()].every((sign) => sign === "a" || sign === "\u{1F600}" || sign === "…")).toBe(true);
+    expect(reasons[2].get("q").text()).toBe("constructor");
   });
 });

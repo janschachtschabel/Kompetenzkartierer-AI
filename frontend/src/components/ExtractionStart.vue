@@ -54,7 +54,9 @@ async function onSubmit(): Promise<void> {
       sector: sector.value,
       regions: chosenRegions.value,
     });
-    await router.push({ name: "document", params: { id: started.document.id } });
+    // where one ran already for the PDF, its page says so: what the form chose was not taken
+    const to = { name: "document", params: { id: started.document.id } };
+    await router.push(started.made ? to : { ...to, state: { ledToRunning: true } });
   } catch (error) {
     failure.value = failureNotice(error, t("documents.start.failed"));
   } finally {

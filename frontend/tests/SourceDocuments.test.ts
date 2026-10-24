@@ -58,6 +58,9 @@ describe("the documents of a register entry", () => {
       [t("documents.list.untitled", { made: momentFormat.format(new Date("2026-10-24T10:00:00Z")) }), "/dokumente/d1"],
     ]);
     expect(wrapper.findAll("li")[0].text()).toContain(t("documents.page.lastStatus", { status: t("jobs.status.running") }));
+    // an untitled one has its time in its name: not once more beside it
+    expect(wrapper.findAll("li")[1].findAll("time")).toHaveLength(0);
+    expect(wrapper.findAll("li")[0].findAll("time")).toHaveLength(1);
     expect(wrapper.findAll("li")[1].text()).toContain(t("documents.page.none"));
   });
 

@@ -212,7 +212,7 @@ onUnmounted(() => following?.stop());
         :aria-disabled="busy || undefined"
         @click="start"
       >
-        {{ failed ? t("states.retry") : t("conversions.start") }}
+        {{ failed && !stopped ? t("states.retry") : t("conversions.start") }}
       </button>
     </div>
     <!-- always in the page, so a screen reader hears each change of its text -->

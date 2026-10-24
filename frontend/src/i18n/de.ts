@@ -461,6 +461,8 @@ export const messages = {
     waitingJustNow: "wartet seit weniger als einer Minute",
     waitingForHours: "wartet seit {hours} {hours|Stunde|Stunden} und {minutes} {minutes|Minute|Minuten}",
     waitingForHoursOnly: "wartet seit {hours} {hours|Stunde|Stunden}",
+    // handed back to the queue after a try: it waits for the next
+    waitingAgain: "wartet auf den nächsten Versuch",
     // a cancel from the page: asked first, then followed until the job has ended (JobProgress.vue)
     cancel: {
       button: "Abbrechen",
@@ -647,7 +649,7 @@ export const messages = {
     // why a run failed, where it names a type of failure rather than a code (DocumentRuns.vue); the
     // codes are a job's (jobs.failures), anything else the server's words, quoted
     runFailures: {
-      LeaseLost: "Der Lauf ging nicht weiter: Der Auftrag wurde abgebrochen oder von einem anderen Worker übernommen.",
+      LeaseLost: "Der Lauf ging nicht weiter: Der Auftrag wurde abgebrochen oder vom Server neu vergeben.",
     },
     untitled: "Dokument ohne Titel",
     start: {
@@ -684,6 +686,10 @@ export const messages = {
       // its job is another's to follow, or gone: the document is asked after (DocumentExtraction.vue)
       following: "Der Stand wird weiter abgefragt, bis die Extraktion endet.",
       started: "Die Extraktion ist gestartet; ihr Stand steht hier.",
+      // the start form led here: for this PDF one ran already, and what the form chose was not taken
+      ledToRunning:
+        "Für diese PDF lief schon eine Extraktion – hier ist sie. Bereich und Länder aus dem Formular " +
+        "wurden nicht übernommen; ist sie beendet, kannst du ein weiteres Dokument anlegen.",
       resume: "Extraktion fortsetzen",
       resumeFailed: "Die Extraktion wurde nicht gestartet.",
       notOwn: "Die Extraktion startet nur, wer das Dokument angelegt hat.",

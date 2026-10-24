@@ -53,8 +53,11 @@ onMounted(load);
           <bdi>{{ item.title || t("documents.list.untitled", { made: moment(item.created_at) }) }}</bdi>
         </RouterLink>
         <span class="documents__meta">
-          <time :datetime="item.created_at">{{ moment(item.created_at) }}</time>
-          ·
+          <!-- an untitled one has its time in its name already -->
+          <template v-if="item.title">
+            <time :datetime="item.created_at">{{ moment(item.created_at) }}</time>
+            ·
+          </template>
           {{
             item.extraction
               ? t("documents.page.lastStatus", { status: t(`jobs.status.${item.extraction.status}`) })

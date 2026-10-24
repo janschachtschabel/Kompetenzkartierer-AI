@@ -498,14 +498,18 @@ Nachtrag zur Umsetzung (24.10.):
   einer Transaktion samt Zulassung (eine Abweisung nimmt das Dokument mit zurück).
   `POST /documents/{id}/extraction` ist idempotent wie der Umwandlungsstart: läuft eine, 200 mit
   ihr – auch wenn die Zulassung abweisen würde (sie zu verfolgen kostet nichts). Ebenso
-  `POST /documents`: wird ein Dokument desselben Kontos aus derselben Konvertierung gerade
-  extrahiert, 200 mit diesem Dokument und seinem Job statt eines zweiten (Formular doppelt
-  abgeschickt, Anfrage wiederholt) – ein PDF wird je Konto nicht zweimal zugleich bezahlt; nach
-  dem Ende dieser Extraktion darf ein weiteres Dokument entstehen (anderer Bereich, andere Länder).
-  Beides wird unter der Sperre der Zulassung nachgesehen, auch wo sie abweist: ein Start daneben in
-  einer anderen Anfrage wird so gefunden (Review 7a B1/B3). Starten darf nur der Eigentümer (er
-  wird belastet), und nur, solange er den Inhalt des Eintrags lesen darf wie bei der Anlage (403
-  `file_hidden`); wer das Dokument sieht, liest es und seine Läufe. Abweichungen: die Route gibt
+  `POST /documents`: wird ein Dokument desselben Kontos aus demselben Eintrag und derselben
+  Konvertierung gerade extrahiert, 200 mit diesem Dokument und seinem Job statt eines zweiten
+  (`made: false`; Formular doppelt abgeschickt, Anfrage wiederholt) – die Dokumentseite sagt dann,
+  dass es die schon laufende ist und die Wahl im Formular nicht übernommen wurde. Nach dem Ende
+  dieser Extraktion darf ein weiteres Dokument entstehen (anderer Bereich, andere Länder); ein
+  anderer Eintrag derselben Datei legt sein eigenes an, und ein bewusster Neustart eines anderen
+  Dokuments ist kein doppeltes Absenden und läuft. Beides wird unter der Sperre der Zulassung
+  nachgesehen, auch wo sie abweist: ein Start daneben in einer anderen Anfrage wird so gefunden
+  (Review 7a B1/B3, Nachprüfung R1). Starten darf nur der Eigentümer (er wird belastet), und nur,
+  solange er den Inhalt des Eintrags lesen darf wie bei der Anlage (403 `file_hidden`, auch wo er
+  den Eintrag gar nicht mehr sieht); eine wartende oder laufende verfolgt er auch ohne. Wer das
+  Dokument sieht, liest es und seine Läufe. Abweichungen: die Route gibt
   den Job selbst zurück, nicht `{job}`; das Dokument nennt seine letzte Extraktion als
   `extraction: {job_id, status}` (nicht `extraction_job`), die `job_id` nur für Eigentümer und
   Admins, die sie verfolgen dürfen – die Redaktion liest den Status.
@@ -519,8 +523,9 @@ Nachtrag zur Umsetzung (24.10.):
   von ihr) auf den Handler und schreibt dann `cancelled`; vorher wartete er ohne Frist, ein
   hängender Handler (Aufruf, der den Abbruch übergeht, langsames Aufräumen) hielt Job und
   Worker-Platz, bis die Lease ablief. Ebenso nach verlorener Lease. Der Handler läuft abgekoppelt
-  aus; seine Schreibversuche scheitern an der Lease, und vor jeder Modellanfrage prüft X1 sie
-  (`check_lease`), so dass er nichts mehr fragt und kostet. Einen laufenden Job erreicht der
+  aus; seine Schreibversuche scheitern an der Lease, und vor jeder Modellanfrage – auch jeder
+  Wiederholung – prüft der Zähler sie bei der Reservierung (`LedgerMeter` mit dem Job,
+  `check_lease`), so dass er nichts mehr fragt und kostet. Einen laufenden Job erreicht der
   Abbruch beim nächsten Herzschlag (alle `JOB_LEASE_S`/3, 20 s bei 60 s). Oberfläche: „Abbrechen“ an jedem
   Auftrag (JobProgress) mit Rückfrage, danach „Abbruch angefordert“, dazu die Laufzeit. Kein
   automatischer Abbruch nach Höchstdauer (Messpunkt Paket 11: wie lange ein echter Lauf dauert).
@@ -529,7 +534,8 @@ Nachtrag zur Umsetzung (24.10.):
   `DocumentExtraction` und `DocumentRuns`), Dokumente in der Quellansicht (`SourceDocuments`, nur
   bei einer PDF). Die Redaktion, die den Job nicht verfolgen darf, liest den Stand aus dem Dokument,
   das nachgefragt wird, bis die Extraktion weiterrückt; Start und Ende sagt eine eigene Region,
-  JobProgress bleibt leise, sagt aber den Abbruchwunsch an. Gründe gescheiterter Läufe in eigenen
+  für Verfolgende wie für Nachfragende. JobProgress bleibt leise; den Abbruchwunsch sagt es einmal
+  – der Fokus auf seinem Hinweis liest ihn, wo der Fokus woanders ist, die Region. Gründe gescheiterter Läufe in eigenen
   Worten, sonst als englisches Zitat. Eine selbst abgebrochene Umwandlung heißt „abgebrochen“,
   nicht „gescheitert“. Bereichsnamen an `cv:EducationSectors`, Länder an `laender.ttl`,
   Laufzustände an `RunState` gebunden (tests/documentWords.test.ts).

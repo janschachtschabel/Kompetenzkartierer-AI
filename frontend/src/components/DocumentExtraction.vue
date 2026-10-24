@@ -7,10 +7,11 @@
  * editor - and one whose job is gone from them read its state from the document, asked after as
  * a job is (jobWatch.ts) until it is no longer waiting or running.
  *
- * Started, ended: said once in a region that is there from the start - JobProgress shows its
- * states without announcing them, the region going with it once the job has ended. The page
- * reads the document again when the extraction has moved on (`changed`), and the keyboard goes
- * to the section's heading where what it rested on went with the state it belonged to.
+ * Started, ended - followed or asked after: said once in a region that is there from the start;
+ * JobProgress shows its states without announcing them, the region going with it once the job
+ * has ended. The page reads the document again when the extraction has moved on (`changed`),
+ * and the keyboard goes to the section's heading where what it rested on went with the state it
+ * belonged to. `led`: the start form led here to an extraction that ran already for the PDF.
  */
 import { computed, nextTick, onUnmounted, ref, watch } from "vue";
 
@@ -26,10 +27,11 @@ import { askWithBackoff, hasEnded, type JobWatch } from "@/jobWatch";
 import { sayAnew } from "@/liveRegion";
 import { failureNotice, type Notice } from "@/notice";
 
-const props = defineProps<{ document: CurriculumDocument }>();
+const props = defineProps<{ document: CurriculumDocument; led?: boolean }>();
 const emit = defineEmits<{ changed: [] }>();
 
-/** The job a start from here gave back, followed until the page reads the document again. */
+/** The job a start from here gave back, followed until the page reads the document again -
+ * once it has ended too, so its end shows until the document says how the extraction stands. */
 const started = ref<string | null>(null);
 /** The document's job that answered 404 or 403: its state is read from the document instead. */
 const lost = ref<string | null>(null);
@@ -70,13 +72,14 @@ function movedOn(): void {
 
 function onEnded(job: Job): void {
   say(outcome(job));
-  started.value = null;
   movedOn();
 }
 
+/** Its job is no longer the reader's to follow: the document says how the extraction stands. */
 function onGone(): void {
   lost.value = followed.value;
   started.value = null;
+  movedOn();
 }
 
 async function resume(): Promise<void> {
@@ -105,6 +108,8 @@ function follow(): JobWatch {
       const found = await getDocument(props.document.id);
       if (!wanted()) return false;
       if (found.extraction?.status === was) return true;
+      const now = found.extraction?.status;
+      if (now && hasEnded(now)) say(t("jobs.announce", { label: isolate(label.value), status: t(`jobs.status.${now}`) }));
       movedOn();
       return false;
     } catch (error) {
@@ -116,12 +121,13 @@ function follow(): JobWatch {
   });
 }
 
-// asked after anew for each state the document gives while no job is followed
+// asked after anew for each reading of the document while no job is followed: one that came
+// back as it was, or after a refusal, is asked after again
 watch(
-  () => (unfollowed.value ? latest.value?.status : null),
-  (state) => {
+  () => (unfollowed.value ? props.document : null),
+  (reading) => {
     asking?.stop();
-    asking = state ? follow() : null;
+    asking = reading ? follow() : null;
   },
   { immediate: true },
 );
@@ -129,6 +135,7 @@ watch(
 watch(
   () => props.document,
   async () => {
+    started.value = null; // the document names its latest job now
     if (!focusWasHere) return;
     focusWasHere = false;
     await nextTick();
@@ -143,6 +150,7 @@ onUnmounted(() => asking?.stop());
   <section ref="section" aria-labelledby="document-extraction">
     <!-- tabindex -1: where the keyboard goes once what it pressed went with its state -->
     <h2 id="document-extraction" ref="heading" tabindex="-1">{{ t("documents.page.extraction") }}</h2>
+    <p v-if="led" class="extraction__note" data-test="extraction-led">{{ t("documents.page.ledToRunning") }}</p>
     <JobProgress v-if="followed" :key="followed" :job-id="followed" :label="label" quiet @ended="onEnded" @gone="onGone" />
     <template v-else>
       <p class="extraction__note">

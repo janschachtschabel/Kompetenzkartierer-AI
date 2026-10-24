@@ -159,7 +159,27 @@ describe("an entry's conversion", () => {
     expect(wrapper.text()).toContain(t("conversions.stopped"));
     expect(wrapper.text()).not.toContain(t("conversions.failed"));
     expect(wrapper.find(".conversion__failure").exists()).toBe(false);
-    expect(wrapper.find("[data-test=conversion-start]").exists()).toBe(true);
+    // started anew, not tried again: nothing failed
+    expect(wrapper.get("[data-test=conversion-start]").text()).toBe(t("conversions.start"));
+  });
+
+  it("leaves the keyboard where the reader took it when the job ends", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    vi.mocked(api.getConversion).mockResolvedValueOnce(pending);
+    vi.spyOn(api, "getJob").mockResolvedValue({ ...job("done"), kind: "source.convert" });
+    const wrapper = await open();
+    (wrapper.get(".job__line").element as HTMLElement).focus();
+    const elsewhere = document.body.appendChild(document.createElement("button"));
+    vi.mocked(api.getConversion).mockImplementation(() => {
+      elsewhere.focus(); // the reader goes on while the panel reads the conversion again
+      return Promise.resolve(conversion());
+    });
+
+    await vi.advanceTimersByTimeAsync(1000);
+    await flushPromises();
+
+    expect(document.activeElement).toBe(elsewhere);
+    elsewhere.remove();
   });
 
   it("says a conversion cancelled while the reader was there as stopped, not failed", async () => {
@@ -181,7 +201,7 @@ describe("an entry's conversion", () => {
     vi.mocked(api.getConversion).mockResolvedValueOnce(pending).mockResolvedValue(conversion());
     vi.spyOn(api, "getJob").mockResolvedValue({ ...job("done"), kind: "source.convert" });
     const wrapper = await open();
-    (wrapper.get(".job").element as HTMLElement).focus();
+    (wrapper.get(".job__line").element as HTMLElement).focus();
 
     await vi.advanceTimersByTimeAsync(1000);
     await flushPromises();
