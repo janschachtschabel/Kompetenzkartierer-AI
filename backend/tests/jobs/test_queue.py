@@ -16,6 +16,7 @@ from app.jobs.queue import (
     enqueue,
     fail,
     heartbeat,
+    hold_lease,
     mark_cancelled,
     release,
     request_cancel,
@@ -362,3 +363,33 @@ async def test_an_expired_lease_of_a_cancelled_job_ends_it(connect: Any) -> None
     assert await requeue_expired(db) == ["cancelled"]
 
     assert (await row(db, job_id))["status"] == "cancelled"
+
+
+async def test_an_attempt_holds_its_lease_through_its_transaction_and_a_sweep_waits(connect: Any) -> None:
+    # what a stage writes is its attempt's only while it holds the lease (plan M1 6, Festlegung 1)
+    db, sweeper = await connect(), await connect()
+    await enqueue(db, "test.work", "account-a")
+    job = await claim(db, "w1", KINDS, 1.0)
+    assert job is not None
+
+    async with db.transaction():
+        await hold_lease(db, job)
+        await asyncio.sleep(1.2)  # the lease runs out while the attempt's transaction holds it
+        await sweeper.execute("SET lock_timeout = '200ms'")
+        with pytest.raises(psycopg.errors.LockNotAvailable):
+            await requeue_expired(sweeper)
+
+
+async def test_a_lease_lost_or_run_out_is_held_no_more(connect: Any) -> None:
+    db = await connect()
+    for _ in range(2):
+        await enqueue(db, "test.work", "account-a")
+    taken, ran_out = await claim(db, "w1", KINDS, LEASE_S), await claim(db, "w1", KINDS, LEASE_S)
+    assert taken is not None and ran_out is not None
+    await db.execute("UPDATE job SET lease_token = gen_random_uuid() WHERE id = %s", (taken.id,))
+    await db.execute("UPDATE job SET lease_expires_at = now() - interval '1 s' WHERE id = %s", (ran_out.id,))
+
+    for lost in (taken, ran_out):
+        async with db.transaction():
+            with pytest.raises(LeaseLost):
+                await hold_lease(db, lost)
