@@ -187,3 +187,14 @@ def seed_account(url: str, name: str, roles: list[str]) -> tuple[UUID, dict[str,
 def seed_admin(url: str) -> dict[str, str]:
     """The Authorization header of a new admin in a migrated test database."""
     return {"Authorization": f"Bearer {seed_token(url, 'Admin', ['admin'])}"}
+
+
+async def waiting_on_a_lock(look: psycopg.AsyncConnection, pid: int) -> None:
+    """Until the backend ``pid`` waits on a lock, as ``look`` sees it; AssertionError after 10 s."""
+    for _ in range(200):
+        cursor = await look.execute("SELECT wait_event_type FROM pg_stat_activity WHERE pid = %s", (pid,))
+        found = await cursor.fetchone()
+        if found is not None and found[0] == "Lock":
+            return
+        await asyncio.sleep(0.05)
+    raise AssertionError(f"backend {pid} never waited on a lock")

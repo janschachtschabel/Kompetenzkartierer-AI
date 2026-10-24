@@ -11,6 +11,7 @@ import pytest
 from app.db.migrate import migrate
 from app.jobs import queue
 from app.jobs.queue import LatestJob, OpenJob, claim, complete, enqueue, last_jobs, open_job, request_cancel
+from tests.support import waiting_on_a_lock
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 
@@ -92,16 +93,6 @@ async def test_jobs_without_a_key_are_made_as_ever(connect: Any) -> None:
     made = {await enqueue(db, "test.work", "account-a") for _ in range(3)}
 
     assert len(made) == 3
-
-
-async def waiting_on_a_lock(look: psycopg.AsyncConnection, pid: int) -> None:
-    for _ in range(200):
-        cursor = await look.execute("SELECT wait_event_type FROM pg_stat_activity WHERE pid = %s", (pid,))
-        found = await cursor.fetchone()
-        if found is not None and found[0] == "Lock":
-            return
-        await asyncio.sleep(0.05)
-    raise AssertionError("the second start never waited on the first's row")
 
 
 @pytest.mark.parametrize("first_commits", [True, False], ids=["committed", "rolled-back"])

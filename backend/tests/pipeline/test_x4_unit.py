@@ -21,8 +21,8 @@ from app.pipeline.statement_read import ReadStatement
 from app.pipeline.x2_segments import WorkPackage
 from app.pipeline.x4_read import UnitReading
 from app.pipeline.x4_unit import first_position, write_unit
-from tests.db.test_units import waiting_on_a_lock
 from tests.pipeline.test_run import CV, a_document, a_job, rows, setup
+from tests.support import waiting_on_a_lock
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 __all__ = ["setup"]  # the fixture, shared with test_run

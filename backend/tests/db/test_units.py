@@ -12,6 +12,7 @@ import pytest
 from app.db.migrate import migrate
 from app.db.units import UnitTaken, done_units, mark_unit
 from tests.db.l1 import CV, add_conversion, add_document, add_node, add_run, seed_vocabulary
+from tests.support import waiting_on_a_lock
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 
@@ -139,13 +140,3 @@ async def test_of_two_writers_of_one_unit_side_by_side_one_marks_it(
         assert isinstance(outcome, UnitTaken) and statements == 1
     else:
         assert outcome == "marked" and statements == 2
-
-
-async def waiting_on_a_lock(look: psycopg.AsyncConnection, pid: int) -> None:
-    for _ in range(200):
-        cursor = await look.execute("SELECT wait_event_type FROM pg_stat_activity WHERE pid = %s", (pid,))
-        found = await cursor.fetchone()
-        if found is not None and found[0] == "Lock":
-            return
-        await asyncio.sleep(0.05)
-    raise AssertionError("the second writer never waited on the first's row")

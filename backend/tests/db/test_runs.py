@@ -23,7 +23,7 @@ from app.db.runs import (
 )
 from app.jobs.queue import account_lane, claim, enqueue, release
 from tests.db.l1 import CV, add_conversion, add_document, seed_vocabulary
-from tests.db.test_units import waiting_on_a_lock
+from tests.support import waiting_on_a_lock
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 
