@@ -385,9 +385,11 @@ Nachtrag zur Umsetzung (24.10.):
   Nach dem Review: Ein Verzeichnis ist ein Lauf, dessen Seiten nie fallen, höchstens die Seitenzahl
   des Dokuments erreichen und nicht alle gleich sind (eine Lernfeldübersicht mit Stunden, ein
   Fußnotenblock mit Jahren sind keins). Wo die Titelei endet, entscheidet allein der erste Lauf von
-  Einträgen mit Titel („Inhalt…“) oder auf den ersten fünf Seiten, gelesen oder nicht: mit Titel
-  dort, ohne Titel nur, wo er gelesen wird, sonst nirgends; kein späterer Lauf (Abbildungen, das
-  Verzeichnis eines Anhangs) verschiebt sie (Nachprüfung). Verzeichnismuster sind Hinweise mit
+  Einträgen, der gelesen wird oder auf den ersten fünf Seiten steht: dort, wo er einen Titel
+  („Inhalt…“) hat oder vorn gelesen wird (ein Verzeichnis hinter langem Vorwort trägt seinen
+  Titel), sonst nirgends. Ein Lauf weder gelesen noch vorn (das Verzeichnis eines Anhangs mit
+  Amtsblatt-Seiten) entscheidet nichts, und kein Lauf nach dem entscheidenden (Abbildungen, ein
+  Anhang) verschiebt das Ende (Nach- und Abschlussprüfung). Verzeichnismuster sind Hinweise mit
   `mapsTo cv:occ_toc`; `occursIn cv:occ_toc` tragen Wörter von Überschriften, die auch im
   Verzeichnis stehen. Verzeichniszeilen werden mit einfachem Leerraum gelesen (sonst quadratisch).
   Läuft das Muster eines Homonyms oder eines starken Hinweises zu lange, typisiert keine Regel.
@@ -442,7 +444,11 @@ Nachtrag zur Umsetzung (24.10.):
   Teil ab 1 gezählte Seiten, eine falsch gelesene Ziffer lehnen ein echtes Verzeichnis ab; es
   kostet dann seine Einträge (Ebenen, nur dort genannte Überschriften), nicht die Überschriften
   (Nachprüfung R1-2). Messen; ein besserer Maßstab wären die gedruckten Seitenzahlen der
-  Umwandlung statt der Seitenzahl der PDF.
+  Umwandlung statt der Seitenzahl der PDF. Zwei Restfälle der Titelei-Regel, bewusst offen: ein
+  gelesenes Verzeichnis mit Titel weit hinten als einziges (etwa nur das eines Anhangs) beendet
+  die Titelei dort, was davor steht, wird keine Überschrift; ein abgelehnter Lauf ohne Titel vorn
+  (eine Stundenübersicht als Text, Fußnoten mit Jahren) vor dem echten Verzeichnis lässt sie
+  nirgends enden, die Titelei liefert dann Schein-Überschriften. Beides an echten Dokumenten zählen.
 - **Offen für Paket 7 (7.5):** Ein unterlegener Job läuft nach X1 mit X2 weiter. Schreiben X3/X4
   ohne dieselbe zweite Prüfung, schrieben zwei Jobs sie doppelt. Vorher entscheiden: höchstens ein
   offener `extract.run` je Dokument (beim Start), oder dieselbe Prüfung unter der Dokumentsperre in
