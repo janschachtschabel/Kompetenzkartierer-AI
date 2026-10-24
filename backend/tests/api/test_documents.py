@@ -92,6 +92,7 @@ def test_a_document_is_made_of_a_finished_conversion_and_its_extraction_started(
     )
     assert (job["kind"], job["status"]) == (KIND, "queued")
     assert document["extraction"] == {"job_id": job["id"], "status": "queued"}
+    assert answer.json()["made"] is True
     assert rows(url, "SELECT lane, payload, unique_key FROM job WHERE id = %s", job["id"]) == [
         (str(owner), {"document_id": document["id"]}, unique_key(UUID(document["id"])))
     ]
@@ -184,6 +185,7 @@ def test_a_document_asked_of_a_conversion_whose_extraction_waits_gives_that_one_
         started["job"]["id"],
     )
     assert again.json()["document"]["sector"] == "school"
+    assert again.json()["made"] is False  # the page says it is the one that ran already
     assert rows(url, "SELECT count(*) FROM document") == [(1,)]
     assert rows(url, "SELECT count(*) FROM job") == [(1,)]
     assert rows(url, "SELECT count(*) FROM rate_event")[0][0] == starts  # rolled back, admission and all
@@ -252,6 +254,28 @@ def test_a_document_of_the_conversion_is_made_again_once_its_extraction_ended_or
     assert again.status_code == 202, again.text
     assert again.json()["document"]["id"] != started["document"]["id"]
     assert rows(url, "SELECT count(*) FROM document") == [(4,)]
+
+
+def test_another_entry_of_the_same_file_makes_a_document_of_its_own(client: TestClient, url: str) -> None:
+    # the file's conversion is shared, the entry is not: the form on the second entry's page is
+    # no second sending of the first's
+    owner, header = an_account(url)
+    made = a_conversion(url, owner)
+    started = make(client, url, header, made)
+    with psycopg.connect(url, autocommit=True) as connection:
+        twin = add_entity(connection, "source")
+        connection.execute(
+            "INSERT INTO source (id, owner_id, provenance, register_status, file_id, file_name, mime)"
+            " SELECT %s, owner_id, provenance, register_status, file_id, file_name, mime"
+            " FROM source WHERE id = %s",
+            (twin, made["source"]),
+        )
+
+    second = client.post("/api/v1/documents", headers=header, json=asked(made, source_id=str(twin)))
+
+    assert second.status_code == 202, second.text
+    assert second.json()["document"]["source_id"] == str(twin)
+    assert second.json()["document"]["id"] != started["document"]["id"]
 
 
 def test_a_start_while_the_extraction_waits_or_runs_gives_that_one_back(client: TestClient, url: str) -> None:
@@ -424,6 +448,42 @@ def test_a_restart_needs_the_entry_s_content_still_readable_by_its_owner(
 
     assert (again.status_code, again.json()["code"]) == (403, "file_hidden")
     assert rows(url, "SELECT count(*) FROM job") == [(1,)]
+
+
+def test_a_restart_by_an_owner_who_no_longer_sees_the_entry_is_refused_as_content_hidden(
+    client: TestClient, url: str
+) -> None:
+    # made as an editor of another account's upload; the role taken since
+    owner, header = an_account(url, "Redaktion", ("redaktion",))
+    stranger, _ = an_account(url, "Fremde")
+    started = make(client, url, header, a_conversion(url, stranger))
+    end_job(url, started["job"]["id"], "cancelled")
+    with psycopg.connect(url, autocommit=True) as connection:
+        connection.execute("DELETE FROM role_grant WHERE account_id = %s AND role = 'redaktion'", (owner,))
+        connection.execute(
+            "INSERT INTO role_grant (account_id, role) VALUES (%s, 'nutzer') ON CONFLICT DO NOTHING", (owner,)
+        )
+
+    again = client.post(f"/api/v1/documents/{started['document']['id']}/extraction", headers=header)
+
+    assert (again.status_code, again.json()["code"]) == (403, "file_hidden")
+
+
+def test_the_extraction_waiting_or_running_is_followed_though_the_entry_is_no_longer_readable(
+    client: TestClient, url: str, tmp_path: Path
+) -> None:
+    # following it reads no content: the restart gives the open one back before it looks at rights
+    owner, header = an_account(url)
+    made = a_conversion(url, owner)
+    with psycopg.connect(url, autocommit=True) as connection:
+        connection.execute("UPDATE source SET owner_id = NULL WHERE id = %s", (made["source"],))
+    opened = make_settings(database_url=url, storage_dir=tmp_path, third_party_markdown="accounts")
+    with selector_client(create_app(opened), base_url=PUBLIC) as while_open:
+        started = make(while_open, url, header, made)
+
+    again = client.post(f"/api/v1/documents/{started['document']['id']}/extraction", headers=header)
+
+    assert (again.status_code, again.json()["id"]) == (200, started["job"]["id"])
 
 
 def end_job_of_lane(url: str, lane: str) -> None:

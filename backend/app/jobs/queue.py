@@ -89,8 +89,6 @@ class OpenJob(Exception):
 
 
 JobStatus = Literal["queued", "running", "done", "failed", "cancelled"]
-# a job waiting or running: of a unique key, one at a time
-OPEN_STATUSES: frozenset[JobStatus] = frozenset({"queued", "running"})
 
 
 class LeaseLost(Exception):
@@ -180,12 +178,20 @@ async def open_job(connection: psycopg.AsyncConnection, unique_key: str) -> UUID
     return None if found is None else found[0]
 
 
-# the latest job of each key (index job_by_key); a key's open job is its latest, for none is
-# made beside it and an ended one never opens again
+# the latest job of each key (index job_by_key), by when it was made
 _LATEST = """
 SELECT DISTINCT ON (unique_key) unique_key, id, status FROM job WHERE unique_key = ANY(%s)
 ORDER BY unique_key, created_at DESC, id DESC
 """
+
+
+async def open_jobs(connection: psycopg.AsyncConnection, unique_keys: Sequence[str]) -> dict[str, UUID]:
+    """The job of each key waiting or running; a key without one is not there."""
+    cursor = await connection.execute(
+        "SELECT unique_key, id FROM job WHERE unique_key = ANY(%s) AND status IN ('queued', 'running')",
+        (list(unique_keys),),
+    )
+    return {key: job_id for key, job_id in await cursor.fetchall()}
 
 
 async def last_jobs(

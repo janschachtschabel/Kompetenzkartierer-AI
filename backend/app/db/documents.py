@@ -40,7 +40,8 @@ WHERE {DOCUMENT_VISIBLE} AND (%(source)s::uuid IS NULL OR d.source_id = %(source
 ORDER BY d.created_at DESC, d.id DESC LIMIT %(limit)s
 """  # noqa: S608 - fixed parts
 _MADE_OF = f"""
-SELECT {_COLUMNS} FROM document d WHERE d.owner_id = %(owner)s AND d.conversion_id = %(conversion)s
+SELECT {_COLUMNS} FROM document d
+WHERE d.owner_id = %(owner)s AND d.source_id = %(source)s AND d.conversion_id = %(conversion)s
 ORDER BY d.created_at DESC, d.id DESC
 """  # noqa: S608 - fixed parts
 # The entry whose content the maker may read, as app/api/source_content.py has it: its own, every
@@ -177,10 +178,12 @@ async def documents_of(
 
 
 async def documents_made_of(
-    connection: psycopg.AsyncConnection, owner_id: UUID, conversion_id: UUID
+    connection: psycopg.AsyncConnection, owner_id: UUID, source_id: UUID, conversion_id: UUID
 ) -> list[Document]:
-    """The documents of ``owner_id``'s made of the conversion, the newest first."""
-    return await _documents(connection, _MADE_OF, {"owner": owner_id, "conversion": conversion_id})
+    """The documents of ``owner_id``'s made of the entry's conversion, the newest first. Another
+    entry of the same file shares the conversion, not its documents."""
+    params = {"owner": owner_id, "source": source_id, "conversion": conversion_id}
+    return await _documents(connection, _MADE_OF, params)
 
 
 async def _documents(

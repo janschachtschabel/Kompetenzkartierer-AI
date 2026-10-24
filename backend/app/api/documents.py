@@ -3,14 +3,16 @@ their extraction started at once; started again where it ended; read with their 
 
 One extraction of a document waits or runs at a time (job.unique_key): a start while one does gives
 that one back (200), as a conversion asked again does; the database holds to it beside a start
-in another request. So does an account's document asked of a conversion one of its documents is
-being extracted from: the form sent twice, a request sent again, is led to that document (200);
-once that extraction has ended another document of it may be made (another sector, other Länder).
-Both are looked for once the admission's lock is held, and also where it refuses: what started
-beside the request is followed whatever the admission says. Only the document's owner starts its
-extraction - the owner is charged for it
-(plan M1 5.6) and follows its job in their own lane; another who sees the document (editors) is
-told 403, one who does not the 404 of no document. A start is admitted as a model job (budget,
+in another request. So does an account's document asked of an entry's conversion one of its
+documents of that entry is being extracted from: the form sent twice, a request sent again, is
+led to that document (200, ``made`` false); once that extraction has ended another document of it
+may be made (another sector, other Länder). A deliberate start of another of its documents is no
+second sending, and goes. Both are looked for once the admission's lock is held, and also where it
+refuses: what started beside the request is followed whatever the admission says. Only the
+document's owner starts its extraction - the owner is charged for it (plan M1 5.6) and follows its
+job in their own lane - and only while the entry's content is still theirs to read (403
+``file_hidden``); following the one waiting or running reads none. Another who sees the document
+(editors) is told 403, one who does not the 404 of no document. A start is admitted as a model job (budget,
 jobs in flight, starts a minute) in the transaction that makes it, so a refusal takes the
 document back too. Who may read a document reads its runs (app/db/documents.py, DOCUMENT_VISIBLE);
 its job is followed and cancelled at /api/v1/jobs (app/api/jobs.py).
@@ -22,7 +24,7 @@ from typing import Annotated
 from uuid import UUID
 
 import psycopg
-from fastapi import APIRouter, Depends, Query, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from app.api.deps import require_account
@@ -44,7 +46,7 @@ from app.db.documents import (
 )
 from app.db.runs import RunState, runs_of
 from app.db.source_queries import Reader
-from app.jobs.queue import OPEN_STATUSES, JobStatus, OpenJob, account_lane, enqueue, last_jobs, open_job
+from app.jobs.queue import JobStatus, OpenJob, account_lane, enqueue, last_jobs, open_job, open_jobs
 from app.jobs.state import job_state
 from app.pipeline.extraction import KIND, unique_key
 from app.vocab.lookup import notations_by_iri
@@ -91,6 +93,8 @@ class DocumentOut(BaseModel):
 class StartedOut(BaseModel):
     document: DocumentOut
     job: JobOut
+    # false where the account's document of the entry being extracted came back instead (200)
+    made: bool
 
 
 class RunOut(BaseModel):
@@ -140,7 +144,7 @@ async def make_document(
                     connection,
                     owner,
                     settings,
-                    lambda: _being_extracted(connection, owner, body.conversion_id),
+                    lambda: _being_extracted(connection, owner, body.source_id, body.conversion_id),
                 )
                 job_id = await _enqueue(connection, owner, document.id)
                 await record_audit(
@@ -160,7 +164,8 @@ async def make_document(
             response.status_code = 200
             document, job_id = found.document, found.job_id
         [out] = await _outs(connection, [document], who)
-        return StartedOut(document=out, job=await _job(connection, job_id, who))
+        made = response.status_code != 200
+        return StartedOut(document=out, job=await _job(connection, job_id, who), made=made)
 
 
 @router.post(
@@ -189,9 +194,9 @@ async def start_extraction(document_id: UUID, request: Request, response: Respon
                 if document.owner_id != who.account_id:
                     raise Refusal(403, "not_owner", "Only the document's owner starts its extraction.")
                 settings = request.app.state.settings
-                # the entry's content read as when the document was made: 403 file_hidden, 404 once not
-                await content_row(connection, who, settings, document.source_id)
                 key = unique_key(document.id)
+                await _open(connection, key)  # following the one waiting or running reads no content
+                await _readable(connection, who, settings, document)
                 await _admit(connection, who.account_id, settings, lambda: _open(connection, key))
                 job_id = await _enqueue(connection, who.account_id, document.id)
                 await record_audit(
@@ -293,13 +298,27 @@ async def _open(connection: psycopg.AsyncConnection, key: str) -> None:
         raise OpenJob(open_id)
 
 
-async def _being_extracted(connection: psycopg.AsyncConnection, owner: UUID, conversion_id: UUID) -> None:
-    made = await documents_made_of(connection, owner, conversion_id)
-    latest = await last_jobs(connection, [unique_key(document.id) for document in made])
+async def _being_extracted(
+    connection: psycopg.AsyncConnection, owner: UUID, source_id: UUID, conversion_id: UUID
+) -> None:
+    made = await documents_made_of(connection, owner, source_id, conversion_id)
+    found = await open_jobs(connection, [unique_key(document.id) for document in made])
     for document in made:
-        found = latest.get(unique_key(document.id))
-        if found is not None and found[1] in OPEN_STATUSES:
-            raise _BeingExtracted(document, found[0])
+        if (job_id := found.get(unique_key(document.id))) is not None:
+            raise _BeingExtracted(document, job_id)
+
+
+async def _readable(
+    connection: psycopg.AsyncConnection, who: Principal, settings: Settings, document: Document
+) -> None:
+    """The entry's content still the owner's to read, as when the document was made - its own,
+    every entry while an editor, one of no account while THIRD_PARTY_MARKDOWN opens it."""
+    try:
+        await content_row(connection, who, settings, document.source_id)
+    except HTTPException as hidden:  # an entry no longer the owner's to see at all: hidden as well
+        if hidden.status_code != 404:
+            raise
+        raise Refusal(403, "file_hidden", "The content of this entry is no longer yours to read.") from None
 
 
 async def _enqueue(connection: psycopg.AsyncConnection, owner: UUID, document_id: UUID) -> UUID:
