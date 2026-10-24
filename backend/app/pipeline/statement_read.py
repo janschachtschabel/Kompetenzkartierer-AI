@@ -73,35 +73,11 @@ def read_statements(
 ) -> tuple[list[ReadStatement], list[Finding]]:
     """The statements of an answer (its ``statements``), in the document's order, and the findings
     of reading them; ``within``: the positions of the blocks the request asked about, or None."""
-    reading = _Reading(context)
-    read: list[tuple[int, ReadStatement, Sequence[int]]] = []
-    for at, statement in enumerate(given):
-        if len(read) == MOST_STATEMENTS:
-            left = len(given) - at
-            reading.note(
-                "too_many_statements", "warning", "$.statements", f"{left} more left unread", left=left
-            )
-            break
-        found = reading.statement(statement, f"$.statements[{at}]", within)
-        if found is not None:
-            read.append((at, found, statement["targetsContent"]))
-    read.sort(key=lambda item: item[1].first)  # stable: the answer's order among equals
-    place = {at: index for index, (at, _, _) in enumerate(read)}
-    content = {at for at, found, _ in read if found.draft.kind == _CONTENT}
-    ordered = []
-    for at, found, targets in read:
-        kept = []
-        for target in targets:
-            if target in content:
-                kept.append(place[target])
-            else:
-                path = f"$.statements[{at}].targetsContent"
-                reading.note("target_not_content", "info", path, "no content statement read", target=target)
-        ordered.append(ReadStatement(found.draft, found.first, tuple(kept)))
-    return ordered, reading.findings
+    reading = Reading(context)
+    return reading.statements(given, within), reading.findings
 
 
-class _Reading:
+class Reading:
     """One answer's statements being read, with the findings they give."""
 
     def __init__(self, context: StatementContext) -> None:
@@ -111,6 +87,34 @@ class _Reading:
     def note(self, rule: str, severity: Severity, path: str, message: str, **details: Any) -> None:
         rule = f"{self.context.stage}.{rule}"
         self.findings.append(Finding(rule, severity, self.context.document_id, message, path, details))
+
+    def statements(self, given: Sequence[Mapping[str, Any]], within: range | None) -> list[ReadStatement]:
+        """The statements of an answer, as ``read_statements`` reads them."""
+        read: list[tuple[int, ReadStatement, Sequence[int]]] = []
+        for at, statement in enumerate(given):
+            if len(read) == MOST_STATEMENTS:
+                left = len(given) - at
+                self.note(
+                    "too_many_statements", "warning", "$.statements", f"{left} more left unread", left=left
+                )
+                break
+            found = self.statement(statement, f"$.statements[{at}]", within)
+            if found is not None:
+                read.append((at, found, statement["targetsContent"]))
+        read.sort(key=lambda item: item[1].first)  # stable: the answer's order among equals
+        place = {at: index for index, (at, _, _) in enumerate(read)}
+        content = {at for at, found, _ in read if found.draft.kind == _CONTENT}
+        ordered = []
+        for at, found, targets in read:
+            kept = []
+            for target in targets:
+                if target in content:
+                    kept.append(place[target])
+                else:
+                    path = f"$.statements[{at}].targetsContent"
+                    self.note("target_not_content", "info", path, "no content statement read", target=target)
+            ordered.append(ReadStatement(found.draft, found.first, tuple(kept)))
+        return ordered
 
     def statement(self, given: Mapping[str, Any], path: str, within: range | None) -> ReadStatement | None:
         blocks = self.blocks(given["blockIds"], f"{path}.blockIds", within)
