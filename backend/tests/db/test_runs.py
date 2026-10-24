@@ -1,6 +1,7 @@
 """The runs of the pipeline's stages (plan M1 6.6, app/db/runs.py): one for each stage and attempt of a
 job, ended once with its outcome; a stage is done for a job once one of its runs is."""
 
+import asyncio
 from collections.abc import AsyncIterator
 from typing import Any, cast
 from uuid import UUID
@@ -9,9 +10,20 @@ import psycopg
 import pytest
 
 from app.db.migrate import migrate
-from app.db.runs import RunOutcome, RunStart, Stage, done_stages, finish_run, runs_of, stage_result, start_run
+from app.db.runs import (
+    RunOutcome,
+    RunStart,
+    Stage,
+    done_stages,
+    finish_run,
+    lock_for_stage,
+    runs_of,
+    stage_result,
+    start_run,
+)
 from app.jobs.queue import account_lane, claim, enqueue, release
 from tests.db.l1 import CV, add_conversion, add_document, seed_vocabulary
+from tests.db.test_units import waiting_on_a_lock
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 
@@ -167,6 +179,44 @@ async def test_a_run_of_an_attempt_handed_back_does_not_run_beside_the_next_of_i
     runs = await runs_of(connection, made["document"])
 
     assert [(run.attempt, run.state) for run in runs] == [(1, "abandoned"), (1, "running"), (1, "abandoned")]
+
+
+async def test_a_stage_s_write_locks_the_document_and_says_whether_another_run_did_it(
+    connection: psycopg.AsyncConnection, made: dict[str, Any]
+) -> None:
+    job = await a_job(connection, made)
+    await finish_run(connection, await start_run(connection, run_of(made, job, "X2")), "done")
+
+    async with connection.transaction():
+        assert await lock_for_stage(connection, made["document"], "X3") is False
+    await finish_run(connection, await start_run(connection, run_of(made, job, "X3")), "done")
+    async with connection.transaction():
+        assert await lock_for_stage(connection, made["document"], "X3") is True
+
+
+async def test_a_second_writer_of_a_stage_waits_for_the_first_and_then_sees_its_run(
+    database_url: str, connection: psycopg.AsyncConnection, made: dict[str, Any]
+) -> None:
+    job = await a_job(connection, made)
+    run = await start_run(connection, run_of(made, job, "X3"))
+    first = await psycopg.AsyncConnection.connect(database_url)
+    second = await psycopg.AsyncConnection.connect(database_url)
+    try:
+        assert await lock_for_stage(first, made["document"], "X3") is False
+
+        async def second_writer() -> bool:
+            async with second.transaction():
+                return await lock_for_stage(second, made["document"], "X3")
+
+        writing = asyncio.create_task(second_writer())
+        await waiting_on_a_lock(connection, second.info.backend_pid)
+        await finish_run(first, run, "done")
+        await first.commit()
+
+        assert await asyncio.wait_for(writing, 10) is True
+    finally:
+        await first.close()
+        await second.close()
 
 
 def test_a_run_names_a_stage_of_the_core() -> None:

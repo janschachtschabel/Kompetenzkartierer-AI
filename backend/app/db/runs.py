@@ -125,6 +125,15 @@ async def done_stages(connection: psycopg.AsyncConnection, document_id: UUID) ->
     return {iri.removeprefix(_STAGE_IRI) for (iri,) in await cursor.fetchall()}
 
 
+async def lock_for_stage(connection: psycopg.AsyncConnection, document_id: UUID, stage: Stage) -> bool:
+    """Lock the document for a stage's write, in the caller's transaction, and say whether a run of
+    the stage is done on it - another job's, since this one looked: the stage then writes nothing.
+    A second job that asked meanwhile waits for the first one's commit here, then sees its run
+    (read committed); as X1's write does (app/db/profile.py, lock_for_x1)."""
+    await connection.execute("SELECT 1 FROM document WHERE id = %s FOR NO KEY UPDATE", (document_id,))
+    return stage in await done_stages(connection, document_id)
+
+
 @dataclass(frozen=True)
 class RunView:
     stage: str  # its notation, "X1"
