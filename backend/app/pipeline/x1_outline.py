@@ -136,6 +136,9 @@ def _decision(
                 key=given["nodeType"],
             )
     function = context.functions_of.get(node_type) if node_type else functions.get(given["nodeFunction"])
+    if function is None and not node_type:
+        path = f"$.headings[{at}].nodeFunction"
+        note("x1.unknown_value", path, "a function the vocabulary does not hold", value=given["nodeFunction"])
     applies_to = []
     for place, specification in enumerate(given["appliesTo"]):
         if specification in context.specifications:
@@ -144,11 +147,19 @@ def _decision(
             path = f"$.headings[{at}].appliesTo[{place}]"
             note("x1.unknown_key", path, "a specification the profile does not hold", key=specification)
     share = given["scopeShare"]
+    scope_share = None if share is None else context.codes.get("ScopeShares", {}).get(share)
+    if share is not None and scope_share is None:
+        note(
+            "x1.unknown_value",
+            f"$.headings[{at}].scopeShare",
+            "a share the vocabulary does not hold",
+            value=share,
+        )
     return Decision(
         node_type,
         function or functions.get("unit", _CV + "fn_unit"),
         tuple(dict.fromkeys(applies_to)),
-        None if share is None else context.codes.get("ScopeShares", {}).get(share),
+        scope_share,
         MODEL,
         None,
     )

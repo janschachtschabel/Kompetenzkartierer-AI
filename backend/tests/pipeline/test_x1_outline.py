@@ -191,6 +191,21 @@ def test_a_heading_the_answer_leaves_out_gets_a_function_by_its_children_and_a_f
     assert findings[0].focus_id == DOCUMENT
 
 
+def test_a_function_or_share_the_vocabulary_no_longer_holds_is_a_finding() -> None:
+    decisions, findings = decide(
+        SKELETON,
+        ["H1", "H3"],
+        [answer("H1", function="subunit"), answer("H3", function="frame", scopeShare="alternative")],
+        CONTEXT,
+    )
+
+    assert (decisions["H1"].function, decisions["H3"].scope_share) == (CV + "fn_unit", None)
+    assert rules(findings) == [
+        ("x1.unknown_value", "warning", "$.headings[0].nodeFunction"),
+        ("x1.unknown_value", "warning", "$.headings[1].scopeShare"),
+    ]
+
+
 def test_what_the_answer_names_wrongly_is_a_finding_never_a_value() -> None:
     decisions, findings = decide(
         SKELETON,
