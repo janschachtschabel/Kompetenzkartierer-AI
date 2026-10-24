@@ -159,7 +159,9 @@ async def _stage(
         question = await profile_question(connection, document, blocks, printed, first.contents, found)
     stage = asking.agent(x1_profile.SCHEMA, x1_profile.SCHEMA_NAME, x1_profile.INSTRUCTIONS)
     profile = read_profile(await asking.answer(stage, "x1.profile", question.prompt), question.context)
-    typed = active_cues(ground.cues, ground.regions, profile.document_type, None, wider_regions=ground.wider)
+    # a type the editors set stays the document's (write_profile): the headings are read by it
+    document_type = document.document_type_iri or profile.document_type
+    typed = active_cues(ground.cues, ground.regions, document_type, None, wider_regions=ground.wider)
     skeleton = await asyncio.to_thread(build_skeleton, blocks, typed, ground.node_types)
     specifications = [(item.key, item.title) for item in profile.specifications]
     async with context.pool.connection() as connection:
