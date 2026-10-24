@@ -28,6 +28,14 @@ export const REFUSAL_CODES = [
   "no_conversion",
   "not_converted",
   "no_such_page",
+  // a document and its extraction (backend app/api/documents.py), a model job's admission (limits.py)
+  "no_document",
+  "not_owner",
+  "unknown_sector",
+  "unknown_region",
+  "no_budget",
+  "too_many_jobs",
+  "too_many_starts",
 ] as const;
 
 export type RefusalCode = (typeof REFUSAL_CODES)[number];

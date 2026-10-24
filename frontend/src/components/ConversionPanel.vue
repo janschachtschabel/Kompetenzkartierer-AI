@@ -11,7 +11,8 @@
  * The conversion belongs to the file, its job to whoever started it: another account holding
  * the same file, an editor, the reader of an entry of no account gets no job named, or one that
  * answers them 404 (app/api/jobs.py). The panel then asks after the conversion itself, as a job
- * is asked after (jobWatch.ts), until it is no longer waiting.
+ * is asked after (jobWatch.ts), until it is no longer waiting. A conversion done is where an
+ * extraction starts (ExtractionStart).
  */
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
@@ -19,6 +20,7 @@ import { ApiError, askConversion, getConversion, type Conversion } from "@/api";
 import AppIcon from "@/components/AppIcon.vue";
 import ConversionSummary from "@/components/ConversionSummary.vue";
 import ErrorState from "@/components/ErrorState.vue";
+import ExtractionStart from "@/components/ExtractionStart.vue";
 import JobProgress from "@/components/JobProgress.vue";
 import LoadingState from "@/components/LoadingState.vue";
 import NoticeText from "@/components/NoticeText.vue";
@@ -32,7 +34,8 @@ import { failureNotice, type Notice } from "@/notice";
 /** The one type converted so far: the server refuses any other (422 not_pdf). */
 const PDF = "application/pdf";
 
-const props = defineProps<{ sourceId: string; mime: string }>();
+/** `country`: the entry's Land, chosen at the start of an extraction. */
+const props = defineProps<{ sourceId: string; mime: string; country?: string | null }>();
 
 const convertible = computed(() => props.mime === PDF);
 const conversion = ref<Conversion | null>(null);
@@ -182,7 +185,10 @@ onUnmounted(() => following?.stop());
         />
         <p v-else class="conversion__note" data-test="conversion-following">{{ t("conversions.following") }}</p>
       </template>
-      <ConversionSummary v-else-if="conversion.status === 'done'" :conversion="conversion" :source-id="sourceId" />
+      <template v-else-if="conversion.status === 'done'">
+        <ConversionSummary :conversion="conversion" :source-id="sourceId" />
+        <ExtractionStart :source-id="sourceId" :conversion-id="conversion.id" :country="country ?? null" />
+      </template>
       <p v-else class="conversion__failure">
         <AppIcon name="warning" />
         <span>{{ t("conversions.failed") }} {{ conversionFailureText(conversion.error_code) }}</span>

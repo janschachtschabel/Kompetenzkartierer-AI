@@ -6,7 +6,7 @@
  * seed's candidate what the dataset or the land's research said of the
  * curriculum, what the check found at its address, and the access notes of its
  * land, school form and subject. Where it has a file, its conversion into blocks
- * (ConversionPanel).
+ * (ConversionPanel), where an extraction starts, and the documents made of it (SourceDocuments).
  */
 import { onMounted, ref, watch } from "vue";
 import { RouterLink, useRouter, type RouteLocationRaw } from "vue-router";
@@ -17,6 +17,7 @@ import ConversionPanel from "@/components/ConversionPanel.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
+import SourceDocuments from "@/components/SourceDocuments.vue";
 import { LOCALE, messages, momentFormat, t } from "@/i18n/de";
 import { failureNotice, type Notice } from "@/notice";
 import { pageTitle } from "@/pageTitle";
@@ -158,7 +159,14 @@ function grades(seed: SeedFields): string | null {
         <AcquisitionList :acquisitions="source.acquisitions" />
       </section>
 
-      <ConversionPanel v-if="source.file" class="source__section" :source-id="source.id" :mime="source.file.mime" />
+      <ConversionPanel
+        v-if="source.file"
+        class="source__section"
+        :source-id="source.id"
+        :mime="source.file.mime"
+        :country="source.country"
+      />
+      <SourceDocuments v-if="source.file" class="source__section" :source-id="source.id" />
 
       <section v-if="source.seed" class="source__section" aria-labelledby="source-seed">
         <h2 id="source-seed">{{ t("entryPage.seed.heading") }}</h2>

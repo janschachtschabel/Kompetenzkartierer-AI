@@ -7,6 +7,7 @@ import { pageTitle } from "@/pageTitle";
 import { RETURN_PARAM } from "@/returnTarget";
 import { clearSession, ensureSession, hasRole } from "@/session";
 import ConversionView from "@/views/ConversionView.vue";
+import DocumentView from "@/views/DocumentView.vue";
 import LoginView from "@/views/LoginView.vue";
 import SourceDetailView from "@/views/SourceDetailView.vue";
 import SourcesView from "@/views/SourcesView.vue";
@@ -58,6 +59,14 @@ export const router = createRouter({
       props: true,
       // its own name, the entry's and the page's, once the entry is loaded
       meta: { title: "app.titles.conversion", requiresAuth: true, section: "sources" },
+    },
+    {
+      path: "/dokumente/:id",
+      name: "document",
+      component: DocumentView,
+      props: true,
+      // its own name once the document is loaded (DocumentView); it is reached from an entry
+      meta: { title: "app.titles.document", requiresAuth: true, section: "sources" },
     },
     { path: "/:rest(.*)*", redirect: { name: "start" } },
   ],

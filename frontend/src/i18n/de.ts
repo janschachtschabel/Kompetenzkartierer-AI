@@ -22,6 +22,7 @@ export const messages = {
       sources: "Quellen",
       source: "Registereintrag",
       conversion: "Blöcke",
+      document: "Dokument",
     },
     roles: {
       admin: "Administration",
@@ -605,6 +606,87 @@ export const messages = {
     no_conversion: "Die Datei wurde noch nicht in Blöcke umgewandelt. Die Umwandlung startest du auf der Seite des Eintrags.",
     not_converted: "Die Umwandlung ist noch nicht fertig. Wie weit sie ist, zeigt die Seite des Eintrags.",
     no_such_page: "Diese Seite gibt es in der Datei nicht.",
+    // a document and its extraction (backend app/api/documents.py), and a model job's admission (limits.py)
+    no_document: "Dieses Dokument gibt es nicht, oder dein Konto sieht es nicht.",
+    not_owner: "Die Extraktion startet nur, wer das Dokument angelegt hat.",
+    unknown_sector: "Diesen Bildungsbereich kennt die Anwendung nicht.",
+    unknown_region: "Eines der gewählten Länder kennt die Anwendung nicht.",
+    no_budget: "Dein Konto hat kein Token-Budget mehr für das Sprachmodell. Bitte die Administration um mehr Budget.",
+    too_many_jobs: "Dein Konto hat schon viele Aufträge laufen. Versuch es in einer Minute noch einmal.",
+    too_many_starts: "Zu viele Starts in kurzer Zeit. Versuch es in einer Minute noch einmal.",
+  },
+  // Documents of a conversion and their extraction (ExtractionStart.vue, DocumentView.vue, SourceDocuments.vue)
+  documents: {
+    // by the notations of cv:EducationSectors (tests/documentWords.test.ts)
+    sectors: {
+      elementary: "Elementarbildung",
+      school: "Schulbildung",
+      vocational: "Berufsbildung",
+      higher: "Hochschulbildung",
+      adult: "Erwachsenen- und Weiterbildung",
+    },
+    stages: {
+      X1: "Profil und Gliederung",
+      X2: "Arbeitspakete",
+    },
+    runStates: {
+      done: "fertig",
+      failed: "gescheitert",
+      budget_exhausted: "Budget aufgebraucht",
+      running: "läuft",
+      abandoned: "abgebrochen",
+    },
+    untitled: "Dokument ohne Titel",
+    start: {
+      heading: "Extraktion",
+      intro:
+        "Aus der fertigen Umwandlung wird ein Dokument; das Sprachmodell liest sein Profil und seine Gliederung. " +
+        "Je Dokument läuft höchstens eine Extraktion, und du kannst sie jederzeit abbrechen.",
+      sector: "Bildungsbereich",
+      sectorChoose: "Bereich wählen",
+      sectorMissing: "Wähle den Bildungsbereich des Dokuments.",
+      regions: "Länder",
+      regionsHint: "Wofür das Dokument gilt; „Bund“, wenn es für alle Länder gilt.",
+      submit: "Extraktion starten",
+      failed: "Die Extraktion wurde nicht gestartet.",
+    },
+    page: {
+      loadFailed: "Das Dokument wurde nicht geladen.",
+      notFoundTitle: "Dieses Dokument gibt es nicht",
+      notFoundBody: "Oder dein Konto sieht es nicht. Deine Dokumente findest du auf den Seiten ihrer Registereinträge.",
+      facts: {
+        heading: "Angaben",
+        sector: "Bildungsbereich",
+        regions: "Länder",
+        source: "Registereintrag",
+        created: "Angelegt",
+      },
+      sourceLink: "Zum Registereintrag",
+      noRegions: "keine angegeben",
+      extraction: "Extraktion",
+      jobLabel: "Extraktion",
+      none: "Noch keine Extraktion.",
+      lastStatus: "Letzte Extraktion: {status}",
+      resume: "Extraktion fortsetzen",
+      resumeFailed: "Die Extraktion wurde nicht gestartet.",
+      notOwn: "Die Extraktion startet nur, wer das Dokument angelegt hat.",
+      runs: "Läufe der Stufen",
+      runsTable: "Tabelle der Läufe",
+      noRuns: "Noch keine Läufe.",
+      columns: {
+        stage: "Stufe",
+        attempt: "Versuch",
+        state: "Stand",
+        started: "Beginn",
+        finished: "Ende",
+        failure: "Grund",
+      },
+    },
+    list: {
+      heading: "Dokumente",
+      empty: "Aus diesem Eintrag ist noch kein Dokument angelegt.",
+      loadFailed: "Die Dokumente wurden nicht geladen.",
+    },
   },
 } as const;
 
