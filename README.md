@@ -156,10 +156,12 @@ ungültig.
   Sprachmodell das Dokumentprofil (Titel, Typ, Geltung,
   Spezifikationen, eigene Begriffe), baut das Gerüst ohne Modell aus Verzeichnis, Layout und
   Lexikon, lässt nur die Überschriften ohne starkes Muster vom Modell einordnen und teilt den
-  Text in Arbeitspakete (X2). X3 liest mit einer Anfrage die Rahmenteile (Kompetenz- und
-  Niveaumodelle, Operatoren, Querschnittslegende, Regeln, Ziele und Aufträge der Rahmenabschnitte;
-  Tabelle `frame_part`, Migration 0015). X4 liest je Arbeitspaket mit Aussagen eine Anfrage, alle
-  hinter demselben Präfix (Dokument, Profil, Auswahllisten aus X3, Cache-Haltepunkt danach), bis zu
+  Text in Arbeitspakete (X2). X3 liest mit einer Anfrage die Rahmenteile – Kompetenz- und
+  Niveaumodelle, Operatoren, Querschnittslegende und Regeln (Tabelle `frame_part`, Migration 0015) –
+  und die Ziele und Aufträge der Rahmenabschnitte als Aussagen an deren Knoten. X4 liest je
+  Arbeitspaket mit Aussagen eine Anfrage, hinter demselben Präfix (Dokument, Profil, Auswahllisten
+  aus X3, Cache-Haltepunkt danach), wo das Dokument ins Kontextfenster passt, sonst hinter dem
+  Fenster um den Abschnitt des Pakets, bis zu
   `EXTRACT_CONCURRENCY` (Standard 4, 1–16; nie mehr als `DB_POOL_MAX_SIZE` − 1) zugleich. Jedes
   Paket wird für sich geschrieben, sobald es beantwortet ist (`extraction_unit`, Migration 0019):
   Wortlautfelder nur, wenn sie in den Blöcken der Aussage stehen, Herkunft Modell, Prüfstand

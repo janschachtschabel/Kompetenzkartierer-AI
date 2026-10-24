@@ -569,7 +569,8 @@ Nachtrag zur Umsetzung (24.10.):
   `x4.value_from_surroundings`), die Vererbung bleibt abgefragt (konzept §7) – statt
   `inherited`/`rule` aus 7.3. `budget_exhausted` ist ein Job-Fehlercode (`jobMessages.ts`),
   kein Abweisungscode (`refusals.ts`, so in 7.6 genannt). Codes der Rahmenteile bleiben Notationen
-  wie gegeben. Neuer Fehlercode `prefix_too_long` (kein Fenster passt, vor dem Lauf).
+  wie gegeben. Neuer Fehlercode `prefix_too_long` (kein Fenster passt): in X3 vor dem Lauf, in X4
+  beim Paket, dessen Fenster nicht passt – der Lauf scheitert, fertige Pakete bleiben.
 - **Budget mitten in X4.** Reicht der Rest für die nächste Reservierung nicht, beginnt kein Paket
   mehr; die laufenden werden fertig und geschrieben; Lauf `budget_exhausted`, ein neuer Job fragt nur
   die offenen. Ein Paket mit Antwort außer Form oder für eine andere Einheit bleibt offen
