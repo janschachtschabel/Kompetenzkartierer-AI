@@ -481,11 +481,13 @@ export const messages = {
     progress: {
       checking: "{done} von {total} {total|Adresse|Adressen} angesehen",
       converting: "Die Datei wird in Blöcke umgewandelt; bei einer großen Datei dauert das einige Minuten.",
-      // extract.run: the stages X1 and X2 of a document
+      // extract.run: the stages X1 to X3 of a document
       extract_profile: "Das Sprachmodell liest Titel, Geltung und Begriffe des Dokuments.",
       // a count of 0 too: the lexicon's patterns may type every heading
       extract_outline: "Die Gliederung wird gebaut. Überschriften, die das Sprachmodell einordnet: {headings}.",
       extract_segments: "Das Dokument wird in {units} {units|Arbeitspaket|Arbeitspakete} geteilt.",
+      extract_frame:
+        "Das Sprachmodell liest die Rahmenteile: Kompetenzmodelle, Operatoren, Legenden, Regeln und Ziele.",
     },
     trouble: "Der Server antwortet gerade nicht; der Stand wird weiter abgefragt.",
     // why there is nothing left to ask (jobWatch.ts, JobGone); for a fetch and the seed's check alike
@@ -554,7 +556,7 @@ export const messages = {
         "Versuch es später noch einmal.",
       result_not_storable: "Das Ergebnis ließ sich nicht speichern. Melde das bitte der Administration.",
       lease_lost: "Der Auftrag wurde unterbrochen, weil sein Dienst ausfiel. Versuch es noch einmal.",
-      // extract.run (backend app/pipeline/run.py, x1_stage.py)
+      // extract.run (backend app/pipeline/run.py, asking.py, unit_question.py)
       // charged to the document's owner, whoever started it; a new start goes on from the last stage done
       budget_exhausted:
         "Das Token-Budget des Kontos, dem das Dokument gehört, ist aufgebraucht; die Extraktion ist beendet. " +
@@ -564,6 +566,10 @@ export const messages = {
         "Das Sprachmodell hat auch nach mehreren Versuchen keine verwertbare Antwort geliefert. Starte die " +
         "Extraktion später noch einmal; scheitert sie wieder, melde es der Administration.",
       model_not_configured: "Für das Sprachmodell ist kein Zugang eingerichtet. Melde das bitte der Administration.",
+      // not even one section beside the title pages and the frame fits the model's context
+      prefix_too_long:
+        "Ein Abschnitt des Dokuments ist zu lang, als dass das Sprachmodell ihn zusammen mit Titelei und " +
+        "Rahmenteilen lesen könnte. Teile das Dokument auf, oder melde es der Administration.",
       document_gone: "Das Dokument gibt es nicht mehr; die Extraktion ist entfallen.",
       // a document the extraction wrote ends done: this one holds what no extraction wrote
       document_has_tree:

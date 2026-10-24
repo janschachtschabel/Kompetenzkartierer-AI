@@ -70,7 +70,7 @@ async def profile_question(
         [values.document_types, values.node_types, values.subkinds] if values is not None else [(), (), ()]
     )
     texts = await concept_texts(connection, [iri for group in groups for iri in group])
-    document_types, node_types, subkinds = (_by_label(texts, group) for group in groups)
+    document_types, node_types, subkinds = (by_label(texts, group) for group in groups)
     excerpt = profile_excerpt(blocks, printed_pages, contents)
     terms = [found for found in cues if found.cue.kind == _TERM]
     prompt, lists = profile_prompt(
@@ -107,7 +107,7 @@ async def outline_questions(
         for iri, broader in node_types.items()
         if (core := next((b for b in broader if b in cores), None))
     }
-    listed = _by_label(texts, node_types)
+    listed = by_label(texts, node_types)
     names = {iri: name for name, iri in functions.items()}
     items = outline_items(skeleton, blocks)
     prompts: list[str] = []
@@ -134,7 +134,8 @@ async def _profile(
     return notation, await profile_concepts(connection, notation)
 
 
-def _by_label(texts: dict[str, ConceptText], iris: Collection[str]) -> list[ConceptText]:
+def by_label(texts: Mapping[str, ConceptText], iris: Collection[str]) -> list[ConceptText]:
+    """The concepts of these IRIs that ``texts`` holds, as a question lists them: by label, then IRI."""
     return sorted(
         (texts[iri] for iri in iris if iri in texts), key=lambda text: (text.label.casefold(), text.iri)
     )

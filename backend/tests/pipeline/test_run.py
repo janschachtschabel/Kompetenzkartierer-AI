@@ -1,4 +1,4 @@
-"""The job extract.run (plan M1 6.6): X1 and X2 of a document one after the other, each stage of each
+"""The job extract.run (plan M1 6.6, 7b): X1 to X3 of a document one after the other, each stage of each
 attempt a run of its own, written at once with its run's end under the attempt's lease; an attempt
 after a break goes on from the last stage done; a spent budget ends the job and keeps what is done.
 A model stands in (FunctionModel), never a provider."""
@@ -74,8 +74,15 @@ BLOCKS = [
 ]
 
 
+EMPTY_FRAME: dict[str, Any] = {
+    "competencyModels": [], "levelModels": [], "operators": [], "crossCuttingLegend": [], "rules": [],
+    "statements": [], "checkedAbsent": [],
+}  # fmt: skip
+
+
 class Model:
-    """The model of both X1 questions: it answers each by the keys its prompt lists."""
+    """The model of X1's questions and X3's: it answers each by the keys its prompt lists, X3's
+    with ``frame`` (none found where not given)."""
 
     def __init__(
         self,
@@ -83,18 +90,24 @@ class Model:
         profile_out_of_form: bool = False,
         specifications: bool = True,
         document_type: str = "Lehrplan",
+        frame: dict[str, Any] | None = None,
     ) -> None:
         self.asked: list[str] = []
         self.profile_out_of_form = profile_out_of_form
         self.specifications = specifications
         self.document_type = document_type  # the label of the type it reads
+        self.frame = EMPTY_FRAME if frame is None else frame
 
     def __call__(self, messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         prompt = str(messages[0].parts[-1].content)  # type: ignore[union-attr]
-        # the output tool is pydantic-ai's own (final_result) for either schema: the prompt tells them apart
-        question = "profile" if prompt.startswith("=== AUSZUG AUS DEM DOKUMENT ===") else "outline"
+        # the output tool is pydantic-ai's own (final_result) for every schema: the prompt tells them apart
+        if prompt.startswith("=== AUSZUG AUS DEM DOKUMENT ==="):
+            question, answer = "profile", self.profile(prompt)
+        elif "=== RAHMENBEREICHE ===" in prompt:
+            question, answer = "frame", self.frame
+        else:
+            question, answer = "outline", self.outline(prompt)
         self.asked.append(question)
-        answer = self.profile(prompt) if question == "profile" else self.outline(prompt)
         usage = RequestUsage(input_tokens=1_000, output_tokens=100)
         return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, json.dumps(answer))], usage=usage)
 
@@ -218,15 +231,15 @@ async def test_a_document_is_extracted_stage_by_stage_each_a_run(
 
     result = await extract_document(context_of(pool, tmp_path, model, database_url), job)
 
-    assert result == {"document_id": str(document.id), "stages": ["X1", "X2"], "packages": 4}
-    assert model.asked == ["profile", "outline"]
+    assert result == {"document_id": str(document.id), "stages": ["X1", "X2", "X3"], "packages": 4}
+    assert model.asked == ["profile", "outline", "frame"]
     assert await rows(
         connection,
         "SELECT replace(stage_iri, %s, ''), attempt, outcome, model FROM extraction_run WHERE job_id = %s"
         " ORDER BY started_at",
         CV + "stage_",
         job.id,
-    ) == [("X1", 1, "done", "gpt-6-luna"), ("X2", 1, "done", None)]
+    ) == [("X1", 1, "done", "gpt-6-luna"), ("X2", 1, "done", None), ("X3", 1, "done", "gpt-6-luna")]
     [(title, document_type, valid_from)] = await rows(
         connection, "SELECT title, document_type_iri, valid_from FROM document WHERE id = %s", document.id
     )
@@ -255,15 +268,17 @@ async def test_a_document_is_extracted_stage_by_stage_each_a_run(
         ("E0", "frame"), ("E1", "statements"), ("E2", "statements"), ("E3", "frame"),
     ]  # fmt: skip
     [(progress,)] = await rows(connection, "SELECT progress FROM job WHERE id = %s", job.id)
-    assert progress == {"code": "extract_segments", "params": {"units": 4}}
+    assert progress == {"code": "extract_frame", "params": {}}
     spent = await rows(
         connection,
         "SELECT purpose, sum(requests) FROM llm_usage WHERE job_id = %s GROUP BY purpose ORDER BY purpose",
         job.id,
     )
-    assert spent == [("x1.outline", 1), ("x1.profile", 1)]
-    kept = sorted(path.name for path in (tmp_path / "store").rglob("*.json"))
-    assert kept == ["1.json", "2.json"]  # both answers as they came, under the X1 run
+    assert spent == [("x1.outline", 1), ("x1.profile", 1), ("x3.frame", 1)]
+    kept = sorted(
+        path.relative_to(tmp_path / "store").parts[2:] for path in (tmp_path / "store").rglob("*.json")
+    )
+    assert kept == [("x1", "1.json"), ("x1", "2.json"), ("x3", "1.json")]  # as they came, under their runs
 
 
 async def test_an_attempt_after_a_break_goes_on_from_the_last_stage_done(
@@ -284,15 +299,15 @@ async def test_an_attempt_after_a_break_goes_on_from_the_last_stage_done(
             await extract_document(context, job)
     again = await extract_document(context, job)
 
-    assert again["stages"] == ["X1", "X2"]
-    assert model.asked == ["profile", "outline"]  # X1 was done: not asked again
+    assert again["stages"] == ["X1", "X2", "X3"]
+    assert model.asked == ["profile", "outline", "frame"]  # X1 was done: not asked again
     assert await rows(
         connection,
         "SELECT replace(stage_iri, %s, ''), outcome FROM extraction_run WHERE job_id = %s"
         " ORDER BY started_at",
         CV + "stage_",
         job.id,
-    ) == [("X1", "done"), ("X2", "done")]  # the broken attempt started no run of X2
+    ) == [("X1", "done"), ("X2", "done"), ("X3", "done")]  # the broken attempt started no run of X2
     [(nodes,)] = await rows(connection, "SELECT count(*) FROM node WHERE document_id = %s", document.id)
     assert nodes == 3  # written once
 
@@ -345,7 +360,7 @@ async def test_the_headings_are_read_by_the_type_the_editors_set_not_by_x1_s(
         CV,
         document.id,
     ) == [(VOCATIONAL + "CurriculareEinheit", "orig_rule")]
-    assert model.asked == ["profile"]  # typed by its pattern: nothing left to ask
+    assert model.asked == ["profile", "frame"]  # typed by its pattern: no outline left to ask
     assert await rows(connection, "SELECT document_type_iri FROM document WHERE id = %s", document.id) == [
         (VOCATIONAL + "dt-PflegeRahmenplan",)
     ]
@@ -555,7 +570,7 @@ async def test_a_job_without_a_model_or_a_document_ends_at_once(
 
 @pytest.mark.parametrize(
     ("blocks", "specifications", "asked", "packages"),
-    [(BLOCKS, True, ["profile", "outline"], 4), (PLAIN, False, ["profile"], 1)],
+    [(BLOCKS, True, ["profile", "outline", "frame"], 4), (PLAIN, False, ["profile", "frame"], 1)],
     ids=["tree", "plain"],
 )
 async def test_a_document_done_before_is_neither_asked_nor_written_again(
@@ -578,7 +593,7 @@ async def test_a_document_done_before_is_neither_asked_nor_written_again(
     result = await extract_document(context, again)
 
     assert model.asked == asked
-    assert result == {"document_id": str(document.id), "stages": ["X1", "X2"], "packages": packages}
+    assert result == {"document_id": str(document.id), "stages": ["X1", "X2", "X3"], "packages": packages}
     assert await rows(connection, "SELECT count(*) FROM extraction_run WHERE job_id = %s", again.id) == [(0,)]
 
 
@@ -603,13 +618,14 @@ async def test_a_new_job_goes_on_where_one_that_failed_stopped(
     result = await extract_document(context, later)
 
     assert result["packages"] == 4
-    assert model.asked == ["profile", "outline"]  # X1 is not asked again
+    assert model.asked == ["profile", "outline", "frame"]  # X1 is not asked again
     assert await rows(
         connection,
-        "SELECT replace(stage_iri, %s, ''), outcome FROM extraction_run WHERE job_id = %s",
+        "SELECT replace(stage_iri, %s, ''), outcome FROM extraction_run WHERE job_id = %s"
+        " ORDER BY started_at",
         CV + "stage_",
         later.id,
-    ) == [("X2", "done")]
+    ) == [("X2", "done"), ("X3", "done")]
 
 
 @pytest.mark.parametrize(
@@ -700,7 +716,7 @@ async def test_a_job_that_finds_x1_written_since_it_looked_goes_on_with_x2(
     result = await extract_document(context, later)
 
     assert result["packages"] == 4
-    assert model.asked == ["profile", "outline"]  # the other job's alone
+    assert model.asked == ["profile", "outline", "frame"]  # the other job's alone: X3 is done too
     assert await rows(
         connection,
         "SELECT replace(stage_iri, %s, '') FROM extraction_run WHERE job_id = %s",

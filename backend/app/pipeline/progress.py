@@ -8,7 +8,7 @@ import psycopg
 
 from app.jobs.queue import Job, report_progress
 
-ProgressCode = Literal["extract_profile", "extract_outline", "extract_segments"]
+ProgressCode = Literal["extract_profile", "extract_outline", "extract_segments", "extract_frame"]
 
 
 async def report(connection: psycopg.AsyncConnection, job: Job, code: ProgressCode, **params: int) -> None:

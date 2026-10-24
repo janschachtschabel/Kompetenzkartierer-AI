@@ -1,10 +1,11 @@
-"""The job ``extract.run`` (plan M1 6.6): a document's stages one after the other - X1 (profile,
-skeleton, outline; app/pipeline/x1_stage.py), then X2 (work packages) - each stage of each attempt a
-run of its own (``extraction_run``), written at once with its run's end under the attempt's lease.
+"""The job ``extract.run`` (plan M1 6.6, 7b): a document's stages one after the other - X1 (profile,
+skeleton, outline; app/pipeline/x1_stage.py), X2 (work packages), X3 (the frame;
+app/pipeline/x3_stage.py) - each stage of each attempt a run of its own (``extraction_run``),
+written at once with its run's end under the attempt's lease.
 A job goes on from the last stage done on the document - an attempt after a break (a worker gone,
 an error asked again), or a new job after one that ended for good (its attempts spent, its budget
 spent); a stage cut off midway left nothing. A document done is neither asked about nor written
-again. Paket 7 and 8 hang X3 to X5 on.
+again. X3 reads the document as X1 left it, its type among it. Paket 7 and 8 hang X4 and X5 on.
 
 Payload: ``{"document_id": "<uuid>"}``; what it ends with: the document, its stages, the number of
 X2's packages (which X2's run holds, plan M1 6, Festlegung 3).
@@ -25,9 +26,10 @@ from app.pipeline.extraction import KIND as KIND
 from app.pipeline.progress import report
 from app.pipeline.x1_stage import run_x1
 from app.pipeline.x2_segments import work_packages
+from app.pipeline.x3_stage import run_x3
 from app.vocab.lookup import current_release
 
-STAGES = ("X1", "X2")
+STAGES = ("X1", "X2", "X3")
 
 
 async def extract_document(context: JobContext, job: Job) -> dict[str, Any]:
@@ -47,6 +49,12 @@ async def extract_document(context: JobContext, job: Job) -> dict[str, Any]:
         async with context.pool.connection() as connection:
             made = await stage_result(connection, document.id, "X2")
         packages = len((made or {}).get("packages", []))
+    if "X3" not in done:
+        async with context.pool.connection() as connection:
+            current = await document_for_job(connection, document.id)  # as X1 left it
+        if current is None:
+            raise PermanentError("document_gone", "the document to extract is gone")
+        await run_x3(context, job, current, blocks, printed)
     return {"document_id": str(document.id), "stages": list(STAGES), "packages": packages}
 
 
