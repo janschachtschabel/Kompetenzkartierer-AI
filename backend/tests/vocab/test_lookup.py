@@ -10,7 +10,16 @@ import pytest
 from app.db.migrate import migrate
 from app.domain.lexicon import Cue, active_cues
 from app.vocab.loader import read_vocabulary
-from app.vocab.lookup import REGIONS, by_notation, concept, cues_for, profile_concepts, region_with_ancestors
+from app.vocab.lookup import (
+    REGIONS,
+    by_notation,
+    concept,
+    concept_texts,
+    cues_for,
+    current_release,
+    profile_concepts,
+    region_with_ancestors,
+)
 from app.vocab.store import load_vocabulary
 from tests.vocab.model import LEXICON_CORE, PROFILE_PREFIXES, SCHOOL_PROFILE, write_model
 
@@ -188,3 +197,26 @@ async def test_a_retired_cue_is_not_read(connection: psycopg.AsyncConnection) ->
 
     assert len(cues) == 486
     assert SCHOOL + "cue-dt-kernlehrplan" not in {cue.iri for cue in cues}
+
+
+async def test_a_profile_value_is_read_as_a_prompt_lists_it(connection: psycopg.AsyncConnection) -> None:
+    # label and definition in German, the core value it refines, the depth its nodes are read to
+    texts = await concept_texts(
+        connection,
+        [SCHOOL + "Inhaltsbereich", SCHOOL + "Rahmenteil", SCHOOL + "Verzeichnis", SCHOOL + "Keiner"],
+    )
+
+    area = texts[SCHOOL + "Inhaltsbereich"]
+    assert (area.label, area.broader, area.depth) == ("Inhaltsbereich", (CV + "fn_area",), "full")
+    assert area.definition is not None and area.definition.startswith("Thematische Ordnungseinheit")
+    assert (texts[SCHOOL + "Rahmenteil"].depth, texts[SCHOOL + "Verzeichnis"].depth) == ("typed", "skip")
+    assert texts[SCHOOL + "Verzeichnis"].label == "Verzeichnis/Vorwort"
+    assert SCHOOL + "Keiner" not in texts
+
+
+async def test_the_current_release_is_the_last_loaded(connection: psycopg.AsyncConnection) -> None:
+    cursor = await connection.execute("SELECT max(id) FROM vocab_release")
+    latest = await cursor.fetchone()
+
+    assert latest is not None
+    assert await current_release(connection) == latest[0]

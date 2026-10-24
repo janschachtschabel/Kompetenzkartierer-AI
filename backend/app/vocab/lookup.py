@@ -7,7 +7,7 @@ of those classes named under its namespace (app/db/migrations/0012_lexicon.sql),
 core values it refines (``skos:broader``).
 """
 
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -34,6 +34,20 @@ class VocabEntry:
     pref_labels: dict[str, str]
     broader: tuple[str, ...]
     retired: bool
+
+
+@dataclass(frozen=True)
+class ConceptText:
+    """A concept as a prompt lists it: its label and definition in one language (any other where
+    that has none), the core values it refines, and - for a node type - the depth its nodes are read
+    to (``cur:extractionDepth``, as its notation: full, typed, skip)."""
+
+    iri: str
+    notation: str | None
+    label: str
+    definition: str | None
+    broader: tuple[str, ...]
+    depth: str | None
 
 
 @dataclass(frozen=True)
@@ -67,6 +81,12 @@ JOIN terminology_profile p ON p.iri = c.profile_iri
 JOIN vocab_concept s ON s.iri = p.sector_iri
 WHERE s.notation = %s AND s.retired_in IS NULL AND p.retired_in IS NULL AND c.retired_in IS NULL
 ORDER BY c.iri
+"""
+_CONCEPT_TEXTS = """
+SELECT c.iri, c.notation, c.pref_labels, c.definitions, c.broader, d.notation AS depth
+FROM vocab_concept c
+LEFT JOIN vocab_concept d ON d.iri = c.properties -> %(depth)s -> 0 ->> 'iri'
+WHERE c.iri = ANY (%(iris)s)
 """
 _ANCESTORS = """
 WITH RECURSIVE up (iri, broader) AS (
@@ -148,6 +168,40 @@ async def cues_for(connection: psycopg.AsyncConnection, sector_notation: str) ->
 
 def _texts(by_language: dict[str, list[str]]) -> tuple[str, ...]:
     return tuple(text for language in sorted(by_language) for text in by_language[language])
+
+
+async def concept_texts(
+    connection: psycopg.AsyncConnection, iris: Collection[str], language: str = "de"
+) -> dict[str, ConceptText]:
+    """The concepts of these IRIs as a prompt lists them, retired or not; an unknown IRI is left out."""
+    async with connection.cursor(row_factory=dict_row) as cursor:
+        await cursor.execute(_CONCEPT_TEXTS, {"depth": CUR + "extractionDepth", "iris": list(iris)})
+        rows = await cursor.fetchall()
+    return {
+        row["iri"]: ConceptText(
+            iri=row["iri"],
+            notation=row["notation"],
+            label=_in(row["pref_labels"], language) or row["notation"] or row["iri"],
+            definition=_in(row["definitions"], language),
+            broader=tuple(row["broader"]),
+            depth=row["depth"],
+        )
+        for row in rows
+    }
+
+
+def _in(by_language: dict[str, str], language: str) -> str | None:
+    """The text in ``language``, else in the first other one there is."""
+    if language in by_language:
+        return by_language[language]
+    return next((by_language[other] for other in sorted(by_language)), None)
+
+
+async def current_release(connection: psycopg.AsyncConnection) -> int | None:
+    """The release the vocabularies were last loaded as, which a run reads with; None before any load."""
+    cursor = await connection.execute("SELECT max(id) FROM vocab_release")
+    row = await cursor.fetchone()
+    return None if row is None else row[0]
 
 
 async def region_with_ancestors(connection: psycopg.AsyncConnection, notation: str) -> frozenset[str]:
