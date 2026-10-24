@@ -2,21 +2,22 @@
 -- written in one transaction with this row, so a unit is done whole or not at all, and once per
 -- document - a second writer of the same unit fails on the key and takes back what it wrote. What
 -- the unit was found to lack are docking points (cur:checkedAbsent). Its run gone, or its node, the
--- unit is open again, and the next extraction asks for it.
+-- unit stays done: its statements outlive its run (statement.run_id), and a node is taken away by
+-- the editors - asked again, the unit would meet its statements' positions or name a node gone.
 CREATE TABLE extraction_unit (
     document_id uuid NOT NULL REFERENCES document (id) ON DELETE CASCADE,
     unit_key text NOT NULL CHECK (unit_key ~ '^E[0-9]{1,6}$'),
-    run_id uuid NOT NULL,
+    run_id uuid,  -- the run that did it, while it is kept
     node_id uuid,
     statements integer NOT NULL CHECK (statements >= 0),
     checked_absent text[] NOT NULL DEFAULT '{}',
     finished_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (document_id, unit_key),
-    FOREIGN KEY (document_id, run_id) REFERENCES extraction_run (document_id, id) ON DELETE CASCADE,
-    FOREIGN KEY (document_id, node_id) REFERENCES node (document_id, id) ON DELETE CASCADE
+    FOREIGN KEY (document_id, run_id) REFERENCES extraction_run (document_id, id) ON DELETE SET NULL (run_id),
+    FOREIGN KEY (document_id, node_id) REFERENCES node (document_id, id) ON DELETE SET NULL (node_id)
 );
 
-CREATE INDEX extraction_unit_run ON extraction_unit (run_id);
+CREATE INDEX extraction_unit_run ON extraction_unit (run_id) WHERE run_id IS NOT NULL;
 CREATE INDEX extraction_unit_node ON extraction_unit (node_id) WHERE node_id IS NOT NULL;
 
 -- What a unit lacks (cur:checkedAbsent): concepts of cv:DockingPoints, which the vocabularies

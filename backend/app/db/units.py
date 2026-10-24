@@ -35,8 +35,8 @@ class UnitTaken(Exception):
 @dataclass(frozen=True)
 class UnitDone:
     key: str
-    run_id: UUID
-    node_id: UUID | None  # the node its statements went to
+    run_id: UUID | None  # the run that did it, while it is kept
+    node_id: UUID | None  # the node its statements went to, while it stands
     statements: int
     checked_absent: tuple[str, ...]  # concepts of cv:DockingPoints the unit lacks
     finished_at: datetime

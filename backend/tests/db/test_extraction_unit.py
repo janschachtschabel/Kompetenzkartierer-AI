@@ -94,13 +94,24 @@ def test_a_unit_is_done_by_a_run_of_its_own_document(connection: psycopg.Connect
         add_unit(connection, document, add_run(connection, document), node_id=add_node(connection, other))
 
 
-def test_its_run_or_its_node_gone_a_unit_is_open_again(connection: psycopg.Connection, document: Any) -> None:
+def test_its_run_or_its_node_gone_a_unit_stays_done(connection: psycopg.Connection, document: Any) -> None:
+    # what it wrote outlives its run (statement.run_id SET NULL), and its node the editors took away
+    # themselves: asked again, it would meet its statements' positions or name a node gone
     run, node = add_run(connection, document), add_node(connection, document)
-    add_unit(connection, document, run, "E1")
-    add_unit(connection, document, run, "E2", node_id=node)
-    add_unit(connection, document, add_run(connection, document), "E3")
+    add_unit(connection, document, run, "E1", node_id=node)
 
     connection.execute("DELETE FROM node WHERE id = %s", (node,))
-    assert [key for key, _ in units(connection)] == ["E1", "E3"]
     connection.execute("DELETE FROM extraction_run WHERE id = %s", (run,))
-    assert [key for key, _ in units(connection)] == ["E3"]
+
+    assert connection.execute("SELECT unit_key, run_id, node_id FROM extraction_unit").fetchall() == [
+        ("E1", None, None)
+    ]
+
+
+def test_what_a_unit_found_missing_stays_docking_points_when_changed(
+    connection: psycopg.Connection, document: Any
+) -> None:
+    add_unit(connection, document, add_run(connection, document), "E1", checked_absent=[CV + "dock_level"])
+
+    with pytest.raises(errors.CheckViolation):
+        connection.execute("UPDATE extraction_unit SET checked_absent = ARRAY[%s]", (CV + "mark_bold",))
