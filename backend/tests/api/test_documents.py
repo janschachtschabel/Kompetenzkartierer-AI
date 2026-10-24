@@ -282,6 +282,33 @@ def test_a_document_and_its_list_are_read_by_who_sees_them(client: TestClient, u
     assert client.get("/api/v1/documents", headers=stranger).json() == []
 
 
+def test_the_extraction_s_job_is_named_to_those_who_may_follow_it_its_status_to_every_reader(
+    client: TestClient, url: str
+) -> None:
+    # the job is followed in its owner's lane or by an admin (app/api/jobs.py); an editor reads how
+    # it stands, as a conversion names its job to its starter alone (app/api/conversions.py)
+    owner, header = an_account(url)
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+    _, admin = an_account(url, "Admin", ("admin",))
+    made = a_conversion(url, owner)
+    started = make(client, url, header, made)
+    path, job = f"/api/v1/documents/{started['document']['id']}", started["job"]["id"]
+
+    seen = {
+        name: (
+            client.get(path, headers=who).json()["extraction"],
+            client.get("/api/v1/documents", headers=who, params={"source_id": str(made["source"])}).json()[0][
+                "extraction"
+            ],
+        )
+        for name, who in {"owner": header, "editor": editor, "admin": admin}.items()
+    }
+
+    assert seen["owner"] == seen["admin"] == ({"job_id": job, "status": "queued"},) * 2
+    assert seen["editor"] == ({"job_id": None, "status": "queued"},) * 2
+    assert client.get(f"/api/v1/jobs/{job}", headers=editor).status_code == 404  # whom it is kept from
+
+
 def add_run(url: str, document: str, job: str, stage: str, attempt: int, outcome: str | None = None,
             failure: str | None = None) -> None:  # fmt: skip
     with psycopg.connect(url, autocommit=True) as connection:

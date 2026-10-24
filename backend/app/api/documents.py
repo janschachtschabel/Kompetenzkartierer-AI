@@ -57,7 +57,8 @@ class DocumentRequest(BaseModel):
 
 
 class ExtractionRef(BaseModel):
-    job_id: UUID
+    # the job, for those who may follow it (GET /api/v1/jobs/{id}): its owner, an admin; else null
+    job_id: UUID | None
     status: JobStatus
 
 
@@ -247,7 +248,14 @@ async def _outs(
     """The documents as the API gives them, in two queries however many they are."""
     sectors = {iri: notation for notation, iri in (await notations_of(connection, EDUCATION_SECTORS)).items()}
     found = await last_jobs(connection, [unique_key(document.id) for document in documents])
-    latest = {key: ExtractionRef(job_id=job_id, status=status) for key, (job_id, status) in found.items()}
+
+    def extraction(document: Document) -> ExtractionRef | None:
+        if (latest := found.get(unique_key(document.id))) is None:
+            return None
+        job_id, status = latest
+        follows = "admin" in who.roles or document.owner_id == who.account_id
+        return ExtractionRef(job_id=job_id if follows else None, status=status)
+
     return [
         DocumentOut(
             id=document.id,
@@ -259,7 +267,7 @@ async def _outs(
             sector=sectors.get(document.sector_iri, document.sector_iri),
             regions=list(document.regions),
             created_at=document.created_at,
-            extraction=latest.get(unique_key(document.id)),
+            extraction=extraction(document),
         )
         for document in documents
     ]
