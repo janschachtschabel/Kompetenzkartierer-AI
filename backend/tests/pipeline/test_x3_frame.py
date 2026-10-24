@@ -123,7 +123,7 @@ async def test_the_frame_is_asked_once_behind_the_prefix_and_written_with_its_an
         "SELECT p.part_kind, p.content, array_agg(b.block_id ORDER BY b.block_id), r.stage_iri"
         " FROM frame_part p JOIN anchor a ON a.frame_part_id = p.id JOIN anchor_block b ON b.anchor_id = a.id"
         " JOIN extraction_run r ON r.id = p.run_id WHERE p.document_id = %s"
-        " GROUP BY p.id, p.part_kind, p.content, r.stage_iri ORDER BY p.id",
+        " GROUP BY p.id, p.part_kind, p.content, r.stage_iri ORDER BY p.position",
         document.id,
     ) == [
         (

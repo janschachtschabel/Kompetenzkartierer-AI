@@ -132,8 +132,8 @@ def test_what_a_run_made_or_found_is_of_the_run_s_document(
     with pytest.raises(errors.ForeignKeyViolation):
         connection.execute(
             "INSERT INTO frame_part (id, document_id, part_kind, content, origin_scheme, origin_iri,"
-            " review_status_scheme, review_status_iri, run_id)"
-            " VALUES (%s, %s, 'operators', '{}', %s, %s, %s, %s, %s)",
+            " review_status_scheme, review_status_iri, run_id, position)"
+            " VALUES (%s, %s, 'operators', '{}', %s, %s, %s, %s, %s, 1)",
             (
                 add_entity(connection, "frame_part"),
                 document,

@@ -4,10 +4,12 @@ they were written."""
 
 from collections.abc import AsyncIterator
 from typing import Any
+from uuid import UUID
 
 import psycopg
 import pytest
 
+from app.db import anchors
 from app.db.frame_parts import FramePartDraft, frame_parts_of, write_frame_parts
 from app.db.migrate import migrate
 from app.domain.l1 import AnchorDraft
@@ -83,6 +85,36 @@ async def test_frame_parts_are_written_with_what_they_hold_and_where_they_stand(
         " WHERE p.document_id = %s ORDER BY p.id",
         made["document"],
     ) == [(MODEL, PROPOSED, 1, "p1-b1"), (MODEL, PROPOSED, 1, "p1-b1")]
+
+
+async def test_frame_parts_are_read_in_the_order_written_whatever_their_ids(
+    connection: psycopg.AsyncConnection, made: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # ids of one millisecond sort by their random bits (app/core/ids.py): here the later ones lower
+    falling = iter(UUID(int=(1 << 100) - number) for number in range(1, 100))
+    monkeypatch.setattr(anchors, "new_id", lambda: next(falling))
+    drafts = [draft("operators", {"lemma": lemma}) for lemma in ("beschreiben", "erklären", "nennen")]
+
+    async with connection.transaction():
+        await write_frame_parts(connection, made["document"], made["conversion"], drafts, run_id=made["run"])
+
+    parts = await frame_parts_of(connection, made["document"])
+    assert [part.content["lemma"] for part in parts] == ["beschreiben", "erklären", "nennen"]
+
+
+async def test_frame_parts_written_later_stand_after_those_there_are(
+    connection: psycopg.AsyncConnection, made: dict[str, Any]
+) -> None:
+    for lemma in ("beschreiben", "erklären"):
+        async with connection.transaction():
+            await write_frame_parts(
+                connection, made["document"], made["conversion"], [draft("operators", {"lemma": lemma})],
+                run_id=made["run"],
+            )  # fmt: skip
+
+    assert await rows(
+        connection, "SELECT position, content ->> 'lemma' FROM frame_part ORDER BY position"
+    ) == [(1, "beschreiben"), (2, "erklären")]
 
 
 async def test_a_frame_part_a_rule_gave_names_its_rule(

@@ -1,7 +1,8 @@
 """Frame parts as X3 writes and X4 reads them (plan M1 7b, 0015): a competency or level model, an
 operator, a legend entry or a rule of the document's frame - each its schema object as X3 gave it,
 without the blocks it names, which its anchor holds. Written in the caller's transaction, the one
-that ends X3's run; read back in the order they were written (their ids grow with time).
+that ends X3's run, each after the document's parts there are; read back in that order (their
+``position``: ids of one millisecond do not keep it, migration 0019).
 """
 
 from collections.abc import Mapping, Sequence
@@ -17,10 +18,11 @@ from app.domain.l1 import AnchorDraft, FramePartKind
 
 _PART = """
 INSERT INTO frame_part (id, document_id, part_kind, content, origin_scheme, origin_iri, review_status_scheme,
-    review_status_iri, rule_id, run_id)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    review_status_iri, rule_id, run_id, position)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
-_PARTS = "SELECT id, part_kind, content, run_id FROM frame_part WHERE document_id = %s ORDER BY id"
+_NEXT = "SELECT coalesce(max(position), 0) + 1 FROM frame_part WHERE document_id = %s"
+_PARTS = "SELECT id, part_kind, content, run_id FROM frame_part WHERE document_id = %s ORDER BY position"
 
 
 @dataclass(frozen=True)
@@ -50,8 +52,11 @@ async def write_frame_parts(
     run_id: UUID,
 ) -> list[UUID]:
     """The parts, each with its anchor in the document's conversion, in the caller's transaction."""
+    cursor = await connection.execute(_NEXT, (document_id,))
+    found = await cursor.fetchone()
+    assert found is not None  # noqa: S101 - an aggregate yields its row
     made = []
-    for draft in drafts:
+    for place, draft in enumerate(drafts, start=int(found[0])):
         part_id = await new_entity(connection, "frame_part")
         await connection.execute(
             _PART,
@@ -66,6 +71,7 @@ async def write_frame_parts(
                 draft.review_status,
                 draft.rule_id,
                 run_id,
+                place,
             ),
         )
         await write_anchor(connection, document_id, conversion_id, draft.anchor, frame_part_id=part_id)

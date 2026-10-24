@@ -180,8 +180,13 @@ def test_a_node_taken_away_takes_its_anchors_and_their_blocks(
 
 def add_frame_part(connection: psycopg.Connection, made: dict[str, Any], **columns: Any) -> uuid.UUID:
     part = add_entity(connection, "frame_part")
+    last = connection.execute(
+        "SELECT coalesce(max(position), 0) FROM frame_part WHERE document_id = %s", (made["document"],)
+    ).fetchone()
+    assert last is not None
     values = {
         "document_id": made["document"],
+        "position": last[0] + 1,
         "part_kind": "operators",
         "content": Jsonb({"name": "Operatoren"}),
         "origin_scheme": CV + "Origins",
