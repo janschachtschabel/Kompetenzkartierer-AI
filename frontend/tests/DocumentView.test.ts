@@ -205,12 +205,14 @@ describe("a document's page", () => {
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
     const statements = at("extract_statements", { done: 1, total: 2 });
     let asked = 0;
-    vi.mocked(api.getJob).mockImplementation(async (id) =>
-      id === "j2"
-        ? { ...statements, id: "j2" }
-        : asked++ === 0
-          ? statements
-          : { ...statements, status: "failed", error_code: "budget_exhausted" },
+    vi.mocked(api.getJob).mockImplementation((id) =>
+      Promise.resolve(
+        id === "j2"
+          ? { ...statements, id: "j2" }
+          : asked++ === 0
+            ? statements
+            : { ...statements, status: "failed" as const, error_code: "budget_exhausted" },
+      ),
     );
     vi.spyOn(api, "startExtraction").mockResolvedValue(job("queued"));
     const wrapper = await open();
