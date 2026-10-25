@@ -1,8 +1,11 @@
 """The fuzzy stage of checking a wording against the text of its anchor's blocks (plan M1 8.1), after
 the old app's ce_api/services/extraction/anchors.py: the passage most like the wording, among the places
 its rare words lead to, tightened to what the two share (app/pipeline/anchor_passage.py). Normalized
-where the document's words there are the wording's - case, marks, spacing and soft hyphens aside -
-else fuzzy with its likeness: no proof of the wording (konzept §5.1).
+where the document's words there are the wording's - case, marks, spacing, composed or decomposed
+letters and words parted at a line's end or by a soft hyphen aside - else fuzzy with its likeness: no
+proof of the wording (konzept §5.1). A passage's likeness can be less than ``MIN_RATIO``, the window's
+never: a passage that holds all of the wording and runs on past a parenthesis it left out scores less
+than the window it was tightened from (``_passage``).
 
 difflib is pure Python and its cost grows with both lengths: over a long text it once took 22 s (old
 app, audit E-20). So the wording's opening is aligned at no more than ``FUZZY_PLACES`` places, where one
@@ -13,6 +16,7 @@ gives no wording longer than ``anchor_check.MAX_FUZZY``. A table block of a whol
 import difflib
 import re
 
+from app.domain.wording import unparted
 from app.pipeline.anchor_match import Hit, words
 from app.pipeline.anchor_passage import candidates
 
@@ -37,9 +41,15 @@ def fuzzy(target: str, text: str) -> Hit | None:
     low, high, likeness = window
     start, end, score = _passage(text, low, high, target, likeness)
     found = text[start:end]
-    if [word.casefold() for word in words(found)] == [word.casefold() for word in words(target)]:
+    if _compared(found) == _compared(target):
         return Hit(start, end, "normalized")
     return Hit(start, end, "fuzzy", round(score, 3))
+
+
+def _compared(text: str) -> list[str]:
+    """The words of ``text`` as a normalized match compares them: composed, case folded, whole where a
+    hyphen at a line's end parted one - a block keeps its lines (app/conversion/lines.py)."""
+    return [word.casefold() for word in words(unparted(text))]
 
 
 def _fuzzy_span(target: str, text: str) -> tuple[int, int, float] | None:

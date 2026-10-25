@@ -9,6 +9,8 @@ have nothing to do here.
 """
 
 import re
+import unicodedata
+from collections.abc import Iterator
 from typing import Literal, NamedTuple
 
 # How far apart the fragments of an elided wording may stand: a model leaves out a clause or the middle
@@ -53,14 +55,30 @@ def needle(wording: str) -> str:
 
 
 def verbatim(target: str, text: str) -> Hit | None:
-    """The first place ``text`` holds the wording as it stands, else with any run of whitespace."""
+    """The first place ``text`` holds the wording as it stands, else with any run of whitespace - as
+    whole words: "Lernfeld 12" does not hold "Lernfeld 1"."""
     at = text.find(target)
-    if at != -1:
-        return Hit(at, at + len(target), "exact")
-    flexible = _flexible(target).search(text)
-    if flexible:
-        return Hit(flexible.start(), flexible.end(), "whitespace")
+    while at != -1:
+        if _whole(text, at, at + len(target), target):
+            return Hit(at, at + len(target), "exact")
+        at = text.find(target, at + 1)
+    for flexible in _flexible(target).finditer(text):
+        if _whole(text, flexible.start(), flexible.end(), target):
+            return Hit(flexible.start(), flexible.end(), "whitespace")
     return None
+
+
+def in_word(sign: str) -> bool:
+    """Whether ``sign`` belongs to a word: a letter or digit, or a mark a decomposed letter is written
+    with ("u" and U+0308 for "ü": a PDF may write it so)."""
+    return sign.isalnum() or unicodedata.category(sign).startswith("M")
+
+
+def _whole(text: str, start: int, end: int, target: str) -> bool:
+    """Whether ``text[start:end]`` cuts no word at an end where the wording has a letter or digit."""
+    cut_before = target[:1].isalnum() and start > 0 and in_word(text[start - 1])
+    cut_after = target[-1:].isalnum() and end < len(text) and in_word(text[end])
+    return not (cut_before or cut_after)
 
 
 def elided(target: str, text: str) -> Hit | None:
@@ -87,27 +105,35 @@ def _fragments(target: str) -> list[str]:
 
 
 def _chain(fragments: list[str], text: str) -> tuple[int, int] | None:
-    """The first place where ``fragments`` stand in order, each no more than ``ELIDED_GAP`` characters
-    after the one before: where the first begins and the last ends.
+    """The first place where ``fragments`` stand in order, each as whole words and no more than
+    ``ELIDED_GAP`` characters after the one before: where the first begins and the last ends.
 
     The first fragment counts where it stands last before the second: a common opening - "Die
     Schülerinnen und Schüler" - stands before every sentence, and taken where it first stood, the
     passage began a sentence early and claimed it (old app, review of package 1).
     """
     first, *rest = [_flexible(fragment) for fragment in fragments]
-    for found in first.finditer(text):
+    for found in _places(first, fragments[0], text, 0, len(text)):
         end = found.end()
         followers: list[re.Match[str]] = []
         for pattern, fragment in zip(rest, fragments[1:], strict=True):
             # twice the fragment's length: a whitespace-flexible match may run longer
-            after = pattern.search(text, end, min(len(text), end + ELIDED_GAP + 2 * len(fragment)))
+            reach = min(len(text), end + ELIDED_GAP + 2 * len(fragment))
+            after = next(_places(pattern, fragment, text, end, reach), None)
             if after is None or after.start() - end > ELIDED_GAP:
                 break
             followers.append(after)
             end = after.end()
         else:
             start = found.start()
-            for later in first.finditer(text, found.end(), followers[0].start()):
+            for later in _places(first, fragments[0], text, found.end(), followers[0].start()):
                 start = later.start()
             return start, end
     return None
+
+
+def _places(
+    pattern: re.Pattern[str], fragment: str, text: str, low: int, high: int
+) -> Iterator[re.Match[str]]:
+    """Where ``pattern`` stands in ``text[low:high]`` as whole words."""
+    return (found for found in pattern.finditer(text, low, high) if _whole(text, *found.span(), fragment))

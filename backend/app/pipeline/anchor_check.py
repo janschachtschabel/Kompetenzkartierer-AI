@@ -25,7 +25,7 @@ MatchKind = Literal["exact", "whitespace", "elided", "normalized", "fuzzy", "not
 @dataclass(frozen=True)
 class AnchorMatch:
     kind: MatchKind  # the notation in cv:MatchKinds
-    score: float | None = None  # a fuzzy match's likeness, 0..1
+    score: float | None = None  # a fuzzy quote's likeness, 0..1, perhaps under MIN_RATIO
     quote: str | None = None  # the document's text at the place
     start: int | None = None  # the place in the text of the blocks
     end: int | None = None

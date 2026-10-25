@@ -12,7 +12,7 @@ import pytest
 
 from app.pipeline import anchor_fuzzy, anchor_passage
 from app.pipeline.anchor_check import MAX_FUZZY, check_wording
-from app.pipeline.anchor_fuzzy import FUZZY_PLACES, FUZZY_QUOTE
+from app.pipeline.anchor_fuzzy import FUZZY_PLACES, FUZZY_QUOTE, MIN_RATIO
 from app.pipeline.anchor_match import ELIDED_GAP, words
 
 TWO = ["Die Schülerinnen und Schüler\nbeschreiben die Strukturen.", "Zweiter Absatz auf der zweiten Seite."]
@@ -255,6 +255,8 @@ def test_a_passage_runs_on_to_the_wording_s_last_words_past_what_it_left_out(
 
     assert found.kind == "fuzzy" and found.quote is not None
     assert found.quote.startswith(wording[:40]) and found.quote.endswith(ending)
+    # the quote's likeness, under the window's threshold: what it holds more is what the wording left out
+    assert found.score is not None and 0.75 < found.score < MIN_RATIO
 
 
 # --- normalized: the same words, marks and case aside -------------------------------------------------
@@ -491,3 +493,135 @@ def test_the_first_passage_offered_is_the_whole_sentence_where_its_dots_end_none
     first = next(anchor_passage.candidates(text, 0, len(text), wording, margin=anchor_fuzzy.TIGHTEN_MARGIN))
 
     assert text[slice(*first)] == text
+
+
+# --- review of package 8a: the text of blocks as the conversion keeps it -------------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "wording"),
+    [
+        (
+            "Die Lernenden erwerben Kompe-\ntenzen im Umgang mit Licht.",
+            "Die Lernenden erwerben Kompetenzen im Umgang mit Licht.",
+        ),
+        ("Wärmeerzeugungs-\nanlagen installieren", "Wärmeerzeugungsanlagen installieren"),
+        ("Die Lernenden pflegen saisonales Gemüse.", "Die Lernenden pflegen saisonales Gemüse."),
+    ],
+    ids=["hyphen at a line's end", "a heading parted in its block", "decomposed letters"],
+)
+def test_a_word_parted_at_a_line_s_end_or_written_decomposed_is_normalized(text: str, wording: str) -> None:
+    # a block keeps its lines (app/conversion/lines.py), and a PDF may write "ü" as "u" and its mark
+    found = check_wording(wording, [text])
+
+    assert (found.kind, found.score, found.quote) == ("normalized", None, text)
+
+
+def test_a_hyphen_before_a_capital_parts_two_words() -> None:
+    # "E-\nMail" is the word "E-Mail", not "EMail": text_hash joins a parted word only before a small letter
+    found = check_wording("Die Lernenden schreiben eine EMail.", ["Die Lernenden schreiben eine E-\nMail."])
+
+    assert found.kind == "fuzzy"
+
+
+def test_a_quote_ends_after_the_marks_of_its_last_letters() -> None:
+    text = "Die Lernenden pflegen saisonales Gemüse im Beet."
+
+    found = check_wording("Die Lernenden pflegen saisonales Gemüse.", [text])
+
+    assert found.kind == "normalized" and found.quote == "Die Lernenden pflegen saisonales Gemüse"
+
+
+@pytest.mark.parametrize(
+    ("wording", "text"),
+    [
+        ("Lernfeld 1", "Lernfeld 12: Anlagen instand halten und ändern"),
+        ("2.1 Mechanik", "12.1 Mechanik"),
+        ("Lernfeld 1 … ändern", "Lernfeld 12: Anlagen instand halten und ändern"),
+    ],
+    ids=["ends inside a number", "begins inside a number", "elided"],
+)
+def test_a_wording_the_text_holds_only_inside_longer_words_is_not_found_word_for_word(
+    wording: str, text: str
+) -> None:
+    # X5 checks the model's claim that the blocks hold the wording: "Lernfeld 12" does not hold "Lernfeld 1"
+    assert check_wording(wording, [text]).kind not in ("exact", "whitespace", "elided")
+
+
+def test_a_wording_that_begins_or_ends_with_a_mark_may_stand_next_to_a_word() -> None:
+    # only an edge where the wording has a letter or digit can cut a word
+    found = check_wording("(vgl. Kapitel 2)", ["Siehe Optik(vgl. Kapitel 2)der Anlage."])
+
+    assert (found.kind, found.quote) == ("exact", "(vgl. Kapitel 2)")
+
+
+def test_a_wording_is_found_where_it_stands_as_whole_words_after_a_place_inside_one() -> None:
+    text = "Lernfeld 12: Anlagen instand halten\nLernfeld 1: Grundlagen"
+
+    found = check_wording("Lernfeld 1", [text])
+
+    assert (found.kind, found.start) == ("exact", text.index("Lernfeld 1:"))
+
+
+def test_a_heading_block_named_with_its_paragraph_is_a_line_like_any_other() -> None:
+    # the old app moved a passage off a markdown heading line; the anchor's texts do not say which block is a
+    # heading, and a sentence a page break parted begins on its first block (plan M1, Nachtrag 8a)
+    texts = ["Ziele des Fachs", "Die Lernenden beschreiben die Ziele des Unterrichts."]
+
+    found = check_wording("Fach: Die Lernenden erläutern die Ziele des Unterrichts.", texts)
+
+    assert (found.kind, found.quote) == ("fuzzy", "Fachs\n" + texts[1])
+
+
+def test_the_document_s_words_before_a_passage_are_not_taken_from_the_block_before() -> None:
+    texts = ["2 Optik", "Die Schülerinnen und Schüler können optische Experimente selbständig durchführen."]
+
+    found = check_wording(
+        "Insgesamt Die Schülerinnen und Schüler können optische Experimente selbstständig durchführen.", texts
+    )
+
+    assert (found.kind, found.quote) == ("fuzzy", texts[1])
+
+
+def test_the_document_s_words_after_a_passage_are_not_taken_from_the_block_after() -> None:
+    texts = ["Die Person zeigt, dass sie in der Lage ist,", "Dieser Satz steht im nächsten Block."]
+
+    found = check_wording("Die Person zeigt, dass sie in der Lage ist, Probleme", texts)
+
+    assert (found.kind, found.quote) == ("fuzzy", texts[0])
+
+
+def test_a_passage_takes_in_the_document_s_opening_words_the_window_started_after() -> None:
+    # the wording left out a word before its longest shared stretch: its window starts that much late
+    text = "1. Die Lernenden messen elektrische Spannungen an Bauteilen und vergleichen sie mit dem Sollwert."
+
+    found = check_wording(
+        "1. Die Lernenden Spannungen an Bauteilen und vergleichen sie mit dem Sollwert.", [text]
+    )
+
+    assert (found.kind, found.quote) == ("fuzzy", text)
+
+
+def test_a_wording_as_long_as_the_fuzzy_search_takes_is_searched_fuzzy() -> None:
+    text = " ".join(f"Begriff{number}" for number in range(400))[:MAX_FUZZY]
+    wording = text.replace("Begriff7 ", "Begriffx ", 1)  # one sign for one
+
+    found = check_wording(wording, [text])
+
+    assert (len(wording), found.kind) == (MAX_FUZZY, "fuzzy")
+
+
+def test_a_long_paraphrase_found_in_a_table_costs_its_thread_a_bounded_time() -> None:
+    # X5 checks all of a document's anchors in one thread beside the event loop
+    table = " ".join(
+        f"Zelle {number}: Begriff{number} steht in Zeile {number % 97}." for number in range(1_200)
+    )
+    start = table.index("Zelle 300:")
+    wording = table[start : start + 1_950].replace("steht", "stand")
+
+    started = time.thread_time()
+    found = check_wording(wording, [table])
+    spent = time.thread_time() - started
+
+    assert found.kind == "fuzzy"
+    assert spent < 5.0, f"{spent:.2f} s of CPU time"

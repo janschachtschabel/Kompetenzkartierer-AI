@@ -60,6 +60,12 @@ def folded(text: str) -> str:
     return _SPACE.sub(" ", _fold(text)).strip()
 
 
+def unparted(text: str) -> str:
+    """Text with its letters composed and each word a hyphen parted at a line's end whole again: as a
+    match compares the document's words with a wording's (app/pipeline/anchor_fuzzy.py)."""
+    return _PARTED.sub("", unicodedata.normalize("NFC", text))  # type: ignore[no-any-return]
+
+
 def _fold(text: str) -> str:
     """Everything ``normalized`` does but the numbering and the spaces."""
     text = _FORMAT.sub("", unicodedata.normalize("NFC", text))  # regex is untyped

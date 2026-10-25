@@ -7,14 +7,18 @@ anchor's quote - it is not (old app, audit 2026-10-03 F01). This narrows the win
 wording's words match and widens it to whole words, and offers the alternatives too, the window last,
 for the search to take the first that is no worse than the window (``candidates``).
 
-The text is the anchor's blocks, one line end between two: a line break ends a word, and the old app's
-moves off a markdown heading line have no heading to move off.
+The text is the anchor's blocks, one line end between two: a line break ends a word. A heading block
+named with its paragraph is a line like any other - the old app moved a passage off a markdown heading
+line, but the blocks do not say which of them is a heading, and a sentence a page break parted begins on
+its first block. A word is its letters and digits and the marks of decomposed letters (``in_word``).
 """
 
 import difflib
 import re
 from collections.abc import Iterator
 from typing import NamedTuple
+
+from app.pipeline.anchor_match import in_word
 
 # How far past the passage the wording's last words may stand: what the wording left out before them -
 # a parenthesis, a clause - as far as the gap of an elided wording may run (old app, live replay
@@ -153,11 +157,11 @@ def _words_before(text: str, start: int, count: int) -> int:
     line = text.rfind("\n", 0, start) + 1
     for _ in range(count):
         word_end = start
-        while word_end > line and not text[word_end - 1].isalnum():
+        while word_end > line and not in_word(text[word_end - 1]):
             word_end -= 1
         if word_end == line or re.search(r"[.!?]", text[word_end:start]):
             break
-        while word_end > line and text[word_end - 1].isalnum():
+        while word_end > line and in_word(text[word_end - 1]):
             word_end -= 1
         start = word_end
     return start
@@ -172,11 +176,11 @@ def _words_after(text: str, end: int, count: int) -> int:
         if text[end - 1 : end] in (".", "!", "?"):
             break
         word_start = end
-        while word_start < line_end and not text[word_start].isalnum():
+        while word_start < line_end and not in_word(text[word_start]):
             word_start += 1
         if word_start == line_end or re.search(r"[.!?]", text[end:word_start]):
             break
-        while word_start < line_end and text[word_start].isalnum():
+        while word_start < line_end and in_word(text[word_start]):
             word_start += 1
         end = word_start
     return end
@@ -189,8 +193,8 @@ def _whole_words(text: str, start: int, end: int) -> tuple[int, int]:
         start += 1
     while end > start and text[end - 1].isspace():
         end -= 1
-    while 0 < start < end and text[start - 1].isalnum() and text[start].isalnum():
+    while 0 < start < end and in_word(text[start - 1]) and in_word(text[start]):
         start -= 1
-    while start < end < len(text) and text[end - 1].isalnum() and text[end].isalnum():
+    while start < end < len(text) and in_word(text[end - 1]) and in_word(text[end]):
         end += 1
     return start, end
