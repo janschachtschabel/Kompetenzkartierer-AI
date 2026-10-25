@@ -171,6 +171,9 @@ class Settings(BaseSettings):
     # Units X4 asks the model about at once within one job (app/pipeline/x4_statements.py); each
     # holds its reservation while it waits, so more of them spend an account's budget faster
     extract_concurrency: Annotated[int, Field(ge=1, le=16)] = 4
+    # How long X5 may validate one document against the Kern's shapes, in a child process killed at
+    # its end (app/pipeline/shacl.py): 43 s measured for 2,400 rows, room for a slower machine
+    shacl_timeout_s: Annotated[int, Field(ge=10, le=1800)] = 300
     # Who the register's requests say they are (source.fetch, source.check): the product token
     # robots.txt knows us by, then where to reach the operators; printable ASCII, as a header
     # holds it - and no space at its end, which h11 refuses in a header's value

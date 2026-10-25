@@ -447,6 +447,16 @@ def test_x4_asks_one_to_sixteen_units_at_once(value: int) -> None:
     assert make_settings(extract_concurrency=value).extract_concurrency == value
 
 
+def test_x5_gives_its_shacl_check_five_minutes_by_default() -> None:
+    # 43 s measured for a document of 2,400 rows (plan M1, Nachtrag 8a)
+    assert make_settings().shacl_timeout_s == 300
+
+
+@pytest.mark.parametrize("value", [10, 1800])
+def test_x5_gives_its_shacl_check_ten_seconds_to_half_an_hour(value: int) -> None:
+    assert make_settings(shacl_timeout_s=value).shacl_timeout_s == value
+
+
 @pytest.mark.parametrize(
     ("variable", "value"),
     [
@@ -455,6 +465,8 @@ def test_x4_asks_one_to_sixteen_units_at_once(value: int) -> None:
         ("MODEL_STARTS_PER_MINUTE", "0"),
         ("EXTRACT_CONCURRENCY", "0"),
         ("EXTRACT_CONCURRENCY", "17"),
+        ("SHACL_TIMEOUT_S", "9"),
+        ("SHACL_TIMEOUT_S", "1801"),
     ],
 )
 def test_the_limits_of_model_jobs_are_bounded(
