@@ -20,7 +20,7 @@ from app.llm import calls
 from app.llm.attempts import never_sent
 from app.llm.calls import StageAgent, ask, breakpoint_settings, build_agent, cached_up_to, wait_after
 from app.llm.client import build_model
-from app.llm.metering import BudgetExhausted, Spent
+from app.llm.metering import BudgetExhausted, Spent, estimate_input
 from tests.llm.test_client import llm_settings
 
 pytestmark = pytest.mark.anyio
@@ -102,11 +102,10 @@ async def test_a_request_s_input_is_counted_beside_the_event_loop(monkeypatch: p
     # the whole document is counted before each request: X4 asks several units at once (plan M1 7b)
     loop_thread = threading.get_ident()
     counted_in: list[int] = []
-    estimate = calls.estimate_input
 
     def counted(*args: Any, **kwargs: Any) -> int:
         counted_in.append(threading.get_ident())
-        return estimate(*args, **kwargs)
+        return estimate_input(*args, **kwargs)
 
     monkeypatch.setattr(calls, "estimate_input", counted)
     built, _ = stage(['{"title": "Zahlen"}'])
