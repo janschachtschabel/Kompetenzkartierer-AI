@@ -726,7 +726,9 @@ export const messages = {
         anchor: "Anker",
         variant: "Variante",
       },
-      unit: "Paket {unit}",
+      // what a finding is about: its kind, its wording or title, the work package it names
+      about: "{kind} „{label}“",
+      inUnit: "{what}, Paket {unit}",
       // by the rule's name without its stage: the reading of an answer names its rules alike at X1,
       // X3, X4 and X6 (tests/findingWords.test.ts); SHACL's own messages are German already
       rules: {
@@ -739,9 +741,9 @@ export const messages = {
         heading_as_statement: "Eine Aussage, die nur die Überschrift ihres Knotens wiederholt.",
         // what the reading of the model's answer found
         too_many_statements: "Die Antwort enthielt mehr Aussagen, als gelesen werden; die übrigen fehlen.",
-        statement_without_block: "Eine Aussage, die in keinem ihrer Blöcke steht; sie fehlt.",
+        statement_without_block: "Eine Aussage ohne gültige Blockkennung; sie fehlt.",
         statement_without_wording: "Eine Aussage ohne Wortlaut; sie fehlt.",
-        statement_too_long: "Eine Aussage über der Längengrenze.",
+        statement_too_long: "Eine Aussage über der Längengrenze; sie fehlt.",
         unknown_block: "Eine Blockkennung, die die Umwandlung nicht hat.",
         block_outside_unit: "Ein Block außerhalb des gefragten Arbeitspakets.",
         unknown_value: "Ein Wert, den die Auswahlliste nicht hat.",
@@ -750,7 +752,7 @@ export const messages = {
         value_cut: "Ein Wert, auf die Höchstlänge gekürzt.",
         value_from_surroundings: "Ein Wert aus der Umgebung, nicht aus dem Wortlaut der Aussage.",
         target_not_content: "Ein Verweis auf eine Aussage, die keine Inhaltsaussage ist.",
-        part_without_block: "Ein Rahmenteil, das in keinem seiner Blöcke steht.",
+        part_without_block: "Ein Rahmenteil ohne gültige Blockkennung; es fehlt.",
         statement_outside_frame: "Eine Aussage außerhalb der Rahmenteile; sie wird mit den Arbeitspaketen gelesen.",
         statement_without_node: "Eine Aussage der Titelei, die kein Knoten aufnimmt.",
         target_elsewhere: "Ein Verweis auf Inhalt an einem anderen Knoten oder an keinem.",
@@ -766,6 +768,8 @@ export const messages = {
           "Was die Redaktion geändert hat, bleibt.",
         start: "Reparieren",
         started: "Die Reparatur ist gestartet; ihr Stand steht unter „Extraktion“.",
+        // the start gave back the document's extraction, waiting or running
+        extractionRunning: "Es läuft schon eine Extraktion des Dokuments; ihr Stand steht unter „Extraktion“.",
         failed: "Die Reparatur wurde nicht gestartet.",
       },
     },
@@ -810,6 +814,8 @@ export const messages = {
       // its job is another's to follow, or gone: the document is asked after (DocumentExtraction.vue)
       following: "Der Stand wird weiter abgefragt, bis die Extraktion endet.",
       started: "Die Extraktion ist gestartet; ihr Stand steht hier.",
+      // a start gave back the document's repair, waiting or running (one job of a document at a time)
+      repairRunning: "Es läuft schon eine Reparatur des Dokuments; ihr Stand steht hier.",
       // the start form led here: for this PDF one ran already, and what the form chose was not taken
       ledToRunning:
         "Für diese PDF lief schon eine Extraktion – hier ist sie. Bereich und Länder aus dem Formular " +

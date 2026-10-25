@@ -4,9 +4,11 @@
  * each with its severity, what it found in words (findingWords.ts) and the row it is about - as many
  * as the server lists, said where it found more. Read again whenever `refresh` changes (the page bumps
  * it as the extraction moves on), as sectionReading.ts reads. Its owner is offered the repair of the
- * work packages they name (FindingsRepair.vue) while no job of the document waits or runs (`busy`);
- * once the page follows a repair started here, the button is gone and the keyboard goes to the
- * section's heading, where it was left on nothing.
+ * work packages they name (FindingsRepair.vue) while no job of the document waits or runs (`busy`),
+ * and only beside findings read since: not while they are read again - the job that just ended may
+ * have changed them - nor beside a reading that failed. Once the page follows a repair started
+ * here, the button is gone and the keyboard goes to the section's heading, where it was left on
+ * nothing.
  */
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 
@@ -28,6 +30,7 @@ const heading = ref<HTMLElement | null>(null);
 const {
   shown: page,
   failure,
+  pending,
   load,
   retry,
 } = useSectionReading<FindingsPage>(() => getFindings(props.documentId), t("documents.findings.loadFailed"), heading);
@@ -121,7 +124,7 @@ watch(() => props.refresh, load);
       v-if="own && page"
       :document-id="documentId"
       :repairable="page.repairable"
-      :busy="busy"
+      :busy="busy || pending || failure !== null"
       @started="onStarted"
     />
     <!-- in the page from the start, so a failure of a later reading is heard -->

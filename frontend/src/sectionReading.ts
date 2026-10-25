@@ -14,6 +14,8 @@ export interface SectionReading<T> {
   /** What the last reading that counted gave; null before the first. */
   shown: Ref<T | null>;
   failure: Ref<Notice | null>;
+  /** A reading is under way whose answer has not come: what is shown may be overtaken. */
+  pending: Ref<boolean>;
   /** A reading as the page moves on: neither waiting nor keyboard change. */
   load: () => Promise<void>;
   /** A reading the reader asked for. */
@@ -28,6 +30,7 @@ export function useSectionReading<T>(
 ): SectionReading<T> {
   const shown = shallowRef<T | null>(null);
   const failure = ref<Notice | null>(null);
+  const pending = ref(false);
   let generation = 0;
   // where the reader's retry began, until what it asked for is shown; undefined: none asked
   let retriedFrom: Element | null | undefined;
@@ -36,6 +39,7 @@ export function useSectionReading<T>(
 
   async function load(): Promise<void> {
     const mine = ++generation;
+    pending.value = true;
     try {
       const found = await read();
       if (mine !== generation) return;
@@ -45,6 +49,7 @@ export function useSectionReading<T>(
       if (mine !== generation) return;
       failure.value = failureNotice(error, loadFailed);
     }
+    pending.value = false;
     answerRetry();
   }
 
@@ -79,5 +84,5 @@ export function useSectionReading<T>(
     { flush: "post" },
   );
 
-  return { shown, failure, load, retry };
+  return { shown, failure, pending, load, retry };
 }

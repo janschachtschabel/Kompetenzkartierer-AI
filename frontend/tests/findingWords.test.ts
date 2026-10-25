@@ -73,9 +73,11 @@ describe("a finding in words", () => {
 
   it("names what a finding is about by its kind, its wording or title, and the work package", () => {
     // the wording set apart, so its direction does not turn the sentence around it
-    expect(focusText(finding())).toBe(`${t("documents.findings.kinds.statement")} „${isolate("Die Lernenden messen.")}“`);
+    expect(focusText(finding())).toBe(
+      t("documents.findings.about", { kind: t("documents.findings.kinds.statement"), label: isolate("Die Lernenden messen.") }),
+    );
     expect(focusText(finding({ focus: { kind: "document", id: "d1", label: null }, unit: "E2" }))).toBe(
-      `${t("documents.findings.kinds.document")}, ${t("documents.findings.unit", { unit: "E2" })}`,
+      t("documents.findings.inUnit", { what: t("documents.findings.kinds.document"), unit: "E2" }),
     );
     expect(focusText(finding({ focus: { kind: "work", id: "w1", label: null } }))).toBe("work");
   });

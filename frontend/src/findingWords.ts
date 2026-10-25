@@ -33,6 +33,6 @@ export function findingText(finding: DocumentFinding): { text: string; lang?: "e
 export function focusText(finding: DocumentFinding): string {
   const { kind, label } = finding.focus;
   const named = word(messages.documents.findings.kinds, kind);
-  const what = label ? `${named} „${isolate(label)}“` : named;
-  return finding.unit ? `${what}, ${t("documents.findings.unit", { unit: finding.unit })}` : what;
+  const what = label ? t("documents.findings.about", { kind: named, label: isolate(label) }) : named;
+  return finding.unit ? t("documents.findings.inUnit", { what, unit: finding.unit }) : what;
 }

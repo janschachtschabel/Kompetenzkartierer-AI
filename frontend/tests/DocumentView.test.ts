@@ -153,6 +153,22 @@ describe("a document's page", () => {
     expect(wrapper.findComponent({ name: "JobProgress" }).props("jobId")).toBe("j2");
   });
 
+  it("names a repair a start gave back as one, and says that it runs already", async () => {
+    // a repair started meanwhile (in another tab): the start follows it, by its own kind
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { kind: "extract.run", job_id: "j1", status: "cancelled", error_code: null } }));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    const repairing = { ...job("running", "j9"), kind: "extract.repair" };
+    vi.spyOn(api, "startExtraction").mockResolvedValue(repairing);
+    vi.mocked(api.getJob).mockResolvedValue(repairing);
+    const wrapper = await open();
+
+    await wrapper.get("[data-test=extraction-resume]").trigger("click");
+    await flushPromises();
+
+    expect(extraction(wrapper).get(".job__label").text()).toBe(t("documents.page.repairLabel"));
+    expect(extractionStatus(wrapper)).toBe(t("documents.page.repairRunning"));
+  });
+
   it("says a start refused in its own words", async () => {
     vi.spyOn(api, "getDocument").mockResolvedValue(document_());
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
@@ -185,7 +201,7 @@ describe("a document's page", () => {
     expect(wrapper.get("section[aria-labelledby=document-units]").text()).toContain("Kompetenzen");
   });
 
-  it("reads the work packages again as the extraction moves on", async () => {
+  it("reads the work packages and the findings again as the extraction moves on", async () => {
     vi.useFakeTimers();
     vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { kind: "extract.run", job_id: "j1", status: "running", error_code: null } }));
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
@@ -200,6 +216,7 @@ describe("a document's page", () => {
     await flushPromises();
 
     expect(api.getUnits).toHaveBeenCalledTimes(3); // once a step reported: the first, then the next
+    expect(api.getFindings).toHaveBeenCalledTimes(3);
   });
 
   it("says each step the extraction moves to, once, and not each package it counts", async () => {

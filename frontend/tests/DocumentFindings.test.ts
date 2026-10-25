@@ -101,6 +101,9 @@ describe("a document's findings", () => {
       [t("documents.findings.counts.warning", { count: 2 }), ["status-badge", "warning"]],
       [t("documents.findings.counts.info", { count: 1 }), ["status-badge", "neutral"]],
     ]);
+    // scrolled on its own, by the keyboard too, named (axe in jsdom does not judge a scroll region)
+    const region = wrapper.get("[role=region]");
+    expect([region.attributes("tabindex"), region.attributes("aria-label")]).toEqual(["0", t("documents.findings.table")]);
     expect(rows(wrapper)).toEqual([
       [t("documents.findings.severities.violation"), findingText(WRONG).text, focusText(WRONG)],
       [t("documents.findings.severities.warning"), findingText(LOST).text, focusText(LOST)],
@@ -232,6 +235,60 @@ describe("a document's repair offered with its findings", () => {
     await flushPromises();
     expect(nothing.find("[data-test=repair-start]").exists()).toBe(false);
     expect(nothing.find("[data-test=repair-offer]").exists()).toBe(false);
+  });
+
+  it("says that an extraction runs already where the start gave that one back", async () => {
+    vi.spyOn(api, "getFindings").mockResolvedValue(page({ repairable: ["E1"] }));
+    vi.spyOn(api, "startRepair").mockResolvedValue({ ...job(), kind: "extract.run", status: "running" });
+    const wrapper = open();
+    await flushPromises();
+
+    await wrapper.get("[data-test=repair-start]").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get("[data-test=repair-status]").text()).toBe(t("documents.findings.repair.extractionRunning"));
+    expect(wrapper.emitted("started")).toHaveLength(1); // the page follows it all the same
+  });
+
+  it("offers no repair while its findings are read again, nor beside a reading that failed", async () => {
+    let reread: (value: FindingsPage) => void = () => undefined;
+    vi.spyOn(api, "getFindings")
+      .mockResolvedValueOnce(page({ repairable: ["E1"] }))
+      .mockReturnValueOnce(new Promise<FindingsPage>((resolve) => (reread = resolve)))
+      .mockRejectedValueOnce(new ApiError("server", 503, "service_unavailable"));
+    const wrapper = open();
+    await flushPromises();
+    expect(wrapper.find("[data-test=repair-start]").exists()).toBe(true);
+
+    await wrapper.setProps({ refresh: 1 }); // a job ended: what it found is not here yet
+    await flushPromises();
+    const whileRead = wrapper.find("[data-test=repair-start]").exists();
+    reread(page({ repairable: ["E3"] }));
+    await flushPromises();
+    const afterRead = wrapper.get("[data-test=repair-offer]").text();
+    await wrapper.setProps({ refresh: 2 });
+    await flushPromises();
+
+    expect(whileRead).toBe(false);
+    expect(afterRead).toBe(t("documents.findings.repair.offer", { count: 1 }));
+    expect(wrapper.find("[data-test=repair-start]").exists()).toBe(false); // beside the failure said
+  });
+
+  it("does not say a refusal again once the offer comes back after a job", async () => {
+    vi.spyOn(api, "getFindings").mockResolvedValue(page({ repairable: ["E1"] }));
+    vi.spyOn(api, "startRepair").mockRejectedValue(new ApiError("server", 429, "too_many_starts"));
+    const wrapper = open();
+    await flushPromises();
+    await wrapper.get("[data-test=repair-start]").trigger("click");
+    await flushPromises();
+    expect(wrapper.find("[role=alert]").exists()).toBe(true);
+
+    await wrapper.setProps({ busy: true });
+    await wrapper.setProps({ busy: false });
+    await flushPromises();
+
+    expect(wrapper.find("[data-test=repair-start]").exists()).toBe(true);
+    expect(wrapper.find("[role=alert]").exists()).toBe(false);
   });
 
   it("says a start refused in its own words, and keeps the button", async () => {

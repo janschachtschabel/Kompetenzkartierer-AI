@@ -24,6 +24,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
 import {
   ApiError,
+  REPAIR_KIND,
   getDocument,
   startExtraction,
   type CurriculumDocument,
@@ -50,6 +51,8 @@ const emit = defineEmits<{ changed: []; progressed: []; busy: [busy: boolean] }>
 /** The job a start from here gave back, followed until the page reads the document again -
  * once it has ended too, so its end shows until the document says how the extraction stands. */
 const started = ref<string | null>(null);
+// its kind: a start gives back the document's repair where one waits or runs
+const startedKind = ref("");
 /** The document's job that answered 404 or 403: its state is read from the document instead. */
 const lost = ref<string | null>(null);
 const starting = ref(false);
@@ -78,10 +81,8 @@ const unfollowed = computed(() => open.value && followed.value === null);
 watch(followed, () => {
   stepSaid = "";
 });
-// a start from here is an extraction's; the document's job is named by its kind
-const label = computed(() =>
-  started.value || !latest.value ? t("documents.page.jobLabel") : jobLabel(latest.value.kind),
-);
+// the job followed is named by its kind: the one a start gave back, else the document's
+const label = computed(() => jobLabel(started.value ? startedKind.value : (latest.value?.kind ?? "")));
 /** How the last job ended, and why where it failed: the document names the code to every reader. */
 const lastLine = computed(() => {
   if (!latest.value) return t("documents.page.none");
@@ -136,8 +137,10 @@ async function resume(): Promise<void> {
   starting.value = true;
   startFailure.value = null;
   try {
-    started.value = (await startExtraction(props.document.id)).id;
-    say(t("documents.page.started"));
+    const job = await startExtraction(props.document.id);
+    started.value = job.id;
+    startedKind.value = job.kind;
+    say(job.kind === REPAIR_KIND ? t("documents.page.repairRunning") : t("documents.page.started"));
     // the button went with the state it belonged to: the keyboard goes to the section's heading,
     // where it was left on nothing
     await nextTick();

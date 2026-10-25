@@ -3,12 +3,14 @@
  * The owner's repair of a document (plan M1 8b, F8), offered beside its findings where they name work
  * packages a repair would ask again and no job of the document waits or runs (`busy`, the page's):
  * X6 asks those again, X5 checks anew. Started here, followed under "Extraktion"
- * (DocumentExtraction.vue) once the page has read the document again (`started`). That it started
- * is said in a region there from the start; a refusal beside the button, which stays.
+ * (DocumentExtraction.vue) once the page has read the document again (`started`) - the
+ * extraction too, where the start gave that one back (one job of a document at a time). What
+ * became of a start is said in a region there from the start; a refusal beside the button, which
+ * stays, until the offer goes with a job.
  */
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 
-import { startRepair, type Job } from "@/api";
+import { REPAIR_KIND, startRepair, type Job } from "@/api";
 import AppIcon from "@/components/AppIcon.vue";
 import NoticeText from "@/components/NoticeText.vue";
 import { t } from "@/i18n/de";
@@ -23,6 +25,10 @@ const failure = ref<Notice | null>(null);
 const status = ref("");
 
 const offered = computed(() => props.repairable.length > 0 && !props.busy);
+// a refusal belongs to the offer it answered: one made anew after a job is not refused yet
+watch(offered, (now) => {
+  if (!now) failure.value = null;
+});
 
 async function start(): Promise<void> {
   if (starting.value) return; // the button stays focusable while busy, so it can be pressed again
@@ -30,7 +36,8 @@ async function start(): Promise<void> {
   failure.value = null;
   try {
     const job = await startRepair(props.documentId);
-    status.value = sayAnew(status.value, t("documents.findings.repair.started"));
+    const said = job.kind === REPAIR_KIND ? "started" : "extractionRunning";
+    status.value = sayAnew(status.value, t(`documents.findings.repair.${said}`));
     emit("started", job);
   } catch (error) {
     failure.value = failureNotice(error, t("documents.findings.repair.failed"));
