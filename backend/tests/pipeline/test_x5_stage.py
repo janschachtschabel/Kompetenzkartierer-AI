@@ -13,14 +13,15 @@ import pytest
 
 from app.db.anchors import CheckedAnchor, UncheckedAnchor, unchecked_anchors
 from app.db.findings import Finding
-from app.db.nodes import lock_tree
+from app.db.nodes import append_statements, lock_tree
 from app.db.runs import RunStart, finish_run, start_run
+from app.domain.l1 import AnchorDraft, StatementDraft
 from app.jobs.queue import LeaseLost
 from app.pipeline import run, x5_stage
 from app.pipeline.anchor_check import AnchorMatch
 from app.pipeline.run import extract_document
 from app.pipeline.shacl import ShaclCrashed, ShaclTimeout, shacl_check
-from tests.pipeline.test_run import CV, PLAIN, Model, a_document, a_job, context_of, rows, setup
+from tests.pipeline.test_run import BODY, CV, PLAIN, Model, a_document, a_job, context_of, rows, setup
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 __all__ = ["setup"]  # the fixture, shared with test_run
@@ -318,3 +319,89 @@ async def test_x5_after_a_crashed_check_writes_its_findings_once_and_counts_the_
     assert sorted(focus for rule, _, focus in found if rule == "x5.wording_not_found") == sorted(
         row for (row,) in statements
     )
+
+
+# --- X5 again, after a repair (plan M1 8b) --------------------------------------------------------------
+
+
+async def x5_run_ids(connection: Any, document: Any) -> list[Any]:
+    found = await rows(
+        connection,
+        "SELECT id FROM extraction_run WHERE document_id = %s AND stage_iri = %s ORDER BY started_at",
+        document.id,
+        CV + "stage_X5",
+    )
+    return [run_id for (run_id,) in found]
+
+
+async def test_x5_again_checks_the_document_as_it_stands_and_its_findings_replace_the_ones_before(
+    setup: Any, tmp_path: Path, database_url: str
+) -> None:
+    pool, connection = setup
+    document = await a_document(connection)
+    job = await a_job(connection, document.id, document.owner_id)
+    context = context_of(pool, tmp_path, Model(), database_url)
+    await extract_document(context, job)
+    [gone, kept] = await rows(
+        connection, "SELECT id, node_id FROM statement WHERE document_id = %s ORDER BY position", document.id
+    )
+    # a repair took one statement away and wrote one the blocks hold
+    await connection.execute("DELETE FROM statement WHERE id = %s", (gone[0],))
+    held = StatementDraft(
+        verbatim=BODY, kind=CV + "kind_learningOutcome", addressees=(CV + "addr_learner",),
+        anchors=(AnchorDraft(("p2-b2",), page_start=2),), origin=CV + "orig_model",
+        review_status=CV + "rev_proposed",
+    )  # fmt: skip
+    async with connection.transaction():
+        [written] = await append_statements(connection, document.id, kept[1], [held], first_position=20_001)
+
+    made = await x5_stage.run_x5(context, job, document, again=True)
+
+    [first, second] = await x5_run_ids(connection, document)
+    assert [outcome for outcome, _ in await x5_runs(connection, document)] == ["done", "done"]
+    left = await rows(
+        connection,
+        "SELECT run_id, rule, focus_id FROM validation_finding"
+        " WHERE document_id = %s AND run_id IN (%s, %s)",
+        document.id, first, second,
+    )  # fmt: skip
+    assert {run_id for run_id, _, _ in left} == {second}
+    assert sorted(focus for _, rule, focus in left if rule == "x5.wording_not_found") == [kept[0]]
+    assert await rows(
+        connection, "SELECT replace(match_kind_iri, %s, '') FROM anchor WHERE statement_id = %s", CV, written
+    ) == [("match_exact",)]
+    assert made["anchors"] == {"exact": len(await node_anchors(connection, document)) + 1, "notFound": 1}
+
+
+async def test_x5_again_that_lost_its_lease_leaves_the_findings_before_standing(
+    setup: Any, tmp_path: Path, database_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pool, connection = setup
+    document = await a_document(connection)
+    job = await a_job(connection, document.id, document.owner_id)
+    context = context_of(pool, tmp_path, Model(), database_url)
+    await extract_document(context, job)
+    before = await x5_findings(connection, document)
+
+    async def lease_lost(*_: Any, **__: Any) -> list[Any]:
+        await connection.execute(
+            "UPDATE job SET lease_expires_at = now() - interval '1 second' WHERE id = %s", (job.id,)
+        )
+        return []
+
+    monkeypatch.setattr(x5_stage, "shacl_check", lease_lost)
+    with pytest.raises(LeaseLost):
+        await x5_stage.run_x5(context, job, document, again=True)
+
+    assert before and await x5_findings(connection, document) == before
+
+
+async def test_x5_done_is_not_run_again_unless_asked(setup: Any, tmp_path: Path, database_url: str) -> None:
+    pool, connection = setup
+    document = await a_document(connection)
+    job = await a_job(connection, document.id, document.owner_id)
+    context = context_of(pool, tmp_path, Model(), database_url)
+    await extract_document(context, job)
+
+    assert await x5_stage.run_x5(context, job, document) == {"done_before": True}
+    assert len(await x5_run_ids(connection, document)) == 1

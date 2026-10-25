@@ -12,6 +12,10 @@
    gate shut, and X5 ends all the same.
 4. The findings and the run's end are written in one transaction under the lease; another job's run of
    X5 done meanwhile passes this one over (app/pipeline/asking.py, Superseded).
+
+After a repair (job extract.repair, plan M1 8b) X5 runs ``again``: a run done before does not stop it, and
+its findings replace those of the stage's runs before - they describe the document before the repair.
+One open extraction job per document (app/pipeline/extraction.py) keeps a second such run away.
 """
 
 import asyncio
@@ -30,7 +34,7 @@ from app.db.anchors import (
     unchecked_anchors,
 )
 from app.db.documents import Document
-from app.db.findings import Finding, add_findings
+from app.db.findings import Finding, add_findings, drop_stage_findings
 from app.db.nodes import lock_tree
 from app.db.runs import RunStart, done_stages, finish_run, lock_for_stage, start_run
 from app.domain.l1 import Severity
@@ -52,10 +56,10 @@ _MOST_QUOTE = 20_000  # what the anchor's quote holds (0015)
 _SEVERITIES: tuple[Severity, ...] = ("violation", "warning", "info")
 
 
-async def run_x5(context: JobContext, job: Job, document: Document) -> dict[str, Any]:
-    """X5 of the document, ended by what it found or by what broke it."""
+async def run_x5(context: JobContext, job: Job, document: Document, *, again: bool = False) -> dict[str, Any]:
+    """X5 of the document, ended by what it found or by what broke it; ``again`` after a repair."""
     async with context.pool.connection() as connection:
-        if "X5" in await done_stages(connection, document.id):
+        if not again and "X5" in await done_stages(connection, document.id):
             return {"done_before": True}
         # the lease first: an attempt that lost it starts no run that would never end
         await report(connection, job, "check_document")
@@ -70,10 +74,12 @@ async def run_x5(context: JobContext, job: Job, document: Document) -> dict[str,
             await current_release(connection),
         )
         run_id = await start_run(connection, start)
-    return await ended(context, run_id, "X5", _checked(context, job, document, run_id))
+    return await ended(context, run_id, "X5", _checked(context, job, document, run_id, again=again))
 
 
-async def _checked(context: JobContext, job: Job, document: Document, run_id: Any) -> dict[str, Any]:
+async def _checked(
+    context: JobContext, job: Job, document: Document, run_id: Any, *, again: bool
+) -> dict[str, Any]:
     await _anchors(context, job, document)
     # the findings and the graph of one state of the document: a node moved meanwhile is in both or in none
     async with context.pool.connection() as connection, connection.transaction():
@@ -112,8 +118,10 @@ async def _checked(context: JobContext, job: Job, document: Document, run_id: An
     }
     async with context.pool.connection() as connection, connection.transaction():
         await hold_lease(connection, job)
-        if await lock_for_stage(connection, document.id, "X5"):
+        if await lock_for_stage(connection, document.id, "X5") and not again:
             raise Superseded
+        if again:
+            await drop_stage_findings(connection, document.id, "X5", keep_run=run_id)
         await add_findings(connection, document.id, run_id, findings)
         await finish_run(connection, run_id, "done", result)
     return result
