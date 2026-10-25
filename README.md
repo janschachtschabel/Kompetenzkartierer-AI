@@ -185,9 +185,10 @@ ungültig.
   Curriculum-Kerns und der Profile, in einem eigenen Prozess mit der Frist `SHACL_TIMEOUT_S`
   (Standard 300 s, 10–1800). Die Befunde stehen in `validation_finding` (Verstoß, Warnung,
   Hinweis): ein Wortlaut, den seine Blöcke nicht enthalten, ist ein Verstoß, eine überschrittene
-  Frist der Verstoß `x5.shacl_timeout`; X5 endet in beiden Fällen fertig. Bis zur Reparatur
-  (Paket 8b) prüft kein neuer Start ein Dokument erneut, dessen X5 fertig ist: eine höhere Frist
-  gilt für Dokumente, deren X5 noch aussteht. Stirbt der Prüfprozess (Speichermangel) oder bricht
+  Frist der Verstoß `x5.shacl_timeout`; X5 endet in beiden Fällen fertig. Ein neuer Start der
+  Extraktion prüft ein Dokument, dessen X5 fertig ist, nicht erneut; das tut erst eine Reparatur,
+  die Arbeitspakete neu schreibt, dann mit der geltenden Frist. Stirbt der Prüfprozess
+  (Speichermangel) oder bricht
   er ab, scheitert der Lauf (`ShaclCrashed`), und der Job wird bis zu seiner Versuchsgrenze
   wiederholt (`handler_error`). Jede Stufe jedes Versuchs ist ein
   eigener Lauf (`extraction_run`); X1 bis X3 schreiben ihr Ergebnis auf einmal, X4 je Paket, X5
@@ -203,6 +204,22 @@ ungültig.
   `document_gone` oder `document_has_tree` (Knoten oder Spezifikationen stehen schon, aber keine
   Extraktion schrieb sie). Der Worker startet auch ohne
   Schlüssel; das Modell entsteht beim ersten Job, der es braucht.
+- Reparatur (X6): Der Job `extract.repair` (`{"document_id": …}`) fragt nur die Arbeitspakete
+  erneut, deren Aussagen X5 oder das Lesen der Antwort beanstandet hat – ein Verstoß an einer
+  Aussage, die X4 oder X6 schrieb und die seither niemand angefasst hat, oder eine Warnung oder ein
+  Verstoß beim Lesen, der das Paket nennt (außer `*.pattern_timeout`) –, je Job einmal, je Paket
+  höchstens zweimal (`extraction_unit.repairs`, Migration 0020). Hinweise, Warnungen der
+  SHACL-Prüfung und Befunde an Knoten oder am Dokument sind kein Anlass. Die Frage ist die von X4
+  hinter demselben Präfix, dazu die Befunde in Worten und die Wortlaute, die die Redaktion hält
+  (Promptversion `x6-repair/1`). Die Antwort ersetzt die unangetasteten Aussagen des Pakets;
+  bestätigte, verworfene und von Hand geschriebene bleiben und kommen nicht doppelt. Eine Antwort
+  außerhalb des Schemas lässt das Paket, wie es war, zählt aber als Reparatur (Warnung
+  `x6.unanswered`). Danach prüft X5 das Dokument erneut, seine Befunde ersetzen die des letzten
+  X5 – auch wenn das Budget X6 beendet hat, bevor der Job mit `budget_exhausted` endet. Ist nichts
+  mehr zu reparieren, fragt der Job kein Modell. Fortschritt `repair_units` (fertig/gesamt); endet
+  mit `document_not_checked`, wo X5 noch aussteht. In der Oberfläche bietet der Abschnitt
+  „Befunde“ des Dokuments dem Eigentümer den Knopf „Reparieren“ an; ihr Stand steht unter
+  „Extraktion“.
 - Erster Admin: `python -m app.bootstrap NAME` gibt das Token einmal auf stdout aus. Interaktiv
   ausführen (`docker compose run`, `kubectl exec -it`), nicht als Job, dessen Ausgabe ein
   Log-System sammelt. Exit-Code 0: angelegt; 2: es gibt schon einen Admin, der sich anmelden

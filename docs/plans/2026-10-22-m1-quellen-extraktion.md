@@ -692,6 +692,52 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   X5 ihn prüft, schriebe X5 die Fundart des alten Wortlauts: dann das Schreiben an den geprüften
   Wortlaut binden (oder an einen Stand der Zeile).
 
+**Nachtrag 8b – X6 Reparatur und Befunde in der Oberfläche (25.10.)**
+
+- **Anlass einer Reparatur** (`app/pipeline/x6_units.py`). Ein Arbeitspaket wird erneut gefragt,
+  wenn ein Verstoß an einer Aussage steht, die X4 oder X6 schrieb und die seither niemand angefasst
+  hat (Herkunft Modell, Prüfstand vorgeschlagen, Revision 1), oder ein Befund des Lesens seiner
+  Antwort mit `details.unit` (Warnung oder Verstoß, außer `*.pattern_timeout`). Kein Anlass:
+  Hinweise, Warnungen der SHACL-Prüfung (darunter die in M1 sicheren, 8.3), Befunde an Knoten oder
+  am Dokument (`x5.shacl_timeout`), Pakete, die X4 nicht getan hat, und Pakete, deren Knoten nicht
+  mehr steht. Wem eine Aussage gehört, sagt ihr Teil des Knotens (`(Position − 1) // PART`) oder der
+  eigene Knoten, den X4 einem Paket ohne Überschrift gab.
+- **Zahl der Aufrufe.** Je Job ein Durchgang, je Paket höchstens zwei Reparaturen
+  (`extraction_unit.repairs`, Migration `0020_unit_repairs`, CHECK 0–2). Eine Antwort außerhalb des
+  Schemas zählt als Reparatur, lässt das Paket, wie es war, und nennt es (`x6.unanswered`, Warnung);
+  der Lauf endet trotzdem fertig.
+- **Frage** (`prompts/x6.py`, `x6-repair/1`). Präfix, Anweisungen und Schema von X4 (gleich
+  zwischengespeichert), die Aufgabe von X4 (`x4.unit_parts`) und dazu „BEFUNDE DER LETZTEN ANTWORT“
+  in Worten und „BLEIBT“: die Wortlaute, die die Redaktion hält. Zweck `x6.unit`, Rohantworten unter
+  `x6`, Lesebefunde `x6.*`.
+- **Schreiben** (`app/pipeline/x6_unit.py`). Unter Lease, erst `lock_tree`: die unangetasteten
+  Aussagen des Pakets fallen weg, die neuen kommen hinter die höchste vergebene Position seines Teils;
+  ein Wortlaut, den eine gehaltene oder verworfene Aussage schon hat (`text_hash`), kommt nicht
+  doppelt; die Lesebefunde des Pakets aus X4/X6 fallen weg; `remark_unit` zählt die Reparatur.
+- **Job** (`app/pipeline/x6_repair.py`). `extract.repair` teilt den eindeutigen Schlüssel der
+  Extraktion (`extract.run:<Dokument>`), ist Modelljob der Zulassung, meldet `repair_units`. Erst wenn
+  X5 fertig ist (sonst `document_not_checked`). Danach X5 erneut: `run_x5(again=True)` ersetzt die
+  Befunde des letzten X5 (8.5, aus 8a verschoben); auch wo das Budget X6 beendet, bevor der Job mit
+  `budget_exhausted` endet. Ohne Anlass: `{"units": 0}`, kein Lauf, kein X5. Ein neuer Versuch macht
+  nach den Stufen weiter, die die Läufe dieses Jobs taten (`stages_done_by`).
+- **API.** `POST /api/v1/documents/{id}/repair` wie ein Neustart: nur der Eigentümer (403
+  `not_owner`), solange er den Inhalt lesen darf (403 `file_hidden`), ein offener Job des Schlüssels
+  wird zurückgegeben (200), dann 409 `not_checked` und 409 `nothing_to_repair` – vor der Zulassung,
+  so nennt die Antwort den Grund am Dokument vor einem aufgebrauchten Budget –, Audit `repair.start`.
+  `GET …/findings` nennt dem Eigentümer nach X5 `repairable`; `extraction.kind` die Art des letzten
+  Jobs.
+- **Oberfläche.** Abschnitt „Befunde“ (`DocumentFindings.vue`) zwischen „Arbeitspakete“ und „Läufe
+  der Stufen“: Zahlen je Schwere, Tabelle mit Schwere, Befund (`findingWords.ts`: Worte für X5 und
+  das Lesen der Antworten nach dem Regelnamen ohne Stufe, auch an X1 und X3; SHACL deutsch, sonst
+  das Englisch des Servers zitiert) und Bezug; Zustände wie die Arbeitspakete (`sectionReading.ts`,
+  aus `DocumentUnits.vue` herausgelöst). Knopf „Reparieren“ (`FindingsRepair.vue`) nur für den
+  Eigentümer und nur, solange kein Job des Dokuments wartet oder läuft; der Stand steht unter
+  „Extraktion“, als „Reparatur“ benannt (`documentJobs.ts`), auch in der Dokumentliste des Eintrags.
+- **Abweichung von 8.6.** „0–2 Aufrufe“ gilt je Paket über alle Reparaturen, nicht je Job; ein Job
+  fragt jedes Paket höchstens einmal. Zusätzlich zur Tabelle: die Oberfläche für Befunde und Start.
+- **Offen für Paket 9.** Befunde je Knoten im Baum und Befundfilter; ein Befund lässt sich nicht
+  quittieren; die Bindung des X5-Ankers an den geprüften Wortlaut (8a).
+
 ### Paket 9: Editor, Redaktion und Festschreiben (8 PT)
 
 | # | Aufgabe | Dateien | Test zuerst | Nachweis |
