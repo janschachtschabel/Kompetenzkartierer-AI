@@ -64,6 +64,7 @@ def test_a_document_s_findings_are_read_gravest_first_with_the_rows_they_are_abo
              "path": None, "message": "x5.unit_without_statements", "unit": "E3"},
         ],
         "truncated": False,
+        "repairable": [],  # X2 parted the document into no packages
     }  # fmt: skip
 
 
@@ -75,7 +76,12 @@ def test_a_document_nothing_was_found_on_has_no_findings(client: TestClient, url
 
     assert (answer.status_code, answer.json()) == (
         200,
-        {"counts": {"violation": 0, "warning": 0, "info": 0}, "findings": [], "truncated": False},
+        {
+            "counts": {"violation": 0, "warning": 0, "info": 0},
+            "findings": [],
+            "truncated": False,
+            "repairable": [],
+        },
     )
 
 

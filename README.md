@@ -147,6 +147,14 @@ ungültig.
   ein Extraktionsjob (`job.unique_key`, Migration 0018): ein Start dabei gibt den laufenden zurück
   (200); ebenso ein neues Dokument desselben Eintrags und derselben Konvertierung, solange eines
   des Kontos daraus extrahiert wird – dann 200 mit diesem (`made: false`).
+- Reparatur: `POST /api/v1/documents/{id}/repair` startet den Job `extract.repair` (X6, dann X5
+  erneut) – nur durch den Eigentümer und solange er den Inhalt lesen darf, wie ein Neustart,
+  sobald X5 das Dokument geprüft hat (409 `not_checked`) und Befunde eines Arbeitspakets eine
+  Reparatur verlangen (409 `nothing_to_repair`), zugelassen als Modelljob. Er teilt den
+  Schlüssel der Extraktion: Ein Start, während eine Extraktion oder Reparatur wartet oder läuft,
+  gibt diese zurück (200), in beide Richtungen. `findings` nennt dem Eigentümer nach X5 in
+  `repairable` die Pakete, die eine Reparatur fragen würde; `extraction.kind` sagt jedem Leser,
+  welcher Art der letzte Job ist.
 - Abbrechen: `POST /api/v1/jobs/{id}/cancel` (Eigentümer des Jobs oder Admin, in der Oberfläche
   der Knopf „Abbrechen“ an jedem Auftrag). Ein wartender Job endet sofort, ein laufender beim
   nächsten Herzschlag seines Workers (alle `JOB_LEASE_S`/3); hält der Handler dann nicht an,

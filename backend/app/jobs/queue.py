@@ -180,7 +180,8 @@ async def open_job(connection: psycopg.AsyncConnection, unique_key: str) -> UUID
 
 # the latest job of each key (index job_by_key), by when it was made
 _LATEST = """
-SELECT DISTINCT ON (unique_key) unique_key, id, status, CASE WHEN status = 'failed' THEN error->>'code' END
+SELECT DISTINCT ON (unique_key)
+    unique_key, id, kind, status, CASE WHEN status = 'failed' THEN error->>'code' END
 FROM job WHERE unique_key = ANY(%s)
 ORDER BY unique_key, created_at DESC, id DESC
 """
@@ -198,6 +199,7 @@ async def open_jobs(connection: psycopg.AsyncConnection, unique_keys: Sequence[s
 @dataclass(frozen=True)
 class LatestJob:
     id: UUID
+    kind: str  # of the jobs that share a key, the one this is (extract.run, extract.repair)
     status: JobStatus
     error_code: str | None  # why it failed, where it did
 
@@ -205,7 +207,10 @@ class LatestJob:
 async def last_jobs(connection: psycopg.AsyncConnection, unique_keys: Sequence[str]) -> dict[str, LatestJob]:
     """Each key's latest job, whatever became of it; a key before its first is not there."""
     cursor = await connection.execute(_LATEST, (list(unique_keys),))
-    return {key: LatestJob(job_id, status, code) for key, job_id, status, code in await cursor.fetchall()}
+    return {
+        key: LatestJob(job_id, kind, status, code)
+        for key, job_id, kind, status, code in await cursor.fetchall()
+    }
 
 
 def _request_trace() -> str | None:

@@ -16,6 +16,12 @@ job in their own lane - and only while the entry's content is still theirs to re
 jobs in flight, starts a minute) in the transaction that makes it, so a refusal takes the
 document back too. Who may read a document reads its runs (app/db/documents.py, DOCUMENT_VISIBLE);
 its job is followed and cancelled at /api/v1/jobs (app/api/jobs.py).
+
+A repair (plan M1 8b, app/pipeline/x6_repair.py) is started alike, by the owner, admitted alike, and
+shares the extraction's key: a start of either while one of them waits or runs gives that one back.
+It goes once X5 has checked the document (409 ``not_checked``) and a work package's findings ask for
+one (409 ``nothing_to_repair``, app/pipeline/x6_units.py). The document names its latest job of
+either kind.
 """
 
 from collections.abc import Awaitable, Callable
@@ -44,11 +50,12 @@ from app.db.documents import (
     documents_made_of,
     documents_of,
 )
-from app.db.runs import RunState, runs_of
+from app.db.runs import RunState, done_stages, runs_of
 from app.jobs.queue import JobStatus, OpenJob, account_lane, enqueue, last_jobs, open_job, open_jobs
 from app.jobs.state import job_state
-from app.pipeline.extraction import KIND, unique_key
+from app.pipeline.extraction import KIND, REPAIR_KIND, unique_key
 from app.pipeline.units import UnitState, document_units
+from app.pipeline.x6_units import repairable_units
 from app.vocab.lookup import notations_by_iri
 
 router = APIRouter(prefix="/api/v1", tags=["documents"], responses=AUTH_RESPONSES)
@@ -74,6 +81,7 @@ class DocumentRequest(BaseModel):
 class ExtractionRef(BaseModel):
     # the job, for those who may follow it (GET /api/v1/jobs/{id}): its owner, an admin; else null
     job_id: UUID | None
+    kind: str  # extract.run, or extract.repair (X6, then X5 again)
     status: JobStatus
     # why it failed, to every reader: a code says nothing kept from them (the page words it)
     error_code: str | None
@@ -156,7 +164,7 @@ async def make_document(
                     settings,
                     lambda: _being_extracted(connection, owner, body.source_id, body.conversion_id),
                 )
-                job_id = await _enqueue(connection, owner, document.id)
+                job_id = await _enqueue(connection, owner, document.id, KIND)
                 await record_audit(
                     connection,
                     owner,
@@ -208,12 +216,65 @@ async def start_extraction(document_id: UUID, request: Request, response: Respon
                 await _open(connection, key)  # following the one waiting or running reads no content
                 await _readable(connection, who, settings, document)
                 await _admit(connection, who.account_id, settings, lambda: _open(connection, key))
-                job_id = await _enqueue(connection, who.account_id, document.id)
+                job_id = await _enqueue(connection, who.account_id, document.id, KIND)
                 await record_audit(
                     connection,
                     who.account_id,
                     who.name,
                     "extraction.start",
+                    f"document:{document.id}",
+                    {"job": str(job_id)},
+                    current_request_id(),
+                )
+        except OpenJob as open_one:  # rolled back, the admission with it
+            response.status_code = 200
+            job_id = open_one.job_id
+        return await _job(connection, job_id, who)
+
+
+@router.post(
+    "/documents/{document_id}/repair",
+    summary="Ask the work packages the findings name again, then check the document anew",
+    status_code=202,
+    responses={
+        200: {"model": JobOut, "description": "The extraction or repair waiting or running: none is made"},
+        **START_REFUSALS,
+        403: {
+            "model": ErrorBody,
+            "description": "no_budget: no tokens left; not_owner: another's document; "
+            "file_hidden: the entry's content is no longer the owner's to read",
+        },
+        404: {"model": ErrorBody, "description": "no_document: none the caller may read"},
+        409: {
+            "model": ErrorBody,
+            "description": "not_checked: X5 has not checked the document yet; "
+            "nothing_to_repair: no work package's findings ask for a repair",
+        },
+    },
+)
+async def start_repair(document_id: UUID, request: Request, response: Response, who: Account) -> JobOut:
+    assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
+    async with request.app.state.pool.connection() as connection:
+        try:
+            async with connection.transaction():
+                document = await visible_document(connection, who, document_id)
+                if document.owner_id != who.account_id:
+                    raise Refusal(403, "not_owner", "Only the document's owner starts its repair.")
+                settings = request.app.state.settings
+                key = unique_key(document.id)
+                await _open(connection, key)
+                await _readable(connection, who, settings, document)
+                if "X5" not in await done_stages(connection, document.id):
+                    raise Refusal(409, "not_checked", "The document's extraction has not come to its check.")
+                if not await repairable_units(connection, document.id):
+                    raise Refusal(409, "nothing_to_repair", "No work package's findings ask for a repair.")
+                await _admit(connection, who.account_id, settings, lambda: _open(connection, key))
+                job_id = await _enqueue(connection, who.account_id, document.id, REPAIR_KIND)
+                await record_audit(
+                    connection,
+                    who.account_id,
+                    who.name,
+                    "repair.start",
                     f"document:{document.id}",
                     {"job": str(job_id)},
                     current_request_id(),
@@ -340,10 +401,10 @@ async def _readable(
         raise Refusal(403, "file_hidden", "The content of this entry is no longer yours to read.") from None
 
 
-async def _enqueue(connection: psycopg.AsyncConnection, owner: UUID, document_id: UUID) -> UUID:
+async def _enqueue(connection: psycopg.AsyncConnection, owner: UUID, document_id: UUID, kind: str) -> UUID:
     return await enqueue(
         connection,
-        KIND,
+        kind,
         account_lane(owner),
         {"document_id": str(document_id)},
         unique_key=unique_key(document_id),
@@ -370,7 +431,10 @@ async def _outs(
             return None
         follows = "admin" in who.roles or document.owner_id == who.account_id
         return ExtractionRef(
-            job_id=latest.id if follows else None, status=latest.status, error_code=latest.error_code
+            job_id=latest.id if follows else None,
+            kind=latest.kind,
+            status=latest.status,
+            error_code=latest.error_code,
         )
 
     return [

@@ -1,7 +1,8 @@
 """A document's findings (plan M1 8b; table validation_finding): what the extraction's stages found on it
 - X5's checks, the SHACL gate, the reading of the model's answers - gravest first, each with the kind
 and the wording or title of the row it is about, the counts of all beside and at most
-``MOST_FINDINGS`` listed. Who may read the document reads them (app/api/document_access.py).
+``MOST_FINDINGS`` listed. Who may read the document reads them (app/api/document_access.py); its
+owner reads too which work packages a repair would ask again (POST /documents/{id}/repair).
 """
 
 from typing import Annotated
@@ -15,7 +16,9 @@ from app.api.document_access import visible_document
 from app.api.errors import AUTH_RESPONSES, ErrorBody
 from app.core.auth import Principal
 from app.db.findings import findings_of
+from app.db.runs import done_stages
 from app.domain.l1 import Severity
+from app.pipeline.x6_units import repairable_units
 
 router = APIRouter(prefix="/api/v1", tags=["documents"], responses=AUTH_RESPONSES)
 Account = Annotated[Principal, Depends(require_account)]
@@ -47,6 +50,8 @@ class FindingsOut(BaseModel):
     counts: SeverityCounts  # of all the document's findings
     findings: list[FindingOut]
     truncated: bool  # more were found than are listed
+    # the work packages a repair would ask again, "E2": to the owner, once X5 has checked the document
+    repairable: list[str]
 
 
 @router.get(
@@ -56,8 +61,11 @@ class FindingsOut(BaseModel):
 )
 async def read_findings(document_id: UUID, request: Request, who: Account) -> FindingsOut:
     async with request.app.state.pool.connection() as connection:
-        await visible_document(connection, who, document_id)
+        document = await visible_document(connection, who, document_id)
         page = await findings_of(connection, document_id)
+        repairable: list[str] = []
+        if document.owner_id == who.account_id and "X5" in await done_stages(connection, document_id):
+            repairable = [unit.package.key for unit in await repairable_units(connection, document_id)]
     return FindingsOut(
         counts=SeverityCounts(**page.counts),
         findings=[
@@ -73,4 +81,5 @@ async def read_findings(document_id: UUID, request: Request, who: Account) -> Fi
             for row in page.rows
         ],
         truncated=page.truncated,
+        repairable=repairable,
     )

@@ -91,7 +91,12 @@ def test_a_document_is_made_of_a_finished_conversion_and_its_extraction_started(
         True,
     )
     assert (job["kind"], job["status"]) == (KIND, "queued")
-    assert document["extraction"] == {"job_id": job["id"], "status": "queued", "error_code": None}
+    assert document["extraction"] == {
+        "job_id": job["id"],
+        "kind": KIND,
+        "status": "queued",
+        "error_code": None,
+    }
     assert answer.json()["made"] is True
     assert rows(url, "SELECT lane, payload, unique_key FROM job WHERE id = %s", job["id"]) == [
         (str(owner), {"document_id": document["id"]}, unique_key(UUID(document["id"])))
@@ -307,6 +312,7 @@ def test_once_the_extraction_has_ended_a_start_makes_a_new_one(
     document = client.get(f"/api/v1/documents/{started['document']['id']}", headers=header).json()
     assert document["extraction"] == {
         "job_id": again.json()["id"],
+        "kind": KIND,
         "status": "queued",
         "error_code": None,
     }  # the latest
@@ -514,6 +520,7 @@ def test_a_document_and_its_list_are_read_by_who_sees_them(client: TestClient, u
     assert [item["id"] for item in own.json()] == [second["document"]["id"], first["document"]["id"]]
     assert own.json()[0]["extraction"] == {
         "job_id": second["job"]["id"],
+        "kind": KIND,
         "status": "queued",
         "error_code": None,
     }
@@ -545,8 +552,9 @@ def test_the_extraction_s_job_is_named_to_those_who_may_follow_it_its_status_to_
         for name, who in {"owner": header, "editor": editor, "admin": admin}.items()
     }
 
-    assert seen["owner"] == seen["admin"] == ({"job_id": job, "status": "queued", "error_code": None},) * 2
-    assert seen["editor"] == ({"job_id": None, "status": "queued", "error_code": None},) * 2
+    queued = {"kind": KIND, "status": "queued", "error_code": None}
+    assert seen["owner"] == seen["admin"] == ({"job_id": job} | queued,) * 2
+    assert seen["editor"] == ({"job_id": None} | queued,) * 2
     assert client.get(f"/api/v1/jobs/{job}", headers=editor).status_code == 404  # whom it is kept from
 
 
@@ -564,10 +572,10 @@ def test_why_the_extraction_failed_is_said_to_every_reader(client: TestClient, u
     path = f"/api/v1/documents/{started['document']['id']}"
 
     assert client.get(path, headers=header).json()["extraction"] == {
-        "job_id": started["job"]["id"], "status": "failed", "error_code": "budget_exhausted",
+        "job_id": started["job"]["id"], "kind": KIND, "status": "failed", "error_code": "budget_exhausted",
     }  # fmt: skip
     assert client.get(path, headers=editor).json()["extraction"] == {
-        "job_id": None, "status": "failed", "error_code": "budget_exhausted",
+        "job_id": None, "kind": KIND, "status": "failed", "error_code": "budget_exhausted",
     }  # fmt: skip
 
 
