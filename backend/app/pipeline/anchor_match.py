@@ -75,10 +75,23 @@ def in_word(sign: str) -> bool:
 
 
 def _whole(text: str, start: int, end: int, target: str) -> bool:
-    """Whether ``text[start:end]`` cuts no word at an end where the wording has a letter or digit."""
-    cut_before = target[:1].isalnum() and start > 0 and in_word(text[start - 1])
-    cut_after = target[-1:].isalnum() and end < len(text) and in_word(text[end])
+    """Whether ``text[start:end]`` cuts no word: "Lernfeld 12" does not hold "Lernfeld 1", while the
+    digit of a footnote glued to a word ("Strukturen¹") is a sign of its own."""
+    cut_before = start > 0 and _one_word(target[0], text[start - 1])
+    cut_after = end < len(text) and _one_word(target[-1], text[end])
     return not (cut_before or cut_after)
+
+
+def _one_word(edge: str, beside: str) -> bool:
+    """Whether the wording's sign at an edge and the text's sign beside it belong to one word: a digit
+    to a letter or digit, a letter only to a letter or the mark of a decomposed one."""
+    if edge.isdigit():
+        return in_word(beside)
+    return _letter(edge) and _letter(beside)
+
+
+def _letter(sign: str) -> bool:
+    return sign.isalpha() or unicodedata.category(sign).startswith("M")
 
 
 def elided(target: str, text: str) -> Hit | None:

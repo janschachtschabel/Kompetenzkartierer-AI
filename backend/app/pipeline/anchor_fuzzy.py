@@ -15,6 +15,7 @@ gives no wording longer than ``anchor_check.MAX_FUZZY``. A table block of a whol
 
 import difflib
 import re
+import unicodedata
 
 from app.domain.wording import unparted
 from app.pipeline.anchor_match import Hit, words
@@ -41,15 +42,21 @@ def fuzzy(target: str, text: str) -> Hit | None:
     low, high, likeness = window
     start, end, score = _passage(text, low, high, target, likeness)
     found = text[start:end]
-    if _compared(found) == _compared(target):
+    if _joined(found) == _joined(target) or _apart(found) == _apart(target):
         return Hit(start, end, "normalized")
     return Hit(start, end, "fuzzy", round(score, 3))
 
 
-def _compared(text: str) -> list[str]:
+def _joined(text: str) -> list[str]:
     """The words of ``text`` as a normalized match compares them: composed, case folded, whole where a
     hyphen at a line's end parted one - a block keeps its lines (app/conversion/lines.py)."""
     return [word.casefold() for word in words(unparted(text))]
+
+
+def _apart(text: str) -> list[str]:
+    """The same with a hyphen at a line's end left between two words: "Fach-" / "und
+    Methodenkompetenz" supplements a word, as "Kompe-" / "tenzen" parts one (domain/wording.py)."""
+    return [word.casefold() for word in words(unicodedata.normalize("NFC", text))]
 
 
 def _fuzzy_span(target: str, text: str) -> tuple[int, int, float] | None:

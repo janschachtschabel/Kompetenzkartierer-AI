@@ -538,8 +538,9 @@ def test_a_quote_ends_after_the_marks_of_its_last_letters() -> None:
         ("Lernfeld 1", "Lernfeld 12: Anlagen instand halten und ändern"),
         ("2.1 Mechanik", "12.1 Mechanik"),
         ("Lernfeld 1 … ändern", "Lernfeld 12: Anlagen instand halten und ändern"),
+        ("Sie pflegen saisonales Gemu", "Sie pflegen saisonales Gemüse."),
     ],
-    ids=["ends inside a number", "begins inside a number", "elided"],
+    ids=["ends inside a number", "begins inside a number", "elided", "before a decomposed letter's mark"],
 )
 def test_a_wording_the_text_holds_only_inside_longer_words_is_not_found_word_for_word(
     wording: str, text: str
@@ -624,4 +625,82 @@ def test_a_long_paraphrase_found_in_a_table_costs_its_thread_a_bounded_time() ->
     spent = time.thread_time() - started
 
     assert found.kind == "fuzzy"
-    assert spent < 5.0, f"{spent:.2f} s of CPU time"
+    # ~3 s measured here, ~7 s under coverage as CI runs it, the old app's search the same: the bound
+    # catches a search gone unbounded (22 s, old app audit E-20), not a slower machine
+    assert spent < 20.0, f"{spent:.2f} s of CPU time"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Die Lernenden beschreiben Strukturen1 und Prozesse.",
+        "Die Lernenden beschreiben Strukturen\N{SUPERSCRIPT ONE} und Prozesse.",
+    ],
+    ids=["digit", "superscript"],
+)
+def test_a_footnote_s_mark_glued_to_the_last_word_cuts_no_word(text: str) -> None:
+    # a PDF's text glues a footnote's number to the word it stands at
+    found = check_wording("Die Lernenden beschreiben Strukturen", [text])
+
+    assert (found.kind, found.quote) == ("exact", "Die Lernenden beschreiben Strukturen")
+
+
+def test_an_elided_wording_s_last_fragment_may_stand_before_a_footnote_s_mark() -> None:
+    text = "Die Lernenden beschreiben Strukturen und Prozesse2 genau."
+
+    found = check_wording("Die Lernenden beschreiben … Prozesse", [text])
+
+    assert (found.kind, found.quote) == ("elided", "Die Lernenden beschreiben Strukturen und Prozesse")
+
+
+def test_an_elided_wording_s_later_fragment_stands_as_whole_words() -> None:
+    text = "Die Lernenden beschreiben Lichtquellen und das Licht der Sonne."
+
+    found = check_wording("Die Lernenden beschreiben … Licht", [text])
+
+    assert (found.kind, found.quote) == ("elided", "Die Lernenden beschreiben Lichtquellen und das Licht")
+
+
+def test_an_elided_wording_s_first_fragment_is_not_moved_into_a_longer_word() -> None:
+    # the first fragment counts where it stands last before the second - as whole words
+    text = "Lernfeld 1: Grundlagen. Lernfeld 12 Anlagen installieren"
+
+    found = check_wording("Lernfeld 1 … installieren", [text])
+
+    assert (found.kind, found.quote) == ("elided", text)
+
+
+@pytest.mark.parametrize(
+    ("wording", "text", "quote"),
+    [
+        (  # the stretch begins inside a word whose letter stands decomposed before it
+            "Wöchentlich lesen die Lernenden Texte.",
+            "Ta\u0308glich lesen die Lernenden Texte.",
+            "Ta\u0308glich lesen die Lernenden Texte.",
+        ),
+        (  # the document's word the wording replaced at its start
+            "Oft lesen die Lernenden kurze Texte.",
+            "Ta\u0308glich lesen die Lernenden kurze Texte.",
+            "Ta\u0308glich lesen die Lernenden kurze Texte.",
+        ),
+        (  # and at its end
+            "Die Lernenden lesen kurze Texte gern.",
+            "Die Lernenden lesen kurze Texte ta\u0308glich.",
+            "Die Lernenden lesen kurze Texte ta\u0308glich.",
+        ),
+    ],
+    ids=["inside the stretch", "a word before it", "a word after it"],
+)
+def test_a_quote_takes_in_decomposed_letters_whole(wording: str, text: str, quote: str) -> None:
+    found = check_wording(wording, [text])
+
+    assert (found.kind, found.quote) == ("fuzzy", quote)
+
+
+def test_a_word_a_supplementing_hyphen_ends_stays_two_words_in_a_normalized_match() -> None:
+    # "Fach- und Methodenkompetenz": a hyphen at a line's end before a small letter parts no word here
+    found = check_wording(
+        "sie zeigen Fach- und Methodenkompetenz.", ["Sie zeigen Fach-\nund Methodenkompetenz."]
+    )
+
+    assert (found.kind, found.score) == ("normalized", None)
