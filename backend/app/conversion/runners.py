@@ -2,9 +2,8 @@
 
 A PDF parser on an untrusted file may take minutes, memory without end, or the process down; in the
 worker's own process it would stop the event loop, and with it the job's lease. So the conversion
-runs in a child of its own, started fresh (``spawn``: the worker has threads and a loop a fork
-would copy half of). Its answer comes back as a file, written whole before it is renamed: the
-conversion as JSON, the refusal with its code, or the kind of error it raised.
+runs in a child of its own (app/core/child.py). Its answer comes back as a file, written whole before
+it is renamed: the conversion as JSON, the refusal with its code, or the kind of error it raised.
 
 How a child ends tells what may come of trying again. A refusal or a crash - an error raised in
 the conversion, or in writing it down, or a fault that ended it by a signal of its own (SIGSEGV,
@@ -18,38 +17,33 @@ The child logs as the service does, but the PDF libraries say no more than warni
 pdfminer logs each token it reads, the text of a file perhaps hidden from all but its editors.
 
 Whatever ends the waiting - the job cancelled, its deadline (``asyncio.timeout`` around the call),
-its lease lost, which the worker turns into a cancel - kills the child at once. On POSIX the child
-leads a process group of its own, which is killed whole, so nothing it started outlives it; on
-Linux the kernel takes it before the worker when memory runs out. Windows has no process groups:
-there a grandchild would outlive it (the engines start none).
+its lease lost, which the worker turns into a cancel - kills the child at once, and on POSIX all it
+started (the engines start nothing).
 
 No settings here: the caller names the engine, the page limit, how the child logs and the deadline.
 """
 
-import asyncio
-import contextlib
 import json
 import logging
-import multiprocessing
-import os
-import shutil
-import signal
-import sys
-import tempfile
 import traceback
 from collections.abc import Callable
-from dataclasses import dataclass
 from pathlib import Path
 
 from app.conversion.base import Conversion, engine
 from app.conversion.convert import ConversionRefused, convert_file
-from app.core.logging import configure_logging, current_request_id, set_request_id
+from app.core.child import KILLED, ChildLog, run_in_child, stand_alone, write
+from app.core.logging import current_request_id
 
-log = logging.getLogger(__name__)
-POLL_S = 0.2  # how often the waiting asks whether the child is done
-KILLED = -9  # the exit code of a process ended by SIGKILL, which Windows does not name
+__all__ = [
+    "ChildLog",
+    "ConversionCrashed",
+    "ConversionDied",
+    "ConversionFailed",
+    "Convert",
+    "convert_in_child",
+]
+
 LIBRARIES = ("pdfminer", "pdfplumber", "pypdfium2")
-KILL_WAIT_S = 5.0
 Convert = Callable[[Path, str, int], Conversion]
 
 
@@ -63,15 +57,6 @@ class ConversionDied(RuntimeError):
 
 class ConversionFailed(RuntimeError):
     """The child exited without an answer and without a signal."""
-
-
-@dataclass(frozen=True)
-class ChildLog:
-    """How the child logs: the service's level and format, and the request of the job it serves."""
-
-    level: str
-    format: str
-    request_id: str
 
 
 def convert_with_engine(path: Path, name: str, max_pages: int) -> Conversion:
@@ -90,23 +75,9 @@ async def convert_in_child(
     code, ConversionCrashed, ConversionDied or ConversionFailed where there is none. ``convert``
     stands in for the conversion in tests: a function the child imports by its name."""
     told = child_log or ChildLog(level="WARNING", format="text", request_id=current_request_id())
-    # one mkdir, made here: in a thread, a cancel meanwhile would leave the folder behind
-    out = Path(tempfile.mkdtemp(prefix="convert-"))
-    child = multiprocessing.get_context("spawn").Process(
-        target=_run, args=(convert, str(path), engine, max_pages, str(out), told), daemon=True
+    return await run_in_child(
+        _run, (convert, str(path), engine, max_pages, told), prefix="convert-", read=_outcome
     )
-    try:
-        child.start()
-        try:
-            while child.is_alive():
-                await asyncio.sleep(POLL_S)
-        except BaseException:
-            _kill(child)  # cancelled, past its deadline, or the lease lost
-            raise
-        child.join()
-        return await asyncio.to_thread(_outcome, child.exitcode, out)
-    finally:
-        shutil.rmtree(out, ignore_errors=True)
 
 
 def log_crash(error: BaseException) -> None:
@@ -131,49 +102,17 @@ def _outcome(exit_code: int | None, out: Path) -> Conversion:
     raise ConversionFailed(f"the conversion's process ended without an answer (exit code {exit_code})")
 
 
-def _kill(child: multiprocessing.process.BaseProcess) -> None:
-    # sys.platform, not os.name: the type checker reads it, and checks each platform's calls
-    if sys.platform != "win32" and child.pid is not None:
-        with contextlib.suppress(ProcessLookupError, PermissionError):
-            os.killpg(child.pid, signal.SIGKILL)  # the child leads its group: what it started too
-    child.kill()
-    child.join(KILL_WAIT_S)
-    if child.is_alive():
-        log.warning("the conversion's process %s outlived its kill", child.pid)
-
-
-def _run(convert: Convert, path: str, name: str, max_pages: int, out: str, told: ChildLog) -> None:
+def _run(convert: Convert, path: str, name: str, max_pages: int, told: ChildLog, out: str) -> None:
     """The child: convert, and leave the answer in ``out``."""
-    _stand_alone(told)
+    stand_alone(told, LIBRARIES)
     try:
         answer = convert(Path(path), name, max_pages).model_dump_json()
     except ConversionRefused as refused:
-        _write(Path(out) / "refused.json", json.dumps({"code": refused.code, "message": str(refused)}))
+        write(Path(out) / "refused.json", json.dumps({"code": refused.code, "message": str(refused)}))
         return
     except Exception as error:
         log_crash(error)
-        _write(Path(out) / "crashed.json", json.dumps({"error": type(error).__name__}))
+        write(Path(out) / "crashed.json", json.dumps({"error": type(error).__name__}))
         raise SystemExit(1) from None
     # outside the try: an answer that cannot be written - the disk full - is no crash of the file
-    _write(Path(out) / "result.json", answer)
-
-
-def _stand_alone(told: ChildLog) -> None:
-    configure_logging(told.level, told.format, stream=sys.stderr)
-    quietest = max(logging.WARNING, logging.getLogger().level)
-    for name in LIBRARIES:
-        logging.getLogger(name).setLevel(quietest)
-    set_request_id(told.request_id)
-    if sys.platform != "win32":
-        os.setsid()  # a group of its own, killed whole
-    if sys.platform == "linux":
-        with contextlib.suppress(OSError):
-            # the kernel takes this process first when memory runs out, not the worker
-            Path("/proc/self/oom_score_adj").write_text("1000", encoding="ascii")
-
-
-def _write(path: Path, text: str) -> None:
-    """Whole or not at all: the parent reads only a renamed file."""
-    part = path.with_suffix(".part")
-    part.write_text(text, encoding="utf-8")
-    os.replace(part, path)
+    write(Path(out) / "result.json", answer)
