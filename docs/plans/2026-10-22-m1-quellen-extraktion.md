@@ -679,7 +679,13 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   (Superseded wie X1–X4). Ergebnis `{"anchors": {Fundart: n}, "findings": {Schwere: n},
   "shacl": "done"|"timeout"}`, Fortschritt `check_document`, Stufenwort „Prüfung“.
   „Ein zweiter X5-Lauf ersetzt die Befunde“ wandert nach 8b: In 8a läuft X5 je Dokument einmal
-  (eine fertige Stufe wird übersprungen); erst die Reparatur startet X5 neu.
+  (eine fertige Stufe wird übersprungen); erst die Reparatur startet X5 neu. Die Zahl der Fundarten
+  im Ergebnis liest X5 aus den Fundstellen, wie sie stehen: ein Versuch nach einem gescheiterten, der
+  die Fundarten schon schrieb, zählt sie auch.
+- **Offen für Paket 9.** X5 liest den Wortlaut ohne Baumsperre und schreibt die Fundart unter ihr,
+  nur wo noch keine steht. Ändert die Redaktion einen Wortlaut und setzt die Fundart zurück, während
+  X5 ihn prüft, schriebe X5 die Fundart des alten Wortlauts: dann das Schreiben an den geprüften
+  Wortlaut binden (oder an einen Stand der Zeile).
 
 ### Paket 9: Editor, Redaktion und Festschreiben (8 PT)
 

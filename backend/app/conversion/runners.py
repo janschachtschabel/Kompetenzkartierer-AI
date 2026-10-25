@@ -41,6 +41,8 @@ __all__ = [
     "ConversionFailed",
     "Convert",
     "convert_in_child",
+    "convert_with_engine",
+    "log_crash",
 ]
 
 LIBRARIES = ("pdfminer", "pdfplumber", "pypdfium2")
