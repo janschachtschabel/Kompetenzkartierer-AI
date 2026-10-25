@@ -42,15 +42,21 @@ def unit_task(unit: WorkPackage, node: str, excerpt: str) -> str:
     """The task for ``unit``; ``node`` is the line naming its node's type (none where it has none),
     ``excerpt`` the lexicon's lines over its text."""
     blocks = f"{unit.first_block} bis {unit.last_block}"
+    order = (
+        f"=== AUFTRAG ===\nGib die Aussagen der Einheit {unit.key} zurück, die in den Blöcken {blocks}"
+        f" stehen, mit {unit.key} als unitKey. Das übrige Dokument ist Zusammenhang."
+        " Antworte im vorgegebenen Schema.\n"
+    )
+    return "\n".join([*unit_parts(unit, node, excerpt), order])
+
+
+def unit_parts(unit: WorkPackage, node: str, excerpt: str) -> list[str]:
+    """What a task about ``unit`` names before its order: the unit, its node's type, the lexicon."""
+    blocks = f"{unit.first_block} bis {unit.last_block}"
     parts = [
         f"=== EINHEIT ===\n{unit.key} | {_PATH.join(unit.path) or 'Dokument'} | Blöcke {blocks}\n"
         + (f"{node}\n" if node else "")
     ]
     if excerpt:
         parts.append(f"=== LEXIKON ===\n{excerpt}\n")
-    parts.append(
-        f"=== AUFTRAG ===\nGib die Aussagen der Einheit {unit.key} zurück, die in den Blöcken {blocks}"
-        f" stehen, mit {unit.key} als unitKey. Das übrige Dokument ist Zusammenhang."
-        " Antworte im vorgegebenen Schema.\n"
-    )
-    return "\n".join(parts)
+    return parts
