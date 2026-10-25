@@ -2,7 +2,8 @@
 packages is marked in the transaction that writes its statements, so it is done whole or not at
 all, and once per document. A unit marked already - by an earlier run, or by a writer beside this
 one, whose commit this one waits for - is taken: the caller's transaction gives way, with what it
-wrote, and the unit counts as done by the other.
+wrote, and the unit counts as done by the other. A repair (X6, plan M1 8b) writes a unit done anew and
+marks it again, counting the repair - twice at most (migration unit_repairs).
 """
 
 from collections.abc import Sequence
@@ -18,8 +19,14 @@ VALUES (%s, %s, %s, %s, %s, %s)
 ON CONFLICT (document_id, unit_key) DO NOTHING
 RETURNING unit_key
 """
+_REMARK = """
+UPDATE extraction_unit SET run_id = %s, statements = %s, checked_absent = %s, finished_at = now(),
+    repairs = repairs + 1
+WHERE document_id = %s AND unit_key = %s
+RETURNING unit_key
+"""
 _DONE = """
-SELECT unit_key, run_id, node_id, statements, checked_absent, finished_at
+SELECT unit_key, run_id, node_id, statements, checked_absent, finished_at, repairs
 FROM extraction_unit WHERE document_id = %s
 """
 
@@ -40,6 +47,7 @@ class UnitDone:
     statements: int
     checked_absent: tuple[str, ...]  # concepts of cv:DockingPoints the unit lacks
     finished_at: datetime
+    repairs: int = 0  # how often X6 wrote it anew
 
 
 async def mark_unit(
@@ -61,10 +69,27 @@ async def mark_unit(
         raise UnitTaken(key)
 
 
+async def remark_unit(
+    connection: psycopg.AsyncConnection,
+    document_id: UUID,
+    key: str,
+    *,
+    run_id: UUID,
+    statements: int,
+    checked_absent: Sequence[str],
+) -> None:
+    """Mark the unit done again by the repair ``run_id``, with what it wrote now, in the caller's
+    transaction; its node stays. CheckViolation for a unit repaired twice already, LookupError for one
+    not done."""
+    cursor = await connection.execute(_REMARK, (run_id, statements, list(checked_absent), document_id, key))
+    if await cursor.fetchone() is None:
+        raise LookupError(f"unit {key} is not done")
+
+
 async def done_units(connection: psycopg.AsyncConnection, document_id: UUID) -> dict[str, UnitDone]:
     """The document's units done, by their keys, whichever run did them."""
     cursor = await connection.execute(_DONE, (document_id,))
     return {
-        key: UnitDone(key, run_id, node_id, statements, tuple(absent), finished)
-        for key, run_id, node_id, statements, absent, finished in await cursor.fetchall()
+        key: UnitDone(key, run_id, node_id, statements, tuple(absent), finished, repairs)
+        for key, run_id, node_id, statements, absent, finished, repairs in await cursor.fetchall()
     }

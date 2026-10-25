@@ -115,3 +115,14 @@ def test_what_a_unit_found_missing_stays_docking_points_when_changed(
 
     with pytest.raises(errors.CheckViolation):
         connection.execute("UPDATE extraction_unit SET checked_absent = ARRAY[%s]", (CV + "mark_bold",))
+
+
+def test_a_unit_is_repaired_no_more_than_twice(connection: psycopg.Connection, document: Any) -> None:
+    # X6 asks the model again for a unit at most twice in all (plan M1 8b, konzept §13.2 "0-2")
+    add_unit(connection, document, add_run(connection, document))
+    assert connection.execute("SELECT repairs FROM extraction_unit").fetchone() == (0,)
+
+    connection.execute("UPDATE extraction_unit SET repairs = 2")
+    for wrong in (3, -1):
+        with pytest.raises(errors.CheckViolation):
+            connection.execute("UPDATE extraction_unit SET repairs = %s", (wrong,))

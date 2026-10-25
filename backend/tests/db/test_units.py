@@ -10,7 +10,7 @@ import psycopg
 import pytest
 
 from app.db.migrate import migrate
-from app.db.units import UnitTaken, done_units, mark_unit
+from app.db.units import UnitTaken, done_units, mark_unit, remark_unit
 from tests.db.l1 import CV, add_conversion, add_document, add_node, add_run, seed_vocabulary
 from tests.support import waiting_on_a_lock
 
@@ -140,3 +140,50 @@ async def test_of_two_writers_of_one_unit_side_by_side_one_marks_it(
         assert isinstance(outcome, UnitTaken) and statements == 1
     else:
         assert outcome == "marked" and statements == 2
+
+
+async def test_a_unit_a_repair_wrote_again_counts_the_repair_with_what_it_made(
+    connect: Any, made: dict[str, Any], database_url: str
+) -> None:
+    db = await connect()
+    document = made["document"]
+    await mark_unit(
+        db,
+        document,
+        "E2",
+        run_id=made["run"],
+        node_id=made["node"],
+        statements=4,
+        checked_absent=[CV + "dock_level"],
+    )
+    with psycopg.connect(database_url, autocommit=True) as setup:
+        repair = add_run(setup, document, "stage_X6")
+
+    await remark_unit(db, document, "E2", run_id=repair, statements=2, checked_absent=[CV + "dock_time"])
+
+    done = (await done_units(db, document))["E2"]
+    assert (done.run_id, done.node_id, done.statements, done.checked_absent, done.repairs) == (
+        repair,
+        made["node"],
+        2,
+        (CV + "dock_time",),
+        1,
+    )
+
+
+async def test_a_unit_is_written_again_no_more_than_twice(connect: Any, made: dict[str, Any]) -> None:
+    db = await connect()
+    document = made["document"]
+    await mark_unit(db, document, "E1", run_id=made["run"], node_id=None, statements=0, checked_absent=[])
+    for _ in range(2):
+        await remark_unit(db, document, "E1", run_id=made["run"], statements=1, checked_absent=[])
+
+    with pytest.raises(psycopg.errors.CheckViolation):
+        await remark_unit(db, document, "E1", run_id=made["run"], statements=1, checked_absent=[])
+
+
+async def test_a_unit_not_done_is_not_written_again(connect: Any, made: dict[str, Any]) -> None:
+    with pytest.raises(LookupError, match="E7"):
+        await remark_unit(
+            await connect(), made["document"], "E7", run_id=made["run"], statements=0, checked_absent=[]
+        )
