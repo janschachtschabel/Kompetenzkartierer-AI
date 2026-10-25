@@ -4,7 +4,7 @@ document's conversion. Each row of the layer is an entity first (0013). X5 check
 hold a wording against their blocks (plan M1 8.1) and writes how it stands there back.
 """
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -30,6 +30,7 @@ LEFT JOIN node n ON n.id = a.node_id
 JOIN anchor_block ab ON ab.anchor_id = a.id
 JOIN document_block b ON b.conversion_id = ab.conversion_id AND b.block_id = ab.block_id
 WHERE a.document_id = %s AND a.match_kind_iri IS NULL AND coalesce(s.verbatim, n.original_title) IS NOT NULL
+    AND (n.rule_id IS NULL OR NOT n.rule_id = ANY(%s))
 GROUP BY a.id, s.verbatim, n.original_title
 ORDER BY a.id
 """
@@ -116,9 +117,12 @@ async def write_anchor(
     return anchor_id
 
 
-async def unchecked_anchors(connection: psycopg.AsyncConnection, document_id: UUID) -> list[UncheckedAnchor]:
-    """The document's anchors of a statement or a node's heading that have no match kind yet."""
-    cursor = await connection.execute(_UNCHECKED, (document_id,))
+async def unchecked_anchors(
+    connection: psycopg.AsyncConnection, document_id: UUID, *, rule_titles: Collection[str] = ()
+) -> list[UncheckedAnchor]:
+    """The document's anchors of a statement or a node's heading that have no match kind yet - but for
+    the nodes of ``rule_titles``, the rules that title a node from no wording of its blocks."""
+    cursor = await connection.execute(_UNCHECKED, (document_id, list(rule_titles)))
     return [
         UncheckedAnchor(found, owner, wording, tuple(texts))
         for found, owner, wording, texts in await cursor.fetchall()
@@ -127,17 +131,14 @@ async def unchecked_anchors(connection: psycopg.AsyncConnection, document_id: UU
 
 async def set_matches(connection: psycopg.AsyncConnection, checked: Sequence[CheckedAnchor]) -> int:
     """Each anchor's match, where it has none yet; how many were written."""
-    written = 0
-    for anchor in checked:
-        cursor = await connection.execute(
-            _MATCH,
-            (
-                CV + "MatchKinds", anchor.match_kind, anchor.score, anchor.quote, anchor.char_start,
-                anchor.char_end, anchor.id,
-            ),
-        )  # fmt: skip
-        written += cursor.rowcount
-    return written
+    rows = [
+        (CV + "MatchKinds", anchor.match_kind, anchor.score, anchor.quote, anchor.char_start, anchor.char_end,
+         anchor.id)
+        for anchor in checked
+    ]  # fmt: skip
+    async with connection.cursor() as cursor:
+        await cursor.executemany(_MATCH, rows)  # in one pipeline, not a round trip each
+        return max(cursor.rowcount, 0)
 
 
 async def not_found_anchors(

@@ -35,6 +35,7 @@ from app.pipeline.anchor_check import AnchorMatch, check_wording
 from app.pipeline.asking import Superseded, ended
 from app.pipeline.progress import report
 from app.pipeline.shacl import ShaclTimeout, as_findings, shacl_check
+from app.pipeline.x4_unit import UNIT_WITHOUT_NODE
 from app.pipeline.x5_checks import plausibility
 from app.vocab.lookup import current_release
 
@@ -67,7 +68,9 @@ async def run_x5(context: JobContext, job: Job, document: Document) -> dict[str,
 
 async def _checked(context: JobContext, job: Job, document: Document, run_id: Any) -> dict[str, Any]:
     kinds = await _anchors(context, job, document)
-    async with context.pool.connection() as connection:
+    # the findings and the graph of one state of the document: a node moved meanwhile is in both or in none
+    async with context.pool.connection() as connection, connection.transaction():
+        await connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
         findings = [
             Finding(
                 "x5.wording_not_found",
@@ -110,7 +113,8 @@ async def _checked(context: JobContext, job: Job, document: Document, run_id: An
 async def _anchors(context: JobContext, job: Job, document: Document) -> dict[str, int]:
     """Check the document's unchecked anchors and write their matches; how many of each kind."""
     async with context.pool.connection() as connection:
-        unchecked = await unchecked_anchors(connection, document.id)
+        # X4's node of a unit under no heading bears the document's title, no wording of its blocks
+        unchecked = await unchecked_anchors(connection, document.id, rule_titles=(UNIT_WITHOUT_NODE,))
     matches = await asyncio.to_thread(_matched, unchecked)
     async with context.pool.connection() as connection, connection.transaction():
         await hold_lease(connection, job)

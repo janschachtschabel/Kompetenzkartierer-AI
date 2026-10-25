@@ -189,7 +189,18 @@ async def test_a_value_retired_since_it_was_written_is_a_warning(connection: psy
         (retired,),
     )
 
-    assert seen(await plausibility(connection, document.id)) == ordered(
+    found = await plausibility(connection, document.id)
+    assert seen(found) == ordered(
         [("x5.retired_value", "warning", node_id, {"value": value}) for value in retired[:3]]
         + [("x5.retired_value", "warning", statement_id, {"value": value}) for value in retired[2:]]
     )
+    assert ordered((item.focus_id, item.path, item.details["value"]) for item in found) == ordered(
+        [
+            (node_id, "cur:nodeFunction", retired[0]),
+            (node_id, "cur:nodeType", retired[1]),
+            (node_id, "cur:obligation", binding),
+            (statement_id, "cur:obligation", binding),
+            (statement_id, "cur:statementKind", outcome),
+            (statement_id, "cur:statementSubkind", expectation),
+        ]
+    )  # the field each value stands in

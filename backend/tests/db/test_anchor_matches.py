@@ -13,7 +13,8 @@ from app.conversion.base import Block
 from app.db.anchors import CheckedAnchor, not_found_anchors, set_matches, unchecked_anchors, write_anchor
 from app.db.migrate import migrate
 from app.db.nodes import write_subtree
-from app.domain.l1 import AnchorDraft, NodeDraft, StatementDraft
+from app.db.profile import write_profile
+from app.domain.l1 import AnchorDraft, NodeDraft, ProfileDraft, SpecificationDraft, StatementDraft
 from app.vocab.loader import read_vocabulary
 from app.vocab.store import load_vocabulary
 from tests.db.document_of import document_of
@@ -55,9 +56,16 @@ def statement(verbatim: str, anchor: AnchorDraft) -> StatementDraft:
 
 
 async def a_tree(connection: psycopg.AsyncConnection) -> Any:
-    """A document whose heading and one statement are unchecked, a statement already checked, and an
-    anchor of the document itself (X1's, no wording)."""
+    """A document whose heading and one statement are unchecked, a statement already checked, and the
+    anchors of the document itself and of a specification (X1's, no wording)."""
     document = await document_of(connection, BLOCKS)
+    profile = ProfileDraft(
+        title=None, document_type=None, legal_form=None, binding=None, lifecycle=None, issuer=None,
+        edition=None, issued=None, valid_from=None, evidence=(),
+        specifications=(SpecificationDraft("S1", "curriculum", "Physik", None, {}, ("p1-b1",)),),
+        term_mappings=(), new_terms=(),
+    )  # fmt: skip
+    await write_profile(connection, document.id, profile)
     checked = AnchorDraft(
         ("p1-b2",), page_start=1, quote="Die Lernenden beschreiben", match_kind=CV + "match_exact"
     )
@@ -146,3 +154,17 @@ async def test_the_anchors_whose_wording_was_not_found_are_those_with_blocks_the
     )  # fmt: skip
 
     assert await not_found_anchors(connection, document.id) == [(told.id, told.owner)]
+
+
+async def test_the_anchor_of_a_node_a_rule_titled_is_not_checked(connection: psycopg.AsyncConnection) -> None:
+    # X4 titles a node of its own by the document (app/pipeline/x4_unit.py): its anchor says where the unit
+    # begins, not that the title stands there
+    document = await document_of(connection, BLOCKS)
+    titled = NodeDraft(
+        function=CV + "fn_unit", origin=CV + "orig_rule", review_status=PROPOSED, original_title="Dokument",
+        rule_id="x4.unit_without_node", anchors=(AnchorDraft(("p1-b2",), page_start=1),),
+    )  # fmt: skip
+    await write_subtree(connection, document.id, titled)
+
+    assert await unchecked_anchors(connection, document.id, rule_titles=("x4.unit_without_node",)) == []
+    assert [anchor.wording for anchor in await unchecked_anchors(connection, document.id)] == ["Dokument"]
