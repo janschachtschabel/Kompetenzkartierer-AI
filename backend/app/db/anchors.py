@@ -22,7 +22,8 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
 # A statement's anchor checks its wording, a node's its heading's title; the blocks in reading order
 _UNCHECKED = """
-SELECT a.id, coalesce(s.verbatim, n.original_title), array_agg(b.text ORDER BY b.seq)
+SELECT a.id, coalesce(a.statement_id, a.node_id), coalesce(s.verbatim, n.original_title),
+    array_agg(b.text ORDER BY b.seq)
 FROM anchor a
 LEFT JOIN statement s ON s.id = a.statement_id
 LEFT JOIN node n ON n.id = a.node_id
@@ -42,6 +43,7 @@ WHERE id = %s AND match_kind_iri IS NULL
 @dataclass(frozen=True)
 class UncheckedAnchor:
     id: UUID
+    owner: UUID  # its statement or node
     wording: str  # the statement's, or the title of the node's heading
     texts: tuple[str, ...]  # its blocks', in reading order
 
@@ -110,7 +112,8 @@ async def unchecked_anchors(connection: psycopg.AsyncConnection, document_id: UU
     """The document's anchors of a statement or a node's heading that have no match kind yet."""
     cursor = await connection.execute(_UNCHECKED, (document_id,))
     return [
-        UncheckedAnchor(found, wording, tuple(texts)) for found, wording, texts in await cursor.fetchall()
+        UncheckedAnchor(found, owner, wording, tuple(texts))
+        for found, owner, wording, texts in await cursor.fetchall()
     ]
 
 

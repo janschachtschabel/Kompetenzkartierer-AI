@@ -82,9 +82,15 @@ async def test_the_anchors_to_check_have_a_wording_and_no_match_kind_their_texts
 
     found = await unchecked_anchors(connection, document.id)
 
-    assert sorted((anchor.wording, anchor.texts) for anchor in found) == [
-        (WORDING, ("Die Lernenden beschreiben", "Licht und Schatten.")),
-        ("Kompetenzen", ("Kompetenzen",)),
+    cursor = await connection.execute(
+        "SELECT (SELECT id FROM node WHERE document_id = %(d)s),"
+        " (SELECT id FROM statement WHERE document_id = %(d)s AND verbatim = %(w)s)",
+        {"d": document.id, "w": WORDING},
+    )
+    [(node, told)] = await cursor.fetchall()
+    assert sorted((anchor.wording, anchor.texts, anchor.owner) for anchor in found) == [
+        (WORDING, ("Die Lernenden beschreiben", "Licht und Schatten."), told),  # whose: the finding's focus
+        ("Kompetenzen", ("Kompetenzen",), node),
     ]
 
 
