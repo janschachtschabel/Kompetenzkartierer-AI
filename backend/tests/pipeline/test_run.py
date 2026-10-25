@@ -256,7 +256,11 @@ async def test_a_document_is_extracted_stage_by_stage_each_a_run(
 
     result = await extract_document(context_of(pool, tmp_path, model, database_url), job)
 
-    assert result == {"document_id": str(document.id), "stages": ["X1", "X2", "X3", "X4"], "packages": 4}
+    assert result == {
+        "document_id": str(document.id),
+        "stages": ["X1", "X2", "X3", "X4", "X5"],
+        "packages": 4,
+    }
     assert model.asked == ["profile", "outline", "frame"]
     assert await rows(
         connection,
@@ -269,6 +273,7 @@ async def test_a_document_is_extracted_stage_by_stage_each_a_run(
         ("X2", 1, "done", None),
         ("X3", 1, "done", "gpt-6-luna"),
         ("X4", 1, "done", "gpt-6-luna"),
+        ("X5", 1, "done", None),  # no model asked
     ]
     [(title, document_type, valid_from)] = await rows(
         connection, "SELECT title, document_type_iri, valid_from FROM document WHERE id = %s", document.id
@@ -298,7 +303,7 @@ async def test_a_document_is_extracted_stage_by_stage_each_a_run(
         ("E0", "frame"), ("E1", "statements"), ("E2", "statements"), ("E3", "frame"),
     ]  # fmt: skip
     [(progress,)] = await rows(connection, "SELECT progress FROM job WHERE id = %s", job.id)
-    assert progress == {"code": "extract_statements", "params": {"done": 2, "total": 2}}
+    assert progress == {"code": "check_document", "params": {}}  # the last step: X5
     spent = await rows(
         connection,
         "SELECT purpose, sum(requests) FROM llm_usage WHERE job_id = %s GROUP BY purpose ORDER BY purpose",
@@ -335,7 +340,7 @@ async def test_an_attempt_after_a_break_goes_on_from_the_last_stage_done(
             await extract_document(context, job)
     again = await extract_document(context, job)
 
-    assert again["stages"] == ["X1", "X2", "X3", "X4"]
+    assert again["stages"] == ["X1", "X2", "X3", "X4", "X5"]
     assert model.asked == ["profile", "outline", "frame"]  # X1 was done: not asked again
     assert await rows(
         connection,
@@ -348,6 +353,7 @@ async def test_an_attempt_after_a_break_goes_on_from_the_last_stage_done(
         ("X2", "done"),
         ("X3", "done"),
         ("X4", "done"),
+        ("X5", "done"),
     ]  # the broken attempt started no run of X2
     [(nodes,)] = await rows(connection, "SELECT count(*) FROM node WHERE document_id = %s", document.id)
     assert nodes == 3  # written once
@@ -636,7 +642,7 @@ async def test_a_document_done_before_is_neither_asked_nor_written_again(
     assert model.asked == asked
     assert result == {
         "document_id": str(document.id),
-        "stages": ["X1", "X2", "X3", "X4"],
+        "stages": ["X1", "X2", "X3", "X4", "X5"],
         "packages": packages,
     }
     assert await rows(connection, "SELECT count(*) FROM extraction_run WHERE job_id = %s", again.id) == [(0,)]
@@ -670,7 +676,7 @@ async def test_a_new_job_goes_on_where_one_that_failed_stopped(
         " ORDER BY started_at",
         CV + "stage_",
         later.id,
-    ) == [("X2", "done"), ("X3", "done"), ("X4", "done")]
+    ) == [("X2", "done"), ("X3", "done"), ("X4", "done"), ("X5", "done")]
 
 
 @pytest.mark.parametrize(

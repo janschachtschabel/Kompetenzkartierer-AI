@@ -16,7 +16,7 @@ from app.db.runs import RunStart, finish_run, start_run
 from app.db.units import mark_unit
 from app.jobs.outcome import PermanentError
 from app.jobs.queue import LeaseLost
-from app.pipeline import x4_question
+from app.pipeline import run, x4_question
 from app.pipeline.lexicon_excerpt import Excerpt
 from app.pipeline.run import extract_document
 from tests.db.document_of import document_of
@@ -68,6 +68,10 @@ async def x4_runs(connection: Any, document: Any) -> list[tuple[Any, ...]]:
     )
 
 
+async def skipped(*_: Any) -> dict[str, Any]:
+    return {}
+
+
 async def units_done(connection: Any, document: Any) -> list[tuple[Any, ...]]:
     return await rows(
         connection,
@@ -78,9 +82,10 @@ async def units_done(connection: Any, document: Any) -> list[tuple[Any, ...]]:
 
 
 async def test_each_unit_is_asked_once_behind_the_prefix_they_share_and_written(
-    setup: Any, tmp_path: Path, database_url: str
+    setup: Any, tmp_path: Path, database_url: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     pool, connection = setup
+    monkeypatch.setattr(run, "run_x5", skipped)  # X4's last progress is the job's
     document = await a_document(connection)
     job = await a_job(connection, document.id, document.owner_id)
     model = Model(frame=FRAME)
@@ -94,7 +99,7 @@ async def test_each_unit_is_asked_once_behind_the_prefix_they_share_and_written(
 
     result = await extract_document(context_of(pool, tmp_path, answer, database_url), job)
 
-    assert result["stages"] == ["X1", "X2", "X3", "X4"]
+    assert result["stages"] == ["X1", "X2", "X3", "X4", "X5"]
     assert sorted(model.units) == ["E1", "E2"]
     shared = {key: prompt.split("=== EINHEIT ===")[0] for key, prompt in prompts.items()}
     assert shared["E1"] == shared["E2"]  # the same bytes: one cache for every unit
@@ -311,7 +316,7 @@ async def test_a_run_of_x4_done_while_this_one_asked_passes_the_stage_over(
         await a_job(connection, document.id, document.owner_id),
     )
 
-    assert result["stages"] == ["X1", "X2", "X3", "X4"]
+    assert result["stages"] == ["X1", "X2", "X3", "X4", "X5"]
     assert [(outcome, result.get("failure")) for outcome, result in await x4_runs(connection, document)] == [
         ("failed", "X4 of the document was written by another run meanwhile"),  # this one's, begun first
         ("done", None),

@@ -9,7 +9,12 @@ import psycopg
 from app.jobs.queue import Job, report_progress
 
 ProgressCode = Literal[
-    "extract_profile", "extract_outline", "extract_segments", "extract_frame", "extract_statements"
+    "extract_profile",
+    "extract_outline",
+    "extract_segments",
+    "extract_frame",
+    "extract_statements",
+    "check_document",
 ]
 
 

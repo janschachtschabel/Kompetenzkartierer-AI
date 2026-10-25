@@ -1,12 +1,14 @@
-"""The job ``extract.run`` (plan M1 6.6, 7b): a document's stages one after the other - X1 (profile,
-skeleton, outline; app/pipeline/x1_stage.py), X2 (work packages), X3 (the frame;
-app/pipeline/x3_stage.py), X4 (the units' statements; app/pipeline/x4_statements.py) - each stage
-of each attempt a run of its own (``extraction_run``), written at once with its run's end under the
-attempt's lease; X4's units each written whole on their own, so a unit done stays done.
+"""The job ``extract.run`` (plan M1 6.6, 7b, 8): a document's stages one after the other - X1
+(profile, skeleton, outline; app/pipeline/x1_stage.py), X2 (work packages), X3 (the frame;
+app/pipeline/x3_stage.py), X4 (the units' statements; app/pipeline/x4_statements.py), X5 (the checks,
+no model; app/pipeline/x5_stage.py) - each stage of each attempt a run of its own
+(``extraction_run``), written at once with its run's end under the attempt's lease; X4's units each
+written whole on their own, so a unit done stays done.
 A job goes on from the last stage done on the document - an attempt after a break (a worker gone,
 an error asked again), or a new job after one that ended for good (its attempts spent, its budget
 spent); a stage cut off midway left nothing. A document done is neither asked about nor written
-again. X3 and X4 read the document as X1 left it, its type among it. Paket 8 hangs X5 on.
+again. X3 and X4 read the document as X1 left it, its type among it; X5 checks what the stages wrote
+(app/pipeline/x5_stage.py).
 
 Payload: ``{"document_id": "<uuid>"}``; what it ends with: the document, its stages, the number of
 X2's packages (which X2's run holds, plan M1 6, Festlegung 3).
@@ -29,9 +31,10 @@ from app.pipeline.x1_stage import run_x1
 from app.pipeline.x2_segments import work_packages
 from app.pipeline.x3_stage import run_x3
 from app.pipeline.x4_statements import run_x4
+from app.pipeline.x5_stage import run_x5
 from app.vocab.lookup import current_release
 
-STAGES = ("X1", "X2", "X3", "X4")
+STAGES = ("X1", "X2", "X3", "X4", "X5")
 
 
 async def extract_document(context: JobContext, job: Job) -> dict[str, Any]:
@@ -55,6 +58,8 @@ async def extract_document(context: JobContext, job: Job) -> dict[str, Any]:
         await run_x3(context, job, await _current(context, document.id), blocks, printed)
     if "X4" not in done:
         await run_x4(context, job, await _current(context, document.id), blocks, printed)
+    if "X5" not in done:
+        await run_x5(context, job, await _current(context, document.id))
     return {"document_id": str(document.id), "stages": list(STAGES), "packages": packages}
 
 

@@ -191,7 +191,7 @@ async def test_a_run_of_x3_done_while_this_one_asked_is_found_at_the_write(
 
     result = await extract_document(context_of(pool, tmp_path, answer, database_url), job)
 
-    assert result["stages"] == ["X1", "X2", "X3", "X4"]
+    assert result["stages"] == ["X1", "X2", "X3", "X4", "X5"]
     assert [(outcome, result.get("failure")) for outcome, result in await x3_run(connection, document)] == [
         ("failed", "X3 of the document was written by another run meanwhile"),  # this one's, begun first
         ("done", None),
