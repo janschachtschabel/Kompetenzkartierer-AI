@@ -26,6 +26,8 @@ CONCEPTS: dict[str, list[tuple[str, list[str], list[str]]]] = {
         (CV + "stage_X2", [], []),
         (CV + "stage_X3", [], []),
         (CV + "stage_X4", [], []),
+        (CV + "stage_X5", [], []),
+        (CV + "stage_X6", [], []),
     ],
     CV + "NodeFunctions": [(CV + "fn_area", [], []), (CV + "fn_unit", [], [])],
     CV + "StatementKinds": [(CV + "kind_learningOutcome", [], []), (CV + "kind_content", [], [])],
