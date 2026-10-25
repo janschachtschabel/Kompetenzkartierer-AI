@@ -28,10 +28,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from app.api.deps import require_account
+from app.api.document_access import reader, visible_document
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.api.jobs import JobOut, job_out
 from app.api.limits import admit_model_start
-from app.api.source_content import EDITORS, content_row
+from app.api.source_content import content_row
 from app.core.auth import Principal
 from app.core.logging import current_request_id
 from app.core.settings import Settings
@@ -42,10 +43,8 @@ from app.db.documents import (
     create_document,
     documents_made_of,
     documents_of,
-    get_document,
 )
 from app.db.runs import RunState, runs_of
-from app.db.source_queries import Reader
 from app.jobs.queue import JobStatus, OpenJob, account_lane, enqueue, last_jobs, open_job, open_jobs
 from app.jobs.state import job_state
 from app.pipeline.extraction import KIND, unique_key
@@ -142,7 +141,7 @@ async def make_document(
                 try:
                     document = await create_document(
                         connection,
-                        _reader(who),
+                        reader(who),
                         third_party_content=settings.third_party_markdown != "hidden",
                         source_id=body.source_id,
                         conversion_id=body.conversion_id,
@@ -201,7 +200,7 @@ async def start_extraction(document_id: UUID, request: Request, response: Respon
     async with request.app.state.pool.connection() as connection:
         try:
             async with connection.transaction():
-                document = await _visible(connection, who, document_id)
+                document = await visible_document(connection, who, document_id)
                 if document.owner_id != who.account_id:
                     raise Refusal(403, "not_owner", "Only the document's owner starts its extraction.")
                 settings = request.app.state.settings
@@ -232,7 +231,7 @@ async def list_documents(
     source_id: Annotated[UUID | None, Query(description="Those of this register entry only")] = None,
 ) -> list[DocumentOut]:
     async with request.app.state.pool.connection() as connection:
-        found = await documents_of(connection, _reader(who), source_id=source_id, limit=MOST_LISTED)
+        found = await documents_of(connection, reader(who), source_id=source_id, limit=MOST_LISTED)
         return await _outs(connection, found, who)
 
 
@@ -243,7 +242,7 @@ async def list_documents(
 )
 async def read_document(document_id: UUID, request: Request, who: Account) -> DocumentOut:
     async with request.app.state.pool.connection() as connection:
-        [out] = await _outs(connection, [await _visible(connection, who, document_id)], who)
+        [out] = await _outs(connection, [await visible_document(connection, who, document_id)], who)
         return out
 
 
@@ -254,7 +253,7 @@ async def read_document(document_id: UUID, request: Request, who: Account) -> Do
 )
 async def read_runs(document_id: UUID, request: Request, who: Account) -> list[RunOut]:
     async with request.app.state.pool.connection() as connection:
-        await _visible(connection, who, document_id)
+        await visible_document(connection, who, document_id)
         return [RunOut.model_validate(run.__dict__) for run in await runs_of(connection, document_id)]
 
 
@@ -265,7 +264,7 @@ async def read_runs(document_id: UUID, request: Request, who: Account) -> list[R
 )
 async def read_units(document_id: UUID, request: Request, who: Account) -> list[UnitOut]:
     async with request.app.state.pool.connection() as connection:
-        await _visible(connection, who, document_id)
+        await visible_document(connection, who, document_id)
         units = await document_units(connection, document_id)
     return [
         UnitOut(
@@ -279,24 +278,12 @@ async def read_units(document_id: UUID, request: Request, who: Account) -> list[
     ]
 
 
-def _reader(who: Principal) -> Reader:
-    assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
-    return Reader(account_id=who.account_id, sees_all=bool(who.roles & EDITORS))
-
-
 def _refusal(refused: DocumentError) -> Refusal:
     if refused.code == "unknown_sector":
         return Refusal(422, "unknown_sector", "No such education sector.")
     if refused.code == "unknown_region":
         return Refusal(422, "unknown_region", "No such region.")
     return Refusal(404, "no_conversion", "No finished conversion of this entry the account may read.")
-
-
-async def _visible(connection: psycopg.AsyncConnection, who: Principal, document_id: UUID) -> Document:
-    document = await get_document(connection, _reader(who), document_id)
-    if document is None:
-        raise Refusal(404, "no_document", "No such document.")
-    return document
 
 
 class _BeingExtracted(Exception):
