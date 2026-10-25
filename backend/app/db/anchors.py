@@ -33,6 +33,14 @@ WHERE a.document_id = %s AND a.match_kind_iri IS NULL AND coalesce(s.verbatim, n
 GROUP BY a.id, s.verbatim, n.original_title
 ORDER BY a.id
 """
+# The model named blocks the wording is not in; an anchor without blocks is an editor's that found none
+_NOT_FOUND = """
+SELECT a.id, coalesce(a.statement_id, a.node_id) FROM anchor a
+WHERE a.document_id = %s AND a.match_kind_iri = 'https://w3id.org/wlo/curriculum/vocab#match_notFound'
+    AND coalesce(a.statement_id, a.node_id) IS NOT NULL
+    AND EXISTS (SELECT FROM anchor_block ab WHERE ab.anchor_id = a.id)
+ORDER BY a.id
+"""
 _MATCH = """
 UPDATE anchor SET match_kind_scheme = %s, match_kind_iri = %s, match_score = %s, quote = %s, char_start = %s,
     char_end = %s
@@ -130,3 +138,11 @@ async def set_matches(connection: psycopg.AsyncConnection, checked: Sequence[Che
         )  # fmt: skip
         written += cursor.rowcount
     return written
+
+
+async def not_found_anchors(
+    connection: psycopg.AsyncConnection, document_id: UUID
+) -> list[tuple[UUID, UUID]]:
+    """The anchors of statements and nodes whose wording their blocks do not hold, with whose they are."""
+    cursor = await connection.execute(_NOT_FOUND, (document_id,))
+    return [(found, owner) for found, owner in await cursor.fetchall()]

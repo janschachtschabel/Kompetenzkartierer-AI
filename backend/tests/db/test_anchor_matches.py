@@ -10,7 +10,7 @@ import psycopg
 import pytest
 
 from app.conversion.base import Block
-from app.db.anchors import CheckedAnchor, set_matches, unchecked_anchors, write_anchor
+from app.db.anchors import CheckedAnchor, not_found_anchors, set_matches, unchecked_anchors, write_anchor
 from app.db.migrate import migrate
 from app.db.nodes import write_subtree
 from app.domain.l1 import AnchorDraft, NodeDraft, StatementDraft
@@ -123,3 +123,26 @@ async def test_a_match_is_written_where_none_is_and_a_set_one_stays(
         (CV + "MatchKinds", CV + "match_fuzzy", 0.912, "Die Lernenden beschreiben", 0, 11),
         (CV + "MatchKinds", CV + "match_fuzzy", 0.912, "Kompetenzen", 0, 11),
     ]
+
+
+async def test_the_anchors_whose_wording_was_not_found_are_those_with_blocks_the_model_named(
+    connection: psycopg.AsyncConnection,
+) -> None:
+    document = await a_tree(connection)
+    [told, heading] = sorted(  # "Die Lernenden …" before "Kompetenzen"
+        await unchecked_anchors(connection, document.id), key=lambda anchor: anchor.wording
+    )
+    await set_matches(
+        connection,
+        [
+            CheckedAnchor(heading.id, CV + "match_exact", None, "Kompetenzen", 0, 11),
+            CheckedAnchor(told.id, CV + "match_notFound", None, None, None, None),
+        ],
+    )
+    # an editor's anchor that found no block (plan M1 9.4): no claim of the model
+    await write_anchor(
+        connection, document.id, document.conversion_id,
+        AnchorDraft((), page_start=1, match_kind=CV + "match_notFound"), statement_id=told.owner,
+    )  # fmt: skip
+
+    assert await not_found_anchors(connection, document.id) == [(told.id, told.owner)]
