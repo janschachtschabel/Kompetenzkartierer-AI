@@ -481,7 +481,7 @@ export const messages = {
     progress: {
       checking: "{done} von {total} {total|Adresse|Adressen} angesehen",
       converting: "Die Datei wird in Blöcke umgewandelt; bei einer großen Datei dauert das einige Minuten.",
-      // extract.run: the stages X1 to X4 of a document
+      // extract.run: the stages X1 to X5 of a document
       extract_profile: "Das Sprachmodell liest Titel, Geltung und Begriffe des Dokuments.",
       // a count of 0 too: the lexicon's patterns may type every heading
       extract_outline: "Die Gliederung wird gebaut. Überschriften, die das Sprachmodell einordnet: {headings}.",
@@ -491,6 +491,9 @@ export const messages = {
       // a unit is done once written: those done stay when the job stops
       extract_statements:
         "Das Sprachmodell liest die Aussagen der Arbeitspakete: {done} von {total} {total|Paket|Paketen} fertig.",
+      // X5 asks no model; its SHACL check of a long plan may take minutes
+      check_document:
+        "Das Dokument wird geprüft: jeder Wortlaut an seinen Blöcken, die Plausibilität und die Formen des Curriculum-Kerns. Bei einem langen Plan dauert das einige Minuten.",
     },
     trouble: "Der Server antwortet gerade nicht; der Stand wird weiter abgefragt.",
     // why there is nothing left to ask (jobWatch.ts, JobGone); for a fetch and the seed's check alike
@@ -649,6 +652,7 @@ export const messages = {
       X2: "Arbeitspakete",
       X3: "Rahmenteile",
       X4: "Aussagen",
+      X5: "Prüfung",
     },
     runStates: {
       done: "fertig",

@@ -15,6 +15,7 @@ export const JOB_PROGRESS: Readonly<Record<string, readonly string[]>> = {
   extract_segments: ["units"],
   extract_frame: [],
   extract_statements: ["done", "total"],
+  check_document: [],
 };
 
 /** The progress in the page's words; none for a code it has no words for, or numbers missing. */
