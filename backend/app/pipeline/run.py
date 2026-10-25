@@ -6,7 +6,8 @@ no model; app/pipeline/x5_stage.py) - each stage of each attempt a run of its ow
 written whole on their own, so a unit done stays done.
 A job goes on from the last stage done on the document - an attempt after a break (a worker gone,
 an error asked again), or a new job after one that ended for good (its attempts spent, its budget
-spent); a stage cut off midway left nothing. A document done is neither asked about nor written
+spent); a stage cut off midway left nothing but X4's finished units and the anchors X5 checked. A
+document done is neither asked about nor written
 again. X3 and X4 read the document as X1 left it, its type among it; X5 checks what the stages wrote
 (app/pipeline/x5_stage.py).
 

@@ -24,10 +24,10 @@ from typing import Any, NamedTuple
 from rdflib import RDF, BNode, Graph, Namespace, URIRef
 
 from app.core.child import ChildLog, stand_alone, write
+from app.vocab.loader import MODEL_DIRS
 
 SH = Namespace("http://www.w3.org/ns/shacl#")
 SHAPE_FILES = ("ontologie/cur-shapes.ttl", "profile/profil-shapes.ttl")
-MODEL_FOLDERS = ("ontologie", "vokabulare", "profile")  # their files, not their subfolders: as pruefe.py
 _LEFT_OUT = ("-lexikon", "cur-alignments", "migration")  # no shape a document's row meets reads them
 _LIBRARIES = ("rdflib", "pyshacl", "owlrl")
 _SEVERITIES = {str(SH.Violation): "violation", str(SH.Warning): "warning", str(SH.Info): "info"}
@@ -49,7 +49,8 @@ class ShaclResult(NamedTuple):
 
 
 def model_paths(ontology_dir: Path) -> list[Path]:
-    paths = [path for folder in MODEL_FOLDERS for path in sorted((ontology_dir / folder).glob("*.ttl"))]
+    # the folders the image holds; their files, not their subfolders: as pruefe.py
+    paths = [path for folder in MODEL_DIRS for path in sorted((ontology_dir / folder).glob("*.ttl"))]
     return [path for path in paths if not any(mark in path.name for mark in _LEFT_OUT)]
 
 

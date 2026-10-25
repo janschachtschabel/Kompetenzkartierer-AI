@@ -469,9 +469,7 @@ def test_x5_gives_its_shacl_check_ten_seconds_to_half_an_hour(value: int) -> Non
         ("SHACL_TIMEOUT_S", "1801"),
     ],
 )
-def test_the_limits_of_model_jobs_are_bounded(
-    monkeypatch: pytest.MonkeyPatch, variable: str, value: str
-) -> None:
+def test_the_limits_of_jobs_are_bounded(monkeypatch: pytest.MonkeyPatch, variable: str, value: str) -> None:
     monkeypatch.setenv("DATABASE_URL", FAKE_URL)
     monkeypatch.setenv(variable, value)
 
