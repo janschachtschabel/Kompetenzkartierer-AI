@@ -13,7 +13,8 @@ const typesFollow: [
   Same<api.Sector, keyof typeof messages.documents.sectors>,
   Same<api.RunState, keyof typeof messages.documents.runStates>,
   Same<api.UnitState, keyof typeof messages.documents.units.states>,
-] = [true, true, true];
+  Same<api.FindingSeverity, keyof typeof messages.documents.findings.severities>,
+] = [true, true, true, true];
 
 /** The notations of cv:EducationSectors in the core's vocabulary, as the backend loads them. */
 function sectorNotations(): string[] {
@@ -41,6 +42,13 @@ function runStates(): string[] {
 function unitStates(): string[] {
   const source = readFileSync(join(process.cwd(), "..", "backend", "app", "pipeline", "units.py"), "utf8");
   const literal = /^UnitState = Literal\[([^\]]*)\]/m.exec(source)?.[1] ?? "";
+  return [...literal.matchAll(/"([^"]+)"/g)].map(([, value]) => value).sort();
+}
+
+/** The values of Severity in backend app/domain/l1.py, as a finding is graded. */
+function severities(): string[] {
+  const source = readFileSync(join(process.cwd(), "..", "backend", "app", "domain", "l1.py"), "utf8");
+  const literal = /^Severity = Literal\[([^\]]*)\]/m.exec(source)?.[1] ?? "";
   return [...literal.matchAll(/"([^"]+)"/g)].map(([, value]) => value).sort();
 }
 
@@ -81,5 +89,16 @@ describe("the words of a document", () => {
   it("name every stage the extraction runs", () => {
     expect(extractionStages()).toContain("X1");
     for (const stage of extractionStages()) expect(Object.keys(messages.documents.stages)).toContain(stage);
+  });
+
+  it("name the stage a repair runs", () => {
+    const source = readFileSync(join(process.cwd(), "..", "backend", "app", "pipeline", "x6_repair.py"), "utf8");
+    expect(source).toContain('"X6",');
+    expect(Object.keys(messages.documents.stages)).toContain("X6");
+  });
+
+  it("name every severity of a finding, and no other", () => {
+    expect(severities()).toContain("violation");
+    expect(Object.keys(messages.documents.findings.severities).sort()).toEqual(severities());
   });
 });

@@ -45,7 +45,7 @@ afterEach(() => {
 describe("the documents of a register entry", () => {
   it("lists the entry's documents as the server gives them, each with its extraction", async () => {
     const list = vi.spyOn(api, "listDocuments").mockResolvedValue([
-      made("d2", { title: "Kernlehrplan Physik", extraction: { job_id: "j2", status: "running", error_code: null } }),
+      made("d2", { title: "Kernlehrplan Physik", extraction: { kind: "extract.run", job_id: "j2", status: "running", error_code: null } }),
       made("d1"),
     ]);
 
@@ -62,6 +62,18 @@ describe("the documents of a register entry", () => {
     expect(wrapper.findAll("li")[1].findAll("time")).toHaveLength(0);
     expect(wrapper.findAll("li")[0].findAll("time")).toHaveLength(1);
     expect(wrapper.findAll("li")[1].text()).toContain(t("documents.page.none"));
+  });
+
+  it("names a document's last repair as such", async () => {
+    vi.spyOn(api, "listDocuments").mockResolvedValue([
+      made("d2", { extraction: { kind: "extract.repair", job_id: "j3", status: "running", error_code: null } }),
+    ]);
+
+    const wrapper = await open();
+
+    expect(wrapper.get("li").text()).toContain(
+      t("documents.page.lastRepairStatus", { status: t("jobs.status.running") }),
+    );
   });
 
   it("says when the entry has none yet", async () => {

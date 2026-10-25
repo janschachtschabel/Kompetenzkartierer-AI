@@ -10,6 +10,7 @@ import { RouterLink } from "vue-router";
 import { listDocuments, type CurriculumDocument } from "@/api";
 import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
+import { lastStatus } from "@/documentJobs";
 import { momentFormat, t } from "@/i18n/de";
 import { failureNotice, type Notice } from "@/notice";
 
@@ -58,11 +59,7 @@ onMounted(load);
             <time :datetime="item.created_at">{{ moment(item.created_at) }}</time>
             ·
           </template>
-          {{
-            item.extraction
-              ? t("documents.page.lastStatus", { status: t(`jobs.status.${item.extraction.status}`) })
-              : t("documents.page.none")
-          }}
+          {{ item.extraction ? lastStatus(item.extraction) : t("documents.page.none") }}
         </span>
       </li>
     </ul>

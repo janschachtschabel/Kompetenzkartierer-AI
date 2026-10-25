@@ -14,6 +14,11 @@
  * again). The page reads the document again when the extraction has moved on (`changed`),
  * and the keyboard goes to the section's heading where what it rested on went with the state it
  * belonged to. `led`: the start form led here to an extraction that ran already for the PDF.
+ *
+ * The document's job may be a repair (started beside its findings, DocumentFindings.vue): it is
+ * followed here alike, named as one (documentJobs.ts). Whether a job of the document waits or runs -
+ * followed, asked after, or started here and not yet read with the document - the page is told
+ * (`busy`): no repair is offered beside it.
  */
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
@@ -30,6 +35,7 @@ import { isolate } from "@/bidi";
 import AppIcon from "@/components/AppIcon.vue";
 import JobProgress from "@/components/JobProgress.vue";
 import NoticeText from "@/components/NoticeText.vue";
+import { jobLabel, lastStatus } from "@/documentJobs";
 import { focusIsFree } from "@/focusRescue";
 import { t } from "@/i18n/de";
 import { jobFailureText } from "@/jobMessages";
@@ -39,7 +45,7 @@ import { sayAnew } from "@/liveRegion";
 import { failureNotice, type Notice } from "@/notice";
 
 const props = defineProps<{ document: CurriculumDocument; led?: boolean }>();
-const emit = defineEmits<{ changed: []; progressed: [] }>();
+const emit = defineEmits<{ changed: []; progressed: []; busy: [busy: boolean] }>();
 
 /** The job a start from here gave back, followed until the page reads the document again -
  * once it has ended too, so its end shows until the document says how the extraction stands. */
@@ -72,13 +78,21 @@ const unfollowed = computed(() => open.value && followed.value === null);
 watch(followed, () => {
   stepSaid = "";
 });
-const label = computed(() => t("documents.page.jobLabel"));
-/** How the last extraction ended, and why where it failed: the document names the code to every reader. */
+// a start from here is an extraction's; the document's job is named by its kind
+const label = computed(() =>
+  started.value || !latest.value ? t("documents.page.jobLabel") : jobLabel(latest.value.kind),
+);
+/** How the last job ended, and why where it failed: the document names the code to every reader. */
 const lastLine = computed(() => {
   if (!latest.value) return t("documents.page.none");
-  const line = t("documents.page.lastStatus", { status: t(`jobs.status.${latest.value.status}`) });
+  const line = lastStatus(latest.value);
   return latest.value.status === "failed" ? `${line}. ${jobFailureText(latest.value.error_code)}` : line;
 });
+watch(
+  () => followed.value !== null || unfollowed.value,
+  (busy) => emit("busy", busy),
+  { immediate: true },
+);
 
 function say(message: string): void {
   status.value = sayAnew(status.value, message);

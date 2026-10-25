@@ -1,6 +1,7 @@
 // Documents and their extraction (backend app/api/documents.py): made of an entry's finished
-// conversion with their extraction started at once; one extraction of a document waits or runs at
-// a time - a start while one does gives that one back.
+// conversion with their extraction started at once; one extraction or repair of a document waits or
+// runs at a time - a start while one does gives that one back. Their findings
+// (app/api/document_findings.py).
 import { apiFetch } from "./http";
 import type { Job, JobStatus } from "./jobs";
 
@@ -21,7 +22,40 @@ export interface CurriculumDocument {
   created_at: string;
   /** The latest extraction job, whatever became of it; its id only for who may follow it - the
    * owner, an admin - null for an editor, who reads the status; why it failed, for every reader. */
-  extraction: { job_id: string | null; status: JobStatus; error_code: string | null } | null;
+  extraction: { job_id: string | null; kind: string; status: JobStatus; error_code: string | null } | null;
+}
+
+/** The job kind of a document's repair: X6, then X5 again (backend app/pipeline/x6_repair.py). */
+export const REPAIR_KIND = "extract.repair";
+
+/** How grave a finding is (backend app/domain/l1.py, Severity). */
+export type FindingSeverity = "violation" | "warning" | "info";
+
+export interface DocumentFinding {
+  /** "x5.wording_not_found", "shacl.StatementShape" … */
+  rule: string;
+  severity: FindingSeverity;
+  /** The stage whose run found it, "X5". */
+  stage: string | null;
+  /** The row it is about: its kind ("statement", "node", "document" …), and its wording or title. */
+  focus: { kind: string; id: string; label: string | null };
+  /** The property, or the place in the model's answer, where it names one. */
+  path: string | null;
+  /** The server's: English, SHACL's German. */
+  message: string;
+  /** The work package it names, "E2". */
+  unit: string | null;
+}
+
+export interface FindingsPage {
+  /** Of all the document's findings. */
+  counts: Record<FindingSeverity, number>;
+  /** Gravest first, at most 500. */
+  findings: DocumentFinding[];
+  /** More were found than are listed. */
+  truncated: boolean;
+  /** The work packages a repair would ask again: to the owner, once X5 has checked the document. */
+  repairable: string[];
 }
 
 /** How far X4 has come with a unit: done, open; read typed by X3 (frame), or not at all (none). */
@@ -78,6 +112,11 @@ export function startExtraction(documentId: string): Promise<Job> {
   return apiFetch<Job>(`${documentPath(documentId)}/extraction`, { method: "POST" });
 }
 
+/** Starts the document's repair; the extraction or repair waiting or running where there is one. */
+export function startRepair(documentId: string): Promise<Job> {
+  return apiFetch<Job>(`${documentPath(documentId)}/repair`, { method: "POST" });
+}
+
 /** The documents the caller may read, of one entry where `sourceId` names it; the newest first. */
 export function listDocuments(sourceId?: string): Promise<CurriculumDocument[]> {
   const query = sourceId ? `?${new URLSearchParams({ source_id: sourceId })}` : "";
@@ -96,6 +135,11 @@ export function getRuns(id: string): Promise<Run[]> {
 /** The document's units, in its order; none before X2 has parted it. */
 export function getUnits(id: string): Promise<Unit[]> {
   return apiFetch<Unit[]>(`${documentPath(id)}/units`);
+}
+
+/** What the stages found on the document, gravest first. */
+export function getFindings(id: string): Promise<FindingsPage> {
+  return apiFetch<FindingsPage>(`${documentPath(id)}/findings`);
 }
 
 function documentPath(id: string): string {

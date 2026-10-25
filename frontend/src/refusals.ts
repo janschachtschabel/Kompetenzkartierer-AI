@@ -36,6 +36,9 @@ export const REFUSAL_CODES = [
   "no_budget",
   "too_many_jobs",
   "too_many_starts",
+  // a document's repair (backend app/api/documents.py)
+  "not_checked",
+  "nothing_to_repair",
 ] as const;
 
 export type RefusalCode = (typeof REFUSAL_CODES)[number];

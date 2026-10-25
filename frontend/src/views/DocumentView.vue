@@ -1,15 +1,19 @@
 <script setup lang="ts">
 /**
- * One document made of an entry's conversion (plan M1 7.5, 7a): what it is for, its extraction
- * (DocumentExtraction: followed, cancelled, started again), its work packages (DocumentUnits) and
- * the runs of its stages (DocumentRuns). The page reads the document again when its extraction
- * has moved on, its work packages at each progress too.
+ * One document made of an entry's conversion (plan M1 7.5, 7a, 8b): what it is for, its extraction
+ * (DocumentExtraction: followed, cancelled, started again), its work packages (DocumentUnits), what
+ * the stages found on it with the repair offered to its owner (DocumentFindings) and the runs of its
+ * stages (DocumentRuns). The page reads the document again when its extraction has moved on or a
+ * repair was started, its work packages and findings at each progress too. No repair is offered
+ * while a job of the document waits or runs: one followed under the extraction, or one just started
+ * and not yet read with the document.
  */
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 
 import { ApiError, getDocument, getRuns, type CurriculumDocument, type Run } from "@/api";
 import DocumentExtraction from "@/components/DocumentExtraction.vue";
+import DocumentFindings from "@/components/DocumentFindings.vue";
 import DocumentRuns from "@/components/DocumentRuns.vue";
 import DocumentUnits from "@/components/DocumentUnits.vue";
 import EmptyState from "@/components/EmptyState.vue";
@@ -31,8 +35,12 @@ const failure = ref<Notice | null>(null);
 let generation = 0;
 // The start form led here to an extraction that ran already for the PDF (ExtractionStart.vue)
 const led = ref(false);
-// bumped as the extraction moves on: the work packages are read again
+// bumped as the extraction moves on: the work packages and the findings are read again
 const unitsRead = ref(0);
+// a job of the document waits or runs, as DocumentExtraction follows it
+const jobOpen = ref(false);
+// a repair was started, the document not read again since
+const repairStarted = ref(false);
 
 /** Whether a start led here, said once: read again later, or come back to, the page no longer says so. */
 function ledHere(): boolean {
@@ -59,6 +67,7 @@ async function load(): Promise<void> {
     if (mine !== generation) return;
     document_.value = found;
     runs.value = ran;
+    repairStarted.value = false; // the document names its job now
   } catch (error) {
     if (mine !== generation) return;
     document_.value = null;
@@ -73,6 +82,11 @@ async function load(): Promise<void> {
 function moved(): void {
   unitsRead.value++;
   void load();
+}
+
+function repairing(): void {
+  repairStarted.value = true;
+  moved();
 }
 
 function moment(value: string): string {
@@ -142,8 +156,18 @@ watch(
         :led="led"
         @changed="moved()"
         @progressed="unitsRead++"
+        @busy="jobOpen = $event"
       />
       <DocumentUnits :key="document_.id" class="document__section" :document-id="document_.id" :refresh="unitsRead" />
+      <DocumentFindings
+        :key="document_.id"
+        class="document__section"
+        :document-id="document_.id"
+        :own="document_.own"
+        :busy="jobOpen || repairStarted"
+        :refresh="unitsRead"
+        @started="repairing()"
+      />
       <DocumentRuns class="document__section" :runs="runs" />
     </template>
   </div>

@@ -637,12 +637,14 @@ export const messages = {
     no_such_page: "Diese Seite gibt es in der Datei nicht.",
     // a document and its extraction (backend app/api/documents.py), and a model job's admission (limits.py)
     no_document: "Dieses Dokument gibt es nicht, oder dein Konto sieht es nicht.",
-    not_owner: "Die Extraktion startet nur, wer das Dokument angelegt hat.",
+    not_owner: "Extraktion und Reparatur startet nur, wer das Dokument angelegt hat.",
     unknown_sector: "Diesen Bildungsbereich kennt die Anwendung nicht.",
     unknown_region: "Eines der gewählten Länder kennt die Anwendung nicht.",
     no_budget: "Dein Konto hat kein Token-Budget mehr für das Sprachmodell. Bitte die Administration um mehr Budget.",
     too_many_jobs: "Dein Konto hat schon viele Aufträge laufen. Versuch es in einer Minute noch einmal.",
     too_many_starts: "Zu viele Starts in kurzer Zeit. Versuch es in einer Minute noch einmal.",
+    not_checked: "Die Extraktion des Dokuments ist noch nicht bis zur Prüfung gelaufen. Setze sie erst fort.",
+    nothing_to_repair: "Kein Arbeitspaket hat mehr Befunde, die eine Reparatur angeht.",
   },
   // Documents of a conversion and their extraction (ExtractionStart.vue, DocumentView.vue, SourceDocuments.vue)
   documents: {
@@ -660,6 +662,7 @@ export const messages = {
       X3: "Rahmenteile",
       X4: "Aussagen",
       X5: "Prüfung",
+      X6: "Reparatur",
     },
     runStates: {
       done: "fertig",
@@ -696,6 +699,76 @@ export const messages = {
       // the packages whose statements the extraction reads
       summary: "{done} von {total} {total|Paket|Paketen} mit Aussagen fertig.",
     },
+    // What the stages found on a document (DocumentFindings.vue, backend app/api/document_findings.py)
+    findings: {
+      heading: "Befunde",
+      table: "Befunde des Dokuments",
+      loading: "Die Befunde werden geladen.",
+      loadFailed: "Die Befunde ließen sich nicht laden.",
+      noneTitle: "Keine Befunde",
+      noneBody: "Die Stufen der Extraktion haben an diesem Dokument bisher nichts gefunden.",
+      columns: { severity: "Schwere", finding: "Befund", focus: "Betrifft" },
+      // by Severity (backend app/domain/l1.py; tests/documentWords.test.ts)
+      severities: { violation: "Verstoß", warning: "Warnung", info: "Hinweis" },
+      counts: {
+        violation: "{count} {count|Verstoß|Verstöße}",
+        warning: "{count} {count|Warnung|Warnungen}",
+        info: "{count} {count|Hinweis|Hinweise}",
+      },
+      truncated: "Gezeigt werden die ersten {shown} von {total} {total|Befund|Befunden}.",
+      // the kind of the row a finding is about; another kind is shown as the server names it
+      kinds: {
+        document: "Dokument",
+        node: "Knoten",
+        statement: "Aussage",
+        frame_part: "Rahmenteil",
+        specification: "Spezifikation",
+        anchor: "Anker",
+        variant: "Variante",
+      },
+      unit: "Paket {unit}",
+      // by the rule's name without its stage: the reading of an answer names its rules alike at X1,
+      // X3, X4 and X6 (tests/findingWords.test.ts); SHACL's own messages are German already
+      rules: {
+        // X5's checks
+        wording_not_found: "Der Wortlaut steht nicht in den Blöcken, auf die er verweist.",
+        unit_without_statements: "Das Arbeitspaket wurde ganz gelesen, enthält aber keine Aussage.",
+        shacl_timeout: "Die Regelprüfung (SHACL) dauerte zu lange; das Ergebnis bleibt gesperrt.",
+        rule_bounds: "Die Grenzen einer Regel widersprechen sich.",
+        retired_value: "Ein Wert, den die Vokabulare nicht mehr führen.",
+        heading_as_statement: "Eine Aussage, die nur die Überschrift ihres Knotens wiederholt.",
+        // what the reading of the model's answer found
+        too_many_statements: "Die Antwort enthielt mehr Aussagen, als gelesen werden; die übrigen fehlen.",
+        statement_without_block: "Eine Aussage, die in keinem ihrer Blöcke steht; sie fehlt.",
+        statement_without_wording: "Eine Aussage ohne Wortlaut; sie fehlt.",
+        statement_too_long: "Eine Aussage über der Längengrenze.",
+        unknown_block: "Eine Blockkennung, die die Umwandlung nicht hat.",
+        block_outside_unit: "Ein Block außerhalb des gefragten Arbeitspakets.",
+        unknown_value: "Ein Wert, den die Auswahlliste nicht hat.",
+        unknown_key: "Eine Kennung, die die Frage nicht genannt hat.",
+        subkind_mismatch: "Eine Unterart, die nicht zur Aussageart gehört.",
+        value_cut: "Ein Wert, auf die Höchstlänge gekürzt.",
+        value_from_surroundings: "Ein Wert aus der Umgebung, nicht aus dem Wortlaut der Aussage.",
+        target_not_content: "Ein Verweis auf eine Aussage, die keine Inhaltsaussage ist.",
+        part_without_block: "Ein Rahmenteil, das in keinem seiner Blöcke steht.",
+        statement_outside_frame: "Eine Aussage außerhalb der Rahmenteile; sie wird mit den Arbeitspaketen gelesen.",
+        statement_without_node: "Eine Aussage der Titelei, die kein Knoten aufnimmt.",
+        target_elsewhere: "Ein Verweis auf Inhalt an einem anderen Knoten oder an keinem.",
+        // a stage's own
+        unanswered: "Das Sprachmodell gab keine Antwort in der verlangten Form.",
+        pattern_timeout: "Ein Suchmuster des Lexikons brauchte zu lange und wurde übergangen.",
+      },
+      // the owner's repair (FindingsRepair.vue, backend POST /documents/{id}/repair)
+      repair: {
+        offer:
+          "{count} {count|Arbeitspaket hat|Arbeitspakete haben} Befunde, die eine Reparatur angeht: Das " +
+          "Sprachmodell liest {count|es|sie} noch einmal, danach wird das Dokument erneut geprüft. " +
+          "Was die Redaktion geändert hat, bleibt.",
+        start: "Reparieren",
+        started: "Die Reparatur ist gestartet; ihr Stand steht unter „Extraktion“.",
+        failed: "Die Reparatur wurde nicht gestartet.",
+      },
+    },
     untitled: "Dokument ohne Titel",
     start: {
       heading: "Extraktion",
@@ -729,8 +802,11 @@ export const messages = {
       noRegions: "keine angegeben",
       extraction: "Extraktion",
       jobLabel: "Extraktion",
+      // the document's job a repair started (documentJobs.ts)
+      repairLabel: "Reparatur",
       none: "Noch keine Extraktion.",
       lastStatus: "Letzte Extraktion: {status}",
+      lastRepairStatus: "Letzte Reparatur: {status}",
       // its job is another's to follow, or gone: the document is asked after (DocumentExtraction.vue)
       following: "Der Stand wird weiter abgefragt, bis die Extraktion endet.",
       started: "Die Extraktion ist gestartet; ihr Stand steht hier.",
