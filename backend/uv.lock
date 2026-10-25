@@ -433,6 +433,7 @@ dependencies = [
     { name = "pydantic-ai-slim", extra = ["openai"] },
     { name = "pydantic-settings" },
     { name = "pypdfium2" },
+    { name = "pyshacl" },
     { name = "python-multipart" },
     { name = "rdflib" },
     { name = "regex" },
@@ -444,7 +445,6 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "mypy" },
-    { name = "pyshacl" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pyyaml" },
@@ -465,6 +465,7 @@ requires-dist = [
     { name = "pydantic-ai-slim", extras = ["openai"], specifier = ">=2.42" },
     { name = "pydantic-settings", specifier = ">=2.15" },
     { name = "pypdfium2", specifier = ">=5.13" },
+    { name = "pyshacl", specifier = ">=0.40" },
     { name = "python-multipart", specifier = ">=0.0.32" },
     { name = "rdflib", specifier = ">=7.6" },
     { name = "regex", specifier = ">=2026.9.10" },
@@ -476,7 +477,6 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "mypy", specifier = ">=2.3" },
-    { name = "pyshacl", specifier = ">=0.40" },
     { name = "pytest", specifier = ">=9.1" },
     { name = "pytest-cov", specifier = ">=7.1" },
     { name = "pyyaml", specifier = ">=6.0.3" },

@@ -34,6 +34,8 @@ dependencies = [
     # counting a request's tokens before it is sent, with o200k_base (app/llm/budget.py); the
     # version pydantic-ai brought along
     "tiktoken>=0.14",
+    # X5's SHACL gate: each document against the Kern's shapes, in a child process (plan M1 8.4)
+    "pyshacl>=0.40",
 ]
 
 [dependency-groups]
@@ -42,7 +44,6 @@ dev = [
     "pytest-cov>=7.1",
     "ruff>=0.16",
     "mypy>=2.3",
-    "pyshacl>=0.40",
     # the deployment tests read deploy/docker-compose.yml
     "pyyaml>=6.0.3",
 ]

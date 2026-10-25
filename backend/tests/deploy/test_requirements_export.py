@@ -74,7 +74,14 @@ def test_every_exported_package_carries_its_hashes() -> None:
 def test_the_dev_tools_stay_out_of_the_image() -> None:
     pinned, _ = exported(EXPORT.read_text(encoding="utf-8"))
 
-    assert not {"pytest", "mypy", "ruff", "pyshacl"} & pinned.keys()
+    assert not {"pytest", "mypy", "ruff"} & pinned.keys()
+
+
+def test_the_worker_s_shacl_gate_ships_in_the_image() -> None:
+    # X5 validates each document against the Kern's shapes (plan M1 8.4)
+    pinned, _ = exported(EXPORT.read_text(encoding="utf-8"))
+
+    assert "pyshacl" in pinned
 
 
 def test_the_reader_sees_a_package_without_a_hash() -> None:

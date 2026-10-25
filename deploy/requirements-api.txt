@@ -142,6 +142,10 @@ h11==0.16.0 \
     # via
     #   httpcore2
     #   uvicorn
+html5rdf==1.2.1 \
+    --hash=sha256:1f519121bc366af3e485310dc8041d2e86e5173c1a320fac3dc9d2604069b83e \
+    --hash=sha256:ace9b420ce52995bb4f05e7425eedf19e433c981dfe7a831ab391e2fa2e1a195
+    # via rdflib
 httpcore2==2.13.1 ; sys_platform != 'emscripten' \
     --hash=sha256:e0aa977abe17e69a3b820a24542a6fa88702676d83880b8d194dcd18408e5103 \
     --hash=sha256:e1e05d4f25f7d7d496bfb96748f6f4b67657b03da069b3a68c36069f3db73d0a
@@ -204,6 +208,14 @@ opentelemetry-api==1.45.1 \
     # via
     #   fastapi
     #   pydantic-ai-slim
+owlrl==7.6.2 \
+    --hash=sha256:83347bf7f133979e87b2b18695d51d25510b99cec3f6919b5df05d4fbf058ae0 \
+    --hash=sha256:c743f35c2d908396e77823852bb1ebbce88340cd49961493983bec42c93283a8
+    # via pyshacl
+packaging==26.3 \
+    --hash=sha256:94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79 \
+    --hash=sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c
+    # via pyshacl
 pdfminer-six==20260107 \
     --hash=sha256:366585ba97e80dffa8f00cebe303d2f381884d8637af4ce422f1df3ef38111a9 \
     --hash=sha256:96bfd431e3577a55a0efd25676968ca4ce8fd5b53f14565f85716ff363889602
@@ -229,6 +241,10 @@ pillow==12.3.0 \
     --hash=sha256:d69141514cc30b774ceea5e3ed3a6635c8d8a96edf664689b890f4089111fb35 \
     --hash=sha256:f7401aebd7f581d7f83a439d87d474999317ee099218e5ad25d125290990ba65
     # via pdfplumber
+prettytable==3.18.0 \
+    --hash=sha256:439217116152244369caf3d9f1caf2f9fe29b03bd79e88d2928c8e718c95d680 \
+    --hash=sha256:b3346e0e6f79180833aebaac088ae926340586cf6d7d991b9eb125b65f72313a
+    # via pyshacl
 prometheus-client==0.26.0 \
     --hash=sha256:04a91bcf94e2cf74a44a1a874d651a2e853ed354b6e822f3b7487751465d5c2b \
     --hash=sha256:fa93d06737aa02bacd05794768508bb97d2fbee28cb3bca04eaae92f0ca953d6
@@ -329,6 +345,10 @@ pypdfium2==5.13.0 \
     # via
     #   kompetenzkartierer-ai
     #   pdfplumber
+pyshacl==0.40.1 \
+    --hash=sha256:011e3cf1a68b31747cb762ba3d755ae1bdcc464c8fad0dc212a9adc550719552 \
+    --hash=sha256:27dd58c8ddfa103303b4a8c40b2c666332ffc912dbcd3137f7adc7b7bc5e6bda
+    # via kompetenzkartierer-ai
 python-dateutil==2.9.0.post0 \
     --hash=sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3 \
     --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
@@ -344,7 +364,10 @@ python-multipart==0.0.32 \
 rdflib==7.6.0 \
     --hash=sha256:30c0a3ebf4c0e09215f066be7246794b6492e054e782d7ac2a34c9f70a15e0dd \
     --hash=sha256:6c831288d5e4a5a7ece85d0ccde9877d512a3d0f02d7c06455d00d6d0ea379df
-    # via kompetenzkartierer-ai
+    # via
+    #   kompetenzkartierer-ai
+    #   owlrl
+    #   pyshacl
 regex==2026.9.10 \
     --hash=sha256:048a89ee797db10160bd2bd519286577a6b43a100279bd4b7d8456a3d69c80a0 \
     --hash=sha256:1e321e2c84f0e52c457f5ea5944f796d6e8e09cb99738ea98dcc1bfe402a128d \
@@ -441,3 +464,7 @@ uvicorn==0.54.0 \
     --hash=sha256:505bdb0f318731d45f1f712071fc781a8981f6847a31c902c9f5e652d4f67faf \
     --hash=sha256:a2e33cbfaa0306f8e6b0c13e0cb89d7d7a2da3e62b90c66e18c33d9807b28620
     # via kompetenzkartierer-ai
+wcwidth==0.8.3 \
+    --hash=sha256:d128512515fbf4612e0ff21fd6380399210318b7b54a9af59dff8454cf9730eb \
+    --hash=sha256:d5b73dba6158a595ec9370350e7f2637bcac8d6c5e4fde34f30fcffb6103a5e4
+    # via prettytable
