@@ -104,5 +104,9 @@ ein Test schlägt an, wenn sie veraltet.
   braucht je nach PDF ein Vielfaches davon (gemessen wird in M6). Unter Linux nimmt der Kernel
   bei Speichermangel zuerst ihn (`oom_score_adj` 1000), nicht den Worker; die Konvertierung
   endet dann mit `died`.
+- Prüfung (X5): Die SHACL-Formen prüft ein Kindprozess des Workers, mit derselben Regel für
+  Speichermangel. Gemessen (CPU, ohne Last): rund 2 s für ein Dokument mit 200 Knoten und
+  Aussagen, 9 s mit 800, 43 s mit 2.400; `SHACL_TIMEOUT_S` (Standard 300 s) begrenzt ihn, danach
+  bleibt das Tor mit dem Befund `x5.shacl_timeout` zu.
 - `JOB_SHUTDOWN_GRACE_S` mindestens 5 s unter `terminationGracePeriodSeconds` des Workers.
 - `LOG_FORMAT=json` für die zentrale Logsammlung.

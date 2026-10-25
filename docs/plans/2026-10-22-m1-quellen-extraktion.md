@@ -603,6 +603,59 @@ Nachtrag zur Umsetzung (24.10.):
 | 8.5 | X5 als Stufe | letzte Stufe von `extract.run` | Befunde als Zeilen; ein zweiter X5-Lauf ersetzt die Befunde desselben Laufs | `pytest -m pg tests/pipeline/test_x5.py` |
 | 8.6 | X6 Reparatur | `app/pipeline/x6_repair.py`, Job `extract.repair` (nur Einheiten mit Befunden, 0–2 Aufrufe, Schema wie X4; Redaktionsänderungen unangetastet) | nur fehlerhafte Einheiten; bearbeitete Aussagen nie überschrieben; danach X5 erneut | `pytest -m pg tests/pipeline/test_x6_repair.py` |
 
+**Nachtrag 8a – X5 Prüfung ohne Modell (25.10.)**
+
+Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberfläche für Befunde).
+
+- **8.1 Dateien.** Statt `anchors.py`: `anchor_match.py` (Nadel, exact, whitespace, elided),
+  `anchor_fuzzy.py` (Stellen seltener Wörter, difflib), `anchor_passage.py` (Passage straffen),
+  `anchor_check.py` (`check_wording`), `db/anchors.py` (lesen, schreiben). Schwellen wie in der alten
+  App, durch einen Test festgehalten; die Überschriftzeile der alten Suche entfällt (Blöcke statt
+  Markdown). Ein Wortlaut über 2.000 Zeichen (`MAX_FUZZY`) wird nur exact/whitespace/elided gesucht.
+- **8.1 Was geprüft wird.** Fundstellen ohne Fundart an Aussagen (Wortlaut `verbatim`) und an Knoten
+  (Wortlaut `original_title`); Fundstellen von Rahmenteilen, Spezifikationen und dem Dokument haben
+  keinen eigenen Wortlaut und bleiben ohne Fundart. Eine gesetzte Fundart überschreibt X5 nicht. Der
+  Text einer Fundstelle sind die Texte ihrer Blöcke in Lesereihenfolge, mit Zeilenende verbunden;
+  auf ihn beziehen sich `char_start`/`char_end`. `quote` ist der Text des Dokuments an der Stelle;
+  über 20.000 Zeichen bleibt er leer, die Spanne bleibt.
+- **8.1 Nicht gefunden.** `cv:match_notFound` lässt die Blöcke stehen: Sie sind die Behauptung des
+  Modells. Der Befund `x5.wording_not_found` (Verstoß) wird aus den Fundstellen gelesen – notFound mit
+  Blöcken –, findet sich also auch in einem späteren X5-Lauf wieder; von Hand angelegte Fundstellen
+  ohne Block (9.4) ergeben keinen. Unscharfe Treffer meldet SHACL selbst (Warnung), X5 nicht doppelt.
+- **8.2 Regeln.** `x5.heading_as_statement` (Warnung), `x5.unit_without_statements` (Hinweis; ohne
+  `checked_absent`), `x5.rule_bounds` (Warnung; min > max, Anteil außerhalb 0..1),
+  `x5.retired_value` (Warnung; zurückgezogener Knotentyp, Art, Unterart, Verbindlichkeit). Nicht
+  in X5: „Aussageart passt zum Knotentyp“ (kein Vokabularprädikat nennt erlaubte Arten; Unterart zu
+  Art und Knotentyp zu Funktion prüft SHACL), Pflichtfelder (SHACL) und Summen von Stunden und
+  Anteilen (Arbeitsumfang erst L2/M3).
+- **8.3 Export.** `exports/kern_rows.py` liest das Dokument in einem Snapshot, `exports/kern_rdf.py`
+  baut den Graphen. Jede Zeile ist `urn:uuid:<id>`, so bildet ein SHACL-Fokus direkt auf die Zeile
+  ab. Ein Wurzelknoten hängt an der einzigen in `applies_to` genannten Spezifikation, sonst an der
+  einzigen des Dokuments, sonst am Dokument. Nicht exportiert in M1: Inhalte von `frame_part` (L2),
+  eigene Begriffe des Profils, Fundstellen von Dokument und Spezifikation, Varianten außer in
+  `appliesTo`, `codeText`/`purposeText`.
+- **8.4 Prozess.** Statt eines Prozess-Pools prüft ein Kindprozess je Dokument, über `core/child.py`
+  (aus `conversion/runners.py` herausgelöst, verhaltensgleich: Frist, Abbruch, Lease-Verlust,
+  `oom_score_adj`). Ein Thread hielte den GIL über die ganze Prüfung.
+- **8.4 Varianten, gemessen** (Messskripte nicht im Repository; die Gleichheit sichert
+  `test_shacl.py`): V1 ganzes Modell wie `pruefe.py` 13,6–16,1 s je Beispiel; V2 mit den Zeilen
+  des Dokuments als Fokus 1,6–4,0 s; V3 dazu ohne Lexika, Alignments und Migration 1,2–3,5 s;
+  Befunde von V2 und V3 an allen sechs Beispielen gleich V1. An Export-förmigen Dokumenten wuchs
+  V3 überlinear (202 Fokus 13,7 s, 802 57,5 s, 2.402 191,7 s): rdflib parst und übersetzt jede
+  SPARQL-Abfrage je Fokusknoten neu. Gewählt: V3 mit Fokus und im Kindprozess gehaltenen
+  Übersetzungen – 2,3 s, 8,5 s, 43,3 s. Die Abfrage 5 von `HsModuleShape` (Arbeitsumfang) wächst
+  mit Arbeitsumfang-Daten weiter überlinear; der M1-Export schreibt keine, in M3 messen.
+- **8.4 Frist und Befunde.** `SHACL_TIMEOUT_S` Standard 300 s (10–1800; das Ziel < 5 s gilt für
+  die Testdokumente, ein langer Plan braucht länger). Nach der Frist: Befund `x5.shacl_timeout`
+  (Verstoß, Tor zu), X5 endet trotzdem `done`. Regel `shacl.<Shape>`, Fokus die Zeile, sonst das
+  Dokument mit `details.focus`; ohne Meldung steht der Name der Form.
+- **8.5 Stufe.** `x5_stage.py`, Test `test_x5_stage.py`. Erst die Fundarten unter Lease und
+  Baumsperre, dann Befunde und Laufende in einer Transaktion unter Lease und `lock_for_stage`
+  (Superseded wie X1–X4). Ergebnis `{"anchors": {Fundart: n}, "findings": {Schwere: n},
+  "shacl": "done"|"timeout"}`, Fortschritt `check_document`, Stufenwort „Prüfung“.
+  „Ein zweiter X5-Lauf ersetzt die Befunde“ wandert nach 8b: In 8a läuft X5 je Dokument einmal
+  (eine fertige Stufe wird übersprungen); erst die Reparatur startet X5 neu.
+
 ### Paket 9: Editor, Redaktion und Festschreiben (8 PT)
 
 | # | Aufgabe | Dateien | Test zuerst | Nachweis |

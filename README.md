@@ -152,7 +152,7 @@ ungültig.
   Modellanfrage – auch eine Wiederholung – reserviert er nicht mehr (`check_lease` im Zähler).
   Ein Worker, der gar nicht mehr schlägt,
   endet über die Prüfung abgelaufener Leases ebenso `cancelled`.
-- Extraktion (X1–X4): Der Job `extract.run` (`{"document_id": …}`) bestimmt für ein Dokument per
+- Extraktion (X1–X5): Der Job `extract.run` (`{"document_id": …}`) bestimmt für ein Dokument per
   Sprachmodell das Dokumentprofil (Titel, Typ, Geltung,
   Spezifikationen, eigene Begriffe), baut das Gerüst ohne Modell aus Verzeichnis, Layout und
   Lexikon, lässt nur die Überschriften ohne starkes Muster vom Modell einordnen und teilt den
@@ -165,12 +165,21 @@ ungültig.
   `EXTRACT_CONCURRENCY` (Standard 4, 1–16; nie mehr als `DB_POOL_MAX_SIZE` − 1) zugleich. Jedes
   Paket wird für sich geschrieben, sobald es beantwortet ist (`extraction_unit`, Migration 0019):
   Wortlautfelder nur, wenn sie in den Blöcken der Aussage stehen, Herkunft Modell, Prüfstand
-  vorgeschlagen. Jede Stufe jedes Versuchs ist ein eigener Lauf (`extraction_run`); X1 bis X3
-  schreiben ihr Ergebnis auf einmal, X4 je Paket. Ein neuer Versuch oder ein neuer Job auf
+  vorgeschlagen. X5 prüft ohne Modell: jeden noch ungeprüften Wortlaut (Aussage, Überschrift
+  eines Knotens) gegen den Text der Blöcke seines Ankers – wörtlich, normalisiert, mit Auslassung
+  oder unscharf, wie die Ankersuche der alten App; Art, Fundstelle und Zeichenspanne stehen dann am
+  Anker –, die Plausibilität (Überschrift als Aussage, Einheit ohne Aussagen, Regelgrenzen,
+  zurückgezogene Werte) und die SHACL-Formen des Curriculum-Kerns und der Profile über den
+  Kern-Graphen des Dokuments, in einem eigenen Prozess mit der Frist `SHACL_TIMEOUT_S` (Standard
+  300 s, 10–1800). Die Befunde stehen in `validation_finding` (Verstoß, Warnung, Hinweis): ein
+  Wortlaut, den seine Blöcke nicht enthalten, ist ein Verstoß, eine überschrittene Frist der
+  Verstoß `x5.shacl_timeout`; X5 endet in beiden Fällen fertig. Jede Stufe jedes Versuchs ist ein
+  eigener Lauf (`extraction_run`); X1 bis X3 schreiben ihr Ergebnis auf einmal, X4 je Paket, X5
+  erst die Anker, dann Befunde und Ende zusammen. Ein neuer Versuch oder ein neuer Job auf
   demselben Dokument macht nach der letzten fertigen Stufe weiter, in X4 mit den offenen Paketen;
   zwei gleichzeitige schreiben jede Stufe und jedes Paket einmal.
   Fortschritt: `extract_profile`, `extract_outline`, `extract_segments`, `extract_frame`,
-  `extract_statements` (fertig/gesamt). Endet mit
+  `extract_statements` (fertig/gesamt), `check_document`. Endet mit
   `budget_exhausted` (Budget aufgebraucht: in X4 beginnt kein Paket mehr, die laufenden werden
   fertig, Fertiges bleibt), `model_unanswered` (keine Antwort im Schema; in X4 bleiben nur solche
   Pakete offen), `model_not_configured` (kein `OPENAI_API_KEY` im Worker), `prefix_too_long`
