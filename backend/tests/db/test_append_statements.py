@@ -3,13 +3,14 @@ writes a unit's statements at the unit's node, from the position its part of the
 in the unit's transaction; profile values are checked as a subtree's are, and nothing is written
 of statements refused or of a node another document holds."""
 
+import uuid
 from typing import Any
 
 import psycopg
 import pytest
 
 from app.db.documents import DocumentError, ProfileValueError
-from app.db.nodes import append_statements, lock_tree, write_subtree
+from app.db.nodes import append_statements, drop_statements, lock_tree, write_subtree
 from app.db.tree import read_tree
 from tests.db.test_nodes import CV, SCHOOL, anchor, connection, document, node, owner, statement, url
 
@@ -154,3 +155,22 @@ async def test_statements_added_wait_for_another_write_to_the_document_s_tree(
         await connection.execute("SET lock_timeout = '200ms'")
         with pytest.raises(psycopg.errors.LockNotAvailable):
             await append_statements(connection, document.id, unit_node, [statement("Gut.")], first_position=1)
+
+
+async def test_statements_taken_away_go_with_their_anchors_and_addressees_the_document_s_only(
+    connection: psycopg.AsyncConnection, document: Any, unit_node: Any
+) -> None:
+    gone, kept = await append_statements(
+        connection, document.id, unit_node, [statement("Weg."), statement("Bleibt.")], first_position=1
+    )
+
+    dropped = await drop_statements(connection, document.id, [gone, uuid.uuid4()])
+
+    assert (dropped, await statements_of(connection, document)) == (1, [(2, "Bleibt.")])
+    cursor = await connection.execute(
+        "SELECT (SELECT count(*) FROM anchor WHERE statement_id = %(gone)s),"
+        " (SELECT count(*) FROM statement_addressee WHERE statement_id = %(gone)s),"
+        " (SELECT count(*) FROM anchor WHERE statement_id = %(kept)s)",
+        {"gone": gone, "kept": kept},
+    )
+    assert await cursor.fetchone() == (0, 0, 1)
