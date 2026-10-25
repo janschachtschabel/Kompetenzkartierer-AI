@@ -491,9 +491,9 @@ export const messages = {
       // a unit is done once written: those done stay when the job stops
       extract_statements:
         "Das Sprachmodell liest die Aussagen der Arbeitspakete: {done} von {total} {total|Paket|Paketen} fertig.",
-      // X5 asks no model; its SHACL check of a long plan may take minutes
+      // X5 asks no model; its SHACL check of a long document may take minutes
       check_document:
-        "Das Dokument wird geprüft: jeder Wortlaut an seinen Blöcken, die Plausibilität und die Formen des Curriculum-Kerns. Bei einem langen Plan dauert das einige Minuten.",
+        "Das Dokument wird geprüft: ob jeder Wortlaut in seinen Blöcken steht, ob die Angaben stimmig sind und ob sie den Regeln des Curriculum-Kerns genügen. Bei einem langen Dokument kann das einige Minuten dauern.",
     },
     trouble: "Der Server antwortet gerade nicht; der Stand wird weiter abgefragt.",
     // why there is nothing left to ask (jobWatch.ts, JobGone); for a fetch and the seed's check alike
@@ -694,7 +694,8 @@ export const messages = {
       heading: "Extraktion",
       intro:
         "Aus der fertigen Umwandlung wird ein Dokument; das Sprachmodell liest sein Profil, seine Gliederung, " +
-        "seine Rahmenteile und die Aussagen jedes Arbeitspakets. Fertige Pakete bleiben, auch wenn die " +
+        "seine Rahmenteile und die Aussagen jedes Arbeitspakets; danach prüft die Anwendung das Ergebnis, " +
+        "ohne Sprachmodell. Fertige Pakete bleiben, auch wenn die " +
         "Extraktion abbricht; ein neuer Start setzt dort fort. " +
         "Für eine PDF läuft bei dir höchstens eine Extraktion zugleich – läuft schon eine, führt der Knopf zu ihr. " +
         "Du kannst sie jederzeit abbrechen.",

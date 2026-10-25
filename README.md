@@ -166,14 +166,19 @@ ungültig.
   Paket wird für sich geschrieben, sobald es beantwortet ist (`extraction_unit`, Migration 0019):
   Wortlautfelder nur, wenn sie in den Blöcken der Aussage stehen, Herkunft Modell, Prüfstand
   vorgeschlagen. X5 prüft ohne Modell: jeden noch ungeprüften Wortlaut (Aussage, Überschrift
-  eines Knotens) gegen den Text der Blöcke seines Ankers – wörtlich, normalisiert, mit Auslassung
-  oder unscharf, wie die Ankersuche der alten App; Art, Fundstelle und Zeichenspanne stehen dann am
-  Anker –, die Plausibilität (Überschrift als Aussage, Einheit ohne Aussagen, Regelgrenzen,
-  zurückgezogene Werte) und die SHACL-Formen des Curriculum-Kerns und der Profile über den
-  Kern-Graphen des Dokuments, in einem eigenen Prozess mit der Frist `SHACL_TIMEOUT_S` (Standard
-  300 s, 10–1800). Die Befunde stehen in `validation_finding` (Verstoß, Warnung, Hinweis): ein
-  Wortlaut, den seine Blöcke nicht enthalten, ist ein Verstoß, eine überschrittene Frist der
-  Verstoß `x5.shacl_timeout`; X5 endet in beiden Fällen fertig. Jede Stufe jedes Versuchs ist ein
+  eines Knotens) gegen den Text der Blöcke seines Ankers – wörtlich, über Leerraum hinweg,
+  normalisiert, mit Auslassung oder unscharf, wie die Ankersuche der alten App; die Fundart, bei
+  unscharfen Treffern ihr Wert, der Text an der Stelle (`quote`) und die Zeichenspanne stehen dann
+  am Anker –, die Plausibilität (Überschrift als Aussage, Arbeitspaket ohne Aussagen, Regelgrenzen,
+  zurückgezogene Werte) und den Kern-Graphen des Dokuments gegen die SHACL-Formen des
+  Curriculum-Kerns und der Profile, in einem eigenen Prozess mit der Frist `SHACL_TIMEOUT_S`
+  (Standard 300 s, 10–1800). Die Befunde stehen in `validation_finding` (Verstoß, Warnung,
+  Hinweis): ein Wortlaut, den seine Blöcke nicht enthalten, ist ein Verstoß, eine überschrittene
+  Frist der Verstoß `x5.shacl_timeout`; X5 endet in beiden Fällen fertig. Bis zur Reparatur
+  (Paket 8b) prüft kein neuer Start ein Dokument erneut, dessen X5 fertig ist: eine höhere Frist
+  gilt für Dokumente, deren X5 noch aussteht. Stirbt der Prüfprozess (Speichermangel) oder bricht
+  er ab, scheitert der Lauf (`ShaclCrashed`), und der Job wird bis zu seiner Versuchsgrenze
+  wiederholt (`handler_error`). Jede Stufe jedes Versuchs ist ein
   eigener Lauf (`extraction_run`); X1 bis X3 schreiben ihr Ergebnis auf einmal, X4 je Paket, X5
   erst die Anker, dann Befunde und Ende zusammen. Ein neuer Versuch oder ein neuer Job auf
   demselben Dokument macht nach der letzten fertigen Stufe weiter, in X4 mit den offenen Paketen;

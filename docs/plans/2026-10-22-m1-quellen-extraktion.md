@@ -612,33 +612,58 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   `anchor_check.py` (`check_wording`), `db/anchors.py` (lesen, schreiben). Schwellen wie in der alten
   App, durch einen Test festgehalten; die Überschriftzeile der alten Suche entfällt (Blöcke statt
   Markdown). Ein Wortlaut über 2.000 Zeichen (`MAX_FUZZY`) wird nur exact/whitespace/elided gesucht.
+- **8.1 Abweichungen von der alten Suche** (Review 8a). Ein Treffer Wort für Wort zerschneidet kein
+  Wort – „Lernfeld 12“ enthält „Lernfeld 1“ nicht, auch nicht als Bruchstück einer Auslassung –, wo
+  der Wortlaut an diesem Rand einen Buchstaben oder eine Ziffer hat. Normalisiert gilt auch ein am
+  Zeilenende getrenntes Wort („Kompe-“ / „tenzen“) und ein zerlegt geschriebener Buchstabe (u +
+  U+0308), wie `text_hash` sie liest (`domain.wording.unparted`); ein Zitat endet nach den Zeichen
+  seines letzten Buchstabens. Ein mit dem Absatz genannter Überschriftblock ist eine Zeile wie jede:
+  welcher Block Überschrift ist, sagen die Texte nicht, und ein Satz über einen Seitenumbruch beginnt
+  im ersten Block. Der Wert eines unscharfen Zitats kann unter 0,8 liegen (das Fenster nie): es hält
+  den ganzen Wortlaut und läuft über das Ausgelassene weiter.
 - **8.1 Was geprüft wird.** Fundstellen ohne Fundart an Aussagen (Wortlaut `verbatim`) und an Knoten
   (Wortlaut `original_title`); Fundstellen von Rahmenteilen, Spezifikationen und dem Dokument haben
-  keinen eigenen Wortlaut und bleiben ohne Fundart. Eine gesetzte Fundart überschreibt X5 nicht. Der
+  keinen eigenen Wortlaut und bleiben ohne Fundart, ebenso der Knoten, den X4 einer Einheit ohne
+  Überschrift gibt (`x4.unit_without_node`): er trägt den Titel des Dokuments, nicht den Wortlaut
+  seiner Blöcke. Eine gesetzte Fundart überschreibt X5 nicht. Der
   Text einer Fundstelle sind die Texte ihrer Blöcke in Lesereihenfolge, mit Zeilenende verbunden;
   auf ihn beziehen sich `char_start`/`char_end`. `quote` ist der Text des Dokuments an der Stelle;
   über 20.000 Zeichen bleibt er leer, die Spanne bleibt.
 - **8.1 Nicht gefunden.** `cv:match_notFound` lässt die Blöcke stehen: Sie sind die Behauptung des
   Modells. Der Befund `x5.wording_not_found` (Verstoß) wird aus den Fundstellen gelesen – notFound mit
   Blöcken –, findet sich also auch in einem späteren X5-Lauf wieder; von Hand angelegte Fundstellen
-  ohne Block (9.4) ergeben keinen. Unscharfe Treffer meldet SHACL selbst (Warnung), X5 nicht doppelt.
+  ohne Block (9.4) ergeben keinen. Unscharfe Treffer an Aussagen meldet SHACL selbst
+  (`StatementPlausibilityShape`, Warnung), X5 nicht doppelt; an Knotenüberschriften meldet sie
+  niemand – deren Titel nimmt X2 aus den Blöcken selbst, unscharf werden sie erst durch eine
+  Änderung (offen für 8b/Paket 9).
 - **8.2 Regeln.** `x5.heading_as_statement` (Warnung), `x5.unit_without_statements` (Hinweis; ohne
   `checked_absent`), `x5.rule_bounds` (Warnung; min > max, Anteil außerhalb 0..1),
-  `x5.retired_value` (Warnung; zurückgezogener Knotentyp, Art, Unterart, Verbindlichkeit). Nicht
+  `x5.retired_value` (Warnung; zurückgezogene Funktion, Knotentyp, Art, Unterart,
+  Verbindlichkeit). Nicht
   in X5: „Aussageart passt zum Knotentyp“ (kein Vokabularprädikat nennt erlaubte Arten; Unterart zu
   Art und Knotentyp zu Funktion prüft SHACL), Pflichtfelder (SHACL) und Summen von Stunden und
   Anteilen (Arbeitsumfang erst L2/M3).
-- **8.3 Export.** `exports/kern_rows.py` liest das Dokument in einem Snapshot, `exports/kern_rdf.py`
-  baut den Graphen. Jede Zeile ist `urn:uuid:<id>`, so bildet ein SHACL-Fokus direkt auf die Zeile
-  ab. Ein Wurzelknoten hängt an der einzigen in `applies_to` genannten Spezifikation, sonst an der
-  einzigen des Dokuments, sonst am Dokument. Nicht exportiert in M1: Inhalte von `frame_part` (L2),
-  eigene Begriffe des Profils, Fundstellen von Dokument und Spezifikation, Varianten außer in
-  `appliesTo`, `codeText`/`purposeText`.
+- **8.3 Export.** `exports/kern_rows.py` liest das Dokument in einem Snapshot – allein oder in einer
+  Transaktion des Aufrufers mit Snapshot (repeatable read); in einer ohne verweigert es (die
+  Verbindung des Pools nach ihrer ersten Abfrage); X5 liest Befunde und Graph zusammen in einem.
+  `exports/kern_rdf.py` baut den Graphen. Jede Zeile ist `urn:uuid:<id>`, so bildet ein SHACL-Fokus
+  direkt auf die Zeile ab. Ein Wurzelknoten hängt an der einzigen in `applies_to` genannten
+  Spezifikation, sonst an der einzigen des Dokuments, sonst am Dokument. Ein Knoten trägt als
+  `cur:checkedAbsent` die Andockpunkte, die alle seine Einheiten als fehlend geprüft haben (ein Teil
+  eines Knotens bürgt nicht für einen anderen); die Profilformen lesen sie. `purposeText` ist
+  `cur:purpose`, `codeText` `cur:code`; eine Region ist ihr aktives Konzept. Nicht exportiert in M1:
+  Rahmenteile und ihre Fundstellen (L2), eigene Begriffe des Profils, Fundstellen von Dokument und
+  Spezifikation, die Geltung (`applicability`) einer Spezifikation.
+- **8.3 In M1 sichere Warnungen.** Der Export schreibt keinen Arbeitsumfang, keine Zeitspanne und
+  keine Zerlegung (L2): ein `beruf:Lernfeld` ohne `checkedAbsent` für die Zeit warnt zweimal, ein
+  `hs:Modul` ohne Leistungspunkte einmal, jedes Lernergebnis gibt den Hinweis der Zerlegung. Das sind
+  Warnungen und Hinweise, keine Verstöße; X6 (8b) nimmt sie nicht als Anlass einer Reparatur.
 - **8.4 Prozess.** Statt eines Prozess-Pools prüft ein Kindprozess je Dokument, über `core/child.py`
   (aus `conversion/runners.py` herausgelöst, verhaltensgleich: Frist, Abbruch, Lease-Verlust,
   `oom_score_adj`). Ein Thread hielte den GIL über die ganze Prüfung.
-- **8.4 Varianten, gemessen** (Messskripte nicht im Repository; die Gleichheit sichert
-  `test_shacl.py`): V1 ganzes Modell wie `pruefe.py` 13,6–16,1 s je Beispiel; V2 mit den Zeilen
+- **8.4 Varianten, gemessen** (Messskripte nicht im Repository; die Gleichheit mit V1 sichert
+  `test_shacl.py` an allen sechs Beispielen und einem exportierten Dokument): V1 ganzes Modell wie
+  `pruefe.py` 13,6–16,1 s je Beispiel; V2 mit den Zeilen
   des Dokuments als Fokus 1,6–4,0 s; V3 dazu ohne Lexika, Alignments und Migration 1,2–3,5 s;
   Befunde von V2 und V3 an allen sechs Beispielen gleich V1. An Export-förmigen Dokumenten wuchs
   V3 überlinear (202 Fokus 13,7 s, 802 57,5 s, 2.402 191,7 s): rdflib parst und übersetzt jede
