@@ -83,10 +83,9 @@ def _whole_model() -> Graph:
     return model
 
 
-@pytest.mark.parametrize("name", ["fehlerhaft.ttl", "fehlerhaft-hinweise.ttl"])
-def test_the_chosen_model_with_kept_queries_finds_what_the_whole_model_finds(name: str) -> None:
-    # V1 as pruefe.py runs it: the whole model, every node a focus, no query kept
-    data = example(name)
+def whole_and_chosen(data: Graph) -> tuple[set[tuple[str, str, str]], set[tuple[str, str, str]]]:
+    """The results on the data's rows of V1 as pruefe.py runs it - the whole model, every node a focus,
+    no query kept - and of the variant X5 runs."""
     shapes = Graph()
     for path in (ONTOLOGY / "ontologie" / "cur-shapes.ttl", ONTOLOGY / "profile" / "profil-shapes.ttl"):
         shapes.parse(path, format="turtle")
@@ -104,10 +103,16 @@ def test_the_chosen_model_with_kept_queries_finds_what_the_whole_model_finds(nam
         severity = str(report.value(result, SH.resultSeverity)).removeprefix(str(SH)).lower()
         if focus in subjects:
             whole.add((focus, str(shape).removeprefix(SHAPES), severity))
-
     chosen = {(found.focus, found.shape, found.severity) for found in validate_graph(ONTOLOGY, data)}
+    return whole, chosen
 
-    assert whole and chosen == whole
+
+@pytest.mark.parametrize("name", sorted(path.name for path in EXAMPLES.glob("*.ttl")))
+def test_the_chosen_model_with_kept_queries_finds_what_the_whole_model_finds(name: str) -> None:
+    whole, chosen = whole_and_chosen(example(name))
+
+    assert chosen == whole
+    assert whole or not name.startswith("fehlerhaft")  # a faulty example faults
 
 
 def a_document(addressees: list[str]) -> KernRows:
@@ -124,7 +129,7 @@ def a_document(addressees: list[str]) -> KernRows:
           "node_type_iri": SCHOOL + "Inhaltsbereich", "code": "1", "code_assigned": False,
           "original_title": "Optik", "title_language": "de", "obligation_iri": None, "scope_share_iri": None,
           "extraction_depth_iri": None, "applies_to": [], "origin_iri": CV + "orig_model",
-          "review_status_iri": CV + "rev_proposed"}],
+          "review_status_iri": CV + "rev_proposed", "checked_absent": []}],
         [{"id": statement, "node_id": node, "position": 1, "verbatim": "Die Lernenden beschreiben Licht.",
           "language": "de", "lead_in": None, "statement_kind_iri": CV + "kind_content", "subkind_iri": None,
           "obligation_iri": None, "origin_iri": CV + "orig_model", "review_status_iri": CV + "rev_proposed",
@@ -194,3 +199,9 @@ async def test_a_check_that_breaks_in_its_child_comes_back_by_its_kind(tmp_path:
     # the shapes are missing: rdflib reads the path, and its error's kind comes back, never its text
     with pytest.raises(ShaclCrashed, match=r"^the SHACL validation raised \w+ in its process$"):
         await shacl_check(kern_graph(a_document([])), ontology_dir=tmp_path, timeout_s=120, told=TOLD)
+
+
+def test_the_chosen_model_finds_on_an_exported_document_what_the_whole_model_finds() -> None:
+    whole, chosen = whole_and_chosen(kern_graph(a_document(addressees=[])))
+
+    assert whole and chosen == whole

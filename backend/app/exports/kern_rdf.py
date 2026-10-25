@@ -4,10 +4,10 @@ specification), statements and the anchors of nodes and statements, as the rows 
 app/exports/kern_rows.py hold them.
 
 Every row is ``urn:uuid:<id>`` - the draft IRI a document has until it is frozen (plan M1, IRIs) - so a
-SHACL focus node is the id of the row it is about. Left out in M1: the frame parts (L2 in M3; in the
+SHACL focus node is the id of the row it is about. A node lacks the docking points every unit of it
+checked absent (cur:checkedAbsent). Left out in M1: the frame parts and their anchors (L2 in M3; in the
 Kern they would be nodes of function fn_frame), the profile's own terms, the anchors of the document and
-of specifications, a specification's applicability, and the wording fields the Kern has no property for
-(codeText, purposeText).
+of specifications, and a specification's applicability.
 """
 
 from collections.abc import Mapping, Sequence
@@ -140,6 +140,8 @@ def _node(graph: Graph, row: Row, parent: URIRef) -> None:
     _add(graph, subject, CUR.position, row["position"])
     for applies in row["applies_to"]:
         graph.add((subject, CUR.appliesTo, row_iri(applies)))
+    for point in row["checked_absent"]:
+        graph.add((subject, CUR.checkedAbsent, URIRef(point)))
 
 
 def _statement(graph: Graph, row: Row, at_place: Mapping[tuple[UUID, int], UUID]) -> None:
@@ -164,6 +166,8 @@ def _statement(graph: Graph, row: Row, at_place: Mapping[tuple[UUID, int], UUID]
     for name in _TEXTS:
         _add(graph, subject, CUR[name], details.get(name))
     _add(graph, subject, CUR.exampleText, details.get("exampleText"), lang=language)
+    _add(graph, subject, CUR.purpose, details.get("purposeText"), lang=language)
+    _add(graph, subject, CUR.code, details.get("codeText"))  # its number or mark as the document prints it
     for marker in details.get("crossCuttingMarkers", []):
         graph.add((subject, CUR.crossCuttingMarker, Literal(marker)))
     for position in details.get("targetsContent", []):

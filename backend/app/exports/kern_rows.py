@@ -17,12 +17,16 @@ from app.db.documents import DocumentError
 from app.vocab.lookup import REGIONS
 
 Row = dict[str, Any]
+_SNAPSHOTS = ("repeatable read", "serializable")  # the isolation levels whose queries share one snapshot
 
 _DOCUMENT = """
 SELECT d.id, d.title, d.issuer, d.edition, d.document_type_iri, d.sector_iri, d.legal_form_iri, d.binding_iri,
     d.lifecycle_iri, d.valid_from, d.valid_until, d.issued,
-    ARRAY(SELECT c.iri FROM unnest(d.regions) AS region JOIN vocab_concept c
-          ON c.scheme_iri = %(regions)s AND c.notation = region ORDER BY c.iri) AS region_iris
+    ARRAY(SELECT iri FROM (
+              SELECT DISTINCT ON (region) c.iri FROM unnest(d.regions) AS region JOIN vocab_concept c
+                  ON c.scheme_iri = %(regions)s AND c.notation = region
+              ORDER BY region, c.retired_in NULLS FIRST  -- the active concept of a notation first
+          ) AS found ORDER BY iri) AS region_iris
 FROM document d WHERE d.id = %(document)s
 """
 _SPECIFICATIONS = """
@@ -32,11 +36,16 @@ _VARIANTS = """
 SELECT v.id, v.specification_id, v.label, v.variant_kind_iri FROM variant v
 JOIN specification s ON s.id = v.specification_id WHERE s.document_id = %(document)s ORDER BY v.key
 """
+# A node lacks what every unit of it checked absent: one part of a node vouches for no other part
 _NODES = """
-SELECT id, parent_id, position, function_iri, node_type_iri, code, code_assigned, original_title,
-    title_language, obligation_iri, scope_share_iri, extraction_depth_iri, applies_to, origin_iri,
-    review_status_iri
-FROM node WHERE document_id = %(document)s ORDER BY parent_id NULLS FIRST, position
+SELECT n.id, n.parent_id, n.position, n.function_iri, n.node_type_iri, n.code, n.code_assigned,
+    n.original_title, n.title_language, n.obligation_iri, n.scope_share_iri, n.extraction_depth_iri,
+    n.applies_to, n.origin_iri, n.review_status_iri,
+    ARRAY(SELECT point FROM extraction_unit u CROSS JOIN LATERAL unnest(u.checked_absent) AS point
+          WHERE u.node_id = n.id GROUP BY point
+          HAVING count(DISTINCT u.unit_key) = (SELECT count(*) FROM extraction_unit w WHERE w.node_id = n.id)
+          ORDER BY point) AS checked_absent
+FROM node n WHERE n.document_id = %(document)s ORDER BY n.parent_id NULLS FIRST, n.position
 """
 _STATEMENTS = """
 SELECT s.id, s.node_id, s.position, s.verbatim, s.language, s.lead_in, s.statement_kind_iri, s.subkind_iri,
@@ -66,9 +75,14 @@ class KernRows:
 
 
 async def read_document(connection: psycopg.AsyncConnection, document_id: UUID) -> KernRows:
-    """The document's rows for its Kern RDF, in one snapshot: in a read-only transaction of its own,
-    within the caller's as that one reads. DocumentError where there is none."""
+    """The document's rows for its Kern RDF, in one snapshot: in a read-only transaction of its own, or
+    within the caller's where that one keeps a snapshot (repeatable read, serializable) - RuntimeError
+    where it does not, as a pool's connection after its first query. DocumentError where there is none."""
     if connection.info.transaction_status != psycopg.pq.TransactionStatus.IDLE:
+        cursor = await connection.execute("SELECT current_setting('transaction_isolation')")
+        isolation = await cursor.fetchone()
+        if isolation is None or isolation[0] not in _SNAPSHOTS:
+            raise RuntimeError("the Kern rows are read in one snapshot: in repeatable read, or idle")
         return await _read(connection, document_id)
     async with connection.transaction():
         await connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
