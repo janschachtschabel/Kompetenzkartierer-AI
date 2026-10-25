@@ -43,7 +43,8 @@ async def shacl_check(
     graph: Graph, *, ontology_dir: Path, timeout_s: float, told: ChildLog
 ) -> list[ShaclResult]:
     """The shapes' results over ``graph`` at its subjects, validated in a child process."""
-    # one mkdir, made here: in a thread, a cancel meanwhile would leave the folder behind
+    # one mkdir, made here: in a thread, a cancel meanwhile would leave the folder behind (a cancel
+    # while the thread writes the file still may: a folder in the temporary files)
     folder = Path(tempfile.mkdtemp(prefix="shacl-data-"))
     try:
         data = folder / "data.nt"

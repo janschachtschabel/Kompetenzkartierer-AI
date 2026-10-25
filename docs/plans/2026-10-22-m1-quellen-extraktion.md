@@ -613,14 +613,19 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   App, durch einen Test festgehalten; die Überschriftzeile der alten Suche entfällt (Blöcke statt
   Markdown). Ein Wortlaut über 2.000 Zeichen (`MAX_FUZZY`) wird nur exact/whitespace/elided gesucht.
 - **8.1 Abweichungen von der alten Suche** (Review 8a). Ein Treffer Wort für Wort zerschneidet kein
-  Wort – „Lernfeld 12“ enthält „Lernfeld 1“ nicht, auch nicht als Bruchstück einer Auslassung –, wo
-  der Wortlaut an diesem Rand einen Buchstaben oder eine Ziffer hat. Normalisiert gilt auch ein am
-  Zeilenende getrenntes Wort („Kompe-“ / „tenzen“) und ein zerlegt geschriebener Buchstabe (u +
-  U+0308), wie `text_hash` sie liest (`domain.wording.unparted`); ein Zitat endet nach den Zeichen
-  seines letzten Buchstabens. Ein mit dem Absatz genannter Überschriftblock ist eine Zeile wie jede:
-  welcher Block Überschrift ist, sagen die Texte nicht, und ein Satz über einen Seitenumbruch beginnt
-  im ersten Block. Der Wert eines unscharfen Zitats kann unter 0,8 liegen (das Fenster nie): es hält
-  den ganzen Wortlaut und läuft über das Ausgelassene weiter.
+  Wort – „Lernfeld 12“ enthält „Lernfeld 1“ nicht, auch nicht als Bruchstück einer Auslassung: eine
+  Ziffer am Rand des Wortlauts gehört zu einem Buchstaben oder einer Ziffer daneben, ein Buchstabe nur
+  zu einem Buchstaben; die angeklebte Ziffer einer Fußnote („Strukturen¹“) schneidet nichts.
+  Normalisiert gilt auch ein am Zeilenende getrenntes Wort („Kompe-“ / „tenzen“) und ein zerlegt
+  geschriebener Buchstabe (u + U+0308), wie `text_hash` sie liest (`domain.wording.unparted`), ebenso
+  der Ergänzungsstrich am Zeilenende („Fach-“ / „und Methodenkompetenz“) als zwei Wörter; ein Zitat
+  endet nach den Zeichen seines letzten Buchstabens. Ein mit dem Absatz genannter Überschriftblock ist
+  eine Zeile wie jede: welcher Block Überschrift ist, sagen die Texte nicht, und ein Satz über einen
+  Seitenumbruch beginnt im ersten Block. Der Wert eines unscharfen Zitats kann unter 0,8 liegen (das
+  Fenster nie): es hält den ganzen Wortlaut und läuft über das Ausgelassene weiter. Kosten: eine lange
+  Umschreibung (2.000 Zeichen) in einem Tabellenblock von 50.000 Zeichen kostet rund 3 s CPU im Thread
+  neben dem Loop, so viel wie in der alten App; ein Dokument mit vielen solchen Fundstellen braucht
+  dafür Minuten (Messpunkt Paket 11).
 - **8.1 Was geprüft wird.** Fundstellen ohne Fundart an Aussagen (Wortlaut `verbatim`) und an Knoten
   (Wortlaut `original_title`); Fundstellen von Rahmenteilen, Spezifikationen und dem Dokument haben
   keinen eigenen Wortlaut und bleiben ohne Fundart, ebenso der Knoten, den X4 einer Einheit ohne

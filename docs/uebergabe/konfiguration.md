@@ -108,7 +108,9 @@ ein Test schlägt an, wenn sie veraltet.
   Speichermangel; seinen Speicherbedarf misst M6. Gemessen (CPU, ohne Last): rund 2 s für ein
   Dokument mit 100 Knoten und Aussagen (mit Fundstellen 200 Zeilen), 9 s mit 400, 43 s mit 1.200
   (300 Knoten, 900 Aussagen); `SHACL_TIMEOUT_S` (Standard 300 s) begrenzt ihn, danach bleibt das
-  Tor mit dem Befund `x5.shacl_timeout` zu. Stirbt der Kindprozess oder bricht er ab, scheitert
+  Tor mit dem Befund `x5.shacl_timeout` zu; bis zur Reparatur (Paket 8b) prüft kein neuer Start
+  ein Dokument erneut, dessen X5 fertig ist: eine höhere Frist gilt für Dokumente, deren X5 noch
+  aussteht. Stirbt der Kindprozess oder bricht er ab, scheitert
   der Lauf X5 (`ShaclCrashed`), und der Job wird bis zu seiner Versuchsgrenze wiederholt.
 - `JOB_SHUTDOWN_GRACE_S` mindestens 5 s unter `terminationGracePeriodSeconds` des Workers.
 - `LOG_FORMAT=json` für die zentrale Logsammlung.

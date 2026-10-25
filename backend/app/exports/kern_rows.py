@@ -25,7 +25,7 @@ SELECT d.id, d.title, d.issuer, d.edition, d.document_type_iri, d.sector_iri, d.
     ARRAY(SELECT iri FROM (
               SELECT DISTINCT ON (region) c.iri FROM unnest(d.regions) AS region JOIN vocab_concept c
                   ON c.scheme_iri = %(regions)s AND c.notation = region
-              ORDER BY region, c.retired_in NULLS FIRST  -- the active concept of a notation first
+              ORDER BY region, c.retired_in DESC NULLS FIRST  -- the active concept, else the last retired
           ) AS found ORDER BY iri) AS region_iris
 FROM document d WHERE d.id = %(document)s
 """

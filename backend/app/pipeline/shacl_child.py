@@ -110,8 +110,10 @@ def run_child(ontology_dir: str, data: str, told: ChildLog, out: str) -> None:
     """The child: validate the N-Triples file ``data``, and leave the results in ``out``."""
     stand_alone(told, _LIBRARIES)
     # pyshacl's validate logs to a logger of its own, which it sets to INFO with a handler of its own on
-    # every call: a filter it leaves holds the quiet rule there
-    logging.getLogger("pyshacl-validate").addFilter(lambda record: record.levelno >= logging.WARNING)
+    # every call: a filter it leaves holds the quiet rule there (stand_alone's), and what passes it is
+    # written twice - by the root's handler and once more, plain, by pyshacl's own on stderr
+    quietest = max(logging.WARNING, logging.getLogger().level)
+    logging.getLogger("pyshacl-validate").addFilter(lambda record: record.levelno >= quietest)
     try:
         results = validate_graph(Path(ontology_dir), Graph().parse(Path(data), format="nt"))
     except Exception as error:
