@@ -3,11 +3,8 @@
  * A document's work packages (plan M1 7b, F14): each with its section, its pages and how far the
  * extraction has come with it - its statements read and written, open, a frame part read typed,
  * or not read at all. Read again whenever `refresh` changes (the page bumps it as the extraction
- * moves on); the list shown stays meanwhile, and stays where a later reading fails, said beside it.
- * The latest reading counts: an answer overtaken by a later question is dropped. A retry the reader
- * asks for shows its waiting where nothing is shown yet, says a failure again even in the same
- * words, and takes the keyboard to the section's heading once its button went with the notice; a
- * retry a later reading overtook leaves both to that reading.
+ * moves on), as sectionReading.ts reads: the list shown stays meanwhile and where a later reading
+ * fails, a retry takes the keyboard to the section's heading.
  */
 import { computed, onMounted, ref, watch } from "vue";
 
@@ -16,70 +13,21 @@ import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
 import PartialState from "@/components/PartialState.vue";
-import { focusIsFree } from "@/focusRescue";
 import { t } from "@/i18n/de";
-import { sayAnew } from "@/liveRegion";
-import { failureNotice, type Notice } from "@/notice";
+import { useSectionReading } from "@/sectionReading";
 
 const props = defineProps<{ documentId: string; refresh: number }>();
 
-const units = ref<Unit[] | null>(null);
-const failure = ref<Notice | null>(null);
 const heading = ref<HTMLElement | null>(null);
-let generation = 0;
-// where the reader's retry began, until the list it asked for is shown; undefined: none asked
-let retriedFrom: Element | null | undefined;
-// the notice the reader's retry began from, until a reading that counts answers it; undefined: none
-let retriedNotice: Notice | null | undefined;
+const {
+  shown: units,
+  failure,
+  load,
+  retry,
+} = useSectionReading<Unit[]>(() => getUnits(props.documentId), t("documents.units.loadFailed"), heading);
 
 const read = computed(() => (units.value ?? []).filter((unit) => unit.state === "done" || unit.state === "open"));
 const done = computed(() => read.value.filter((unit) => unit.state === "done").length);
-
-async function load(): Promise<void> {
-  const mine = ++generation;
-  try {
-    const found = await getUnits(props.documentId);
-    if (mine !== generation) return;
-    units.value = found;
-    failure.value = null;
-  } catch (error) {
-    if (mine !== generation) return;
-    failure.value = failureNotice(error, t("documents.units.loadFailed"));
-  }
-  answerRetry();
-}
-
-/** A reading the reader asked for; a reading as the extraction moves on stays without either. */
-async function retry(): Promise<void> {
-  retriedFrom = document.activeElement;
-  retriedNotice = failure.value;
-  if (units.value === null) failure.value = null; // the waiting shows, and the alert comes again
-  await load();
-}
-
-/** The reader's retry answered by the reading that counts - its own, or a later one that overtook
- * it: a failure is said again even in the same words, and the keyboard is left where it is. */
-function answerRetry(): void {
-  if (retriedNotice === undefined) return;
-  const before = retriedNotice;
-  retriedNotice = undefined;
-  if (failure.value && before && units.value !== null) {
-    failure.value = { ...failure.value, text: sayAnew(before.text, failure.value.text) };
-  }
-  if (failure.value) retriedFrom = undefined;
-}
-
-// after the render, before the focus rescue takes a focus the render dropped to the main region;
-// only where the focus still rests where the retry began, or nowhere
-watch(
-  units,
-  () => {
-    const from = retriedFrom;
-    retriedFrom = undefined;
-    if (from !== undefined && (document.activeElement === from || focusIsFree())) heading.value?.focus();
-  },
-  { flush: "post" },
-);
 
 function section(unit: Unit): string {
   if (unit.path.length) return unit.path.join(" / ");
