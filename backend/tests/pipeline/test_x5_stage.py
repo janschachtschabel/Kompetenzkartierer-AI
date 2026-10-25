@@ -19,7 +19,7 @@ from app.jobs.queue import LeaseLost
 from app.pipeline import run, x5_stage
 from app.pipeline.anchor_check import AnchorMatch
 from app.pipeline.run import extract_document
-from app.pipeline.shacl import ShaclTimeout
+from app.pipeline.shacl import ShaclCrashed, ShaclTimeout, shacl_check
 from tests.pipeline.test_run import CV, PLAIN, Model, a_document, a_job, context_of, rows, setup
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
@@ -72,8 +72,8 @@ async def test_x5_checks_the_document_after_x4_and_writes_its_findings_on_their_
     assert anchored == [("node", "match_exact"), ("statement", "match_notFound")]
     statements = await rows(connection, "SELECT id FROM statement WHERE document_id = %s", document.id)
     found = await x5_findings(connection, document)
-    assert {focus for rule, _, focus in found if rule == "x5.wording_not_found"} == {
-        row for (row,) in statements
+    assert {(rule, said, focus) for rule, said, focus in found if rule == "x5.wording_not_found"} == {
+        ("x5.wording_not_found", "violation", row) for (row,) in statements
     }
     assert any(rule.startswith("shacl.") for rule, _, _ in found)
     assert made["anchors"] == {
@@ -283,3 +283,38 @@ async def test_a_run_of_x5_done_while_this_one_checked_passes_the_stage_over(
         ("done", None),
     ]
     assert await x5_findings(connection, document) == []
+
+
+async def test_x5_after_a_crashed_check_writes_its_findings_once_and_counts_the_anchors_as_they_stand(
+    setup: Any, tmp_path: Path, database_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # the first attempt wrote the matches before its check crashed; the next finds none unchecked
+    pool, connection = setup
+    document = await a_document(connection)
+    job = await a_job(connection, document.id, document.owner_id)
+    context = context_of(pool, tmp_path, Model(), database_url)
+
+    async def crashed(*_: Any, **__: Any) -> list[Any]:
+        raise ShaclCrashed("the SHACL validation raised MemoryError in its process")
+
+    monkeypatch.setattr(x5_stage, "shacl_check", crashed)
+    with pytest.raises(ShaclCrashed):
+        await extract_document(context, job)
+    assert await x5_findings(connection, document) == []
+    monkeypatch.setattr(x5_stage, "shacl_check", shacl_check)
+    await extract_document(context, job)
+
+    runs = await x5_runs(connection, document)
+    assert [(outcome, made.get("failure")) for outcome, made in runs] == [
+        ("failed", "ShaclCrashed"),
+        ("done", None),
+    ]
+    statements = await rows(connection, "SELECT id FROM statement WHERE document_id = %s", document.id)
+    assert runs[-1][1]["anchors"] == {
+        "exact": len(await node_anchors(connection, document)),
+        "notFound": len(statements),
+    }
+    found = await x5_findings(connection, document)
+    assert sorted(focus for rule, _, focus in found if rule == "x5.wording_not_found") == sorted(
+        row for (row,) in statements
+    )

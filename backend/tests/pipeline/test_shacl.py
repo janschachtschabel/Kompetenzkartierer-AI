@@ -5,17 +5,19 @@ alignments and migration, the document's rows as focus nodes and rdflib's querie
 measured tenth of the time, the same results (plan M1, Nachtrag 8a)."""
 
 import multiprocessing
+import pickle
 import uuid
 from pathlib import Path
 
 import pytest
 from pyshacl import validate
-from rdflib import RDF, BNode, Graph, Namespace
+from rdflib import RDF, BNode, Graph, Namespace, URIRef
 from rdflib.plugins.sparql import parser, processor
 
-from app.core.child import ChildLog
+from app.core.child import ChildLog, run_in_child
 from app.exports.kern_rdf import kern_graph
 from app.exports.kern_rows import KernRows
+from app.pipeline import shacl
 from app.pipeline.shacl import ShaclCrashed, ShaclTimeout, as_findings, shacl_check
 from app.pipeline.shacl_child import ShaclResult, validate_graph
 
@@ -205,3 +207,49 @@ def test_the_chosen_model_finds_on_an_exported_document_what_the_whole_model_fin
     whole, chosen = whole_and_chosen(kern_graph(a_document(addressees=[])))
 
     assert whole and chosen == whole
+
+
+def silent(*_: object) -> None:
+    raise SystemExit(0)  # a child that ends and says nothing
+
+
+async def test_a_check_whose_child_ends_without_an_answer_comes_back_as_crashed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(shacl, "run_child", silent)
+
+    with pytest.raises(ShaclCrashed, match="ended without an answer"):
+        await shacl_check(kern_graph(a_document([])), ontology_dir=ONTOLOGY, timeout_s=120, told=TOLD)
+
+
+async def test_the_graph_reaches_the_child_as_a_file_so_its_start_writes_little(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # spawn writes its arguments into a pipe the child drains only once it has started: a long document's
+    # N-Triples there kept the worker's event loop waiting seconds (review of 8a, slice C)
+    graph = kern_graph(a_document([]))
+    for number in range(5_000):
+        graph.add((EX[f"row{number}"], EX.says, EX[f"thing{number}"]))
+    started: list[tuple[object, ...]] = []
+
+    async def spied(target: object, args: tuple[object, ...], **named: object) -> object:
+        started.append(args)
+        return await run_in_child(target, args, **named)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(shacl, "run_in_child", spied)
+    results = await shacl_check(graph, ontology_dir=ONTOLOGY, timeout_s=300, told=TOLD)
+
+    [args] = started
+    assert len(graph.serialize(format="nt")) > 64 * 1024 > len(pickle.dumps(args))
+    assert "StatementShape" in {found.shape for found in results}  # the data arrived whole
+    assert not any(Path(str(arg)).is_file() for arg in args[:2])  # and its file is gone
+
+
+def test_an_inverse_path_is_written_as_sparql_writes_it() -> None:
+    specification = URIRef("urn:uuid:00000000-0000-0000-0000-000000000001")
+    data = Graph()
+    data.add((specification, RDF.type, URIRef("https://w3id.org/wlo/curriculum/core#Curriculum")))
+
+    paths = {found.path for found in validate_graph(ONTOLOGY, data) if found.shape == "SpecificationShape"}
+
+    assert "^cur:represents" in paths  # no document represents it

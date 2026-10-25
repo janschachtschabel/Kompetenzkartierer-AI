@@ -21,7 +21,14 @@ from typing import Any
 
 from app.core.child import ChildLog
 from app.core.logging import current_request_id
-from app.db.anchors import CheckedAnchor, UncheckedAnchor, not_found_anchors, set_matches, unchecked_anchors
+from app.db.anchors import (
+    CheckedAnchor,
+    UncheckedAnchor,
+    match_kinds,
+    not_found_anchors,
+    set_matches,
+    unchecked_anchors,
+)
 from app.db.documents import Document
 from app.db.findings import Finding, add_findings
 from app.db.nodes import lock_tree
@@ -67,7 +74,7 @@ async def run_x5(context: JobContext, job: Job, document: Document) -> dict[str,
 
 
 async def _checked(context: JobContext, job: Job, document: Document, run_id: Any) -> dict[str, Any]:
-    kinds = await _anchors(context, job, document)
+    await _anchors(context, job, document)
     # the findings and the graph of one state of the document: a node moved meanwhile is in both or in none
     async with context.pool.connection() as connection, connection.transaction():
         await connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
@@ -82,7 +89,9 @@ async def _checked(context: JobContext, job: Job, document: Document, run_id: An
             for anchor, owner in await not_found_anchors(connection, document.id)
         ]
         findings += await plausibility(connection, document.id)
-        graph = kern_graph(await read_document(connection, document.id))
+        kinds = await match_kinds(connection, document.id)  # as they stand: an attempt before set some
+        rows = await read_document(connection, document.id)
+    graph = await asyncio.to_thread(kern_graph, rows)  # a second for a long document: beside the loop
     settings = context.settings
     told = ChildLog(level=settings.log_level, format=settings.log_format, request_id=current_request_id())
     shacl = "done"
@@ -110,8 +119,8 @@ async def _checked(context: JobContext, job: Job, document: Document, run_id: An
     return result
 
 
-async def _anchors(context: JobContext, job: Job, document: Document) -> dict[str, int]:
-    """Check the document's unchecked anchors and write their matches; how many of each kind."""
+async def _anchors(context: JobContext, job: Job, document: Document) -> None:
+    """Check the document's unchecked anchors and write their matches."""
     async with context.pool.connection() as connection:
         # X4's node of a unit under no heading bears the document's title, no wording of its blocks
         unchecked = await unchecked_anchors(connection, document.id, rule_titles=(UNIT_WITHOUT_NODE,))
@@ -123,7 +132,6 @@ async def _anchors(context: JobContext, job: Job, document: Document) -> dict[st
             connection,
             [checked_anchor(anchor, match) for anchor, match in zip(unchecked, matches, strict=True)],
         )
-    return dict(sorted(Counter(match.kind for match in matches).items()))
 
 
 def _matched(unchecked: Sequence[UncheckedAnchor]) -> list[AnchorMatch]:

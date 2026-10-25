@@ -42,6 +42,12 @@ WHERE a.document_id = %s AND a.match_kind_iri = 'https://w3id.org/wlo/curriculum
     AND EXISTS (SELECT FROM anchor_block ab WHERE ab.anchor_id = a.id)
 ORDER BY a.id
 """
+# How the document's anchors of statements and nodes stand, by the notation of their match kind
+_KINDS = """
+SELECT replace(match_kind_iri, %s, ''), count(*) FROM anchor
+WHERE document_id = %s AND coalesce(statement_id, node_id) IS NOT NULL AND match_kind_iri IS NOT NULL
+GROUP BY 1 ORDER BY 1
+"""
 _MATCH = """
 UPDATE anchor SET match_kind_scheme = %s, match_kind_iri = %s, match_score = %s, quote = %s, char_start = %s,
     char_end = %s
@@ -127,6 +133,12 @@ async def unchecked_anchors(
         UncheckedAnchor(found, owner, wording, tuple(texts))
         for found, owner, wording, texts in await cursor.fetchall()
     ]
+
+
+async def match_kinds(connection: psycopg.AsyncConnection, document_id: UUID) -> dict[str, int]:
+    """How many of the document's anchors of statements and nodes stand each way ("exact" ...)."""
+    cursor = await connection.execute(_KINDS, (CV + "match_", document_id))
+    return {kind: count for kind, count in await cursor.fetchall()}
 
 
 async def set_matches(connection: psycopg.AsyncConnection, checked: Sequence[CheckedAnchor]) -> int:

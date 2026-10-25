@@ -35,6 +35,7 @@ _PREFIXES = (
     ("cur", "https://w3id.org/wlo/curriculum/core#"),
     ("dct", "http://purl.org/dc/terms/"),
     ("skos", "http://www.w3.org/2004/02/skos/core#"),
+    ("prov", "http://www.w3.org/ns/prov#"),
 )
 
 
@@ -106,10 +107,13 @@ def queries_kept_translated() -> Iterator[None]:
 
 
 def run_child(ontology_dir: str, data: str, told: ChildLog, out: str) -> None:
-    """The child: validate the N-Triples ``data``, and leave the results in ``out``."""
+    """The child: validate the N-Triples file ``data``, and leave the results in ``out``."""
     stand_alone(told, _LIBRARIES)
+    # pyshacl's validate logs to a logger of its own, which it sets to INFO with a handler of its own on
+    # every call: a filter it leaves holds the quiet rule there
+    logging.getLogger("pyshacl-validate").addFilter(lambda record: record.levelno >= logging.WARNING)
     try:
-        results = validate_graph(Path(ontology_dir), Graph().parse(data=data, format="nt"))
+        results = validate_graph(Path(ontology_dir), Graph().parse(Path(data), format="nt"))
     except Exception as error:
         frames = "".join(traceback.format_tb(error.__traceback__))
         logging.getLogger(__name__).error("the SHACL validation raised %s\n%s", type(error).__name__, frames)
@@ -141,12 +145,20 @@ def _results(report: Graph, shapes: Graph, data: Graph) -> list[ShaclResult]:
         found.append(
             ShaclResult(
                 str(focus), _name(shape), _SEVERITIES[str(report.value(result, SH.resultSeverity))],
-                _curie(path) if isinstance(path, URIRef) else None,
+                _path(report, path),
                 str(report.value(result, SH.resultMessage) or ""),
                 None if value is None else str(value), None if component is None else _name(component),
             )
         )  # fmt: skip
     return sorted(found, key=lambda result: [part or "" for part in result])
+
+
+def _path(report: Graph, path: Any) -> str | None:
+    """The result's property as a CURIE, an inverse one as SPARQL writes it ("^cur:represents")."""
+    if isinstance(path, URIRef):
+        return _curie(path)
+    inverse = None if path is None else report.value(path, SH.inversePath)
+    return f"^{_curie(inverse)}" if isinstance(inverse, URIRef) else None
 
 
 def _curie(path: URIRef) -> str:
