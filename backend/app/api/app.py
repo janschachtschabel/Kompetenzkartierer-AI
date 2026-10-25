@@ -10,6 +10,7 @@ from app import __version__
 from app.api import (
     accounts,
     conversions,
+    document_findings,
     documents,
     internal,
     jobs,
@@ -97,6 +98,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(source_checks.router)
     app.include_router(conversions.router)
     app.include_router(documents.router)
+    app.include_router(document_findings.router)
     app.add_middleware(internal.InternalOnly, port=settings.internal_port)
     # an upload takes a file and the form around it; every other body is JSON
     upload_limit = (settings.max_upload_mb + 1) * MIB

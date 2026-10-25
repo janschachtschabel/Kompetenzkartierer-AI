@@ -138,9 +138,12 @@ ungültig.
   `too_many_starts`). `POST /api/v1/documents/{id}/extraction` startet sie neu, nur durch den
   Eigentümer (403 `not_owner`) und solange er den Inhalt des Eintrags lesen darf (403
   `file_hidden`); `GET /api/v1/documents?source_id=…`, `/documents/{id}`, `/documents/{id}/runs`,
-  `/documents/{id}/units` lesen sie (die Job-ID nur für Eigentümer und Admins, den Fehlercode des
-  letzten Jobs, `extraction.error_code`, alle Leser; `units`: die Arbeitspakete mit Stand `done`
-  samt Zahl der Aussagen, `open`, `frame` oder `none`, vor X2 leer). Je Dokument wartet oder läuft höchstens
+  `/documents/{id}/units`, `/documents/{id}/findings` lesen sie (die Job-ID nur für Eigentümer und
+  Admins, den Fehlercode des letzten Jobs, `extraction.error_code`, alle Leser; `units`: die
+  Arbeitspakete mit Stand `done` samt Zahl der Aussagen, `open`, `frame` oder `none`, vor X2 leer;
+  `findings`: die Befunde der Stufen, Verstöße zuerst, je mit Art, Wortlaut oder Titel der Zeile,
+  die sie betreffen, und dem Arbeitspaket, das sie nennen – höchstens 500, die Zahlen je Schwere
+  über alle). Je Dokument wartet oder läuft höchstens
   ein Extraktionsjob (`job.unique_key`, Migration 0018): ein Start dabei gibt den laufenden zurück
   (200); ebenso ein neues Dokument desselben Eintrags und derselben Konvertierung, solange eines
   des Kontos daraus extrahiert wird – dann 200 mit diesem (`made: false`).
