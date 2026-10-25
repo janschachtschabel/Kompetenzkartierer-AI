@@ -16,6 +16,8 @@ export const JOB_PROGRESS: Readonly<Record<string, readonly string[]>> = {
   extract_frame: [],
   extract_statements: ["done", "total"],
   check_document: [],
+  // extract.repair (backend app/pipeline/x6_repair.py)
+  repair_units: ["done", "total"],
 };
 
 /** The progress in the page's words; none for a code it has no words for, or numbers missing. */

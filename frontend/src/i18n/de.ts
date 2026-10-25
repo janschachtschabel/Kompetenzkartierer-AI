@@ -494,6 +494,9 @@ export const messages = {
       // X5 asks no model; its SHACL check of a long document may take minutes
       check_document:
         "Das Dokument wird geprüft: ob jeder Wortlaut in seinen Blöcken steht, ob die Angaben stimmig sind und ob sie den Regeln des Curriculum-Kerns genügen. Bei einem langen Dokument kann das einige Minuten dauern.",
+      // X6: only the work packages with findings, each once a repair
+      repair_units:
+        "Das Sprachmodell liest die Arbeitspakete mit Befunden noch einmal: {done} von {total} {total|Paket|Paketen} fertig.",
     },
     trouble: "Der Server antwortet gerade nicht; der Stand wird weiter abgefragt.",
     // why there is nothing left to ask (jobWatch.ts, JobGone); for a fetch and the seed's check alike
@@ -577,6 +580,10 @@ export const messages = {
         "Ein Abschnitt des Dokuments ist zu lang, als dass das Sprachmodell ihn zusammen mit Titelei und " +
         "Rahmenteilen lesen könnte. Teile das Dokument auf, oder melde es der Administration.",
       document_gone: "Das Dokument gibt es nicht mehr; die Extraktion ist entfallen.",
+      // a repair needs the extraction to have come to its check (X5)
+      document_not_checked:
+        "Die Extraktion des Dokuments ist noch nicht bis zur Prüfung gelaufen. Setze sie erst fort; danach " +
+        "lässt es sich reparieren.",
       // a document the extraction wrote ends done: this one holds what no extraction wrote
       document_has_tree:
         "Am Dokument stehen schon Knoten oder Spezifikationen, die keine Extraktion angelegt hat; die " +

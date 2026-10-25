@@ -42,6 +42,7 @@ _FINISH = """
     UPDATE extraction_run SET outcome = %s, result = %s, finished_at = now()
     WHERE id = %s AND outcome IS NULL
 """
+_DONE_BY = "SELECT stage_iri FROM extraction_run WHERE job_id = %s AND outcome = 'done' ORDER BY started_at"
 _DONE = """
     SELECT DISTINCT stage_iri FROM extraction_run WHERE document_id = %s AND outcome = 'done'
 """
@@ -123,6 +124,13 @@ async def done_stages(connection: psycopg.AsyncConnection, document_id: UUID) ->
     that ended for good goes on where it stopped."""
     cursor = await connection.execute(_DONE, (document_id,))
     return {iri.removeprefix(_STAGE_IRI) for (iri,) in await cursor.fetchall()}
+
+
+async def stages_done_by(connection: psycopg.AsyncConnection, job_id: UUID) -> list[str]:
+    """The stages the job's runs did, by notation, in the order they began: where an attempt of a job
+    that runs a stage more than once (extract.repair) goes on."""
+    cursor = await connection.execute(_DONE_BY, (job_id,))
+    return [iri.removeprefix(_STAGE_IRI) for (iri,) in await cursor.fetchall()]
 
 
 async def lock_for_stage(connection: psycopg.AsyncConnection, document_id: UUID, stage: Stage) -> bool:

@@ -15,6 +15,7 @@ class UnknownJobKind(ValueError):
 def make_handlers(context: JobContext) -> dict[str, Handler]:
     from app.conversion import job as convert_job
     from app.pipeline import run as extract_run
+    from app.pipeline import x6_repair
     from app.sources import check_job, fetch_job
 
     return {
@@ -22,6 +23,7 @@ def make_handlers(context: JobContext) -> dict[str, Handler]:
         check_job.KIND: partial(check_job.check_sources, context),
         convert_job.KIND: partial(convert_job.convert_source, context),
         extract_run.KIND: partial(extract_run.extract_document, context),
+        x6_repair.REPAIR_KIND: partial(x6_repair.repair_document, context),
     }
 
 

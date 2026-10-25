@@ -15,6 +15,7 @@ ProgressCode = Literal[
     "extract_frame",
     "extract_statements",
     "check_document",
+    "repair_units",
 ]
 
 

@@ -2,14 +2,15 @@
 the document, its profile, the choice lists of X3 with the profile's statement subkinds - and what
 the answers are read against. Built once a run from the store as it stands after X3; a unit's
 prompt is its prefix (one for the whole document where it fits, else its window), a cache
-breakpoint, and its task (prompts/x4.py).
+breakpoint, and its task (prompts/x4.py; X6 asks with its own task behind the same prefix,
+prompts/x6.py, and reads its answers as its stage's).
 
 The prefix is counted with the tokenizer, CPU work: it runs by ``asyncio.to_thread``, one unit at a
 time, so the units asked side by side count the whole document once (the plan keeps each count).
 """
 
 import asyncio
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from uuid import UUID
 
@@ -63,8 +64,11 @@ class UnitQuestions:
             async with self._counting:
                 await asyncio.to_thread(prefix_at, self.plan, unit.first)
 
-    async def question(self, unit: WorkPackage) -> UnitQuestion:
-        """The question for ``unit``; PermanentError (prefix_too_long) where no window fits."""
+    async def question(
+        self, unit: WorkPackage, task: Callable[[WorkPackage, str, str], str] = x4.unit_task
+    ) -> UnitQuestion:
+        """The question for ``unit`` - its prefix, then ``task`` of the unit, its node's line and the
+        lexicon's excerpt -; PermanentError (prefix_too_long) where no window fits."""
         async with self._counting:
             prefix = await asyncio.to_thread(prefix_at, self.plan, unit.first)
         texts = [
@@ -74,15 +78,16 @@ class UnitQuestions:
         ]
         excerpt = await asyncio.to_thread(lexicon_excerpt, self.cues, texts, self.lists.names)
         node = "" if unit.node_id is None else self.nodes.get(unit.node_id, "")
-        task = x4.unit_task(unit, node, excerpt.text)
+        asked = task(unit, node, excerpt.text)
         findings = [
             Finding(
-                "x4.pattern_timeout", "warning", self.document_id, "a cue's pattern took too long", None,
+                f"{self.statements.stage}.pattern_timeout", "warning", self.document_id,
+                "a cue's pattern took too long", None,
                 {"cue": cue, "unit": unit.key},
             )
             for cue in sorted(excerpt.timeouts)
         ]  # fmt: skip
-        return UnitQuestion(cached_up_to(prefix.text, task, self.model), findings)
+        return UnitQuestion(cached_up_to(prefix.text, asked, self.model), findings)
 
 
 async def unit_questions(
@@ -93,9 +98,11 @@ async def unit_questions(
     printed: Sequence[str | None],
     ground: Ground,
     model: Model,
+    *,
+    stage: str = "x4",
 ) -> UnitQuestions:
-    """The questions of a run of X4 on the document - as the store holds it after X3 - of these blocks
-    (all of its conversion's, in order)."""
+    """The questions of a run of X4 - or of X6, ``stage`` "x6" - on the document, as the store holds it
+    after X3, of these blocks (all of its conversion's, in order)."""
     lists = await statement_lists(connection, ground.sector)
     choices = choice_lists(await frame_parts_of(connection, document.id))
     plan = await prefix_plan(
@@ -104,7 +111,7 @@ async def unit_questions(
     cues = active_cues(
         ground.cues, ground.regions, document.document_type_iri, None, wider_regions=ground.wider
     )
-    statements = StatementContext("x4", document.id, blocks, printed, lists.keys, lists.refines, lists.codes)
+    statements = StatementContext(stage, document.id, blocks, printed, lists.keys, lists.refines, lists.codes)
     return UnitQuestions(
         document.id, blocks, plan, lists, cues, await _node_lines(connection, document.id), model, statements
     )

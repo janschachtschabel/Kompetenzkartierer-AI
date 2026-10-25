@@ -27,6 +27,7 @@ from app.jobs.context import JobContext
 from app.jobs.outcome import PermanentError
 from app.jobs.queue import Job, hold_lease
 from app.pipeline.extraction import KIND as KIND
+from app.pipeline.extraction import document_in
 from app.pipeline.progress import report
 from app.pipeline.x1_stage import run_x1
 from app.pipeline.x2_segments import work_packages
@@ -39,7 +40,7 @@ STAGES = ("X1", "X2", "X3", "X4", "X5")
 
 
 async def extract_document(context: JobContext, job: Job) -> dict[str, Any]:
-    document_id = _document_id(job.payload)
+    document_id = document_in(job.payload)
     async with context.pool.connection() as connection:
         document = None if document_id is None else await document_for_job(connection, document_id)
         if document is None:
@@ -92,10 +93,3 @@ async def _current(context: JobContext, document_id: UUID) -> Document:
     if current is None:
         raise PermanentError("document_gone", "the document to extract is gone")
     return current
-
-
-def _document_id(payload: dict[str, Any]) -> UUID | None:
-    try:
-        return UUID(str(payload["document_id"]))
-    except (KeyError, ValueError):
-        return None

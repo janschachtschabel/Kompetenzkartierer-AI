@@ -25,6 +25,9 @@ UPDATE extraction_unit SET run_id = %s, statements = %s, checked_absent = %s, fi
 WHERE document_id = %s AND unit_key = %s
 RETURNING unit_key
 """
+_COUNTED = """
+UPDATE extraction_unit SET repairs = repairs + 1 WHERE document_id = %s AND unit_key = %s RETURNING unit_key
+"""
 _DONE = """
 SELECT unit_key, run_id, node_id, statements, checked_absent, finished_at, repairs
 FROM extraction_unit WHERE document_id = %s
@@ -82,6 +85,14 @@ async def remark_unit(
     transaction; its node stays. CheckViolation for a unit repaired twice already, LookupError for one
     not done."""
     cursor = await connection.execute(_REMARK, (run_id, statements, list(checked_absent), document_id, key))
+    if await cursor.fetchone() is None:
+        raise LookupError(f"unit {key} is not done")
+
+
+async def count_repair(connection: psycopg.AsyncConnection, document_id: UUID, key: str) -> None:
+    """Count a repair that wrote nothing - its answer never took its form -, in the caller's
+    transaction: it was asked and paid for. CheckViolation past two, LookupError for a unit not done."""
+    cursor = await connection.execute(_COUNTED, (document_id, key))
     if await cursor.fetchone() is None:
         raise LookupError(f"unit {key} is not done")
 
