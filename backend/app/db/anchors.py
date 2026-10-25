@@ -1,7 +1,11 @@
 """Anchors (cur:SourceAnchor) as the first layer writes them (0015): of one node, statement, frame part
 or specification of a document - or, naming none, of the document itself - with their blocks of the
-document's conversion. Each row of the layer is an entity first (0013)."""
+document's conversion. Each row of the layer is an entity first (0013). X5 checks the anchors that
+hold a wording against their blocks (plan M1 8.1) and writes how it stands there back.
+"""
 
+from collections.abc import Sequence
+from dataclasses import dataclass
 from uuid import UUID
 
 import psycopg
@@ -16,6 +20,40 @@ INSERT INTO anchor (id, document_id, conversion_id, node_id, statement_id, frame
     char_end, table_cell)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
+# A statement's anchor checks its wording, a node's its heading's title; the blocks in reading order
+_UNCHECKED = """
+SELECT a.id, coalesce(s.verbatim, n.original_title), array_agg(b.text ORDER BY b.seq)
+FROM anchor a
+LEFT JOIN statement s ON s.id = a.statement_id
+LEFT JOIN node n ON n.id = a.node_id
+JOIN anchor_block ab ON ab.anchor_id = a.id
+JOIN document_block b ON b.conversion_id = ab.conversion_id AND b.block_id = ab.block_id
+WHERE a.document_id = %s AND a.match_kind_iri IS NULL AND coalesce(s.verbatim, n.original_title) IS NOT NULL
+GROUP BY a.id, s.verbatim, n.original_title
+ORDER BY a.id
+"""
+_MATCH = """
+UPDATE anchor SET match_kind_scheme = %s, match_kind_iri = %s, match_score = %s, quote = %s, char_start = %s,
+    char_end = %s
+WHERE id = %s AND match_kind_iri IS NULL
+"""
+
+
+@dataclass(frozen=True)
+class UncheckedAnchor:
+    id: UUID
+    wording: str  # the statement's, or the title of the node's heading
+    texts: tuple[str, ...]  # its blocks', in reading order
+
+
+@dataclass(frozen=True)
+class CheckedAnchor:
+    id: UUID
+    match_kind: str  # a concept of cv:MatchKinds
+    score: float | None
+    quote: str | None  # the document's text at the place
+    char_start: int | None  # in the text of its blocks, one line end between two
+    char_end: int | None
 
 
 async def new_entity(connection: psycopg.AsyncConnection, kind: str) -> UUID:
@@ -66,3 +104,26 @@ async def write_anchor(
             [(anchor_id, conversion_id, block) for block in draft.block_ids],
         )
     return anchor_id
+
+
+async def unchecked_anchors(connection: psycopg.AsyncConnection, document_id: UUID) -> list[UncheckedAnchor]:
+    """The document's anchors of a statement or a node's heading that have no match kind yet."""
+    cursor = await connection.execute(_UNCHECKED, (document_id,))
+    return [
+        UncheckedAnchor(found, wording, tuple(texts)) for found, wording, texts in await cursor.fetchall()
+    ]
+
+
+async def set_matches(connection: psycopg.AsyncConnection, checked: Sequence[CheckedAnchor]) -> int:
+    """Each anchor's match, where it has none yet; how many were written."""
+    written = 0
+    for anchor in checked:
+        cursor = await connection.execute(
+            _MATCH,
+            (
+                CV + "MatchKinds", anchor.match_kind, anchor.score, anchor.quote, anchor.char_start,
+                anchor.char_end, anchor.id,
+            ),
+        )  # fmt: skip
+        written += cursor.rowcount
+    return written
