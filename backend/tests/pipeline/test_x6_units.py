@@ -210,3 +210,10 @@ async def test_the_defects_of_a_package_are_all_named_in_their_order(tree: Tree,
         ("x5.wording_not_found", "Aussage B"),
         ("x4.unknown_block", None),
     ]
+
+
+async def test_a_package_whose_node_was_taken_away_is_not_asked_again(tree: Tree, connection: Any) -> None:
+    tree.connection.execute("UPDATE extraction_unit SET node_id = NULL WHERE unit_key = 'E1'")
+    tree.finding(tree.x4, "x4.unknown_block", "warning", tree.document, details={"unit": "E1"})
+
+    assert await keys(connection, tree) == []

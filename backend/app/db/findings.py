@@ -42,6 +42,11 @@ ORDER BY array_position(%(severities)s::text[], f.severity), r.stage_iri, f.rule
 LIMIT %(most)s
 """
 _COUNTS = "SELECT severity, count(*) FROM validation_finding WHERE document_id = %s GROUP BY severity"
+# the findings of reading the model's answer for a package (details.unit) by the stages that read one
+_DROP_UNIT = """
+DELETE FROM validation_finding f USING extraction_run r
+WHERE f.document_id = %s AND r.id = f.run_id AND r.stage_iri = ANY(%s) AND f.details ->> 'unit' = %s
+"""
 _DROP = """
 DELETE FROM validation_finding f USING extraction_run r
 WHERE f.document_id = %s AND r.id = f.run_id AND r.stage_iri = %s AND f.run_id <> %s
@@ -112,6 +117,17 @@ async def drop_stage_findings(
 ) -> int:
     """Drop the findings of the stage's runs on the document but ``keep_run``; how many went."""
     cursor = await connection.execute(_DROP, (document_id, stage_iri(stage), keep_run))
+    return cursor.rowcount
+
+
+async def drop_unit_findings(
+    connection: psycopg.AsyncConnection, document_id: UUID, unit_key: str, stages: Sequence[Stage]
+) -> int:
+    """Drop the findings the ``stages``' runs made of the package ``unit_key`` - a repair's reading of a
+    new answer makes way for its own; how many went."""
+    cursor = await connection.execute(
+        _DROP_UNIT, (document_id, [stage_iri(stage) for stage in stages], unit_key)
+    )
     return cursor.rowcount
 
 

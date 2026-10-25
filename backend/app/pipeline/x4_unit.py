@@ -56,7 +56,7 @@ async def write_unit(
         await hold_lease(connection, job)
         start = first if unit.node_id is not None else 1  # a node of its own holds it alone
         drafts = [
-            _pointing(item.draft, [start + target for target in item.targets]) for item in read.statements
+            pointing(item.draft, [start + target for target in item.targets]) for item in read.statements
         ]
         if unit.node_id is None:
             node = NodeDraft(
@@ -103,5 +103,6 @@ async def _mark(
     )
 
 
-def _pointing(draft: StatementDraft, targets: list[int]) -> StatementDraft:
+def pointing(draft: StatementDraft, targets: list[int]) -> StatementDraft:
+    """The statement pointing to the content statements at ``targets`` (their positions), where any."""
     return replace(draft, details={**draft.details, "targetsContent": targets}) if targets else draft

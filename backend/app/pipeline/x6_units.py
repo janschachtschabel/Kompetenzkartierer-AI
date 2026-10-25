@@ -136,6 +136,6 @@ class _Places:
         return parts[part].key if 0 <= part < len(parts) else None
 
     def repairable(self, package: WorkPackage) -> bool:
-        # done: X4 marked it - only X4 marks packages, never one X3 reads typed
+        # done: X4 marked it - only X4 marks packages, never one X3 reads typed; at a node that stands
         done = self.done.get(package.key)
-        return done is not None and done.repairs < MOST_REPAIRS
+        return done is not None and done.node_id is not None and done.repairs < MOST_REPAIRS
