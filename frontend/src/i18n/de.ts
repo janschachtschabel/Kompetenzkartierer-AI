@@ -645,6 +645,15 @@ export const messages = {
     too_many_starts: "Zu viele Starts in kurzer Zeit. Versuch es in einer Minute noch einmal.",
     not_checked: "Die Extraktion des Dokuments ist noch nicht bis zur Prüfung gelaufen. Setze sie erst fort.",
     nothing_to_repair: "Kein Arbeitspaket hat mehr Befunde, die eine Reparatur angeht.",
+    // an editor's change to a document's nodes and statements (backend app/api/edit_answers.py and its routes)
+    no_node: "Diesen Knoten gibt es nicht mehr, oder dein Konto sieht ihn nicht.",
+    no_statement: "Diese Aussage gibt es nicht mehr, oder dein Konto sieht sie nicht.",
+    stale_revision: "Jemand hat das inzwischen geändert. Sieh dir den neuen Stand an und entscheide dann.",
+    invalid_field: "Ein Feld lässt sich so nicht setzen. Prüfe die markierte Eingabe.",
+    anchor_missing: "Eine Aussage braucht mindestens eine Fundstelle: Blöcke der Quelle oder eine Seite.",
+    job_open: "Zu diesem Dokument läuft gerade ein Auftrag. Ändern geht wieder, sobald er fertig ist.",
+    frozen: "Das Dokument ist festgeschrieben. Änderungen gehen nur in einer Entwurfskopie.",
+    no_form: "Für den Bildungsbereich dieses Dokuments gibt es kein Formular zum Bearbeiten.",
   },
   // Documents of a conversion and their extraction (ExtractionStart.vue, DocumentView.vue, SourceDocuments.vue)
   documents: {

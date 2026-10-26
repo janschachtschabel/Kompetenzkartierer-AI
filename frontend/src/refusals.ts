@@ -39,6 +39,16 @@ export const REFUSAL_CODES = [
   // a document's repair (backend app/api/documents.py)
   "not_checked",
   "nothing_to_repair",
+  // an editor's change to a document's nodes and statements (backend app/api/node_editing.py,
+  // statement_editing.py, edit_answers.py)
+  "no_node",
+  "no_statement",
+  "stale_revision",
+  "invalid_field",
+  "anchor_missing",
+  "job_open",
+  "frozen",
+  "no_form",
 ] as const;
 
 export type RefusalCode = (typeof REFUSAL_CODES)[number];
