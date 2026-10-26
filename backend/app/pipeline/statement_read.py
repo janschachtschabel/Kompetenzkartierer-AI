@@ -22,20 +22,11 @@ from uuid import UUID
 
 from app.conversion.base import Block
 from app.db.findings import Finding
-from app.domain.l1 import AnchorDraft, Severity, StatementDraft, check_profile_value
+from app.domain.l1 import WORDING_FIELDS, AnchorDraft, Severity, StatementDraft, check_profile_value
 from app.domain.wording import folded
 from app.pipeline.x1_outline import MODEL, PROPOSED
 
 MOST_STATEMENTS = 500
-WORDING_FIELDS = (
-    "codeText",
-    "levelText",
-    "timeText",
-    "contextText",
-    "referenceMarker",
-    "exampleText",
-    "purposeText",
-)
 _MOST_VERBATIM, _MOST_TEXT = 20_000, 2_000  # the store's limits (migration l1_nodes)
 _CV = "https://w3id.org/wlo/curriculum/vocab#"
 _CONTENT = _CV + "kind_content"

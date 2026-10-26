@@ -31,6 +31,16 @@ FramePartKind = Literal["competencyModels", "levelModels", "operators", "crossCu
 Severity = Literal["violation", "warning", "info"]
 # a wording the blocks hold no fitting passage for: anchored at its page alone (plan M1 8.1, 9.4)
 MATCH_NOT_FOUND = "https://w3id.org/wlo/curriculum/vocab#match_notFound"
+# a statement's wording fields, kept in its details (X4 reads them, the editor's form offers them)
+WORDING_FIELDS = (
+    "codeText",
+    "levelText",
+    "timeText",
+    "contextText",
+    "referenceMarker",
+    "exampleText",
+    "purposeText",
+)
 
 
 def _once[T](items: tuple[T, ...]) -> tuple[T, ...]:
