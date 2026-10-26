@@ -169,6 +169,22 @@ ungültig.
   dazu die Zahl der Knoten und Aussagen je Prüfstand. `editable`: Eigentümer und Redaktion/Admin
   dürfen jetzt bearbeiten, `reviewable`: Redaktion/Admin dürfen den Prüfstand setzen – beides
   nicht, solange ein Job des Dokuments wartet oder läuft, und nicht, sobald es festgeschrieben ist.
+- Bearbeiten: `PATCH /api/v1/nodes/{id}` und `/statements/{id}` (`expected_revision`, `fields` unter
+  den Schlüsseln des Formulars, ausgelassene bleiben; eine Aussage auch `anchors`, alle auf einmal:
+  Blöcke der Konvertierung, die Seiten folgen aus ihnen, oder nur `page`, wo kein Block sie hält),
+  `POST /api/v1/documents/{id}/nodes` (`parent_id`, ans Ende der Geschwister) und
+  `/nodes/{id}/statements` (ans Ende des Knotens, mindestens eine Fundstelle, sonst 422
+  `anchor_missing`), `DELETE /api/v1/nodes/{id}` (samt Unterbaum und den Befunden darauf) und
+  `/statements/{id}` (je `?expected_revision=`; die Aussage eines Laufs wird verworfen und bleibt,
+  damit keine Reparatur sie neu vorschlägt, eine von Hand geschriebene gelöscht) – durch Eigentümer
+  und Redaktion/Admin. Eine Änderung macht die Zeile zum Vorschlag der Redaktion (`orig_human`,
+  `rev_proposed`, Revision +1), ein neuer Titel oder Wortlaut lässt die Fundstellen mit Blöcken für
+  X5 wieder ungeprüft, eine Änderung ohne geänderten Wert lässt die Zeile stehen; die Antwort ist die
+  Zeile wie im Baum. Abgewiesen: 409 `stale_revision` (mit `details.current`, der Zeile, wie sie
+  steht), `job_open` (solange ein Job des Dokuments wartet oder läuft; die Job-ID für Eigentümer und
+  Admins), `frozen`, `no_form`; 422 `invalid_field` (`details.field`, `details.problem`). Jede
+  Änderung steht im Audit (`node.edit`, `node.add`, `node.drop`, `statement.edit`, `statement.add`,
+  `statement.reject`, `statement.delete`).
 - Abbrechen: `POST /api/v1/jobs/{id}/cancel` (Eigentümer des Jobs oder Admin, in der Oberfläche
   der Knopf „Abbrechen“ an jedem Auftrag). Ein wartender Job endet sofort, ein laufender beim
   nächsten Herzschlag seines Workers (alle `JOB_LEASE_S`/3); hält der Handler dann nicht an,

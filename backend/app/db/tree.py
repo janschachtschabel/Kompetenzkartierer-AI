@@ -5,7 +5,7 @@ form and its anchors, each node with the findings on it and its statements count
 app/db/nodes.py."""
 
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
@@ -130,16 +130,21 @@ async def read_tree(
         return await _read_tree(connection, reader, document_id)
 
 
+def walk(tree: Sequence[TreeNode]) -> Iterator[TreeNode]:
+    """Each node of the tree, level by level."""
+    level = list(tree)
+    while level:
+        yield from level
+        level = [child for node in level for child in node.children]
+
+
 def review_counts(tree: Sequence[TreeNode]) -> tuple[dict[str, int], dict[str, int]]:
     """The tree's nodes and its statements counted by review status - each status, none left out."""
     nodes, statements = dict.fromkeys(REVIEW_STATUSES, 0), dict.fromkeys(REVIEW_STATUSES, 0)
-    level = list(tree)
-    while level:
-        for node in level:
-            nodes[node.review_status_iri] += 1
-            for said in node.statements:
-                statements[said.review_status_iri] += 1
-        level = [child for node in level for child in node.children]
+    for node in walk(tree):
+        nodes[node.review_status_iri] += 1
+        for said in node.statements:
+            statements[said.review_status_iri] += 1
     return nodes, statements
 
 

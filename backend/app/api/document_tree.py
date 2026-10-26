@@ -2,15 +2,17 @@
 with the fields of the editor's form by their keys (GET /profiles/{sector}/form), its anchors, origin,
 review status and revision; each node with the findings on it and its statements counted; the nodes and
 statements counted by review status - and whether the caller may edit the tree now and review it. Read
-in one snapshot, by who may read the document (app/api/document_access.py).
+in one snapshot, by who may read the document (app/api/document_access.py). A node or a statement alone
+reads as the tree has it, for the answer to its change.
 
 Editing is the owner's and the editors' (Redaktion, Admin), reviewing the editors' alone; neither while
 a job of the document waits or runs (its extraction, repair or check), nor once it is frozen.
 """
 
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
+import psycopg
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
@@ -20,14 +22,16 @@ from app.api.document_findings import SeverityCounts
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.api.source_content import EDITORS
 from app.core.auth import Principal
-from app.db.tree import TreeAnchor, TreeNode, TreeStatement, read_tree, review_counts
+from app.db.editing import DOCUMENT_OF_NODE, target_of
+from app.db.statement_editing import DOCUMENT_OF_STATEMENT
+from app.db.tree import TreeAnchor, TreeNode, TreeStatement, read_tree, review_counts, walk
 from app.domain.l1 import WORDING_FIELDS
 from app.jobs.queue import open_job
 from app.pipeline.extraction import unique_key
+from app.vocab.form_values import FieldValue
 
 router = APIRouter(prefix="/api/v1", tags=["documents"], responses=AUTH_RESPONSES)
 Account = Annotated[Principal, Depends(require_account)]
-FieldValue = str | list[str] | None  # a text, a value's IRI, the IRIs of a field of many; none unset
 
 
 class AnchorOut(BaseModel):
@@ -52,7 +56,9 @@ class StatementOut(BaseModel):
     anchors: list[AnchorOut]
 
 
-class NodeOut(BaseModel):
+class NodeRowOut(BaseModel):
+    """A node itself, without what stands under it."""
+
     id: UUID
     position: int
     fields: dict[str, FieldValue]  # by the keys of the form's node fields, each of them
@@ -62,6 +68,9 @@ class NodeOut(BaseModel):
     revision: int
     findings: SeverityCounts  # on the node, its statements and their anchors - not on its children
     anchors: list[AnchorOut]
+
+
+class NodeOut(NodeRowOut):
     statements: list[StatementOut]
     children: list["NodeOut"]
 
@@ -102,26 +111,63 @@ async def read_document_tree(document_id: UUID, request: Request, who: Account) 
     )
 
 
+async def node_as_read(
+    connection: psycopg.AsyncConnection, who: Principal, node_id: UUID
+) -> NodeRowOut | None:
+    """The node as the tree has it, where the caller sees it.
+
+    simplify: reads its document's whole tree for the one row - a change is an editor's, one at a time;
+    a read of one row's parts would spare it."""
+    found = await _tree_of(connection, who, DOCUMENT_OF_NODE, node_id)
+    node = next((node for node in walk(found) if node.id == node_id), None)
+    return None if node is None else NodeRowOut(**_node_parts(node))
+
+
+async def statement_as_read(
+    connection: psycopg.AsyncConnection, who: Principal, statement_id: UUID
+) -> StatementOut | None:
+    """The statement as the tree has it, where the caller sees it (as ``node_as_read``)."""
+    found = await _tree_of(connection, who, DOCUMENT_OF_STATEMENT, statement_id)
+    said = (said for node in walk(found) for said in node.statements if said.id == statement_id)
+    statement = next(said, None)
+    return None if statement is None else _statement(statement)
+
+
+async def _tree_of(
+    connection: psycopg.AsyncConnection, who: Principal, query: str, row_id: UUID
+) -> tuple[TreeNode, ...]:
+    target = await target_of(connection, query, reader(who), row_id)
+    if target is None:
+        return ()
+    return await read_tree(connection, reader(who), target.document_id) or ()
+
+
 def _node(node: TreeNode) -> NodeOut:
     return NodeOut(
-        id=node.id,
-        position=node.position,
-        fields={
+        **_node_parts(node),
+        statements=[_statement(statement) for statement in node.statements],
+        children=[_node(child) for child in node.children],
+    )
+
+
+def _node_parts(node: TreeNode) -> dict[str, Any]:
+    return {
+        "id": node.id,
+        "position": node.position,
+        "fields": {
             "original_title": node.original_title,
             "function": node.function_iri,
             "node_type": node.node_type_iri,
             "code": node.code,
             "obligation": node.obligation_iri,
         },
-        code_assigned=node.code_assigned,
-        origin=node.origin_iri,
-        review_status=node.review_status_iri,
-        revision=node.revision,
-        findings=SeverityCounts(**node.findings),
-        anchors=[_anchor(anchor) for anchor in node.anchors],
-        statements=[_statement(statement) for statement in node.statements],
-        children=[_node(child) for child in node.children],
-    )
+        "code_assigned": node.code_assigned,
+        "origin": node.origin_iri,
+        "review_status": node.review_status_iri,
+        "revision": node.revision,
+        "findings": SeverityCounts(**node.findings),
+        "anchors": [_anchor(anchor) for anchor in node.anchors],
+    }
 
 
 def _statement(statement: TreeStatement) -> StatementOut:

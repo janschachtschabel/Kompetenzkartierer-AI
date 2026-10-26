@@ -47,7 +47,7 @@ from app.vocab.form_values import FieldError, check_under, checked
 from app.vocab.forms import STATEMENT_FIELDS
 
 REJECTED = CV + "rev_rejected"
-_DOCUMENT_OF_STATEMENT = f"""
+DOCUMENT_OF_STATEMENT = f"""
 SELECT d.id, sector.notation FROM statement s JOIN document d ON d.id = s.document_id {SECTOR}
 WHERE s.id = %(id)s AND {DOCUMENT_VISIBLE}
 """  # noqa: S608 - fixed parts
@@ -102,7 +102,7 @@ async def edit_statement(
     ``reader`` sees no such statement. StaleRevision, FieldError, JobOpen or DocumentFrozen, and then
     nothing is changed."""
     async with connection.transaction():
-        target = await target_of(connection, _DOCUMENT_OF_STATEMENT, reader, statement_id)
+        target = await target_of(connection, DOCUMENT_OF_STATEMENT, reader, statement_id)
         if target is None:
             return None
         form = await form_for(connection, target.sector)
@@ -200,7 +200,7 @@ async def drop_or_reject_statement(
     it is not so already. Which was done; None where ``reader`` sees no such statement. StaleRevision,
     JobOpen or DocumentFrozen, and then nothing is changed."""
     async with connection.transaction():
-        target = await target_of(connection, _DOCUMENT_OF_STATEMENT, reader, statement_id)
+        target = await target_of(connection, DOCUMENT_OF_STATEMENT, reader, statement_id)
         if target is None:
             return None
         await guard(connection, target.document_id)
