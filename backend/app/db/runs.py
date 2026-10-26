@@ -46,15 +46,16 @@ _DONE_BY = "SELECT stage_iri FROM extraction_run WHERE job_id = %s AND outcome =
 _DONE = """
     SELECT DISTINCT stage_iri FROM extraction_run WHERE document_id = %s AND outcome = 'done'
 """
+# what began after the document's last check: a repair, or an editor's change (Paket 9 G9)
 _OWED = """
-SELECT EXISTS (
-    SELECT FROM extraction_run WHERE document_id = %(document)s AND stage_iri = %(x6)s
-        AND started_at > coalesce(
-            (SELECT max(started_at) FROM extraction_run
-             WHERE document_id = %(document)s AND stage_iri = %(x5)s AND outcome = 'done'),
-            '-infinity'
-        )
+WITH checked (at) AS (
+    SELECT coalesce(max(started_at), '-infinity') FROM extraction_run
+    WHERE document_id = %(document)s AND stage_iri = %(x5)s AND outcome = 'done'
 )
+SELECT EXISTS (
+    SELECT FROM extraction_run, checked
+    WHERE document_id = %(document)s AND stage_iri = %(x6)s AND started_at > checked.at
+) OR EXISTS (SELECT FROM document, checked WHERE id = %(document)s AND edited_at > checked.at)
 """
 
 
@@ -145,7 +146,8 @@ async def stages_done_by(connection: psycopg.AsyncConnection, job_id: UUID) -> l
 
 async def x5_owed(connection: psycopg.AsyncConnection, document_id: UUID) -> bool:
     """Whether X5 owes the document a check: a run of X6 began after its last run of X5 that ended done -
-    whatever became of the repair, it may have written (app/pipeline/x6_repair.py)."""
+    whatever became of the repair, it may have written (app/pipeline/x6_repair.py) -, or an editor changed
+    what it says since (``document.edited_at``, app/db/editing.py)."""
     cursor = await connection.execute(
         _OWED, {"document": document_id, "x5": stage_iri("X5"), "x6": stage_iri("X6")}
     )

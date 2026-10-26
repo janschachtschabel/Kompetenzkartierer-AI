@@ -250,3 +250,19 @@ def test_a_run_names_a_stage_of_the_core() -> None:
             profile_version=None,
             lexicon_release=None,
         )
+
+
+async def test_a_check_is_owed_once_an_editor_changed_the_document_after_its_last_one(
+    connection: psycopg.AsyncConnection, made: dict[str, Any]
+) -> None:
+    job, document = await a_job(connection, made), made["document"]
+    edited = "UPDATE document SET edited_at = now() WHERE id = %s"
+
+    await connection.execute(edited, (document,))
+    assert await x5_owed(connection, document) is True  # changed, and never checked since
+    await finish_run(connection, await start_run(connection, run_of(made, job, "X5")), "done")
+    assert await x5_owed(connection, document) is False  # the check began after the change
+    await connection.execute(edited, (document,))
+    assert await x5_owed(connection, document) is True
+    await finish_run(connection, await start_run(connection, run_of(made, job, "X5", attempt=2)), "done")
+    assert await x5_owed(connection, document) is False
