@@ -28,7 +28,12 @@ def test_the_task_names_the_package_as_x4_s_does_then_what_was_wrong_and_what_st
             "x5.wording_not_found", "the wording is not in the blocks", "Die Lernenden messen Licht.", None
         ),
         Defect("shacl.StatementShape", "Aussage ohne Adressat.", "Sie erklären Schatten.", "cur:addressee"),
-        Defect("x4.block_outside_unit", "a block outside the unit", None, "statements[1].blockIds[0]"),
+        Defect(
+            "x4.block_outside_unit", "a block outside the unit", None, "$.statements[1].blockIds[0]", "p2-b9"
+        ),
+        Defect("x6.unknown_key", "a key the question did not list", None, "$.statements[0].addressee", None),
+        Defect("x6.unanswered", "the model's answer never took the form of the unit", None, None),
+        Defect("x6.empty_answer", "the answer held no statement", None, None),
         Defect("x6.something_new", "something no word was found for", None, None),
     )
 
@@ -40,17 +45,24 @@ def test_the_task_names_the_package_as_x4_s_does_then_what_was_wrong_and_what_st
     for line in (
         "- „Die Lernenden messen Licht.“ steht nicht wörtlich in den Blöcken der Einheit.",
         "- „Sie erklären Schatten.“: Aussage ohne Adressat. (cur:addressee)",
-        "- Ein Block außerhalb der Einheit (statements[1].blockIds[0]).",
+        # what was at fault, not where in an answer the model no longer sees
+        "- Ein Block außerhalb der Einheit: p2-b9.",
+        "- Eine Kennung, die die Auswahlliste nicht hat.",
+        "- Die letzte Antwort hatte nicht die Form des Schemas oder galt einer anderen Einheit.",
+        "- Die letzte Antwort enthielt keine Aussage, obwohl die Einheit welche hat.",
         "- something no word was found for",
     ):
         assert line in task
+    assert "$.statements" not in task
     assert "=== BLEIBT (nicht zurückgeben) ===\n- „Bleibt so.“\n" in task
     order = [
         task.index(mark)
         for mark in ("=== EINHEIT", "=== LEXIKON", "=== BEFUNDE", "=== BLEIBT", "=== AUFTRAG")
     ]
     assert order == sorted(order)
-    assert "mit E2 als unitKey" in task and "wörtlich" in task.split("=== AUFTRAG ===")[1]
+    asked = task.split("=== AUFTRAG ===")[1]
+    assert "mit E2 als unitKey" in asked and "wörtlich" in asked
+    assert "Was unter BLEIBT steht, ist schon erfasst oder verworfen; gib es nicht zurück." in asked
 
 
 def test_a_task_without_statements_held_has_no_list_of_them() -> None:

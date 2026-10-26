@@ -232,6 +232,29 @@ async def test_an_answer_out_of_form_leaves_its_package_counts_the_repair_and_sa
     assert await rows(connection, "SELECT repairs FROM extraction_unit WHERE unit_key = 'E3'") == [(1,)]
 
 
+async def test_an_answer_of_no_statement_leaves_its_package_counts_the_repair_and_says_so(
+    setup: Any, tmp_path: Path, database_url: str
+) -> None:
+    pool, connection = setup
+    document = await extracted(setup, tmp_path, database_url, invent=("E3",))
+    fixer = Quoting(units={"E3": {"unitKey": "E3", "statements": [], "checkedAbsent": []}})
+
+    await x6_repair.repair_document(
+        context_of(pool, tmp_path, fixer, database_url), await a_repair(connection, document)
+    )
+
+    assert "Aussage E3" in await wordings(connection, document)  # not lost with the answer
+    runs = await runs_of(connection, document)
+    assert runs[1][2]["unanswered"] == ["E3"]
+    assert await rows(
+        connection,
+        "SELECT f.rule, f.severity, f.details ->> 'unit' FROM validation_finding f"
+        " JOIN extraction_run r ON r.id = f.run_id WHERE r.stage_iri = %s",
+        CV + "stage_X6",
+    ) == [("x6.empty_answer", "warning", "E3")]
+    assert await rows(connection, "SELECT repairs FROM extraction_unit WHERE unit_key = 'E3'") == [(1,)]
+
+
 async def test_a_budget_spent_amid_the_repair_still_checks_what_was_repaired(
     setup: Any, tmp_path: Path, database_url: str
 ) -> None:
@@ -277,13 +300,158 @@ async def test_an_attempt_after_a_break_checks_what_its_repair_wrote_and_asks_no
     monkeypatch.setattr(x6_repair, "run_x5", checked)
     again = Quoting()
 
-    await x6_repair.repair_document(context_of(pool, tmp_path, again, database_url), job)
-    await x6_repair.repair_document(context_of(pool, tmp_path, again, database_url), job)
+    made = [await x6_repair.repair_document(context_of(pool, tmp_path, again, database_url), job)]
+    made.append(await x6_repair.repair_document(context_of(pool, tmp_path, again, database_url), job))
 
     assert again.units == []
+    assert made == [{"document_id": str(document.id), "units": 1, "checked": True}] * 2  # X6's, done before
     assert [(stage, outcome) for stage, outcome, _ in await runs_of(connection, document)] == [
         ("X5", "done"), ("X6", "done"), ("X5", "done"),
     ]  # fmt: skip
+
+
+async def test_a_package_answered_wrong_again_is_asked_by_the_next_repair_and_no_third(
+    setup: Any, tmp_path: Path, database_url: str
+) -> None:
+    pool, connection = setup
+    document = await extracted(setup, tmp_path, database_url, invent=("E3",))
+    first, second, third = Quoting(invent=("E3",)), Quoting(invent=("E3",)), Quoting()
+
+    for model in (first, second, third):
+        await x6_repair.repair_document(
+            context_of(pool, tmp_path, model, database_url), await a_repair(connection, document)
+        )
+
+    assert (first.units, second.units, third.units) == (["E3"], ["E3"], [])  # twice at most (F2)
+    assert await rows(connection, "SELECT repairs FROM extraction_unit WHERE unit_key = 'E3'") == [(2,)]
+    assert await not_found(connection, document) == ["Aussage E3"]  # the editors' to take up
+
+
+async def broken_once(monkeypatch: pytest.MonkeyPatch, name: str) -> Any:
+    """``x6_repair.<name>`` breaking as a database gone away does; the original, to put back."""
+    original = getattr(x6_repair, name)
+
+    async def broken(*_: Any, **__: Any) -> Any:
+        raise ConnectionError("the database went away")
+
+    monkeypatch.setattr(x6_repair, name, broken)
+    return original
+
+
+async def test_an_attempt_after_x6_broke_off_asks_no_package_again_and_checks_what_it_wrote(
+    setup: Any, tmp_path: Path, database_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # the attempt before wrote E2 anew and was answered out of form for E3; then its run broke off
+    pool, connection = setup
+    document = await extracted(setup, tmp_path, database_url, invent=("E2", "E3"))
+    job = await a_repair(connection, document)
+    first = Quoting(units={"E3": {"unitKey": "E9", "statements": [], "checkedAbsent": []}})
+    ends = await broken_once(monkeypatch, "finish_run")
+    with pytest.raises(ConnectionError):
+        await x6_repair.repair_document(context_of(pool, tmp_path, first, database_url), job)
+    monkeypatch.setattr(x6_repair, "finish_run", ends)
+    again = Quoting()
+
+    made = await x6_repair.repair_document(context_of(pool, tmp_path, again, database_url), job)
+
+    assert (sorted(first.units), again.units) == (["E2", "E3"], [])  # each package once a job
+    assert await rows(
+        connection,
+        "SELECT unit_key, repairs FROM extraction_unit WHERE document_id = %s ORDER BY 1",
+        document.id,
+    ) == [("E2", 1), ("E3", 1), ("E4", 0)]
+    assert await not_found(connection, document) == ["Aussage E3"]  # checked again: E2's is gone
+    assert [(stage, outcome) for stage, outcome, _ in await runs_of(connection, document)] == [
+        ("X5", "done"), ("X6", "failed"), ("X5", "done"),
+    ]  # fmt: skip
+    assert made == {"document_id": str(document.id), "units": 0, "checked": True}
+
+
+async def test_a_repair_ended_before_its_check_leaves_the_next_extraction_to_check_the_document(
+    setup: Any, tmp_path: Path, database_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # cancelled while it checked, or its attempts spent: what it wrote is checked by whatever comes next
+    pool, connection = setup
+    document = await extracted(setup, tmp_path, database_url, invent=("E3",))
+    checks = await broken_once(monkeypatch, "run_x5")
+    with pytest.raises(ConnectionError):
+        await x6_repair.repair_document(
+            context_of(pool, tmp_path, Quoting(), database_url), await a_repair(connection, document)
+        )
+    monkeypatch.setattr(x6_repair, "run_x5", checks)
+    model = Quoting()
+
+    await extract_document(
+        context_of(pool, tmp_path, model, database_url),
+        await a_job(connection, document.id, document.owner_id),
+    )
+
+    assert model.units == []
+    assert await not_found(connection, document) == []
+    assert [(stage, outcome) for stage, outcome, _ in await runs_of(connection, document)] == [
+        ("X5", "done"), ("X6", "done"), ("X5", "done"),
+    ]  # fmt: skip
+
+
+async def test_a_repair_with_nothing_left_to_ask_checks_what_one_before_left_unchecked(
+    setup: Any, tmp_path: Path, database_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pool, connection = setup
+    document = await extracted(setup, tmp_path, database_url, invent=("E3",))
+    checks = await broken_once(monkeypatch, "run_x5")
+    with pytest.raises(ConnectionError):
+        await x6_repair.repair_document(
+            context_of(pool, tmp_path, Quoting(), database_url), await a_repair(connection, document)
+        )
+    monkeypatch.setattr(x6_repair, "run_x5", checks)
+    fixer = Quoting()
+
+    made = await x6_repair.repair_document(
+        context_of(pool, tmp_path, fixer, database_url), await a_repair(connection, document)
+    )
+
+    assert (fixer.units, made) == ([], {"document_id": str(document.id), "units": 0, "checked": True})
+    assert await not_found(connection, document) == []
+    assert [(stage, outcome) for stage, outcome, _ in await runs_of(connection, document)] == [
+        ("X5", "done"), ("X6", "done"), ("X5", "done"),
+    ]  # fmt: skip
+
+
+async def test_an_attempt_after_the_budget_s_check_checks_what_it_repaired_then(
+    setup: Any, tmp_path: Path, database_url: str
+) -> None:
+    # the worker died once X5 had checked what the spent budget let X6 write: the job is asked again;
+    # E2, answered wrong once more and found so, is not asked twice by the job
+    pool, connection = setup
+    document = await extracted(setup, tmp_path, database_url, invent=("E2", "E3"))
+    job = await a_repair(connection, document)
+    fixer = Quoting(invent=("E2",))
+
+    async def answer(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
+        if "=== EINHEIT ===" in prompt_of(messages) and not fixer.units:
+            usage = await usage_of(connection, document.owner_id)
+            await connection.execute(
+                "UPDATE quota SET token_limit = %s WHERE account_id = %s",
+                (usage.tokens_spent + usage.tokens_held, document.owner_id),
+            )
+        return fixer(messages, info)
+
+    spent = with_concurrency(context_of(pool, tmp_path, answer, database_url), database_url, 1)
+    with pytest.raises(PermanentError):
+        await x6_repair.repair_document(spent, job)
+    await connection.execute(
+        "UPDATE quota SET token_limit = NULL WHERE account_id = %s", (document.owner_id,)
+    )
+    again = Quoting()
+
+    made = await x6_repair.repair_document(context_of(pool, tmp_path, again, database_url), job)
+
+    assert (fixer.units, again.units) == (["E2"], ["E3"])
+    assert await not_found(connection, document) == ["Aussage E2"]  # the next repair's to ask
+    assert [(stage, outcome) for stage, outcome, _ in await runs_of(connection, document)] == [
+        ("X5", "done"), ("X6", "budget_exhausted"), ("X5", "done"), ("X6", "done"), ("X5", "done"),
+    ]  # fmt: skip
+    assert made == {"document_id": str(document.id), "units": 1, "checked": True}
 
 
 async def test_a_repair_reports_its_packages_as_they_are_written(

@@ -44,12 +44,20 @@ WHERE f.document_id = %(document)s AND f.severity = 'violation' AND r.stage_iri 
 ORDER BY s.node_id, s.position, f.rule, f.created_at
 """
 _OF_READING = """
-SELECT f.details ->> 'unit', f.rule, f.message, f.path
+SELECT f.details ->> 'unit', f.rule, f.message, f.path, f.details
 FROM validation_finding f
 JOIN extraction_run r ON r.id = f.run_id
 WHERE f.document_id = %(document)s AND f.severity IN ('violation', 'warning')
     AND r.stage_iri = ANY(%(written)s) AND f.details ? 'unit' AND f.rule NOT LIKE '%%.pattern_timeout'
 ORDER BY f.rule, f.path, f.created_at
+"""
+# the packages a repair job's runs of X6 wrote anew, or named in a finding (answered out of form)
+_ASKED_BY = """
+SELECT u.unit_key FROM extraction_unit u JOIN extraction_run r ON r.id = u.run_id
+WHERE u.document_id = %(document)s AND r.job_id = %(job)s AND r.stage_iri = %(x6)s
+UNION
+SELECT f.details ->> 'unit' FROM validation_finding f JOIN extraction_run r ON r.id = f.run_id
+WHERE f.document_id = %(document)s AND r.job_id = %(job)s AND r.stage_iri = %(x6)s AND f.details ? 'unit'
 """
 _HELD = """
 SELECT s.node_id, s.position, s.verbatim FROM statement s
@@ -59,15 +67,21 @@ ORDER BY s.node_id, s.position
 """
 
 
+# what the reading of an answer names as at fault (app/pipeline/statement_read.py, its details)
+_AT_FAULT = ("block", "value", "key", "subkind")
+
+
 @dataclass(frozen=True)
 class Defect:
     """What a finding says is wrong: its rule and message, the statement's wording where it is on one,
-    the place in the answer or the property where it names one."""
+    the place in the answer or the property where it names one, the block, value or key at fault where
+    the reading of an answer names one."""
 
     rule: str
     message: str
     wording: str | None
     path: str | None
+    detail: str | None = None
 
 
 @dataclass(frozen=True)
@@ -92,8 +106,9 @@ async def repairable_units(connection: psycopg.AsyncConnection, document_id: UUI
         if (key := places.unit_of(node_id, position)) is not None:
             defects.setdefault(key, []).append(Defect(rule, message, verbatim, path))
     cursor = await connection.execute(_OF_READING, asked)
-    for key, rule, message, path in await cursor.fetchall():
-        defects.setdefault(key, []).append(Defect(rule, message, None, path))
+    for key, rule, message, path, details in await cursor.fetchall():
+        at_fault = next((str(details[name]) for name in _AT_FAULT if details.get(name) is not None), None)
+        defects.setdefault(key, []).append(Defect(rule, message, None, path, at_fault))
     kept: dict[str, list[str]] = {}
     cursor = await connection.execute(_HELD, asked)
     for node_id, position, verbatim in await cursor.fetchall():
@@ -112,12 +127,24 @@ async def repairable_units(connection: psycopg.AsyncConnection, document_id: UUI
     ]
 
 
+async def asked_by(connection: psycopg.AsyncConnection, document_id: UUID, job_id: UUID) -> set[str]:
+    """The packages the repair job asked in an attempt before: a job asks each once (F2)."""
+    cursor = await connection.execute(
+        _ASKED_BY, {"document": document_id, "job": job_id, "x6": stage_iri("X6")}
+    )
+    return {key for (key,) in await cursor.fetchall()}
+
+
 class _Places:
     """Where a package's statements stand: its part of its node, or X4's node of its own."""
 
     def __init__(self, packages: Sequence[WorkPackage], done: dict[str, UnitDone]) -> None:
         self.packages = packages
         self.done = done
+        self.parts: dict[UUID, list[str]] = {}  # a node's packages, a part each, in the document's order
+        for item in packages:
+            if item.node_id is not None:
+                self.parts.setdefault(item.node_id, []).append(item.key)
         by_key = {item.key: item for item in packages}
         self.own = {  # X4's node of a package under no heading, and that package
             unit.node_id: unit.key
@@ -131,9 +158,9 @@ class _Places:
     def unit_of(self, node_id: UUID, position: int) -> str | None:
         if node_id in self.own:
             return self.own[node_id]
-        parts = [item for item in self.packages if item.node_id == node_id]
+        parts = self.parts.get(node_id, [])
         part = (position - 1) // PART
-        return parts[part].key if 0 <= part < len(parts) else None
+        return parts[part] if 0 <= part < len(parts) else None
 
     def repairable(self, package: WorkPackage) -> bool:
         # done: X4 marked it - only X4 marks packages, never one X3 reads typed; at a node that stands

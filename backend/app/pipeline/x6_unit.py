@@ -7,8 +7,12 @@ with their anchors; those the editors hold - changed, confirmed, rejected, writt
 statement of the new answer with the wording of one of them is left out (konzept: a rejected statement
 is kept so that it is not proposed again). The new statements come after every position the package
 used, so none takes the place a held statement points to; a statement points to content by that
-content's new position, and to none the answer lost. The findings of reading the package's earlier
-answers make way for this reading's, and the mark names the repair and counts it (app/db/units.py).
+content's new position - by the held one's where its wording is held and not rejected -, and to none
+the answer lost. The findings of reading the package's earlier answers make way for this reading's,
+and the mark names the repair and counts it (app/db/units.py).
+
+An answer of no statement for a package the model wrote statements to lost them rather than found
+none - it was asked for all of them -: nothing of it is written (``EmptyAnswer``).
 """
 
 from dataclasses import dataclass
@@ -29,12 +33,17 @@ from app.pipeline.x6_units import RepairUnit
 _CV = "https://w3id.org/wlo/curriculum/vocab#"
 _OF_PACKAGE = """
 SELECT id, position, text_hash,
-    origin_iri = %(model)s AND review_status_iri = %(proposed)s AND revision = 1
+    origin_iri = %(model)s AND review_status_iri = %(proposed)s AND revision = 1,
+    review_status_iri = %(rejected)s
 FROM statement
 WHERE document_id = %(document)s AND node_id = %(node)s AND position BETWEEN %(low)s AND %(high)s
 ORDER BY position
 """
 _LAST_POSITION = 2**31 - 1  # of a node X4 made for a package alone: all its positions are the package's
+
+
+class EmptyAnswer(Exception):
+    """The answer held no statement of a package that has statements nobody touched."""
 
 
 @dataclass(frozen=True)
@@ -52,7 +61,8 @@ async def rewrite_unit(
     *,
     run_id: UUID,
 ) -> Rewritten:
-    """Write the package anew as read; LeaseLost or the database's error, and then nothing of it."""
+    """Write the package anew as read; LeaseLost, EmptyAnswer or the database's error, and then
+    nothing of it."""
     if unit.node_id is None:
         raise LookupError(f"package {unit.package.key} stands at no node")
     async with connection.transaction():
@@ -64,18 +74,25 @@ async def rewrite_unit(
             {
                 "document": document.id, "node": unit.node_id, "low": unit.first, "high": high,
                 "model": _CV + "orig_model", "proposed": _CV + "rev_proposed",
+                "rejected": _CV + "rev_rejected",
             },
         )  # fmt: skip
-        found = await cursor.fetchall()
-        held = [hashed for _, _, hashed, untouched in found if not untouched]
-        await drop_statements(
-            connection, document.id, [row_id for row_id, _, _, untouched in found if untouched]
-        )
-        start = max((position for _, position, _, _ in found), default=unit.first - 1) + 1
-        kept = [
-            index for index, item in enumerate(read.statements) if text_hash(item.draft.verbatim) not in held
-        ]
-        place = {index: start + at for at, index in enumerate(kept)}
+        found = await cursor.fetchall()  # mine: the model's, nobody's since
+        untouched = [row_id for row_id, _, _, mine, _ in found if mine]
+        if untouched and not read.statements:
+            raise EmptyAnswer(unit.package.key)
+        held = {hashed for _, _, hashed, mine, _ in found if not mine}
+        standing: dict[str, int] = {}  # a held wording not rejected, at its first position
+        for _, position, hashed, mine, rejected in found:
+            if not (mine or rejected):
+                standing.setdefault(hashed, position)
+        await drop_statements(connection, document.id, untouched)
+        start = max((position for _, position, _, _, _ in found), default=unit.first - 1) + 1
+        hashes = [text_hash(item.draft.verbatim) for item in read.statements]
+        kept = [index for index, hashed in enumerate(hashes) if hashed not in held]
+        place = {index: start + at for at, index in enumerate(kept)} | {
+            index: standing[hashed] for index, hashed in enumerate(hashes) if hashed in standing
+        }
         drafts = [
             pointing(
                 read.statements[index].draft,
@@ -93,7 +110,7 @@ async def rewrite_unit(
             document.id,
             unit.package.key,
             run_id=run_id,
-            statements=len(held) + len(drafts),
+            statements=len(found) - len(untouched) + len(drafts),
             checked_absent=read.checked_absent,
         )
     return Rewritten(len(drafts), len(read.statements) - len(kept))

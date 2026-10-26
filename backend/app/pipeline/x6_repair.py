@@ -5,14 +5,16 @@ X6 asks the model again for the work packages whose statements X5 or the reading
 wrong (app/pipeline/x6_units.py) - each once a job, twice at most in all -, with X4's question behind the
 same prefix and the defects named (prompts/x6.py), side by side as X4 asks, and writes each anew as soon
 as it is answered (app/pipeline/x6_unit.py). An answer out of form leaves its package as it was: it is
-counted as a repair, and its finding (``x6.unanswered``) asks for one more. A budget spent lets no
-further package begin, as in X4. Then X5 checks the document again, its findings replacing the ones
+counted as a repair, and its finding (``x6.unanswered``) asks for one more; so does an answer of no
+statement for a package that has some (``x6.empty_answer``). A budget spent lets no further package
+begin, as in X4. Then X5 checks the document again, its findings replacing the ones
 before (app/pipeline/x5_stage.py) - also where the budget ended X6, before the job ends with it.
 
 A document is repaired once X5 has checked it, every package done then; one not checked yet goes on
 with extract.run (``document_not_checked``). With nothing to repair - the editors took it meanwhile -
-no model is asked and nothing checked again. An attempt after a break goes on after the stages this
-job's runs did: X6 done, X5 again; both done, nothing.
+no model is asked. An attempt after a break asks none of the packages an attempt before asked, and
+passes over an X6 done; X5 checks the document whenever a repair began since its last check
+(app/db/runs.x5_owed) - this job's, or one that ended before its check, which extract.run checks too.
 """
 
 import asyncio
@@ -24,7 +26,7 @@ from app.conversion.base import Block
 from app.db.conversions import all_blocks, printed_pages
 from app.db.documents import Document, document_for_job
 from app.db.findings import Finding, add_findings
-from app.db.runs import RunStart, done_stages, finish_run, stage_result, stages_done_by, start_run
+from app.db.runs import RunStart, done_stages, finish_run, stage_result, stages_done_by, start_run, x5_owed
 from app.db.units import count_repair
 from app.jobs.context import JobContext
 from app.jobs.outcome import PermanentError
@@ -42,8 +44,8 @@ from app.pipeline.x2_segments import WorkPackage
 from app.pipeline.x4_question import UnitQuestions, unit_questions
 from app.pipeline.x4_read import WrongUnit, read_unit
 from app.pipeline.x5_stage import run_x5
-from app.pipeline.x6_unit import rewrite_unit
-from app.pipeline.x6_units import RepairUnit, repairable_units
+from app.pipeline.x6_unit import EmptyAnswer, rewrite_unit
+from app.pipeline.x6_units import RepairUnit, asked_by, repairable_units
 
 PROMPT_VERSION = x6.PROMPT_VERSION
 
@@ -58,20 +60,28 @@ async def repair_document(context: JobContext, job: Job) -> dict[str, Any]:
         done = await stages_done_by(connection, job.id)
         blocks = await all_blocks(connection, document.conversion_id)
         printed = await printed_pages(connection, document.conversion_id)
+    units: int | None = None  # asked by this attempt; None where an attempt before did X6
     if "X6" not in done:
         try:
-            made = await run_x6(context, job, document, blocks, printed)
+            units = (await run_x6(context, job, document, blocks, printed))["units"]
         except PermanentError as ending:
             if ending.code == "budget_exhausted":  # what was repaired is checked all the same
-                await run_x5(context, job, await _current(context, document.id), again=True)
+                await _check(context, job, document.id)
             raise
-        if made["units"] == 0:
-            return {"document_id": str(document.id), "units": 0, "checked": False}
-    if done[-1:] != ["X5"]:
-        await run_x5(context, job, await _current(context, document.id), again=True)
+    await _check(context, job, document.id)
     async with context.pool.connection() as connection:
-        repaired = await stage_result(connection, document.id, "X6")
-    return {"document_id": str(document.id), "units": (repaired or {}).get("units", 0), "checked": True}
+        if units is None:
+            units = ((await stage_result(connection, document.id, "X6")) or {}).get("units", 0)
+        checked = "X5" in await stages_done_by(connection, job.id)
+    return {"document_id": str(document.id), "units": units, "checked": checked}
+
+
+async def _check(context: JobContext, job: Job, document_id: Any) -> None:
+    """X5 again, where a repair began since the document's last check."""
+    async with context.pool.connection() as connection:
+        owed = await x5_owed(connection, document_id)
+    if owed:
+        await run_x5(context, job, await _current(context, document_id), again=True)
 
 
 async def run_x6(
@@ -82,7 +92,10 @@ async def run_x6(
     model, model_name = model_of(context)
     assert context.llm is not None  # noqa: S101 - the stage has its model (model_of)
     async with context.pool.connection() as connection:
-        units = await repairable_units(connection, document.id)
+        asked = await asked_by(connection, document.id, job.id)
+        units = [
+            unit for unit in await repairable_units(connection, document.id) if unit.package.key not in asked
+        ]
         if not units:
             return {"units": 0}
         await report(connection, job, "repair_units", done=0, total=len(units))
@@ -154,25 +167,37 @@ class _Repairs:
                 self.spent = spent
                 return
             except (Unanswered, WrongUnit):
-                await self._unanswered(unit.package.key)
+                message = "the model's answer never took the form of the unit, or answered for another"
+                of_unit = {"unit": unit.package.key}
+                await self._left(
+                    Finding("x6.unanswered", "warning", self.asking.document.id, message, None, of_unit)
+                )
                 return
             key = unit.package.key
             named = [replace(found, details={**found.details, "unit": key}) for found in read.findings]
             read = replace(read, findings=[*question.findings, *named])
             context, job, document = self.asking.context, self.asking.job, self.asking.document
             async with context.pool.connection() as connection:
-                made = await rewrite_unit(connection, job, document, unit, read, run_id=self.asking.run_id)
+                try:
+                    made = await rewrite_unit(
+                        connection, job, document, unit, read, run_id=self.asking.run_id
+                    )
+                except EmptyAnswer:
+                    message = "the answer held no statement of a unit that has some: it stays as it was"
+                    await self._left(
+                        Finding("x6.empty_answer", "warning", document.id, message, None, {"unit": key})
+                    )
+                    return
                 self.written += made.statements
                 self.dropped += made.dropped
                 self.done += 1
                 await report(connection, job, "repair_units", done=self.done, total=self.total)
 
-    async def _unanswered(self, key: str) -> None:
-        """The package stays as it was; its repair is counted (it was paid for) and named."""
+    async def _left(self, finding: Finding) -> None:
+        """The package the finding names stays as it was; its repair is counted (it was paid for)."""
         context, job, document = self.asking.context, self.asking.job, self.asking.document
+        key = finding.details["unit"]
         self.unanswered.append(key)
-        message = "the model's answer never took the form of the unit, or answered for another"
-        finding = Finding("x6.unanswered", "warning", document.id, message, None, {"unit": key})
         async with context.pool.connection() as connection:
             async with connection.transaction():
                 await hold_lease(connection, job)

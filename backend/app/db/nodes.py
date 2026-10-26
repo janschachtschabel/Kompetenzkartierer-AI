@@ -113,11 +113,14 @@ async def drop_statements(
 ) -> int:
     """Take the document's statements ``statement_ids`` away - their addressees, anchors and the anchors'
     blocks go with them - under the tree's lock, which whoever changes a tree takes first (plan M1,
-    Paket 4: X6 and the editors); how many went. Ids of no statement of the document take none."""
-    await lock_tree(connection, document_id)
-    cursor = await connection.execute(
-        "DELETE FROM statement WHERE document_id = %s AND id = ANY(%s)", (document_id, list(statement_ids))
-    )
+    Paket 4: X6 and the editors); how many went. Ids of no statement of the document take none. In a
+    transaction of its own, or the caller's (as a savepoint), so that the lock holds over the delete."""
+    async with connection.transaction():
+        await lock_tree(connection, document_id)
+        cursor = await connection.execute(
+            "DELETE FROM statement WHERE document_id = %s AND id = ANY(%s)",
+            (document_id, list(statement_ids)),
+        )
     return cursor.rowcount
 
 

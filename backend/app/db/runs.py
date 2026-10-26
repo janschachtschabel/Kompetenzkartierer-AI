@@ -24,12 +24,12 @@ RunState = Literal["done", "failed", "budget_exhausted", "running", "abandoned"]
 # The stages of the core's scheme cv:Stages, by their notation
 Stage = Literal["X0", "X1", "X2", "X3", "X4", "X5", "X6", "N1", "N2", "G1"]
 STAGES = "https://w3id.org/wlo/curriculum/vocab#Stages"
-_STAGE_IRI = "https://w3id.org/wlo/curriculum/vocab#stage_"
+STAGE_PREFIX = "https://w3id.org/wlo/curriculum/vocab#stage_"  # of a stage's IRI, before its notation
 
 
 def stage_iri(stage: Stage) -> str:
     """The IRI of a stage of cv:Stages by its notation ("X1")."""
-    return _STAGE_IRI + stage
+    return STAGE_PREFIX + stage
 
 
 _START = """
@@ -45,6 +45,16 @@ _FINISH = """
 _DONE_BY = "SELECT stage_iri FROM extraction_run WHERE job_id = %s AND outcome = 'done' ORDER BY started_at"
 _DONE = """
     SELECT DISTINCT stage_iri FROM extraction_run WHERE document_id = %s AND outcome = 'done'
+"""
+_OWED = """
+SELECT EXISTS (
+    SELECT FROM extraction_run WHERE document_id = %(document)s AND stage_iri = %(x6)s
+        AND started_at > coalesce(
+            (SELECT max(started_at) FROM extraction_run
+             WHERE document_id = %(document)s AND stage_iri = %(x5)s AND outcome = 'done'),
+            '-infinity'
+        )
+)
 """
 
 
@@ -123,14 +133,24 @@ async def done_stages(connection: psycopg.AsyncConnection, document_id: UUID) ->
     """The stages done on the document, by notation ("X1"), whichever job did them: a job after one
     that ended for good goes on where it stopped."""
     cursor = await connection.execute(_DONE, (document_id,))
-    return {iri.removeprefix(_STAGE_IRI) for (iri,) in await cursor.fetchall()}
+    return {iri.removeprefix(STAGE_PREFIX) for (iri,) in await cursor.fetchall()}
 
 
 async def stages_done_by(connection: psycopg.AsyncConnection, job_id: UUID) -> list[str]:
     """The stages the job's runs did, by notation, in the order they began: where an attempt of a job
     that runs a stage more than once (extract.repair) goes on."""
     cursor = await connection.execute(_DONE_BY, (job_id,))
-    return [iri.removeprefix(_STAGE_IRI) for (iri,) in await cursor.fetchall()]
+    return [iri.removeprefix(STAGE_PREFIX) for (iri,) in await cursor.fetchall()]
+
+
+async def x5_owed(connection: psycopg.AsyncConnection, document_id: UUID) -> bool:
+    """Whether X5 owes the document a check: a run of X6 began after its last run of X5 that ended done -
+    whatever became of the repair, it may have written (app/pipeline/x6_repair.py)."""
+    cursor = await connection.execute(
+        _OWED, {"document": document_id, "x5": stage_iri("X5"), "x6": stage_iri("X6")}
+    )
+    found = await cursor.fetchone()
+    return bool(found and found[0])
 
 
 async def lock_for_stage(connection: psycopg.AsyncConnection, document_id: UUID, stage: Stage) -> bool:
@@ -169,7 +189,7 @@ async def runs_of(connection: psycopg.AsyncConnection, document_id: UUID) -> lis
     cursor = await connection.execute(_RUNS, (document_id,))
     return [
         RunView(
-            stage=iri.removeprefix(_STAGE_IRI),
+            stage=iri.removeprefix(STAGE_PREFIX),
             attempt=attempt,
             state=outcome or ("running" if running else "abandoned"),
             started_at=started,

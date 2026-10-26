@@ -758,6 +758,7 @@ export const messages = {
         target_elsewhere: "Ein Verweis auf Inhalt an einem anderen Knoten oder an keinem.",
         // a stage's own
         unanswered: "Das Sprachmodell gab keine Antwort in der verlangten Form.",
+        empty_answer: "Die Antwort enthielt keine Aussage, obwohl das Paket welche hat; es bleibt, wie es war.",
         pattern_timeout: "Ein Suchmuster des Lexikons brauchte zu lange und wurde übergangen.",
       },
       // the owner's repair (FindingsRepair.vue, backend POST /documents/{id}/repair)

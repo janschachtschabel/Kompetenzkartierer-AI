@@ -8,8 +8,9 @@ A job goes on from the last stage done on the document - an attempt after a brea
 an error asked again), or a new job after one that ended for good (its attempts spent, its budget
 spent); a stage cut off midway left nothing but X4's finished units and the anchors X5 checked. A
 document done is neither asked about nor written
-again. X3 and X4 read the document as X1 left it, its type among it; X5 checks what the stages wrote
-(app/pipeline/x5_stage.py).
+again - but checked again where a repair (extract.repair, app/pipeline/x6_repair.py) ended before its
+check of what it wrote. X3 and X4 read the document as X1 left it, its type among it; X5 checks what
+the stages wrote (app/pipeline/x5_stage.py).
 
 Payload: ``{"document_id": "<uuid>"}``; what it ends with: the document, its stages, the number of
 X2's packages (which X2's run holds, plan M1 6, Festlegung 3).
@@ -22,7 +23,7 @@ from uuid import UUID
 from app.conversion.base import Block
 from app.db.conversions import all_blocks, printed_pages
 from app.db.documents import Document, document_for_job
-from app.db.runs import RunStart, done_stages, finish_run, stage_result, start_run
+from app.db.runs import RunStart, done_stages, finish_run, stage_result, start_run, x5_owed
 from app.jobs.context import JobContext
 from app.jobs.outcome import PermanentError
 from app.jobs.queue import Job, hold_lease
@@ -46,6 +47,7 @@ async def extract_document(context: JobContext, job: Job) -> dict[str, Any]:
         if document is None:
             raise PermanentError("document_gone", "the document to extract is gone")
         done = await done_stages(connection, document.id)
+        owed = await x5_owed(connection, document.id)  # a repair ended before its check
         blocks = await all_blocks(connection, document.conversion_id)
         printed = await printed_pages(connection, document.conversion_id)
     if "X1" not in done:
@@ -62,6 +64,8 @@ async def extract_document(context: JobContext, job: Job) -> dict[str, Any]:
         await run_x4(context, job, await _current(context, document.id), blocks, printed)
     if "X5" not in done:
         await run_x5(context, job, await _current(context, document.id))
+    elif owed:
+        await run_x5(context, job, await _current(context, document.id), again=True)
     return {"document_id": str(document.id), "stages": list(STAGES), "packages": packages}
 
 

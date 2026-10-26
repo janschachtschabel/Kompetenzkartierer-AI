@@ -27,6 +27,9 @@ _READ: dict[str, str] = {
     "unknown_value": "Ein Wert, den die Auswahlliste nicht hat",
     "unknown_key": "Eine Kennung, die die Auswahlliste nicht hat",
     "subkind_mismatch": "Eine Unterart, die nicht zur Aussageart gehört",
+    # X6's own: the package stayed as it was
+    "unanswered": "Die letzte Antwort hatte nicht die Form des Schemas oder galt einer anderen Einheit",
+    "empty_answer": "Die letzte Antwort enthielt keine Aussage, obwohl die Einheit welche hat",
 }
 
 
@@ -45,18 +48,21 @@ def repair_task(
         f"=== AUFTRAG ===\nLies die Einheit {unit.key} noch einmal und gib alle ihre Aussagen zurück, die in"
         f" den Blöcken {blocks} stehen, mit {unit.key} als unitKey - jeden Wortlaut wörtlich, wie er im"
         " Block steht. Die Befunde nennen, was an der letzten Antwort falsch war. Was unter BLEIBT steht,"
-        " gilt schon; gib es nicht zurück. Antworte im vorgegebenen Schema.\n"
+        " ist schon erfasst oder verworfen; gib es nicht zurück. Antworte im vorgegebenen Schema.\n"
     )
     return "\n".join(parts)
 
 
 def _said(defect: Defect) -> str:
     """A defect in a line of the task: a statement's wording not found, a finding on a statement with
-    its message (SHACL's, German), what the reading found, else the finding's own message."""
+    its message (SHACL's, German) and property, what the reading found with what was at fault - not
+    where in an answer the model no longer sees -, else the finding's own message."""
     if defect.rule == "x5.wording_not_found" and defect.wording is not None:
         return f"„{defect.wording}“ steht nicht wörtlich in den Blöcken der Einheit."
-    where = f" ({defect.path})" if defect.path else ""
     if defect.wording is not None:
+        where = f" ({defect.path})" if defect.path else ""
         return f"„{defect.wording}“: {defect.message}{where}"
     read = _READ.get(defect.rule.partition(".")[2])
-    return f"{read}{where}." if read else defect.message
+    if read is None:
+        return defect.message
+    return f"{read}: {defect.detail}." if defect.detail else f"{read}."

@@ -16,8 +16,8 @@ from app.db.nodes import lock_tree
 from app.db.runs import RunStart, start_run
 from app.db.units import done_units
 from app.jobs.queue import LeaseLost
-from app.pipeline.x4_unit import write_unit
-from app.pipeline.x6_unit import Rewritten, rewrite_unit
+from app.pipeline.x4_unit import PART, write_unit
+from app.pipeline.x6_unit import EmptyAnswer, Rewritten, rewrite_unit
 from app.pipeline.x6_units import RepairUnit
 from tests.pipeline.test_run import CV, rows, setup
 from tests.pipeline.test_x4_unit import package, read, ready, statement, statements_of
@@ -93,6 +93,105 @@ async def test_the_statements_the_editors_hold_stay_and_are_not_written_twice(se
         (5, "Neues Licht", {}),
     ]
     assert (await done_units(connection, document.id))["E2"].statements == 4
+
+
+async def test_a_new_statement_points_to_the_content_the_editors_hold_in_its_place(setup: Any) -> None:
+    # the answer's content statement is left out for the confirmed one of its wording: the pointer
+    # to it goes to that one; to a rejected one it goes nowhere (above)
+    _, connection = setup
+    document, job, _, x6, unit = await written(connection)
+    await connection.execute(
+        "UPDATE statement SET review_status_iri = %s WHERE verbatim = 'Licht alt' AND document_id = %s",
+        (CV + "rev_confirmed", document.id),
+    )
+
+    made = await rewrite_unit(
+        connection, job, document, unit,
+        read(statement("Licht alt", kind="kind_content"), statement("Neu erklären", targets=(0,))),
+        run_id=x6,
+    )  # fmt: skip
+
+    assert made == Rewritten(statements=1, dropped=1)
+    assert [
+        (at, verbatim, details) for _, at, verbatim, details in await statements_of(connection, document)
+    ] == [
+        (3, "Licht alt", {}),
+        (4, "Neu erklären", {"targetsContent": [3]}),
+    ]
+
+
+async def test_an_answer_of_no_statement_leaves_a_package_that_had_some_as_it_was(setup: Any) -> None:
+    # the model was asked for all of them: none at all is an answer that lost them, not a package
+    # without statements (the repair is counted by the caller, app/pipeline/x6_repair.py)
+    _, connection = setup
+    document, job, _, x6, unit = await written(connection)
+    before = await statements_of(connection, document)
+
+    with pytest.raises(EmptyAnswer):
+        await rewrite_unit(connection, job, document, unit, read(), run_id=x6)
+
+    assert await statements_of(connection, document) == before
+    assert (await done_units(connection, document.id))["E2"].repairs == 0
+
+
+async def test_an_answer_of_no_statement_is_written_where_the_editors_hold_them_all(setup: Any) -> None:
+    _, connection = setup
+    document, job, _, x6, unit = await written(connection)
+    await connection.execute("UPDATE statement SET revision = 2 WHERE document_id = %s", (document.id,))
+
+    made = await rewrite_unit(connection, job, document, unit, read(), run_id=x6)
+
+    assert made == Rewritten(statements=0, dropped=0)
+    assert len(await statements_of(connection, document)) == 3
+    assert (await done_units(connection, document.id))["E2"].repairs == 1
+
+
+async def test_a_part_of_a_parted_node_is_written_anew_without_the_other(setup: Any) -> None:
+    # E2 and E3 share a node, each in its part of the positions (app/pipeline/x4_unit.py)
+    _, connection = setup
+    document, job, node, x4 = await ready(connection)
+    first, second = package("E2", node), package("E3", node)
+    await write_unit(connection, job, document, first, read(statement("Erster Teil")), first=1, run_id=x4)
+    await write_unit(
+        connection, job, document, second, read(statement("Zweiter Teil")), first=PART + 1, run_id=x4
+    )
+    x6 = await start_run(connection, RunStart(document.id, job.id, 1, "X6", None, None, None, None))
+
+    await rewrite_unit(
+        connection, job, document, RepairUnit(second, node, PART + 1, (), ()), read(statement("Zweiter neu")),
+        run_id=x6,
+    )  # fmt: skip
+    await rewrite_unit(
+        connection, job, document, RepairUnit(first, node, 1, (), ()), read(statement("Erster neu")),
+        run_id=x6,
+    )  # fmt: skip
+
+    assert [(at, verbatim) for _, at, verbatim, _ in await statements_of(connection, document)] == [
+        (2, "Erster neu"),
+        (PART + 2, "Zweiter neu"),
+    ]
+
+
+async def test_a_package_of_a_node_of_its_own_is_written_anew_whole(setup: Any) -> None:
+    # under no heading X4 gave it a node of its own: every position there is the package's
+    _, connection = setup
+    document, job, _, x4 = await ready(connection)
+    alone = package("E1", None, first="p2-b1", last="p2-b1")
+    await write_unit(connection, job, document, alone, read(statement("Allein")), first=1, run_id=x4)
+    own = (await done_units(connection, document.id))["E1"].node_id
+    assert own is not None
+    await connection.execute(
+        "UPDATE statement SET position = %s WHERE node_id = %s", (3 * PART, own)
+    )  # however far it lies
+    x6 = await start_run(connection, RunStart(document.id, job.id, 1, "X6", None, None, None, None))
+
+    await rewrite_unit(
+        connection, job, document, RepairUnit(alone, own, 1, (), ()), read(statement("Allein neu")), run_id=x6
+    )
+
+    assert [(node, verbatim) for node, _, verbatim, _ in await statements_of(connection, document)] == [
+        (own, "Allein neu"),
+    ]
 
 
 async def test_the_package_s_old_reading_findings_make_way_for_the_new(setup: Any) -> None:

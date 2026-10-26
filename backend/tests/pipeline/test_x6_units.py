@@ -115,13 +115,16 @@ async def test_a_warning_of_reading_an_answer_asks_the_package_it_names_again(
     tree: Tree, connection: Any
 ) -> None:
     tree.finding(tree.x4, "x4.unknown_block", "warning", tree.document, path="statements[0].blockIds[0]",
-                 message="a block id nobody showed", details={"unit": "E2"})  # fmt: skip
+                 message="a block id nobody showed", details={"unit": "E2", "block": "p9-b1"})  # fmt: skip
+    tree.finding(tree.x4, "x4.unknown_value", "warning", tree.document, path="statements[1].obligation",
+                 message="no such value", details={"unit": "E2", "value": "sometimes"})  # fmt: skip
 
     [unit] = await repairable_units(connection, tree.document)
 
     assert (unit.package.key, unit.first) == ("E2", 1)
-    assert unit.defects == (
-        Defect("x4.unknown_block", "a block id nobody showed", None, "statements[0].blockIds[0]"),
+    assert unit.defects == (  # with what was at fault: the block, value or key the reading named
+        Defect("x4.unknown_block", "a block id nobody showed", None, "statements[0].blockIds[0]", "p9-b1"),
+        Defect("x4.unknown_value", "no such value", None, "statements[1].obligation", "sometimes"),
     )
 
 

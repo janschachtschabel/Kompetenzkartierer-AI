@@ -20,6 +20,7 @@ from app.db.runs import (
     runs_of,
     stage_result,
     start_run,
+    x5_owed,
 )
 from app.jobs.queue import account_lane, claim, enqueue, release
 from tests.db.l1 import CV, add_conversion, add_document, seed_vocabulary
@@ -122,6 +123,24 @@ async def test_a_stage_s_result_is_what_its_last_done_run_made(
 
     assert await stage_result(connection, made["document"], "X2") == {"units": 5}
     assert await stage_result(connection, made["document"], "X1") is None  # no run of it is done
+
+
+async def test_a_check_is_owed_once_a_repair_began_after_the_document_s_last_one(
+    connection: psycopg.AsyncConnection, made: dict[str, Any]
+) -> None:
+    job, document = await a_job(connection, made), made["document"]
+
+    assert await x5_owed(connection, document) is False  # nothing checked, nothing repaired
+    await finish_run(connection, await start_run(connection, run_of(made, job, "X5")), "done")
+    assert await x5_owed(connection, document) is False
+    await finish_run(connection, await start_run(connection, run_of(made, job, "X5", attempt=4)), "failed")
+    assert await x5_owed(connection, document) is False  # only a repair owes one: it wrote
+    await start_run(connection, run_of(made, job, "X6"))  # broken off: it may have written all the same
+    assert await x5_owed(connection, document) is True
+    await finish_run(connection, await start_run(connection, run_of(made, job, "X5", attempt=2)), "failed")
+    assert await x5_owed(connection, document) is True  # a check that failed is none
+    await finish_run(connection, await start_run(connection, run_of(made, job, "X5", attempt=3)), "done")
+    assert await x5_owed(connection, document) is False
 
 
 async def test_a_document_s_runs_are_read_with_their_state_in_the_order_they_began(
