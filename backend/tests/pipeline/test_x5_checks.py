@@ -3,6 +3,7 @@ its node's heading, a unit read whole that holds no statement, a rule whose boun
 the vocabularies have retired since it was written."""
 
 from collections.abc import AsyncIterator
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -204,3 +205,19 @@ async def test_a_value_retired_since_it_was_written_is_a_warning(connection: psy
             (statement_id, "cur:statementSubkind", expectation),
         ]
     )  # the field each value stands in
+
+
+async def test_a_rejected_statement_is_checked_no_more(connection: psycopg.AsyncConnection) -> None:
+    document = await a_document(connection)
+    rejected, binding = CV + "rev_rejected", CV + "obl_binding"
+    tree = node(
+        "2.1 Kompetenzen",
+        replace(statement("Kompetenzen"), review_status=rejected),  # its node's heading
+        replace(statement("Die Lernenden beschreiben Licht.", obligation=binding), review_status=rejected),
+    )
+    await write_subtree(connection, document.id, tree)
+    await connection.execute(
+        "UPDATE vocab_concept SET retired_in = (SELECT max(id) FROM vocab_release) WHERE iri = %s", (binding,)
+    )
+
+    assert await plausibility(connection, document.id) == []

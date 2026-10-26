@@ -25,7 +25,7 @@ from app.domain.wording import text_hash
 
 _HEADED = """
 SELECT s.id, s.text_hash, n.original_title FROM statement s JOIN node n ON n.id = s.node_id
-WHERE s.document_id = %s AND n.original_title IS NOT NULL
+WHERE s.document_id = %s AND n.original_title IS NOT NULL AND s.review_status_iri <> 'https://w3id.org/wlo/curriculum/vocab#rev_rejected'
 """
 _EMPTY_UNITS = """
 SELECT unit_key, node_id FROM extraction_unit
@@ -43,7 +43,7 @@ SELECT s.id, value.field, value.iri FROM statement s
 CROSS JOIN LATERAL (VALUES ('statementKind', s.statement_kind_iri), ('statementSubkind', s.subkind_iri),
     ('obligation', s.obligation_iri)) AS value (field, iri)
 JOIN vocab_concept c ON c.iri = value.iri
-WHERE s.document_id = %(document)s AND c.retired_in IS NOT NULL
+WHERE s.document_id = %(document)s AND c.retired_in IS NOT NULL AND s.review_status_iri <> 'https://w3id.org/wlo/curriculum/vocab#rev_rejected'
 """
 _BOUNDS = (("minCount", "maxCount"), ("minAmount", "maxAmount"))
 

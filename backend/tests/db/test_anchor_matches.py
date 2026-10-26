@@ -10,7 +10,14 @@ import psycopg
 import pytest
 
 from app.conversion.base import Block
-from app.db.anchors import CheckedAnchor, not_found_anchors, set_matches, unchecked_anchors, write_anchor
+from app.db.anchors import (
+    CheckedAnchor,
+    match_kinds,
+    not_found_anchors,
+    set_matches,
+    unchecked_anchors,
+    write_anchor,
+)
 from app.db.migrate import migrate
 from app.db.nodes import write_subtree
 from app.db.profile import write_profile
@@ -168,3 +175,20 @@ async def test_the_anchor_of_a_node_a_rule_titled_is_not_checked(connection: psy
 
     assert await unchecked_anchors(connection, document.id, rule_titles=("x4.unit_without_node",)) == []
     assert [anchor.wording for anchor in await unchecked_anchors(connection, document.id)] == ["Dokument"]
+
+
+async def test_a_rejected_statement_s_anchors_are_neither_checked_nor_counted(
+    connection: psycopg.AsyncConnection,
+) -> None:
+    # a rejected statement is no part of the curriculum (Paket 9 G9): X5 checks its wording no more
+    document = await a_tree(connection)
+    [told, _] = sorted(await unchecked_anchors(connection, document.id), key=lambda anchor: anchor.wording)
+    await connection.execute(
+        "UPDATE statement SET review_status_iri = %s WHERE document_id = %s",
+        (CV + "rev_rejected", document.id),
+    )
+
+    assert [anchor.wording for anchor in await unchecked_anchors(connection, document.id)] == ["Kompetenzen"]
+    await set_matches(connection, [CheckedAnchor(told.id, CV + "match_notFound", None, None, None, None)])
+    assert await not_found_anchors(connection, document.id) == []
+    assert await match_kinds(connection, document.id) == {}  # the exact one, too, was a statement's

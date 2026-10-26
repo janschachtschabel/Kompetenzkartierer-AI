@@ -52,7 +52,8 @@ SELECT s.id, s.node_id, s.position, s.verbatim, s.language, s.lead_in, s.stateme
     s.obligation_iri, s.origin_iri, s.review_status_iri, s.text_hash, s.details, s.layout_markers,
     ARRAY(SELECT a.addressee_iri FROM statement_addressee a WHERE a.statement_id = s.id
           ORDER BY a.addressee_iri) AS addressees
-FROM statement s WHERE s.document_id = %(document)s ORDER BY s.node_id, s.position
+FROM statement s WHERE s.document_id = %(document)s AND s.review_status_iri <> 'https://w3id.org/wlo/curriculum/vocab#rev_rejected'
+ORDER BY s.node_id, s.position
 """
 _ANCHORS = """
 SELECT a.id, a.node_id, a.statement_id, a.page_start, a.page_end, a.printed_page, a.quote, a.match_kind_iri,
@@ -60,6 +61,7 @@ SELECT a.id, a.node_id, a.statement_id, a.page_start, a.page_end, a.printed_page
     ARRAY(SELECT ab.block_id FROM anchor_block ab WHERE ab.anchor_id = a.id) AS blocks
 FROM anchor a
 WHERE a.document_id = %(document)s AND (a.node_id IS NOT NULL OR a.statement_id IS NOT NULL)
+    AND NOT EXISTS (SELECT FROM statement s WHERE s.id = a.statement_id AND s.review_status_iri = 'https://w3id.org/wlo/curriculum/vocab#rev_rejected')
 ORDER BY a.id
 """
 

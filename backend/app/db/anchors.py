@@ -30,7 +30,7 @@ LEFT JOIN node n ON n.id = a.node_id
 JOIN anchor_block ab ON ab.anchor_id = a.id
 JOIN document_block b ON b.conversion_id = ab.conversion_id AND b.block_id = ab.block_id
 WHERE a.document_id = %s AND a.match_kind_iri IS NULL AND coalesce(s.verbatim, n.original_title) IS NOT NULL
-    AND (n.rule_id IS NULL OR NOT n.rule_id = ANY(%s))
+    AND (n.rule_id IS NULL OR NOT n.rule_id = ANY(%s)) AND s.review_status_iri IS DISTINCT FROM 'https://w3id.org/wlo/curriculum/vocab#rev_rejected'
 GROUP BY a.id, s.verbatim, n.original_title
 ORDER BY a.id
 """
@@ -40,12 +40,14 @@ SELECT a.id, coalesce(a.statement_id, a.node_id) FROM anchor a
 WHERE a.document_id = %s AND a.match_kind_iri = 'https://w3id.org/wlo/curriculum/vocab#match_notFound'
     AND coalesce(a.statement_id, a.node_id) IS NOT NULL
     AND EXISTS (SELECT FROM anchor_block ab WHERE ab.anchor_id = a.id)
+    AND NOT EXISTS (SELECT FROM statement s WHERE s.id = a.statement_id AND s.review_status_iri = 'https://w3id.org/wlo/curriculum/vocab#rev_rejected')
 ORDER BY a.id
 """
 # How the document's anchors of statements and nodes stand, by the notation of their match kind
 _KINDS = """
-SELECT replace(match_kind_iri, %s, ''), count(*) FROM anchor
-WHERE document_id = %s AND coalesce(statement_id, node_id) IS NOT NULL AND match_kind_iri IS NOT NULL
+SELECT replace(a.match_kind_iri, %s, ''), count(*) FROM anchor a
+WHERE a.document_id = %s AND coalesce(a.statement_id, a.node_id) IS NOT NULL AND a.match_kind_iri IS NOT NULL
+    AND NOT EXISTS (SELECT FROM statement s WHERE s.id = a.statement_id AND s.review_status_iri = 'https://w3id.org/wlo/curriculum/vocab#rev_rejected')
 GROUP BY 1 ORDER BY 1
 """
 _MATCH = """

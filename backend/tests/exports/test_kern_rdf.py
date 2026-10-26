@@ -276,3 +276,27 @@ async def test_a_region_is_its_active_concept_where_a_retired_one_shares_its_not
     assert sorted(str(region) for region in made.objects(None, CUR.region)) == [
         "https://w3id.org/wlo/curriculum/region/DE-NW"
     ]
+
+
+async def test_a_rejected_statement_and_its_anchors_are_no_rows_of_the_document(
+    connection: psycopg.AsyncConnection,
+) -> None:
+    # it is no part of the curriculum (Paket 9 G9): neither the export nor X5's graph holds it
+    document = await document_of(connection, [block(1, TEXTS[2])])
+
+    def said(verbatim: str, status: str) -> StatementDraft:
+        return StatementDraft(
+            verbatim=verbatim, kind=CV + "kind_learningOutcome", addressees=(CV + "addr_learner",),
+            anchors=(AnchorDraft(("p1-b1",), page_start=1),), origin=MODEL, review_status=status,
+        )  # fmt: skip
+
+    root = NodeDraft(
+        function=CV + "fn_area", origin=MODEL, review_status=PROPOSED,
+        statements=(said(TEXTS[2], PROPOSED), said("Die Lernenden raten.", CV + "rev_rejected")),
+    )  # fmt: skip
+    await write_subtree(connection, document.id, root)
+
+    rows = await read_document(connection, document.id)
+
+    assert [row["verbatim"] for row in rows.statements] == [TEXTS[2]]
+    assert [row["statement_id"] for row in rows.anchors] == [rows.statements[0]["id"]]
