@@ -37,6 +37,7 @@ class FindingOut(BaseModel):
     focus: FocusOut
     path: str | None  # the property, where it is about one
     message: str
+    message_lang: str | None  # its language where the stage knew it, SHACL's German "de"; else English
     unit: str | None  # the work package it names, "E2"
 
 
@@ -76,6 +77,7 @@ async def read_findings(document_id: UUID, request: Request, who: Account) -> Fi
                 focus=FocusOut(kind=row.focus_kind, id=row.focus_id, label=row.focus_label),
                 path=row.path,
                 message=row.message,
+                message_lang=row.message_lang,
                 unit=row.unit,
             )
             for row in page.rows

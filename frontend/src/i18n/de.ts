@@ -730,7 +730,7 @@ export const messages = {
       about: "{kind} „{label}“",
       inUnit: "{what}, Paket {unit}",
       // by the rule's name without its stage: the reading of an answer names its rules alike at X1,
-      // X3, X4 and X6 (tests/findingWords.test.ts); SHACL's own messages are German already
+      // X3, X4 and X6 (tests/findingWords.test.ts); SHACL's messages as the server gives them
       rules: {
         // X5's checks
         wording_not_found: "Der Wortlaut steht nicht in den Blöcken, auf die er verweist.",

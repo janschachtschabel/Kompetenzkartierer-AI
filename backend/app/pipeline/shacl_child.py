@@ -21,7 +21,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, NamedTuple
 
-from rdflib import RDF, BNode, Graph, Namespace, URIRef
+from rdflib import RDF, BNode, Graph, Literal, Namespace, URIRef
 
 from app.core.child import ChildLog, stand_alone, write
 from app.vocab.loader import MODEL_DIRS
@@ -47,6 +47,7 @@ class ShaclResult(NamedTuple):
     message: str
     value: str | None
     component: str | None  # the constraint component's name
+    lang: str | None = None  # the message's language where the shape gave one (sh:message "…"@de)
 
 
 def model_paths(ontology_dir: Path) -> list[Path]:
@@ -144,12 +145,14 @@ def _results(report: Graph, shapes: Graph, data: Graph) -> list[ShaclResult]:
         path = report.value(result, SH.resultPath)
         value = report.value(result, SH.value)
         component = report.value(result, SH.sourceConstraintComponent)
+        message = report.value(result, SH.resultMessage)  # pyshacl's own, English, where the shape gave none
         found.append(
             ShaclResult(
                 str(focus), _name(shape), _SEVERITIES[str(report.value(result, SH.resultSeverity))],
                 _path(report, path),
-                str(report.value(result, SH.resultMessage) or ""),
+                str(message or ""),
                 None if value is None else str(value), None if component is None else _name(component),
+                message.language if isinstance(message, Literal) else None,
             )
         )  # fmt: skip
     return sorted(found, key=lambda result: [part or "" for part in result])

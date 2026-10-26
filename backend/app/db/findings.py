@@ -14,7 +14,7 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 from app.core.ids import new_id
-from app.db.runs import Stage, stage_iri
+from app.db.runs import STAGE_PREFIX, Stage, stage_iri
 from app.domain.l1 import Severity
 
 MOST_MESSAGE_SIGNS = 4000  # as the table holds them
@@ -25,11 +25,17 @@ _ADD = """
     INSERT INTO validation_finding (id, document_id, run_id, rule, severity, focus_id, path, message, details)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
-# The row a finding is about by its entity's kind, named by its wording or title; the stage of its run
+# The row a finding is about by its entity's kind, named by its wording or title - cut, and said to be
+# -; the stage of its run; the counts of all the document's findings beside each, so that one statement
+# reads both in one snapshot
 _ROWS = """
 SELECT f.rule, f.severity, replace(r.stage_iri, %(stages)s, ''), e.kind, f.focus_id,
-    left(coalesce(s.verbatim, n.original_title, n.code, sp.title, d.title), %(label)s), f.path, f.message,
-    f.details ->> 'unit'
+    CASE WHEN length(l.label) > %(label)s THEN left(l.label, %(label)s - 1) || '…' ELSE l.label END,
+    f.path, f.message, f.details ->> 'lang', f.details ->> 'unit',
+    (SELECT json_object_agg(c.severity, c.n) FROM (
+        SELECT severity, count(*) AS n FROM validation_finding
+        WHERE document_id = %(document)s GROUP BY severity
+    ) AS c)
 FROM validation_finding f
 JOIN entity e ON e.id = f.focus_id
 LEFT JOIN extraction_run r ON r.id = f.run_id
@@ -37,11 +43,12 @@ LEFT JOIN statement s ON s.id = f.focus_id
 LEFT JOIN node n ON n.id = f.focus_id
 LEFT JOIN specification sp ON sp.id = f.focus_id
 LEFT JOIN document d ON d.id = f.focus_id
+CROSS JOIN LATERAL (SELECT coalesce(s.verbatim, n.original_title, n.code, sp.title, d.title) AS label) AS l
 WHERE f.document_id = %(document)s
 ORDER BY array_position(%(severities)s::text[], f.severity), r.stage_iri, f.rule, f.created_at, f.id
 LIMIT %(most)s
 """
-_COUNTS = "SELECT severity, count(*) FROM validation_finding WHERE document_id = %s GROUP BY severity"
+_DROP_RULE = "DELETE FROM validation_finding WHERE document_id = %s AND rule = %s"
 # the findings of reading the model's answer for a package (details.unit) by the stages that read one
 _DROP_UNIT = """
 DELETE FROM validation_finding f USING extraction_run r
@@ -70,7 +77,8 @@ class Finding:
 class FindingRow:
     """A finding as the document's page lists it: ``stage`` its run's ("X5"), ``focus_kind`` the kind of
     the row it is about ("statement", "node", "document" …) and ``focus_label`` that row's wording or
-    title, where it has one; ``unit`` the work package it names."""
+    title, where it has one; ``message_lang`` the message's language where the stage knew it (SHACL's
+    German, "de"), else none - English; ``unit`` the work package it names."""
 
     rule: str
     severity: Severity
@@ -80,6 +88,7 @@ class FindingRow:
     focus_label: str | None
     path: str | None
     message: str
+    message_lang: str | None
     unit: str | None
 
 
@@ -98,15 +107,15 @@ async def findings_of(
         _ROWS,
         {
             "document": document_id,
-            "stages": stage_iri("X0").removesuffix("X0"),
+            "stages": STAGE_PREFIX,
             "label": LABEL_SIGNS,
             "severities": list(SEVERITIES),
             "most": most + 1,
         },
     )
-    rows = [FindingRow(*row) for row in await cursor.fetchall()]
-    cursor = await connection.execute(_COUNTS, (document_id,))
-    counted: dict[str, int] = dict(await cursor.fetchall())
+    found = await cursor.fetchall()
+    rows = [FindingRow(*row[:-1]) for row in found]
+    counted: dict[str, int] = found[0][-1] if found else {}  # none found: none to count
     return FindingsPage(
         {severity: counted.get(severity, 0) for severity in SEVERITIES}, rows[:most], len(rows) > most
     )
@@ -128,6 +137,12 @@ async def drop_unit_findings(
     cursor = await connection.execute(
         _DROP_UNIT, (document_id, [stage_iri(stage) for stage in stages], unit_key)
     )
+    return cursor.rowcount
+
+
+async def drop_rule_findings(connection: psycopg.AsyncConnection, document_id: UUID, rule: str) -> int:
+    """Drop the document's findings of ``rule``, whichever run found them; how many went."""
+    cursor = await connection.execute(_DROP_RULE, (document_id, rule))
     return cursor.rowcount
 
 

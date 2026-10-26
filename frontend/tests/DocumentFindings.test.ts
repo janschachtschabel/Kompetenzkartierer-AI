@@ -18,6 +18,7 @@ const WRONG: DocumentFinding = {
   focus: { kind: "statement", id: "s1", label: "Die Lernenden messen." },
   path: null,
   message: "the wording is not in the blocks its anchor names",
+  message_lang: null,
   unit: null,
 };
 const LOST: DocumentFinding = {
@@ -27,6 +28,7 @@ const LOST: DocumentFinding = {
   focus: { kind: "document", id: "d1", label: null },
   path: "$.statements[0].blockIds[0]",
   message: "a block the conversion does not hold",
+  message_lang: null,
   unit: "E1",
 };
 const ENGLISH: DocumentFinding = {
@@ -36,6 +38,7 @@ const ENGLISH: DocumentFinding = {
   focus: { kind: "document", id: "d1", label: null },
   path: null,
   message: "the Länder read differ from those asked",
+  message_lang: null,
   unit: null,
 };
 

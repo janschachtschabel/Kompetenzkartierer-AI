@@ -41,8 +41,10 @@ export interface DocumentFinding {
   focus: { kind: string; id: string; label: string | null };
   /** The property, or the place in the model's answer, where it names one. */
   path: string | null;
-  /** The server's: English, SHACL's German. */
+  /** The server's: English but where `message_lang` says otherwise. */
   message: string;
+  /** The message's language where the stage knew it - SHACL's German, "de" -; else English. */
+  message_lang: string | null;
   /** The work package it names, "E2". */
   unit: string | null;
 }

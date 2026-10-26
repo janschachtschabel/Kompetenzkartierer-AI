@@ -153,6 +153,8 @@ async def test_a_document_is_checked_in_a_child_and_its_findings_name_its_rows()
     assert ("shacl.StatementShape", "violation", statement["id"], "cur:addressee") in {
         (found.rule, found.severity, found.focus_id, found.path) for found in findings
     }
+    # the shape's message is German ("Aussage ohne Adressat."@de), and says so
+    assert {found.details.get("lang") for found in findings if found.path == "cur:addressee"} == {"de"}
 
 
 async def test_a_sound_document_has_no_violation() -> None:
@@ -169,7 +171,7 @@ def test_a_finding_focused_outside_the_rows_is_the_document_s() -> None:
     results = [
         ShaclResult(
             f"urn:uuid:{statement}", "StatementShape", "violation", "cur:addressee", "Kein Adressat.", None,
-            "MinCountConstraintComponent",
+            "MinCountConstraintComponent", "de",
         ),
         ShaclResult(outside, "ConceptLabelShape", "warning", None, "Ohne Label.", "x", None),
         ShaclResult(f"urn:uuid:{statement}", "StatementShape", "info", None, "", None, None),  # no message
@@ -183,7 +185,7 @@ def test_a_finding_focused_outside_the_rows_is_the_document_s() -> None:
     ]
     assert seen == [
         ("shacl.StatementShape", "violation", statement, "cur:addressee", "Kein Adressat.",
-         {"component": "MinCountConstraintComponent"}),
+         {"component": "MinCountConstraintComponent", "lang": "de"}),
         ("shacl.ConceptLabelShape", "warning", document, None, "Ohne Label.",
          {"focus": "https://w3id.org/wlo/curriculum/vocab#kind_content", "value": "x"}),
         ("shacl.StatementShape", "info", statement, None, "StatementShape", {}),  # a finding says something

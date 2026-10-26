@@ -1,7 +1,7 @@
 // A document's findings in words (DocumentFindings.vue): what a rule found, in German where the page
 // knows the rule - X5's checks and the reading of the model's answers, named alike at every stage that
-// reads one (tests/findingWords.test.ts) -, SHACL's message as it is (German already), any other as
-// the server's English, to be quoted; and the row it is about.
+// reads one (tests/findingWords.test.ts) -, a message the server says is German (SHACL's, where the
+// shape gives one) as it is, any other as the server's English, to be quoted; and the row it is about.
 import type { DocumentFinding, FindingSeverity } from "@/api";
 import { isolate } from "@/bidi";
 import { messages, t } from "@/i18n/de";
@@ -25,7 +25,7 @@ export function findingText(finding: DocumentFinding): { text: string; lang?: "e
   if (/^x\d$/.test(stage) && name && Object.hasOwn(RULES, name)) {
     return { text: t(`documents.findings.rules.${name}`) };
   }
-  if (stage === "shacl") return { text: finding.message };
+  if (finding.message_lang === "de") return { text: finding.message };
   return { text: finding.message, lang: "en" };
 }
 

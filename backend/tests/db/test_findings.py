@@ -125,15 +125,15 @@ async def test_a_document_s_findings_are_read_gravest_first_each_with_the_row_it
 
     assert page.rows == [
         FindingRow("x5.wording_not_found", "violation", "X5", "statement", statement,
-                   "Die Lernenden beschreiben Licht.", None, "the wording is not in the blocks", None),
+                   "Die Lernenden beschreiben Licht.", None, "the wording is not in the blocks", None, None),
         FindingRow("x4.unknown_block", "warning", "X4", "document", document, None, "statements[0]",
-                   "a block id nobody showed", "E2"),  # an earlier stage first, whatever its rule
+                   "a block id nobody showed", None, "E2"),  # an earlier stage first, whatever its rule
         FindingRow("shacl.StatementPlausibilityShape", "warning", "X5", "statement", statement,
-                   "Die Lernenden beschreiben Licht.", None, "Fundstelle unscharf gefunden.", None),
+                   "Die Lernenden beschreiben Licht.", None, "Fundstelle unscharf gefunden.", None, None),
         FindingRow("x5.retired_value", "warning", "X5", "node", node, "Optik", "cur:nodeType",
-                   "a value the vocabularies have retired", None),
+                   "a value the vocabularies have retired", None, None),
         FindingRow("x5.unit_without_statements", "info", "X5", "document", document, None, None,
-                   "a unit read whole holds no statement", "E3"),
+                   "a unit read whole holds no statement", None, "E3"),
     ]  # fmt: skip
     assert (page.counts, page.truncated) == ({"violation": 1, "warning": 3, "info": 1}, False)
 
@@ -164,7 +164,27 @@ async def test_a_finding_s_label_is_cut_to_what_a_list_shows(
 
     [row] = (await findings_of(connection, made["document"])).rows
 
-    assert row.focus_label == ("Licht " * 60)[:160]
+    assert row.focus_label == ("Licht " * 60)[:159] + "…"  # cut, and said to be
+    assert len(row.focus_label) == 160
+
+
+async def test_a_finding_s_message_says_its_language_where_the_stage_knew_it(
+    connection: psycopg.AsyncConnection, made: dict[str, Any], database_url: str
+) -> None:
+    # SHACL's own messages are German where the shapes give one (sh:message "…"@de), pyshacl's English
+    _, statement, _, x5 = a_tree(database_url, made)
+    german = Finding(
+        "shacl.StatementShape", "violation", statement, "Aussage ohne Adressat.", details={"lang": "de"}
+    )
+    english = Finding("shacl.StatementShape", "warning", statement, "Less than 1 values on cur:obligation")
+    await add_findings(connection, made["document"], x5, [german, english])
+
+    rows = (await findings_of(connection, made["document"])).rows
+
+    assert [(row.message, row.message_lang) for row in rows] == [
+        ("Aussage ohne Adressat.", "de"),
+        ("Less than 1 values on cur:obligation", None),
+    ]
 
 
 async def test_a_stage_s_earlier_findings_are_dropped_and_every_other_kept(

@@ -36,6 +36,7 @@ function finding(changes: Partial<DocumentFinding> = {}): DocumentFinding {
     focus: { kind: "statement", id: "s1", label: "Die Lernenden messen." },
     path: null,
     message: "the wording is not in the blocks its anchor names",
+    message_lang: null,
     unit: null,
     ...changes,
   };
@@ -61,10 +62,17 @@ describe("a finding in words", () => {
     expect(findingText(finding({ rule: "x1.unknown_block" }))).toEqual({ text: t("documents.findings.rules.unknown_block") });
   });
 
-  it("quotes SHACL's German message as it is, and another message as the server's English", () => {
-    const shacl = finding({ rule: "shacl.StatementShape", message: "Eine Aussage braucht genau einen Wortlaut." });
+  it("says a message in German where the server says it is, and quotes any other as English", () => {
+    // SHACL's own messages are German where the shapes give one; pyshacl writes its own in English
+    const shacl = finding({
+      rule: "shacl.StatementShape",
+      message: "Eine Aussage braucht genau einen Wortlaut.",
+      message_lang: "de",
+    });
+    const generic = finding({ rule: "shacl.StatementShape", message: "Less than 1 values on cur:obligation" });
 
     expect(findingText(shacl)).toEqual({ text: "Eine Aussage braucht genau einen Wortlaut." });
+    expect(findingText(generic)).toEqual({ text: "Less than 1 values on cur:obligation", lang: "en" });
     expect(findingText(finding({ rule: "x1.regions_differ", message: "the Länder read differ" }))).toEqual({
       text: "the Länder read differ",
       lang: "en",

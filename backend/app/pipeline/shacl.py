@@ -71,6 +71,8 @@ def as_findings(results: Sequence[ShaclResult], document_id: UUID) -> list[Findi
             details["focus"] = result.focus
         if result.value is not None:
             details["value"] = result.value
+        if result.lang is not None and result.message:  # the page quotes a message without as English
+            details["lang"] = result.lang
         findings.append(
             Finding(
                 f"shacl.{result.shape}", cast(Severity, result.severity), row or document_id,

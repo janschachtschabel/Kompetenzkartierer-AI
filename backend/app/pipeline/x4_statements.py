@@ -25,7 +25,7 @@ import psycopg
 
 from app.conversion.base import Block
 from app.db.documents import Document
-from app.db.findings import Finding, add_findings
+from app.db.findings import Finding, add_findings, drop_rule_findings
 from app.db.runs import RunStart, done_stages, finish_run, lock_for_stage, stage_result, start_run
 from app.db.units import UnitTaken, done_units
 from app.jobs.context import JobContext
@@ -172,6 +172,8 @@ class _Units:
             await hold_lease(connection, job)
             if await lock_for_stage(connection, document.id, "X4"):
                 raise Superseded
+            # every unit answered now: an earlier run's word that some were not is no longer true
+            await drop_rule_findings(connection, document.id, "x4.unanswered")
             done = await done_units(connection, document.id)
             result = {
                 "units": self.total,

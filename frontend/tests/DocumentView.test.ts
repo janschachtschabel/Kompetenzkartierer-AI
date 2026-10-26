@@ -40,6 +40,7 @@ const REPAIRABLE: FindingsPage = {
       focus: { kind: "statement", id: "s1", label: "Die Lernenden messen." },
       path: null,
       message: "the wording is not in the blocks its anchor names",
+      message_lang: null,
       unit: null,
     },
   ],

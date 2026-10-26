@@ -188,6 +188,8 @@ async def test_a_unit_answered_for_another_stays_open_and_a_new_job_asks_it_alon
     assert sorted(model.units) == ["E2", "E3", "E3", "E4"]
     assert [key for key, _, _ in await units_done(connection, document)] == ["E2", "E3", "E4"]
     assert [outcome for outcome, _ in await x4_runs(connection, document)] == ["failed", "done"]
+    # E3 answered now: the finding that it was not says nothing true of the document any more
+    assert await rows(connection, "SELECT rule FROM validation_finding WHERE rule = 'x4.unanswered'") == []
 
 
 async def test_a_lease_lost_while_a_unit_is_asked_ends_the_units_and_writes_none_of_it(

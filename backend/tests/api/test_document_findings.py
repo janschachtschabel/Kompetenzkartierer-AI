@@ -43,25 +43,30 @@ def test_a_document_s_findings_are_read_gravest_first_with_the_rows_they_are_abo
     finding(url, document, x5, "x5.retired_value", "warning", node, path="cur:nodeType")
     finding(url, document, x4, "x4.unknown_block", "warning", document, details={"unit": "E1"})
     finding(url, document, x5, "x5.wording_not_found", "violation", statement, message="not in the blocks")
+    finding(url, document, x5, "shacl.StatementShape", "violation", statement,
+            message="Aussage ohne Adressat.", details={"lang": "de"})  # fmt: skip
 
     answer = client.get(f"/api/v1/documents/{document}/findings", headers=header)
 
     assert answer.status_code == 200, answer.text
     assert answer.json() == {
-        "counts": {"violation": 1, "warning": 2, "info": 1},
+        "counts": {"violation": 2, "warning": 2, "info": 1},
         "findings": [
+            {"rule": "shacl.StatementShape", "severity": "violation", "stage": "X5",
+             "focus": {"kind": "statement", "id": str(statement), "label": "Die Lernenden messen."},
+             "path": None, "message": "Aussage ohne Adressat.", "message_lang": "de", "unit": None},
             {"rule": "x5.wording_not_found", "severity": "violation", "stage": "X5",
              "focus": {"kind": "statement", "id": str(statement), "label": "Die Lernenden messen."},
-             "path": None, "message": "not in the blocks", "unit": None},
+             "path": None, "message": "not in the blocks", "message_lang": None, "unit": None},
             {"rule": "x4.unknown_block", "severity": "warning", "stage": "X4",
              "focus": {"kind": "document", "id": document, "label": None},
-             "path": None, "message": "x4.unknown_block", "unit": "E1"},
+             "path": None, "message": "x4.unknown_block", "message_lang": None, "unit": "E1"},
             {"rule": "x5.retired_value", "severity": "warning", "stage": "X5",
              "focus": {"kind": "node", "id": str(node), "label": "Optik"},
-             "path": "cur:nodeType", "message": "x5.retired_value", "unit": None},
+             "path": "cur:nodeType", "message": "x5.retired_value", "message_lang": None, "unit": None},
             {"rule": "x5.unit_without_statements", "severity": "info", "stage": "X5",
              "focus": {"kind": "document", "id": document, "label": None},
-             "path": None, "message": "x5.unit_without_statements", "unit": "E3"},
+             "path": None, "message": "x5.unit_without_statements", "message_lang": None, "unit": "E3"},
         ],
         "truncated": False,
         "repairable": [],  # X2 parted the document into no packages
