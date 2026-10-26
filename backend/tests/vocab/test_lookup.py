@@ -14,6 +14,7 @@ from app.vocab.lookup import (
     REGIONS,
     by_notation,
     concept,
+    concept_details,
     concept_texts,
     cues_for,
     current_release,
@@ -247,3 +248,30 @@ async def test_a_scheme_s_active_values_are_found_by_their_notations(
     assert forms["unknown"] == CV + "lf_unknown"
     assert "statute" not in forms
     assert await notations_of(connection, CV + "NoSuchScheme") == {}
+
+
+async def test_a_concept_s_details_are_read_as_a_form_offers_them(
+    connection: psycopg.AsyncConnection,
+) -> None:
+    # a node type: its definition, what it is not for, its examples; a document type: its other names
+    staged, area, plan = SCHOOL + "Stufenabschnitt", SCHOOL + "Kompetenzbereich", SCHOOL + "dt-Lehrplan"
+    await connection.execute("UPDATE vocab_concept SET retired_in = 1 WHERE iri = %s", (area,))
+
+    found = await concept_details(connection, [staged, area, plan, CUR + "NoSuchConcept"])
+
+    assert sorted(found) == sorted([staged, area, plan])  # an unknown IRI is left out, a retired one read
+    stage = found[staged]
+    assert (stage.label, stage.broader, stage.retired) == ("Stufenabschnitt", (CV + "fn_grouping",), False)
+    assert stage.definition is not None and stage.definition.startswith("Gliederung nach Jahrgang")
+    assert stage.delimitation is not None and stage.delimitation.endswith(
+        "(BE/BB): die sind Niveau, nicht Zeit."
+    )
+    assert stage.examples == (
+        "„Jahrgangsstufe 7“ (BY)",
+        "„Standards für inhaltsbezogene Kompetenzen Klassen 5/6“ (BW)",
+    )
+    assert (stage.alt_labels, stage.note) == ((), None)
+    competence = found[area]
+    assert competence.note is not None and competence.note.startswith("In Matrixlayouts")
+    assert competence.retired is True
+    assert found[plan].alt_labels == ("Fachlehrplan",)

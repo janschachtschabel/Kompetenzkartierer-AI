@@ -17,6 +17,7 @@ from psycopg.rows import dict_row
 from app.domain.lexicon import Cue
 
 CUR = "https://w3id.org/wlo/curriculum/core#"
+SKOS = "http://www.w3.org/2004/02/skos/core#"
 REGIONS = "https://w3id.org/wlo/curriculum/region/Regions"
 _VALUE_CLASSES = {
     "node_types": CUR + "NodeType",
@@ -48,6 +49,25 @@ class ConceptText:
     definition: str | None
     broader: tuple[str, ...]
     depth: str | None
+
+
+@dataclass(frozen=True)
+class ConceptDetails:
+    """A concept as a form offers it to choose: its label, other labels, definition, note
+    (``skos:scopeNote``), what it is not for (``cur:delimitation``) and examples (``cur:positiveExample``,
+    ``skos:example``) in one language (any other where that has none), the core values it refines,
+    and whether it is retired."""
+
+    iri: str
+    notation: str | None
+    label: str
+    alt_labels: tuple[str, ...]
+    definition: str | None
+    note: str | None
+    delimitation: str | None
+    examples: tuple[str, ...]
+    broader: tuple[str, ...]
+    retired: bool
 
 
 @dataclass(frozen=True)
@@ -89,6 +109,11 @@ SELECT c.iri, c.notation, c.pref_labels, c.definitions, c.broader, d.notation AS
 FROM vocab_concept c
 LEFT JOIN vocab_concept d ON d.iri = c.properties -> %(depth)s -> 0 ->> 'iri'
 WHERE c.iri = ANY (%(iris)s)
+"""
+_CONCEPT_DETAILS = """
+SELECT iri, notation, pref_labels, alt_labels, definitions, broader, properties,
+    retired_in IS NOT NULL AS retired
+FROM vocab_concept WHERE iri = ANY (%s)
 """
 _ANCESTORS = """
 WITH RECURSIVE up (iri, broader) AS (
@@ -197,6 +222,51 @@ async def concept_texts(
         )
         for row in rows
     }
+
+
+async def concept_details(
+    connection: psycopg.AsyncConnection, iris: Collection[str], language: str = "de"
+) -> dict[str, ConceptDetails]:
+    """The concepts of these IRIs as a form offers them, retired or not; an unknown IRI is left out."""
+    async with connection.cursor(row_factory=dict_row) as cursor:
+        await cursor.execute(_CONCEPT_DETAILS, (list(iris),))
+        rows = await cursor.fetchall()
+    found = {}
+    for row in rows:
+        properties = row["properties"]
+        notes = _literals(properties.get(SKOS + "scopeNote", []), language)
+        delimitations = _literals(properties.get(CUR + "delimitation", []), language)
+        examples = [*properties.get(CUR + "positiveExample", []), *properties.get(SKOS + "example", [])]
+        found[row["iri"]] = ConceptDetails(
+            iri=row["iri"],
+            notation=row["notation"],
+            label=_in(row["pref_labels"], language) or row["notation"] or row["iri"],
+            alt_labels=tuple(_all_in(row["alt_labels"], language)),
+            definition=_in(row["definitions"], language),
+            note=notes[0] if notes else None,
+            delimitation=delimitations[0] if delimitations else None,
+            examples=tuple(_literals(examples, language)),
+            broader=tuple(row["broader"]),
+            retired=row["retired"],
+        )
+    return found
+
+
+def _all_in(by_language: dict[str, list[str]], language: str) -> list[str]:
+    """The texts in ``language``, else those in the first other one there is."""
+    if language in by_language:
+        return list(by_language[language])
+    return next((list(by_language[other]) for other in sorted(by_language)), [])
+
+
+def _literals(values: list[dict[str, str]], language: str) -> list[str]:
+    """The literal values (as the loader keeps them: value, lang) in ``language`` or of none, else
+    those of the first other language there is."""
+    by_language: dict[str, list[str]] = {}
+    for value in values:
+        if "value" in value:
+            by_language.setdefault(value.get("lang", language), []).append(value["value"])
+    return _all_in(by_language, language)
 
 
 def _in(by_language: dict[str, str], language: str) -> str | None:
