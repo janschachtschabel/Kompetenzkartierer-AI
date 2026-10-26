@@ -142,8 +142,9 @@ ungültig.
   Admins, den Fehlercode des letzten Jobs, `extraction.error_code`, alle Leser; `units`: die
   Arbeitspakete mit Stand `done` samt Zahl der Aussagen, `open`, `frame` oder `none`, vor X2 leer;
   `findings`: die Befunde der Stufen, Verstöße zuerst, je mit Art, Wortlaut oder Titel der Zeile,
-  die sie betreffen, und dem Arbeitspaket, das sie nennen – höchstens 500, die Zahlen je Schwere
-  über alle). Je Dokument wartet oder läuft höchstens
+  die sie betreffen (gekürzt mit „…“), dem Arbeitspaket, das sie nennen, und der Sprache der
+  Meldung, wo die Stufe sie kennt (`message_lang`: „de“ für die deutschen Meldungen der SHACL-Formen,
+  sonst Englisch) – höchstens 500, die Zahlen je Schwere über alle). Je Dokument wartet oder läuft höchstens
   ein Extraktionsjob (`job.unique_key`, Migration 0018): ein Start dabei gibt den laufenden zurück
   (200); ebenso ein neues Dokument desselben Eintrags und derselben Konvertierung, solange eines
   des Kontos daraus extrahiert wird – dann 200 mit diesem (`made: false`).
@@ -209,14 +210,19 @@ ungültig.
   Aussage, die X4 oder X6 schrieb und die seither niemand angefasst hat, oder eine Warnung oder ein
   Verstoß beim Lesen, der das Paket nennt (außer `*.pattern_timeout`) –, je Job einmal, je Paket
   höchstens zweimal (`extraction_unit.repairs`, Migration 0020). Hinweise, Warnungen der
-  SHACL-Prüfung und Befunde an Knoten oder am Dokument sind kein Anlass. Die Frage ist die von X4
-  hinter demselben Präfix, dazu die Befunde in Worten und die Wortlaute, die die Redaktion hält
-  (Promptversion `x6-repair/1`). Die Antwort ersetzt die unangetasteten Aussagen des Pakets;
-  bestätigte, verworfene und von Hand geschriebene bleiben und kommen nicht doppelt. Eine Antwort
-  außerhalb des Schemas lässt das Paket, wie es war, zählt aber als Reparatur (Warnung
-  `x6.unanswered`). Danach prüft X5 das Dokument erneut, seine Befunde ersetzen die des letzten
-  X5 – auch wenn das Budget X6 beendet hat, bevor der Job mit `budget_exhausted` endet. Ist nichts
-  mehr zu reparieren, fragt der Job kein Modell. Fortschritt `repair_units` (fertig/gesamt); endet
+  SHACL-Prüfung und die übrigen Befunde an Knoten oder am Dokument (etwa `x5.shacl_timeout`) sind
+  kein Anlass. Die Frage ist die von X4 hinter demselben Präfix, dazu die Befunde in Worten – mit
+  dem Block, Wert oder Schlüssel, der falsch war – und die Wortlaute, die die Redaktion hält oder
+  verworfen hat (Promptversion `x6-repair/1`). Die Antwort ersetzt die unangetasteten Aussagen des
+  Pakets; bestätigte, verworfene und von Hand geschriebene bleiben und kommen nicht doppelt, ein
+  Verweis auf Inhalt geht dann auf die gehaltene Aussage. Eine Antwort außerhalb des Schemas lässt
+  das Paket, wie es war, zählt aber als Reparatur (Warnung `x6.unanswered`), ebenso eine Antwort
+  ohne Aussage für ein Paket, das welche hat (Warnung `x6.empty_answer`). Danach prüft X5 das
+  Dokument erneut, seine Befunde ersetzen die des letzten X5 – auch wenn das Budget X6 beendet hat,
+  bevor der Job mit `budget_exhausted` endet. Ein neuer Versuch fragt kein Paket, das der Job schon
+  gefragt hat. Endet eine Reparatur, bevor X5 geprüft hat, was sie schrieb (abgebrochen, Versuche
+  aufgebraucht), prüft die nächste Extraktion („Extraktion fortsetzen“) oder Reparatur das
+  Dokument erneut. Ist nichts mehr zu reparieren, fragt der Job kein Modell. Fortschritt `repair_units` (fertig/gesamt); endet
   mit `document_not_checked`, wo X5 noch aussteht. In der Oberfläche bietet der Abschnitt
   „Befunde“ des Dokuments dem Eigentümer den Knopf „Reparieren“ an; ihr Stand steht unter
   „Extraktion“.

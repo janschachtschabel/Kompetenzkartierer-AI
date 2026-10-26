@@ -735,8 +735,22 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   „Extraktion“, als „Reparatur“ benannt (`documentJobs.ts`), auch in der Dokumentliste des Eintrags.
 - **Abweichung von 8.6.** „0–2 Aufrufe“ gilt je Paket über alle Reparaturen, nicht je Job; ein Job
   fragt jedes Paket höchstens einmal. Zusätzlich zur Tabelle: die Oberfläche für Befunde und Start.
+- **Nach dem Review (26.10.).** Ein neuer Versuch eines Reparaturjobs fragt kein Paket, das ein
+  früherer Versuch schrieb oder in einem Befund nannte (`x6_units.asked_by`). X5 ist geschuldet,
+  sobald ein X6-Lauf – gleich wie er endete – nach dem letzten fertigen X5 begann
+  (`runs.x5_owed`): Die Reparatur prüft dann, auch ohne Paket zu fragen, und `extract.run` prüft
+  ein Dokument, dessen Reparatur vor ihrer Prüfung endete. Eine Antwort ohne Aussage für ein Paket
+  mit unangetasteten Aussagen lässt es stehen (`x6.empty_answer`). Ein Verweis auf Inhalt, den die
+  Antwort zugunsten einer gehaltenen, nicht verworfenen Aussage auslässt, geht auf diese. Die
+  Befunde nennen die Sprache ihrer Meldung (`message_lang`, aus `sh:message`), ein gekürztes Label
+  endet mit „…“, Liste und Zahlen kommen aus einer Abfrage; `x4.unanswered` fällt weg, sobald X4
+  fertig ist. Die Oberfläche bietet die Reparatur erst neben frisch gelesenen Befunden an und nennt
+  einen zurückgegebenen Job nach seiner Art.
 - **Offen für Paket 9.** Befunde je Knoten im Baum und Befundfilter; ein Befund lässt sich nicht
-  quittieren; die Bindung des X5-Ankers an den geprüften Wortlaut (8a).
+  quittieren; die Bindung des X5-Ankers an den geprüften Wortlaut (8a). Die Zuordnung einer Aussage
+  zu ihrem Paket über die Position setzt voraus, dass das Verschieben einer Aussage durch die
+  Redaktion ihre Revision erhöht, und dass neue Aussagen nicht über das Ende ihres Teils hinaus
+  rücken. Gelöschte Aussagen lassen ihre `entity`-Zeile stehen (wie gelöschte Dokumente).
 
 ### Paket 9: Editor, Redaktion und Festschreiben (8 PT)
 
