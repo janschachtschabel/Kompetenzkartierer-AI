@@ -771,6 +771,49 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
 | 9.9 | Quellenbeleg | `components/SourcePane.vue` (Blöcke der Seite neben dem Formular, genannte markiert, Blockauswahl als Fundstelle), `SourceQuote.vue` + `sourceAnchor.ts` (Kopie) | Fundart in Worten; Markierung nicht nur farbig; axe ohne Befund | `vitest run` |
 | 9.10 | Festschreiben in der Oberfläche | `FreezeDialog.vue`, `FrozenNotice.vue` (aus `RunFreezeDialog.vue`/`FrozenRunNotice.vue`), Befunde je Knoten, Quelltyp, Lizenz und Abrufkette in der Dokumentansicht | Fokus auf „Abbrechen"; danach nur Lesen und „Als Entwurf kopieren" | `vitest run`, Browser-Probe |
 
+**Nachtrag 9a – Editor im Backend (26.10.)**
+
+- **Schnitt.** Paket 9 ist geteilt: 9a Bearbeiten im Backend (9.1–9.5, dieser Nachtrag), 9b
+  Festschreiben im Backend (9.6), 9c Oberfläche bearbeiten (9.7–9.9), 9d Oberfläche festschreiben
+  (9.10). Nutzerentscheidungen: Festschreiben trotz Verstößen nur mit Bestätigung; Prüfstand,
+  Festschreiben und Entwurfskopie nur Redaktion/Admin; „Löschen“ einer Aussage von Modell oder Regel
+  heißt Verwerfen; jede inhaltliche Änderung setzt den Prüfstand auf „vorgeschlagen“.
+- **Formular (9.1).** Feldregister im Code (`app/vocab/forms.py`), gegen `cur-shapes.ttl` getestet;
+  Werte nur aktiv, Knotentypen und Unterarten mit Texten (`lookup.concept_details`). Die Feldprüfung
+  ist rein (`app/vocab/form_values.py`, `FieldError` mit Feld und Grund); das Paar Knotentyp/Funktion
+  bzw. Unterart/Art wird nur geprüft, wo eine Änderung eines der beiden nennt.
+- **Baum (9.2).** `GET /documents/{id}/tree` in einem Snapshot: Felder unter den Formularschlüsseln
+  (`fields`), Fundstellen von Knoten und Aussagen (Blöcke in Dokumentreihenfolge), Befunde je Knoten
+  und Schwere (an ihm, seinen Aussagen und deren Fundstellen), Zähler je Prüfstand (`REVIEW_STATUSES`),
+  `editable`/`reviewable`. Test `tests/api/test_document_tree.py` statt `test_tree.py`.
+- **Bearbeiten (9.3/9.4).** Abweichend von der Tabelle: `POST /documents/{id}/nodes` (`parent_id`)
+  und `POST /nodes/{id}/statements` legen an; PATCH/DELETE wie geplant, DELETE mit
+  `?expected_revision=`. Jeder Schreibweg nimmt `lock_tree`, prüft dann Festschreibung (409 `frozen`,
+  der Trigger folgt in 9b) und offenen Job (409 `job_open`) – damit entfallen das X5-Ankerrennen (8a)
+  und Redaktionsänderungen neben einer Stufe durch Konstruktion. Revision je Zeile (409
+  `stale_revision` mit `details.current`); eine Änderung ohne geänderten Wert lässt die Zeile stehen.
+  Neuer Titel oder Wortlaut: Fundstellen mit Blöcken wieder ungeprüft, blocklose `notFound` bleiben.
+  Verworfen statt gelöscht wird jede Aussage außer der von Hand geschriebenen (`orig_human` und kein
+  Lauf). Gelöschte Knoten nehmen Unterbaum und Befunde mit; `entity`-Zeilen bleiben. Keine
+  Verschiebung in M1 (die Paketzuordnung über `(Position − 1) // PART` bleibt so gültig). Alle
+  Abfragen einer Schreibroute laufen in einer Transaktion (Pool-Verbindungen sind nicht autocommit).
+  Migration `0021_document_edited_at`.
+- **Prüfstand (9.5).** `POST /documents/{id}/review` mit Kurznamen (`proposed`/`confirmed`/
+  `rejected`), alles oder nichts (409 mit `details.stale`), Herkunft bleibt. Eine Aussage zu oder von
+  „verworfen“ setzt `edited_at`, weil verworfene Aussagen nicht mehr zum Lehrplan gehören: Kern-Export
+  und X5 lassen sie aus.
+- **Erneut prüfen (zusätzlich).** Job `extract.check` (X5 erneut, kein Modelljob) und
+  `POST /documents/{id}/check`; `x5_owed` gilt auch nach einer Bearbeitung seit dem letzten fertigen X5.
+- **Knoten weg (G6).** X4 und X6 prüfen nach der Baumsperre, ob ihr Knoten steht, sonst
+  `PermanentError("node_gone")` statt FK-Fehler und Wiederholungen; eine neue Reparatur lässt das Paket
+  aus.
+- **Offen.** (1) Wurde ein Knoten mit noch offenem X4-Paket gelöscht, während kein Job lief (eine
+  abgebrochene Extraktion), endet jede Fortsetzung mit `node_gone`: Löschen vor fertigem X4 abweisen
+  oder das Paket auslassen – Nutzerfrage. (2) Entwurfskopien (9b) haben keine Läufe: „von Hand“ muss
+  dort anders erkannt werden, sonst würde eine bearbeitete Modell-Aussage gelöscht statt verworfen.
+  (3) Bearbeitungsrecht = Leserecht in M1 (`simplify:`), M5 braucht eine eigene Prüfung.
+  (4) Herkunft je Zeile, nicht je Feld.
+
 ### Paket 10: Lexikon aus der Länderrecherche mit Stichprobe (3 PT)
 
 | # | Aufgabe | Dateien | Test zuerst | Nachweis |
