@@ -11,8 +11,9 @@ content's new position - by the held one's where its wording is held and not rej
 the answer lost. The findings of reading the package's earlier answers make way for this reading's,
 and the mark names the repair and counts it (app/db/units.py).
 
-An answer of no statement for a package the model wrote statements to lost them rather than found
-none - it was asked for all of them -: nothing of it is written (``EmptyAnswer``).
+An answer that brings no statement to write for a package the model wrote statements to - none, none
+read, or only the wordings that stay, which it was told not to bring - lost them rather than found none
+(it was asked for all of them): nothing of it is written (``EmptyAnswer``).
 """
 
 from dataclasses import dataclass
@@ -79,17 +80,17 @@ async def rewrite_unit(
         )  # fmt: skip
         found = await cursor.fetchall()  # mine: the model's, nobody's since
         untouched = [row_id for row_id, _, _, mine, _ in found if mine]
-        if untouched and not read.statements:
-            raise EmptyAnswer(unit.package.key)
         held = {hashed for _, _, hashed, mine, _ in found if not mine}
+        hashes = [text_hash(item.draft.verbatim) for item in read.statements]
+        kept = [index for index, hashed in enumerate(hashes) if hashed not in held]
+        if untouched and not kept:
+            raise EmptyAnswer(unit.package.key)
         standing: dict[str, int] = {}  # a held wording not rejected, at its first position
         for _, position, hashed, mine, rejected in found:
             if not (mine or rejected):
                 standing.setdefault(hashed, position)
         await drop_statements(connection, document.id, untouched)
         start = max((position for _, position, _, _, _ in found), default=unit.first - 1) + 1
-        hashes = [text_hash(item.draft.verbatim) for item in read.statements]
-        kept = [index for index, hashed in enumerate(hashes) if hashed not in held]
         place = {index: start + at for at, index in enumerate(kept)} | {
             index: standing[hashed] for index, hashed in enumerate(hashes) if hashed in standing
         }

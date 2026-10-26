@@ -49,7 +49,7 @@ def test_the_task_names_the_package_as_x4_s_does_then_what_was_wrong_and_what_st
         "- Ein Block außerhalb der Einheit: p2-b9.",
         "- Eine Kennung, die die Auswahlliste nicht hat.",
         "- Die letzte Antwort hatte nicht die Form des Schemas oder galt einer anderen Einheit.",
-        "- Die letzte Antwort enthielt keine Aussage, obwohl die Einheit welche hat.",
+        "- Die letzte Antwort enthielt keine neue lesbare Aussage, obwohl die Einheit welche hat.",
         "- something no word was found for",
     ):
         assert line in task

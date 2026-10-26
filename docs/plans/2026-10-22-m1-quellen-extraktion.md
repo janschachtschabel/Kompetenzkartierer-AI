@@ -745,7 +745,11 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   Befunde nennen die Sprache ihrer Meldung (`message_lang`, aus `sh:message`), ein gekürztes Label
   endet mit „…“, Liste und Zahlen kommen aus einer Abfrage; `x4.unanswered` fällt weg, sobald X4
   fertig ist. Die Oberfläche bietet die Reparatur erst neben frisch gelesenen Befunden an und nennt
-  einen zurückgegebenen Job nach seiner Art.
+  einen zurückgegebenen Job nach seiner Art. Nachprüfung: Als leer gilt eine Antwort, die nichts zu
+  schreiben bringt (keine, keine lesbare oder nur gehaltene Aussagen); ihre Lesebefunde bleiben mit
+  `x6.empty_answer` stehen, und der Befund wird erst geschrieben, wenn die Verbindung des Pakets
+  zurück ist (je Paket eine Verbindung). `units` im Ergebnis des Jobs zählt die Pakete, die er über
+  alle Versuche fragte.
 - **Offen für Paket 9.** Befunde je Knoten im Baum und Befundfilter; ein Befund lässt sich nicht
   quittieren; die Bindung des X5-Ankers an den geprüften Wortlaut (8a). Die Zuordnung einer Aussage
   zu ihrem Paket über die Position setzt voraus, dass das Verschieben einer Aussage durch die

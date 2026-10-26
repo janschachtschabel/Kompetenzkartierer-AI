@@ -4,10 +4,12 @@ prefix -, writes them anew without touching what the editors hold, and then X5 c
 again, its findings replacing the ones before. A model stands in (FunctionModel)."""
 
 import re
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 import pytest
+from psycopg_pool import AsyncConnectionPool
 from pydantic_ai.messages import ModelMessage, ModelResponse
 from pydantic_ai.models.function import AgentInfo
 
@@ -23,6 +25,7 @@ from app.usage.ledger import usage_of
 from tests.pipeline.test_run import BODY, CV, Model, a_document, a_job, a_statement, context_of, rows, setup
 from tests.pipeline.test_x3_frame import prompt_of
 from tests.pipeline.test_x4_statements import FIELDS, with_concurrency
+from tests.support import make_settings
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 __all__ = ["setup"]  # the fixture, shared with test_run
@@ -255,6 +258,48 @@ async def test_an_answer_of_no_statement_leaves_its_package_counts_the_repair_an
     assert await rows(connection, "SELECT repairs FROM extraction_unit WHERE unit_key = 'E3'") == [(1,)]
 
 
+async def test_an_answer_none_of_whose_statements_reads_leaves_its_package_and_names_what_was_wrong(
+    setup: Any, tmp_path: Path, database_url: str
+) -> None:
+    # the reading found the answer's statements at blocks the document lacks: the next repair is told so
+    pool, connection = setup
+    document = await extracted(setup, tmp_path, database_url, invent=("E3",))
+    lost = {"unitKey": "E3", "statements": [a_statement("p99-b1", "Aussage E3")], "checkedAbsent": []}
+
+    await x6_repair.repair_document(
+        context_of(pool, tmp_path, Quoting(units={"E3": lost}), database_url),
+        await a_repair(connection, document),
+    )
+
+    assert "Aussage E3" in await wordings(connection, document)
+    assert await rows(
+        connection,
+        "SELECT f.rule, f.details ->> 'unit', f.details ->> 'block' FROM validation_finding f"
+        " JOIN extraction_run r ON r.id = f.run_id WHERE r.stage_iri = %s ORDER BY 1",
+        CV + "stage_X6",
+    ) == [
+        ("x6.empty_answer", "E3", None),
+        ("x6.statement_without_block", "E3", None),
+        ("x6.unknown_block", "E3", "p99-b1"),
+    ]
+
+
+async def test_a_repair_asks_with_one_connection_a_package_also_where_its_answer_is_empty(
+    setup: Any, tmp_path: Path, database_url: str
+) -> None:
+    # the gate gives each package one connection: none is taken twice, so a pool of one serves
+    _, connection = setup
+    document = await extracted(setup, tmp_path, database_url, invent=("E2", "E3"))
+    empty = {"unitKey": "E3", "statements": [], "checkedAbsent": []}
+    async with AsyncConnectionPool(database_url, min_size=1, max_size=1, timeout=3, open=False) as alone:
+        context = context_of(alone, tmp_path, Quoting(units={"E3": empty}), database_url)
+        context = replace(context, settings=make_settings(database_url=database_url, db_pool_max_size=1))
+
+        made = await x6_repair.repair_document(context, await a_repair(connection, document))
+
+    assert made == {"document_id": str(document.id), "units": 2, "checked": True}
+
+
 async def test_a_budget_spent_amid_the_repair_still_checks_what_was_repaired(
     setup: Any, tmp_path: Path, database_url: str
 ) -> None:
@@ -304,7 +349,7 @@ async def test_an_attempt_after_a_break_checks_what_its_repair_wrote_and_asks_no
     made.append(await x6_repair.repair_document(context_of(pool, tmp_path, again, database_url), job))
 
     assert again.units == []
-    assert made == [{"document_id": str(document.id), "units": 1, "checked": True}] * 2  # X6's, done before
+    assert made == [{"document_id": str(document.id), "units": 1, "checked": True}] * 2  # what the job asked
     assert [(stage, outcome) for stage, outcome, _ in await runs_of(connection, document)] == [
         ("X5", "done"), ("X6", "done"), ("X5", "done"),
     ]  # fmt: skip
@@ -364,7 +409,11 @@ async def test_an_attempt_after_x6_broke_off_asks_no_package_again_and_checks_wh
     assert [(stage, outcome) for stage, outcome, _ in await runs_of(connection, document)] == [
         ("X5", "done"), ("X6", "failed"), ("X5", "done"),
     ]  # fmt: skip
-    assert made == {"document_id": str(document.id), "units": 0, "checked": True}
+    assert made == {
+        "document_id": str(document.id),
+        "units": 2,
+        "checked": True,
+    }  # asked by the attempt before
 
 
 async def test_a_repair_ended_before_its_check_leaves_the_next_extraction_to_check_the_document(
@@ -451,7 +500,7 @@ async def test_an_attempt_after_the_budget_s_check_checks_what_it_repaired_then(
     assert [(stage, outcome) for stage, outcome, _ in await runs_of(connection, document)] == [
         ("X5", "done"), ("X6", "budget_exhausted"), ("X5", "done"), ("X6", "done"), ("X5", "done"),
     ]  # fmt: skip
-    assert made == {"document_id": str(document.id), "units": 1, "checked": True}
+    assert made == {"document_id": str(document.id), "units": 2, "checked": True}  # E2 before, E3 now
 
 
 async def test_a_repair_reports_its_packages_as_they_are_written(

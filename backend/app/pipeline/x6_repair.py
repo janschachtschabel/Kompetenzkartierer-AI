@@ -26,7 +26,7 @@ from app.conversion.base import Block
 from app.db.conversions import all_blocks, printed_pages
 from app.db.documents import Document, document_for_job
 from app.db.findings import Finding, add_findings
-from app.db.runs import RunStart, done_stages, finish_run, stage_result, stages_done_by, start_run, x5_owed
+from app.db.runs import RunStart, done_stages, finish_run, stages_done_by, start_run, x5_owed
 from app.db.units import count_repair
 from app.jobs.context import JobContext
 from app.jobs.outcome import PermanentError
@@ -60,18 +60,16 @@ async def repair_document(context: JobContext, job: Job) -> dict[str, Any]:
         done = await stages_done_by(connection, job.id)
         blocks = await all_blocks(connection, document.conversion_id)
         printed = await printed_pages(connection, document.conversion_id)
-    units: int | None = None  # asked by this attempt; None where an attempt before did X6
     if "X6" not in done:
         try:
-            units = (await run_x6(context, job, document, blocks, printed))["units"]
+            await run_x6(context, job, document, blocks, printed)
         except PermanentError as ending:
             if ending.code == "budget_exhausted":  # what was repaired is checked all the same
                 await _check(context, job, document.id)
             raise
     await _check(context, job, document.id)
-    async with context.pool.connection() as connection:
-        if units is None:
-            units = ((await stage_result(connection, document.id, "X6")) or {}).get("units", 0)
+    async with context.pool.connection() as connection:  # the job's, whichever attempt asked
+        units = len(await asked_by(connection, document.id, job.id))
         checked = "X5" in await stages_done_by(connection, job.id)
     return {"document_id": str(document.id), "units": units, "checked": checked}
 
@@ -170,39 +168,42 @@ class _Repairs:
                 message = "the model's answer never took the form of the unit, or answered for another"
                 of_unit = {"unit": unit.package.key}
                 await self._left(
-                    Finding("x6.unanswered", "warning", self.asking.document.id, message, None, of_unit)
+                    [Finding("x6.unanswered", "warning", self.asking.document.id, message, None, of_unit)]
                 )
                 return
             key = unit.package.key
             named = [replace(found, details={**found.details, "unit": key}) for found in read.findings]
             read = replace(read, findings=[*question.findings, *named])
             context, job, document = self.asking.context, self.asking.job, self.asking.document
+            left = False
             async with context.pool.connection() as connection:
                 try:
                     made = await rewrite_unit(
                         connection, job, document, unit, read, run_id=self.asking.run_id
                     )
                 except EmptyAnswer:
-                    message = "the answer held no statement of a unit that has some: it stays as it was"
-                    await self._left(
-                        Finding("x6.empty_answer", "warning", document.id, message, None, {"unit": key})
-                    )
-                    return
-                self.written += made.statements
-                self.dropped += made.dropped
-                self.done += 1
-                await report(connection, job, "repair_units", done=self.done, total=self.total)
+                    left = True  # the connection goes back first: a package holds one at a time
+                else:
+                    self.written += made.statements
+                    self.dropped += made.dropped
+                    self.done += 1
+                    await report(connection, job, "repair_units", done=self.done, total=self.total)
+            if left:  # with what reading it found: the next repair is told what was wrong
+                message = "the answer held no statement to write, of a unit that has some: it stays as it was"
+                empty = Finding("x6.empty_answer", "warning", document.id, message, None, {"unit": key})
+                await self._left([*read.findings, empty])
 
-    async def _left(self, finding: Finding) -> None:
-        """The package the finding names stays as it was; its repair is counted (it was paid for)."""
+    async def _left(self, findings: Sequence[Finding]) -> None:
+        """The package the last of the findings names stays as it was; its repair is counted (it was
+        paid for), and the findings kept."""
         context, job, document = self.asking.context, self.asking.job, self.asking.document
-        key = finding.details["unit"]
+        key = findings[-1].details["unit"]
         self.unanswered.append(key)
         async with context.pool.connection() as connection:
             async with connection.transaction():
                 await hold_lease(connection, job)
                 await count_repair(connection, document.id, key)
-                await add_findings(connection, document.id, self.asking.run_id, [finding])
+                await add_findings(connection, document.id, self.asking.run_id, findings)
             self.done += 1
             await report(connection, job, "repair_units", done=self.done, total=self.total)
 

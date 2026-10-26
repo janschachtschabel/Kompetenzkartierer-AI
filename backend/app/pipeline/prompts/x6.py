@@ -19,7 +19,7 @@ SCHEMA_NAME = x4.SCHEMA_NAME
 # what the reading of an answer found wrong (app/pipeline/statement_read.py), by its rule's name
 _READ: dict[str, str] = {
     "too_many_statements": "Mehr Aussagen, als eine Antwort enthalten darf",
-    "statement_without_block": "Eine Aussage ohne Blockkennung",
+    "statement_without_block": "Eine Aussage ohne gültige Blockkennung",
     "statement_without_wording": "Eine Aussage ohne Wortlaut",
     "statement_too_long": "Eine Aussage über der Längengrenze",
     "unknown_block": "Eine Blockkennung, die das Dokument nicht hat",
@@ -29,7 +29,7 @@ _READ: dict[str, str] = {
     "subkind_mismatch": "Eine Unterart, die nicht zur Aussageart gehört",
     # X6's own: the package stayed as it was
     "unanswered": "Die letzte Antwort hatte nicht die Form des Schemas oder galt einer anderen Einheit",
-    "empty_answer": "Die letzte Antwort enthielt keine Aussage, obwohl die Einheit welche hat",
+    "empty_answer": "Die letzte Antwort enthielt keine neue lesbare Aussage, obwohl die Einheit welche hat",
 }
 
 

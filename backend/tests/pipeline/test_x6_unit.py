@@ -134,6 +134,26 @@ async def test_an_answer_of_no_statement_leaves_a_package_that_had_some_as_it_wa
     assert (await done_units(connection, document.id))["E2"].repairs == 0
 
 
+async def test_an_answer_of_the_editors_wordings_alone_leaves_a_package_that_had_others_as_it_was(
+    setup: Any,
+) -> None:
+    # it brought back what stays, which it was told not to, and lost the rest
+    _, connection = setup
+    document, job, _, x6, unit = await written(connection)
+    await connection.execute(
+        "UPDATE statement SET review_status_iri = %s WHERE verbatim = 'Licht alt' AND document_id = %s",
+        (CV + "rev_confirmed", document.id),
+    )
+    before = await statements_of(connection, document)
+
+    with pytest.raises(EmptyAnswer):
+        await rewrite_unit(
+            connection, job, document, unit, read(statement("Licht alt", kind="kind_content")), run_id=x6
+        )
+
+    assert await statements_of(connection, document) == before
+
+
 async def test_an_answer_of_no_statement_is_written_where_the_editors_hold_them_all(setup: Any) -> None:
     _, connection = setup
     document, job, _, x6, unit = await written(connection)
