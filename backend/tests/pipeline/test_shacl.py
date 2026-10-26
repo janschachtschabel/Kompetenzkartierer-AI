@@ -157,6 +157,21 @@ async def test_a_document_is_checked_in_a_child_and_its_findings_name_its_rows()
     assert {found.details.get("lang") for found in findings if found.path == "cur:addressee"} == {"de"}
 
 
+async def test_a_message_a_sparql_constraint_gives_keeps_the_language_it_was_declared_in() -> None:
+    # pyshacl writes a SPARQL constraint's message anew, without its "@de": the constraint still says it
+    rows = a_document(addressees=[CV + "addr_learner"])
+    rows.statements[0]["statement_kind_iri"] = CV + "kind_learningOutcome"  # not decomposed yet (N1)
+
+    results = await shacl_check(kern_graph(rows), ontology_dir=ONTOLOGY, timeout_s=120, told=TOLD)
+    findings = as_findings(results, rows.document["id"])
+
+    [progress] = [found for found in findings if found.rule == "shacl.LearningOutcomeProgressShape"]
+    assert (progress.message, progress.details.get("lang")) == (
+        "Lernergebnis noch nicht zerlegt (N1 ausstehend).",
+        "de",
+    )
+
+
 async def test_a_sound_document_has_no_violation() -> None:
     results = await shacl_check(
         kern_graph(a_document([CV + "addr_learner"])), ontology_dir=ONTOLOGY, timeout_s=120, told=TOLD

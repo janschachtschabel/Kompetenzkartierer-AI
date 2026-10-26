@@ -152,10 +152,19 @@ def _results(report: Graph, shapes: Graph, data: Graph) -> list[ShaclResult]:
                 _path(report, path),
                 str(message or ""),
                 None if value is None else str(value), None if component is None else _name(component),
-                message.language if isinstance(message, Literal) else None,
+                _language(message, report.value(result, SH.sourceConstraint), shapes),
             )
         )  # fmt: skip
     return sorted(found, key=lambda result: [part or "" for part in result])
+
+
+def _language(message: Any, constraint: Any, shapes: Graph) -> str | None:
+    """The message's language: its literal's - or, where pyshacl wrote a SPARQL constraint's message
+    anew without it, the language the constraint declares its message in."""
+    if isinstance(message, Literal) and message.language:
+        return message.language
+    declared = None if constraint is None else shapes.value(constraint, SH.message)
+    return declared.language if isinstance(declared, Literal) else None
 
 
 def _path(report: Graph, path: Any) -> str | None:
