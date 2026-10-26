@@ -15,7 +15,7 @@ export const JOB_PROGRESS: Readonly<Record<string, readonly string[]>> = {
   extract_segments: ["units"],
   extract_frame: [],
   extract_statements: ["done", "total"],
-  check_document: [],
+  check_document: [], // extract.check too (backend app/pipeline/x5_check.py)
   // extract.repair (backend app/pipeline/x6_repair.py)
   repair_units: ["done", "total"],
 };

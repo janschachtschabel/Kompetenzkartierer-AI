@@ -194,6 +194,13 @@ ungültig.
   Revisionen danach. Eine Aussage zu oder von „verworfen“ ändert, was der Lehrplan sagt (Export und X5
   lassen verworfene aus) und schuldet X5 eine Prüfung; ein Knoten verworfen bleibt in beiden. Wie beim
   Bearbeiten nicht neben einem offenen Job und nicht festgeschrieben; Audit `review.set`.
+- Erneut prüfen: `POST /api/v1/documents/{id}/check` startet den Job `extract.check` (X5 erneut,
+  ohne Modell) – durch Eigentümer und Redaktion/Admin, sobald X5 das Dokument einmal geprüft hat
+  (sonst 409 `not_checked`: die Extraktion fortsetzen). Kein Modelljob: weder Budget noch
+  Startgrenzen lassen ihn zu. Er teilt den Schlüssel der Extraktion; wartet oder läuft ein Job des
+  Dokuments, kommt dieser zurück (200), wo der Aufrufer ihm folgen darf (wer ihn startete, Admin),
+  sonst 409 `job_open`. Audit `check.start`. Geschuldet ist die Prüfung, sobald eine Reparatur
+  oder eine Bearbeitung (`document.edited_at`) nach dem Start des letzten fertigen X5 begann.
 - Abbrechen: `POST /api/v1/jobs/{id}/cancel` (Eigentümer des Jobs oder Admin, in der Oberfläche
   der Knopf „Abbrechen“ an jedem Auftrag). Ein wartender Job endet sofort, ein laufender beim
   nächsten Herzschlag seines Workers (alle `JOB_LEASE_S`/3); hält der Handler dann nicht an,
@@ -264,6 +271,11 @@ ungültig.
   mit `document_not_checked`, wo X5 noch aussteht. In der Oberfläche bietet der Abschnitt
   „Befunde“ des Dokuments dem Eigentümer den Knopf „Reparieren“ an; ihr Stand steht unter
   „Extraktion“.
+- Prüfung nach der Redaktion (X5): Der Job `extract.check` (`{"document_id": …}`) prüft ein
+  Dokument erneut, nachdem die Redaktion es geändert hat; seine Befunde ersetzen die des letzten
+  X5. Verworfene Aussagen prüft X5 nicht und der Kern-Export enthält sie nicht. Fortschritt
+  `check_document`; endet mit `document_not_checked`, wo X5 noch aussteht; ein neuer Versuch prüft
+  nicht doppelt.
 - Erster Admin: `python -m app.bootstrap NAME` gibt das Token einmal auf stdout aus. Interaktiv
   ausführen (`docker compose run`, `kubectl exec -it`), nicht als Job, dessen Ausgabe ein
   Log-System sammelt. Exit-Code 0: angelegt; 2: es gibt schon einen Admin, der sich anmelden

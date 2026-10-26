@@ -110,7 +110,8 @@ ein Test schlägt an, wenn sie veraltet.
   (300 Knoten, 900 Aussagen); `SHACL_TIMEOUT_S` (Standard 300 s) begrenzt ihn, danach bleibt das
   Tor mit dem Befund `x5.shacl_timeout` zu. Ein neuer Start der Extraktion prüft ein Dokument,
   dessen X5 fertig ist, nicht erneut: Eine höhere Frist gilt für Dokumente, deren X5 noch aussteht,
-  und für die Prüfung nach einer Reparatur (`extract.repair`). Der Befund `x5.shacl_timeout` allein
+  und für die Prüfung nach einer Reparatur (`extract.repair`) oder einer Bearbeitung
+  (`extract.check`). Der Befund `x5.shacl_timeout` allein
   ist kein Anlass für eine Reparatur. Stirbt der Kindprozess oder bricht er ab, scheitert
   der Lauf X5 (`ShaclCrashed`), und der Job wird bis zu seiner Versuchsgrenze wiederholt.
 - `JOB_SHUTDOWN_GRACE_S` mindestens 5 s unter `terminationGracePeriodSeconds` des Workers.

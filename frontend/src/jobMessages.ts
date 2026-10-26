@@ -33,7 +33,7 @@ export const JOB_FAILURE_CODES = [
   "prefix_too_long",
   "document_gone",
   "document_has_tree",
-  // extract.repair (backend app/pipeline/x6_repair.py)
+  // extract.repair and extract.check (backend app/pipeline/x6_repair.py, x5_check.py)
   "document_not_checked",
   // any job (app/jobs/outcome.py, app/jobs/queue.py)
   "handler_error",

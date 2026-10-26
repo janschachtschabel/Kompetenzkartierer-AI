@@ -10,6 +10,7 @@ from app import __version__
 from app.api import (
     accounts,
     conversions,
+    document_check,
     document_findings,
     document_tree,
     documents,
@@ -105,6 +106,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(conversions.router)
     app.include_router(documents.router)
     app.include_router(document_findings.router)
+    app.include_router(document_check.router)
     app.include_router(document_tree.router)
     app.include_router(node_editing.router)
     app.include_router(statement_editing.router)

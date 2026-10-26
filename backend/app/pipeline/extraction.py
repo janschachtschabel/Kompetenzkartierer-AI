@@ -1,6 +1,7 @@
-"""The jobs that extract a document (plan M1 6.6, 7a) and repair it (8b), as their starter names
-them: their kinds, and their unique key - one of them waits or runs on a document at a time
-(job.unique_key, migration 0018), so a repair never meets an extraction. Apart from the pipeline
+"""The jobs that extract a document (plan M1 6.6, 7a), repair it (8b) and check it again after its
+editors changed it (9), as their starter names them: their kinds, and their unique key - one of them
+waits or runs on a document at a time (job.unique_key, migration 0018), so a repair never meets an
+extraction, nor an editor a stage (app/db/editing.py). Apart from the pipeline
 (app/pipeline/run.py, x6_repair.py), so the API starts them without importing it."""
 
 from typing import Any
@@ -8,10 +9,11 @@ from uuid import UUID
 
 KIND = "extract.run"
 REPAIR_KIND = "extract.repair"
+CHECK_KIND = "extract.check"
 
 
 def unique_key(document_id: UUID) -> str:
-    """The key of the document's extraction job, an extraction's or a repair's."""
+    """The key of the document's extraction job, an extraction's, a repair's or a check's."""
     return f"{KIND}:{document_id}"
 
 
