@@ -185,6 +185,15 @@ ungültig.
   Admins), `frozen`, `no_form`; 422 `invalid_field` (`details.field`, `details.problem`). Jede
   Änderung steht im Audit (`node.edit`, `node.add`, `node.drop`, `statement.edit`, `statement.add`,
   `statement.reject`, `statement.delete`).
+- Prüfstand: `POST /api/v1/documents/{id}/review` (`status`: `proposed`, `confirmed` oder
+  `rejected`; `items`: je `kind` – `node` oder `statement` –, `id` und gelesene `revision`, 1 bis
+  2.000) setzt den Prüfstand vieler Zeilen auf einmal, nur durch Redaktion/Admin (sonst 403
+  `not_editor`): alles oder nichts – steht eine Zeile anders oder nicht mehr da, 409 `stale_revision`
+  mit `details.stale` (je Zeile `current`, die Revision jetzt oder `null`). Die Herkunft bleibt, die
+  Revision zählt eins hoch, eine Zeile mit diesem Prüfstand bleibt, wie sie ist; die Antwort nennt die
+  Revisionen danach. Eine Aussage zu oder von „verworfen“ ändert, was der Lehrplan sagt (Export und X5
+  lassen verworfene aus) und schuldet X5 eine Prüfung; ein Knoten verworfen bleibt in beiden. Wie beim
+  Bearbeiten nicht neben einem offenen Job und nicht festgeschrieben; Audit `review.set`.
 - Abbrechen: `POST /api/v1/jobs/{id}/cancel` (Eigentümer des Jobs oder Admin, in der Oberfläche
   der Knopf „Abbrechen“ an jedem Auftrag). Ein wartender Job endet sofort, ein laufender beim
   nächsten Herzschlag seines Workers (alle `JOB_LEASE_S`/3); hält der Handler dann nicht an,

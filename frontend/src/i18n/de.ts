@@ -654,6 +654,7 @@ export const messages = {
     job_open: "Zu diesem Dokument läuft gerade ein Auftrag. Ändern geht wieder, sobald er fertig ist.",
     frozen: "Das Dokument ist festgeschrieben. Änderungen gehen nur in einer Entwurfskopie.",
     no_form: "Für den Bildungsbereich dieses Dokuments gibt es kein Formular zum Bearbeiten.",
+    not_editor: "Den Prüfstand setzt nur die Redaktion.",
   },
   // Documents of a conversion and their extraction (ExtractionStart.vue, DocumentView.vue, SourceDocuments.vue)
   documents: {

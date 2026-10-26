@@ -49,6 +49,8 @@ export const REFUSAL_CODES = [
   "job_open",
   "frozen",
   "no_form",
+  // the editors' review (backend app/api/review.py)
+  "not_editor",
 ] as const;
 
 export type RefusalCode = (typeof REFUSAL_CODES)[number];
