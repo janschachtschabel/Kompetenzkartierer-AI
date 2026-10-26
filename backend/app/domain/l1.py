@@ -31,6 +31,10 @@ FramePartKind = Literal["competencyModels", "levelModels", "operators", "crossCu
 Severity = Literal["violation", "warning", "info"]
 # a wording the blocks hold no fitting passage for: anchored at its page alone (plan M1 8.1, 9.4)
 MATCH_NOT_FOUND = "https://w3id.org/wlo/curriculum/vocab#match_notFound"
+# how far the editors have checked a node or statement (cv:ReviewStatuses; plan M1 9.5)
+REVIEW_STATUSES = tuple(
+    "https://w3id.org/wlo/curriculum/vocab#rev_" + status for status in ("proposed", "confirmed", "rejected")
+)
 # a statement's wording fields, kept in its details (X4 reads them, the editor's form offers them)
 WORDING_FIELDS = (
     "codeText",

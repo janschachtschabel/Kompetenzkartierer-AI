@@ -1,10 +1,14 @@
 """What a profile value must be, and what a drafted node, statement and anchor must carry (plan M1 4.5)."""
 
 import uuid
+from pathlib import Path
 
 import pytest
 
-from app.domain.l1 import AnchorDraft, NodeDraft, StatementDraft, check_profile_value
+from app.domain.l1 import REVIEW_STATUSES, AnchorDraft, NodeDraft, StatementDraft, check_profile_value
+from app.vocab.loader import read_vocabulary
+
+ONTOLOGY = Path(__file__).resolve().parents[3] / "ontology"
 
 NOT_FOUND = "https://w3id.org/wlo/curriculum/vocab#match_notFound"
 PROFILE = {"schul:Inhaltsbereich": ("cv:fn_area",), "schul:Kompetenzerwartung": ("cv:kind_learningOutcome",)}
@@ -136,3 +140,11 @@ def test_a_node_whose_code_was_assigned_has_one() -> None:
         NodeDraft(
             function="cv:fn_unit", origin="cv:orig_rule", review_status="cv:rev_proposed", code_assigned=True
         )
+
+
+def test_the_review_statuses_are_those_of_the_vocabulary() -> None:
+    scheme = "https://w3id.org/wlo/curriculum/vocab#ReviewStatuses"
+
+    held = [iri for iri, concept in read_vocabulary(ONTOLOGY).concepts.items() if concept.scheme == scheme]
+
+    assert sorted(REVIEW_STATUSES) == sorted(held)
