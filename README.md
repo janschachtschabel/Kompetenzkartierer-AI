@@ -132,6 +132,11 @@ ungültig.
   mit `too_dense`, länger als `CONVERT_TIMEOUT_S` (900 s) mit `timed_out`. Die Umwandlung läuft
   in einem eigenen Kindprozess, den Abbruch, Frist und Lease-Verlust beenden; dafür eigene
   Worker mit `WORKER_KINDS=source.convert` vorsehen, ein Job je Pod.
+- Formular: `GET /api/v1/profiles/{bereich}/form` (jedes Konto; `bereich` wie `school`) nennt die
+  Felder eines Knotens und einer Aussage mit Art, Pflicht, Mehrfachwert und Höchstlänge und je
+  Auswahlliste die aktiven Werte des Profils, nach Label geordnet – Knotentypen und Unterarten mit
+  Label, weiteren Namen, Definition, Anmerkung, Abgrenzung und Beispielen; kein aktives Profil: 404
+  `unknown_sector`. Die Felder sind nicht laxer als die SHACL-Formen des Kerns (Test).
 - Dokumente: `POST /api/v1/documents` (`source_id`, `conversion_id`, `sector`, `regions`) legt aus
   der fertigen Umwandlung eines Eintrags ein Dokument an und startet seine Extraktion (202 mit
   Dokument und Job), als Modelljob zugelassen (403 `no_budget`, 429 `too_many_jobs` /

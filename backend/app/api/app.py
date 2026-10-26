@@ -14,6 +14,7 @@ from app.api import (
     documents,
     internal,
     jobs,
+    profiles,
     source_checks,
     source_register,
     sources,
@@ -49,6 +50,7 @@ TAGS = [
     {"name": "sources", "description": "The register of curriculum documents: uploads and their files."},
     {"name": "conversions", "description": "A register file converted into named blocks (X0), page by page."},
     {"name": "documents", "description": "Documents of a conversion and their extraction, one at a time."},
+    {"name": "profiles", "description": "A sector's profile as the editor offers it: its form and values."},
 ]
 
 
@@ -99,6 +101,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(conversions.router)
     app.include_router(documents.router)
     app.include_router(document_findings.router)
+    app.include_router(profiles.router)
     app.add_middleware(internal.InternalOnly, port=settings.internal_port)
     # an upload takes a file and the form around it; every other body is JSON
     upload_limit = (settings.max_upload_mb + 1) * MIB
