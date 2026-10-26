@@ -161,6 +161,14 @@ ungültig.
   gibt diese zurück (200), in beide Richtungen. `findings` nennt dem Eigentümer nach X5 in
   `repairable` die Pakete, die eine Reparatur fragen würde; `extraction.kind` sagt jedem Leser,
   welcher Art der letzte Job ist.
+- Baum: `GET /api/v1/documents/{id}/tree` liest die Knoten und Aussagen eines Dokuments, wie der
+  Editor sie zeigt (wer das Dokument lesen darf, in einem Snapshot): je Zeile die Felder des
+  Formulars unter dessen Schlüsseln, Herkunft, Prüfstand, Revision und Fundstellen (Seiten,
+  gedruckte Seite, Zitat, Fundart, Wert, Blöcke in Dokumentreihenfolge), je Knoten die Zahl der
+  Befunde je Schwere an ihm, seinen Aussagen und deren Fundstellen (nicht an seinen Kindern),
+  dazu die Zahl der Knoten und Aussagen je Prüfstand. `editable`: Eigentümer und Redaktion/Admin
+  dürfen jetzt bearbeiten, `reviewable`: Redaktion/Admin dürfen den Prüfstand setzen – beides
+  nicht, solange ein Job des Dokuments wartet oder läuft, und nicht, sobald es festgeschrieben ist.
 - Abbrechen: `POST /api/v1/jobs/{id}/cancel` (Eigentümer des Jobs oder Admin, in der Oberfläche
   der Knopf „Abbrechen“ an jedem Auftrag). Ein wartender Job endet sofort, ein laufender beim
   nächsten Herzschlag seines Workers (alle `JOB_LEASE_S`/3); hält der Handler dann nicht an,
