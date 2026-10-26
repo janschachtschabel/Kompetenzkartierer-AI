@@ -583,7 +583,11 @@ export const messages = {
       // a repair needs the extraction to have come to its check (X5)
       document_not_checked:
         "Die Extraktion des Dokuments ist noch nicht bis zur Prüfung gelaufen. Setze sie erst fort; danach " +
-        "lässt es sich reparieren.",
+        "lässt es sich reparieren und erneut prüfen.",
+      // the editors took away a node a stage still wrote to, while it waited for the tree
+      node_gone:
+        "Die Redaktion hat einen Knoten gelöscht, an dem die Stufe noch schreiben wollte. Eine neue Reparatur " +
+        "lässt ihn aus; bleibt die Extraktion daran hängen, melde es der Administration.",
       // a document the extraction wrote ends done: this one holds what no extraction wrote
       document_has_tree:
         "Am Dokument stehen schon Knoten oder Spezifikationen, die keine Extraktion angelegt hat; die " +

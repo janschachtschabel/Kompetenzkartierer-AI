@@ -15,6 +15,7 @@ from app.db.findings import Finding, add_findings
 from app.db.nodes import lock_tree
 from app.db.runs import RunStart, start_run
 from app.db.units import done_units
+from app.jobs.outcome import PermanentError
 from app.jobs.queue import LeaseLost
 from app.pipeline.x4_unit import PART, write_unit
 from app.pipeline.x6_unit import EmptyAnswer, Rewritten, rewrite_unit
@@ -277,4 +278,20 @@ async def test_a_package_written_anew_waits_for_the_tree_before_it_reads_its_sta
     assert [verbatim for _, _, verbatim, _ in await statements_of(connection, document)] == [
         "Licht alt",
         "Neu",
+    ]
+
+
+async def test_a_package_whose_node_an_editor_took_away_ends_the_job(setup: Any) -> None:
+    # an editor's drop held the tree's lock the repair waited at (Paket 9 G6): the next repair asks
+    # the package no more, its node gone (app/pipeline/x6_units.py)
+    _, connection = setup
+    document, job, node, x6, unit = await written(connection)
+    await connection.execute("DELETE FROM node WHERE id = %s", (node,))
+
+    with pytest.raises(PermanentError) as ended:
+        await rewrite_unit(connection, job, document, unit, read(statement("Neu")), run_id=x6)
+
+    assert ended.value.code == "node_gone"
+    assert await rows(connection, "SELECT count(*) FROM statement WHERE document_id = %s", document.id) == [
+        (0,)
     ]

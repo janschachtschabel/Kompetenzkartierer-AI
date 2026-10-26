@@ -124,6 +124,13 @@ async def drop_statements(
     return cursor.rowcount
 
 
+async def node_stands(connection: psycopg.AsyncConnection, document_id: UUID, node_id: UUID) -> bool:
+    """Whether the document holds the node - asked under the tree's lock, after which an editor may have
+    taken it away (app/db/editing.py)."""
+    cursor = await connection.execute(_OF_DOCUMENT, (node_id, document_id))
+    return await cursor.fetchone() is not None
+
+
 async def lock_tree(connection: psycopg.AsyncConnection, document_id: UUID) -> None:
     """Wait for, then hold until the transaction ends, the lock all writes to the document's tree
     share - subtrees written, nodes moved (migration l1_nodes); within a transaction alone."""

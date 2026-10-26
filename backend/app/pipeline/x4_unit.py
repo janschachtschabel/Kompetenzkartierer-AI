@@ -6,7 +6,8 @@ pages (app/pipeline/x2_segments.py) has a range of PART positions for each of it
 document's order holds however and whenever the parts are written. A unit of no node - a document
 without headings is one unit - gets a node of its own, the rule's, named by the document's title.
 A statement points to the content it names by that content's position. A unit marked already
-(another writer's) gives way with all it wrote (UnitTaken). At a node that stands the tree's lock
+(another writer's) gives way with all it wrote (UnitTaken); one whose node an editor took away while it
+waited for the tree ends the job (``node_gone``, Paket 9 G6). At a node that stands the tree's lock
 comes first, as for every writer of a tree (migration l1_nodes) - none holds a row of it while it
 waits -, then the mark: a writer beside this one waits at the lock and meets the mark, where its
 statements would otherwise meet this one's at their positions.
@@ -20,9 +21,10 @@ import psycopg
 
 from app.db.documents import Document
 from app.db.findings import add_findings
-from app.db.nodes import append_statements, lock_tree, write_subtree
+from app.db.nodes import append_statements, lock_tree, node_stands, write_subtree
 from app.db.units import mark_unit
 from app.domain.l1 import AnchorDraft, NodeDraft, StatementDraft
+from app.jobs.outcome import PermanentError
 from app.jobs.queue import Job, hold_lease
 from app.pipeline.x1_outline import PROPOSED, RULE
 from app.pipeline.x2_segments import WorkPackage
@@ -75,6 +77,8 @@ async def write_unit(
             # the tree's lock before any row of it (migration l1_nodes), then the mark: a writer beside
             # this one meets it there, not the statements' positions
             await lock_tree(connection, document.id)
+            if not await node_stands(connection, document.id, unit.node_id):  # an editor took it away
+                raise PermanentError("node_gone", f"the node of the package {unit.key} is gone")
             await _mark(connection, document, unit, read, unit.node_id, len(drafts), run_id)
             await append_statements(
                 connection, document.id, unit.node_id, drafts, first_position=first, run_id=run_id

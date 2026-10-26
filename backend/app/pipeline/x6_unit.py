@@ -23,9 +23,10 @@ import psycopg
 
 from app.db.documents import Document
 from app.db.findings import add_findings, drop_unit_findings
-from app.db.nodes import append_statements, drop_statements, lock_tree
+from app.db.nodes import append_statements, drop_statements, lock_tree, node_stands
 from app.db.units import remark_unit
 from app.domain.wording import text_hash
+from app.jobs.outcome import PermanentError
 from app.jobs.queue import Job, hold_lease
 from app.pipeline.x4_read import UnitReading
 from app.pipeline.x4_unit import PART, pointing
@@ -62,13 +63,16 @@ async def rewrite_unit(
     *,
     run_id: UUID,
 ) -> Rewritten:
-    """Write the package anew as read; LeaseLost, EmptyAnswer or the database's error, and then
+    """Write the package anew as read; LeaseLost, EmptyAnswer, PermanentError ``node_gone`` where an editor
+    took its node away while it waited for the tree (Paket 9 G6), or the database's error, and then
     nothing of it."""
     if unit.node_id is None:
         raise LookupError(f"package {unit.package.key} stands at no node")
     async with connection.transaction():
         await hold_lease(connection, job)
         await lock_tree(connection, document.id)
+        if not await node_stands(connection, document.id, unit.node_id):  # an editor took it away
+            raise PermanentError("node_gone", f"the node of the package {unit.package.key} is gone")
         high = unit.first + PART - 1 if unit.package.node_id is not None else _LAST_POSITION
         cursor = await connection.execute(
             _OF_PACKAGE,

@@ -35,6 +35,8 @@ export const JOB_FAILURE_CODES = [
   "document_has_tree",
   // extract.repair and extract.check (backend app/pipeline/x6_repair.py, x5_check.py)
   "document_not_checked",
+  // extract.run and extract.repair, a node an editor took away (backend app/pipeline/x4_unit.py, x6_unit.py)
+  "node_gone",
   // any job (app/jobs/outcome.py, app/jobs/queue.py)
   "handler_error",
   "result_not_storable",

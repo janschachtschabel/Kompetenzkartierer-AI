@@ -16,6 +16,7 @@ from app.db.nodes import lock_tree, write_subtree
 from app.db.runs import RunStart, start_run
 from app.db.units import UnitTaken, done_units, mark_unit
 from app.domain.l1 import AnchorDraft, NodeDraft, StatementDraft
+from app.jobs.outcome import PermanentError
 from app.jobs.queue import LeaseLost
 from app.pipeline.statement_read import ReadStatement
 from app.pipeline.x2_segments import WorkPackage
@@ -280,3 +281,20 @@ async def test_an_attempt_that_lost_its_lease_writes_nothing_of_the_unit(setup: 
         )
 
     assert (await statements_of(connection, document), await done_units(connection, document.id)) == ([], {})
+
+
+async def test_a_unit_whose_node_an_editor_took_away_ends_the_job(setup: Any) -> None:
+    # an editor's drop held the tree's lock the unit waited at (Paket 9 G6): its node is gone after
+    _, connection = setup
+    document, job, node, run = await ready(connection)
+    await connection.execute("DELETE FROM node WHERE id = %s", (node,))
+
+    with pytest.raises(PermanentError) as ended:
+        await write_unit(
+            connection, job, document, package("E2", node), read(statement("Aussage")), first=1, run_id=run
+        )
+
+    assert ended.value.code == "node_gone"
+    assert await rows(
+        connection, "SELECT count(*) FROM extraction_unit WHERE document_id = %s", document.id
+    ) == [(0,)]
