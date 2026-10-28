@@ -830,8 +830,9 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   keine Läufe: „von Hand“ muss dort anders erkannt werden, sonst würde eine bearbeitete
   Modell-Aussage gelöscht statt verworfen. (3) Bearbeitungsrecht = Leserecht in M1 (`simplify:`),
   M5 braucht eine eigene Prüfung. (4) Herkunft je Zeile, nicht je Feld.
-  Für 9b: (5) eine Entwurfskopie hat kein fertiges X5 und schuldet keine Prüfung – `check` und
-  `x5_owed` müssen sie prüfbar machen; (6) Fundstellen verworfener Aussagen bleiben ungeprüft, das
+  Für 9b: (5) eine Entwurfskopie hat keine Läufe: kein fertiges X4 – `guard` und `editable`
+  sperrten sie ganz (`not_extracted`), sie muss als extrahiert gelten – und kein fertiges X5 –
+  `check` und `x5_owed` müssen sie prüfbar machen; (6) Fundstellen verworfener Aussagen bleiben ungeprüft, das
   Festschreib-Tor muss sie auslassen; (7) Festschreiben nimmt `lock_tree` wie jede Änderung, und
   Extraktion und Reparatur weisen ein festgeschriebenes Dokument ab (die Prüfung tut es schon).
   Für 9c: (8) der Prüfjob heißt in der Oberfläche noch „Extraktion“ (`documentJobs.ts`), und

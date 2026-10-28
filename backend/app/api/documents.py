@@ -419,7 +419,8 @@ async def _job(connection: psycopg.AsyncConnection, job_id: UUID, who: Principal
     assert who.account_id is not None  # noqa: S101 - require_account refuses visitors
     lane = None if "admin" in who.roles else account_lane(who.account_id)
     state = await job_state(connection, job_id, lane)
-    assert state is not None  # noqa: S101 - the owner's own job, just made or found
+    # the owner's own job, just made or found: every job of a document runs in its owner's lane
+    assert state is not None  # noqa: S101
     return job_out(state)
 
 

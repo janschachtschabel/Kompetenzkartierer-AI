@@ -1,9 +1,10 @@
 """Jobs as their owner follows them: the state, and a cancel.
 
-A job's lane is the account that started it (``account_lane``). Another account gets the 404
-of a job that does not exist, so ids reveal nothing; an admin, who runs the service, sees and
-cancels every job. Who may see or cancel a job is decided in the query (``lane``), never in
-Python after loading it. A cancel is audited (``job.cancel``).
+A job's lane is the account it runs for (``account_lane``): the one that started it, and for every job
+of a document its owner, an editor's check among them (app/api/document_check.py). Another account
+gets the 404 of a job that does not exist, so ids reveal nothing; an admin, who runs the service, sees
+and cancels every job. Who may see or cancel a job is decided in the query (``lane``), never in Python
+after loading it. A cancel is audited (``job.cancel``).
 """
 
 from datetime import datetime

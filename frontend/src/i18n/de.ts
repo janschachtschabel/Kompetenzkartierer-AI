@@ -659,8 +659,8 @@ export const messages = {
     frozen: "Das Dokument ist festgeschrieben. Änderungen gehen nur in einer Entwurfskopie.",
     no_form: "Für den Bildungsbereich dieses Dokuments gibt es kein Formular zum Bearbeiten.",
     not_extracted:
-      "Die Extraktion hat noch nicht alle Arbeitspakete gelesen. Setze sie erst fort; danach lässt sich " +
-      "das Dokument bearbeiten.",
+      "Die Extraktion hat noch nicht alle Arbeitspakete gelesen. Erst wenn der Eigentümer sie fortgesetzt hat, " +
+      "lässt sich das Dokument bearbeiten.",
     not_editor: "Das darf nur die Redaktion.",
   },
   // Documents of a conversion and their extraction (ExtractionStart.vue, DocumentView.vue, SourceDocuments.vue)
