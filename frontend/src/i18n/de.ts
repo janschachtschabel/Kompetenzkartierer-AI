@@ -586,7 +586,7 @@ export const messages = {
         "lässt es sich reparieren und erneut prüfen.",
       // the editors took away a node a stage still wrote to, while it waited for the tree
       node_gone:
-        "Die Redaktion hat einen Knoten gelöscht, an dem die Stufe noch schreiben wollte. Eine neue Reparatur " +
+        "Ein Knoten wurde gelöscht, an dem die Stufe noch schreiben wollte. Eine neue Reparatur " +
         "lässt ihn aus; bleibt die Extraktion daran hängen, melde es der Administration.",
       // a document the extraction wrote ends done: this one holds what no extraction wrote
       document_has_tree:
@@ -655,10 +655,13 @@ export const messages = {
     stale_revision: "Jemand hat das inzwischen geändert. Sieh dir den neuen Stand an und entscheide dann.",
     invalid_field: "Ein Feld lässt sich so nicht setzen. Prüfe die markierte Eingabe.",
     anchor_missing: "Eine Aussage braucht mindestens eine Fundstelle: Blöcke der Quelle oder eine Seite.",
-    job_open: "Zu diesem Dokument läuft gerade ein Auftrag. Ändern geht wieder, sobald er fertig ist.",
+    job_open: "Zu diesem Dokument läuft gerade ein Auftrag. Das geht wieder, sobald er fertig ist.",
     frozen: "Das Dokument ist festgeschrieben. Änderungen gehen nur in einer Entwurfskopie.",
     no_form: "Für den Bildungsbereich dieses Dokuments gibt es kein Formular zum Bearbeiten.",
-    not_editor: "Den Prüfstand setzt nur die Redaktion.",
+    not_extracted:
+      "Die Extraktion hat noch nicht alle Arbeitspakete gelesen. Setze sie erst fort; danach lässt sich " +
+      "das Dokument bearbeiten.",
+    not_editor: "Das darf nur die Redaktion.",
   },
   // Documents of a conversion and their extraction (ExtractionStart.vue, DocumentView.vue, SourceDocuments.vue)
   documents: {

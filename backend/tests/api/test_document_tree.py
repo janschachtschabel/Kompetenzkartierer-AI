@@ -13,6 +13,7 @@ from psycopg.types.json import Jsonb
 
 from app.vocab.forms import NODE_FIELDS, STATEMENT_FIELDS
 from tests.api.test_document_findings import finding
+from tests.api.test_document_units import a_run
 from tests.api.test_documents import a_conversion, an_account, client, end_job, make, url
 from tests.db.l1 import CV, add_node, add_statement
 
@@ -23,12 +24,17 @@ SCHOOL = "https://w3id.org/wlo/curriculum/profile/school#"
 PROPOSED, CONFIRMED, REJECTED = (CV + "rev_" + status for status in ("proposed", "confirmed", "rejected"))
 
 
-def a_document(client: TestClient, url: str, *, ended: bool = True) -> tuple[str, dict[str, str]]:
-    """A document of a new account's with that account's header; its extraction ended, unless not."""
+def a_document(
+    client: TestClient, url: str, *, ended: bool = True, extracted: bool = True
+) -> tuple[str, dict[str, str]]:
+    """A document of a new account's with that account's header; its extraction ended, unless not, and X4
+    done - every package read - unless not."""
     owner, header = an_account(url)
     started = make(client, url, header, a_conversion(url, owner))
     if ended:
         end_job(url, started["job"]["id"], "done")
+    if extracted:
+        a_run(url, started["document"]["id"], "X4")
     return started["document"]["id"], header
 
 
@@ -110,6 +116,17 @@ def test_the_owner_edits_a_tree_and_the_editors_edit_and_review_it(client: TestC
 
 def test_a_tree_beside_an_open_job_is_edited_and_reviewed_by_none(client: TestClient, url: str) -> None:
     document, owner = a_document(client, url, ended=False)
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+
+    for header in (owner, editor):
+        read = tree(client, document, header)
+        assert (read["editable"], read["reviewable"]) == (False, False)
+
+
+def test_a_tree_whose_extraction_has_not_read_every_package_is_edited_by_none(
+    client: TestClient, url: str
+) -> None:
+    document, owner = a_document(client, url, extracted=False)  # X4 still writes at its nodes
     _, editor = an_account(url, "Redaktion", ("redaktion",))
 
     for header in (owner, editor):

@@ -10,11 +10,11 @@ import psycopg
 import pytest
 
 from app.db.documents import create_document
-from app.db.editing import DocumentFrozen, JobOpen
+from app.db.editing import DocumentFrozen, JobOpen, NotExtracted
 from app.db.nodes import write_subtree
 from app.db.review import ReviewItem, Stale, StaleItems, set_review
-from tests.db.test_editing import an_open_job, edited_at, one
-from tests.db.test_nodes import CV, connection, document, node, owner, statement, url
+from tests.db.test_editing import an_open_job, document, edited_at, extracted, one
+from tests.db.test_nodes import CV, connection, node, owner, statement, url
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 __all__ = ["connection", "document", "url"]  # the fixtures, shared with test_nodes
@@ -118,6 +118,9 @@ async def test_a_row_of_another_document_is_none_of_this_one(
         connection, owner(document), third_party_content=False, source_id=document.source_id,
         conversion_id=document.conversion_id, sector="school",
     )  # fmt: skip
+    with pytest.raises(NotExtracted):  # not yet: X4 has not read it
+        await set_review(connection, other.id, CONFIRMED, [ReviewItem("node", top, 1)])
+    await extracted(connection, other)
 
     with pytest.raises(StaleItems) as raised:
         await set_review(connection, other.id, CONFIRMED, [ReviewItem("node", top, 1)])

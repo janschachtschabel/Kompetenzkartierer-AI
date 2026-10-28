@@ -6,7 +6,8 @@ in one snapshot, by who may read the document (app/api/document_access.py). A no
 reads as the tree has it, for the answer to its change.
 
 Editing is the owner's and the editors' (Redaktion, Admin), reviewing the editors' alone; neither while
-a job of the document waits or runs (its extraction, repair or check), nor once it is frozen.
+a job of the document waits or runs (its extraction, repair or check), nor once it is frozen, nor before
+its extraction has read every package (X4).
 """
 
 from typing import Annotated, Any
@@ -23,6 +24,7 @@ from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.api.source_content import EDITORS
 from app.core.auth import Principal
 from app.db.editing import DOCUMENT_OF_NODE, target_of
+from app.db.runs import done_stages
 from app.db.statement_editing import DOCUMENT_OF_STATEMENT
 from app.db.tree import TreeAnchor, TreeNode, TreeStatement, read_tree, review_counts, walk
 from app.domain.l1 import WORDING_FIELDS
@@ -98,10 +100,11 @@ async def read_document_tree(document_id: UUID, request: Request, who: Account) 
         document = await visible_document(connection, who, document_id)
         tree = await read_tree(connection, reader(who), document_id)
         job = await open_job(connection, unique_key(document_id))
+        extracted = "X4" in await done_stages(connection, document_id)
     if tree is None:  # seen in the same snapshot as the document: never so
         raise Refusal(404, "no_document", "No such document.")
     editor = bool(who.roles & EDITORS)
-    open_to_change = job is None and document.frozen_at is None
+    open_to_change = job is None and document.frozen_at is None and extracted
     nodes, statements = review_counts(tree)
     return TreeOut(
         editable=open_to_change and (editor or document.owner_id == who.account_id),

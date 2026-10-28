@@ -789,8 +789,10 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
 - **Bearbeiten (9.3/9.4).** Abweichend von der Tabelle: `POST /documents/{id}/nodes` (`parent_id`)
   und `POST /nodes/{id}/statements` legen an; PATCH/DELETE wie geplant, DELETE mit
   `?expected_revision=`. Jeder Schreibweg nimmt `lock_tree`, prüft dann Festschreibung (409 `frozen`,
-  der Trigger folgt in 9b) und offenen Job (409 `job_open`) – damit entfallen das X5-Ankerrennen (8a)
-  und Redaktionsänderungen neben einer Stufe durch Konstruktion. Revision je Zeile (409
+  der Trigger folgt in 9b), offenen Job (409 `job_open`) und fertiges X4 (409 `not_extracted`: X4
+  schreibt an den Knoten offener Pakete ab Position 1, eine Handaussage dort träfe es, ein gelöschter
+  Knoten endete in `node_gone`) – damit entfallen das X5-Ankerrennen (8a) und Redaktionsänderungen
+  neben einer Stufe durch Konstruktion. Revision je Zeile (409
   `stale_revision` mit `details.current`); eine Änderung ohne geänderten Wert lässt die Zeile stehen.
   Neuer Titel oder Wortlaut: Fundstellen mit Blöcken wieder ungeprüft, blocklose `notFound` bleiben.
   Verworfen statt gelöscht wird jede Aussage außer der von Hand geschriebenen (`orig_human` und kein
@@ -807,9 +809,8 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
 - **Knoten weg (G6).** X4 und X6 prüfen nach der Baumsperre, ob ihr Knoten steht, sonst
   `PermanentError("node_gone")` statt FK-Fehler und Wiederholungen; eine neue Reparatur lässt das Paket
   aus.
-- **Offen.** (1) Wurde ein Knoten mit noch offenem X4-Paket gelöscht, während kein Job lief (eine
-  abgebrochene Extraktion), endet jede Fortsetzung mit `node_gone`: Löschen vor fertigem X4 abweisen
-  oder das Paket auslassen – Nutzerfrage. (2) Entwurfskopien (9b) haben keine Läufe: „von Hand“ muss
+- **Offen.** (1) Erledigt durch die Sperre vor fertigem X4 (Review 9a): ein Knoten mit offenem
+  X4-Paket lässt sich nicht mehr löschen; `node_gone` bleibt für X6. (2) Entwurfskopien (9b) haben keine Läufe: „von Hand“ muss
   dort anders erkannt werden, sonst würde eine bearbeitete Modell-Aussage gelöscht statt verworfen.
   (3) Bearbeitungsrecht = Leserecht in M1 (`simplify:`), M5 braucht eine eigene Prüfung.
   (4) Herkunft je Zeile, nicht je Feld.

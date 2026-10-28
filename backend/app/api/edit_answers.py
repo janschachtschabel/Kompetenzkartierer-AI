@@ -2,8 +2,8 @@
 statement_editing.py; Paket 9 G2-G7): fields by the form's keys, and the refusals of a change - a field
 the form does not take so (422 ``invalid_field``, ``anchor_missing`` for a statement without an anchor),
 a job of the document waiting or running (409 ``job_open``, the job named to the owner and the admins),
-a frozen document (409 ``frozen``), a sector without a form (409 ``no_form``). Each change is audited in
-its transaction.
+a frozen document (409 ``frozen``), one whose extraction has not read every package (409
+``not_extracted``), a sector without a form (409 ``no_form``). Each change is audited in its transaction.
 """
 
 from typing import Annotated, Any
@@ -17,7 +17,7 @@ from app.core.auth import Principal
 from app.core.logging import current_request_id
 from app.db.accounts import record_audit
 from app.db.documents import DocumentError
-from app.db.editing import DocumentFrozen, JobOpen
+from app.db.editing import DocumentFrozen, JobOpen, NotExtracted
 from app.vocab.form_values import FieldError
 
 MOST_FIELDS = 50  # a form's fields, and room
@@ -25,12 +25,12 @@ MOST_VALUES = 50  # of a field of many
 FieldIn = str | Annotated[list[str], Field(max_length=MOST_VALUES)] | None
 Fields = Annotated[dict[str, FieldIn], Field(max_length=MOST_FIELDS)]
 # what a change may meet besides a stale revision, which answers with the row as it stands
-REFUSED = (FieldError, JobOpen, DocumentFrozen, DocumentError)
+REFUSED = (FieldError, JobOpen, DocumentFrozen, NotExtracted, DocumentError)
 EDIT_RESPONSES: dict[int | str, dict[str, Any]] = {
     409: {
         "model": ErrorBody,
         "description": "stale_revision (details.current: the row as it stands), job_open (details.job_id"
-        " to the owner and the admins), frozen, no_form",
+        " to the owner and the admins), frozen, not_extracted (X4 has not read every package), no_form",
     },
     422: {"model": ErrorBody, "description": "invalid_field (details: field, problem), anchor_missing"},
 }
@@ -77,6 +77,8 @@ async def refusal_of(
         )
     if isinstance(error, DocumentFrozen):
         return Refusal(409, "frozen", "The document is frozen: its draft copy takes changes.")
+    if isinstance(error, NotExtracted):
+        return Refusal(409, "not_extracted", "The extraction has not read every work package yet.")
     if isinstance(error, DocumentError) and error.code == "no_form":
         return Refusal(409, "no_form", "The document's sector has no form to edit it with.")
     return Refusal(404, "no_document", "No such document.")

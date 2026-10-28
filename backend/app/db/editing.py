@@ -3,9 +3,11 @@ a node added after its siblings, a node dropped with its subtree - here; a state
 app/db/statement_editing.py. Fields go by the keys of the editor's form and are checked against it
 (app/vocab/form_values.py).
 
-Every change holds the tree's lock first (``lock_tree``), then refuses a document frozen or one a job
-waits or runs on (its extraction, repair or check): so no stage writes beside an editor, and a start
-between the check and the write waits for the lock like any write. A change of a row names the revision
+Every change holds the tree's lock first (``lock_tree``), then refuses a document frozen, one a job
+waits or runs on (its extraction, repair or check) and one whose extraction has not read every package
+yet (X4: it still writes at the nodes of the open ones, at positions of its own): so no stage writes beside
+an editor, and a start between the check and the write waits for the lock, as the job starters take it
+too. A change of a row names the revision
 it was made on (StaleRevision where the row stands at another) and counts one up; it makes the row an
 editor's proposal - its origin the editor's, its rule's name gone, its review status proposed - and
 notes the document edited (``document.edited_at``), which owes X5 a check. A change that changes no field
@@ -25,6 +27,7 @@ from psycopg.rows import dict_row
 
 from app.db.documents import DOCUMENT_VISIBLE, DocumentError
 from app.db.nodes import lock_tree, write_subtree
+from app.db.runs import done_stages
 from app.db.source_queries import Reader
 from app.domain.l1 import NodeDraft
 from app.jobs.queue import open_job
@@ -83,6 +86,10 @@ class JobOpen(Exception):
 
 class DocumentFrozen(Exception):
     """The document is frozen: its draft copy takes changes (plan M1 9.6)."""
+
+
+class NotExtracted(Exception):
+    """The document's extraction has not read every work package yet (X4): it goes on first."""
 
 
 class StaleRevision(Exception):
@@ -233,7 +240,8 @@ def text(value: FieldValue) -> str | None:
 
 
 async def guard(connection: psycopg.AsyncConnection, document_id: UUID) -> None:
-    """Hold the tree's lock, then refuse the change of a frozen document or one beside its open job."""
+    """Hold the tree's lock, then refuse the change of a frozen document, one beside its open job and one
+    X4 has not done yet."""
     await lock_tree(connection, document_id)
     cursor = await connection.execute(
         "SELECT frozen_at IS NOT NULL FROM document WHERE id = %s", (document_id,)
@@ -245,6 +253,8 @@ async def guard(connection: psycopg.AsyncConnection, document_id: UUID) -> None:
         raise DocumentFrozen(f"the document {document_id} is frozen")
     if (job := await open_job(connection, unique_key(document_id))) is not None:
         raise JobOpen(job)
+    if "X4" not in await done_stages(connection, document_id):
+        raise NotExtracted(f"X4 has not read every package of the document {document_id}")
 
 
 def check_revision(row: dict[str, Any], revision: int) -> dict[str, Any]:

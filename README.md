@@ -168,7 +168,8 @@ ungültig.
   Befunde je Schwere an ihm, seinen Aussagen und deren Fundstellen (nicht an seinen Kindern),
   dazu die Zahl der Knoten und Aussagen je Prüfstand. `editable`: Eigentümer und Redaktion/Admin
   dürfen jetzt bearbeiten, `reviewable`: Redaktion/Admin dürfen den Prüfstand setzen – beides
-  nicht, solange ein Job des Dokuments wartet oder läuft, und nicht, sobald es festgeschrieben ist.
+  nicht, solange ein Job des Dokuments wartet oder läuft, nicht, bevor X4 jedes Arbeitspaket gelesen
+  hat, und nicht, sobald es festgeschrieben ist.
 - Bearbeiten: `PATCH /api/v1/nodes/{id}` und `/statements/{id}` (`expected_revision`, `fields` unter
   den Schlüsseln des Formulars, ausgelassene bleiben; eine Aussage auch `anchors`, alle auf einmal:
   Blöcke der Konvertierung, die Seiten folgen aus ihnen, oder nur `page`, wo kein Block sie hält),
@@ -182,7 +183,8 @@ ungültig.
   X5 wieder ungeprüft, eine Änderung ohne geänderten Wert lässt die Zeile stehen; die Antwort ist die
   Zeile wie im Baum. Abgewiesen: 409 `stale_revision` (mit `details.current`, der Zeile, wie sie
   steht), `job_open` (solange ein Job des Dokuments wartet oder läuft; die Job-ID für Eigentümer und
-  Admins), `frozen`, `no_form`; 422 `invalid_field` (`details.field`, `details.problem`). Jede
+  Admins), `not_extracted` (X4 hat noch nicht jedes Arbeitspaket gelesen: erst fortsetzen), `frozen`,
+  `no_form`; 422 `invalid_field` (`details.field`, `details.problem`). Jede
   Änderung steht im Audit (`node.edit`, `node.add`, `node.drop`, `statement.edit`, `statement.add`,
   `statement.reject`, `statement.delete`).
 - Prüfstand: `POST /api/v1/documents/{id}/review` (`status`: `proposed`, `confirmed` oder
@@ -193,7 +195,7 @@ ungültig.
   Revision zählt eins hoch, eine Zeile mit diesem Prüfstand bleibt, wie sie ist; die Antwort nennt die
   Revisionen danach. Eine Aussage zu oder von „verworfen“ ändert, was der Lehrplan sagt (Export und X5
   lassen verworfene aus) und schuldet X5 eine Prüfung; ein Knoten verworfen bleibt in beiden. Wie beim
-  Bearbeiten nicht neben einem offenen Job und nicht festgeschrieben; Audit `review.set`.
+  Bearbeiten nicht neben einem offenen Job, nicht vor X4 und nicht festgeschrieben; Audit `review.set`.
 - Erneut prüfen: `POST /api/v1/documents/{id}/check` startet den Job `extract.check` (X5 erneut,
   ohne Modell) – durch Eigentümer und Redaktion/Admin, sobald X5 das Dokument einmal geprüft hat
   (sonst 409 `not_checked`: die Extraktion fortsetzen). Kein Modelljob: weder Budget noch

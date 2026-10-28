@@ -9,7 +9,8 @@ from typing import Any
 import psycopg
 import pytest
 
-from app.db.editing import DocumentFrozen, JobOpen, StaleRevision
+from app.db.documents import create_document
+from app.db.editing import DocumentFrozen, JobOpen, NotExtracted, StaleRevision
 from app.db.nodes import write_subtree
 from app.db.source_queries import Reader
 from app.db.statement_editing import HandAnchor, add_statement, drop_or_reject_statement, edit_statement
@@ -17,8 +18,8 @@ from app.domain.l1 import AnchorDraft
 from app.domain.wording import text_hash
 from app.vocab.form_values import FieldError
 from tests.db.l1 import add_run
-from tests.db.test_editing import a_finding, an_open_job, edited_at, one
-from tests.db.test_nodes import CV, SCHOOL, connection, document, node, owner, statement, url
+from tests.db.test_editing import a_finding, an_open_job, document, edited_at, one
+from tests.db.test_nodes import CV, SCHOOL, connection, node, owner, statement, url
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 __all__ = ["connection", "document", "url"]  # the fixtures, shared with test_nodes
@@ -261,6 +262,21 @@ async def test_a_model_s_statement_no_run_names_is_rejected_too(
     assert await drop_or_reject_statement(connection, owner(document), said, 1) == "rejected"
 
     assert (await statement_row(connection, said))[6:8] == (MODEL, REJECTED)
+
+
+async def test_no_statement_is_added_before_the_extraction_has_read_every_package(
+    connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # an open package of X4 begins at position 1 of its node: a hand-written statement there would meet it
+    other = await create_document(
+        connection, owner(document), third_party_content=False, source_id=document.source_id,
+        conversion_id=document.conversion_id, sector="school",
+    )  # fmt: skip
+    top = await write_subtree(connection, other.id, node())
+
+    with pytest.raises(NotExtracted):
+        await add_statement(connection, owner(document), top, NEW, [HandAnchor(page=1)])
+    assert await one(connection, "SELECT count(*) FROM statement") == (0,)
 
 
 async def test_no_statement_is_changed_beside_an_open_job_or_of_a_frozen_document(

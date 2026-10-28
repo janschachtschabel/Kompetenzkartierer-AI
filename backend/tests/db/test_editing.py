@@ -1,7 +1,8 @@
 """An editor's changes to a document's nodes (plan M1 9.3; Paket 9 G2-G6, app/db/editing.py): a node's
 fields set by the form's keys, a node added after its siblings, a node dropped with its subtree and the
 findings on it. Each change names the revision it was made on and makes the node an editor's proposal;
-none is made beside an open job of the document or once it is frozen, each waits for the tree's lock."""
+none is made beside an open job of the document, once it is frozen or before its extraction has read every
+package (X4), each waits for the tree's lock."""
 
 import asyncio
 import uuid
@@ -12,19 +13,29 @@ import psycopg
 import pytest
 
 from app.db.documents import create_document
-from app.db.editing import DocumentFrozen, Dropped, JobOpen, StaleRevision, add_node, drop_node, edit_node
+from app.db.editing import (
+    DocumentFrozen,
+    Dropped,
+    JobOpen,
+    NotExtracted,
+    StaleRevision,
+    add_node,
+    drop_node,
+    edit_node,
+)
 from app.db.nodes import lock_tree, write_subtree
+from app.db.runs import RunStart, finish_run, start_run
 from app.db.source_queries import Reader
 from app.domain.l1 import AnchorDraft
 from app.jobs.queue import enqueue
 from app.pipeline.extraction import KIND, unique_key
 from app.vocab.form_values import FieldError
+from tests.db.l1 import add_conversion
 from tests.db.test_nodes import (
     CV,
     SCHOOL,
     anchor,
     connection,
-    document,
     node,
     owner,
     statement,
@@ -33,11 +44,30 @@ from tests.db.test_nodes import (
 )
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
-__all__ = ["connection", "document", "url"]  # the fixtures, shared with test_nodes
+__all__ = ["connection", "url"]  # the fixtures, shared with test_nodes
 
 HUMAN, RULE = CV + "orig_human", CV + "orig_rule"
 PROPOSED, CONFIRMED = CV + "rev_proposed", CV + "rev_confirmed"
 EXACT = CV + "match_exact"
+
+
+@pytest.fixture
+async def document(url: str, connection: psycopg.AsyncConnection) -> Any:
+    """A document of the school sector whose extraction has read every package: one an editor changes."""
+    with psycopg.connect(url, autocommit=True) as sync:
+        made = add_conversion(sync)
+    document = await create_document(
+        connection, Reader(made["owner"], sees_all=False), third_party_content=False,
+        source_id=made["source"], conversion_id=made["conversion"], sector="school",
+    )  # fmt: skip
+    await extracted(connection, document)
+    return document
+
+
+async def extracted(connection: psycopg.AsyncConnection, document: Any) -> None:
+    """X4 done on the document: every package read."""
+    run = await start_run(connection, RunStart(document.id, None, None, "X4", None, None, None, None))
+    await finish_run(connection, run, "done")
 
 
 async def one(connection: psycopg.AsyncConnection, query: str, *params: Any) -> tuple[Any, ...]:
@@ -292,6 +322,22 @@ async def test_no_change_is_made_beside_an_open_job_of_the_document(
         with pytest.raises(JobOpen) as raised:
             await change()
         assert raised.value.job_id == job
+    assert await one(connection, "SELECT count(*), max(revision) FROM node") == (1, 1)
+
+
+async def test_no_change_is_made_before_the_extraction_has_read_every_package(
+    connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # X4 still writes at the nodes of its open packages, at positions of its own (app/pipeline/x4_unit.py)
+    other = await create_document(
+        connection, owner(document), third_party_content=False, source_id=document.source_id,
+        conversion_id=document.conversion_id, sector="school",
+    )  # fmt: skip
+    made = await a_rule_s_node(connection, other)
+
+    for change in changes(connection, other, made):
+        with pytest.raises(NotExtracted):
+            await change()
     assert await one(connection, "SELECT count(*), max(revision) FROM node") == (1, 1)
 
 

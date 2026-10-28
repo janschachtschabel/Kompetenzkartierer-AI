@@ -49,6 +49,7 @@ export const REFUSAL_CODES = [
   "job_open",
   "frozen",
   "no_form",
+  "not_extracted",
   // the editors' review (backend app/api/review.py)
   "not_editor",
 ] as const;

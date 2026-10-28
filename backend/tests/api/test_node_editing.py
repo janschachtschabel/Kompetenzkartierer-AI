@@ -125,6 +125,20 @@ def test_a_new_node_needs_its_form_s_fields_and_a_parent_of_its_document(
     assert (nowhere.status_code, nowhere.json()["code"]) == (404, "no_node")
 
 
+def test_no_node_is_changed_before_the_extraction_has_read_every_package(
+    client: TestClient, url: str
+) -> None:
+    document, owner = a_document(client, url, extracted=False)
+    made = a_node(url, document)
+
+    answer = client.patch(
+        f"/api/v1/nodes/{made}", headers=owner, json={"expected_revision": 1, "fields": {"code": "2"}}
+    )
+
+    assert (answer.status_code, answer.json()["code"]) == (409, "not_extracted")
+    assert rows(url, "SELECT revision FROM node") == [(1,)]
+
+
 def test_no_node_is_changed_beside_an_open_job_or_once_the_document_is_frozen(
     client: TestClient, url: str
 ) -> None:
