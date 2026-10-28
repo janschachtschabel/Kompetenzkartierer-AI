@@ -243,18 +243,24 @@ async def guard(connection: psycopg.AsyncConnection, document_id: UUID) -> None:
     """Hold the tree's lock, then refuse the change of a frozen document, one beside its open job and one
     X4 has not done yet."""
     await lock_tree(connection, document_id)
-    cursor = await connection.execute(
-        "SELECT frozen_at IS NOT NULL FROM document WHERE id = %s", (document_id,)
-    )
-    frozen = await cursor.fetchone()
-    if frozen is None:
-        raise DocumentError(f"no document {document_id}")
-    if frozen[0]:
+    if await frozen(connection, document_id):
         raise DocumentFrozen(f"the document {document_id} is frozen")
     if (job := await open_job(connection, unique_key(document_id))) is not None:
         raise JobOpen(job)
     if "X4" not in await done_stages(connection, document_id):
         raise NotExtracted(f"X4 has not read every package of the document {document_id}")
+
+
+async def frozen(connection: psycopg.AsyncConnection, document_id: UUID) -> bool:
+    """Whether the document is frozen as it stands now - read under the tree's lock, which a freeze is to
+    take as well (9b); DocumentError for none."""
+    cursor = await connection.execute(
+        "SELECT frozen_at IS NOT NULL FROM document WHERE id = %s", (document_id,)
+    )
+    found = await cursor.fetchone()
+    if found is None:
+        raise DocumentError(f"no document {document_id}")
+    return bool(found[0])
 
 
 def check_revision(row: dict[str, Any], revision: int) -> dict[str, Any]:

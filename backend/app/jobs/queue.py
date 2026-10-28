@@ -126,7 +126,8 @@ class Job:
 
 
 def account_lane(account_id: UUID) -> str:
-    """The lane of the jobs an account starts: whose turn it is, and who may follow them."""
+    """The lane of an account's jobs - those it starts, and the checks editors start on its documents
+    (app/api/document_check.py): whose turn it is, and who may follow them."""
     return str(account_id)
 
 

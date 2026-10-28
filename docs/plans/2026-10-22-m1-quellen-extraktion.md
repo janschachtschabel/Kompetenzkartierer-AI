@@ -807,7 +807,9 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   „verworfen“ setzt `edited_at`, weil verworfene Aussagen nicht mehr zum Lehrplan gehören: Kern-Export
   und X5 lassen sie aus.
 - **Erneut prüfen (zusätzlich).** Job `extract.check` (X5 erneut, kein Modelljob) und
-  `POST /documents/{id}/check`; `x5_owed` gilt auch nach einer Bearbeitung seit dem letzten fertigen X5.
+  `POST /documents/{id}/check`, in der Spur des Eigentümers, auch wenn die Redaktion ihn startet (alle
+  Jobs eines Dokuments in einer Spur; sonst traf die Route des Eigentümers einen fremden Job, 500);
+  nicht für ein festgeschriebenes Dokument; `x5_owed` gilt auch nach einer Bearbeitung seit dem letzten fertigen X5.
 - **Knoten weg (G6).** X4 und X6 prüfen nach der Baumsperre, ob ihr Knoten steht, sonst
   `PermanentError("node_gone")` statt FK-Fehler und Wiederholungen; eine neue Reparatur lässt das Paket
   aus.

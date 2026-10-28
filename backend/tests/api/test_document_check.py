@@ -1,11 +1,12 @@
 """A document checked again through the API (plan M1 9; Paket 9 G9): POST /documents/{id}/check starts the
 job extract.check - X5 again, no model, so no model job's admission - by the owner or the editors, once
-X5 has checked the document; beside a job waiting or running it gives back that one, to whom may follow
-it."""
+X5 has checked the document, not once it is frozen; beside a job waiting or running it gives back that
+one, to whom may follow it. The job goes in the owner's lane, as every job of the document."""
 
 from pathlib import Path
 from uuid import UUID
 
+import psycopg
 import pytest
 from fastapi.testclient import TestClient
 
@@ -73,6 +74,38 @@ def test_a_check_waits_for_the_tree_an_edit_holds(client: TestClient, url: str, 
     started = started_beside_an_edit(url, tmp_path, f"/api/v1/documents/{document}/check", header, document)
 
     assert started.status_code == 202, started.text
+
+
+def test_an_editor_s_check_goes_in_the_owner_s_lane_where_the_owner_s_start_meets_it(
+    client: TestClient, url: str
+) -> None:
+    # in the editor's lane the owner's start found a job not its own to show: an assertion, a 500
+    document, header, owner = checked_once(client, url)
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+
+    by_editor = client.post(f"/api/v1/documents/{document}/check", headers=editor)
+    to_owner = client.post(f"/api/v1/documents/{document}/extraction", headers=header)
+    again_by_editor = client.post(f"/api/v1/documents/{document}/check", headers=editor)
+
+    assert by_editor.status_code == 202, by_editor.text
+    job = by_editor.json()["id"]
+    assert rows(url, "SELECT lane FROM job WHERE id = %s", job) == [(str(owner),)]
+    assert (to_owner.status_code, to_owner.json()["id"]) == (200, job)
+    assert (again_by_editor.status_code, again_by_editor.json()["code"]) == (409, "job_open")
+
+
+def test_a_frozen_document_is_checked_no_more(client: TestClient, url: str) -> None:
+    document, header, _ = checked_once(client, url)
+    with psycopg.connect(url, autocommit=True) as connection:
+        connection.execute(
+            "UPDATE document SET iri = 'https://example.org/curriculum/1', frozen_at = now() WHERE id = %s",
+            (document,),
+        )
+
+    answer = client.post(f"/api/v1/documents/{document}/check", headers=header)
+
+    assert (answer.status_code, answer.json()["code"]) == (409, "frozen")
+    assert rows(url, "SELECT count(*) FROM job WHERE kind = 'extract.check'") == [(0,)]
 
 
 def test_a_document_x5_has_not_checked_is_left_to_its_extraction(client: TestClient, url: str) -> None:

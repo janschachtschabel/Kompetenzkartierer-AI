@@ -198,10 +198,13 @@ ungültig.
   Bearbeiten nicht neben einem offenen Job, nicht vor X4 und nicht festgeschrieben; Audit `review.set`.
 - Erneut prüfen: `POST /api/v1/documents/{id}/check` startet den Job `extract.check` (X5 erneut,
   ohne Modell) – durch Eigentümer und Redaktion/Admin, sobald X5 das Dokument einmal geprüft hat
-  (sonst 409 `not_checked`: die Extraktion fortsetzen). Kein Modelljob: weder Budget noch
-  Startgrenzen lassen ihn zu. Er teilt den Schlüssel der Extraktion; wartet oder läuft ein Job des
-  Dokuments, kommt dieser zurück (200), wo der Aufrufer ihm folgen darf (wer ihn startete, Admin),
-  sonst 409 `job_open`. Audit `check.start`. Geschuldet ist die Prüfung, sobald eine Reparatur
+  (sonst 409 `not_checked`: die Extraktion fortsetzen), nicht, sobald es festgeschrieben ist (409
+  `frozen`).
+  Kein Modelljob: weder Budget noch Startgrenzen lassen ihn zu. Er läuft in der Spur des
+  Eigentümers wie jeder Job des Dokuments: folgen (`GET /api/v1/jobs/{id}`) und abbrechen dürfen
+  Eigentümer und Admins, wer ihn startete, sieht ihn in der Antwort (202). Er teilt den Schlüssel der
+  Extraktion; wartet oder läuft ein Job des Dokuments, kommt dieser zurück (200), wo der Aufrufer ihm
+  folgen darf (Eigentümer, Admin), sonst 409 `job_open`. Audit `check.start`. Geschuldet ist die Prüfung, sobald eine Reparatur
   oder eine Bearbeitung (`document.edited_at`) nach dem Start des letzten fertigen X5 begann.
 - Abbrechen: `POST /api/v1/jobs/{id}/cancel` (Eigentümer des Jobs oder Admin, in der Oberfläche
   der Knopf „Abbrechen“ an jedem Auftrag). Ein wartender Job endet sofort, ein laufender beim
