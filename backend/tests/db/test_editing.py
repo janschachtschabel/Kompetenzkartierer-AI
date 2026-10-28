@@ -177,6 +177,27 @@ async def test_a_new_title_leaves_the_node_s_anchors_unchecked(
     assert await cursor.fetchall() == [(None, None, None, 1), (CV + "match_notFound", None, None, 0)]
 
 
+async def test_an_edit_sets_what_it_changes_alone(
+    url: str, connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # Named in SET, the pair fired its trigger on every edit: once a load of the vocabulary no longer
+    # joins it, an edit of the title alone was a CheckViolation. A code kept keeps its code_assigned.
+    made = await write_subtree(connection, document.id, node(
+        node_type=SCHOOL + "Inhaltsbereich", original_title="Zahlen", code="1", code_assigned=True,
+        origin=RULE, rule_id="x1.heading", review_status=CONFIRMED,
+    ))  # fmt: skip
+    with psycopg.connect(url, autocommit=True) as sync:
+        sync.execute("UPDATE vocab_concept SET broader = '{}' WHERE iri = %s", (SCHOOL + "Inhaltsbereich",))
+
+    await edit_node(connection, owner(document), made, 1, {"original_title": "Zahlen und Größen"})
+    titled = await node_row(connection, made)
+    await edit_node(connection, owner(document), made, 2, {"code": "2"})
+    coded = await node_row(connection, made)
+
+    assert titled[:5] == ("Zahlen und Größen", CV + "fn_area", SCHOOL + "Inhaltsbereich", "1", True)
+    assert coded[3:5] == ("2", False)  # a code an editor set is no longer the one X1 assigned
+
+
 async def test_a_field_the_node_may_not_take_is_refused_and_changes_nothing(
     connection: psycopg.AsyncConnection, document: Any
 ) -> None:

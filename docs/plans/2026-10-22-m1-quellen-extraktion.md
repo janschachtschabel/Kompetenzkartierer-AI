@@ -795,7 +795,9 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   neben einer Stufe durch Konstruktion. Die Jobstarter (Extraktion, Reparatur, Prüfung) nehmen die
   Sperre ebenfalls vor ihrem Blick auf offene Jobs: zwischen Blick und Schreiben einer Änderung
   beginnt kein Job. Revision je Zeile (409
-  `stale_revision` mit `details.current`); eine Änderung ohne geänderten Wert lässt die Zeile stehen.
+  `stale_revision` mit `details.current`); eine Änderung ohne geänderten Wert lässt die Zeile stehen,
+  und eine Änderung setzt nur die Spalten, deren Wert sich ändert (ein Paar im SET löste seinen
+  Trigger auch unverändert aus und scheiterte nach einer Vokabularänderung an jeder Änderung).
   Neuer Titel oder Wortlaut: Fundstellen mit Blöcken wieder ungeprüft, blocklose `notFound` bleiben.
   Ein Feldtext mit NUL oder einzelnem Surrogat ist `not_storable` (statt 500 beim Schreiben); die
   Feldschlüssel folgen dem Muster der Formulare (höchstens 40 Zeichen), ein falscher kommt im 422

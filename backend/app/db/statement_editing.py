@@ -13,7 +13,7 @@ findings on it and its anchors.
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, LiteralString
 from uuid import UUID
 
 import psycopg
@@ -25,10 +25,12 @@ from app.db.editing import (
     CV,
     DOCUMENT_OF_NODE,
     HUMAN,
+    OBLIGATION,
     PROPOSED,
     SECTOR,
     check_revision,
     drop_findings,
+    edit_query,
     every_field,
     form_for,
     guard,
@@ -60,14 +62,14 @@ SELECT s.revision, s.verbatim, s.lead_in, s.statement_kind_iri AS statement_kind
     s.details
 FROM statement s WHERE s.id = %s FOR UPDATE
 """
-_EDIT = """
-UPDATE statement SET verbatim = %(verbatim)s, lead_in = %(lead_in)s, statement_kind_iri = %(statement_kind)s,
-    subkind_iri = %(subkind)s,
-    obligation_scheme = CASE WHEN %(obligation)s::text IS NULL THEN NULL ELSE %(obligations)s END,
-    obligation_iri = %(obligation)s, details = %(details)s, text_hash = %(hash)s, origin_iri = %(human)s,
-    rule_id = NULL, review_status_iri = %(proposed)s, revision = revision + 1, updated_at = now()
-WHERE id = %(id)s RETURNING revision
-"""
+# named where their value changes alone, as a node's (app/db/editing.py): the pair's trigger subkind_fits
+_COLUMNS: dict[str, LiteralString] = {
+    "verbatim": "verbatim = %(verbatim)s, text_hash = %(hash)s",
+    "lead_in": "lead_in = %(lead_in)s",
+    "statement_kind": "statement_kind_iri = %(statement_kind)s",
+    "subkind": "subkind_iri = %(subkind)s",
+    "obligation": OBLIGATION,
+}
 _PAGES = """
 SELECT count(*), min(page), max(last_page) FROM document_block
 WHERE conversion_id = (SELECT conversion_id FROM document WHERE id = %s) AND block_id = ANY(%s)
@@ -123,8 +125,11 @@ async def edit_statement(
         if merged == current and drafts is None:
             return revision
         kept = {name: value for name, value in details.items() if name not in WORDING_FIELDS}
+        changed = [column for key, column in _COLUMNS.items() if merged[key] != current[key]]
+        if any(merged[name] != current[name] for name in WORDING_FIELDS):
+            changed.append("details = %(details)s")
         cursor = await connection.execute(
-            _EDIT,
+            edit_query("statement", changed),
             merged
             | {
                 "id": statement_id,

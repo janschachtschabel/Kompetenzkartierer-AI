@@ -181,6 +181,21 @@ async def test_an_edit_the_statement_may_not_take_changes_nothing(
     assert await edited_at(connection, document) is None
 
 
+async def test_an_edit_leaves_the_pair_it_names_not_as_it_stands(
+    url: str, connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # as a node's (tests/db/test_editing.py): a subkind the vocabulary no longer puts under its kind
+    said = await a_run_s_statement(url, connection, document, subkind=SCHOOL + "Kompetenzerwartung")
+    with psycopg.connect(url, autocommit=True) as sync:
+        sync.execute(
+            "UPDATE vocab_concept SET broader = '{}' WHERE iri = %s", (SCHOOL + "Kompetenzerwartung",)
+        )
+
+    assert await edit_statement(connection, owner(document), said, 1, {"lead_in": "Die Lernenden"}) == 2
+    row = await one(connection, "SELECT lead_in, subkind_iri FROM statement WHERE id = %s", said)
+    assert row == ("Die Lernenden", SCHOOL + "Kompetenzerwartung")
+
+
 async def test_a_block_of_another_conversion_is_no_anchor_of_the_document(
     url: str, connection: psycopg.AsyncConnection, document: Any
 ) -> None:

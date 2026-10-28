@@ -19,10 +19,11 @@ DOCUMENT_VISIBLE has it in M1; once others may read documents (M5), editing need
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, LiteralString
 from uuid import UUID
 
 import psycopg
+from psycopg import sql
 from psycopg.rows import dict_row
 
 from app.db.documents import DOCUMENT_VISIBLE, DocumentError
@@ -50,15 +51,24 @@ SELECT revision, original_title, function_iri AS function, node_type_iri AS node
     obligation_iri AS obligation
 FROM node WHERE id = %s FOR UPDATE
 """
-_EDIT_NODE = """
-UPDATE node SET original_title = %(original_title)s, function_iri = %(function)s,
-    node_type_iri = %(node_type)s,
-    code_assigned = code_assigned AND code IS NOT DISTINCT FROM %(code)s, code = %(code)s,
-    obligation_scheme = CASE WHEN %(obligation)s::text IS NULL THEN NULL ELSE %(obligations)s END,
-    obligation_iri = %(obligation)s, origin_iri = %(human)s, rule_id = NULL, review_status_iri = %(proposed)s,
-    revision = revision + 1, updated_at = now()
-WHERE id = %(id)s RETURNING revision
-"""
+OBLIGATION: LiteralString = (
+    "obligation_scheme = CASE WHEN %(obligation)s::text IS NULL THEN NULL ELSE %(obligations)s END,"
+    " obligation_iri = %(obligation)s"
+)
+# The columns each field of the form sets, named where its value changes alone: a column in SET fires
+# its triggers though its value stays - the pair's (node_type_fits), which fails on a pair a load of the
+# vocabulary no longer joins, so that an edit of the title alone was a CheckViolation
+_NODE_COLUMNS: dict[str, LiteralString] = {
+    "original_title": "original_title = %(original_title)s",
+    "function": "function_iri = %(function)s",
+    "node_type": "node_type_iri = %(node_type)s",
+    "code": "code = %(code)s, code_assigned = false",  # an editor's code is none X1 assigned
+    "obligation": OBLIGATION,
+}
+_PROPOSAL: LiteralString = (
+    "origin_iri = %(human)s, rule_id = NULL, review_status_iri = %(proposed)s, revision = revision + 1,"
+    " updated_at = now()"
+)
 # an anchor of a wording changed, which X5 checks again; one without blocks found no passage, and stays so
 _UNCHECKED = """
 UPDATE anchor a SET match_kind_scheme = NULL, match_kind_iri = NULL, match_score = NULL, quote = NULL,
@@ -139,8 +149,9 @@ async def edit_node(
         check_under(form, merged, given=values)
         if merged == current:
             return revision
+        changed = [column for key, column in _NODE_COLUMNS.items() if merged[key] != current[key]]
         cursor = await connection.execute(
-            _EDIT_NODE,
+            edit_query("node", changed),
             merged | {"id": node_id, "obligations": CV + "Obligations", "human": HUMAN, "proposed": PROPOSED},
         )
         if merged["original_title"] != current["original_title"]:
@@ -261,6 +272,14 @@ async def frozen(connection: psycopg.AsyncConnection, document_id: UUID) -> bool
     if found is None:
         raise DocumentError(f"no document {document_id}")
     return bool(found[0])
+
+
+def edit_query(table: LiteralString, columns: Sequence[LiteralString]) -> sql.Composed:
+    """The UPDATE of the row ``%(id)s`` of ``table`` that sets ``columns`` and makes it an editor's proposal
+    on its next revision, which it returns."""
+    return sql.SQL("UPDATE {table} SET {columns} WHERE id = %(id)s RETURNING revision").format(
+        table=sql.Identifier(table), columns=sql.SQL(", ").join([*map(sql.SQL, columns), sql.SQL(_PROPOSAL)])
+    )
 
 
 def check_revision(row: dict[str, Any], revision: int) -> dict[str, Any]:
