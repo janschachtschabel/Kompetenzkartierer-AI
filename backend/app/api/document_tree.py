@@ -68,7 +68,7 @@ class NodeRowOut(BaseModel):
     origin: str
     review_status: str
     revision: int
-    findings: SeverityCounts  # on the node, its statements and their anchors - not on its children
+    findings: SeverityCounts  # on the node and its anchors, its statements and theirs - not its children's
     anchors: list[AnchorOut]
 
 
