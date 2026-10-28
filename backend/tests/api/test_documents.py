@@ -4,6 +4,7 @@ waiting or running gives that one back, as does a document asked of a conversion
 account's documents is being extracted from; only the owner, who is charged, starts; who may read
 the document reads it and its runs."""
 
+import threading
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -21,8 +22,9 @@ from app.db.migrate import migrate
 from app.pipeline.extraction import KIND, unique_key
 from app.vocab.loader import read_vocabulary
 from app.vocab.store import load_vocabulary
+from tests.api.test_sources_edit import until_waiting
 from tests.db.l1 import CV, add_conversion, add_document, add_entity
-from tests.support import make_settings, seed_account, selector_client
+from tests.support import lock_held, make_settings, seed_account, selector_client
 
 pytestmark = pytest.mark.pg
 
@@ -165,6 +167,26 @@ def make(client: TestClient, url: str, header: dict[str, str], made: dict[str, U
 def end_job(url: str, job_id: str, status: str) -> None:
     with psycopg.connect(url, autocommit=True) as connection:
         connection.execute("UPDATE job SET status = %s, finished_at = now() WHERE id = %s", (status, job_id))
+
+
+def started_beside_an_edit(url: str, store: Path, path: str, header: dict[str, str], document: str) -> Any:
+    """``POST path`` while another session holds the document's tree, as an edit does: the start waits
+    for it - so no job is made between an edit's look at the open jobs and its write - and answers once
+    the lock is let go."""
+    answers: list[Any] = []
+
+    def send() -> None:
+        app = create_app(make_settings(database_url=url, storage_dir=store))
+        with selector_client(app, base_url=PUBLIC) as client:
+            answers.append(client.post(path, headers=header))
+
+    starting = threading.Thread(target=send)
+    with lock_held(url, f"SELECT lock_node_tree('{UUID(document)}')", at_most_s=30):
+        starting.start()
+        until_waiting(url, 1)
+        assert answers == []
+    starting.join(30)
+    return answers[0]
 
 
 def spend_all(url: str, owner: UUID) -> None:
@@ -347,6 +369,19 @@ def test_a_start_that_meets_one_started_beside_it_gives_that_one_back_and_takes_
 
     assert (again.status_code, again.json()["id"]) == (200, str(beside))
     assert rows(url, "SELECT count(*) FROM rate_event")[0][0] == starts
+
+
+def test_a_start_waits_for_the_tree_an_edit_holds(client: TestClient, url: str, tmp_path: Path) -> None:
+    owner, header = an_account(url)
+    started = make(client, url, header, a_conversion(url, owner))
+    end_job(url, started["job"]["id"], "done")
+    document = started["document"]["id"]
+
+    again = started_beside_an_edit(
+        url, tmp_path, f"/api/v1/documents/{document}/extraction", header, document
+    )
+
+    assert again.status_code == 202, again.text
 
 
 def test_a_start_while_the_extraction_runs_gives_it_back_though_the_budget_is_spent(

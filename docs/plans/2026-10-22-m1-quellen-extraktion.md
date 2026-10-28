@@ -792,7 +792,9 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   der Trigger folgt in 9b), offenen Job (409 `job_open`) und fertiges X4 (409 `not_extracted`: X4
   schreibt an den Knoten offener Pakete ab Position 1, eine Handaussage dort träfe es, ein gelöschter
   Knoten endete in `node_gone`) – damit entfallen das X5-Ankerrennen (8a) und Redaktionsänderungen
-  neben einer Stufe durch Konstruktion. Revision je Zeile (409
+  neben einer Stufe durch Konstruktion. Die Jobstarter (Extraktion, Reparatur, Prüfung) nehmen die
+  Sperre ebenfalls vor ihrem Blick auf offene Jobs: zwischen Blick und Schreiben einer Änderung
+  beginnt kein Job. Revision je Zeile (409
   `stale_revision` mit `details.current`); eine Änderung ohne geänderten Wert lässt die Zeile stehen.
   Neuer Titel oder Wortlaut: Fundstellen mit Blöcken wieder ungeprüft, blocklose `notFound` bleiben.
   Verworfen statt gelöscht wird jede Aussage außer der von Hand geschriebenen (`orig_human` und kein

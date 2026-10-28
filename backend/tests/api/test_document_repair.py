@@ -24,6 +24,7 @@ from tests.api.test_documents import (
     make,
     rows,
     spend_all,
+    started_beside_an_edit,
     tight,
     url,
 )
@@ -89,6 +90,18 @@ def test_the_owner_starts_the_repair_of_a_checked_document(client: TestClient, u
     }
     audited = rows(url, "SELECT subject, details->>'job' FROM audit_log WHERE action = 'repair.start'")
     assert audited == [(f"document:{document['id']}", started.json()["id"])]
+
+
+def test_a_repair_waits_for_the_tree_an_edit_holds(client: TestClient, url: str, tmp_path: Path) -> None:
+    owner, header = an_account(url)
+    document = extracted(client, url, header, owner)
+    checked(url, document)
+
+    started = started_beside_an_edit(
+        url, tmp_path, f"/api/v1/documents/{document['id']}/repair", header, document["id"]
+    )
+
+    assert started.status_code == 202, started.text
 
 
 def test_a_repair_asked_while_the_extraction_or_a_repair_waits_or_runs_gives_that_one_back(

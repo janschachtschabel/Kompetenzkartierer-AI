@@ -50,6 +50,7 @@ from app.db.documents import (
     documents_made_of,
     documents_of,
 )
+from app.db.nodes import lock_tree
 from app.db.runs import RunState, done_stages, runs_of
 from app.jobs.queue import JobStatus, OpenJob, account_lane, enqueue, last_jobs, open_job, open_jobs
 from app.jobs.state import job_state
@@ -213,6 +214,7 @@ async def start_extraction(document_id: UUID, request: Request, response: Respon
                     raise Refusal(403, "not_owner", "Only the document's owner starts its extraction.")
                 settings = request.app.state.settings
                 key = unique_key(document.id)
+                await lock_tree(connection, document.id)  # an edit's look and write see no job begun between
                 await _open(connection, key)  # following the one waiting or running reads no content
                 await _readable(connection, who, settings, document)
                 await _admit(connection, who.account_id, settings, lambda: _open(connection, key))
@@ -262,6 +264,7 @@ async def start_repair(document_id: UUID, request: Request, response: Response, 
                     raise Refusal(403, "not_owner", "Only the document's owner starts its repair.")
                 settings = request.app.state.settings
                 key = unique_key(document.id)
+                await lock_tree(connection, document.id)  # as the extraction's start
                 await _open(connection, key)
                 await _readable(connection, who, settings, document)
                 if "X5" not in await done_stages(connection, document.id):

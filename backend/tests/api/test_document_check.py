@@ -3,13 +3,24 @@ job extract.check - X5 again, no model, so no model job's admission - by the own
 X5 has checked the document; beside a job waiting or running it gives back that one, to whom may follow
 it."""
 
+from pathlib import Path
 from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
 
 from tests.api.test_document_units import a_run
-from tests.api.test_documents import a_conversion, an_account, client, end_job, make, rows, spend_all, url
+from tests.api.test_documents import (
+    a_conversion,
+    an_account,
+    client,
+    end_job,
+    make,
+    rows,
+    spend_all,
+    started_beside_an_edit,
+    url,
+)
 
 pytestmark = pytest.mark.pg
 __all__ = ["client", "url"]  # the fixtures, shared with test_documents
@@ -54,6 +65,14 @@ def test_an_editor_checks_another_s_document_and_to_a_stranger_it_is_none(
     assert (by_editor.status_code, by_editor.json()["kind"]) == (202, "extract.check")
     assert (by_stranger.status_code, by_stranger.json()["code"]) == (404, "no_document")
     assert client.post(f"/api/v1/documents/{document}/check").status_code == 401
+
+
+def test_a_check_waits_for_the_tree_an_edit_holds(client: TestClient, url: str, tmp_path: Path) -> None:
+    document, header, _ = checked_once(client, url)
+
+    started = started_beside_an_edit(url, tmp_path, f"/api/v1/documents/{document}/check", header, document)
+
+    assert started.status_code == 202, started.text
 
 
 def test_a_document_x5_has_not_checked_is_left_to_its_extraction(client: TestClient, url: str) -> None:

@@ -19,6 +19,7 @@ from app.api.edit_answers import audit
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.api.jobs import JobOut, job_out
 from app.core.auth import Principal
+from app.db.nodes import lock_tree
 from app.db.runs import done_stages
 from app.jobs.queue import OpenJob, account_lane, enqueue, open_job
 from app.jobs.state import job_state
@@ -49,6 +50,7 @@ async def start_check(document_id: UUID, request: Request, response: Response, w
             async with connection.transaction():
                 document = await visible_document(connection, who, document_id)
                 key = unique_key(document.id)
+                await lock_tree(connection, document.id)  # as the extraction's start (app/api/documents.py)
                 if (waiting := await open_job(connection, key)) is not None:
                     raise OpenJob(waiting)
                 if "X5" not in await done_stages(connection, document.id):
