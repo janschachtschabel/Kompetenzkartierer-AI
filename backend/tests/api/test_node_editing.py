@@ -9,7 +9,10 @@ from typing import Any
 import psycopg
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import TypeAdapter
 
+from app.api.edit_answers import FieldKey
+from app.vocab.forms import NODE_FIELDS, STATEMENT_FIELDS
 from tests.api.test_document_tree import a_document
 from tests.api.test_documents import an_account, client, rows, url
 from tests.db.l1 import CV, add_node, add_statement
@@ -81,6 +84,47 @@ def test_a_field_the_node_may_not_take_is_refused_with_the_field_and_why(
 
     assert (answer.status_code, answer.json()["code"]) == (422, "invalid_field")
     assert answer.json()["details"] == {"field": "original_title", "problem": "required"}
+
+
+def test_a_text_no_store_keeps_and_a_key_no_form_has_are_refused_not_failed_on(
+    client: TestClient, url: str
+) -> None:
+    document, owner = a_document(client, url)
+    made = a_node(url, document)
+    path = f"/api/v1/nodes/{made}"
+    raw = {**owner, "content-type": "application/json"}
+
+    surrogate = client.patch(
+        path, headers=raw, content=b'{"expected_revision": 1, "fields": {"original_title": "a\\ud800"}}'
+    )
+    nul = client.patch(
+        path, headers=owner, json={"expected_revision": 1, "fields": {"original_title": "a\x00"}}
+    )
+    long_key = client.patch(path, headers=owner, json={"expected_revision": 1, "fields": {"t" * 5000: "a"}})
+    odd_key = client.patch(
+        path, headers=raw, content=b'{"expected_revision": 1, "fields": {"\\ud800a": "a"}}'
+    )
+    signs_key = client.patch(
+        path, headers=owner, json={"expected_revision": 1, "fields": {"code\x1b[2J": "a"}}
+    )
+
+    for answer in (surrogate, nul):
+        assert (answer.status_code, answer.json()["details"]) == (
+            422, {"field": "original_title", "problem": "not_storable"},
+        )  # fmt: skip
+    for answer in (long_key, odd_key, signs_key):
+        assert (answer.status_code, answer.json()["code"]) == (422, "validation_failed")
+        assert [fault["loc"] for fault in answer.json()["details"]["errors"]] == [
+            ["body", "fields", "_", "[key]"]
+        ]
+    assert len(long_key.content) < 500  # the key not given back
+    assert rows(url, "SELECT revision FROM node") == [(1,)]
+
+
+def test_every_key_of_the_forms_is_one_the_api_takes() -> None:
+    keys = TypeAdapter(FieldKey)
+    for field in (*NODE_FIELDS, *STATEMENT_FIELDS):
+        assert keys.validate_python(field.key) == field.key
 
 
 def test_a_node_is_added_after_its_siblings_and_dropped_with_its_subtree(

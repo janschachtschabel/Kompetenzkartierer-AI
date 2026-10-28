@@ -138,6 +138,8 @@ def _location(fault: Mapping[str, Any]) -> list[Any]:
     location = list(fault["loc"])
     if fault["type"] == "extra_forbidden" and location:
         location[-1] = MASKED
+    if len(location) > 1 and location[-1] == "[key]":  # a mapping's key, as the request had it
+        location[-2] = MASKED
     return location
 
 

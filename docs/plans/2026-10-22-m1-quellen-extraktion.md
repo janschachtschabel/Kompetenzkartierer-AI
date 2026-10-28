@@ -797,6 +797,9 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   beginnt kein Job. Revision je Zeile (409
   `stale_revision` mit `details.current`); eine Änderung ohne geänderten Wert lässt die Zeile stehen.
   Neuer Titel oder Wortlaut: Fundstellen mit Blöcken wieder ungeprüft, blocklose `notFound` bleiben.
+  Ein Feldtext mit NUL oder einzelnem Surrogat ist `not_storable` (statt 500 beim Schreiben); die
+  Feldschlüssel folgen dem Muster der Formulare (höchstens 40 Zeichen), ein falscher kommt im 422
+  maskiert zurück.
   Verworfen statt gelöscht wird jede Aussage außer der von Hand geschriebenen (`orig_human` und kein
   Lauf). Gelöschte Knoten nehmen Unterbaum und Befunde mit; `entity`-Zeilen bleiben. Keine
   Verschiebung in M1 (die Paketzuordnung über `(Position − 1) // PART` bleibt so gültig). Alle

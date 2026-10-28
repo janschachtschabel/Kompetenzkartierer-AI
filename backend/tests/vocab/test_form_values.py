@@ -1,5 +1,6 @@
 """What an edit sets, checked against the editor's form (plan M1 9.3, 9.4; app/vocab/form_values.py): a
-field the form has, a text within its length and given where the form asks for it, a list's value one
+field the form has, a text within its length, one a store keeps, and given where the form asks for it, a
+list's value one
 the form offers, a field of many a list of them each once; a node type or subkind under the function or
 kind beside it, where the edit names either."""
 
@@ -80,6 +81,13 @@ def test_a_text_longer_than_its_field_holds_is_refused() -> None:
     assert checked(NODE_FIELDS, FORM, {"code": "x" * 100}) == {"code": "x" * 100}
     assert problem(NODE_FIELDS, {"code": "x" * 101}) == ("code", "too_long")
     assert problem(STATEMENT_FIELDS, {"verbatim": "x" * 20_001}) == ("verbatim", "too_long")
+
+
+def test_a_text_no_store_keeps_is_refused() -> None:
+    # PostgreSQL's text takes no NUL, UTF-8 no lone surrogate: either was a 500 at the write
+    assert problem(NODE_FIELDS, {"original_title": "Op\x00tik"}) == ("original_title", "not_storable")
+    assert problem(STATEMENT_FIELDS, {"verbatim": "Sie messen\ud800."}) == ("verbatim", "not_storable")
+    assert problem(STATEMENT_FIELDS, {"codeText": "\x00"}) == ("codeText", "not_storable")
 
 
 def test_a_value_the_form_does_not_offer_is_refused() -> None:

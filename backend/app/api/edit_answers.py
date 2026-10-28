@@ -10,7 +10,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 import psycopg
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 
 from app.api.errors import ErrorBody, Refusal
 from app.core.auth import Principal
@@ -23,7 +23,9 @@ from app.vocab.form_values import FieldError
 MOST_FIELDS = 50  # a form's fields, and room
 MOST_VALUES = 50  # of a field of many
 FieldIn = str | Annotated[list[str], Field(max_length=MOST_VALUES)] | None
-Fields = Annotated[dict[str, FieldIn], Field(max_length=MOST_FIELDS)]
+# a form's key (app/vocab/forms.py, a test compares): one wrong is refused as the request's, unechoed
+FieldKey = Annotated[str, StringConstraints(max_length=40, pattern=r"^[a-z][a-zA-Z_]*$")]
+Fields = Annotated[dict[FieldKey, FieldIn], Field(max_length=MOST_FIELDS)]
 # what a change may meet besides a stale revision, which answers with the row as it stands
 REFUSED = (FieldError, JobOpen, DocumentFrozen, NotExtracted, DocumentError)
 EDIT_RESPONSES: dict[int | str, dict[str, Any]] = {

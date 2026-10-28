@@ -1,20 +1,21 @@
 """What an edit sets, checked against the editor's form (plan M1 9.3, 9.4; app/vocab/forms.py): each value
-by the key of a field the form has; a text within its field's length, a blank one none, and given where
-the form asks for it; a list's value one the form offers - active, of the document's profile -, a field
-of many a list of them, each once. A node type and a subkind stand under the function and the kind beside
-them: checked where the edit names either, so that a value the profile has retired since stays until an
-edit touches its pair. The store checks again (its constraints and triggers); this tells the editor which
-field and why.
+by the key of a field the form has; a text within its field's length, one the store keeps (no NUL, no
+lone surrogate), a blank one none, and given where the form asks for it; a list's value one the form
+offers - active, of the document's profile -, a field of many a list of them, each once. A node type and a
+subkind stand under the function and the kind beside them: checked where the edit names either, so that a
+value the profile has retired since stays until an edit touches its pair. The store checks again (its
+constraints and triggers); this tells the editor which field and why.
 """
 
 from collections.abc import Collection, Mapping, Sequence
 from typing import Literal
 
+from app.domain.text import UNSTORABLE
 from app.vocab.forms import Form, FormField
 
 FieldValue = str | list[str] | None  # a text, a value's IRI, the IRIs of a field of many; none unset
 FieldProblem = Literal[
-    "unknown", "required", "not_text", "not_list", "too_long", "not_offered", "not_under",
+    "unknown", "required", "not_text", "not_list", "too_long", "not_storable", "not_offered", "not_under",
     "unknown_block", "no_page",  # a statement's anchors': a block of no conversion of its document, no page
 ]  # fmt: skip
 # a profile's value and the core value it refines, by their fields' keys
@@ -69,6 +70,8 @@ def _value(field: FormField, form: Form, value: object) -> FieldValue:
         return chosen
     if value is not None and not isinstance(value, str):
         raise FieldError(field.key, "not_text")
+    if value is not None and UNSTORABLE.search(value):
+        raise FieldError(field.key, "not_storable")
     if value is not None and field.kind == "concept":
         _offered(field, form, value)
     if value is not None and not value.strip():
