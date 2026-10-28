@@ -14,6 +14,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from app.domain.text import UNSTORABLE
+
 KNOWN_KEYWORDS = frozenset(
     {
         "type",
@@ -59,15 +61,12 @@ def load_schema(directory: Path, name: str) -> dict[str, Any]:
     return loaded
 
 
-# a NUL, or a lone surrogate: a str holds a character beyond the BMP as one, so any is half a pair
-_UNSTORABLE = re.compile("[\x00\ud800-\udfff]")
-
-
 def storable(value: Any) -> Any:
     """An answer as the store takes it: in every text of it a NUL - JSON carries one, PostgreSQL
-    takes it in neither text nor jsonb - or a lone surrogate made the replacement sign."""
+    takes it in neither text nor jsonb - or a lone surrogate (a str holds a character beyond the BMP as
+    one, so any is half a pair) made the replacement sign."""
     if isinstance(value, str):
-        return _UNSTORABLE.sub("\ufffd", value)
+        return UNSTORABLE.sub("\ufffd", value)
     if isinstance(value, dict):
         return {storable(key): storable(item) for key, item in value.items()}
     if isinstance(value, list):

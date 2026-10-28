@@ -17,15 +17,14 @@ The engines are named here and imported only when asked for: the API never loads
 """
 
 import importlib
-import re
 from pathlib import Path
 from typing import Annotated, Any, Literal, Protocol, Self
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
 from app.domain.blocks import BLOCK_ID, CELL_ID
+from app.domain.text import UNSTORABLE
 
-_UNSTORABLE = re.compile(f"[{chr(0)}{chr(0xD800)}-{chr(0xDFFF)}]")
 BlockKind = Literal["text", "table", "page_header", "page_footer"]
 EngineName = Literal["pdfplumber"]  # the engines offered, for the API's schema (a test compares)
 FindingCode = Literal["unmapped_symbol", "encoding_suspect", "text_dropped"]
@@ -51,7 +50,7 @@ def cell_id(table: int, row: int, column: int) -> str:
 def _storable(text: str) -> str:
     """The engines clean their text (app/conversion/layout.py, clean_text); a sign left that no
     store keeps is a fault of one, which fails here, in the converting child, not in the database."""
-    if _UNSTORABLE.search(text):
+    if UNSTORABLE.search(text):
         raise ValueError("a text holds a NUL or a lone surrogate, which PostgreSQL does not store")
     return text
 
