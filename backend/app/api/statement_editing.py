@@ -15,7 +15,16 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.api.deps import require_account
 from app.api.document_access import reader
 from app.api.document_tree import StatementOut, statement_as_read
-from app.api.edit_answers import REFUSED, TAKE_RESPONSES, Fields, answers, audit, refusal_of, stale
+from app.api.edit_answers import (
+    REFUSED,
+    STATEMENT_RESPONSES,
+    TAKE_RESPONSES,
+    Fields,
+    answers,
+    audit,
+    refusal_of,
+    stale,
+)
 from app.api.errors import AUTH_RESPONSES, Refusal
 from app.core.auth import Principal
 from app.db.editing import DOCUMENT_OF_NODE, StaleRevision, target_of
@@ -70,7 +79,7 @@ class TakenOut(BaseModel):
 @router.patch(
     "/statements/{statement_id}",
     summary="Set a statement's fields and anchors - the statement an editor's proposal after",
-    responses=answers(NO_STATEMENT),
+    responses=answers(NO_STATEMENT, STATEMENT_RESPONSES),
 )
 async def edit_a_statement(
     statement_id: UUID, body: StatementEditIn, request: Request, who: Account
@@ -110,7 +119,7 @@ async def edit_a_statement(
     "/nodes/{node_id}/statements",
     status_code=201,
     summary="Add a statement after the node's others - an editor's proposal",
-    responses=answers("no_node: none the caller may read"),
+    responses=answers("no_node: none the caller may read", STATEMENT_RESPONSES),
 )
 async def add_a_statement(
     node_id: UUID, body: NewStatementIn, request: Request, who: Account

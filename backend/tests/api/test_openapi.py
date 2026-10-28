@@ -57,6 +57,10 @@ def test_the_editor_s_routes_name_the_refusals_they_give(spec: dict[str, Any]) -
 
     assert "details.current" in edited["409"]["description"] and "no_form" in edited["409"]["description"]
     assert "invalid_field" in edited["422"]["description"]
+    stated = paths["/api/v1/statements/{statement_id}"]["patch"]["responses"]
+    # a statement stands somewhere: an anchor missing is its refusal alone
+    assert "anchor_missing" in stated["422"]["description"]
+    assert "anchor_missing" not in edited["422"]["description"]
     assert "details.stale" in reviewed["409"]["description"]
     for answers in (reviewed, *taken):
         assert "no_form" not in answers["409"]["description"]

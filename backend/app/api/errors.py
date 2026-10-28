@@ -128,18 +128,24 @@ async def _http_error(request: Request, error: Exception) -> Response:
 
 async def _validation_error(request: Request, error: Exception) -> Response:
     assert isinstance(error, RequestValidationError)  # noqa: S101 - registered for this type only
-    errors = [{"loc": _location(fault), "type": fault["type"]} for fault in error.errors()]
+    faults = error.errors()
+    # a mapping's key the request got wrong: masked wherever a fault's location names it - its value's too
+    keys = [
+        tuple(fault["loc"][:-1]) for fault in faults if len(fault["loc"]) > 1 and fault["loc"][-1] == "[key]"
+    ]
+    errors = [{"loc": _location(fault, keys), "type": fault["type"]} for fault in faults]
     return error_response(
         422, "The request is not valid.", code=VALIDATION_FAILED, details={"errors": errors}
     )
 
 
-def _location(fault: Mapping[str, Any]) -> list[Any]:
+def _location(fault: Mapping[str, Any], keys: list[tuple[Any, ...]]) -> list[Any]:
     location = list(fault["loc"])
     if fault["type"] == "extra_forbidden" and location:
         location[-1] = MASKED
-    if len(location) > 1 and location[-1] == "[key]":  # a mapping's key, as the request had it
-        location[-2] = MASKED
+    for key in keys:
+        if tuple(location[: len(key)]) == key:
+            location[len(key) - 1] = MASKED
     return location
 
 

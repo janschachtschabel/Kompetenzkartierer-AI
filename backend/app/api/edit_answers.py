@@ -37,7 +37,10 @@ _CLOSED = (
 _CURRENT = "stale_revision (details.current: the row as it stands)"
 EDIT_RESPONSES: Responses = {
     409: {"model": ErrorBody, "description": f"{_CURRENT}, {_CLOSED}, no_form"},
-    422: {"model": ErrorBody, "description": "invalid_field (details: field, problem), anchor_missing"},
+    422: {"model": ErrorBody, "description": "invalid_field (details: field, problem)"},
+}
+STATEMENT_RESPONSES: Responses = EDIT_RESPONSES | {
+    422: {"model": ErrorBody, "description": "invalid_field (details: field, problem), anchor_missing"}
 }
 TAKE_RESPONSES: Responses = {409: {"model": ErrorBody, "description": f"{_CURRENT}, {_CLOSED}"}}
 REVIEW_RESPONSES: Responses = {
@@ -62,7 +65,7 @@ def stale(row: str, current: BaseModel | None) -> Refusal:
 
 def answers(not_found: str, refusals: Responses = EDIT_RESPONSES) -> Responses:
     """A change's answers beside its row: ``not_found`` the 404's description, and the ``refusals`` it
-    gives - an edit's, a taking away's (no field, so no form), a review's."""
+    gives - an edit's (a statement's with its anchors), a taking away's (no field, so no form), a review's."""
     return {404: {"model": ErrorBody, "description": not_found}} | refusals
 
 

@@ -107,6 +107,7 @@ def test_a_text_no_store_keeps_and_a_key_no_form_has_are_refused_not_failed_on(
     signs_key = client.patch(
         path, headers=owner, json={"expected_revision": 1, "fields": {"code\x1b[2J": "a"}}
     )
+    both_wrong = client.patch(path, headers=owner, json={"expected_revision": 1, "fields": {"t" * 5000: 1}})
 
     for answer in (surrogate, nul):
         assert (answer.status_code, answer.json()["details"]) == (
@@ -117,7 +118,10 @@ def test_a_text_no_store_keeps_and_a_key_no_form_has_are_refused_not_failed_on(
         assert [fault["loc"] for fault in answer.json()["details"]["errors"]] == [
             ["body", "fields", "_", "[key]"]
         ]
-    assert len(long_key.content) < 500  # the key not given back
+    # its value wrong as well, the key stands in the value's faults too: masked there alike
+    faults = [fault["loc"] for fault in both_wrong.json()["details"]["errors"]]
+    assert len(faults) > 1 and all(loc[:3] == ["body", "fields", "_"] for loc in faults), faults
+    assert max(len(long_key.content), len(both_wrong.content)) < 500  # the key not given back
     assert rows(url, "SELECT revision FROM node") == [(1,)]
 
 
