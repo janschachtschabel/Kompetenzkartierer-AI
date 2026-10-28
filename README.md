@@ -172,7 +172,8 @@ ungültig.
   hat, und nicht, sobald es festgeschrieben ist.
 - Bearbeiten: `PATCH /api/v1/nodes/{id}` und `/statements/{id}` (`expected_revision`, `fields` unter
   den Schlüsseln des Formulars, ausgelassene bleiben; eine Aussage auch `anchors`, alle auf einmal:
-  Blöcke der Konvertierung, die Seiten folgen aus ihnen, oder nur `page`, wo kein Block sie hält),
+  Blöcke der Konvertierung, die Seiten folgen aus ihnen, oder nur `page`, eine Seite der
+  Konvertierung, wo kein Block sie hält),
   `POST /api/v1/documents/{id}/nodes` (`parent_id`, ans Ende der Geschwister) und
   `/nodes/{id}/statements` (ans Ende des Knotens, mindestens eine Fundstelle, sonst 422
   `anchor_missing`), `DELETE /api/v1/nodes/{id}` (samt Unterbaum und den Befunden darauf) und

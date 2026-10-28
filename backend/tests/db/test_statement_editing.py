@@ -17,7 +17,7 @@ from app.db.statement_editing import HandAnchor, add_statement, drop_or_reject_s
 from app.domain.l1 import AnchorDraft
 from app.domain.wording import text_hash
 from app.vocab.form_values import FieldError
-from tests.db.l1 import add_run
+from tests.db.l1 import add_conversion, add_run
 from tests.db.test_editing import a_finding, an_open_job, document, edited_at, one
 from tests.db.test_nodes import CV, SCHOOL, connection, node, owner, statement, url
 
@@ -171,6 +171,7 @@ async def test_an_edit_the_statement_may_not_take_changes_nothing(
         ({}, [HandAnchor(blocks=("p1-b1", "p9-b9"))], ("anchors", "unknown_block")),
         ({}, [HandAnchor()], ("anchors", "no_page")),
         ({}, [HandAnchor(page=0)], ("anchors", "no_page")),
+        ({}, [HandAnchor(page=3)], ("anchors", "no_page")),  # the conversion has two
     ):  # fmt: skip
         with pytest.raises(FieldError) as raised:
             await edit_statement(connection, owner(document), said, 1, given, anchors=anchors)
@@ -178,6 +179,28 @@ async def test_an_edit_the_statement_may_not_take_changes_nothing(
     assert await statement_row(connection, said) == before
     assert len(await anchors_of(connection, said)) == 1
     assert await edited_at(connection, document) is None
+
+
+async def test_a_block_of_another_conversion_is_no_anchor_of_the_document(
+    url: str, connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    said = await a_run_s_statement(url, connection, document)
+    with psycopg.connect(url, autocommit=True) as sync:
+        other = add_conversion(sync, b"\x05" * 32)["conversion"]
+        sync.execute(
+            "INSERT INTO document_block (conversion_id, block_id, page, last_page, seq, kind, text,"
+            " x0, top, x1, bottom, bold, italic)"
+            " VALUES (%s, 'p2-b7', 2, 2, 3, 'text', 'Text', 0, 0, 1, 1, false, false)",
+            (other,),
+        )
+
+    with pytest.raises(FieldError) as raised:
+        await edit_statement(
+            connection, owner(document), said, 1, {}, anchors=[HandAnchor(blocks=("p2-b7",))]
+        )
+
+    assert (raised.value.key, raised.value.problem) == ("anchors", "unknown_block")
+    assert len(await anchors_of(connection, said)) == 1
 
 
 async def test_a_new_statement_goes_after_the_node_s_others_as_an_editor_s_proposal(

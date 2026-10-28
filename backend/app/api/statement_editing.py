@@ -33,6 +33,7 @@ Revision = Annotated[int, Query(ge=1, description="The statement's revision as i
 NO_STATEMENT = "no_statement: none the caller may read"
 MOST_ANCHORS = 20
 MOST_BLOCKS = 200  # of one anchor: a passage over pages of tables
+MOST_PAGE = 99_999  # as a block's id counts them (BlockId); the conversion's own pages bound it further
 BlockId = Annotated[str, Field(pattern=r"^p[0-9]{1,5}-b[0-9]{1,6}$")]
 
 
@@ -42,7 +43,7 @@ class AnchorIn(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
     blocks: list[BlockId] = Field(default=[], max_length=MOST_BLOCKS)
-    page: int | None = Field(default=None, ge=1)
+    page: int | None = Field(default=None, ge=1, le=MOST_PAGE)
 
 
 Anchors = Annotated[list[AnchorIn], Field(max_length=MOST_ANCHORS)]
@@ -58,7 +59,7 @@ class StatementEditIn(BaseModel):
 class NewStatementIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     fields: Fields  # by the form's keys, those it asks for among them
-    anchors: Anchors  # one at least
+    anchors: Anchors = []  # one at least: none is anchor_missing, as an empty list
 
 
 class TakenOut(BaseModel):

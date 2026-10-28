@@ -799,7 +799,8 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   Neuer Titel oder Wortlaut: Fundstellen mit Blöcken wieder ungeprüft, blocklose `notFound` bleiben.
   Ein Feldtext mit NUL oder einzelnem Surrogat ist `not_storable` (statt 500 beim Schreiben); die
   Feldschlüssel folgen dem Muster der Formulare (höchstens 40 Zeichen), ein falscher kommt im 422
-  maskiert zurück.
+  maskiert zurück. Eine Fundstelle ohne Block nennt eine Seite der Konvertierung (`no_page`); eine
+  neue Aussage ohne `anchors` ist `anchor_missing` wie eine mit leerer Liste.
   Verworfen statt gelöscht wird jede Aussage außer der von Hand geschriebenen (`orig_human` und kein
   Lauf). Gelöschte Knoten nehmen Unterbaum und Befunde mit; `entity`-Zeilen bleiben. Keine
   Verschiebung in M1 (die Paketzuordnung über `(Position − 1) // PART` bleibt so gültig). Alle

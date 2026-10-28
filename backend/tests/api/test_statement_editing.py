@@ -84,6 +84,23 @@ def test_a_stale_revision_and_an_anchor_of_no_block_are_refused(client: TestClie
                         ).status_code == 422  # fmt: skip
 
 
+def test_a_page_past_the_document_s_is_no_anchor(client: TestClient, url: str) -> None:
+    document, owner = a_document(client, url)
+    said = a_statement(url, document, a_node(url, document))
+    path = f"/api/v1/statements/{said}"
+
+    past = client.patch(
+        path, headers=owner, json={"expected_revision": 1, "fields": {}, "anchors": [{"page": 3}]}
+    )
+    beyond = client.patch(
+        path, headers=owner, json={"expected_revision": 1, "fields": {}, "anchors": [{"page": 3_000_000_000}]}
+    )
+
+    assert (past.status_code, past.json()["details"]) == (422, {"field": "anchors", "problem": "no_page"})
+    assert (beyond.status_code, beyond.json()["code"]) == (422, "validation_failed")
+    assert rows(url, "SELECT revision FROM statement") == [(1,)]
+
+
 def test_a_new_statement_comes_with_an_anchor_at_least(client: TestClient, url: str) -> None:
     document, owner = a_document(client, url)
     node = a_node(url, document)
@@ -91,9 +108,11 @@ def test_a_new_statement_comes_with_an_anchor_at_least(client: TestClient, url: 
     statements = f"/api/v1/nodes/{node}/statements"
 
     without = client.post(statements, headers=owner, json={"fields": NEW, "anchors": []})
+    unnamed = client.post(statements, headers=owner, json={"fields": NEW})
     added = client.post(statements, headers=owner, json={"fields": NEW, "anchors": [{"blocks": ["p1-b1"]}]})
 
     assert (without.status_code, without.json()["code"]) == (422, "anchor_missing")
+    assert (unnamed.status_code, unnamed.json()["code"]) == (422, "anchor_missing")
     assert added.status_code == 201, added.text
     row = added.json()
     assert (row["position"], row["revision"], row["origin"], row["fields"]["verbatim"]) == (

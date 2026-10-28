@@ -72,6 +72,9 @@ _PAGES = """
 SELECT count(*), min(page), max(last_page) FROM document_block
 WHERE conversion_id = (SELECT conversion_id FROM document WHERE id = %s) AND block_id = ANY(%s)
 """
+_CONVERSION_PAGES = (
+    "SELECT coalesce(c.pages, 0) FROM document d JOIN conversion c ON c.id = d.conversion_id WHERE d.id = %s"
+)
 _TAKEN = """
 SELECT s.revision, s.origin_iri = %s AND s.run_id IS NULL AS by_hand, s.review_status_iri = %s AS rejected,
     array(SELECT id FROM anchor WHERE statement_id = s.id) AS anchors
@@ -229,13 +232,17 @@ async def _anchor_drafts(
     connection: psycopg.AsyncConnection, document_id: UUID, anchors: Sequence[HandAnchor]
 ) -> list[AnchorDraft]:
     """The anchors an editor gives, as the store writes them; FieldError ``anchors`` for none, a block of
-    no conversion of the document, or a passage found nowhere without its page."""
+    no conversion of the document, or a passage found nowhere without a page of the document's."""
     if not anchors:
         raise FieldError("anchors", "required")
     drafts = []
+    pages: int | None = None  # the conversion's, read once a passage found nowhere asks
     for anchor in anchors:
         if not anchor.blocks:
-            if anchor.page is None or anchor.page < 1:
+            if pages is None:
+                cursor = await connection.execute(_CONVERSION_PAGES, (document_id,))
+                pages = int(found[0]) if (found := await cursor.fetchone()) is not None else 0
+            if anchor.page is None or not 1 <= anchor.page <= pages:
                 raise FieldError("anchors", "no_page")
             drafts.append(AnchorDraft(block_ids=(), page_start=anchor.page, match_kind=MATCH_NOT_FOUND))
             continue
