@@ -7,10 +7,10 @@ written whole on their own, so a unit done stays done.
 A job goes on from the last stage done on the document - an attempt after a break (a worker gone,
 an error asked again), or a new job after one that ended for good (its attempts spent, its budget
 spent); a stage cut off midway left nothing but X4's finished units and the anchors X5 checked. A
-document done is neither asked about nor written
-again - but checked again where a repair (extract.repair, app/pipeline/x6_repair.py) ended before its
-check of what it wrote. X3 and X4 read the document as X1 left it, its type among it; X5 checks what
-the stages wrote (app/pipeline/x5_stage.py).
+document done is neither asked about nor written again - but checked again where X5 owes a check
+(app/db/runs.py, x5_owed): a repair (extract.repair, app/pipeline/x6_repair.py) ended before its check
+of what it wrote, or an editor changed the tree since. X3 and X4 read the document as X1 left it, its
+type among it; X5 checks what the stages wrote (app/pipeline/x5_stage.py).
 
 Payload: ``{"document_id": "<uuid>"}``; what it ends with: the document, its stages, the number of
 X2's packages (which X2's run holds, plan M1 6, Festlegung 3).
@@ -47,7 +47,7 @@ async def extract_document(context: JobContext, job: Job) -> dict[str, Any]:
         if document is None:
             raise PermanentError("document_gone", "the document to extract is gone")
         done = await done_stages(connection, document.id)
-        owed = await x5_owed(connection, document.id)  # a repair ended before its check
+        owed = await x5_owed(connection, document.id)  # a repair ended before its check, an edit since
         blocks = await all_blocks(connection, document.conversion_id)
         printed = await printed_pages(connection, document.conversion_id)
     if "X1" not in done:

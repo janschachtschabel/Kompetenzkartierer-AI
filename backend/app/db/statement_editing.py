@@ -112,7 +112,7 @@ async def edit_statement(
 ) -> int | None:
     """Set the statement's fields ``given`` by the form's keys - and its anchors, where ``anchors`` names
     them, in place of those it has - on its revision ``revision``; its revision after, None where
-    ``reader`` sees no such statement. StaleRevision, FieldError, JobOpen or DocumentFrozen, and then
+    ``reader`` sees no such statement. StaleRevision, FieldError or a refusal of ``guard``, and then
     nothing is changed."""
     async with connection.transaction():
         target = await target_of(connection, DOCUMENT_OF_STATEMENT, reader, statement_id)
@@ -169,7 +169,7 @@ async def add_statement(
 ) -> UUID | None:
     """A new statement of the fields ``given`` and ``anchors`` - one at least - at the node, after its
     others, an editor's proposal; its id. None where ``reader`` sees no such node. FieldError (a field the
-    form asks for missing too), JobOpen or DocumentFrozen."""
+    form asks for missing too) or a refusal of ``guard``."""
     async with connection.transaction():
         target = await target_of(connection, DOCUMENT_OF_NODE, reader, node_id)
         if target is None:
@@ -214,7 +214,7 @@ async def drop_or_reject_statement(
     """Take the statement away on its revision ``revision``: delete it where an editor wrote it - an
     editor's from the first, no run's -, with the findings on it and its anchors; else reject it, where
     it is not so already. Which was done; None where ``reader`` sees no such statement. StaleRevision,
-    JobOpen, DocumentFrozen or NotExtracted, and then nothing is changed."""
+    or a refusal of ``guard``, and then nothing is changed."""
     async with connection.transaction():
         target = await target_of(connection, DOCUMENT_OF_STATEMENT, reader, statement_id)
         if target is None:

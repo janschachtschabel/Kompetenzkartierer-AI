@@ -57,7 +57,7 @@ async def set_review(
 ) -> dict[UUID, int]:
     """Set the review status ``status`` (an IRI of cv:ReviewStatuses) of the document's rows ``items``; the
     revision of each after - one already at the status stays as it is. A row named twice is set once, on
-    the revision named first. StaleItems, JobOpen or DocumentFrozen, and then none is set."""
+    the revision named first. StaleItems or a refusal of ``guard``, and then none is set."""
     first: dict[tuple[str, UUID], ReviewItem] = {}
     for item in items:
         first.setdefault((item.kind, item.id), item)

@@ -200,7 +200,7 @@ async def open_jobs(connection: psycopg.AsyncConnection, unique_keys: Sequence[s
 @dataclass(frozen=True)
 class LatestJob:
     id: UUID
-    kind: str  # of the jobs that share a key, the one this is (extract.run, extract.repair)
+    kind: str  # of the jobs that share a key, the one this is (extract.run, extract.repair, extract.check)
     status: JobStatus
     error_code: str | None  # why it failed, where it did
 

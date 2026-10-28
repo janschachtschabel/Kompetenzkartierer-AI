@@ -165,7 +165,8 @@ ungültig.
   Editor sie zeigt (wer das Dokument lesen darf, in einem Snapshot): je Zeile die Felder des
   Formulars unter dessen Schlüsseln, Herkunft, Prüfstand, Revision und Fundstellen (Seiten,
   gedruckte Seite, Zitat, Fundart, Wert, Blöcke in Dokumentreihenfolge), je Knoten die Zahl der
-  Befunde je Schwere an ihm, seinen Aussagen und deren Fundstellen (nicht an seinen Kindern),
+  Befunde je Schwere an ihm, seinen Fundstellen, seinen Aussagen und deren Fundstellen (nicht an
+  seinen Kindern),
   dazu die Zahl der Knoten und Aussagen je Prüfstand. `editable`: Eigentümer und Redaktion/Admin
   dürfen jetzt bearbeiten, `reviewable`: Redaktion/Admin dürfen den Prüfstand setzen – beides
   nicht, solange ein Job des Dokuments wartet oder läuft, nicht, bevor X4 jedes Arbeitspaket gelesen
@@ -180,8 +181,8 @@ ungültig.
   `/statements/{id}` (je `?expected_revision=`; die Aussage eines Laufs wird verworfen und bleibt,
   damit keine Reparatur sie neu vorschlägt, eine von Hand geschriebene gelöscht; die Antwort nennt
   `outcome` – `rejected` oder `deleted` – und die Revision danach, `null` nach dem Löschen) – durch
-  Eigentümer und Redaktion/Admin. Eine Änderung macht die Zeile zum Vorschlag der Redaktion (`orig_human`,
-  `rev_proposed`, Revision +1), ein neuer Titel oder Wortlaut lässt die Fundstellen mit Blöcken für
+  Eigentümer und Redaktion/Admin. Eine Änderung macht die Zeile zum Vorschlag der Redaktion
+  (`orig_human`, `rev_proposed`, Revision +1), ein neuer Titel oder Wortlaut lässt die Fundstellen mit Blöcken für
   X5 wieder ungeprüft, eine Änderung ohne geänderten Wert lässt die Zeile stehen; die Antwort ist die
   Zeile wie im Baum. Abgewiesen: 409 `stale_revision` (mit `details.current`, der Zeile, wie sie
   steht), `job_open` (solange ein Job des Dokuments wartet oder läuft; die Job-ID für Eigentümer und

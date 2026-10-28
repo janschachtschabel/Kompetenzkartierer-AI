@@ -5,13 +5,13 @@ app/db/statement_editing.py. Fields go by the keys of the editor's form and are 
 
 Every change holds the tree's lock first (``lock_tree``), then refuses a document frozen, one a job
 waits or runs on (its extraction, repair or check) and one whose extraction has not read every package
-yet (X4: it still writes at the nodes of the open ones, at positions of its own): so no stage writes beside
-an editor, and a start between the check and the write waits for the lock, as the job starters take it
-too. A change of a row names the revision
-it was made on (StaleRevision where the row stands at another) and counts one up; it makes the row an
-editor's proposal - its origin the editor's, its rule's name gone, its review status proposed - and
-notes the document edited (``document.edited_at``), which owes X5 a check. A change that changes no field
-leaves the row as it was. Dropped rows take the findings on them along; their entities stay.
+yet (X4: it still writes at the nodes of the open ones, at positions of its own): so no stage writes
+beside an editor, and a start between the check and the write waits for the lock, as the job starters
+take it too. A change of a row names the revision it was made on (StaleRevision where the row stands at
+another) and counts one up; it makes the row an editor's proposal - its origin the editor's, its rule's
+name gone, its review status proposed - and notes the document edited (``document.edited_at``), which
+owes X5 a check. A change that changes no field leaves the row as it was. Dropped rows take the findings
+on them along; their entities stay.
 
 simplify: who sees a document edits it - its owner and the editors (Redaktion, Admin), as
 DOCUMENT_VISIBLE has it in M1; once others may read documents (M5), editing needs its own check.
@@ -133,7 +133,7 @@ async def edit_node(
 ) -> int | None:
     """Set the node's fields ``given`` by the form's keys, on its revision ``revision``; its revision after,
     None where ``reader`` sees no such node. A new title leaves the anchors of the node for X5 to check
-    anew. StaleRevision, FieldError, JobOpen or DocumentFrozen, and then nothing is changed."""
+    anew. StaleRevision, FieldError, or a refusal of ``guard``, and then nothing is changed."""
     async with connection.transaction():
         target = await target_of(connection, DOCUMENT_OF_NODE, reader, node_id)
         if target is None:
@@ -169,7 +169,7 @@ async def add_node(
 ) -> UUID | None:
     """A new node of the fields ``given`` under ``parent_id`` - the document's top where None -, after the
     siblings there, an editor's proposal; its id. None where ``reader`` sees no such document, or the
-    parent is no node of it. FieldError (a field the form asks for missing too), JobOpen, DocumentFrozen."""
+    parent is no node of it. FieldError (a field the form asks for missing too) or a refusal of ``guard``."""
     async with connection.transaction():
         target = await target_of(connection, _DOCUMENT, reader, document_id)
         if target is None:
@@ -201,8 +201,8 @@ async def drop_node(
     connection: psycopg.AsyncConnection, reader: Reader, node_id: UUID, revision: int
 ) -> Dropped | None:
     """Take the node away with its subtree - its children, statements and the anchors of all - and the
-    findings on them; what went. None where ``reader`` sees no such node. StaleRevision, JobOpen or
-    DocumentFrozen, and then nothing goes."""
+    findings on them; what went. None where ``reader`` sees no such node. StaleRevision or a refusal of
+    ``guard``, and then nothing goes."""
     async with connection.transaction():
         target = await target_of(connection, DOCUMENT_OF_NODE, reader, node_id)
         if target is None:
@@ -251,8 +251,8 @@ def text(value: FieldValue) -> str | None:
 
 
 async def guard(connection: psycopg.AsyncConnection, document_id: UUID) -> None:
-    """Hold the tree's lock, then refuse the change of a frozen document, one beside its open job and one
-    X4 has not done yet."""
+    """Hold the tree's lock, then refuse the change of a frozen document (DocumentFrozen), one beside its
+    open job (JobOpen) and one X4 has not done yet (NotExtracted)."""
     await lock_tree(connection, document_id)
     if await frozen(connection, document_id):
         raise DocumentFrozen(f"the document {document_id} is frozen")

@@ -111,7 +111,8 @@ class TreeNode:
     review_status_iri: str
     revision: int
     anchors: tuple[TreeAnchor, ...]
-    findings: dict[Severity, int]  # on the node, its statements and their anchors - not its children's
+    # on the node, its anchors, its statements and their anchors - not its children's
+    findings: dict[Severity, int]
     statements: tuple[TreeStatement, ...]
     children: tuple["TreeNode", ...]
 

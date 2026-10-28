@@ -80,9 +80,10 @@ class DocumentRequest(BaseModel):
 
 
 class ExtractionRef(BaseModel):
-    # the job, for those who may follow it (GET /api/v1/jobs/{id}): its owner, an admin; else null
+    # the job, for those who may follow it (GET /api/v1/jobs/{id}): the document's owner, in whose lane
+    # every job of the document runs, an admin; else null
     job_id: UUID | None
-    kind: str  # extract.run, or extract.repair (X6, then X5 again)
+    kind: str  # extract.run, extract.repair (X6, then X5 again) or extract.check (X5 again)
     status: JobStatus
     # why it failed, to every reader: a code says nothing kept from them (the page words it)
     error_code: str | None

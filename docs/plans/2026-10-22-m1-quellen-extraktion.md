@@ -784,7 +784,8 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   bzw. Unterart/Art wird nur geprüft, wo eine Änderung eines der beiden nennt.
 - **Baum (9.2).** `GET /documents/{id}/tree` in einem Snapshot: Felder unter den Formularschlüsseln
   (`fields`), Fundstellen von Knoten und Aussagen (Blöcke in Dokumentreihenfolge), Befunde je Knoten
-  und Schwere (an ihm, seinen Aussagen und deren Fundstellen), Zähler je Prüfstand (`REVIEW_STATUSES`),
+  und Schwere (an ihm, seinen Fundstellen, seinen Aussagen und deren Fundstellen), Zähler je Prüfstand
+  (`REVIEW_STATUSES`),
   `editable`/`reviewable`. Test `tests/api/test_document_tree.py` statt `test_tree.py`.
 - **Bearbeiten (9.3/9.4).** Abweichend von der Tabelle: `POST /documents/{id}/nodes` (`parent_id`)
   und `POST /nodes/{id}/statements` legen an; PATCH/DELETE wie geplant, DELETE mit
@@ -819,11 +820,29 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
 - **Knoten weg (G6).** X4 und X6 prüfen nach der Baumsperre, ob ihr Knoten steht, sonst
   `PermanentError("node_gone")` statt FK-Fehler und Wiederholungen; eine neue Reparatur lässt das Paket
   aus.
+- **Review 9a (28.10.).** Drei Prüfer (Datenbank, API, Nebenläufigkeit), 4 MAJOR, alle behoben:
+  Bearbeiten erst nach X4 (`not_extracted`), Jobstarter nehmen `lock_tree`, der Prüfjob läuft in
+  der Spur des Eigentümers (die Route des Eigentümers traf sonst einen fremden Job, 500). Dazu
+  `not_storable`, Feldschlüssel nach Muster, Seiten der Konvertierung, nur geänderte Spalten im
+  UPDATE, `revision` in der Antwort des Verwerfens, Antwortbeschreibungen je Route.
 - **Offen.** (1) Erledigt durch die Sperre vor fertigem X4 (Review 9a): ein Knoten mit offenem
-  X4-Paket lässt sich nicht mehr löschen; `node_gone` bleibt für X6. (2) Entwurfskopien (9b) haben keine Läufe: „von Hand“ muss
-  dort anders erkannt werden, sonst würde eine bearbeitete Modell-Aussage gelöscht statt verworfen.
-  (3) Bearbeitungsrecht = Leserecht in M1 (`simplify:`), M5 braucht eine eigene Prüfung.
-  (4) Herkunft je Zeile, nicht je Feld.
+  X4-Paket lässt sich nicht mehr löschen; `node_gone` bleibt für X6. (2) Entwurfskopien (9b) haben
+  keine Läufe: „von Hand“ muss dort anders erkannt werden, sonst würde eine bearbeitete
+  Modell-Aussage gelöscht statt verworfen. (3) Bearbeitungsrecht = Leserecht in M1 (`simplify:`),
+  M5 braucht eine eigene Prüfung. (4) Herkunft je Zeile, nicht je Feld.
+  Für 9b: (5) eine Entwurfskopie hat kein fertiges X5 und schuldet keine Prüfung – `check` und
+  `x5_owed` müssen sie prüfbar machen; (6) Fundstellen verworfener Aussagen bleiben ungeprüft, das
+  Festschreib-Tor muss sie auslassen; (7) Festschreiben nimmt `lock_tree` wie jede Änderung, und
+  Extraktion und Reparatur weisen ein festgeschriebenes Dokument ab (die Prüfung tut es schon).
+  Für 9c: (8) der Prüfjob heißt in der Oberfläche noch „Extraktion“ (`documentJobs.ts`), und
+  „Fortsetzen“ mit 200 auf einen offenen Prüfjob meldet „Extraktion gestartet“; (9) Fundstellen nur
+  senden, wenn sie sich ändern (gesendete zählen immer als Änderung). Klein: (10) ein Knoten ohne
+  Überschrift (`x4.unit_without_node`) behält nach einer Bearbeitung seinen Titel als Merkmal nicht
+  (die X5-Ausnahme für seinen Titel-Anker hängt an `rule_id`); (11) eine Änderung ohne Wirkung steht
+  trotzdem im Audit; (12) Adressaten werden in Kollationsreihenfolge gelesen und nach Codepunkt
+  verglichen – mit den heutigen IRIs gleich; (13) die Rückgabezeile einer Änderung wird nach der
+  Transaktion unter Read Committed gelesen, nicht in einem Snapshot (verschwindet sie dazwischen,
+  antwortet die Route 404).
 
 ### Paket 10: Lexikon aus der Länderrecherche mit Stichprobe (3 PT)
 
