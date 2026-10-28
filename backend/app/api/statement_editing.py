@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.api.deps import require_account
 from app.api.document_access import reader
 from app.api.document_tree import StatementOut, statement_as_read
-from app.api.edit_answers import REFUSED, Fields, answers, audit, refusal_of, stale
+from app.api.edit_answers import REFUSED, TAKE_RESPONSES, Fields, answers, audit, refusal_of, stale
 from app.api.errors import AUTH_RESPONSES, Refusal
 from app.core.auth import Principal
 from app.db.editing import DOCUMENT_OF_NODE, StaleRevision, target_of
@@ -64,6 +64,7 @@ class NewStatementIn(BaseModel):
 
 class TakenOut(BaseModel):
     outcome: Literal["deleted", "rejected"]  # deleted: an editor's own; rejected: a run's, which stays
+    revision: int | None  # the rejected statement's after; none once deleted
 
 
 @router.patch(
@@ -135,7 +136,7 @@ async def add_a_statement(
 @router.delete(
     "/statements/{statement_id}",
     summary="Take a statement away: reject a run's, delete an editor's own",
-    responses=answers(NO_STATEMENT),
+    responses=answers(NO_STATEMENT, TAKE_RESPONSES),
 )
 async def take_a_statement(
     statement_id: UUID, expected_revision: Revision, request: Request, who: Account
@@ -148,12 +149,12 @@ async def take_a_statement(
                 if target is None:
                     raise Refusal(404, "no_statement", "No such statement.")
                 document_id = target.document_id
-                outcome = await drop_or_reject_statement(
+                taken = await drop_or_reject_statement(
                     connection, reader(who), statement_id, expected_revision
                 )
-                if outcome is None:
+                if taken is None:
                     raise Refusal(404, "no_statement", "No such statement.")
-                action = "statement.delete" if outcome == "deleted" else "statement.reject"
+                action = "statement.delete" if taken.outcome == "deleted" else "statement.reject"
                 await audit(
                     connection, who, action, f"statement:{statement_id}", {"document": str(document_id)}
                 )
@@ -161,7 +162,7 @@ async def take_a_statement(
             raise stale("statement", await statement_as_read(connection, who, statement_id)) from error
         except REFUSED as error:
             raise await refusal_of(connection, who, document_id, error) from error
-    return TakenOut(outcome=outcome)
+    return TakenOut(outcome=taken.outcome, revision=taken.revision)
 
 
 def _hand(anchors: list[AnchorIn]) -> list[HandAnchor]:

@@ -28,13 +28,24 @@ FieldKey = Annotated[str, StringConstraints(max_length=40, pattern=r"^[a-z][a-zA
 Fields = Annotated[dict[FieldKey, FieldIn], Field(max_length=MOST_FIELDS)]
 # what a change may meet besides a stale revision, which answers with the row as it stands
 REFUSED = (FieldError, JobOpen, DocumentFrozen, NotExtracted, DocumentError)
-EDIT_RESPONSES: dict[int | str, dict[str, Any]] = {
+Responses = dict[int | str, dict[str, Any]]
+# the document closed to changes now
+_CLOSED = (
+    "job_open (details.job_id to the owner and the admins), frozen,"
+    " not_extracted (X4 has not read every package)"
+)
+_CURRENT = "stale_revision (details.current: the row as it stands)"
+EDIT_RESPONSES: Responses = {
+    409: {"model": ErrorBody, "description": f"{_CURRENT}, {_CLOSED}, no_form"},
+    422: {"model": ErrorBody, "description": "invalid_field (details: field, problem), anchor_missing"},
+}
+TAKE_RESPONSES: Responses = {409: {"model": ErrorBody, "description": f"{_CURRENT}, {_CLOSED}"}}
+REVIEW_RESPONSES: Responses = {
     409: {
         "model": ErrorBody,
-        "description": "stale_revision (details.current: the row as it stands), job_open (details.job_id"
-        " to the owner and the admins), frozen, not_extracted (X4 has not read every package), no_form",
-    },
-    422: {"model": ErrorBody, "description": "invalid_field (details: field, problem), anchor_missing"},
+        "description": "stale_revision (details.stale: each row changed or gone, its revision now or null), "
+        + _CLOSED,
+    }
 }
 
 
@@ -49,9 +60,10 @@ def stale(row: str, current: BaseModel | None) -> Refusal:
     )
 
 
-def answers(not_found: str) -> dict[int | str, dict[str, Any]]:
-    """A change's answers beside its row: ``not_found`` the 404's description, and the refusals."""
-    return {404: {"model": ErrorBody, "description": not_found}} | EDIT_RESPONSES
+def answers(not_found: str, refusals: Responses = EDIT_RESPONSES) -> Responses:
+    """A change's answers beside its row: ``not_found`` the 404's description, and the ``refusals`` it
+    gives - an edit's, a taking away's (no field, so no form), a review's."""
+    return {404: {"model": ErrorBody, "description": not_found}} | refusals
 
 
 async def refusal_of(

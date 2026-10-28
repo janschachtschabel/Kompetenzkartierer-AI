@@ -137,14 +137,42 @@ def test_a_run_s_statement_taken_away_is_rejected_and_an_editor_s_deleted(
     rejected = client.delete(f"/api/v1/statements/{by_run}", headers=owner, params={"expected_revision": 1})
     deleted = client.delete(f"/api/v1/statements/{by_hand}", headers=owner, params={"expected_revision": 1})
 
-    assert (rejected.status_code, rejected.json()) == (200, {"outcome": "rejected"})
-    assert (deleted.status_code, deleted.json()) == (200, {"outcome": "deleted"})
+    assert (rejected.status_code, rejected.json()) == (200, {"outcome": "rejected", "revision": 2})
+    assert (deleted.status_code, deleted.json()) == (200, {"outcome": "deleted", "revision": None})
     assert rows(url, "SELECT review_status_iri FROM statement") == [(CV + "rev_rejected",)]
     assert rows(url, "SELECT action FROM audit_log WHERE action LIKE 'statement.%%' ORDER BY id") == [
         ("statement.add",),
         ("statement.reject",),
         ("statement.delete",),
     ]
+
+
+def test_a_statement_taken_away_on_a_stale_revision_stays_and_none_is_changed_once_frozen(
+    client: TestClient, url: str
+) -> None:
+    document, owner = a_document(client, url)
+    node = a_node(url, document)
+    said = a_run_s_statement(url, document, node)
+    path = f"/api/v1/statements/{said}"
+
+    stale = client.delete(path, headers=owner, params={"expected_revision": 2})
+    with psycopg.connect(url, autocommit=True) as connection:
+        connection.execute(
+            "UPDATE document SET iri = 'https://example.org/curriculum/1', frozen_at = now() WHERE id = %s",
+            (document,),
+        )
+    frozen = (
+        client.patch(path, headers=owner, json={"expected_revision": 1, "fields": {"lead_in": "Sie"}}),
+        client.post(f"/api/v1/nodes/{node}/statements", headers=owner,
+                    json={"fields": NEW, "anchors": [{"page": 1}]}),
+        client.delete(path, headers=owner, params={"expected_revision": 1}),
+    )  # fmt: skip
+
+    assert (stale.status_code, stale.json()["code"]) == (409, "stale_revision")
+    assert stale.json()["details"]["current"]["revision"] == 1
+    for answer in frozen:
+        assert (answer.status_code, answer.json()["code"]) == (409, "frozen")
+    assert rows(url, "SELECT count(*), max(revision) FROM statement") == [(1, 1)]
 
 
 def test_to_another_a_statement_is_none_and_beside_an_open_job_it_stays(client: TestClient, url: str) -> None:

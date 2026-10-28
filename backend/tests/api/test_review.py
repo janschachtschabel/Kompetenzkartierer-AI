@@ -4,6 +4,7 @@ stands otherwise."""
 
 import uuid
 
+import psycopg
 import pytest
 from fastapi.testclient import TestClient
 
@@ -86,6 +87,26 @@ def test_a_review_names_a_status_and_a_row_at_least(client: TestClient, url: str
     ):
         answer = client.post(f"/api/v1/documents/{document}/review", headers=editor, json=review)
         assert (answer.status_code, answer.json()["code"]) == (422, "validation_failed")
+
+
+def test_no_review_is_set_once_the_document_is_frozen(client: TestClient, url: str) -> None:
+    document, _ = a_document(client, url)
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+    node = a_node(url, document)
+    with psycopg.connect(url, autocommit=True) as connection:
+        connection.execute(
+            "UPDATE document SET iri = 'https://example.org/curriculum/1', frozen_at = now() WHERE id = %s",
+            (document,),
+        )
+
+    answer = client.post(
+        f"/api/v1/documents/{document}/review",
+        headers=editor,
+        json={"status": "confirmed", "items": [{"kind": "node", "id": node, "revision": 1}]},
+    )
+
+    assert (answer.status_code, answer.json()["code"]) == (409, "frozen")
+    assert rows(url, "SELECT revision FROM node") == [(1,)]
 
 
 def test_no_review_is_set_beside_an_open_job(client: TestClient, url: str) -> None:

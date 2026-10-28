@@ -13,7 +13,13 @@ from app.db.documents import create_document
 from app.db.editing import DocumentFrozen, JobOpen, NotExtracted, StaleRevision
 from app.db.nodes import write_subtree
 from app.db.source_queries import Reader
-from app.db.statement_editing import HandAnchor, add_statement, drop_or_reject_statement, edit_statement
+from app.db.statement_editing import (
+    HandAnchor,
+    Taken,
+    add_statement,
+    drop_or_reject_statement,
+    edit_statement,
+)
 from app.domain.l1 import AnchorDraft
 from app.domain.wording import text_hash
 from app.vocab.form_values import FieldError
@@ -273,10 +279,10 @@ async def test_a_run_s_statement_is_rejected_and_an_editor_s_deleted(
     on_run = await a_finding(connection, document, by_run)
     await connection.execute("UPDATE document SET edited_at = NULL")
 
-    assert await drop_or_reject_statement(connection, owner(document), by_run, 1) == "rejected"
+    assert await drop_or_reject_statement(connection, owner(document), by_run, 1) == Taken("rejected", 2)
     assert await edited_at(connection, document) is not None
-    assert await drop_or_reject_statement(connection, owner(document), edited, 2) == "rejected"
-    assert await drop_or_reject_statement(connection, owner(document), by_hand, 1) == "deleted"
+    assert await drop_or_reject_statement(connection, owner(document), edited, 2) == Taken("rejected", 3)
+    assert await drop_or_reject_statement(connection, owner(document), by_hand, 1) == Taken("deleted", None)
 
     assert (await statement_row(connection, by_run))[6:10] == (MODEL, REJECTED, text_hash("Sie messen."), 2)
     assert (await statement_row(connection, edited))[6:10] == (HUMAN, REJECTED, text_hash("Sie messen."), 3)
@@ -284,7 +290,7 @@ async def test_a_run_s_statement_is_rejected_and_an_editor_s_deleted(
     assert await one(connection, "SELECT array_agg(id) FROM validation_finding") == ([on_run],)
     assert on_hand != on_run
     # a statement rejected stays so: taking it away again changes nothing
-    assert await drop_or_reject_statement(connection, owner(document), by_run, 2) == "rejected"
+    assert await drop_or_reject_statement(connection, owner(document), by_run, 2) == Taken("rejected", 2)
     assert (await statement_row(connection, by_run))[9] == 2
 
 
@@ -297,7 +303,7 @@ async def test_a_model_s_statement_no_run_names_is_rejected_too(
     )
     said = (await one(connection, "SELECT id FROM statement WHERE node_id = %s", top))[0]
 
-    assert await drop_or_reject_statement(connection, owner(document), said, 1) == "rejected"
+    assert await drop_or_reject_statement(connection, owner(document), said, 1) == Taken("rejected", 2)
 
     assert (await statement_row(connection, said))[6:8] == (MODEL, REJECTED)
 

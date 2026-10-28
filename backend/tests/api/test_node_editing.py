@@ -127,6 +127,19 @@ def test_every_key_of_the_forms_is_one_the_api_takes() -> None:
         assert keys.validate_python(field.key) == field.key
 
 
+def test_a_node_taken_away_on_a_stale_revision_stays_and_comes_back_as_it_stands(
+    client: TestClient, url: str
+) -> None:
+    document, owner = a_document(client, url)
+    made = a_node(url, document)
+
+    answer = client.delete(f"/api/v1/nodes/{made}", headers=owner, params={"expected_revision": 2})
+
+    assert (answer.status_code, answer.json()["code"]) == (409, "stale_revision")
+    assert answer.json()["details"]["current"]["revision"] == 1
+    assert rows(url, "SELECT count(*) FROM node") == [(1,)]
+
+
 def test_a_node_is_added_after_its_siblings_and_dropped_with_its_subtree(
     client: TestClient, url: str
 ) -> None:
@@ -188,16 +201,19 @@ def test_no_node_is_changed_beside_an_open_job_or_once_the_document_is_frozen(
 ) -> None:
     document, owner = a_document(client, url, ended=False)
     _, editor = an_account(url, "Redaktion", ("redaktion",))
+    _, admin = an_account(url, "Verwaltung", ("admin",))
     made = a_node(url, document)
     job = rows(url, "SELECT id FROM job WHERE payload->>'document_id' = %s", document)[0][0]
     edit = {"expected_revision": 1, "fields": {"code": "2"}}
 
     to_owner = client.patch(f"/api/v1/nodes/{made}", headers=owner, json=edit)
+    to_admin = client.patch(f"/api/v1/nodes/{made}", headers=admin, json=edit)
     to_editor = client.patch(f"/api/v1/nodes/{made}", headers=editor, json=edit)
 
-    assert (to_owner.status_code, to_owner.json()["code"], to_owner.json()["details"]) == (
-        409, "job_open", {"job_id": str(job)},
-    )  # fmt: skip
+    for answer in (to_owner, to_admin):
+        assert (answer.status_code, answer.json()["code"], answer.json()["details"]) == (
+            409, "job_open", {"job_id": str(job)},
+        )  # fmt: skip
     assert (to_editor.status_code, to_editor.json()["details"]) == (409, {})  # another's job, unnamed
     with psycopg.connect(url, autocommit=True) as connection:
         connection.execute("UPDATE job SET status = 'done', finished_at = now() WHERE id = %s", (job,))

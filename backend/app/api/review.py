@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.deps import require_account
 from app.api.document_access import visible_document
-from app.api.edit_answers import REFUSED, answers, audit, refusal_of
+from app.api.edit_answers import REFUSED, REVIEW_RESPONSES, answers, audit, refusal_of
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.api.source_content import EDITORS
 from app.core.auth import Principal
@@ -49,7 +49,7 @@ class ReviewOut(BaseModel):
 @router.post(
     "/documents/{document_id}/review",
     summary="Set the review status of nodes and statements at once - the editors alone",
-    responses=answers("no_document: none the caller may read")
+    responses=answers("no_document: none the caller may read", REVIEW_RESPONSES)
     | {403: {"model": ErrorBody, "description": "not_editor: the editors alone review"}},
 )
 async def review_rows(document_id: UUID, body: ReviewIn, request: Request, who: Account) -> ReviewOut:

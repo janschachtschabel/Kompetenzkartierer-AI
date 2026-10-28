@@ -1,4 +1,5 @@
-"""The OpenAPI spec names and describes the service, and every tag in it is declared and used."""
+"""The OpenAPI spec names and describes the service, and every tag in it is declared and used; the
+editor's routes name the refusals they give."""
 
 from typing import Any
 
@@ -43,6 +44,23 @@ def test_every_operation_has_a_tag_and_a_summary(spec: dict[str, Any]) -> None:
         for method, operation in operations.items():
             assert operation.get("tags"), f"{method.upper()} {path} has no tag"
             assert operation.get("summary", "").strip(), f"{method.upper()} {path} has no summary"
+
+
+def test_the_editor_s_routes_name_the_refusals_they_give(spec: dict[str, Any]) -> None:
+    paths = spec["paths"]
+    edited = paths["/api/v1/nodes/{node_id}"]["patch"]["responses"]
+    reviewed = paths["/api/v1/documents/{document_id}/review"]["post"]["responses"]
+    taken = [
+        paths[path]["delete"]["responses"]
+        for path in ("/api/v1/nodes/{node_id}", "/api/v1/statements/{statement_id}")
+    ]
+
+    assert "details.current" in edited["409"]["description"] and "no_form" in edited["409"]["description"]
+    assert "invalid_field" in edited["422"]["description"]
+    assert "details.stale" in reviewed["409"]["description"]
+    for answers in (reviewed, *taken):
+        assert "no_form" not in answers["409"]["description"]
+        assert "invalid_field" not in answers.get("422", {}).get("description", "")
 
 
 def test_info_names_the_service_its_version_and_what_visitors_may_do() -> None:

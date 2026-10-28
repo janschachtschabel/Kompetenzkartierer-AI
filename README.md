@@ -178,8 +178,9 @@ ungültig.
   `/nodes/{id}/statements` (ans Ende des Knotens, mindestens eine Fundstelle, sonst 422
   `anchor_missing`), `DELETE /api/v1/nodes/{id}` (samt Unterbaum und den Befunden darauf) und
   `/statements/{id}` (je `?expected_revision=`; die Aussage eines Laufs wird verworfen und bleibt,
-  damit keine Reparatur sie neu vorschlägt, eine von Hand geschriebene gelöscht) – durch Eigentümer
-  und Redaktion/Admin. Eine Änderung macht die Zeile zum Vorschlag der Redaktion (`orig_human`,
+  damit keine Reparatur sie neu vorschlägt, eine von Hand geschriebene gelöscht; die Antwort nennt
+  `outcome` – `rejected` oder `deleted` – und die Revision danach, `null` nach dem Löschen) – durch
+  Eigentümer und Redaktion/Admin. Eine Änderung macht die Zeile zum Vorschlag der Redaktion (`orig_human`,
   `rev_proposed`, Revision +1), ein neuer Titel oder Wortlaut lässt die Fundstellen mit Blöcken für
   X5 wieder ungeprüft, eine Änderung ohne geänderten Wert lässt die Zeile stehen; die Antwort ist die
   Zeile wie im Baum. Abgewiesen: 409 `stale_revision` (mit `details.current`, der Zeile, wie sie

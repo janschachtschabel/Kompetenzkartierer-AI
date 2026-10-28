@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.api.deps import require_account
 from app.api.document_access import reader, visible_document
 from app.api.document_tree import NodeRowOut, node_as_read
-from app.api.edit_answers import REFUSED, Fields, answers, audit, refusal_of, stale
+from app.api.edit_answers import REFUSED, TAKE_RESPONSES, Fields, answers, audit, refusal_of, stale
 from app.api.errors import AUTH_RESPONSES, Refusal
 from app.core.auth import Principal
 from app.db.editing import DOCUMENT_OF_NODE, StaleRevision, add_node, drop_node, edit_node, target_of
@@ -96,7 +96,7 @@ async def add_a_node(document_id: UUID, body: NewNodeIn, request: Request, who: 
 @router.delete(
     "/nodes/{node_id}",
     summary="Take a node away with its subtree and the findings on them",
-    responses=answers(NO_NODE),
+    responses=answers(NO_NODE, TAKE_RESPONSES),
 )
 async def drop_a_node(
     node_id: UUID, expected_revision: Revision, request: Request, who: Account

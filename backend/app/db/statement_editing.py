@@ -85,6 +85,14 @@ FROM statement s WHERE s.id = %s FOR UPDATE
 
 
 @dataclass(frozen=True)
+class Taken:
+    """What became of a statement taken away, and its revision after - none once deleted."""
+
+    outcome: Literal["deleted", "rejected"]
+    revision: int | None
+
+
+@dataclass(frozen=True)
 class HandAnchor:
     """Where an editor found a statement: blocks of the document's conversion - its pages follow from
     them -, or none, the wording found in no block, and the page it stands on, from 1."""
@@ -202,11 +210,11 @@ async def add_statement(
 
 async def drop_or_reject_statement(
     connection: psycopg.AsyncConnection, reader: Reader, statement_id: UUID, revision: int
-) -> Literal["deleted", "rejected"] | None:
+) -> Taken | None:
     """Take the statement away on its revision ``revision``: delete it where an editor wrote it - an
     editor's from the first, no run's -, with the findings on it and its anchors; else reject it, where
     it is not so already. Which was done; None where ``reader`` sees no such statement. StaleRevision,
-    JobOpen or DocumentFrozen, and then nothing is changed."""
+    JobOpen, DocumentFrozen or NotExtracted, and then nothing is changed."""
     async with connection.transaction():
         target = await target_of(connection, DOCUMENT_OF_STATEMENT, reader, statement_id)
         if target is None:
@@ -218,19 +226,21 @@ async def drop_or_reject_statement(
             return None
         current, by_hand, rejected, anchors = found
         check_revision({"revision": current}, revision)
+        if rejected:
+            return Taken("rejected", current)
         if by_hand:
             await drop_findings(connection, target.document_id, [statement_id, *anchors])
             await connection.execute("DELETE FROM statement WHERE id = %s", (statement_id,))
-        elif not rejected:
-            await connection.execute(
+            taken = Taken("deleted", None)
+        else:
+            cursor = await connection.execute(
                 "UPDATE statement SET review_status_iri = %s, revision = revision + 1, updated_at = now()"
-                " WHERE id = %s",
+                " WHERE id = %s RETURNING revision",
                 (REJECTED, statement_id),
             )
-        else:
-            return "rejected"
+            taken = Taken("rejected", await returned_revision(cursor))
         await mark_edited(connection, target.document_id)
-        return "deleted" if by_hand else "rejected"
+        return taken
 
 
 async def _anchor_drafts(
