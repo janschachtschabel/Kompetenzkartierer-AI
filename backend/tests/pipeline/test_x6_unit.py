@@ -281,15 +281,26 @@ async def test_a_package_written_anew_waits_for_the_tree_before_it_reads_its_sta
     ]
 
 
-async def test_a_package_whose_node_an_editor_took_away_ends_the_job(setup: Any) -> None:
-    # an editor's drop held the tree's lock the repair waited at (Paket 9 G6): the next repair asks
+async def test_a_package_whose_node_an_editor_took_away_ends_the_job(setup: Any, database_url: str) -> None:
+    # an editor's drop holds the tree's lock the repair waits at (Paket 9 G6): the next repair asks
     # the package no more, its node gone (app/pipeline/x6_units.py)
     _, connection = setup
     document, job, node, x6, unit = await written(connection)
-    await connection.execute("DELETE FROM node WHERE id = %s", (node,))
-
-    with pytest.raises(PermanentError) as ended:
-        await rewrite_unit(connection, job, document, unit, read(statement("Neu")), run_id=x6)
+    editor = await psycopg.AsyncConnection.connect(database_url)
+    writer = await psycopg.AsyncConnection.connect(database_url, autocommit=True)
+    try:
+        async with editor.transaction():
+            await lock_tree(editor, document.id)
+            rewriting = asyncio.create_task(
+                rewrite_unit(writer, job, document, unit, read(statement("Neu")), run_id=x6)
+            )
+            await waiting_on_a_lock(connection, writer.info.backend_pid)
+            await editor.execute("DELETE FROM node WHERE id = %s", (node,))
+        with pytest.raises(PermanentError) as ended:
+            await asyncio.wait_for(rewriting, 10)
+    finally:
+        await editor.close()
+        await writer.close()
 
     assert ended.value.code == "node_gone"
     assert await rows(connection, "SELECT count(*) FROM statement WHERE document_id = %s", document.id) == [

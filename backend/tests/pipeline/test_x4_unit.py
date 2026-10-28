@@ -283,16 +283,33 @@ async def test_an_attempt_that_lost_its_lease_writes_nothing_of_the_unit(setup: 
     assert (await statements_of(connection, document), await done_units(connection, document.id)) == ([], {})
 
 
-async def test_a_unit_whose_node_an_editor_took_away_ends_the_job(setup: Any) -> None:
-    # an editor's drop held the tree's lock the unit waited at (Paket 9 G6): its node is gone after
+async def test_a_unit_whose_node_an_editor_took_away_ends_the_job(setup: Any, database_url: str) -> None:
+    # an editor's drop holds the tree's lock the unit waits at (Paket 9 G6): its node is gone after
     _, connection = setup
     document, job, node, run = await ready(connection)
-    await connection.execute("DELETE FROM node WHERE id = %s", (node,))
-
-    with pytest.raises(PermanentError) as ended:
-        await write_unit(
-            connection, job, document, package("E2", node), read(statement("Aussage")), first=1, run_id=run
-        )
+    editor = await psycopg.AsyncConnection.connect(database_url)
+    writer = await psycopg.AsyncConnection.connect(database_url, autocommit=True)
+    try:
+        async with editor.transaction():
+            await lock_tree(editor, document.id)
+            writing = asyncio.create_task(
+                write_unit(
+                    writer,
+                    job,
+                    document,
+                    package("E2", node),
+                    read(statement("Aussage")),
+                    first=1,
+                    run_id=run,
+                )
+            )
+            await waiting_on_a_lock(connection, writer.info.backend_pid)
+            await editor.execute("DELETE FROM node WHERE id = %s", (node,))
+        with pytest.raises(PermanentError) as ended:
+            await asyncio.wait_for(writing, 10)
+    finally:
+        await editor.close()
+        await writer.close()
 
     assert ended.value.code == "node_gone"
     assert await rows(
