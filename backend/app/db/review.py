@@ -1,8 +1,8 @@
 """The editors' review of a document's nodes and statements (plan M1 9.5; Paket 9 G8): one review status for
 many rows at once, all or nothing - each row on the revision it was read at, else none is set
 (StaleItems names those that stand otherwise, or no more). A row set counts its revision one up and keeps
-its origin: a review is no edit. It holds the tree's lock and refuses beside an open job and once the
-document is frozen, as every change does (app/db/editing.py).
+its origin: a review is no edit. It holds the tree's lock and refuses beside an open job, before X4 is
+done and once the document is frozen, as every change does (app/db/editing.py, ``guard``).
 
 A review changes not what the document says - X5 checks no review status -, but a statement rejected, or
 taken back from rejected, enters or leaves the curriculum (the Kern export and X5 leave rejected ones

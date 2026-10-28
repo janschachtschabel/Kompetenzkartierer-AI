@@ -1,8 +1,7 @@
 """What an edit sets, checked against the editor's form (plan M1 9.3, 9.4; app/vocab/form_values.py): a
 field the form has, a text within its length, one a store keeps, and given where the form asks for it, a
-list's value one
-the form offers, a field of many a list of them each once; a node type or subkind under the function or
-kind beside it, where the edit names either."""
+list's value one the form offers, a field of many a list of them each once; a node type or subkind under
+the function or kind beside it, where the edit names either."""
 
 from typing import Any
 

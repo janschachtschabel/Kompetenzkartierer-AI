@@ -1,6 +1,6 @@
 """An editor's changes to a document's statements (plan M1 9.4; Paket 9 G2-G7), as app/db/editing.py makes
-a node's - the tree's lock first, then no frozen document and no open job, the revision named, the
-statement an editor's proposal after, the document edited.
+a node's - the tree's lock first, then no frozen document, no open job and X4 done (``guard``), the
+revision named, the statement an editor's proposal after, the document edited.
 
 A statement's fields go by the form's keys - its wording parts among them, kept in its details beside
 whatever else they hold -, its addressees as one of them, all at once. Its anchors are given whole or
@@ -226,12 +226,12 @@ async def drop_or_reject_statement(
             return None
         current, by_hand, rejected, anchors = found
         check_revision({"revision": current}, revision)
-        if rejected:
-            return Taken("rejected", current)
-        if by_hand:
+        if by_hand:  # rejected in a review or not: a review keeps the origin
             await drop_findings(connection, target.document_id, [statement_id, *anchors])
             await connection.execute("DELETE FROM statement WHERE id = %s", (statement_id,))
             taken = Taken("deleted", None)
+        elif rejected:
+            return Taken("rejected", current)
         else:
             cursor = await connection.execute(
                 "UPDATE statement SET review_status_iri = %s, revision = revision + 1, updated_at = now()"

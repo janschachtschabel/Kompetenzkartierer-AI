@@ -12,6 +12,7 @@ import pytest
 from app.db.documents import create_document
 from app.db.editing import DocumentFrozen, JobOpen, NotExtracted, StaleRevision
 from app.db.nodes import write_subtree
+from app.db.review import ReviewItem, set_review
 from app.db.source_queries import Reader
 from app.db.statement_editing import (
     HandAnchor,
@@ -261,6 +262,19 @@ async def test_a_new_statement_has_its_form_s_fields_and_an_anchor(
         with pytest.raises(FieldError) as raised:
             await add_statement(connection, owner(document), top, given, anchors)
         assert (raised.value.key, raised.value.problem) == problem
+    assert await one(connection, "SELECT count(*) FROM statement") == (0,)
+
+
+async def test_an_editor_s_statement_a_review_rejected_is_deleted_all_the_same(
+    connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # a review keeps a row's origin: the editor's own stays the editor's, and goes when taken away
+    top = await write_subtree(connection, document.id, node())
+    by_hand = await add_statement(connection, owner(document), top, NEW, [HandAnchor(page=1)])
+    assert by_hand is not None
+    await set_review(connection, document.id, REJECTED, [ReviewItem("statement", by_hand, 1)])
+
+    assert await drop_or_reject_statement(connection, owner(document), by_hand, 2) == Taken("deleted", None)
     assert await one(connection, "SELECT count(*) FROM statement") == (0,)
 
 
