@@ -261,6 +261,62 @@ async def test_a_document_beside_its_job_or_before_x4_is_not_frozen(
         await freeze(connection, early.id, BASE, accept_violations=False)
 
 
+async def test_the_conditions_are_asked_in_their_order_each_once_the_one_before_is_met(
+    connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # a document that meets none: each refusal names the first condition unmet, every later one unmet too
+    # (no base until the base is asked), and nothing is changed
+    frozen_beside_a_job = await create_document(
+        connection, owner(document), third_party_content=False, source_id=document.source_id,
+        conversion_id=document.conversion_id, sector="school",
+    )  # fmt: skip
+    await an_open_job(connection, frozen_beside_a_job)
+    await connection.execute(
+        "UPDATE document SET iri = %s, frozen_at = now() WHERE id = %s",
+        (BASE + "doc/a/b/1", frozen_beside_a_job.id),
+    )
+    lacking = await create_document(
+        connection, owner(document), third_party_content=False, source_id=document.source_id,
+        conversion_id=document.conversion_id, sector="school",
+    )  # fmt: skip
+    job = await an_open_job(connection, lacking)
+    await connection.execute(
+        "INSERT INTO validation_finding (id, document_id, rule, severity, focus_id, message)"
+        " VALUES (gen_random_uuid(), %s, 'shacl.DocumentShape', 'violation', %s, 'Verstoß')",
+        (lacking.id, lacking.id),
+    )
+
+    async def refusal(base: str | None = BASE) -> str:
+        try:
+            await freeze(connection, lacking.id, base, accept_violations=False)
+        except FreezeRefused as refused:
+            return refused.code
+        except (DocumentFrozen, JobOpen, NotExtracted) as refused:
+            return type(refused).__name__
+        raise AssertionError("frozen, though a condition is unmet")
+
+    with pytest.raises(DocumentFrozen):
+        await freeze(connection, frozen_beside_a_job.id, BASE, accept_violations=False)
+    asked = [await refusal(None)]
+    await connection.execute("UPDATE job SET status = 'done', finished_at = now() WHERE id = %s", (job,))
+    asked.append(await refusal(None))
+    await extracted(connection, lacking)
+    asked.append(await refusal(None))
+    await ready(connection, lacking)
+    await connection.execute(
+        "DELETE FROM extraction_run WHERE document_id = %s AND stage_iri = %s", (lacking.id, stage_iri("X5"))
+    )
+    asked.append(await refusal(None))
+    asked.append(await refusal())
+    await checked(connection, lacking)
+    asked.append(await refusal())
+
+    assert asked == [
+        "JobOpen", "NotExtracted", "incomplete", "no_iri_base", "check_owed", "has_violations",
+    ]  # fmt: skip
+    assert (await freeze(connection, lacking.id, BASE, accept_violations=True)).violations == 1
+
+
 async def test_an_iri_another_document_or_work_holds_is_refused(
     connection: psycopg.AsyncConnection, document: Any
 ) -> None:
