@@ -389,6 +389,8 @@ export const messages = {
   },
   // The blocks of an entry's converted file, a page at a time (ConversionView.vue)
   conversionPage: {
+    // a block the anchors of the row chosen in a document's tree name (BlockList.vue)
+    cited: "Beleg",
     // the page's heading until the entry names it
     heading: "Blöcke",
     back: "Zurück zum Eintrag",

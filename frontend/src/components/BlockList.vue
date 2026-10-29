@@ -5,9 +5,11 @@
  * tells a heading from the text under it. The text keeps the conversion's line breaks. Running
  * heads and feet are quieter than the text, as on paper; they are kept, not dropped, since a
  * page number in them is what a reader cites. A table run on from an earlier page comes first,
- * as on paper, under its block's ID, with the way to the page it begins on.
+ * as on paper, under its block's ID, with the way to the page it begins on - the rest of the address
+ * kept, as the document's tree keeps the row chosen there. The blocks `cited` - those a row's anchors
+ * name (SourcePane) - are marked by the word "Beleg" and a stronger edge, not by a colour alone.
  */
-import { RouterLink } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
 
 import type { Block, ContinuedTable } from "@/api";
 import { pageQuery } from "@/blockPages";
@@ -15,25 +17,41 @@ import BlockTable from "@/components/BlockTable.vue";
 import { messages, t } from "@/i18n/de";
 import { word } from "@/registerWords";
 
-defineProps<{ blocks: Block[]; continued: ContinuedTable[]; page: number }>();
+withDefaults(defineProps<{ blocks: Block[]; continued: ContinuedTable[]; page: number; cited?: ReadonlySet<string> }>(), {
+  cited: () => new Set<string>(),
+});
+const route = useRoute();
 </script>
 
 <template>
   <ol class="blocks">
-    <li v-for="item in continued" :key="`continued-${item.id}`" class="block block--table" data-test="continued">
+    <li
+      v-for="item in continued"
+      :key="`continued-${item.id}`"
+      class="block block--table"
+      :class="{ 'block--cited': cited.has(item.id) }"
+      data-test="continued"
+    >
       <p class="block__meta">
         <code class="block__id">{{ item.id }}</code>
+        <span v-if="cited.has(item.id)" class="block__cited">{{ t("conversionPage.cited") }}</span>
         <span class="block__kind">{{ t("conversionPage.kind.table") }}</span>
         <span>{{ t("conversionPage.continued", { page: item.page }) }}</span>
-        <RouterLink :to="{ query: pageQuery(item.page) }" replace>
+        <RouterLink :to="{ query: { ...route.query, ...pageQuery(item.page) } }" replace>
           {{ t("conversionPage.tableStart", { page: item.page }) }}
         </RouterLink>
       </p>
       <BlockTable :cells="item.cells" :page="page" continued />
     </li>
-    <li v-for="item in blocks" :key="item.id" class="block" :class="`block--${item.kind}`">
+    <li
+      v-for="item in blocks"
+      :key="item.id"
+      class="block"
+      :class="[`block--${item.kind}`, { 'block--cited': cited.has(item.id) }]"
+    >
       <p class="block__meta">
         <code class="block__id">{{ item.id }}</code>
+        <span v-if="cited.has(item.id)" class="block__cited">{{ t("conversionPage.cited") }}</span>
         <span v-if="item.kind !== 'text'" class="block__kind">{{ word(messages.conversionPage.kind, item.kind) }}</span>
         <span v-if="item.bold">{{ t("conversionPage.bold") }}</span>
         <span v-if="item.italic">{{ t("conversionPage.italic") }}</span>
@@ -82,6 +100,16 @@ defineProps<{ blocks: Block[]; continued: ContinuedTable[]; page: number }>();
 .block__id {
   font-family: var(--font-mono);
   color: var(--text);
+}
+
+/* A block the row chosen names: its word in the line, and a thick edge on the side the text begins. */
+.block--cited {
+  border-inline-start: 4px solid var(--accent);
+}
+
+.block__cited {
+  font-weight: 700;
+  color: var(--accent);
 }
 
 .block__kind {
