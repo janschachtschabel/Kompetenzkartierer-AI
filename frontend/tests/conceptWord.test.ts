@@ -10,6 +10,9 @@ describe("a concept in words", () => {
     expect(conceptWord(WORDS, PREFIX, `${PREFIX}exact`)).toBe("wörtlich gefunden");
     expect(conceptWord(WORDS, PREFIX, `${PREFIX}other`)).toBe(`${PREFIX}other`);
     expect(conceptWord(WORDS, PREFIX, "https://example.org/exact")).toBe("https://example.org/exact");
+    // another scheme's prefix of the same length: its tail is no notation of this one
+    const other = "https://w3id.org/wlo/curriculum/vocab#kind__exact";
+    expect(conceptWord(WORDS, PREFIX, other)).toBe(other);
     expect(conceptWord(WORDS, PREFIX, `${PREFIX}toString`)).toBe(`${PREFIX}toString`); // no inherited key
   });
 });
