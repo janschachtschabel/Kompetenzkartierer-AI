@@ -21,7 +21,7 @@ pytestmark = pytest.mark.pg
 __all__ = ["client", "url"]  # the fixtures, shared with test_documents
 
 BASE = "https://example.org/kk/"
-DOC = BASE + "doc/ministerium/lp-physik/2024"
+DOC = BASE + "doc/de-nw/ministerium/lp-physik/2024"
 WORK = {"title": "Lehrplan Physik", "region": "DE-NW", "short_title": "lp-physik"}
 AREA_TYPE = "https://w3id.org/wlo/curriculum/profile/school#Inhaltsbereich"
 

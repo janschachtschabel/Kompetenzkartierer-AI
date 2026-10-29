@@ -432,7 +432,7 @@ So entsteht das geplante **generische System für Kompetenzstandards** ohne Sond
 
 - **IRI-Schema** (Vorschlag):
   - `…/work/<land>/<kurztitel>` für das Werk;
-  - `…/doc/<herausgeber>/<kurztitel>/<fassung>` für das Dokument, plus SHA-256 der Datei;
+  - `…/doc/<land>/<herausgeber>/<kurztitel>/<fassung>` für das Dokument (Land und Kurztitel des Werks; das Land, weil Herausgeber verschiedener Länder gleich heißen können), plus SHA-256 der Datei;
   - Knoten: Dokument + **Strukturpfad aus Codes** (`…/lf-5`, `…/if-5/st-3`). Fehlt ein Code, vergibt die Pipeline ihn deterministisch aus der Position (`cur:codeAssigned true`).
 - **Laufbezogene IDs** (`run_id#node_id`) sind keine Identität. Die App hat gezeigt, dass Neuläufe sonst alle Kanten verlieren.
 - **Zusammenführen über Dokumente** läuft über Code + Hochschule bzw. Beruf + Lernfeldnummer + Fassung des RLP; für den Wortlaut dient `cur:textHash` (NFC, Kleinschreibung, Leerraum, Trennstriche, ohne führende Nummer).

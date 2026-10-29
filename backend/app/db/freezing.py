@@ -7,10 +7,10 @@ package, and it is no draft copy), short of its work, the work's country or shor
 edition, or one with nothing to name the IRI by (``incomplete``), no base to name it under (``no_iri_base``),
 X5 not done on it (a draft copy runs none until its check job), owing it a check or an anchor X5 has not
 checked (``check_owed``), violations among its findings the editors have not accepted (``has_violations``).
-Then the work gets its IRI where it has none, the document its own - issuer, the work's short title, edition
-(app/domain/iris.py) - where it has none, its nodes and statements theirs (app/domain/naming.py); an IRI
-another work or document holds, committed before or while this one waited, refuses (``iri_taken``). The
-document is frozen last: after that, the triggers refuse every change.
+Then the work gets its IRI where it has none, the document its own - the work's country, issuer, the work's
+short title, edition (app/domain/iris.py) - where it has none, its nodes and statements theirs
+(app/domain/naming.py); an IRI another work or document holds, committed before or while this one waited,
+refuses (``iri_taken``). The document is frozen last: after that, the triggers refuse every change.
 """
 
 from collections.abc import Mapping
@@ -109,7 +109,7 @@ async def freeze(
             work = work_iri(base, region, short_title)
             await _give(connection, "UPDATE work SET iri = %s WHERE id = %s", work, work_id)
         if iri is None:
-            iri = document_iri(base, issuer, short_title, edition)
+            iri = document_iri(base, region, issuer, short_title, edition)
         named = await _name(connection, document_id, iri)
         frozen_now = "UPDATE document SET iri = %s, frozen_at = now(), updated_at = now() WHERE id = %s"
         await _give(connection, frozen_now, iri, document_id)

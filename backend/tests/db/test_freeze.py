@@ -24,7 +24,7 @@ pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 __all__ = ["connection", "document", "url"]  # the fixtures, shared with test_editing
 
 BASE = "https://example.org/kk/"
-DOC = BASE + "doc/ministerium-fuer-schule/lp-physik/2024"
+DOC = BASE + "doc/de-nw/ministerium-fuer-schule/lp-physik/2024"
 REJECTED = CV + "rev_rejected"
 
 

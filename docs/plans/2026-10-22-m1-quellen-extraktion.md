@@ -868,7 +868,9 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   Aussagen und Regeltitel, Offen 9a (6)), `has_violations`
   (ohne `accept_violations`), `iri_taken`. `IRI_BASE` ist optional ohne Vorgabe (Namensraum
   unregistriert). IRIs: Werk `…/work/<land>/<kurztitel>`, Dokument
-  `…/doc/<herausgeber>/<kurztitel des Werks>/<fassung>` – das Dokument hat keinen eigenen Kurztitel –,
+  `…/doc/<land des Werks>/<herausgeber>/<kurztitel des Werks>/<fassung>` – das Dokument hat keinen eigenen
+  Kurztitel; das Land vorn (Entscheidung 2026-10-29, abweichend von konzept §11), weil Ministerien verschiedener
+  Länder gleich heißen können –,
   Knoten nach dem Codepfad (`app/domain/naming.py`), Aussagen `<knoten>/s-<n>`, jede Nummer einmal über
   alle Revisionen (`statement_serial`, je Knoten-IRI das Höchste aller Revisionen der Dokument-IRI:
   ein in der Kopie gelöschter und am selben Codepfad neu angelegter Knoten trägt die IRI wieder, seine

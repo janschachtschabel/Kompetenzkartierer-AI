@@ -1,15 +1,16 @@
 """The IRIs of works, documents and nodes, and the codes the pipeline assigns (konzept §11).
 
-A work is named by its country and short title, a document by its issuer, short title and edition, a node by
-the path of its codes under its document ("…/lf-5", "…/if-5/st-3"), a statement by its number under its node
-("…/lf-5/s-3", numbers given once, plan M1 9.6). A node without a code gets its position among its siblings
-(``cur:codeAssigned``), named ``pos-<n>``, and so does one whose code holds no ASCII letter or digit (a Greek
-letter, a bullet). Siblings whose segments meet - a code printed twice, or printed as "Pos. 3" beside an
-assigned third - are counted on: "lf-5", "lf-5-2"; so is a code that would read as a statement's number ("S 1"
-as "s-1-2"), and "S" twice is "s", "s-1-2" (counted_on). The base is the service's (``IRI_BASE``, set when
-documents are frozen, plan M1 9.6); until then a document carries a draft IRI from its id, and its nodes are
-named once it is frozen. Each part is a slug of a hundred signs at most: lowercase ASCII, the German letters
-spelt out ("ä" as "ae", "ß" as "ss"), anything else between words a hyphen.
+A work is named by its country and short title, a document by its work's country, its issuer, the work's short
+title and its edition, a node by the path of its codes under its document ("…/lf-5", "…/if-5/st-3"), a
+statement by its number under its node ("…/lf-5/s-3", numbers given once, plan M1 9.6). A node without a code
+gets its position among its siblings (``cur:codeAssigned``), named ``pos-<n>``, and so does one whose code
+holds no ASCII letter or digit (a Greek letter, a bullet). Siblings whose segments meet - a code printed
+twice, or printed as "Pos. 3" beside an assigned third - are counted on: "lf-5", "lf-5-2"; so is a code that
+would read as a statement's number ("S 1" as "s-1-2"), and "S" twice is "s", "s-1-2" (counted_on). The base is
+the service's (``IRI_BASE``, set when documents are frozen, plan M1 9.6); until then a document carries a
+draft IRI from its id, and its nodes are named once it is frozen. Each part is a slug of a hundred signs at
+most: lowercase ASCII, the German letters spelt out ("ä" as "ae", "ß" as "ss"), anything else between words a
+hyphen.
 """
 
 import re
@@ -45,9 +46,10 @@ def work_iri(base: str, region: str, short_title: str) -> str:
     return f"{checked_base(base)}work/{slug(region)}/{slug(short_title)}"
 
 
-def document_iri(base: str, issuer: str, short_title: str, edition: str) -> str:
-    """The document's IRI: ``<base>doc/<issuer>/<short title>/<edition>``."""
-    return f"{checked_base(base)}doc/{slug(issuer)}/{slug(short_title)}/{slug(edition)}"
+def document_iri(base: str, region: str, issuer: str, short_title: str, edition: str) -> str:
+    """The document's IRI: ``<base>doc/<country>/<issuer>/<short title>/<edition>``, the country and the
+    short title its work's - the country first, as two countries' ministries may bear one name."""
+    return f"{checked_base(base)}doc/{slug(region)}/{slug(issuer)}/{slug(short_title)}/{slug(edition)}"
 
 
 def draft_iri(document_id: UUID) -> str:

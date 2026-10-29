@@ -56,10 +56,11 @@ def test_a_work_is_named_by_its_country_and_short_title() -> None:
     assert made == "https://example.org/kk/work/de-nw/kernlehrplan-mathematik"
 
 
-def test_a_document_is_named_by_its_issuer_short_title_and_edition() -> None:
-    made = document_iri(BASE, "MSB NRW", "Kernlehrplan Mathematik", "2019")
+def test_a_document_is_named_by_its_work_s_country_its_issuer_the_short_title_and_its_edition() -> None:
+    # the country first: two countries' ministries may bear one name
+    made = document_iri(BASE, "DE-NW", "MSB NRW", "Kernlehrplan Mathematik", "2019")
 
-    assert made == "https://example.org/kk/doc/msb-nrw/kernlehrplan-mathematik/2019"
+    assert made == "https://example.org/kk/doc/de-nw/msb-nrw/kernlehrplan-mathematik/2019"
 
 
 @pytest.mark.parametrize(
@@ -88,7 +89,7 @@ def test_a_draft_is_named_by_its_id() -> None:
 
 
 def test_a_node_is_named_by_the_path_of_its_codes_under_its_document() -> None:
-    document = document_iri(BASE, "KMK", "Rahmenlehrplan Mechatronik", "2018")
+    document = document_iri(BASE, "DE", "KMK", "Rahmenlehrplan Mechatronik", "2018")
 
     assert node_iri(document, ["lf-5", "pos-2"]) == f"{document}/lf-5/pos-2"
 

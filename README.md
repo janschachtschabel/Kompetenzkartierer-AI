@@ -230,13 +230,13 @@ ungültig.
   vor ihrem Prüfjob), schuldet eine Prüfung oder eine Fundstelle ist ungeprüft (`check_owed`,
   `details.unchecked`; Fundstellen verworfener Aussagen zählen nicht), Verstöße unter den Befunden ohne
   `accept_violations` (`has_violations`, `details.violations`). Dann bekommen Werk
-  (`…/work/<land>/<kurztitel>`), Dokument (`…/doc/<herausgeber>/<kurztitel des Werks>/<fassung>`), Knoten
-  (Pfad ihrer Codes; ein Code wie „S 1“ zählt weiter, `s-<n>` gehört den Aussagen) und Aussagen
-  (`<knoten>/s-<n>`, jede Nummer einmal, auch unter einem Knoten, der in einer Kopie neu am selben Pfad
-  entstand) ihre IRIs; eine IRI, die ein anderes Werk oder Dokument hält – auch eines, das im selben
-  Augenblick festgeschrieben wird –, weist ab (`iri_taken`, `details.iri`). Danach weist die Datenbank jede
-  Änderung an den Zeilen des Dokuments ab, nur der Rechtestatus bleibt änderbar. Audit `document.freeze` mit
-  Revision und angenommenen Verstößen; die Antwort ist das Dokument.
+  (`…/work/<land>/<kurztitel>`), Dokument (`…/doc/<land des Werks>/<herausgeber>/<kurztitel des
+  Werks>/<fassung>`), Knoten (Pfad ihrer Codes; ein Code wie „S 1“ zählt weiter, `s-<n>` gehört den
+  Aussagen) und Aussagen (`<knoten>/s-<n>`, jede Nummer einmal, auch unter einem Knoten, der in einer Kopie
+  neu am selben Pfad entstand) ihre IRIs; eine IRI, die ein anderes Werk oder Dokument hält – auch eines,
+  das im selben Augenblick festgeschrieben wird –, weist ab (`iri_taken`, `details.iri`). Danach weist die
+  Datenbank jede Änderung an den Zeilen des Dokuments ab, nur der Rechtestatus bleibt änderbar. Audit
+  `document.freeze` mit Revision und angenommenen Verstößen; die Antwort ist das Dokument.
 - Entwurfskopie: `POST /api/v1/documents/{id}/draft-copy` (nur Redaktion/Admin, 201 mit der Kopie)
   öffnet die nächste Revision eines festgeschriebenen Dokuments unter derselben IRI: alle Zeilen mit
   ihren IRIs, Herkunft, Prüfstand und Revisionen, ohne Läufe und Befunde – X5 schuldet ihr eine
