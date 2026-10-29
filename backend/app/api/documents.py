@@ -69,6 +69,11 @@ START_REFUSALS: dict[int | str, dict[str, object]] = {
     403: {"model": ErrorBody, "description": "no_budget: no tokens left"},
     429: {"model": ErrorBody, "description": "too_many_jobs, too_many_starts: wait and try again"},
 }
+# a frozen document or a draft copy is extracted no more (_extractable)
+NOT_EXTRACTED_AGAIN = (
+    "frozen: the document is frozen, its draft copy takes changes; "
+    "not_extractable: a draft copy holds what the extraction read"
+)
 
 
 class DocumentRequest(BaseModel):
@@ -217,6 +222,7 @@ async def make_document(
             "file_hidden: the entry's content is no longer the owner's to read",
         },
         404: {"model": ErrorBody, "description": "no_document: none the caller may read"},
+        409: {"model": ErrorBody, "description": NOT_EXTRACTED_AGAIN},
     },
 )
 async def start_extraction(document_id: UUID, request: Request, response: Response, who: Account) -> JobOut:
@@ -268,7 +274,7 @@ async def start_extraction(document_id: UUID, request: Request, response: Respon
         409: {
             "model": ErrorBody,
             "description": "not_checked: X5 has not checked the document yet; "
-            "nothing_to_repair: no work package's findings ask for a repair",
+            "nothing_to_repair: no work package's findings ask for a repair; " + NOT_EXTRACTED_AGAIN,
         },
     },
 )

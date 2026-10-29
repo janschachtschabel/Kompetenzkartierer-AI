@@ -67,6 +67,25 @@ def test_the_editor_s_routes_name_the_refusals_they_give(spec: dict[str, Any]) -
         assert "invalid_field" not in answers.get("422", {}).get("description", "")
 
 
+def test_the_routes_of_freezing_name_the_refusals_they_give(spec: dict[str, Any]) -> None:
+    paths = spec["paths"]
+    started = [paths[f"/api/v1/documents/{{document_id}}/{route}"]["post"]["responses"] for route in (
+        "extraction", "repair",
+    )]  # fmt: skip
+    copied = paths["/api/v1/documents/{document_id}/draft-copy"]["post"]["responses"]
+    set_ = [paths[path]["patch"]["responses"] for path in (
+        "/api/v1/documents/{document_id}", "/api/v1/documents/{document_id}/work",
+    )]  # fmt: skip
+
+    for answers in started:
+        assert (
+            "frozen" in answers["409"]["description"] and "not_extractable" in answers["409"]["description"]
+        )
+    assert "vocabulary_changed" in copied["409"]["description"]
+    for answers in set_:
+        assert "invalid_field" in answers["422"]["description"]
+
+
 def test_info_names_the_service_its_version_and_what_visitors_may_do() -> None:
     # the start page asks it before anyone signs in: PUBLIC_ACCESS decides what it offers a visitor
     client = TestClient(create_app(make_settings()), base_url="http://testserver:8000")
