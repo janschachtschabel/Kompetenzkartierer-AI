@@ -78,7 +78,7 @@ _CONVERSION_PAGES = (
     "SELECT coalesce(c.pages, 0) FROM document d JOIN conversion c ON c.id = d.conversion_id WHERE d.id = %s"
 )
 _TAKEN = """
-SELECT s.revision, s.origin_iri = %s AND s.run_id IS NULL AS by_hand, s.review_status_iri = %s AS rejected,
+SELECT s.revision, s.by_hand, s.review_status_iri = %s AS rejected,
     array(SELECT id FROM anchor WHERE statement_id = s.id) AS anchors
 FROM statement s WHERE s.id = %s FOR UPDATE
 """
@@ -204,6 +204,8 @@ async def add_statement(
         [made] = await append_statements(
             connection, target.document_id, node_id, [draft], first_position=int(place[0])
         )
+        # the editor's from the first: taken away, it is deleted (the stages' are rejected)
+        await connection.execute("UPDATE statement SET by_hand = true WHERE id = %s", (made,))
         await mark_edited(connection, target.document_id)
         return made
 
@@ -212,7 +214,7 @@ async def drop_or_reject_statement(
     connection: psycopg.AsyncConnection, reader: Reader, statement_id: UUID, revision: int
 ) -> Taken | None:
     """Take the statement away on its revision ``revision``: delete it where an editor wrote it - an
-    editor's from the first, no run's -, with the findings on it and its anchors; else reject it, where
+    editor's from the first (``by_hand``) -, with the findings on it and its anchors; else reject it, where
     it is not so already. Which was done; None where ``reader`` sees no such statement. StaleRevision,
     or a refusal of ``guard``, and then nothing is changed."""
     async with connection.transaction():
@@ -220,13 +222,13 @@ async def drop_or_reject_statement(
         if target is None:
             return None
         await guard(connection, target.document_id)
-        cursor = await connection.execute(_TAKEN, (HUMAN, REJECTED, statement_id))
+        cursor = await connection.execute(_TAKEN, (REJECTED, statement_id))
         found = await cursor.fetchone()
         if found is None:
             return None
         current, by_hand, rejected, anchors = found
         check_revision({"revision": current}, revision)
-        if by_hand:  # rejected in a review or not: a review keeps the origin
+        if by_hand:  # rejected in a review or not: a review keeps the mark
             await drop_findings(connection, target.document_id, [statement_id, *anchors])
             await connection.execute("DELETE FROM statement WHERE id = %s", (statement_id,))
             taken = Taken("deleted", None)

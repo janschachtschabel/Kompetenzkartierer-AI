@@ -322,6 +322,21 @@ async def test_a_model_s_statement_no_run_names_is_rejected_too(
     assert (await statement_row(connection, said))[6:8] == (MODEL, REJECTED)
 
 
+async def test_a_run_s_statement_an_editor_changed_is_rejected_without_its_run_too(
+    url: str, connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # a draft copy keeps no runs: the edit made it the editor's, its run said it was the model's first
+    edited = await a_run_s_statement(url, connection, document)
+    await edit_statement(connection, owner(document), edited, 1, {"lead_in": "Die Lernenden"})
+    await connection.execute("UPDATE statement SET run_id = NULL WHERE id = %s", (edited,))
+    top = await write_subtree(connection, document.id, node())
+    by_hand = await add_statement(connection, owner(document), top, NEW, [HandAnchor(page=1)])
+
+    assert await drop_or_reject_statement(connection, owner(document), edited, 2) == Taken("rejected", 3)
+    assert await one(connection, "SELECT by_hand FROM statement WHERE id = %s", by_hand) == (True,)
+    assert await one(connection, "SELECT bool_or(by_hand) FROM statement WHERE id <> %s", by_hand) == (False,)
+
+
 async def test_no_statement_is_added_before_the_extraction_has_read_every_package(
     connection: psycopg.AsyncConnection, document: Any
 ) -> None:
