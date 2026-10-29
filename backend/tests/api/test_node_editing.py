@@ -45,8 +45,9 @@ def test_the_owner_edits_a_node_and_reads_it_back_as_the_tree_has_it(client: Tes
     }  # fmt: skip
     assert set(row) == {
         "id", "position", "fields", "code_assigned", "origin", "review_status", "revision", "findings",
-        "anchors",
+        "anchors", "iri",
     }  # fmt: skip
+    assert row["iri"] is None  # given when the document is frozen
     assert rows(
         url, "SELECT action, subject, details->>'document' FROM audit_log WHERE action LIKE 'node.%%'"
     ) == [("node.edit", f"node:{made}", document)]
