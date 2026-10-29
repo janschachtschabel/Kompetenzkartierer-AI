@@ -21,7 +21,7 @@ from tests.db.test_nodes import connection, owner, url
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 __all__ = ["connection", "document", "url"]  # the fixtures, shared with test_editing
 
-IRI = "https://example.org/kk/doc/ministerium/lp-physik/2024"
+IRI = "https://example.org/kk/doc/de-nw/ministerium/lp-physik/2024"
 PHYSICS = NewWork("Lehrplan Physik", "DE-NW", "lp-physik")
 
 

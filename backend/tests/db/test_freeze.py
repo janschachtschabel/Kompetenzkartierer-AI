@@ -167,6 +167,25 @@ async def test_an_issuer_or_edition_with_nothing_to_name_it_by_is_what_the_docum
     assert (unnamed.value.code, unnamed.value.details) == ("incomplete", {"missing": ["issuer", "edition"]})
 
 
+async def test_works_of_two_countries_named_alike_freeze_their_documents_under_iris_of_their_own(
+    connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # one issuer's name, one short title, one edition: the work's country tells the documents apart
+    await ready(connection, document)
+    other = await create_document(
+        connection, owner(document), third_party_content=False, source_id=document.source_id,
+        conversion_id=document.conversion_id, sector="school",
+    )  # fmt: skip
+    await extracted(connection, other)
+    await ready(connection, other)
+    await set_work(connection, owner(document), other.id, NewWork("Lehrplan Physik", "DE-BY", "lp-physik"))
+
+    first = await freeze(connection, document.id, BASE, accept_violations=False)
+    second = await freeze(connection, other.id, BASE, accept_violations=False)
+
+    assert (first.iri, second.iri) == (DOC, BASE + "doc/de-by/ministerium-fuer-schule/lp-physik/2024")
+
+
 async def test_no_document_is_frozen_without_a_base_to_name_it_under(
     connection: psycopg.AsyncConnection, document: Any
 ) -> None:
@@ -273,7 +292,7 @@ async def test_the_conditions_are_asked_in_their_order_each_once_the_one_before_
     await an_open_job(connection, frozen_beside_a_job)
     await connection.execute(
         "UPDATE document SET iri = %s, frozen_at = now() WHERE id = %s",
-        (BASE + "doc/a/b/1", frozen_beside_a_job.id),
+        (BASE + "doc/a/b/c/1", frozen_beside_a_job.id),
     )
     lacking = await create_document(
         connection, owner(document), third_party_content=False, source_id=document.source_id,

@@ -31,7 +31,7 @@ from tests.db.l1 import (
 pytestmark = pytest.mark.pg
 
 FROZEN = "UPDATE document SET iri = %s, frozen_at = now() WHERE id = %s"
-IRI = "https://example.org/doc/amt/lehrplan/2024"
+IRI = "https://example.org/doc/de/amt/lehrplan/2024"
 
 
 @pytest.fixture

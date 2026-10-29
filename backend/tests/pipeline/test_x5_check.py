@@ -99,7 +99,7 @@ async def test_a_draft_copy_is_checked_with_no_x5_of_its_own_and_x5_owes_it_noth
     pool, connection = setup
     document = await extracted(setup, tmp_path, database_url, invent=())
     await connection.execute(
-        "UPDATE document SET iri = 'https://example.org/kk/doc/a/b/1', frozen_at = now() WHERE id = %s",
+        "UPDATE document SET iri = 'https://example.org/kk/doc/a/b/c/1', frozen_at = now() WHERE id = %s",
         (document.id,),
     )
     copy = await copy_document(connection, document.id)

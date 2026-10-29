@@ -112,7 +112,7 @@ def test_one_iri_names_each_revision_of_a_document_once(
     connection: psycopg.Connection, made: dict[str, Any]
 ) -> None:
     # a draft copy is a new revision of the same edition, with the same IRIs (plan M1 9.6)
-    iri = "https://example.org/kk/doc/msb-nrw/klp-mathematik/2019"
+    iri = "https://example.org/kk/doc/de-nw/msb-nrw/klp-mathematik/2019"
     frozen = {"iri": iri, "frozen_at": "2026-10-23T12:00:00Z"}
     add_document(connection, made, revision=1, document_type_iri=SCHOOL + "dt-Lehrplan", **frozen)
     add_document(connection, made, revision=2, iri=iri)

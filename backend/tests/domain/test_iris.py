@@ -95,7 +95,7 @@ def test_a_node_is_named_by_the_path_of_its_codes_under_its_document() -> None:
 
 
 def test_a_statement_is_named_by_its_number_under_its_node() -> None:
-    node = "https://example.org/kk/doc/kmk/rlp/2018/lf-5"
+    node = "https://example.org/kk/doc/de/kmk/rlp/2018/lf-5"
 
     assert statement_iri(node, 3) == f"{node}/s-3"
     with pytest.raises(ValueError, match="number"):
@@ -106,7 +106,7 @@ def test_a_statement_is_named_by_its_number_under_its_node() -> None:
 
 def test_a_node_needs_a_segment() -> None:
     with pytest.raises(ValueError, match="segment"):
-        node_iri("https://example.org/kk/doc/kmk/rlp/2018", [])
+        node_iri("https://example.org/kk/doc/de/kmk/rlp/2018", [])
 
 
 def test_a_node_is_named_under_a_frozen_document_alone() -> None:

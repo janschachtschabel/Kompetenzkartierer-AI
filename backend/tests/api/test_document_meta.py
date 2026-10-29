@@ -15,7 +15,7 @@ pytestmark = pytest.mark.pg
 __all__ = ["client", "url"]  # the fixtures, shared with test_documents
 
 PHYSICS = {"title": "Lehrplan Physik", "region": "DE-NW", "short_title": "lp-physik"}
-IRI = "https://example.org/kk/doc/ministerium/lp-physik/2024"
+IRI = "https://example.org/kk/doc/de-nw/ministerium/lp-physik/2024"
 
 
 def named(url: str, document: str, *, frozen: bool = False) -> None:

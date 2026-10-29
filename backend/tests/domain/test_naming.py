@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from app.domain.naming import NodeRow, StatementRow, name_rows
 
-DOC = "https://example.org/kk/doc/kmk/rlp/2018"
+DOC = "https://example.org/kk/doc/de/kmk/rlp/2018"
 
 
 def node(code: str | None, position: int, parent: NodeRow | None = None, **changes: object) -> NodeRow:
