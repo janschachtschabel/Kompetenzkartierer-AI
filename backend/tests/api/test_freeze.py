@@ -76,6 +76,16 @@ def test_an_editor_freezes_a_ready_document_and_its_tree_is_edited_no_more(
     ]
     tree = freezing.get(f"/api/v1/documents/{document}/tree", headers=editor).json()
     assert (tree["editable"], tree["reviewable"]) == (False, False)
+    [top] = tree["nodes"]
+    assert (top["iri"], top["statements"][0]["iri"]) == (DOC + "/lf-1", DOC + "/lf-1/s-1")
+    read = freezing.get(f"/api/v1/documents/{document}", headers=editor).json()
+    assert {key: read[key] for key in ("iri", "revision", "copy_of", "issuer", "edition")} == {
+        "iri": DOC, "revision": 1, "copy_of": None, "issuer": "Ministerium", "edition": "2024",
+    }  # fmt: skip
+    assert read["frozen_at"] is not None
+    assert {key: value for key, value in read["work"].items() if key != "id"} == WORK | {
+        "iri": BASE + "work/de-nw/lp-physik"
+    }
 
 
 def test_freezing_is_the_editors_and_violations_are_frozen_with_once_they_accept_them(
@@ -160,6 +170,8 @@ def test_an_editor_copies_a_frozen_document_as_its_next_revision(freezing: TestC
     assert rows(url, "SELECT iri, revision, copy_of::text, frozen_at FROM document WHERE id = %s", copy) == [
         (DOC, 2, document, None)
     ]
+    body = copied.json()
+    assert (body["iri"], body["revision"], body["copy_of"], body["frozen_at"]) == (DOC, 2, document, None)
     assert rows(url, "SELECT subject, details FROM audit_log WHERE action = 'document.copy'") == [
         (f"document:{document}", {"copy": copy, "revision": 2})
     ]

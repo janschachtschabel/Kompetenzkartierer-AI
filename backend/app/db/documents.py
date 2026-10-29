@@ -31,7 +31,7 @@ DOCUMENT_VISIBLE = "(d.owner_id = %(me)s OR %(all)s)"
 _COLUMNS = """
     d.id, d.source_id, d.conversion_id, d.owner_id, d.work_id, d.draft_iri, d.iri, d.revision, d.frozen_at,
     d.title, d.document_type_iri, d.sector_iri, d.regions, d.rights_status, d.created_at, d.updated_at,
-    d.copy_of
+    d.copy_of, d.issuer, d.edition
 """
 _BY_ID = f"SELECT {_COLUMNS} FROM document d WHERE d.id = %(id)s"  # noqa: S608 - fixed parts
 _VISIBLE_BY_ID = f"{_BY_ID} AND {DOCUMENT_VISIBLE}"
@@ -103,6 +103,8 @@ class Document:
     created_at: datetime
     updated_at: datetime
     copy_of: UUID | None  # the frozen revision a draft copy copies
+    issuer: str | None
+    edition: str | None
 
 
 async def create_document(

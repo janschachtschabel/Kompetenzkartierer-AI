@@ -22,13 +22,13 @@ from app.domain.l1 import REVIEW_STATUSES, WORDING_FIELDS, Severity
 _VISIBLE = f"SELECT 1 FROM document d WHERE d.id = %(id)s AND {DOCUMENT_VISIBLE}"  # noqa: S608 - fixed parts
 _NODES = f"""
 SELECT n.id, n.parent_id, n.position, n.function_iri, n.node_type_iri, n.code, n.code_assigned,
-    n.original_title, n.obligation_iri, n.origin_iri, n.review_status_iri, n.revision
+    n.original_title, n.obligation_iri, n.origin_iri, n.review_status_iri, n.revision, n.iri
 FROM node n JOIN document d ON d.id = n.document_id
 WHERE n.document_id = %(id)s AND {DOCUMENT_VISIBLE} ORDER BY n.position
 """  # noqa: S608 - fixed parts
 _STATEMENTS = f"""
 SELECT s.id, s.node_id, s.position, s.verbatim, s.lead_in, s.statement_kind_iri, s.subkind_iri,
-    s.obligation_iri, s.details, s.origin_iri, s.review_status_iri, s.text_hash, s.revision,
+    s.obligation_iri, s.details, s.origin_iri, s.review_status_iri, s.text_hash, s.revision, s.iri,
     array(
         SELECT a.addressee_iri FROM statement_addressee a WHERE a.statement_id = s.id ORDER BY 1
     ) AS addressees
@@ -93,6 +93,7 @@ class TreeStatement:
     review_status_iri: str
     text_hash: str
     revision: int
+    iri: str | None  # once its document was frozen
     addressees: tuple[str, ...]
     anchors: tuple[TreeAnchor, ...]
 
@@ -110,6 +111,7 @@ class TreeNode:
     origin_iri: str
     review_status_iri: str
     revision: int
+    iri: str | None  # once its document was frozen
     anchors: tuple[TreeAnchor, ...]
     # on the node, its anchors, its statements and their anchors - not its children's
     findings: dict[Severity, int]

@@ -90,6 +90,14 @@ class ExtractionRef(BaseModel):
     error_code: str | None
 
 
+class WorkOut(BaseModel):
+    id: UUID
+    title: str
+    region: str | None  # ISO 3166: DE, DE-NW
+    short_title: str | None  # a slug
+    iri: str | None  # given when a document of it was first frozen
+
+
 class DocumentOut(BaseModel):
     id: UUID
     source_id: UUID
@@ -99,6 +107,13 @@ class DocumentOut(BaseModel):
     document_type_iri: str | None
     sector: str  # the notation, "school"
     regions: list[str]
+    issuer: str | None
+    edition: str | None
+    work: WorkOut | None  # the work it is a version of, the editors set it (PATCH …/work)
+    iri: str | None  # given when it was first frozen; a draft copy carries its revision's
+    revision: int  # of its edition: a draft copy is the next one
+    frozen_at: datetime | None
+    copy_of: UUID | None  # the frozen revision a draft copy copies
     created_at: datetime
     extraction: ExtractionRef | None  # the latest extraction job, whatever became of it
 
@@ -448,9 +463,15 @@ async def document_out(
 async def _outs(
     connection: psycopg.AsyncConnection, documents: list[Document], who: Principal
 ) -> list[DocumentOut]:
-    """The documents as the API gives them, in two queries however many they are."""
+    """The documents as the API gives them, in three queries however many they are."""
     sectors = await notations_by_iri(connection, {document.sector_iri for document in documents})
     found = await last_jobs(connection, [unique_key(document.id) for document in documents])
+    cursor = await connection.execute(
+        "SELECT id, title, region, short_title, iri FROM work WHERE id = ANY(%s)",
+        ([document.work_id for document in documents if document.work_id is not None],),
+    )
+    works = {row[0]: WorkOut(id=row[0], title=row[1], region=row[2], short_title=row[3], iri=row[4])
+             for row in await cursor.fetchall()}  # fmt: skip
 
     def extraction(document: Document) -> ExtractionRef | None:
         if (latest := found.get(unique_key(document.id))) is None:
@@ -473,6 +494,13 @@ async def _outs(
             document_type_iri=document.document_type_iri,
             sector=sectors.get(document.sector_iri, document.sector_iri),
             regions=list(document.regions),
+            issuer=document.issuer,
+            edition=document.edition,
+            work=None if document.work_id is None else works.get(document.work_id),
+            iri=document.iri,
+            revision=document.revision,
+            frozen_at=document.frozen_at,
+            copy_of=document.copy_of,
             created_at=document.created_at,
             extraction=extraction(document),
         )

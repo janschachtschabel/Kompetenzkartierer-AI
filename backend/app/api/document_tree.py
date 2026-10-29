@@ -53,6 +53,7 @@ class StatementOut(BaseModel):
     origin: str
     review_status: str
     revision: int  # the change of the statement an edit of it names
+    iri: str | None  # given when its document was frozen (<node>/s-<n>)
     text_hash: str
     anchors: list[AnchorOut]
 
@@ -67,6 +68,7 @@ class NodeRowOut(BaseModel):
     origin: str
     review_status: str
     revision: int
+    iri: str | None  # given when its document was frozen (the path of its codes)
     findings: SeverityCounts  # on the node and its anchors, its statements and theirs - not its children's
     anchors: list[AnchorOut]
 
@@ -167,6 +169,7 @@ def _node_parts(node: TreeNode) -> dict[str, Any]:
         "origin": node.origin_iri,
         "review_status": node.review_status_iri,
         "revision": node.revision,
+        "iri": node.iri,
         "findings": SeverityCounts(**node.findings),
         "anchors": [_anchor(anchor) for anchor in node.anchors],
     }
@@ -188,6 +191,7 @@ def _statement(statement: TreeStatement) -> StatementOut:
         origin=statement.origin_iri,
         review_status=statement.review_status_iri,
         revision=statement.revision,
+        iri=statement.iri,
         text_hash=statement.text_hash,
         anchors=[_anchor(anchor) for anchor in statement.anchors],
     )
