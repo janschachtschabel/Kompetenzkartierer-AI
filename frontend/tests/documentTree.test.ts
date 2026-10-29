@@ -2,49 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
 
 import * as api from "@/api";
-import type { CurriculumDocument, Form, Tree, TreeNode, TreeStatement } from "@/api";
+import type { CurriculumDocument, Tree } from "@/api";
 import { rowsOf, useDocumentTree } from "@/documentTree";
 
-export function statement_(id: string, changes: Partial<TreeStatement> = {}): TreeStatement {
-  return {
-    id,
-    position: 1,
-    fields: { verbatim: `Aussage ${id}` },
-    origin: "https://w3id.org/wlo/curriculum/vocab#orig_model",
-    review_status: "https://w3id.org/wlo/curriculum/vocab#rev_proposed",
-    revision: 1,
-    iri: null,
-    text_hash: "h",
-    anchors: [],
-    ...changes,
-  };
-}
-
-export function node_(id: string, changes: Partial<TreeNode> = {}): TreeNode {
-  return {
-    id,
-    position: 1,
-    fields: { original_title: `Knoten ${id}`, code: null },
-    code_assigned: false,
-    origin: "https://w3id.org/wlo/curriculum/vocab#orig_model",
-    review_status: "https://w3id.org/wlo/curriculum/vocab#rev_proposed",
-    revision: 1,
-    iri: null,
-    findings: { violation: 0, warning: 0, info: 0 },
-    anchors: [],
-    statements: [],
-    children: [],
-    ...changes,
-  };
-}
-
-export function tree_(nodes: TreeNode[], changes: Partial<Tree> = {}): Tree {
-  return { editable: true, reviewable: true, counts: { nodes: {}, statements: {} }, nodes, ...changes };
-}
-
-export function form_(sector = "school"): Form {
-  return { sector, profile: "schule", node: [], statement: [] };
-}
+import { form_, node_, statement_, tree_ } from "./treeFixtures";
 
 function document_(changes: Partial<CurriculumDocument> = {}): CurriculumDocument {
   return {
