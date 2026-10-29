@@ -896,6 +896,28 @@ export const messages = {
         title: "Noch keine Knoten",
         body: "Die Extraktion hat in diesem Dokument noch keinen Knoten angelegt.",
       },
+      anchors: {
+        where: "Seite",
+        how: "Fundart",
+        quote: "Zitat",
+        blocks: "Blöcke",
+        unchecked: "noch nicht geprüft",
+        // cv:MatchKinds by notation (anchorWords.ts)
+        matches: {
+          exact: "wörtlich gefunden",
+          whitespace: "bis auf Leerraum gefunden",
+          elided: "mit Auslassung gefunden",
+          normalized: "gefunden bis auf Trennstriche und Anführungszeichen",
+          fuzzy: "nur unscharf gefunden, kein Wortlautbeleg",
+          notFound: "nicht gefunden",
+        },
+        scored: "{found} (Übereinstimmung {score})",
+        page: "Seite {page}",
+        pages: "Seiten {first}–{last}",
+        printed: "{pages} (gedruckt {printed})",
+        noPage: "ohne Seite",
+        show: "Seite {page} in der Quelle zeigen",
+      },
       // cv:ReviewStatuses by notation without its "rev_" (reviewStatus.ts)
       statuses: { proposed: "Vorgeschlagen", confirmed: "Bestätigt", rejected: "Verworfen" },
       filter: {
