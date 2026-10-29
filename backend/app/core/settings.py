@@ -18,6 +18,8 @@ from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 
+from app.domain.iris import checked_base
+
 # The repository's copy; the image sets ONTOLOGY_DIR to the folder it ships
 REPOSITORY_ONTOLOGY = Path(__file__).resolve().parents[3] / "ontology"
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -190,6 +192,10 @@ class Settings(BaseSettings):
     # empty for every kind it knows
     worker_kinds: Annotated[str, Field(pattern=rf"^({_JOB_KIND}(,{_JOB_KIND})*)?$")] = ""
     ontology_dir: Path = REPOSITORY_ONTOLOGY
+    # The base of the IRIs a document gets when it is frozen (app/domain/iris.py), an http(s) IRI
+    # ending in a slash; none until the namespace is registered (ontology/konzept.md), and then
+    # nothing is frozen
+    iri_base: str | None = None
     log_format: Literal["text", "json"] = "text"
     # Where objects go: a folder (development, one node) or an S3-compatible service (a cluster)
     storage_backend: Literal["fs", "s3"] = "fs"
@@ -266,6 +272,11 @@ class Settings(BaseSettings):
     @property
     def worker_kind_list(self) -> tuple[str, ...]:
         return tuple(self.worker_kinds.split(",")) if self.worker_kinds else ()
+
+    @field_validator("iri_base")
+    @classmethod
+    def _iri_base(cls, value: str | None) -> str | None:
+        return None if value is None else checked_base(value)
 
     @field_validator("log_level", mode="before")
     @classmethod

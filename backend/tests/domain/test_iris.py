@@ -4,7 +4,17 @@ from uuid import UUID
 
 import pytest
 
-from app.domain.iris import assign_code, document_iri, draft_iri, node_iri, node_segments, slug, work_iri
+from app.domain.iris import (
+    assign_code,
+    checked_base,
+    document_iri,
+    draft_iri,
+    node_iri,
+    node_segments,
+    slug,
+    statement_iri,
+    work_iri,
+)
 
 BASE = "https://example.org/kk/"
 
@@ -66,6 +76,9 @@ def test_a_document_is_named_by_its_issuer_short_title_and_edition() -> None:
 def test_a_base_is_an_http_iri_ending_in_a_slash(base: str) -> None:
     with pytest.raises(ValueError, match="base"):
         work_iri(base, "DE-NW", "Kernlehrplan")
+    with pytest.raises(ValueError, match="base"):
+        checked_base(base)
+    assert checked_base("https://example.org/kk/") == "https://example.org/kk/"
 
 
 def test_a_draft_is_named_by_its_id() -> None:
@@ -78,6 +91,16 @@ def test_a_node_is_named_by_the_path_of_its_codes_under_its_document() -> None:
     document = document_iri(BASE, "KMK", "Rahmenlehrplan Mechatronik", "2018")
 
     assert node_iri(document, ["lf-5", "pos-2"]) == f"{document}/lf-5/pos-2"
+
+
+def test_a_statement_is_named_by_its_number_under_its_node() -> None:
+    node = "https://example.org/kk/doc/kmk/rlp/2018/lf-5"
+
+    assert statement_iri(node, 3) == f"{node}/s-3"
+    with pytest.raises(ValueError, match="number"):
+        statement_iri(node, 0)
+    with pytest.raises(ValueError, match="frozen"):
+        statement_iri(draft_iri(UUID("01a16940-29e3-7bf4-86d3-421b72698f8e")), 1)
 
 
 def test_a_node_needs_a_segment() -> None:

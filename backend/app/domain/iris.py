@@ -1,7 +1,8 @@
 """The IRIs of works, documents and nodes, and the codes the pipeline assigns (konzept §11).
 
 A work is named by its country and short title, a document by its issuer, short title and
-edition, a node by the path of its codes under its document ("…/lf-5", "…/if-5/st-3"). A node
+edition, a node by the path of its codes under its document ("…/lf-5", "…/if-5/st-3"), a statement by
+its number under its node ("…/lf-5/s-3", numbers given once, plan M1 9.6). A node
 without a code gets its position among its siblings (``cur:codeAssigned``), named ``pos-<n>``, and
 so does one whose code holds no ASCII letter or digit (a Greek letter, a bullet). Siblings whose
 segments meet - a code printed twice, or printed as "Pos. 3" beside an assigned third - are
@@ -39,12 +40,12 @@ def slug(text: str) -> str:
 
 def work_iri(base: str, region: str, short_title: str) -> str:
     """The work's IRI: ``<base>work/<country>/<short title>``."""
-    return f"{_checked(base)}work/{slug(region)}/{slug(short_title)}"
+    return f"{checked_base(base)}work/{slug(region)}/{slug(short_title)}"
 
 
 def document_iri(base: str, issuer: str, short_title: str, edition: str) -> str:
     """The document's IRI: ``<base>doc/<issuer>/<short title>/<edition>``."""
-    return f"{_checked(base)}doc/{slug(issuer)}/{slug(short_title)}/{slug(edition)}"
+    return f"{checked_base(base)}doc/{slug(issuer)}/{slug(short_title)}/{slug(edition)}"
 
 
 def draft_iri(document_id: UUID) -> str:
@@ -59,6 +60,15 @@ def node_iri(document: str, segments: Sequence[str]) -> str:
     if not segments:
         raise ValueError("a node's IRI needs a segment at least")
     return "/".join([document, *segments])
+
+
+def statement_iri(node: str, number: int) -> str:
+    """The statement's IRI: its node's and its number among those its node has given."""
+    if not node.startswith(("https://", "http://")):
+        raise ValueError(f"a statement is named under its frozen node's http(s) IRI, not {node!r}")
+    if number < 1:
+        raise ValueError(f"a statement's number counts from 1, not {number}")
+    return f"{node}/s-{number}"
 
 
 def node_segments(siblings: Sequence[tuple[str, bool]]) -> list[str]:
@@ -86,7 +96,9 @@ def assign_code(position: int) -> str:
     return str(position)
 
 
-def _checked(base: str) -> str:
+def checked_base(base: str) -> str:
+    """``base`` where it is an http(s) IRI ending in a slash, without credentials, query or fragment;
+    ValueError where not."""
     if _BASE.fullmatch(base) is None:
         raise ValueError(f"an IRI base is an http(s) IRI ending in a slash, not {base!r}")
     return base

@@ -49,6 +49,7 @@ ein Test schlägt an, wenn sie veraltet.
 | `CONVERT_TIMEOUT_S` | Zahl ≥ 1, ≤ 7200 | 900 | – | Dienst |
 | `WORKER_KINDS` | Text nach Muster `^([a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*(,[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*)*)?$` | leer | – | Dienst |
 | `ONTOLOGY_DIR` | Pfad | `ontology/` des Repositorys | – | Dienst |
+| `IRI_BASE` | Text | – | – | Dienst |
 | `LOG_FORMAT` | `text` \| `json` | `text` | – | Dienst |
 | `STORAGE_BACKEND` | `fs` \| `s3` | `fs` | – | Dienst |
 | `STORAGE_DIR` | Pfad | –; Pflicht bei `STORAGE_BACKEND=fs` | – | Dienst |
@@ -116,4 +117,9 @@ ein Test schlägt an, wenn sie veraltet.
   ist kein Anlass für eine Reparatur. Stirbt der Kindprozess oder bricht er ab, scheitert
   der Lauf X5 (`ShaclCrashed`), und der Job wird bis zu seiner Versuchsgrenze wiederholt.
 - `JOB_SHUTDOWN_GRACE_S` mindestens 5 s unter `terminationGracePeriodSeconds` des Workers.
+- `IRI_BASE`: die Basis der IRIs, die ein Dokument beim Festschreiben bekommt (Werk, Dokument,
+  Knoten, Aussagen; http(s), mit Schrägstrich am Ende). Ohne sie schreibt der Dienst nichts fest
+  (409 `no_iri_base`). Der Namensraum `w3id.org/wlo/` ist noch nicht registriert
+  (`ontology/konzept.md`); eine einmal vergebene IRI bleibt, also die Basis vor dem ersten
+  Festschreiben festlegen.
 - `LOG_FORMAT=json` für die zentrale Logsammlung.

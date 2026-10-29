@@ -150,6 +150,19 @@ def test_an_unknown_log_level_is_refused(monkeypatch: pytest.MonkeyPatch, level:
         Settings()
 
 
+def test_the_iri_base_is_none_or_an_http_iri_ending_in_a_slash(monkeypatch: pytest.MonkeyPatch) -> None:
+    # none until the namespace is registered (ontology/konzept.md): freezing asks for one
+    monkeypatch.setenv("DATABASE_URL", FAKE_URL)
+    assert Settings().iri_base is None
+
+    monkeypatch.setenv("IRI_BASE", "https://example.org/kk/")
+    assert Settings().iri_base == "https://example.org/kk/"
+
+    monkeypatch.setenv("IRI_BASE", "https://example.org/kk")
+    with pytest.raises(ValidationError, match="iri_base"):
+        Settings()
+
+
 def test_the_log_level_is_case_insensitive(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DATABASE_URL", FAKE_URL)
     monkeypatch.setenv("LOG_LEVEL", "debug")
