@@ -173,6 +173,11 @@ ungültig.
   Redaktion/Admin dürfen jetzt bearbeiten, `reviewable`: Redaktion/Admin dürfen den Prüfstand setzen –
   beides nicht, solange ein Job des Dokuments wartet oder läuft, nicht, bevor X4 jedes Arbeitspaket gelesen
   hat (eine Entwurfskopie gilt als gelesen), und nicht, sobald es festgeschrieben ist.
+- Blöcke des Dokuments: `GET /api/v1/documents/{id}/blocks?page=N` liest eine Seite der Konvertierung, aus
+  der das Dokument gelesen wurde (Blöcke, fortlaufende Tabellen, gedruckte Seite, `pages`) – die Blöcke, die
+  seine Fundstellen nennen, auch wenn die Datei des Eintrags seither neu geholt oder anders umgewandelt
+  wurde. Wer das Dokument lesen darf (sonst 404 `no_document`) und den Inhalt des Eintrags (sonst 403
+  `file_hidden`); 404 `no_such_page` hinter der letzten Seite.
 - Bearbeiten: `PATCH /api/v1/nodes/{id}` und `/statements/{id}` (`expected_revision`, `fields` unter
   den Schlüsseln des Formulars, ausgelassene bleiben; eine Aussage auch `anchors`, alle auf einmal:
   Blöcke der Konvertierung, die Seiten folgen aus ihnen, oder nur `page`, eine Seite der
