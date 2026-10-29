@@ -883,6 +883,13 @@ export const messages = {
     },
     tree: {
       loadFailed: "Der Baum des Dokuments wurde nicht geladen.",
+      // cv:ReviewStatuses by notation without its "rev_" (reviewStatus.ts)
+      statuses: { proposed: "Vorgeschlagen", confirmed: "Bestätigt", rejected: "Verworfen" },
+      filter: {
+        label: "Nach Prüfstand filtern",
+        option: "{label}: {nodes} {nodes|Knoten|Knoten}, {statements} {statements|Aussage|Aussagen}",
+        all: "Alle zeigen",
+      },
     },
   },
 } as const;
