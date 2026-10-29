@@ -265,6 +265,16 @@ async def guard_document(connection: psycopg.AsyncConnection, document_id: UUID)
         raise JobOpen(job)
 
 
+async def extracted(connection: psycopg.AsyncConnection, document_id: UUID) -> bool:
+    """Whether the document's tree is all there: X4 read every package of it, or it is a draft copy of a
+    frozen revision, which brought what X4 read along (plan M1 9.6)."""
+    cursor = await connection.execute(
+        "SELECT copy_of IS NOT NULL FROM document WHERE id = %s", (document_id,)
+    )
+    found = await cursor.fetchone()
+    return bool(found and found[0]) or "X4" in await done_stages(connection, document_id)
+
+
 async def frozen(connection: psycopg.AsyncConnection, document_id: UUID) -> bool:
     """Whether the document is frozen as it stands now - read under the tree's lock, which a freeze is to
     take as well (9b); DocumentError for none."""
