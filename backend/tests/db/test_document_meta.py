@@ -12,6 +12,7 @@ import pytest
 from app.db.document_meta import DocumentNamed, ExistingWork, NewWork, set_metadata, set_work
 from app.db.documents import DocumentError, create_document
 from app.db.editing import DocumentFrozen, JobOpen, NotExtracted
+from app.db.runs import RunStart, finish_run, start_run
 from app.db.source_queries import Reader
 from app.vocab.form_values import FieldError
 from tests.db.test_editing import an_open_job, document, edited_at, one
@@ -67,6 +68,8 @@ async def test_a_work_made_of_what_no_work_may_hold_is_refused_and_none_made(
     for work, problem in (
         (NewWork("Lehrplan\x00Physik", "DE-NW", "lp-physik"), ("title", "not_storable")),
         (NewWork("Lehrplan Physik", "DE-XX", "lp-physik"), ("region", "not_offered")),
+        # separators the API's strip leaves and the table's check (has_text) does not
+        (NewWork("\x1c\x1f", "DE-NW", "lp-physik"), ("title", "required")),
     ):
         with pytest.raises(FieldError) as raised:
             await set_work(connection, owner(document), document.id, work)
@@ -136,11 +139,14 @@ async def test_no_metadata_are_set_on_a_frozen_document_or_beside_its_job(
     assert await one(connection, "SELECT count(*) FROM document WHERE title = 'Neu'") == (0,)
 
 
-async def test_no_metadata_are_set_before_x4_for_x1_would_write_them_over(
+async def test_no_metadata_are_set_before_x4_as_no_edit_of_the_tree_is(
     connection: psycopg.AsyncConnection, document: Any
 ) -> None:
-    # X1 reads the issuer, edition and title off the document (app/db/profile.py); a work it does not
+    # X1 reads the issuer, edition and title off the document (app/db/profile.py), a work it does not:
+    # done, it is passed over, and still the metadata wait for X4, as the tree's edits do (guard)
     early = await another(connection, document)
+    run = await start_run(connection, RunStart(early.id, None, None, "X1", None, None, None, None))
+    await finish_run(connection, run, "done")
 
     with pytest.raises(NotExtracted):
         await set_metadata(connection, owner(document), early.id, {"issuer": "Ministerium"})

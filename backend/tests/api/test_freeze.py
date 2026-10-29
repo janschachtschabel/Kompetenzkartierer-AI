@@ -120,10 +120,14 @@ def test_a_freeze_without_a_body_accepts_no_violations(freezing: TestClient, url
     _, editor = an_account(url, "Redaktion", ("redaktion",))
     document, _ = ready(freezing, url, editor)
     a_violation(url, document)
+    path = f"/api/v1/documents/{document}/freeze"
 
-    answer = freezing.post(f"/api/v1/documents/{document}/freeze", headers=editor)
+    answer = freezing.post(path, headers=editor)
+    # accepted in so many words: a "yes" or a 1 is no acceptance
+    loose = [freezing.post(path, headers=editor, json={"accept_violations": said}) for said in ("yes", 1)]
 
     assert (answer.status_code, answer.json()["code"]) == (409, "has_violations"), answer.text
+    assert [(said.status_code, said.json()["code"]) for said in loose] == [(422, "validation_failed")] * 2
 
 
 def test_a_document_not_ready_is_refused_with_what_it_lacks(

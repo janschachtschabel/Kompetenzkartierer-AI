@@ -63,6 +63,8 @@ async def set_work(
         if isinstance(work, NewWork):
             if UNSTORABLE.search(work.title):
                 raise FieldError("title", "not_storable")
+            if not work.title.strip():  # the separators has_text trims, which the API's strip leaves
+                raise FieldError("title", "required")
             if await unknown_regions(connection, [work.region]):
                 raise FieldError("region", "not_offered")
         await guard_document(connection, document_id)

@@ -17,7 +17,7 @@ from typing import Annotated, assert_never
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, StrictBool
 
 from app.api.deps import require_account
 from app.api.document_access import visible_document
@@ -45,7 +45,7 @@ FREEZE_RESPONSES: Responses = {
 
 class FreezeIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    accept_violations: bool = False  # freeze it with the violations its findings name
+    accept_violations: StrictBool = False  # freeze it with the violations its findings name: in so many words
 
 
 @router.post(
