@@ -3,6 +3,7 @@ rows - nodes, statements and their addressees, anchors and their blocks, frame p
 their variants, its profile - their IRIs, origins, review statuses and revisions, under ids of their own;
 no findings and no runs, so X5 owes it a check. Of the latest revision alone, and one draft at most."""
 
+import asyncio
 import re
 from dataclasses import dataclass
 from typing import Any
@@ -19,7 +20,7 @@ from app.db.runs import x5_owed
 from app.db.statement_editing import HandAnchor, add_statement
 from tests.db.test_editing import document, one
 from tests.db.test_freeze import BASE, DOC, checked, ready
-from tests.db.test_nodes import CV, SCHOOL, connection, owner, url
+from tests.db.test_nodes import CV, SCHOOL, connection, owner, url, waiting_for_a_lock
 from tests.db.test_statement_editing import NEW
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
@@ -300,3 +301,27 @@ async def test_the_copy_takes_every_column_and_table_but_those_it_leaves_by_desi
 
     assert left_out == LEFT_OUT
     assert naming - copied.keys() == NOT_COPIED
+
+
+async def test_of_two_copies_made_at_once_the_second_is_told_of_the_first(
+    url: str, connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # neither sees the other's draft before it commits: the index of one draft by IRI decides
+    await filled(connection, document)
+    async with (
+        await psycopg.AsyncConnection.connect(url, autocommit=True) as other,
+        await psycopg.AsyncConnection.connect(url, autocommit=True) as watcher,
+    ):
+        waiting: asyncio.Task[UUID] | None = None
+        try:
+            async with other.transaction():
+                first = await copy_document(other, document.id)
+                waiting = asyncio.create_task(copy_document(connection, document.id))
+                await waiting_for_a_lock(watcher, connection.info.backend_pid, "transactionid")
+        finally:
+            with pytest.raises(CopyRefused) as raced:
+                if waiting is not None:
+                    await waiting
+
+    assert (raced.value.code, raced.value.details) == ("draft_open", {"document_id": str(first)})
+    assert await one(connection, "SELECT count(*) FROM document WHERE frozen_at IS NULL") == (1,)
