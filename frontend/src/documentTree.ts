@@ -80,11 +80,23 @@ export function useDocumentTree(documentId: Ref<string>) {
   const failure = ref<Notice | null>(null);
   const rows = computed(() => rowsOf(tree.value?.nodes ?? []));
   let generation = 0;
+  // the id of the document shown, as it was asked for: the server's may be written otherwise
+  let shownId: string | null = null;
+
+  /** The document and its tree; a 404 or 422 of either is a document missing. */
+  async function documentAndTree(id: string): Promise<[CurriculumDocument, Tree] | "missing"> {
+    try {
+      return await Promise.all([getDocument(id), getTree(id)]);
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 422)) return "missing";
+      throw error;
+    }
+  }
 
   async function load(): Promise<void> {
     const mine = ++generation;
     const id = documentId.value;
-    if (document_.value?.id !== id) {
+    if (shownId !== id) {
       // another document: what was shown is not its
       document_.value = null;
       tree.value = null;
@@ -93,20 +105,27 @@ export function useDocumentTree(documentId: Ref<string>) {
     failure.value = null;
     missing.value = false;
     try {
-      const [found, read] = await Promise.all([getDocument(id), getTree(id)]);
+      const read = await documentAndTree(id);
+      if (mine !== generation) return;
+      if (read === "missing") {
+        missing.value = true;
+        document_.value = null;
+        tree.value = null;
+        shownId = null;
+        return;
+      }
+      const [found, nodes] = read;
+      // the sector's form, read once; it failing says so, the document is not missing for it
       const known = form.value;
       const fields = known?.sector === found.sector ? known : await getForm(found.sector);
       if (mine !== generation) return;
       document_.value = found;
-      tree.value = read;
+      tree.value = nodes;
       form.value = fields;
+      shownId = id;
     } catch (error) {
       if (mine !== generation) return;
-      if (error instanceof ApiError && (error.status === 404 || error.status === 422) && error.code !== "unknown_sector") {
-        missing.value = true;
-        document_.value = null;
-        tree.value = null;
-      } else failure.value = failureNotice(error, t("documents.tree.loadFailed"));
+      failure.value = failureNotice(error, t("documents.tree.loadFailed"));
     } finally {
       if (mine === generation) loading.value = false;
     }

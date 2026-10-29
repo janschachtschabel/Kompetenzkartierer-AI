@@ -1,8 +1,9 @@
+import { flushPromises } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
 
 import * as api from "@/api";
-import type { CurriculumDocument, Tree } from "@/api";
+import type { CurriculumDocument, Form, Tree } from "@/api";
 import { rowsOf, useDocumentTree } from "@/documentTree";
 
 import { form_, node_, statement_, tree_ } from "./treeFixtures";
@@ -80,6 +81,40 @@ describe("a document's tree", () => {
     expect([read.missing.value, read.tree.value, read.failure.value]).toEqual([true, null, null]);
   });
 
+  it("is missing where the address names no document at all (422), not where its sector has no form", async () => {
+    vi.spyOn(api, "getDocument").mockRejectedValue(new api.ApiError("server", 422, "validation_failed"));
+    vi.spyOn(api, "getTree").mockRejectedValue(new api.ApiError("server", 422, "validation_failed"));
+    const formless = vi.spyOn(api, "getForm").mockRejectedValue(new api.ApiError("server", 404, "unknown_sector"));
+    const read = useDocumentTree(ref("nonsense"));
+    await read.load();
+    expect(read.missing.value).toBe(true);
+
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_());
+    vi.spyOn(api, "getTree").mockResolvedValue(tree_([node_("a")]));
+    formless.mockRejectedValue(new api.ApiError("server", 404, "not_found")); // the form's 404: no document's
+    const other = useDocumentTree(ref("d1"));
+    await other.load();
+
+    expect([other.missing.value, other.tree.value]).toEqual([false, null]);
+    expect(other.failure.value?.text).toBeTruthy();
+  });
+
+  it("reads the form again for a document of another sector", async () => {
+    const documents = vi.spyOn(api, "getDocument").mockResolvedValue(document_());
+    vi.spyOn(api, "getTree").mockResolvedValue(tree_([node_("a")]));
+    const forms = vi.spyOn(api, "getForm").mockImplementation((sector) => Promise.resolve(form_(sector)));
+    const id = ref("d1");
+    const read = useDocumentTree(id);
+    await read.load();
+
+    documents.mockResolvedValue(document_({ id: "d2", sector: "vocational" }));
+    id.value = "d2";
+    await read.load();
+
+    expect(forms.mock.calls).toEqual([["school"], ["vocational"]]);
+    expect(read.form.value?.sector).toBe("vocational");
+  });
+
   it("keeps what it showed when reading it again fails, and says so", async () => {
     vi.spyOn(api, "getDocument").mockResolvedValue(document_());
     const trees = vi.spyOn(api, "getTree").mockResolvedValue(tree_([node_("a")]));
@@ -109,6 +144,41 @@ describe("a document's tree", () => {
 
     expect([read.document.value, read.tree.value, read.rows.value.size]).toEqual([null, null, 0]);
     expect(read.failure.value?.text).toBeTruthy();
+  });
+
+  it("takes the document it was asked for as the one it shows, however the address writes its id", async () => {
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_()); // the server writes it "d1"
+    const trees = vi.spyOn(api, "getTree").mockResolvedValue(tree_([node_("a")]));
+    vi.spyOn(api, "getForm").mockResolvedValue(form_());
+    const read = useDocumentTree(ref("D1"));
+    await read.load();
+    trees.mockRejectedValue(new api.ApiError("network", 0));
+
+    await read.load();
+
+    expect([...read.rows.value.keys()]).toEqual(["node:a"]); // the same document: kept, the failure said
+    expect(read.failure.value?.text).toBeTruthy();
+  });
+
+  it("drops a document whose form a later reading overtook", async () => {
+    const documents = vi.spyOn(api, "getDocument").mockResolvedValue(document_());
+    vi.spyOn(api, "getTree").mockResolvedValue(tree_([node_("a")]));
+    let schoolForm: (form: Form) => void = () => undefined;
+    vi.spyOn(api, "getForm")
+      .mockReturnValueOnce(new Promise((resolve) => (schoolForm = resolve)))
+      .mockResolvedValueOnce(form_("vocational"));
+    const id = ref("d1");
+    const read = useDocumentTree(id);
+
+    const early = read.load();
+    await flushPromises();
+    documents.mockResolvedValue(document_({ id: "d2", sector: "vocational" }));
+    id.value = "d2";
+    await read.load();
+    schoolForm(form_("school"));
+    await early;
+
+    expect([read.document.value?.id, read.form.value?.sector]).toEqual(["d2", "vocational"]);
   });
 
   it("drops an answer a later reading overtook", async () => {
