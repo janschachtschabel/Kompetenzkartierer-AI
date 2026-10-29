@@ -64,6 +64,12 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
 
 
+async def unknown_regions(connection: psycopg.AsyncConnection, regions: Sequence[str]) -> list[str]:
+    """The notations among ``regions`` the region vocabulary holds no current concept of, sorted."""
+    cursor = await connection.execute(_KNOWN_REGIONS, (REGIONS, list(regions)))
+    return sorted(set(regions) - {row[0] for row in await cursor.fetchall()})
+
+
 class DocumentError(Exception):
     """A document that cannot be made or changed as asked: its conversion, sector or id. ``code``
     says why it was not made, for an answer that never compares words: ``no_conversion``,
@@ -140,8 +146,7 @@ async def create_document(
         sector_iri = await sector_by_notation(connection, sector)
         if sector_iri is None:
             raise DocumentError(f"no sector {sector!r}", "unknown_sector")
-        cursor = await connection.execute(_KNOWN_REGIONS, (REGIONS, regions))
-        unknown = sorted(set(regions) - {row[0] for row in await cursor.fetchall()})
+        unknown = await unknown_regions(connection, regions)
         if unknown:
             raise DocumentError(f"no region {', '.join(unknown)}", "unknown_region")
         await connection.execute("INSERT INTO entity (id, kind) VALUES (%s, 'document')", (document_id,))

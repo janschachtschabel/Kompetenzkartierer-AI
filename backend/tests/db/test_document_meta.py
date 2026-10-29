@@ -60,6 +60,21 @@ async def test_a_work_there_is_is_set_and_one_there_is_not_refused(
     assert await one(connection, "SELECT count(*) FROM work") == (1,)
 
 
+async def test_a_work_made_of_what_no_work_may_hold_is_refused_and_none_made(
+    connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # the work's country names its IRI (app/domain/iris.py): one of the vocabulary's, not a typo of one
+    for work, problem in (
+        (NewWork("Lehrplan\x00Physik", "DE-NW", "lp-physik"), ("title", "not_storable")),
+        (NewWork("Lehrplan Physik", "DE-XX", "lp-physik"), ("region", "not_offered")),
+    ):
+        with pytest.raises(FieldError) as raised:
+            await set_work(connection, owner(document), document.id, work)
+        assert (raised.value.key, raised.value.problem) == problem
+    assert await one(connection, "SELECT count(*) FROM work") == (0,)
+    assert await one(connection, "SELECT work_id FROM document WHERE id = %s", document.id) == (None,)
+
+
 async def test_no_work_is_set_on_a_named_or_frozen_document_or_beside_its_job(
     connection: psycopg.AsyncConnection, document: Any
 ) -> None:

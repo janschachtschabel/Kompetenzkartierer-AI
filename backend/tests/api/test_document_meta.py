@@ -60,6 +60,8 @@ def test_a_work_is_the_editors_to_set_and_refused_as_it_may_not_be(client: TestC
     nowhere = client.patch(path, headers=editor, json={"work_id": str(uuid.uuid4())})
     both = client.patch(path, headers=editor, json=PHYSICS | {"work_id": str(uuid.uuid4())})
     no_country = client.patch(path, headers=editor, json=PHYSICS | {"region": "Nordrhein-Westfalen"})
+    unknown_country = client.patch(path, headers=editor, json=PHYSICS | {"region": "DE-XX"})
+    unstorable = client.patch(path, headers=editor, json=PHYSICS | {"title": "Lehrplan\u0000Physik"})
     named(url, document)
     is_named = client.patch(path, headers=editor, json=PHYSICS)
 
@@ -67,6 +69,12 @@ def test_a_work_is_the_editors_to_set_and_refused_as_it_may_not_be(client: TestC
     assert (by_stranger.status_code, by_stranger.json()["code"]) == (404, "no_document")
     assert (nowhere.status_code, nowhere.json()["code"]) == (404, "no_work")
     assert [answer.status_code for answer in (both, no_country)] == [422, 422]
+    assert [(answer.status_code, answer.json()["code"], answer.json()["details"]) for answer in (
+        unknown_country, unstorable,
+    )] == [
+        (422, "invalid_field", {"field": "region", "problem": "not_offered"}),
+        (422, "invalid_field", {"field": "title", "problem": "not_storable"}),
+    ]  # fmt: skip
     assert (is_named.status_code, is_named.json()["code"]) == (409, "named")
     assert rows(url, "SELECT count(*) FROM work") == [(0,)]
 

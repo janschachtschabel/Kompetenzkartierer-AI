@@ -20,7 +20,7 @@ import psycopg
 from psycopg import sql
 
 from app.db.anchors import new_entity
-from app.db.documents import DocumentError
+from app.db.documents import DocumentError, unknown_regions
 from app.db.editing import DOCUMENT, guard_document, mark_edited, target_of
 from app.db.source_queries import Reader
 from app.domain.text import UNSTORABLE
@@ -52,12 +52,18 @@ async def set_work(
     connection: psycopg.AsyncConnection, reader: Reader, document_id: UUID, work: ExistingWork | NewWork
 ) -> UUID | None:
     """Set the document's work - one there is, or one made, ``reader``'s; the work's id. None where
-    ``reader`` sees no such document. DocumentError ``no_work`` for a work there is not, DocumentNamed,
-    or a refusal of ``guard_document``, and then nothing is changed."""
+    ``reader`` sees no such document. DocumentError ``no_work`` for a work there is not, FieldError for a
+    work made of a title the database cannot hold or a country the region vocabulary does not (its IRI
+    is named by it), DocumentNamed, or a refusal of ``guard_document``, and then nothing is changed."""
     async with connection.transaction():
         target = await target_of(connection, DOCUMENT, reader, document_id)
         if target is None:
             return None
+        if isinstance(work, NewWork):
+            if UNSTORABLE.search(work.title):
+                raise FieldError("title", "not_storable")
+            if await unknown_regions(connection, [work.region]):
+                raise FieldError("region", "not_offered")
         await guard_document(connection, document_id)
         await _unnamed(connection, document_id)
         if isinstance(work, ExistingWork):

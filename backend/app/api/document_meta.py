@@ -25,6 +25,7 @@ router = APIRouter(prefix="/api/v1", tags=["documents"], responses=AUTH_RESPONSE
 Account = Annotated[Principal, Depends(require_account)]
 NO_DOCUMENT = "no_document: none the caller may read"
 META_RESPONSES: Responses = {
+    422: {"model": ErrorBody, "description": "invalid_field (details: field, problem)"},
     409: {
         "model": ErrorBody,
         "description": "job_open (details.job_id to the owner and the admins), frozen, named: the"
