@@ -2,7 +2,7 @@
 /**
  * One anchor of a node's title or a statement (plan M1 9.9, Paket 9c J8): its page, how its passage was found
  * - in words, not as a colour - the passage, and the blocks of the document's conversion it names, with a way
- * to show its page in the source beside (SourcePane).
+ * to show its page in the source (SourcePane).
  */
 import type { TreeAnchor } from "@/api";
 import { matchText, pagesText } from "@/anchorWords";

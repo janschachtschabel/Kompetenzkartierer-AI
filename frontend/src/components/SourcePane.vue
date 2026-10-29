@@ -1,13 +1,15 @@
 <script setup lang="ts">
 /**
- * The source beside a row (plan M1 9.9, Paket 9c J9): a page of the conversion the document was read off
+ * The source under a row (plan M1 9.9, Paket 9c J9): a page of the conversion the document was read off
  * (GET …/blocks), the blocks the row's anchors name marked (BlockList), and the pager to any other page.
  * Which page shows is the view's, which keeps it in the address; this only asks for one. As on the blocks'
  * page (ConversionView): a page asked for shows that it loads, the pager names it at once, and once it shows
- * the move is said and its heading takes the keyboard where the keyboard still rests where the move began, or
- * nowhere - whoever went on elsewhere meanwhile keeps their place. The latest page asked for counts. Why it
- * shows none it says: a page past the end (with the way to the first), the content no longer the reader's
- * (which no retry changes), a failed reading (with a retry).
+ * the move is said. Its heading then takes the keyboard where the move began here - the pager, the way to
+ * the first page, a retry, a table's first page - and the keyboard still rests there, or where it rests
+ * nowhere; a move begun elsewhere (a row chosen in the tree) or a reader gone on meanwhile keeps their place,
+ * and the view takes the keyboard along for an anchor's page (`focus`). The latest page asked for counts.
+ * Why it shows none it says: a page past the end (with the way to the first), the content no longer the
+ * reader's (which no retry changes, and no other page), a failed reading (with a retry).
  */
 import { computed, nextTick, ref, useId, watch } from "vue";
 
@@ -26,6 +28,7 @@ const props = defineProps<{ documentId: string; page: number; cited: string[] }>
 const emit = defineEmits<{ go: [page: number] }>();
 
 const headingId = useId();
+const section = ref<HTMLElement | null>(null);
 const heading = ref<HTMLElement | null>(null);
 const shown = ref<DocumentPage | null>(null);
 // the count of pages the last page read said: the pager stays while another page loads or fails
@@ -66,9 +69,18 @@ async function load({ moved = false } = {}): Promise<void> {
     const count = shown.value.blocks.length + shown.value.continued.length;
     status.value = sayAnew(status.value, t("conversionPage.announce", { page: props.page, pages: shown.value.pages, count }));
   } else if (pastEnd.value) status.value = sayAnew(status.value, t("conversionPage.noPageTitle"));
+  else if (hidden.value) status.value = sayAnew(status.value, t("conversionPage.hiddenTitle"));
   await nextTick();
-  if (document.activeElement === from || focusIsFree()) heading.value?.focus();
+  const stayed = document.activeElement === from && from !== null && section.value?.contains(from);
+  if (stayed || focusIsFree()) focus();
 }
+
+/** The keyboard to the source's heading. */
+function focus(): void {
+  heading.value?.focus();
+}
+
+defineExpose({ focus });
 
 watch(
   () => props.documentId,
@@ -85,10 +97,11 @@ watch(
 </script>
 
 <template>
-  <section class="source" :aria-labelledby="headingId">
+  <section ref="section" class="source" :aria-labelledby="headingId">
     <!-- tabindex -1: where the keyboard goes once a page the reader moved to shows -->
     <h2 :id="headingId" ref="heading" tabindex="-1">{{ t("documents.tree.source.heading") }}</h2>
-    <template v-if="pages">
+    <!-- not where the content is no longer the reader's: every page would be refused alike -->
+    <template v-if="pages && !hidden">
       <p class="source__where">
         {{
           printed

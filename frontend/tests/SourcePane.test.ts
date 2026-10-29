@@ -124,6 +124,7 @@ describe("the source beside a row", () => {
 
     expect(wrapper.text()).not.toContain("Erster auf 3");
     expect(wrapper.find(".loading").exists()).toBe(true);
+    expect(wrapper.findAll("[role=status]")).toHaveLength(1); // the loading says nothing: the move is said once shown
     expect((wrapper.get("input").element as HTMLInputElement).value).toBe("4");
     later(page(4));
     await flushPromises();
@@ -142,6 +143,29 @@ describe("the source beside a row", () => {
     await flushPromises();
 
     expect(status.text()).toBe("Seite 4 von 9: 2 Blöcke.");
+    expect(document.activeElement).toBe(wrapper.get("h2").element);
+  });
+
+  it("leaves the focus where a move begun outside it was asked for", async () => {
+    vi.spyOn(api, "getDocumentBlocks").mockImplementation((_id, number) => Promise.resolve(page(number)));
+    const outside = document.createElement("button"); // a row of the tree, say
+    document.body.append(outside);
+    const wrapper = await pane(3);
+    outside.focus();
+
+    await wrapper.setProps({ page: 4 });
+    await flushPromises();
+
+    expect(wrapper.get("[role=status]").text()).toBe("Seite 4 von 9: 2 Blöcke."); // said all the same
+    expect(document.activeElement).toBe(outside);
+  });
+
+  it("takes the focus to its heading when asked to, as for an anchor's page", async () => {
+    vi.spyOn(api, "getDocumentBlocks").mockImplementation((_id, number) => Promise.resolve(page(number)));
+    const wrapper = await pane(3);
+
+    (wrapper.vm as unknown as { focus: () => void }).focus();
+
     expect(document.activeElement).toBe(wrapper.get("h2").element);
   });
 
@@ -174,8 +198,37 @@ describe("the source beside a row", () => {
     expect(wrapper.text()).toContain("Die Datei hat 9 Seiten.");
     expect(wrapper.get("[role=status]").text()).toBe("Diese Seite gibt es nicht"); // not the page before
     expect(wrapper.find("[data-test=next]").exists()).toBe(true);
-    await wrapper.findAll("button").find((button) => button.text() === "Zur ersten Seite")?.trigger("click");
+    const first = wrapper.findAll("button").find((button) => button.text() === "Zur ersten Seite");
+    (first?.element as HTMLElement).focus();
+    await first?.trigger("click");
     expect(wrapper.emitted("go")).toEqual([[1]]);
+  });
+
+  it("takes the focus to its heading where the control the move began at is gone", async () => {
+    vi.spyOn(api, "getDocumentBlocks")
+      .mockRejectedValueOnce(new ApiError("server", 404, "no_such_page"))
+      .mockResolvedValueOnce(page(1));
+    const wrapper = await pane(12);
+    const first = wrapper.findAll("button").find((button) => button.text() === "Zur ersten Seite");
+    (first?.element as HTMLElement).focus();
+
+    await wrapper.setProps({ page: 1 }); // the way to the first page goes with the page past the end
+    await flushPromises();
+
+    expect(document.activeElement).toBe(wrapper.get("h2").element);
+  });
+
+  it("says, moved to, that the content is no longer the reader's, and offers no other page", async () => {
+    vi.spyOn(api, "getDocumentBlocks")
+      .mockResolvedValueOnce(page(3))
+      .mockRejectedValueOnce(new ApiError("forbidden", 403, "file_hidden"));
+    const wrapper = await pane(3);
+
+    await wrapper.setProps({ page: 4 });
+    await flushPromises();
+
+    expect(wrapper.get("[role=status]").text()).toBe(t("conversionPage.hiddenTitle"));
+    expect(wrapper.find("[data-test=next]").exists()).toBe(false);
   });
 
   it("says the entry's content is no longer the reader's, with no retry that could change it", async () => {

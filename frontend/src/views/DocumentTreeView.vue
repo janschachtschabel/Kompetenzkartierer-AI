@@ -1,13 +1,14 @@
 <script setup lang="ts">
 /**
  * A document's tree page (plan M1 9.7-9.9, Paket 9c J2): its nodes and statements as a tree (TreeView), the
- * row chosen with its fields and anchors (RowDetail), and beside it the source - a page of the conversion the
+ * row chosen with its fields and anchors (RowDetail), and under it the source - a page of the conversion the
  * document was read off, the blocks the row's anchors name marked (SourcePane). The row chosen and the page
  * of the source stand in the address (?zeile=node:<id>&seite=3), so back, forward and a reload keep them; a
- * row chosen goes to the page of its first anchor. Wide, the tree and the side stand side by side.
+ * row chosen goes to the page of its first anchor, the keyboard staying in the tree, and an anchor's page
+ * takes the keyboard along to the source. Wide, the tree and the side stand side by side.
  */
-import { computed, onMounted, toRef, watch } from "vue";
-import { RouterLink, useRoute, useRouter } from "vue-router";
+import { computed, onMounted, ref, toRef, watch } from "vue";
+import { RouterLink, useRoute, useRouter, type LocationQuery } from "vue-router";
 
 import { PAGE_PARAM, pageOf } from "@/blockPages";
 import EmptyState from "@/components/EmptyState.vue";
@@ -34,8 +35,13 @@ function firstPage(row: Row | null): number | null {
   return anchorsOf(row).find((anchor) => anchor.page_start !== null)?.page_start ?? null;
 }
 
+// Only under the route the page was mounted at (as ConversionView): a leaving transition keeps it mounted
+// under the next page's address, whose query names no row or page of this one
+const ownRoute = route.name;
+const query = computed<LocationQuery>((before) => (route.name === ownRoute ? route.query : (before ?? {})));
+
 const selectedRow = computed<Row | null>(() => {
-  const key = route.query[ROW_PARAM];
+  const key = query.value[ROW_PARAM];
   return typeof key === "string" ? (rows.value.get(key as RowKey) ?? null) : null;
 });
 
@@ -51,7 +57,7 @@ const selected = computed<RowKey | null>({
   },
 });
 
-const page = computed(() => pageOf(route.query[PAGE_PARAM]) ?? firstPage(selectedRow.value) ?? 1);
+const page = computed(() => pageOf(query.value[PAGE_PARAM]) ?? firstPage(selectedRow.value) ?? 1);
 
 const cited = computed(() => [...new Set(anchorsOf(selectedRow.value).flatMap((anchor) => anchor.blocks))]);
 
@@ -74,6 +80,14 @@ function showPage(at: number): void {
   void router.replace({ query: { ...route.query, [PAGE_PARAM]: String(at) } });
 }
 
+const source = ref<InstanceType<typeof SourcePane> | null>(null);
+
+// an anchor's page is there to be read: the keyboard goes along to it
+function showAnchor(at: number): void {
+  showPage(at);
+  source.value?.focus();
+}
+
 onMounted(() => void load());
 watch(
   () => props.id,
@@ -82,7 +96,7 @@ watch(
 // The tab names the document once it is known; until then the router's name for the page stands. The
 // router names the page alone on each move, the query's too (router.afterEach): named again after it.
 watch([heading, () => route.fullPath], ([name]) => {
-  if (document_.value) document.title = pageTitle(name);
+  if (route.name === ownRoute && document_.value) document.title = pageTitle(name);
 });
 </script>
 
@@ -119,10 +133,10 @@ watch([heading, () => route.fullPath], ([name]) => {
           <h2 id="document-tree-detail">
             <bdi>{{ detailHeading }}</bdi>
           </h2>
-          <RowDetail v-if="selectedRow" :row="selectedRow" :form="form" @show="showPage" />
+          <RowDetail v-if="selectedRow" :row="selectedRow" :form="form" @show="showAnchor" />
           <p v-else>{{ t("documents.tree.detail.none") }}</p>
         </section>
-        <SourcePane :document-id="id" :page="page" :cited="cited" @go="showPage" />
+        <SourcePane ref="source" :document-id="id" :page="page" :cited="cited" @go="showPage" />
       </div>
     </div>
   </div>

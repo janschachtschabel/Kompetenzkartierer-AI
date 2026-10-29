@@ -162,6 +162,42 @@ describe("a document's tree page", () => {
     expect(api.getDocumentBlocks).toHaveBeenLastCalledWith("d1", 1);
   });
 
+  it("keeps the keys in the tree while a row chosen there moves the source to its page", async () => {
+    const wrapper = await open();
+    const row = wrapper.get("[data-key='statement:s1']").element as HTMLElement;
+    row.focus();
+
+    await wrapper.get("[data-key='statement:s1']").trigger("keydown", { key: "Enter" });
+    await flushPromises();
+
+    expect(api.getDocumentBlocks).toHaveBeenLastCalledWith("d1", 5);
+    expect(document.activeElement).toBe(row);
+  });
+
+  it("takes the keys along to the source when an anchor shows its page", async () => {
+    const wrapper = await open({ zeile: "statement:s1" });
+    const show = wrapper.findAll(".row-detail__anchors button")[1];
+    (show?.element as HTMLElement).focus();
+
+    await show?.trigger("click");
+    await flushPromises();
+
+    expect(document.activeElement?.textContent).toBe("Quelle");
+    expect(document.activeElement?.tagName).toBe("H2");
+  });
+
+  it("reads no row or page of the address it is left for, nor names its tab", async () => {
+    // a leaving transition keeps the page mounted under the next page's address
+    await open({ zeile: "statement:s1", seite: "6" });
+    vi.mocked(api.getDocumentBlocks).mockClear();
+
+    await router.push({ name: "document", params: { id: "d1" } });
+    await flushPromises();
+
+    expect(api.getDocumentBlocks).not.toHaveBeenCalled();
+    expect(document.title).toBe(`${t("app.titles.document")} · ${t("app.title")}`);
+  });
+
   it("goes to the page an anchor names, and to the page its pager asks for", async () => {
     const wrapper = await open({ zeile: "statement:s1" });
     expect(api.getDocumentBlocks).toHaveBeenLastCalledWith("d1", 5); // no page asked: its first anchor's
