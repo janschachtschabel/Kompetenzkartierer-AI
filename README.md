@@ -207,8 +207,18 @@ ungültig.
   Eigentümers wie jeder Job des Dokuments: folgen (`GET /api/v1/jobs/{id}`) und abbrechen dürfen
   Eigentümer und Admins, wer ihn startete, sieht ihn in der Antwort (202). Er teilt den Schlüssel der
   Extraktion; wartet oder läuft ein Job des Dokuments, kommt dieser zurück (200), wo der Aufrufer ihm
-  folgen darf (Eigentümer, Admin), sonst 409 `job_open`. Audit `check.start`. Geschuldet ist die Prüfung, sobald eine Reparatur
-  oder eine Bearbeitung (`document.edited_at`) nach dem Start des letzten fertigen X5 begann.
+  folgen darf (Eigentümer, Admin), sonst 409 `job_open`. Audit `check.start`. Geschuldet ist die
+  Prüfung, sobald eine Reparatur oder eine Bearbeitung (`document.edited_at`) nach dem Start des
+  letzten fertigen X5 begann.
+- Werk: `PATCH /api/v1/documents/{id}/work` setzt das Werk des Dokuments – ein vorhandenes
+  (`work_id`) oder ein neues (`title`, `region` wie `DE-NW`, `short_title` als Slug wie `lp-physik`) –,
+  nur durch Redaktion/Admin (sonst 403 `not_editor`); 404 `no_work` für ein Werk, das es nicht gibt.
+  Metadaten: `PATCH /api/v1/documents/{id}` setzt `issuer`, `edition` und `title` (ausgelassene
+  bleiben, `null` oder leerer Text leert) – durch Eigentümer und Redaktion/Admin, 422 `invalid_field`
+  wie beim Bearbeiten; eine Änderung schuldet X5 eine Prüfung. Beide nicht neben einem offenen Job
+  und nicht festgeschrieben; hat das Dokument schon seine IRI (festgeschrieben oder Entwurfskopie),
+  bleiben Werk, Herausgeber und Fassung, aus denen sie besteht (409 `named`). Audit `document.work`
+  bzw. `document.edit`; die Antwort ist das Dokument.
 - Abbrechen: `POST /api/v1/jobs/{id}/cancel` (Eigentümer des Jobs oder Admin, in der Oberfläche
   der Knopf „Abbrechen“ an jedem Auftrag). Ein wartender Job endet sofort, ein laufender beim
   nächsten Herzschlag seines Workers (alle `JOB_LEASE_S`/3); hält der Handler dann nicht an,

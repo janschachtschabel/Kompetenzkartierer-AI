@@ -307,8 +307,7 @@ async def list_documents(
 )
 async def read_document(document_id: UUID, request: Request, who: Account) -> DocumentOut:
     async with request.app.state.pool.connection() as connection:
-        [out] = await _outs(connection, [await visible_document(connection, who, document_id)], who)
-        return out
+        return await document_out(connection, await visible_document(connection, who, document_id), who)
 
 
 @router.get(
@@ -422,6 +421,14 @@ async def _job(connection: psycopg.AsyncConnection, job_id: UUID, who: Principal
     # the owner's own job, just made or found: every job of a document runs in its owner's lane
     assert state is not None  # noqa: S101
     return job_out(state)
+
+
+async def document_out(
+    connection: psycopg.AsyncConnection, document: Document, who: Principal
+) -> DocumentOut:
+    """The document as the API gives it (app/api/document_meta.py, as here)."""
+    [out] = await _outs(connection, [document], who)
+    return out
 
 
 async def _outs(

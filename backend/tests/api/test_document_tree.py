@@ -25,12 +25,18 @@ PROPOSED, CONFIRMED, REJECTED = (CV + "rev_" + status for status in ("proposed",
 
 
 def a_document(
-    client: TestClient, url: str, *, ended: bool = True, extracted: bool = True
+    client: TestClient,
+    url: str,
+    *,
+    ended: bool = True,
+    extracted: bool = True,
+    name: str = "Lehrkraft",
+    digest: bytes = b"" * 32,
 ) -> tuple[str, dict[str, str]]:
     """A document of a new account's with that account's header; its extraction ended, unless not, and X4
     done - every package read - unless not."""
-    owner, header = an_account(url)
-    started = make(client, url, header, a_conversion(url, owner))
+    owner, header = an_account(url, name)
+    started = make(client, url, header, a_conversion(url, owner, digest))
     if ended:
         end_job(url, started["job"]["id"], "done")
     if extracted:

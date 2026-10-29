@@ -16,6 +16,7 @@ from app.api.errors import ErrorBody, Refusal
 from app.core.auth import Principal
 from app.core.logging import current_request_id
 from app.db.accounts import record_audit
+from app.db.document_meta import DocumentNamed
 from app.db.documents import DocumentError
 from app.db.editing import DocumentFrozen, JobOpen, NotExtracted
 from app.vocab.form_values import FieldError
@@ -27,7 +28,7 @@ FieldIn = str | Annotated[list[str], Field(max_length=MOST_VALUES)] | None
 FieldKey = Annotated[str, StringConstraints(max_length=40, pattern=r"^[a-z][a-zA-Z_]*$")]
 Fields = Annotated[dict[FieldKey, FieldIn], Field(max_length=MOST_FIELDS)]
 # what a change may meet besides a stale revision, which answers with the row as it stands
-REFUSED = (FieldError, JobOpen, DocumentFrozen, NotExtracted, DocumentError)
+REFUSED = (FieldError, JobOpen, DocumentFrozen, NotExtracted, DocumentNamed, DocumentError)
 Responses = dict[int | str, dict[str, Any]]
 # the document closed to changes now
 _CLOSED = (
@@ -96,6 +97,8 @@ async def refusal_of(
         return Refusal(409, "frozen", "The document is frozen: its draft copy takes changes.")
     if isinstance(error, NotExtracted):
         return Refusal(409, "not_extracted", "The extraction has not read every work package yet.")
+    if isinstance(error, DocumentNamed):
+        return Refusal(409, "named", "The document is named by its IRI: its work, issuer and edition stay.")
     if isinstance(error, DocumentError) and error.code == "no_form":
         return Refusal(409, "no_form", "The document's sector has no form to edit it with.")
     return Refusal(404, "no_document", "No such document.")
