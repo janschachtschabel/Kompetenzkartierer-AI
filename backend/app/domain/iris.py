@@ -6,16 +6,16 @@ statement by its number under its node ("…/lf-5/s-3", numbers given once, plan
 gets its position among its siblings (``cur:codeAssigned``), named ``pos-<n>``, and so does one whose code
 holds no ASCII letter or digit (a Greek letter, a bullet). Siblings whose segments meet - a code printed
 twice, or printed as "Pos. 3" beside an assigned third - are counted on: "lf-5", "lf-5-2"; so is a code that
-would read as a statement's number ("S 1" as "s-1-2"), and "S" twice is "s", "s-1-2" (counted_on). The base is
-the service's (``IRI_BASE``, set when documents are frozen, plan M1 9.6); until then a document carries a
-draft IRI from its id, and its nodes are named once it is frozen. Each part is a slug of a hundred signs at
-most: lowercase ASCII, the German letters spelt out ("ä" as "ae", "ß" as "ss"), anything else between words a
-hyphen.
+would read as a statement's number ("S 1" as "s-1-2"), and "S" twice is "s", "s-1-2" (SegmentCounter). The
+base is the service's (``IRI_BASE``, set when documents are frozen, plan M1 9.6); until then a document
+carries a draft IRI from its id, and its nodes are named once it is frozen. Each part is a slug of a hundred
+signs at most: lowercase ASCII, the German letters spelt out ("ä" as "ae", "ß" as "ss"), anything else between
+words a hyphen.
 """
 
 import re
 import unicodedata
-from collections.abc import Container, Sequence
+from collections.abc import Sequence
 from uuid import UUID
 
 _SPELT_OUT = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"})
@@ -77,29 +77,39 @@ def statement_iri(node: str, number: int) -> str:
 
 def node_segments(siblings: Sequence[tuple[str, bool]]) -> list[str]:
     """The segments of siblings in their order, from each one's code and whether it was assigned."""
-    taken: set[str] = set()
+    counter = SegmentCounter()
     segments: list[str] = []
     for place, (code, assigned) in enumerate(siblings, start=1):
         try:
             segment = f"pos-{slug(code)}" if assigned else slug(code)
         except ValueError:  # no ASCII letter or digit to name it by: its place names it
             segment = f"pos-{place}"
-        made = counted_on(segment, taken)
-        taken.add(made)
-        segments.append(made)
+        segments.append(counter.take(segment))
     return segments
 
 
-def counted_on(segment: str, taken: Container[str]) -> str:
-    """``segment`` where no sibling holds it, else the first of ``<segment>-2``, ``-3``, ... none holds; one
-    that reads as a statement's (``s-<n>``) is passed over, and under ``s``, whose every count would, the
-    count goes on from ``s-1`` ("s-1-2")."""
-    stem = "s-1" if segment == "s" else segment
-    made, count = segment, 1
-    while made in taken or _STATEMENT.fullmatch(made):
-        count += 1
-        made = f"{stem}-{count}"
-    return made
+class SegmentCounter:
+    """The segments of one group of siblings, each given once, past those in ``taken`` (the set it adds
+    to)."""
+
+    def __init__(self, taken: set[str] | None = None) -> None:
+        self._taken = set() if taken is None else taken
+        # by segment, the count it was last given at: every count below it is taken, and stays so
+        self._counts: dict[str, int] = {}
+
+    def take(self, segment: str) -> str:
+        """``segment`` where none holds it, else the first of ``<segment>-2``, ``-3``, ... none holds; one
+        that reads as a statement's (``s-<n>``) is passed over, and under ``s``, whose every count would, the
+        count goes on from ``s-1`` ("s-1-2")."""
+        stem = "s-1" if segment == "s" else segment
+        count = self._counts.get(segment, 1)
+        made = segment if count == 1 else f"{stem}-{count}"
+        while made in self._taken or _STATEMENT.fullmatch(made):
+            count += 1
+            made = f"{stem}-{count}"
+        self._counts[segment] = count
+        self._taken.add(made)
+        return made
 
 
 def assign_code(position: int) -> str:

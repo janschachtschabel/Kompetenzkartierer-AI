@@ -1,10 +1,14 @@
 """The IRIs of works, documents and nodes, and the codes the pipeline assigns (konzept §11)."""
 
+import random
+import re
+from collections.abc import Container, Sequence
 from uuid import UUID
 
 import pytest
 
 from app.domain.iris import (
+    SegmentCounter,
     assign_code,
     checked_base,
     document_iri,
@@ -155,3 +159,68 @@ def test_an_assigned_code_is_the_position_among_its_siblings() -> None:
 def test_a_position_counts_from_one(position: int) -> None:
     with pytest.raises(ValueError, match="position"):
         assign_code(position)
+
+
+class Asked(set[str]):
+    """A set that counts how often it is asked whether it holds a segment."""
+
+    asked = 0
+
+    def __contains__(self, segment: object) -> bool:
+        self.asked += 1
+        return super().__contains__(segment)
+
+
+def test_a_thousand_siblings_of_one_code_are_counted_on_without_starting_over_each_time() -> None:
+    # 9b counted every sibling from 2 again: half a million questions for a thousand codes "LF 1"
+    taken = Asked()
+    counter = SegmentCounter(taken)
+
+    made = [counter.take("lf-1") for _ in range(1000)]
+
+    assert made[:3] == ["lf-1", "lf-1-2", "lf-1-3"] and made[-1] == "lf-1-1000"
+    assert taken.asked <= 3000
+
+
+def test_a_counter_steps_past_what_its_siblings_brought_and_what_a_statement_would_hold() -> None:
+    counter = SegmentCounter({"lf-1", "lf-1-2", "s"})
+
+    made = [counter.take(segment) for segment in ("lf-1", "lf-1", "s", "s-1", "s")]
+
+    assert made == ["lf-1-3", "lf-1-4", "s-1-2", "s-1-3", "s-1-4"]
+
+
+_STATEMENT = re.compile(r"s-\d+")
+
+
+def _counted_on_as_in_9b(segment: str, taken: Container[str]) -> str:
+    stem = "s-1" if segment == "s" else segment
+    made, count = segment, 1
+    while made in taken or _STATEMENT.fullmatch(made):
+        count += 1
+        made = f"{stem}-{count}"
+    return made
+
+
+def _segments_as_in_9b(siblings: Sequence[tuple[str, bool]]) -> list[str]:
+    taken: set[str] = set()
+    segments: list[str] = []
+    for place, (code, assigned) in enumerate(siblings, start=1):
+        try:
+            segment = f"pos-{slug(code)}" if assigned else slug(code)
+        except ValueError:
+            segment = f"pos-{place}"
+        made = _counted_on_as_in_9b(segment, taken)
+        taken.add(made)
+        segments.append(made)
+    return segments
+
+
+def test_the_segments_are_those_9b_gave_for_every_group_of_siblings() -> None:
+    # codes that meet: the same code, one that reads as another's count, a statement's, none
+    codes = ["LF 1", "LF 1-2", "lf-1", "S", "S 1", "s-1", "S 1-2", "2", "Pos. 2", "", "\u03a9", "LF 1-2-2"]
+    draw = random.Random(9)  # noqa: S311 - the same draw of cases each run, no secret
+    for _ in range(2000):
+        siblings = [(draw.choice(codes), draw.random() < 0.2) for _ in range(draw.randint(1, 12))]
+
+        assert node_segments(siblings) == _segments_as_in_9b(siblings), siblings

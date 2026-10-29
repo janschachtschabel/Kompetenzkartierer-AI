@@ -14,7 +14,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from uuid import UUID
 
-from app.domain.iris import counted_on, node_iri, node_segments, statement_iri
+from app.domain.iris import SegmentCounter, node_iri, node_segments, statement_iri
 
 
 @dataclass(frozen=True)
@@ -72,15 +72,13 @@ def name_rows(
 
 def _siblings(parent: str, siblings: Sequence[NodeRow], named: Named) -> list[tuple[NodeRow, str]]:
     # the segments the siblings brought along hold: a sibling's IRI is its parent's and its segment
-    taken = {row.iri.removeprefix(parent + "/") for row in siblings if row.iri is not None}
+    counter = SegmentCounter({row.iri.removeprefix(parent + "/") for row in siblings if row.iri is not None})
     segments = node_segments([(row.code or "", row.code_assigned) for row in siblings])
     placed = []
     for row, segment in zip(siblings, segments, strict=True):
         iri = row.iri
         if iri is None:
-            made = counted_on(segment, taken)
-            taken.add(made)
-            named.nodes[row.id] = iri = node_iri(parent, [made])
+            named.nodes[row.id] = iri = node_iri(parent, [counter.take(segment)])
         placed.append((row, iri))
     return placed
 
