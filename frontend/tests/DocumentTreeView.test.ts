@@ -51,6 +51,7 @@ const TREE = tree_([
         fields: { verbatim: "Sie messen.", statement_kind: CV + "kind_learningOutcome", addressees: [CV + "addr_learner"] },
         anchors: [anchor("q1", 5, ["p5-b2"]), anchor("q2", 6, ["p6-b1"])],
       }),
+      statement_("s2", { position: 2, fields: { verbatim: "Ohne Fundstelle." } }),
     ],
   }),
 ]);
@@ -99,6 +100,7 @@ describe("a document's tree page", () => {
     expect(wrapper.findAll("[role=treeitem]").map((item) => item.attributes("data-key"))).toEqual([
       "node:a",
       "statement:s1",
+      "statement:s2",
     ]);
     expect(wrapper.text()).toContain(t("documents.tree.detail.none"));
     expect(api.getDocumentBlocks).toHaveBeenCalledWith("d1", 1);
@@ -125,6 +127,22 @@ describe("a document's tree page", () => {
     expect(wrapper.get(".row-detail").text()).toContain("Optik");
     expect(wrapper.get("[data-key='node:a']").attributes("aria-selected")).toBe("true");
     expect(api.getDocumentBlocks).toHaveBeenLastCalledWith("d1", 7);
+  });
+
+  it("reads a page the address writes otherwise than as a whole number as none: the first anchor's", async () => {
+    await open({ zeile: "statement:s1", seite: "0x10" });
+
+    expect(api.getDocumentBlocks).toHaveBeenLastCalledWith("d1", 5);
+  });
+
+  it("shows the first page for a row chosen without anchors, whatever page was shown before", async () => {
+    const wrapper = await open({ zeile: "statement:s1", seite: "6" });
+
+    await wrapper.get("[data-key='statement:s2']").trigger("click");
+    await flushPromises();
+
+    expect(query()).toEqual({ zeile: "statement:s2" });
+    expect(api.getDocumentBlocks).toHaveBeenLastCalledWith("d1", 1);
   });
 
   it("leaves a row the address names but the tree does not hold unchosen", async () => {
@@ -166,6 +184,6 @@ describe("a document's tree page", () => {
     await wrapper.findAll("button").find((button) => button.text() === t("states.retry"))?.trigger("click");
     await flushPromises();
 
-    expect(wrapper.findAll("[role=treeitem]")).toHaveLength(2);
+    expect(wrapper.findAll("[role=treeitem]")).toHaveLength(3);
   });
 });

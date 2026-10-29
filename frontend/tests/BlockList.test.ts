@@ -53,6 +53,20 @@ describe("a page's blocks", () => {
     expect(wrapper.findAll(".block--cited")).toHaveLength(0);
   });
 
+  it("lead to the first page too, where a table begins there, by naming it", async () => {
+    // an address without its page is the first one on the blocks' page, the first anchor's on the tree's
+    await router.push({ name: "conversion", params: { id: "s1" }, query: { zeile: "node:a", seite: "3" } });
+    shown = mount(BlockList, {
+      props: { blocks: [], continued: [{ ...RUNNING_ON, id: "p1-b4", page: 1 }], page: 3 },
+      global: { plugins: [router] },
+      attachTo: document.body,
+    });
+
+    const href = shown.get(".block a").attributes("href") ?? "";
+    expect(href).toContain("seite=1");
+    expect(href).not.toContain("seite=3");
+  });
+
   it("lead to the page a table begins on, keeping the rest of the address", async () => {
     const wrapper = await list();
 

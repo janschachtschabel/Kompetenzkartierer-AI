@@ -12,7 +12,7 @@
 import { RouterLink, useRoute } from "vue-router";
 
 import type { Block, ContinuedTable } from "@/api";
-import { pageQuery } from "@/blockPages";
+import { PAGE_PARAM } from "@/blockPages";
 import BlockTable from "@/components/BlockTable.vue";
 import { messages, t } from "@/i18n/de";
 import { word } from "@/registerWords";
@@ -37,7 +37,7 @@ const route = useRoute();
         <span v-if="cited.has(item.id)" class="block__cited">{{ t("conversionPage.cited") }}</span>
         <span class="block__kind">{{ t("conversionPage.kind.table") }}</span>
         <span>{{ t("conversionPage.continued", { page: item.page }) }}</span>
-        <RouterLink :to="{ query: { ...route.query, ...pageQuery(item.page) } }" replace>
+        <RouterLink :to="{ query: { ...route.query, [PAGE_PARAM]: String(item.page) } }" replace>
           {{ t("conversionPage.tableStart", { page: item.page }) }}
         </RouterLink>
       </p>

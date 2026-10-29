@@ -9,7 +9,7 @@
 import { computed, onMounted, toRef, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
-import { PAGE_PARAM } from "@/blockPages";
+import { PAGE_PARAM, pageOf } from "@/blockPages";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
@@ -44,16 +44,14 @@ const selected = computed<RowKey | null>({
   set: (key) => {
     const row = key ? (rows.value.get(key) ?? null) : null;
     const at = firstPage(row);
+    // a row without anchors shows the first page, not the page of the row before
     void router.replace({
-      query: { ...route.query, [ROW_PARAM]: key ?? undefined, ...(at ? { [PAGE_PARAM]: String(at) } : {}) },
+      query: { ...route.query, [ROW_PARAM]: key ?? undefined, [PAGE_PARAM]: at ? String(at) : undefined },
     });
   },
 });
 
-const page = computed(() => {
-  const asked = Number(route.query[PAGE_PARAM]);
-  return Number.isInteger(asked) && asked >= 1 ? asked : (firstPage(selectedRow.value) ?? 1);
-});
+const page = computed(() => pageOf(route.query[PAGE_PARAM]) ?? firstPage(selectedRow.value) ?? 1);
 
 const cited = computed(() => [...new Set(anchorsOf(selectedRow.value).flatMap((anchor) => anchor.blocks))]);
 

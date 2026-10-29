@@ -9,7 +9,7 @@ import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import { ApiError, getBlocks, getConversion, getSource, type BlockPage, type Conversion, type SourceDetail } from "@/api";
-import { PAGE_PARAM, pageQuery } from "@/blockPages";
+import { PAGE_PARAM, pageOf, pageQuery } from "@/blockPages";
 import BlockList from "@/components/BlockList.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
@@ -28,18 +28,13 @@ const props = defineProps<{ id: string }>();
 const route = useRoute();
 const router = useRouter();
 
-/** The page the address names: a whole number from 1; anything else is the first. */
-function pageOf(value: unknown): number {
-  const page = typeof value === "string" && /^\d{1,6}$/.test(value) ? Number(value) : 1;
-  return Math.max(page, 1);
-}
-
 // Only under the route the page was mounted at: a leaving transition keeps it mounted under the
 // next page's address, whose query is no page of this one - read, it asked for blocks and named
 // the next page's tab after this one (SourcesView keeps its filter the same way).
 const ownRoute = route.name;
 const page = computed<number>((before) =>
-  route.name === ownRoute ? pageOf(route.query[PAGE_PARAM]) : (before ?? 1),
+  // the page the address names; anything else is the first
+  route.name === ownRoute ? (pageOf(route.query[PAGE_PARAM]) ?? 1) : (before ?? 1),
 );
 
 /** Why no page can show: no such entry, a file for the editors alone, no blocks yet. */
