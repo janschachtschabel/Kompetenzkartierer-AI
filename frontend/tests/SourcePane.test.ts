@@ -88,10 +88,10 @@ describe("the source beside a row", () => {
     expect(wrapper.text()).not.toContain("Erster auf 4");
   });
 
-  it("says why it shows no blocks, and reads the page again on request", async () => {
+  it("says a reading failed, and reads the page again on request", async () => {
     const read = vi
       .spyOn(api, "getDocumentBlocks")
-      .mockRejectedValueOnce(new ApiError("forbidden", 403, "file_hidden"))
+      .mockRejectedValueOnce(new ApiError("network", 0))
       .mockResolvedValueOnce(page(2));
     const wrapper = await pane(2);
 
@@ -111,5 +111,80 @@ describe("the source beside a row", () => {
     const wrapper = await pane(7);
 
     expect(wrapper.text()).toContain("Auf dieser Seite steht kein Text"); // as on the conversion's page
+  });
+
+  it("says while another page loads that it does, the pager showing the page asked for", async () => {
+    let later: (found: DocumentPage) => void = () => undefined;
+    vi.spyOn(api, "getDocumentBlocks")
+      .mockResolvedValueOnce(page(3))
+      .mockReturnValueOnce(new Promise((resolve) => (later = resolve)));
+    const wrapper = await pane(3);
+
+    await wrapper.setProps({ page: 4 });
+
+    expect(wrapper.text()).not.toContain("Erster auf 3");
+    expect(wrapper.find(".loading").exists()).toBe(true);
+    expect((wrapper.get("input").element as HTMLInputElement).value).toBe("4");
+    later(page(4));
+    await flushPromises();
+    expect(wrapper.find(".loading").exists()).toBe(false);
+  });
+
+  it("says the page it moved to once it shows, and takes the focus to its heading from where the move began", async () => {
+    vi.spyOn(api, "getDocumentBlocks").mockImplementation((_id, number) => Promise.resolve(page(number)));
+    const wrapper = await pane(3);
+    const status = wrapper.get("[role=status]");
+    expect(status.text()).toBe(""); // the first page is no move
+    const next = wrapper.get("[data-test=next]").element as HTMLButtonElement;
+    next.focus();
+
+    await wrapper.setProps({ page: 4 });
+    await flushPromises();
+
+    expect(status.text()).toBe("Seite 4 von 9: 2 Blöcke.");
+    expect(document.activeElement).toBe(wrapper.get("h2").element);
+  });
+
+  it("leaves the focus where the reader went on to while the page loaded", async () => {
+    let later: (found: DocumentPage) => void = () => undefined;
+    vi.spyOn(api, "getDocumentBlocks")
+      .mockResolvedValueOnce(page(3))
+      .mockReturnValueOnce(new Promise((resolve) => (later = resolve)));
+    const elsewhere = document.createElement("button");
+    document.body.append(elsewhere);
+    const wrapper = await pane(3);
+
+    await wrapper.setProps({ page: 4 });
+    elsewhere.focus();
+    later(page(4));
+    await flushPromises();
+
+    expect(document.activeElement).toBe(elsewhere);
+  });
+
+  it("says a page past the end is none, keeps its pager and offers the first page", async () => {
+    vi.spyOn(api, "getDocumentBlocks")
+      .mockResolvedValueOnce(page(3))
+      .mockRejectedValueOnce(new ApiError("server", 404, "no_such_page"));
+    const wrapper = await pane(3);
+
+    await wrapper.setProps({ page: 12 });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Die Datei hat 9 Seiten.");
+    expect(wrapper.get("[role=status]").text()).toBe("Diese Seite gibt es nicht"); // not the page before
+    expect(wrapper.find("[data-test=next]").exists()).toBe(true);
+    await wrapper.findAll("button").find((button) => button.text() === "Zur ersten Seite")?.trigger("click");
+    expect(wrapper.emitted("go")).toEqual([[1]]);
+  });
+
+  it("says the entry's content is no longer the reader's, with no retry that could change it", async () => {
+    vi.spyOn(api, "getDocumentBlocks").mockRejectedValue(new ApiError("forbidden", 403, "file_hidden"));
+
+    const wrapper = await pane(2);
+
+    expect(wrapper.text()).toContain(t("refusals.file_hidden"));
+    expect(wrapper.findAll("button").some((button) => button.text() === t("states.retry"))).toBe(false);
+    expect(await violations(wrapper.html())).toEqual([]);
   });
 });
