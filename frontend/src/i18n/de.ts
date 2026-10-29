@@ -928,6 +928,13 @@ export const messages = {
         official: "amtlich",
       },
       facts: { origin: "Herkunft", status: "Prüfstand", revision: "Revision", iri: "IRI" },
+      source: {
+        heading: "Quelle",
+        page: "Seite {page} von {pages}",
+        printedPage: "Seite {page} von {pages} (gedruckt {printed})",
+        citedNote: "Mit „Beleg“ markiert: die Blöcke, die die gewählte Zeile nennt.",
+        loadFailed: "Die Quelle wurde nicht geladen.",
+      },
       notGiven: "nicht angegeben",
       assignedCode: "{code} (aus der Position vergeben)",
       anchors: {
