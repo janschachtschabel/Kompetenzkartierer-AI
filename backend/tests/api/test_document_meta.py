@@ -30,7 +30,7 @@ def test_an_editor_makes_the_document_s_work_and_sets_one_there_is_on_another(
     client: TestClient, url: str
 ) -> None:
     document, _ = a_document(client, url)
-    other, _ = a_document(client, url, name="Lehrkraft 2", digest=b"" * 32)
+    other, _ = a_document(client, url, name="Lehrkraft 2", digest=b"\x02" * 32)
     editor_id, editor = an_account(url, "Redaktion", ("redaktion",))
 
     made = client.patch(f"/api/v1/documents/{document}/work", headers=editor, json=PHYSICS)
@@ -121,7 +121,7 @@ def test_metadata_are_refused_as_they_may_not_be_set(client: TestClient, url: st
 def test_neither_is_set_on_a_frozen_document_or_beside_its_job(client: TestClient, url: str) -> None:
     busy, owner = a_document(client, url, ended=False)
     _, editor = an_account(url, "Redaktion", ("redaktion",))
-    frozen, _ = a_document(client, url, name="Lehrkraft 2", digest=b"" * 32)
+    frozen, _ = a_document(client, url, name="Lehrkraft 2", digest=b"\x02" * 32)
     named(url, frozen, frozen=True)
 
     answers = {

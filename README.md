@@ -137,23 +137,24 @@ ungültig.
   Auswahlliste die aktiven Werte des Profils, nach Label geordnet – Knotentypen und Unterarten mit
   Label, weiteren Namen, Definition, Anmerkung, Abgrenzung und Beispielen; kein aktives Profil: 404
   `unknown_sector`. Die Felder sind nicht laxer als die SHACL-Formen des Kerns (Test).
-- Dokumente: `POST /api/v1/documents` (`source_id`, `conversion_id`, `sector`, `regions`) legt aus
-  der fertigen Umwandlung eines Eintrags ein Dokument an und startet seine Extraktion (202 mit
-  Dokument und Job), als Modelljob zugelassen (403 `no_budget`, 429 `too_many_jobs` /
-  `too_many_starts`). `POST /api/v1/documents/{id}/extraction` startet sie neu, nur durch den
-  Eigentümer (403 `not_owner`) und solange er den Inhalt des Eintrags lesen darf (403
-  `file_hidden`), nicht für ein festgeschriebenes Dokument (409 `frozen`) und keine Entwurfskopie
-  (409 `not_extractable`; wie die Reparatur); `GET /api/v1/documents?source_id=…`, `/documents/{id}`, `/documents/{id}/runs`,
-  `/documents/{id}/units`, `/documents/{id}/findings` lesen sie (die Job-ID nur für Eigentümer und
-  Admins, den Fehlercode des letzten Jobs, `extraction.error_code`, alle Leser; `units`: die
-  Arbeitspakete mit Stand `done` samt Zahl der Aussagen, `open`, `frame` oder `none`, vor X2 leer;
-  `findings`: die Befunde der Stufen, Verstöße zuerst, je mit Art, Wortlaut oder Titel der Zeile,
-  die sie betreffen (gekürzt mit „…“), dem Arbeitspaket, das sie nennen, und der Sprache der
-  Meldung, wo die Stufe sie kennt (`message_lang`: „de“ für die deutschen Meldungen der SHACL-Formen,
-  sonst Englisch) – höchstens 500, die Zahlen je Schwere über alle). Je Dokument wartet oder läuft höchstens
-  ein Extraktionsjob (`job.unique_key`, Migration 0018): ein Start dabei gibt den laufenden zurück
-  (200); ebenso ein neues Dokument desselben Eintrags und derselben Konvertierung, solange eines
-  des Kontos daraus extrahiert wird – dann 200 mit diesem (`made: false`).
+- Dokumente: `POST /api/v1/documents` (`source_id`, `conversion_id`, `sector`, `regions`) legt aus der
+  fertigen Umwandlung eines Eintrags ein Dokument an und startet seine Extraktion (202 mit Dokument und
+  Job), als Modelljob zugelassen (403 `no_budget`, 429 `too_many_jobs` / `too_many_starts`). `POST
+  /api/v1/documents/{id}/extraction` startet sie neu, nur durch den Eigentümer (403 `not_owner`) und solange
+  er den Inhalt des Eintrags lesen darf (403 `file_hidden`), nicht für ein festgeschriebenes Dokument (409
+  `frozen`) und keine Entwurfskopie (409 `not_extractable`; wie die Reparatur); `GET
+  /api/v1/documents?source_id=…`, `/documents/{id}`, `/documents/{id}/runs`, `/documents/{id}/units`,
+  `/documents/{id}/findings` lesen sie (jedes Dokument mit `issuer`, `edition`, `work` – Id, Titel, Land,
+  Kurztitel, IRI –, `iri`, `revision`, `frozen_at` und `copy_of`, der Revision, die eine Entwurfskopie
+  kopiert; die Job-ID nur für Eigentümer und Admins, den Fehlercode des letzten Jobs,
+  `extraction.error_code`, alle Leser; `units`: die Arbeitspakete mit Stand `done` samt Zahl der Aussagen,
+  `open`, `frame` oder `none`, vor X2 leer; `findings`: die Befunde der Stufen, Verstöße zuerst, je mit Art,
+  Wortlaut oder Titel der Zeile, die sie betreffen (gekürzt mit „…“), dem Arbeitspaket, das sie nennen, und
+  der Sprache der Meldung, wo die Stufe sie kennt (`message_lang`: „de“ für die deutschen Meldungen der
+  SHACL-Formen, sonst Englisch) – höchstens 500, die Zahlen je Schwere über alle). Je Dokument wartet oder
+  läuft höchstens ein Extraktionsjob (`job.unique_key`, Migration 0018): ein Start dabei gibt den laufenden
+  zurück (200); ebenso ein neues Dokument desselben Eintrags und derselben Konvertierung, solange eines des
+  Kontos daraus extrahiert wird – dann 200 mit diesem (`made: false`).
 - Reparatur: `POST /api/v1/documents/{id}/repair` startet den Job `extract.repair` (X6, dann X5
   erneut) – nur durch den Eigentümer und solange er den Inhalt lesen darf, wie ein Neustart,
   sobald X5 das Dokument geprüft hat (409 `not_checked`) und Befunde eines Arbeitspakets eine
@@ -162,16 +163,15 @@ ungültig.
   gibt diese zurück (200), in beide Richtungen. `findings` nennt dem Eigentümer nach X5 in
   `repairable` die Pakete, die eine Reparatur fragen würde; `extraction.kind` sagt jedem Leser,
   welcher Art der letzte Job ist.
-- Baum: `GET /api/v1/documents/{id}/tree` liest die Knoten und Aussagen eines Dokuments, wie der
-  Editor sie zeigt (wer das Dokument lesen darf, in einem Snapshot): je Zeile die Felder des
-  Formulars unter dessen Schlüsseln, Herkunft, Prüfstand, Revision und Fundstellen (Seiten,
-  gedruckte Seite, Zitat, Fundart, Wert, Blöcke in Dokumentreihenfolge), je Knoten die Zahl der
-  Befunde je Schwere an ihm, seinen Fundstellen, seinen Aussagen und deren Fundstellen (nicht an
-  seinen Kindern),
-  dazu die Zahl der Knoten und Aussagen je Prüfstand. `editable`: Eigentümer und Redaktion/Admin
-  dürfen jetzt bearbeiten, `reviewable`: Redaktion/Admin dürfen den Prüfstand setzen – beides
-  nicht, solange ein Job des Dokuments wartet oder läuft, nicht, bevor X4 jedes Arbeitspaket gelesen
-  hat, und nicht, sobald es festgeschrieben ist.
+- Baum: `GET /api/v1/documents/{id}/tree` liest die Knoten und Aussagen eines Dokuments, wie der Editor sie
+  zeigt (wer das Dokument lesen darf, in einem Snapshot): je Zeile die Felder des Formulars unter dessen
+  Schlüsseln, Herkunft, Prüfstand, Revision, `iri` (sobald das Dokument festgeschrieben wurde, sonst `null`)
+  und Fundstellen (Seiten, gedruckte Seite, Zitat, Fundart, Wert, Blöcke in Dokumentreihenfolge), je Knoten
+  die Zahl der Befunde je Schwere an ihm, seinen Fundstellen, seinen Aussagen und deren Fundstellen (nicht
+  an seinen Kindern), dazu die Zahl der Knoten und Aussagen je Prüfstand. `editable`: Eigentümer und
+  Redaktion/Admin dürfen jetzt bearbeiten, `reviewable`: Redaktion/Admin dürfen den Prüfstand setzen –
+  beides nicht, solange ein Job des Dokuments wartet oder läuft, nicht, bevor X4 jedes Arbeitspaket gelesen
+  hat (eine Entwurfskopie gilt als gelesen), und nicht, sobald es festgeschrieben ist.
 - Bearbeiten: `PATCH /api/v1/nodes/{id}` und `/statements/{id}` (`expected_revision`, `fields` unter
   den Schlüsseln des Formulars, ausgelassene bleiben; eine Aussage auch `anchors`, alle auf einmal:
   Blöcke der Konvertierung, die Seiten folgen aus ihnen, oder nur `page`, eine Seite der
@@ -200,17 +200,16 @@ ungültig.
   Revisionen danach. Eine Aussage zu oder von „verworfen“ ändert, was der Lehrplan sagt (Export und X5
   lassen verworfene aus) und schuldet X5 eine Prüfung; ein Knoten verworfen bleibt in beiden. Wie beim
   Bearbeiten nicht neben einem offenen Job, nicht vor X4 und nicht festgeschrieben; Audit `review.set`.
-- Erneut prüfen: `POST /api/v1/documents/{id}/check` startet den Job `extract.check` (X5 erneut,
-  ohne Modell) – durch Eigentümer und Redaktion/Admin, sobald X5 das Dokument einmal geprüft hat
-  (sonst 409 `not_checked`: die Extraktion fortsetzen; eine Entwurfskopie gleich), nicht, sobald es
-  festgeschrieben ist (409 `frozen`).
-  Kein Modelljob: weder Budget noch Startgrenzen lassen ihn zu. Er läuft in der Spur des
-  Eigentümers wie jeder Job des Dokuments: folgen (`GET /api/v1/jobs/{id}`) und abbrechen dürfen
-  Eigentümer und Admins, wer ihn startete, sieht ihn in der Antwort (202). Er teilt den Schlüssel der
-  Extraktion; wartet oder läuft ein Job des Dokuments, kommt dieser zurück (200), wo der Aufrufer ihm
-  folgen darf (Eigentümer, Admin), sonst 409 `job_open`. Audit `check.start`. Geschuldet ist die
-  Prüfung, sobald eine Reparatur oder eine Bearbeitung (`document.edited_at`) nach dem Start des
-  letzten fertigen X5 begann.
+- Erneut prüfen: `POST /api/v1/documents/{id}/check` startet den Job `extract.check` (X5 erneut, ohne
+  Modell) – durch Eigentümer und Redaktion/Admin, sobald X5 das Dokument einmal geprüft hat (sonst 409
+  `not_checked`: die Extraktion fortsetzen) – eine Entwurfskopie sofort, sie bringt keine Läufe ihrer
+  Vorlage mit –, nicht, sobald es festgeschrieben ist (409 `frozen`). Kein Modelljob: weder Budget noch
+  Startgrenzen lassen ihn zu. Er läuft in der Spur des Eigentümers wie jeder Job des Dokuments: folgen (`GET
+  /api/v1/jobs/{id}`) und abbrechen dürfen Eigentümer und Admins, wer ihn startete, sieht ihn in der Antwort
+  (202). Er teilt den Schlüssel der Extraktion; wartet oder läuft ein Job des Dokuments, kommt dieser zurück
+  (200), wo der Aufrufer ihm folgen darf (Eigentümer, Admin), sonst 409 `job_open`. Audit `check.start`.
+  Geschuldet ist die Prüfung, sobald eine Reparatur oder eine Bearbeitung (`document.edited_at`) nach dem
+  Start des letzten fertigen X5 begann.
 - Werk: `PATCH /api/v1/documents/{id}/work` setzt das Werk des Dokuments – ein vorhandenes (`work_id`) oder
   ein neues (`title`, `region` wie `DE-NW`, `short_title` als Slug wie `lp-physik`) –, nur durch
   Redaktion/Admin (sonst 403 `not_editor`); 404 `no_work` für ein Werk, das es nicht gibt. Metadaten: `PATCH

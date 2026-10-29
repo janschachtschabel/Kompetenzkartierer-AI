@@ -53,19 +53,22 @@ class FreezeIn(BaseModel):
     summary="Freeze the document: its IRIs given, it changes no more - the editors alone",
     responses=answers("no_document: none the caller may read", FREEZE_RESPONSES),
 )
-async def freeze_a_document(document_id: UUID, body: FreezeIn, request: Request, who: Account) -> DocumentOut:
+async def freeze_a_document(
+    document_id: UUID, request: Request, who: Account, body: FreezeIn | None = None
+) -> DocumentOut:
     base = request.app.state.settings.iri_base
+    accept = body is not None and body.accept_violations  # no body: no violations accepted
     async with request.app.state.pool.connection() as connection:
         try:
             async with connection.transaction():
                 await visible_document(connection, who, document_id)
                 if not who.roles & EDITORS:
                     raise Refusal(403, "not_editor", "Only the editors freeze a document.")
-                frozen = await freeze(connection, document_id, base, accept_violations=body.accept_violations)
+                frozen = await freeze(connection, document_id, base, accept_violations=accept)
                 details = {
                     "revision": frozen.revision,
                     "violations": frozen.violations,
-                    "accepted": body.accept_violations and frozen.violations > 0,
+                    "accepted": accept and frozen.violations > 0,
                 }
                 await audit(connection, who, "document.freeze", f"document:{document_id}", details)
         except FreezeRefused as error:

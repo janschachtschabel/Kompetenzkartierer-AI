@@ -31,7 +31,7 @@ def a_document(
     ended: bool = True,
     extracted: bool = True,
     name: str = "Lehrkraft",
-    digest: bytes = b"" * 32,
+    digest: bytes = b"\x01" * 32,
 ) -> tuple[str, dict[str, str]]:
     """A document of a new account's with that account's header; its extraction ended, unless not, and X4
     done - every package read - unless not."""

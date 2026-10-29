@@ -116,6 +116,16 @@ def test_freezing_is_the_editors_and_violations_are_frozen_with_once_they_accept
     ]
 
 
+def test_a_freeze_without_a_body_accepts_no_violations(freezing: TestClient, url: str) -> None:
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+    document, _ = ready(freezing, url, editor)
+    a_violation(url, document)
+
+    answer = freezing.post(f"/api/v1/documents/{document}/freeze", headers=editor)
+
+    assert (answer.status_code, answer.json()["code"]) == (409, "has_violations"), answer.text
+
+
 def test_a_document_not_ready_is_refused_with_what_it_lacks(
     freezing: TestClient, client: TestClient, url: str
 ) -> None:
