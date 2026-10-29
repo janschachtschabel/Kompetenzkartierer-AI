@@ -3,24 +3,31 @@ rows - nodes, statements and their addressees, anchors and their blocks, frame p
 their variants, its profile - their IRIs, origins, review statuses and revisions, under ids of their own;
 no findings and no runs, so X5 owes it a check. Of the latest revision alone, and one draft at most."""
 
+from dataclasses import dataclass
 from typing import Any
+from uuid import UUID
 
 import psycopg
 import pytest
 
 from app.db.anchors import new_entity
 from app.db.draft_copy import CopyRefused, copy_document
-from app.db.editing import extracted
+from app.db.editing import add_node, edit_node, extracted
 from app.db.freezing import freeze
 from app.db.runs import x5_owed
 from tests.db.test_editing import document, one
-from tests.db.test_freeze import BASE, DOC, ready
-from tests.db.test_nodes import CV, connection, url
+from tests.db.test_freeze import BASE, DOC, checked, ready
+from tests.db.test_nodes import CV, connection, owner, url
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 __all__ = ["connection", "document", "url"]  # the fixtures, shared with test_editing
 
 CONFIRMED = CV + "rev_confirmed"
+
+
+@dataclass(frozen=True)
+class Copy:
+    id: UUID  # what checked() reads of a document
 
 
 async def rows(connection: psycopg.AsyncConnection, query: str, document_id: Any) -> list[tuple[Any, ...]]:
@@ -179,3 +186,31 @@ async def test_a_copy_is_of_the_latest_frozen_revision_and_one_draft_at_most(
     assert (open_draft.value.code, open_draft.value.details) == ("draft_open", {"document_id": str(copy)})
     assert earlier.value.code == "not_latest"
     assert await one(connection, "SELECT count(*) FROM document WHERE iri = %s", DOC) == (2,)
+
+
+async def test_a_copy_is_edited_checked_and_frozen_as_the_next_revision_the_one_before_readable(
+    connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    await filled(connection, document)
+    before = await content(connection, document.id)
+    copy = await copy_document(connection, document.id)
+    cursor = await connection.execute(
+        "SELECT id FROM node WHERE document_id = %s AND parent_id IS NULL", (copy,)
+    )
+    [(top,)] = await cursor.fetchall()
+
+    # a copy is all there: its tree takes changes at once (no X4 of its own)
+    await edit_node(connection, owner(document), top, 1, {"code": "LF 7"})
+    added = await add_node(
+        connection, owner(document), copy, top, {"original_title": "Neu", "function": CV + "fn_unit"}
+    )
+    await checked(connection, Copy(copy))
+    frozen = await freeze(connection, copy, BASE, accept_violations=False)
+
+    assert (frozen.iri, frozen.revision, frozen.nodes, frozen.statements) == (DOC, 2, 1, 0)
+    assert await one(connection, "SELECT iri FROM node WHERE id = %s", top) == (DOC + "/lf-1",)  # it stays
+    assert await one(connection, "SELECT iri FROM node WHERE id = %s", added) == (DOC + "/lf-1/pos-2",)
+    assert await content(connection, document.id) == before
+    assert await one(
+        connection, "SELECT count(*) FROM document WHERE iri = %s AND frozen_at IS NOT NULL", DOC
+    ) == (2,)

@@ -249,9 +249,10 @@ def text(value: FieldValue) -> str | None:
 
 
 async def guard(connection: psycopg.AsyncConnection, document_id: UUID) -> None:
-    """``guard_document``, then refuse the change of a tree X4 has not done yet (NotExtracted)."""
+    """``guard_document``, then refuse the change of a tree not all there yet (NotExtracted): X4 has not
+    read every package, and it is no draft copy."""
     await guard_document(connection, document_id)
-    if "X4" not in await done_stages(connection, document_id):
+    if not await extracted(connection, document_id):
         raise NotExtracted(f"X4 has not read every package of the document {document_id}")
 
 

@@ -50,6 +50,7 @@ from app.db.documents import (
     documents_made_of,
     documents_of,
 )
+from app.db.editing import frozen
 from app.db.nodes import lock_tree
 from app.db.runs import RunState, done_stages, runs_of
 from app.jobs.queue import JobStatus, OpenJob, account_lane, enqueue, last_jobs, open_job, open_jobs
@@ -217,6 +218,7 @@ async def start_extraction(document_id: UUID, request: Request, response: Respon
                 key = unique_key(document.id)
                 await lock_tree(connection, document.id)  # an edit's look and write see no job begun between
                 await _open(connection, key)  # following the one waiting or running reads no content
+                await _extractable(connection, document)
                 await _readable(connection, who, settings, document)
                 await _admit(connection, who.account_id, settings, lambda: _open(connection, key))
                 job_id = await _enqueue(connection, who.account_id, document.id, KIND)
@@ -267,6 +269,7 @@ async def start_repair(document_id: UUID, request: Request, response: Response, 
                 key = unique_key(document.id)
                 await lock_tree(connection, document.id)  # as the extraction's start
                 await _open(connection, key)
+                await _extractable(connection, document)
                 await _readable(connection, who, settings, document)
                 if "X5" not in await done_stages(connection, document.id):
                     raise Refusal(409, "not_checked", "The document's extraction has not come to its check.")
@@ -374,6 +377,17 @@ async def _admit(
         await look()
         raise
     await look()
+
+
+async def _extractable(connection: psycopg.AsyncConnection, document: Document) -> None:
+    """Neither a frozen document - read under the tree's lock, which a freeze takes - nor a draft copy,
+    which holds what the extraction read of the frozen one, is extracted or repaired (plan M1 9.6)."""
+    if await frozen(connection, document.id):
+        raise Refusal(409, "frozen", "The document is frozen: its draft copy takes changes.")
+    if document.copy_of is not None:
+        raise Refusal(
+            409, "not_extractable", "A draft copy holds what the extraction read: edit and check it."
+        )
 
 
 async def _open(connection: psycopg.AsyncConnection, key: str) -> None:

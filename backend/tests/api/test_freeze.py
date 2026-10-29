@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from app.api.app import create_app
 from tests.api.test_document_tree import a_document
 from tests.api.test_document_units import a_run
-from tests.api.test_documents import PUBLIC, an_account, client, rows, url
+from tests.api.test_documents import PUBLIC, an_account, client, end_job, rows, url
 from tests.api.test_node_editing import a_node
 from tests.api.test_statement_editing import a_statement
 from tests.support import make_settings, selector_client
@@ -173,3 +173,30 @@ def test_a_draft_is_not_copied(freezing: TestClient, url: str) -> None:
 
     assert (answer.status_code, answer.json()["code"]) == (409, "not_frozen")
     assert rows(url, "SELECT count(*) FROM document") == [(1,)]
+
+
+def test_a_copy_is_edited_and_checked_and_neither_it_nor_a_frozen_one_extracted_again(
+    freezing: TestClient, url: str
+) -> None:
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+    document, owner = ready(freezing, url, editor)
+    assert freezing.post(f"/api/v1/documents/{document}/freeze", headers=editor, json={}).status_code == 200
+    copy = freezing.post(f"/api/v1/documents/{document}/draft-copy", headers=editor).json()["id"]
+
+    tree = freezing.get(f"/api/v1/documents/{copy}/tree", headers=editor).json()
+    check = freezing.post(f"/api/v1/documents/{copy}/check", headers=editor)  # no X5 of its own yet
+    end_job(url, check.json()["id"], "done")
+    starts = {
+        (name, kind): freezing.post(f"/api/v1/documents/{target}/{kind}", headers=owner)
+        for name, target in (("copy", copy), ("frozen", document))
+        for kind in ("extraction", "repair")
+    }
+
+    assert (tree["editable"], tree["reviewable"]) == (True, True)
+    assert (check.status_code, check.json()["kind"]) == (202, "extract.check")
+    assert {key: (answer.status_code, answer.json()["code"]) for key, answer in starts.items()} == {
+        ("copy", "extraction"): (409, "not_extractable"),
+        ("copy", "repair"): (409, "not_extractable"),
+        ("frozen", "extraction"): (409, "frozen"),
+        ("frozen", "repair"): (409, "frozen"),
+    }

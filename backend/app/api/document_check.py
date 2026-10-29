@@ -59,7 +59,8 @@ async def start_check(document_id: UUID, request: Request, response: Response, w
                     raise Refusal(409, "frozen", "The document is frozen: it is checked no more.")
                 if (waiting := await open_job(connection, key)) is not None:
                     raise OpenJob(waiting)
-                if "X5" not in await done_stages(connection, document.id):
+                # a draft copy has no run of X5 of its own: it is checked here first
+                if document.copy_of is None and "X5" not in await done_stages(connection, document.id):
                     raise Refusal(409, "not_checked", "X5 has not checked the document yet: extract it on.")
                 payload = {"document_id": str(document.id)}
                 job_id = await enqueue(
