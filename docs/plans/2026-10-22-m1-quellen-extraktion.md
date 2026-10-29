@@ -845,6 +845,45 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   Transaktion unter Read Committed gelesen, nicht in einem Snapshot (verschwindet sie dazwischen,
   antwortet die Route 404).
 
+**Nachtrag 9b – Festschreiben im Backend (29.10.)**
+
+- **Schema (9.6).** Migration `0022_freeze`: Trigger weisen jede Änderung an den Zeilen eines
+  festgeschriebenen Dokuments ab (Knoten, Aussagen, Adressaten, Fundstellen und ihre Blöcke,
+  Rahmenteile, Spezifikationen, Varianten, Profil; die Dokumentzeile bis auf den Rechtestatus, kein
+  Löschen; SQLSTATE 55000). Befunde, Läufe und Einheiten liegen außerhalb – X5 und X6 laufen auf
+  Festgeschriebenen nicht. Neu: `node.iri`, `node.statement_serial`, `statement.iri`,
+  `statement.by_hand`, `document.copy_of`, höchstens ein offener Entwurf je IRI (Index).
+- **Von Hand.** `statement.by_hand` statt „`orig_human` und kein Lauf“ (Offen 9a (2)): eine Kopie hat
+  keine Läufe; die Migration füllt die Spalte aus der alten Regel.
+- **Werk und Metadaten.** `PATCH /documents/{id}/work` (Redaktion/Admin; vorhandenes oder neues Werk)
+  und `PATCH /documents/{id}` (`issuer`, `edition`, `title`; Eigentümer und Redaktion/Admin), unter
+  `guard_document` (Baumsperre, nicht festgeschrieben, kein offener Job – ohne X4-Bedingung, X1 liest
+  diese Felder vorher). Hat das Dokument eine IRI, bleiben Werk, Herausgeber und Fassung (409 `named`).
+  Eine Metadatenänderung schuldet X5 eine Prüfung.
+- **Festschreiben.** `POST /documents/{id}/freeze` (Redaktion/Admin) unter `lock_tree` (Offen 9a (7)):
+  `frozen`, `job_open`, `not_extracted`, `incomplete` (`details.missing`), `no_iri_base`, `check_owed`
+  (statt des geplanten `not_checked`: der Code der Prüfroute sagt „Extraktion fortsetzen“; die
+  ungeprüften Fundstellen ohne verworfene Aussagen und Regeltitel, Offen 9a (6)), `has_violations`
+  (ohne `accept_violations`), `iri_taken`. `IRI_BASE` ist optional ohne Vorgabe (Namensraum
+  unregistriert). IRIs: Werk `…/work/<land>/<kurztitel>`, Dokument
+  `…/doc/<herausgeber>/<kurztitel des Werks>/<fassung>` – das Dokument hat keinen eigenen Kurztitel –,
+  Knoten nach dem Codepfad (`app/domain/naming.py`), Aussagen `<knoten>/s-<n>`, jede Nummer einmal über
+  alle Revisionen (`statement_serial`); verworfene Aussagen bekommen keine.
+- **Entwurfskopie.** `POST /documents/{id}/draft-copy` (Redaktion/Admin, 201): neue Dokumentzeile mit
+  allen Zeilen unter neuen Ids (temporäre Zuordnung alt→neu, `INSERT … SELECT`), IRIs, Herkunft,
+  Prüfstand, Revisionen und Fundarten übernommen, `run_id` leer, keine Befunde und Läufe; `edited_at`
+  gesetzt, also X5 geschuldet. `not_frozen`, `not_latest`, `draft_open` (`details.document_id`, auch im
+  Wettlauf). Eine Kopie gilt als extrahiert und ist prüfbar (Offen 9a (5)); Extraktion und Reparatur
+  weisen Kopien (409 `not_extractable`) und Festgeschriebene (409 `frozen`) ab (Offen 9a (7)).
+  Erneutes Festschreiben: kopierte Zeilen behalten ihre IRIs, neue zählen an ihnen vorbei.
+- **Ausgaben.** `DocumentOut` mit `issuer`, `edition`, `work`, `iri`, `revision`, `frozen_at`,
+  `copy_of`; der Baum mit `iri` je Knoten und Aussage. Frontend: nur die Texte der neuen Codes (9d).
+- **Offen.** (1) Der Kern-Export schreibt weiter `urn:uuid:` und kein `cur:versionOf`; mit den IRIs
+  und dem Werk folgt er nach 9d. (2) `supersedes` (neue amtliche Fassung) und das Bearbeiten von Werken
+  sind nicht in M1. (3) Die Revisionen einer IRI sind Dokumente; eine eigene Verlaufsansicht folgt mit
+  9d. (4) Die Texte von `frozen` passen für die Prüfroute nur bedingt („Änderungen gehen nur in einer
+  Entwurfskopie“).
+
 ### Paket 10: Lexikon aus der Länderrecherche mit Stichprobe (3 PT)
 
 | # | Aufgabe | Dateien | Test zuerst | Nachweis |

@@ -5,7 +5,7 @@ Under the tree's lock, in this order, each refused with its own reason and nothi
 already (DocumentFrozen), beside its open job (JobOpen), its tree not all there (NotExtracted: X4 has
 not read every package, and it is no draft copy), short of its work, the work's country or short title,
 its issuer or edition (``incomplete``), no base to name it under (``no_iri_base``), X5 owing it a check
-or an anchor X5 has not checked (``not_checked``), violations among its findings the editors have not
+or an anchor X5 has not checked (``check_owed``), violations among its findings the editors have not
 accepted (``has_violations``). Then the work gets its IRI where it has none, the document its own -
 issuer, the work's short title, edition (app/domain/iris.py) - where it has none, its nodes and
 statements theirs (app/domain/naming.py); an IRI another work or document holds refuses
@@ -45,7 +45,7 @@ _VIOLATIONS = "SELECT count(*) FROM validation_finding WHERE document_id = %s AN
 _TAKEN = sql.SQL("SELECT 1 FROM {} WHERE iri = %s AND id <> %s LIMIT 1")
 
 
-FreezeCode = Literal["incomplete", "no_iri_base", "not_checked", "has_violations", "iri_taken"]
+FreezeCode = Literal["incomplete", "no_iri_base", "check_owed", "has_violations", "iri_taken"]
 
 
 class FreezeRefused(Exception):
@@ -94,7 +94,7 @@ async def freeze(
             raise FreezeRefused("no_iri_base", "the service names no IRI base (IRI_BASE)")
         unchecked = len(await unchecked_anchors(connection, document_id, rule_titles=(UNIT_WITHOUT_NODE,)))
         if unchecked or await x5_owed(connection, document_id):
-            raise FreezeRefused("not_checked", "X5 owes the document a check", {"unchecked": unchecked})
+            raise FreezeRefused("check_owed", "X5 owes the document a check", {"unchecked": unchecked})
         cursor = await connection.execute(_VIOLATIONS, (document_id,))
         violations = int((await cursor.fetchone() or (0,))[0])
         if violations and not accept_violations:

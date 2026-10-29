@@ -662,6 +662,23 @@ export const messages = {
       "Die Extraktion hat noch nicht alle Arbeitspakete gelesen. Erst wenn der Eigentümer sie fortgesetzt hat, " +
       "lässt sich das Dokument bearbeiten.",
     not_editor: "Das darf nur die Redaktion.",
+    // a document's work and metadata, frozen and copied (backend app/api/document_meta.py, freeze.py)
+    named:
+      "Das Dokument hat schon seine IRI. Werk, Herausgeber und Fassung, aus denen sie besteht, bleiben, " +
+      "wie sie sind.",
+    no_work: "Dieses Werk gibt es nicht.",
+    incomplete:
+      "Zum Festschreiben fehlt noch etwas: das Werk mit Land und Kurztitel, der Herausgeber oder die Fassung.",
+    no_iri_base: "Der Dienst hat keine IRI-Basis (IRI_BASE). Ohne sie lässt sich nichts festschreiben.",
+    check_owed:
+      "Seit den letzten Änderungen steht die Prüfung aus. Prüfe das Dokument erneut, dann lässt es sich " +
+      "festschreiben.",
+    has_violations: "Die Befunde nennen Verstöße. Festschreiben geht nur, wenn du sie ausdrücklich annimmst.",
+    iri_taken: "Ein anderes Werk oder Dokument hat diese IRI schon.",
+    not_frozen: "Das Dokument ist noch nicht festgeschrieben. Ändere es direkt.",
+    not_latest: "Es gibt schon eine spätere festgeschriebene Revision. Kopiere diese.",
+    draft_open: "Zu diesem Dokument ist schon ein Entwurf offen.",
+    not_extractable: "Eine Entwurfskopie wird nicht extrahiert. Bearbeite und prüfe sie.",
   },
   // Documents of a conversion and their extraction (ExtractionStart.vue, DocumentView.vue, SourceDocuments.vue)
   documents: {

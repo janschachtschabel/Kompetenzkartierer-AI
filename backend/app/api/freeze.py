@@ -4,7 +4,7 @@ app/db/draft_copy.py), by the editors (Redaktion, Admin) alone.
 A document is frozen under the service's IRI base (IRI_BASE). Refused as app/api/edit_answers.py says for
 a frozen document, an open job and a tree X4 has not read, and with 409 and its own code where it is not
 ready:
-``incomplete`` (details.missing), ``no_iri_base``, ``not_checked`` (details.unchecked),
+``incomplete`` (details.missing), ``no_iri_base``, ``check_owed`` (details.unchecked),
 ``has_violations`` (details.violations; ``accept_violations`` freezes it with them) and ``iri_taken``
 (details.iri). Audited with the violations it was frozen with; the answer is the document.
 
@@ -37,7 +37,7 @@ FREEZE_RESPONSES: Responses = {
     409: {
         "model": ErrorBody,
         "description": "frozen, job_open (details.job_id to the owner and the admins), not_extracted,"
-        " incomplete (details.missing), no_iri_base, not_checked (details.unchecked), has_violations"
+        " incomplete (details.missing), no_iri_base, check_owed (details.unchecked), has_violations"
         " (details.violations), iri_taken (details.iri)",
     },
 }
@@ -122,9 +122,9 @@ def _refusal(refused: FreezeRefused) -> Refusal:
             return Refusal(409, "incomplete", "The document lacks what its IRI is made of.", details=details)
         case "no_iri_base":
             return Refusal(409, "no_iri_base", "The service names no IRI base to freeze under (IRI_BASE).")
-        case "not_checked":
+        case "check_owed":
             return Refusal(
-                409, "not_checked", "X5 owes the document a check: check it again.", details=details
+                409, "check_owed", "X5 owes the document a check: check it again.", details=details
             )
         case "has_violations":
             return Refusal(

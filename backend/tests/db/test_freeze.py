@@ -182,8 +182,8 @@ async def test_a_document_x5_owes_a_check_or_with_an_anchor_unchecked_is_refused
     with pytest.raises(FreezeRefused) as owed:
         await freeze(connection, document.id, BASE, accept_violations=False)
 
-    assert (unchecked.value.code, unchecked.value.details) == ("not_checked", {"unchecked": 1})
-    assert (owed.value.code, owed.value.details) == ("not_checked", {"unchecked": 0})
+    assert (unchecked.value.code, unchecked.value.details) == ("check_owed", {"unchecked": 1})
+    assert (owed.value.code, owed.value.details) == ("check_owed", {"unchecked": 0})
     assert (await iris(connection, document))["frozen"] is False
 
 

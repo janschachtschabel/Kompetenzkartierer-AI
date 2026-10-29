@@ -52,6 +52,19 @@ export const REFUSAL_CODES = [
   "not_extracted",
   // the editors' review (backend app/api/review.py)
   "not_editor",
+  // a document's work and metadata, frozen and copied (backend app/api/document_meta.py, freeze.py,
+  // documents.py)
+  "named",
+  "no_work",
+  "incomplete",
+  "no_iri_base",
+  "check_owed",
+  "has_violations",
+  "iri_taken",
+  "not_frozen",
+  "not_latest",
+  "draft_open",
+  "not_extractable",
 ] as const;
 
 export type RefusalCode = (typeof REFUSAL_CODES)[number];

@@ -133,7 +133,7 @@ def test_a_document_not_ready_is_refused_with_what_it_lacks(
         409, "incomplete", {"missing": ["edition"]},
     )  # fmt: skip
     assert (unchecked.status_code, unchecked.json()["code"], unchecked.json()["details"]) == (
-        409, "not_checked", {"unchecked": 0},
+        409, "check_owed", {"unchecked": 0},
     )  # fmt: skip
     assert rows(url, "SELECT frozen_at FROM document WHERE id = %s", document) == [(None,)]
 

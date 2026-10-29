@@ -224,7 +224,7 @@ ungültig.
   Redaktion/Admin. Abgewiesen, der Reihe nach: festgeschrieben (409 `frozen`), offener Job
   (`job_open`), X4 nicht fertig und keine Entwurfskopie (`not_extracted`), es fehlt Werk, dessen Land
   oder Kurztitel, Herausgeber oder Fassung (`incomplete`, `details.missing`), keine `IRI_BASE`
-  (`no_iri_base`), X5 schuldet eine Prüfung oder eine Fundstelle ist ungeprüft (`not_checked`,
+  (`no_iri_base`), X5 schuldet eine Prüfung oder eine Fundstelle ist ungeprüft (`check_owed`,
   `details.unchecked`; Fundstellen verworfener Aussagen zählen nicht), Verstöße unter den Befunden ohne
   `accept_violations` (`has_violations`, `details.violations`). Dann bekommen Werk
   (`…/work/<land>/<kurztitel>`), Dokument (`…/doc/<herausgeber>/<kurztitel des Werks>/<fassung>`),
