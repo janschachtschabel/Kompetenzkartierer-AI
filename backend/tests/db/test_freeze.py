@@ -319,6 +319,8 @@ async def test_the_conditions_are_asked_in_their_order_each_once_the_one_before_
         None,
     )
     assert await one(connection, "SELECT count(iri) FROM node WHERE document_id = %s", lacking.id) == (0,)
+    work = "SELECT w.iri FROM work w JOIN document d ON d.work_id = w.id WHERE d.id = %s"
+    assert await one(connection, work, lacking.id) == (None,)
     assert (await freeze(connection, lacking.id, BASE, accept_violations=True)).violations == 1
 
 
