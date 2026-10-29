@@ -868,7 +868,10 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   unregistriert). IRIs: Werk `…/work/<land>/<kurztitel>`, Dokument
   `…/doc/<herausgeber>/<kurztitel des Werks>/<fassung>` – das Dokument hat keinen eigenen Kurztitel –,
   Knoten nach dem Codepfad (`app/domain/naming.py`), Aussagen `<knoten>/s-<n>`, jede Nummer einmal über
-  alle Revisionen (`statement_serial`); verworfene Aussagen bekommen keine.
+  alle Revisionen (`statement_serial`, je Knoten-IRI das Höchste aller Revisionen der Dokument-IRI:
+  ein in der Kopie gelöschter und am selben Codepfad neu angelegter Knoten trägt die IRI wieder, seine
+  Aussagen zählen an allen früheren vorbei); verworfene Aussagen bekommen keine. Das Segment `s-<n>`
+  gehört den Aussagen: ein Kindcode „S 1“ wird `s-1-2`.
 - **Entwurfskopie.** `POST /documents/{id}/draft-copy` (Redaktion/Admin, 201): neue Dokumentzeile mit
   allen Zeilen unter neuen Ids (temporäre Zuordnung alt→neu, `INSERT … SELECT`), IRIs, Herkunft,
   Prüfstand, Revisionen und Fundarten übernommen, `run_id` leer, keine Befunde und Läufe; `edited_at`

@@ -6,7 +6,8 @@ its number under its node ("…/lf-5/s-3", numbers given once, plan M1 9.6). A n
 without a code gets its position among its siblings (``cur:codeAssigned``), named ``pos-<n>``, and
 so does one whose code holds no ASCII letter or digit (a Greek letter, a bullet). Siblings whose
 segments meet - a code printed twice, or printed as "Pos. 3" beside an assigned third - are
-counted on: "lf-5", "lf-5-2". The base is the service's (``IRI_BASE``, set when documents are
+counted on: "lf-5", "lf-5-2"; so is a code that would read as a statement's number ("S 1" as
+"s-1-2"). The base is the service's (``IRI_BASE``, set when documents are
 frozen, plan M1 9.6); until then a document carries a draft IRI from its id, and its nodes are
 named once it is frozen. Each part is a slug of a hundred signs at most: lowercase ASCII, the
 German letters spelt out ("ä" as "ae", "ß" as "ss"), anything else between words a hyphen.
@@ -21,6 +22,8 @@ _SPELT_OUT = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"})
 _OTHER = re.compile(r"[^a-z0-9]+")
 # an http(s) IRI ending in a slash, without credentials, query or fragment
 _BASE = re.compile(r"https?://[^/\s@?#]+/(?:[^\s?#]*/)?")
+# a statement's segment under its node (statement_iri): no child node takes it
+_STATEMENT = re.compile(r"s-\d+")
 _LONGEST = 100
 
 
@@ -81,7 +84,7 @@ def node_segments(siblings: Sequence[tuple[str, bool]]) -> list[str]:
         except ValueError:  # no ASCII letter or digit to name it by: its place names it
             segment = f"pos-{place}"
         made, count = segment, 1
-        while made in taken:
+        while made in taken or _STATEMENT.fullmatch(made):
             count += 1
             made = f"{segment}-{count}"
         taken.add(made)

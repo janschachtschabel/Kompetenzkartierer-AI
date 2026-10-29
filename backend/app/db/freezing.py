@@ -41,6 +41,11 @@ SELECT id, parent_id, position, code, code_assigned, iri, statement_serial FROM 
 _STATEMENTS = """
 SELECT id, node_id, position, iri, review_status_iri = %s FROM statement WHERE document_id = %s
 """
+# a node IRI a revision gave may come back under a node made anew: its statements count on past it
+_SERVED = """
+SELECT n.iri, max(n.statement_serial) FROM node n JOIN document d ON d.id = n.document_id
+WHERE d.iri = %s AND n.iri IS NOT NULL GROUP BY n.iri
+"""
 _VIOLATIONS = "SELECT count(*) FROM validation_finding WHERE document_id = %s AND severity = 'violation'"
 _TAKEN = sql.SQL("SELECT 1 FROM {} WHERE iri = %s AND id <> %s LIMIT 1")
 
@@ -128,7 +133,9 @@ async def _name(connection: psycopg.AsyncConnection, document_id: UUID, iri: str
     nodes = [NodeRow(*found) for found in await cursor.fetchall()]
     cursor = await connection.execute(_STATEMENTS, (CV + "rev_rejected", document_id))
     statements = [StatementRow(*found) for found in await cursor.fetchall()]
-    named = name_rows(iri, nodes, statements)
+    cursor = await connection.execute(_SERVED, (iri,))
+    served: dict[str, int] = dict(await cursor.fetchall())
+    named = name_rows(iri, nodes, statements, served)
     async with connection.cursor() as writing:
         await writing.executemany(
             "UPDATE node SET iri = %s WHERE id = %s", [(v, k) for k, v in named.nodes.items()]

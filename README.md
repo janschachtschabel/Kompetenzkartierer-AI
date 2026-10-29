@@ -228,7 +228,9 @@ ungültig.
   `details.unchecked`; Fundstellen verworfener Aussagen zählen nicht), Verstöße unter den Befunden ohne
   `accept_violations` (`has_violations`, `details.violations`). Dann bekommen Werk
   (`…/work/<land>/<kurztitel>`), Dokument (`…/doc/<herausgeber>/<kurztitel des Werks>/<fassung>`),
-  Knoten (Pfad ihrer Codes) und Aussagen (`<knoten>/s-<n>`, jede Nummer einmal) ihre IRIs; eine IRI,
+  Knoten (Pfad ihrer Codes; ein Code wie „S 1“ zählt weiter, `s-<n>` gehört den Aussagen) und Aussagen
+  (`<knoten>/s-<n>`, jede Nummer einmal, auch unter einem Knoten, der in einer Kopie neu am selben Pfad
+  entstand) ihre IRIs; eine IRI,
   die ein anderes Werk oder Dokument hält, weist ab (`iri_taken`, `details.iri`). Danach weist die
   Datenbank jede Änderung an den Zeilen des Dokuments ab, nur der Rechtestatus bleibt änderbar. Audit
   `document.freeze` mit Revision und angenommenen Verstößen; die Antwort ist das Dokument.

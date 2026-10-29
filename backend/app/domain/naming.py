@@ -2,14 +2,15 @@
 
 Nodes are named from the top, by the path of their codes under the document (app/domain/iris.py), each
 group of siblings in its order. A statement is numbered under its node - ``<node>/s-<n>`` - from the
-highest number the node has given (``statement_serial``), so that no number is given twice, though a
-draft copy took one away. What a draft copy brought along keeps its IRI, whatever its code says now: an
+highest number given under its IRI (``statement_serial``, and ``served``: what every revision gave
+under it), so that no number is given twice, though a draft copy took one away or dropped the node and
+made it anew at its code's path. What a draft copy brought along keeps its IRI, whatever its code says now: an
 IRI once given stays. What is new is named past it: a segment a sibling holds counts on ("lf-1-2"). A
 rejected statement is none of the curriculum's and gets no IRI; one it had stays.
 """
 
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from uuid import UUID
 
@@ -45,8 +46,14 @@ class Named:
     serials: dict[UUID, int] = field(default_factory=dict)
 
 
-def name_rows(document: str, nodes: Iterable[NodeRow], statements: Iterable[StatementRow]) -> Named:
-    """The IRIs the rows of the document ``document`` (its frozen IRI) lack, given as above."""
+def name_rows(
+    document: str,
+    nodes: Iterable[NodeRow],
+    statements: Iterable[StatementRow],
+    served: Mapping[str, int] | None = None,
+) -> Named:
+    """The IRIs the rows of the document ``document`` (its frozen IRI) lack, given as above; ``served``
+    the highest statement number by node IRI the revisions of the document have given."""
     children: dict[UUID | None, list[NodeRow]] = defaultdict(list)
     for row in nodes:
         children[row.parent_id].append(row)
@@ -58,7 +65,7 @@ def name_rows(document: str, nodes: Iterable[NodeRow], statements: Iterable[Stat
     while pending:
         parent, siblings = pending.pop()
         for row, iri in _siblings(parent, sorted(siblings, key=lambda sibling: sibling.position), named):
-            _statements(row, iri, said[row.id], named)
+            _statements(row, iri, said[row.id], max(row.statement_serial, (served or {}).get(iri, 0)), named)
             pending.append((iri, children[row.id]))
     return named
 
@@ -80,11 +87,11 @@ def _siblings(parent: str, siblings: Sequence[NodeRow], named: Named) -> list[tu
     return placed
 
 
-def _statements(row: NodeRow, iri: str, statements: Sequence[StatementRow], named: Named) -> None:
-    serial = row.statement_serial
+def _statements(row: NodeRow, iri: str, statements: Sequence[StatementRow], given: int, named: Named) -> None:
+    serial = given
     for statement in sorted(statements, key=lambda said: said.position):
         if statement.iri is None and not statement.rejected:
             serial += 1
             named.statements[statement.id] = statement_iri(iri, serial)
-    if serial != row.statement_serial:
+    if serial != given:
         named.serials[row.id] = serial

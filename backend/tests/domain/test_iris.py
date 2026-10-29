@@ -132,6 +132,13 @@ def test_a_count_steps_past_a_code_a_sibling_holds_already() -> None:
     assert node_segments(siblings) == ["lf-5", "lf-5-2", "lf-5-3"]
 
 
+def test_a_segment_a_statement_s_iri_would_have_counts_on() -> None:
+    # <node>/s-<n> names the node's statements (app/domain/naming.py): a child coded "S 1" is no statement
+    siblings = [("S 1", False), ("S-1", False), ("S 12a", False), ("S 12", False)]
+
+    assert node_segments(siblings) == ["s-1-2", "s-1-3", "s-12a", "s-12-2"]
+
+
 def test_an_assigned_code_is_the_position_among_its_siblings() -> None:
     assert assign_code(3) == "3"
 

@@ -81,3 +81,14 @@ def test_nothing_new_is_nothing_named() -> None:
     named = name_rows(DOC, [first], [statement(first, 1, iri=f"{DOC}/lf-1/s-1")])
 
     assert (named.nodes, named.statements, named.serials) == ({}, {}, {})
+
+
+def test_a_node_named_again_numbers_its_statements_past_all_an_earlier_revision_gave() -> None:
+    # dropped in a draft copy and made anew at its code's path: its IRI comes back, no number does
+    again = node("LF 1", 1)
+
+    named = name_rows(DOC, [again], [statement(again, 1)], served={f"{DOC}/lf-1": 5})
+
+    assert named.nodes == {again.id: f"{DOC}/lf-1"}
+    assert list(named.statements.values()) == [f"{DOC}/lf-1/s-6"]
+    assert named.serials == {again.id: 6}

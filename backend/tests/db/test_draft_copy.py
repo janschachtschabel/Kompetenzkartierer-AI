@@ -12,12 +12,14 @@ import pytest
 
 from app.db.anchors import new_entity
 from app.db.draft_copy import CopyRefused, copy_document
-from app.db.editing import add_node, edit_node, extracted
+from app.db.editing import add_node, drop_node, edit_node, extracted
 from app.db.freezing import freeze
 from app.db.runs import x5_owed
+from app.db.statement_editing import HandAnchor, add_statement
 from tests.db.test_editing import document, one
 from tests.db.test_freeze import BASE, DOC, checked, ready
 from tests.db.test_nodes import CV, connection, owner, url
+from tests.db.test_statement_editing import NEW
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 __all__ = ["connection", "document", "url"]  # the fixtures, shared with test_editing
@@ -214,3 +216,26 @@ async def test_a_copy_is_edited_checked_and_frozen_as_the_next_revision_the_one_
     assert await one(
         connection, "SELECT count(*) FROM document WHERE iri = %s AND frozen_at IS NOT NULL", DOC
     ) == (2,)
+
+
+async def test_a_node_dropped_in_a_copy_and_made_anew_gives_no_statement_number_again(
+    connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # revision 1 named LF 1's statements s-1 and s-2: under the node made anew, the next is s-3
+    await filled(connection, document)
+    copy = await copy_document(connection, document.id)
+    cursor = await connection.execute(
+        "SELECT id FROM node WHERE document_id = %s AND parent_id IS NULL", (copy,)
+    )
+    [(top,)] = await cursor.fetchall()
+    await drop_node(connection, owner(document), top, 1)
+    made = {"original_title": "Optik", "code": "LF 1", "function": CV + "fn_area"}
+    again = await add_node(connection, owner(document), copy, None, made)
+    assert again is not None
+    said = await add_statement(connection, owner(document), again, NEW, [HandAnchor(page=1)])
+    await checked(connection, Copy(copy))
+
+    await freeze(connection, copy, BASE, accept_violations=False)
+
+    assert await one(connection, "SELECT iri FROM node WHERE id = %s", again) == (DOC + "/lf-1",)
+    assert await one(connection, "SELECT iri FROM statement WHERE id = %s", said) == (DOC + "/lf-1/s-3",)
