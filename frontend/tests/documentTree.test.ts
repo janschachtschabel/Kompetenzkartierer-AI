@@ -95,6 +95,22 @@ describe("a document's tree", () => {
     expect(read.missing.value).toBe(false);
   });
 
+  it("shows nothing of one document while another's is read, though its reading fails", async () => {
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_());
+    const trees = vi.spyOn(api, "getTree").mockResolvedValue(tree_([node_("a")]));
+    vi.spyOn(api, "getForm").mockResolvedValue(form_());
+    const id = ref("d1");
+    const read = useDocumentTree(id);
+    await read.load();
+    trees.mockRejectedValue(new api.ApiError("network", 0));
+
+    id.value = "d2";
+    await read.load();
+
+    expect([read.document.value, read.tree.value, read.rows.value.size]).toEqual([null, null, 0]);
+    expect(read.failure.value?.text).toBeTruthy();
+  });
+
   it("drops an answer a later reading overtook", async () => {
     vi.spyOn(api, "getDocument").mockResolvedValue(document_());
     vi.spyOn(api, "getForm").mockResolvedValue(form_());

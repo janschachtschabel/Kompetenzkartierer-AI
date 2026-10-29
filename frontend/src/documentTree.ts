@@ -2,8 +2,8 @@
  * A document's tree as its view reads it (plan M1 9.7, Paket 9c J6): the document, its nodes and statements
  * (GET …/tree) and the form of its sector, read together; each row by its key, in the tree's order - a node,
  * its statements, then its children, a level deeper each. The latest reading counts: an answer a later one
- * overtook is dropped. A reading that fails keeps what was shown and says so; a document the caller may not
- * read is missing, as the document page says (404 or an id that is no UUID, 422).
+ * overtook is dropped. A reading that fails keeps what was shown of the same document and says so; a
+ * document the caller may not read is missing, as the document page says (404 or an id that is no UUID, 422).
  */
 import { computed, ref, shallowRef, type Ref } from "vue";
 
@@ -81,6 +81,11 @@ export function useDocumentTree(documentId: Ref<string>) {
   async function load(): Promise<void> {
     const mine = ++generation;
     const id = documentId.value;
+    if (document_.value?.id !== id) {
+      // another document: what was shown is not its
+      document_.value = null;
+      tree.value = null;
+    }
     loading.value = true;
     failure.value = null;
     missing.value = false;
