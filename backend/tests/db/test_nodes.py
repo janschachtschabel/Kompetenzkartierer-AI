@@ -301,19 +301,21 @@ async def test_a_subtree_that_waited_for_the_tree_takes_the_place_after_what_was
     assert [(top.id, top.position) for top in tree] == [(first, 1), (second, 2)]
 
 
-async def waiting_for_a_lock(watcher: psycopg.AsyncConnection, pid: int) -> None:
-    """Until the session of ``pid`` waits for an advisory lock: as long as it is held, it stays."""
+async def waiting_for_a_lock(watcher: psycopg.AsyncConnection, pid: int, event: str = "advisory") -> None:
+    """Until the session of ``pid`` waits for a lock of the kind ``event`` (pg_stat_activity.wait_event:
+    "advisory", "transactionid" for a row or a unique key another transaction holds): as long as it is
+    held, it stays."""
     for _ in range(200):
         cursor = await watcher.execute(
             "SELECT count(*) FROM pg_stat_activity"
-            " WHERE pid = %s AND wait_event_type = 'Lock' AND wait_event = 'advisory'",
-            (pid,),
+            " WHERE pid = %s AND wait_event_type = 'Lock' AND wait_event = %s",
+            (pid, event),
         )
         found = await cursor.fetchone()
         if found is not None and found[0] > 0:
             return
         await asyncio.sleep(0.05)
-    raise AssertionError(f"session {pid} came to wait for no advisory lock")
+    raise AssertionError(f"session {pid} came to wait for no {event} lock")
 
 
 async def test_a_tree_is_read_within_a_transaction_already_open(

@@ -4,20 +4,21 @@ its violations accepted, where it has any; then its work, the document, its node
 their IRIs and it changes no more. Each condition unmet refuses with its own reason, and nothing is
 changed."""
 
+import asyncio
 from typing import Any
 
 import psycopg
 import pytest
 from psycopg import errors
 
-from app.db.document_meta import NewWork, set_work
+from app.db.document_meta import ExistingWork, NewWork, set_work
 from app.db.documents import create_document
 from app.db.editing import DocumentFrozen, JobOpen, NotExtracted, edit_node
 from app.db.freezing import FreezeRefused, Frozen, freeze
 from app.db.nodes import write_subtree
 from app.db.runs import RunStart, finish_run, stage_iri, start_run
 from tests.db.test_editing import an_open_job, document, extracted
-from tests.db.test_nodes import CV, anchor, connection, node, owner, statement, url
+from tests.db.test_nodes import CV, anchor, connection, node, owner, statement, url, waiting_for_a_lock
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 __all__ = ["connection", "document", "url"]  # the fixtures, shared with test_editing
@@ -284,3 +285,40 @@ async def test_an_iri_another_document_or_work_holds_is_refused(
     assert (document_taken.value.code, document_taken.value.details) == ("iri_taken", {"iri": DOC})
     assert work_taken.value.details == {"iri": BASE + "work/de-nw/lp-physik"}
     assert (await iris(connection, document))["frozen"] is False
+
+
+@pytest.mark.parametrize("shared", [True, False], ids=["one work", "two works"])
+async def test_of_two_documents_frozen_at_once_under_one_iri_the_second_is_told_it_is_taken(
+    url: str, connection: psycopg.AsyncConnection, document: Any, shared: bool
+) -> None:
+    # neither sees the other's IRI before it commits: the unique keys decide, the second waits for them
+    await ready(connection, document)
+    second = await create_document(
+        connection, owner(document), third_party_content=False, source_id=document.source_id,
+        conversion_id=document.conversion_id, sector="school",
+    )  # fmt: skip
+    await extracted(connection, second)
+    await ready(connection, second)  # a work of its own, named as the first one's
+    if shared:
+        [(work,)] = await (
+            await connection.execute("SELECT work_id FROM document WHERE id = %s", (document.id,))
+        ).fetchall()
+        await set_work(connection, owner(document), second.id, ExistingWork(work))
+    async with (
+        await psycopg.AsyncConnection.connect(url, autocommit=True) as other,
+        await psycopg.AsyncConnection.connect(url, autocommit=True) as watcher,
+    ):
+        waiting: asyncio.Task[Frozen] | None = None
+        try:
+            async with other.transaction():
+                await freeze(other, document.id, BASE, accept_violations=False)
+                waiting = asyncio.create_task(freeze(connection, second.id, BASE, accept_violations=False))
+                await waiting_for_a_lock(watcher, connection.info.backend_pid, "transactionid")
+        finally:
+            with pytest.raises(FreezeRefused) as taken:
+                if waiting is not None:
+                    await waiting
+
+    expected = DOC if shared else BASE + "work/de-nw/lp-physik"
+    assert (taken.value.code, taken.value.details) == ("iri_taken", {"iri": expected})
+    assert (await iris(connection, second))["frozen"] is False

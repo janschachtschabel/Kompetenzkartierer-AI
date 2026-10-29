@@ -9,8 +9,8 @@ X5 not done on it (a draft copy runs none until its check job), owing it a check
 checked (``check_owed``), violations among its findings the editors have not accepted (``has_violations``).
 Then the work gets its IRI where it has none, the document its own - issuer, the work's short title, edition
 (app/domain/iris.py) - where it has none, its nodes and statements theirs (app/domain/naming.py); an IRI
-another work or document holds refuses (``iri_taken``). The document is frozen last: after that, the triggers
-refuse every change.
+another work or document holds, committed before or while this one waited, refuses (``iri_taken``). The
+document is frozen last: after that, the triggers refuse every change.
 """
 
 from collections.abc import Mapping
@@ -19,7 +19,7 @@ from typing import Any, Literal
 from uuid import UUID
 
 import psycopg
-from psycopg import sql
+from psycopg import errors
 
 from app.db.anchors import unchecked_anchors
 from app.db.documents import DocumentError
@@ -48,7 +48,6 @@ SELECT n.iri, max(n.statement_serial) FROM node n JOIN document d ON d.id = n.do
 WHERE d.iri = %s AND n.iri IS NOT NULL GROUP BY n.iri
 """
 _VIOLATIONS = "SELECT count(*) FROM validation_finding WHERE document_id = %s AND severity = 'violation'"
-_TAKEN = sql.SQL("SELECT 1 FROM {} WHERE iri = %s AND id <> %s LIMIT 1")
 
 
 FreezeCode = Literal["incomplete", "no_iri_base", "check_owed", "has_violations", "iri_taken"]
@@ -108,16 +107,12 @@ async def freeze(
             raise FreezeRefused("has_violations", "violations not accepted", {"violations": violations})
         if work is None:
             work = work_iri(base, region, short_title)
-            await _untaken(connection, "work", work, work_id)
-            await connection.execute("UPDATE work SET iri = %s WHERE id = %s", (work, work_id))
+            await _give(connection, "UPDATE work SET iri = %s WHERE id = %s", work, work_id)
         if iri is None:
             iri = document_iri(base, issuer, short_title, edition)
-            await _untaken(connection, "document", iri, document_id)
         named = await _name(connection, document_id, iri)
-        await connection.execute(
-            "UPDATE document SET iri = %s, frozen_at = now(), updated_at = now() WHERE id = %s",
-            (iri, document_id),
-        )
+        frozen_now = "UPDATE document SET iri = %s, frozen_at = now(), updated_at = now() WHERE id = %s"
+        await _give(connection, frozen_now, iri, document_id)
         return Frozen(iri, revision, named[0], named[1], violations)
 
 
@@ -132,12 +127,13 @@ def _names(text: str | None) -> bool:
     return True
 
 
-async def _untaken(
-    connection: psycopg.AsyncConnection, table: Literal["work", "document"], iri: str, own: UUID
-) -> None:
-    cursor = await connection.execute(_TAKEN.format(sql.Identifier(table)), (iri, own))
-    if await cursor.fetchone() is not None:
-        raise FreezeRefused("iri_taken", f"the IRI {iri} is another {table}'s", {"iri": iri})
+async def _give(connection: psycopg.AsyncConnection, query: str, iri: str, row: UUID) -> None:
+    """Give the row ``iri`` by ``query``; an IRI another work or document holds - committed before, or
+    while this one waited for the unique key - refuses, and the refusal takes back all the freeze wrote."""
+    try:
+        await connection.execute(query, (iri, row))
+    except errors.UniqueViolation as taken:
+        raise FreezeRefused("iri_taken", f"the IRI {iri} is another's", {"iri": iri}) from taken
 
 
 async def _name(connection: psycopg.AsyncConnection, document_id: UUID, iri: str) -> tuple[int, int]:
