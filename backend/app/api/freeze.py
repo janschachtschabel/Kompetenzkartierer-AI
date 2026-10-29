@@ -84,7 +84,8 @@ async def freeze_a_document(document_id: UUID, body: FreezeIn, request: Request,
         404: {"model": ErrorBody, "description": "no_document: none the caller may read"},
         409: {
             "model": ErrorBody,
-            "description": "not_frozen, not_latest, draft_open (details.document_id: the draft open)",
+            "description": "not_frozen, not_latest, draft_open (details.document_id: the draft open),"
+            " vocabulary_changed (details.check: the check a row of it fails today)",
         },
     },
 )
@@ -107,6 +108,13 @@ async def copy_a_document(document_id: UUID, request: Request, who: Account) -> 
                 case "draft_open":
                     raise Refusal(
                         409, "draft_open", "A draft of this IRI is open.", details=error.details
+                    ) from error
+                case "vocabulary_changed":
+                    raise Refusal(
+                        409,
+                        "vocabulary_changed",
+                        "A row of it no longer fits the vocabularies.",
+                        details=error.details,
                     ) from error
                 case _:
                     assert_never(error.code)

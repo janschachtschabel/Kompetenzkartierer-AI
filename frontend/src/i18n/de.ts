@@ -679,6 +679,9 @@ export const messages = {
     not_frozen: "Das Dokument ist noch nicht festgeschrieben. Ändere es direkt.",
     not_latest: "Es gibt schon eine spätere festgeschriebene Revision. Kopiere diese.",
     draft_open: "Zu diesem Dokument ist schon ein Entwurf offen.",
+    vocabulary_changed:
+      "Das Vokabular hat sich seit dem Festschreiben geändert: Eine Zeile des Dokuments passt nicht mehr dazu. " +
+      "Bitte die Administration, das Vokabular zu prüfen.",
     not_extractable: "Eine Entwurfskopie wird nicht extrahiert. Bearbeite und prüfe sie.",
   },
   // Documents of a conversion and their extraction (ExtractionStart.vue, DocumentView.vue, SourceDocuments.vue)

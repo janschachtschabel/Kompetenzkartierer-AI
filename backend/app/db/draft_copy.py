@@ -8,9 +8,12 @@ followed), statements, addressees, anchors (their owner followed) and their bloc
 origins, review statuses, revisions, positions and found anchors are taken along as they are; no run is
 (``run_id`` none: the runs and their findings are the frozen revision's), so X5 owes the copy a check.
 Of the latest revision of an IRI alone (``not_latest``), not of a draft (``not_frozen``), and one draft at
-most is open under an IRI (``draft_open``, also the database's index).
+most is open under an IRI (``draft_open``, also the database's index). The copy's rows are written now, so
+the database checks them against today's vocabularies: a row a later load no longer takes - a node type
+taken from under its function - refuses the copy (``vocabulary_changed``, ``details.check`` the check).
 """
 
+import re
 from collections.abc import Mapping
 from typing import Any, Final, Literal
 from uuid import UUID
@@ -21,7 +24,9 @@ from app.core.ids import new_id
 from app.db.anchors import new_entity
 from app.db.documents import DocumentError
 
-CopyCode = Literal["not_frozen", "not_latest", "draft_open"]
+CopyCode = Literal["not_frozen", "not_latest", "draft_open", "vocabulary_changed"]
+# where a check is a trigger's (migrations l1_documents, l1_nodes), the error names its function alone
+_TRIGGER = re.compile(r"PL/pgSQL function (\w+)\(")
 # The tables whose rows are entities of their own, each with the query of the copied document's ids
 _ENTITIES: Final = {
     "specification": "SELECT id FROM specification WHERE document_id = %(old)s",
@@ -155,19 +160,34 @@ async def copy_document(connection: psycopg.AsyncConnection, document_id: UUID) 
             raise CopyRefused("not_latest", f"a later revision of {iri} is frozen: copy that one")
         copy = await new_entity(connection, "document")
         try:
-            async with connection.transaction():
-                await connection.execute(_DOCUMENT, {"new": copy, "draft": copy.urn, "old": document_id})
-        except psycopg.errors.UniqueViolation as raced:  # another copy, made meanwhile (document_one_draft)
-            cursor = await connection.execute(
-                "SELECT id FROM document WHERE iri = %s AND frozen_at IS NULL", (iri,)
-            )
-            other = await cursor.fetchone()
-            details = {} if other is None else {"document_id": str(other[0])}
-            raise CopyRefused("draft_open", "a draft of the IRI is open", details) from raced
-        await _map(connection, document_id)
-        for query in _ROWS:
-            await connection.execute(query, {"new": copy, "old": document_id})
+            await _write(connection, copy, document_id, iri)
+        except psycopg.errors.CheckViolation as changed:
+            check = changed.diag.constraint_name
+            if check is None and (trigger := _TRIGGER.search(changed.diag.context or "")) is not None:
+                check = trigger.group(1)
+            raise CopyRefused(
+                "vocabulary_changed",
+                "a row of the document no longer fits the vocabularies",
+                {"check": check},
+            ) from changed
         return copy
+
+
+async def _write(connection: psycopg.AsyncConnection, copy: UUID, document_id: UUID, iri: str) -> None:
+    """The copy's document row, then every other row under its new id."""
+    try:
+        async with connection.transaction():
+            await connection.execute(_DOCUMENT, {"new": copy, "draft": copy.urn, "old": document_id})
+    except psycopg.errors.UniqueViolation as raced:  # another copy, made meanwhile (document_one_draft)
+        cursor = await connection.execute(
+            "SELECT id FROM document WHERE iri = %s AND frozen_at IS NULL", (iri,)
+        )
+        other = await cursor.fetchone()
+        details = {} if other is None else {"document_id": str(other[0])}
+        raise CopyRefused("draft_open", "a draft of the IRI is open", details) from raced
+    await _map(connection, document_id)
+    for query in _ROWS:
+        await connection.execute(query, {"new": copy, "old": document_id})
 
 
 async def _map(connection: psycopg.AsyncConnection, document_id: UUID) -> None:

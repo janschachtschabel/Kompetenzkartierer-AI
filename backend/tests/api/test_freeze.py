@@ -23,6 +23,7 @@ __all__ = ["client", "url"]  # the fixtures, shared with test_documents
 BASE = "https://example.org/kk/"
 DOC = BASE + "doc/ministerium/lp-physik/2024"
 WORK = {"title": "Lehrplan Physik", "region": "DE-NW", "short_title": "lp-physik"}
+AREA_TYPE = "https://w3id.org/wlo/curriculum/profile/school#Inhaltsbereich"
 
 
 @pytest.fixture
@@ -185,6 +186,25 @@ def test_a_draft_is_not_copied(freezing: TestClient, url: str) -> None:
 
     assert (answer.status_code, answer.json()["code"]) == (409, "not_frozen")
     assert rows(url, "SELECT count(*) FROM document") == [(1,)]
+
+
+def test_a_copy_today_s_vocabulary_refuses_is_refused_with_the_check_it_fails(
+    freezing: TestClient, url: str
+) -> None:
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+    document, _ = ready(freezing, url, editor)
+    with psycopg.connect(url, autocommit=True) as connection:
+        connection.execute("UPDATE node SET node_type_iri = %s WHERE code = 'LF 1'", (AREA_TYPE,))
+    assert freezing.post(f"/api/v1/documents/{document}/freeze", headers=editor, json={}).status_code == 200
+    with psycopg.connect(url, autocommit=True) as connection:
+        connection.execute("UPDATE vocab_concept SET broader = '{}' WHERE iri = %s", (AREA_TYPE,))
+
+    answer = freezing.post(f"/api/v1/documents/{document}/draft-copy", headers=editor)
+
+    assert (answer.status_code, answer.json()["code"], answer.json()["details"]) == (
+        409, "vocabulary_changed", {"check": "node_type_fits"},
+    )  # fmt: skip
+    assert rows(url, "SELECT count(*) FROM audit_log WHERE action = 'document.copy'") == [(0,)]
 
 
 def test_a_copy_is_edited_and_checked_and_neither_it_nor_a_frozen_one_extracted_again(

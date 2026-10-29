@@ -64,6 +64,7 @@ export const REFUSAL_CODES = [
   "not_frozen",
   "not_latest",
   "draft_open",
+  "vocabulary_changed",
   "not_extractable",
 ] as const;
 

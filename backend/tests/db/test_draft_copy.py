@@ -18,7 +18,7 @@ from app.db.runs import x5_owed
 from app.db.statement_editing import HandAnchor, add_statement
 from tests.db.test_editing import document, one
 from tests.db.test_freeze import BASE, DOC, checked, ready
-from tests.db.test_nodes import CV, connection, owner, url
+from tests.db.test_nodes import CV, SCHOOL, connection, owner, url
 from tests.db.test_statement_editing import NEW
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
@@ -239,3 +239,26 @@ async def test_a_node_dropped_in_a_copy_and_made_anew_gives_no_statement_number_
 
     assert await one(connection, "SELECT iri FROM node WHERE id = %s", again) == (DOC + "/lf-1",)
     assert await one(connection, "SELECT iri FROM statement WHERE id = %s", said) == (DOC + "/lf-1/s-3",)
+
+
+async def test_a_row_today_s_vocabulary_no_longer_takes_refuses_the_copy_with_the_check_it_fails(
+    connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # a later load of the vocabularies took the node type from under its function: the frozen row stays as
+    # it was written, its copy is a row written now
+    await ready(connection, document)
+    await connection.execute(
+        "UPDATE node SET node_type_iri = %s WHERE code = 'LF 1'", (SCHOOL + "Inhaltsbereich",)
+    )
+    await freeze(connection, document.id, BASE, accept_violations=False)
+    await connection.execute(
+        "UPDATE vocab_concept SET broader = '{}' WHERE iri = %s", (SCHOOL + "Inhaltsbereich",)
+    )
+
+    with pytest.raises(CopyRefused) as refused:
+        await copy_document(connection, document.id)
+
+    assert (refused.value.code, refused.value.details) == ("vocabulary_changed", {"check": "node_type_fits"})
+    assert await one(
+        connection, "SELECT count(*), count(*) FILTER (WHERE frozen_at IS NULL) FROM document"
+    ) == (1, 0)

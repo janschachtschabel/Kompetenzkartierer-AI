@@ -877,7 +877,8 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   allen Zeilen unter neuen Ids (temporäre Zuordnung alt→neu, `INSERT … SELECT`), IRIs, Herkunft,
   Prüfstand, Revisionen und Fundarten übernommen, `run_id` leer, keine Befunde und Läufe; `edited_at`
   gesetzt, also X5 geschuldet. `not_frozen`, `not_latest`, `draft_open` (`details.document_id`, auch im
-  Wettlauf). Eine Kopie gilt als extrahiert und ist prüfbar (Offen 9a (5)); Extraktion und Reparatur
+  Wettlauf), `vocabulary_changed` (die Kopie schreibt neue Zeilen, die Trigger prüfen sie gegen das heutige
+  Vokabular; `details.check` nennt Bedingung oder Triggerfunktion). Eine Kopie gilt als extrahiert und ist prüfbar (Offen 9a (5)); Extraktion und Reparatur
   weisen Kopien (409 `not_extractable`) und Festgeschriebene (409 `frozen`) ab (Offen 9a (7)).
   Erneutes Festschreiben: kopierte Zeilen behalten ihre IRIs, neue zählen an ihnen vorbei.
 - **Ausgaben.** `DocumentOut` mit `issuer`, `edition`, `work`, `iri`, `revision`, `frozen_at`,

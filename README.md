@@ -240,7 +240,9 @@ ungültig.
   ihren IRIs, Herkunft, Prüfstand und Revisionen, ohne Läufe und Befunde – X5 schuldet ihr eine
   Prüfung (`POST …/check`). Bearbeiten und Festschreiben wie beim ersten Mal; die vorige Revision bleibt
   lesbar. Abgewiesen: kein festgeschriebenes Dokument (409 `not_frozen`), eine spätere Revision ist
-  festgeschrieben (`not_latest`), ein Entwurf der IRI ist offen (`draft_open`, `details.document_id`).
+  festgeschrieben (`not_latest`), ein Entwurf der IRI ist offen (`draft_open`, `details.document_id`),
+  eine Zeile passt nicht mehr zum heutigen Vokabular, etwa ein Knotentyp, den eine spätere Ladung unter
+  seiner Funktion herausnahm (`vocabulary_changed`, `details.check`: die Prüfung, an der sie scheitert).
   Audit `document.copy`.
 - Abbrechen: `POST /api/v1/jobs/{id}/cancel` (Eigentümer des Jobs oder Admin, in der Oberfläche
   der Knopf „Abbrechen“ an jedem Auftrag). Ein wartender Job endet sofort, ein laufender beim
