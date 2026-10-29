@@ -15,7 +15,7 @@ from app.db.documents import create_document
 from app.db.editing import DocumentFrozen, JobOpen, NotExtracted, edit_node
 from app.db.freezing import FreezeRefused, Frozen, freeze
 from app.db.nodes import write_subtree
-from app.db.runs import RunStart, finish_run, start_run
+from app.db.runs import RunStart, finish_run, stage_iri, start_run
 from tests.db.test_editing import an_open_job, document, extracted
 from tests.db.test_nodes import CV, anchor, connection, node, owner, statement, url
 
@@ -185,6 +185,21 @@ async def test_a_document_x5_owes_a_check_or_with_an_anchor_unchecked_is_refused
     assert (unchecked.value.code, unchecked.value.details) == ("check_owed", {"unchecked": 1})
     assert (owed.value.code, owed.value.details) == ("check_owed", {"unchecked": 0})
     assert (await iris(connection, document))["frozen"] is False
+
+
+async def test_a_document_x5_never_checked_is_refused_though_nobody_edited_it(
+    connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # no X6 and no edit: x5_owed finds nothing owed where no check was ever done
+    await ready(connection, document)
+    await connection.execute(
+        "DELETE FROM extraction_run WHERE document_id = %s AND stage_iri = %s", (document.id, stage_iri("X5"))
+    )
+
+    with pytest.raises(FreezeRefused) as never:
+        await freeze(connection, document.id, BASE, accept_violations=False)
+
+    assert (never.value.code, never.value.details) == ("check_owed", {"unchecked": 0})
 
 
 async def test_an_unchecked_anchor_of_a_rejected_statement_holds_nothing_up(

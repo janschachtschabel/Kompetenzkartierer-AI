@@ -671,8 +671,8 @@ export const messages = {
       "Zum Festschreiben fehlt noch etwas: das Werk mit Land und Kurztitel, der Herausgeber oder die Fassung.",
     no_iri_base: "Der Dienst hat keine IRI-Basis (IRI_BASE). Ohne sie lässt sich nichts festschreiben.",
     check_owed:
-      "Seit den letzten Änderungen steht die Prüfung aus. Prüfe das Dokument erneut, dann lässt es sich " +
-      "festschreiben.",
+      "Die Prüfung steht aus: Das Dokument wurde noch nicht oder nicht seit den letzten Änderungen geprüft. " +
+      "Prüfe es, dann lässt es sich festschreiben.",
     has_violations: "Die Befunde nennen Verstöße. Festschreiben geht nur, wenn du sie ausdrücklich annimmst.",
     iri_taken: "Ein anderes Werk oder Dokument hat diese IRI schon.",
     not_frozen: "Das Dokument ist noch nicht festgeschrieben. Ändere es direkt.",

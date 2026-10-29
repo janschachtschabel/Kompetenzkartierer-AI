@@ -862,8 +862,9 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   Eine Metadatenänderung schuldet X5 eine Prüfung.
 - **Festschreiben.** `POST /documents/{id}/freeze` (Redaktion/Admin) unter `lock_tree` (Offen 9a (7)):
   `frozen`, `job_open`, `not_extracted`, `incomplete` (`details.missing`), `no_iri_base`, `check_owed`
-  (statt des geplanten `not_checked`: der Code der Prüfroute sagt „Extraktion fortsetzen“; die
-  ungeprüften Fundstellen ohne verworfene Aussagen und Regeltitel, Offen 9a (6)), `has_violations`
+  (statt des geplanten `not_checked`: der Code der Prüfroute sagt „Extraktion fortsetzen“; X5 nie
+  gelaufen – eine Kopie vor ihrem Prüfjob –, geschuldet oder die ungeprüften Fundstellen ohne verworfene
+  Aussagen und Regeltitel, Offen 9a (6)), `has_violations`
   (ohne `accept_violations`), `iri_taken`. `IRI_BASE` ist optional ohne Vorgabe (Namensraum
   unregistriert). IRIs: Werk `…/work/<land>/<kurztitel>`, Dokument
   `…/doc/<herausgeber>/<kurztitel des Werks>/<fassung>` – das Dokument hat keinen eigenen Kurztitel –,
