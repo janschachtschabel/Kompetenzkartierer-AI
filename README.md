@@ -231,6 +231,13 @@ ungültig.
   die ein anderes Werk oder Dokument hält, weist ab (`iri_taken`, `details.iri`). Danach weist die
   Datenbank jede Änderung an den Zeilen des Dokuments ab, nur der Rechtestatus bleibt änderbar. Audit
   `document.freeze` mit Revision und angenommenen Verstößen; die Antwort ist das Dokument.
+- Entwurfskopie: `POST /api/v1/documents/{id}/draft-copy` (nur Redaktion/Admin, 201 mit der Kopie)
+  öffnet die nächste Revision eines festgeschriebenen Dokuments unter derselben IRI: alle Zeilen mit
+  ihren IRIs, Herkunft, Prüfstand und Revisionen, ohne Läufe und Befunde – X5 schuldet ihr eine
+  Prüfung (`POST …/check`). Bearbeiten und Festschreiben wie beim ersten Mal; die vorige Revision bleibt
+  lesbar. Abgewiesen: kein festgeschriebenes Dokument (409 `not_frozen`), eine spätere Revision ist
+  festgeschrieben (`not_latest`), ein Entwurf der IRI ist offen (`draft_open`, `details.document_id`).
+  Audit `document.copy`.
 - Abbrechen: `POST /api/v1/jobs/{id}/cancel` (Eigentümer des Jobs oder Admin, in der Oberfläche
   der Knopf „Abbrechen“ an jedem Auftrag). Ein wartender Job endet sofort, ein laufender beim
   nächsten Herzschlag seines Workers (alle `JOB_LEASE_S`/3); hält der Handler dann nicht an,

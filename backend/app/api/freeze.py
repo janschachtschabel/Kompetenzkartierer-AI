@@ -1,9 +1,16 @@
-"""A document frozen (plan M1 9.6; Paket 9b H5; app/db/freezing.py): by the editors (Redaktion, Admin)
-alone, under the service's IRI base (IRI_BASE). Refused as app/api/edit_answers.py says for a frozen
-document, an open job and a tree X4 has not read, and with 409 and its own code where it is not ready:
+"""A document frozen and copied as a draft (plan M1 9.6; Paket 9b H5, H7; app/db/freezing.py,
+app/db/draft_copy.py), by the editors (Redaktion, Admin) alone.
+
+A document is frozen under the service's IRI base (IRI_BASE). Refused as app/api/edit_answers.py says for
+a frozen document, an open job and a tree X4 has not read, and with 409 and its own code where it is not
+ready:
 ``incomplete`` (details.missing), ``no_iri_base``, ``not_checked`` (details.unchecked),
 ``has_violations`` (details.violations; ``accept_violations`` freezes it with them) and ``iri_taken``
 (details.iri). Audited with the violations it was frozen with; the answer is the document.
+
+A frozen document's draft copy is the next revision under its IRI (201, the copy): refused for a draft
+(409 ``not_frozen``), a revision a later one follows (``not_latest``) and beside an open draft of the
+IRI (``draft_open``, details.document_id). Audited as ``document.copy`` with the copy.
 """
 
 from typing import Annotated, assert_never
@@ -19,6 +26,8 @@ from app.api.edit_answers import REFUSED, Responses, answers, audit, refusal_of
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.api.source_content import EDITORS
 from app.core.auth import Principal
+from app.db.documents import DocumentError
+from app.db.draft_copy import CopyRefused, copy_document
 from app.db.freezing import FreezeRefused, freeze
 
 router = APIRouter(prefix="/api/v1", tags=["documents"], responses=AUTH_RESPONSES)
@@ -64,6 +73,46 @@ async def freeze_a_document(document_id: UUID, body: FreezeIn, request: Request,
         except REFUSED as error:
             raise await refusal_of(connection, who, document_id, error) from error
         return await document_out(connection, await visible_document(connection, who, document_id), who)
+
+
+@router.post(
+    "/documents/{document_id}/draft-copy",
+    status_code=201,
+    summary="Copy the frozen document as a draft: its next revision, under its IRI - the editors alone",
+    responses={
+        403: {"model": ErrorBody, "description": "not_editor: the editors alone copy a document"},
+        404: {"model": ErrorBody, "description": "no_document: none the caller may read"},
+        409: {
+            "model": ErrorBody,
+            "description": "not_frozen, not_latest, draft_open (details.document_id: the draft open)",
+        },
+    },
+)
+async def copy_a_document(document_id: UUID, request: Request, who: Account) -> DocumentOut:
+    async with request.app.state.pool.connection() as connection:
+        try:
+            async with connection.transaction():
+                document = await visible_document(connection, who, document_id)
+                if not who.roles & EDITORS:
+                    raise Refusal(403, "not_editor", "Only the editors copy a document.")
+                copy = await copy_document(connection, document_id)
+                details = {"copy": str(copy), "revision": document.revision + 1}
+                await audit(connection, who, "document.copy", f"document:{document_id}", details)
+        except CopyRefused as error:
+            match error.code:
+                case "not_frozen":
+                    raise Refusal(409, "not_frozen", "A draft is changed as it is.") from error
+                case "not_latest":
+                    raise Refusal(409, "not_latest", "A later revision is frozen: copy that one.") from error
+                case "draft_open":
+                    raise Refusal(
+                        409, "draft_open", "A draft of this IRI is open.", details=error.details
+                    ) from error
+                case _:
+                    assert_never(error.code)
+        except DocumentError as error:  # taken away meanwhile
+            raise Refusal(404, "no_document", "No such document.") from error
+        return await document_out(connection, await visible_document(connection, who, copy), who)
 
 
 def _refusal(refused: FreezeRefused) -> Refusal:

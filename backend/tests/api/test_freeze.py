@@ -138,3 +138,38 @@ def test_a_document_beside_its_job_or_before_x4_is_not_frozen(freezing: TestClie
 
     assert (beside.status_code, beside.json()["code"]) == (409, "job_open")
     assert (before.status_code, before.json()["code"]) == (409, "not_extracted")
+
+
+def test_an_editor_copies_a_frozen_document_as_its_next_revision(freezing: TestClient, url: str) -> None:
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+    document, owner = ready(freezing, url, editor)
+    assert freezing.post(f"/api/v1/documents/{document}/freeze", headers=editor, json={}).status_code == 200
+    path = f"/api/v1/documents/{document}/draft-copy"
+
+    by_owner = freezing.post(path, headers=owner)
+    copied = freezing.post(path, headers=editor)
+    again = freezing.post(path, headers=editor)
+
+    assert (by_owner.status_code, by_owner.json()["code"]) == (403, "not_editor")
+    assert copied.status_code == 201, copied.text
+    copy = copied.json()["id"]
+    assert copy != document
+    assert (again.status_code, again.json()["code"], again.json()["details"]) == (
+        409, "draft_open", {"document_id": copy},
+    )  # fmt: skip
+    assert rows(url, "SELECT iri, revision, copy_of::text, frozen_at FROM document WHERE id = %s", copy) == [
+        (DOC, 2, document, None)
+    ]
+    assert rows(url, "SELECT subject, details FROM audit_log WHERE action = 'document.copy'") == [
+        (f"document:{document}", {"copy": copy, "revision": 2})
+    ]
+
+
+def test_a_draft_is_not_copied(freezing: TestClient, url: str) -> None:
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+    document, _ = ready(freezing, url, editor)
+
+    answer = freezing.post(f"/api/v1/documents/{document}/draft-copy", headers=editor)
+
+    assert (answer.status_code, answer.json()["code"]) == (409, "not_frozen")
+    assert rows(url, "SELECT count(*) FROM document") == [(1,)]
