@@ -17,7 +17,7 @@ from app.db.editing import DocumentFrozen, JobOpen, NotExtracted, edit_node
 from app.db.freezing import FreezeRefused, Frozen, freeze
 from app.db.nodes import write_subtree
 from app.db.runs import RunStart, finish_run, stage_iri, start_run
-from tests.db.test_editing import an_open_job, document, extracted
+from tests.db.test_editing import an_open_job, document, extracted, one
 from tests.db.test_nodes import CV, anchor, connection, node, owner, statement, url, waiting_for_a_lock
 
 pytestmark = [pytest.mark.pg, pytest.mark.anyio]
@@ -314,6 +314,11 @@ async def test_the_conditions_are_asked_in_their_order_each_once_the_one_before_
     assert asked == [
         "JobOpen", "NotExtracted", "incomplete", "no_iri_base", "check_owed", "has_violations",
     ]  # fmt: skip
+    assert await one(connection, "SELECT iri, frozen_at FROM document WHERE id = %s", lacking.id) == (
+        None,
+        None,
+    )
+    assert await one(connection, "SELECT count(iri) FROM node WHERE document_id = %s", lacking.id) == (0,)
     assert (await freeze(connection, lacking.id, BASE, accept_violations=True)).violations == 1
 
 

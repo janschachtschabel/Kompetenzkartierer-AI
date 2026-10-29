@@ -36,11 +36,12 @@ LEFT_OUT = {
     "frame_part": {"kind", "run_id"}, "node": {"kind", "run_id"}, "statement": {"kind", "run_id"},
     "statement_addressee": set(), "anchor_block": set(), "document_profile": set(),
 }  # fmt: skip
-# The tables naming a document whose rows the copy does not take: the runs, their units and findings
+# The tables naming a document or a row the copy takes whose own rows it does not take: the runs, their
+# units and findings
 NOT_COPIED = {"extraction_run", "extraction_unit", "validation_finding"}
 _NAMING = """
 SELECT DISTINCT c.conrelid::regclass::text FROM pg_constraint c
-WHERE c.contype = 'f' AND c.confrelid = 'document'::regclass
+WHERE c.contype = 'f' AND c.confrelid = ANY (%s::regclass[])
 """
 
 
@@ -296,7 +297,7 @@ async def test_the_copy_takes_every_column_and_table_but_those_it_leaves_by_desi
             "SELECT column_name FROM information_schema.columns WHERE table_name = %s", (table,)
         )
         left_out[table] = {name for (name,) in await cursor.fetchall()} - columns
-    cursor = await connection.execute(_NAMING)
+    cursor = await connection.execute(_NAMING, (list(copied),))
     naming = {table for (table,) in await cursor.fetchall()}
 
     assert left_out == LEFT_OUT
