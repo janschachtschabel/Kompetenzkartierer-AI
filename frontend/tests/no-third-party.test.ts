@@ -17,8 +17,11 @@ const files = [...sourceFiles(SRC, /\.(vue|ts|css)$/), join(process.cwd(), "inde
 const STORE_OR_CONSOLE =
   /\blocalStorage\b|\bconsole\s*(?:\.|\[)|\bdocument\.cookie\b|\bcookieStore\b|\bindexedDB\b|\bcaches\.(?:open|match)\(/;
 
-/** URLs that name a namespace, never fetched: the W3C's, and the curriculum vocabularies' (cv:, the profiles'). */
-const NAMESPACES = /^(?:https?:)?\/\/(?:www\.w3\.org|w3id\.org\/wlo)\//i;
+/**
+ * URLs that name a namespace, never fetched: the W3C's, and the curriculum vocabularies' (cv:, the profiles') as
+ * whole namespace IRIs ending in "#" - below them w3id forwards an address like any other, which is fetched.
+ */
+const NAMESPACES = /^(?:(?:https?:)?\/\/www\.w3\.org\/|https:\/\/w3id\.org\/wlo\/curriculum\/(?:[\w-]+\/)*[\w-]*#$)/i;
 
 /** The addresses `source` would fetch from elsewhere: with a scheme or protocol-relative, in any case. */
 function foreignAddresses(source: string): string[] {
@@ -41,6 +44,10 @@ describe("a third party", () => {
     expect(foreignAddresses('<svg xmlns="http://www.w3.org/2000/svg">')).toEqual([]);
     expect(foreignAddresses('const CV = "https://w3id.org/wlo/curriculum/vocab#";')).toEqual([]);
     expect(foreignAddresses('fetch("https://w3id.org/other/x")')).toHaveLength(1); // only the curriculum's
+    expect(foreignAddresses('const SCHOOL = "https://w3id.org/wlo/curriculum/profile/school#";')).toEqual([]);
+    // w3id forwards whatever is asked of it: below the namespace, an address is fetched like any other
+    expect(foreignAddresses('<img src="https://w3id.org/wlo/logo.png">')).toHaveLength(1);
+    expect(foreignAddresses('fetch("https://w3id.org/wlo/curriculum/vocab.ttl")')).toHaveLength(1);
   });
 
   it.each([
