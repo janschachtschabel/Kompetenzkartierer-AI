@@ -15,6 +15,7 @@ from app.api import (
     document_meta,
     document_tree,
     documents,
+    freeze,
     internal,
     jobs,
     node_editing,
@@ -113,6 +114,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(statement_editing.router)
     app.include_router(review.router)
     app.include_router(document_meta.router)
+    app.include_router(freeze.router)
     app.include_router(profiles.router)
     app.add_middleware(internal.InternalOnly, port=settings.internal_port)
     # an upload takes a file and the form around it; every other body is JSON

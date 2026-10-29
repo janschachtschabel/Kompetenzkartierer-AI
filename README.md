@@ -219,6 +219,18 @@ ungültig.
   und nicht festgeschrieben; hat das Dokument schon seine IRI (festgeschrieben oder Entwurfskopie),
   bleiben Werk, Herausgeber und Fassung, aus denen sie besteht (409 `named`). Audit `document.work`
   bzw. `document.edit`; die Antwort ist das Dokument.
+- Festschreiben: `POST /api/v1/documents/{id}/freeze` (`accept_violations`, Standard `false`), nur
+  Redaktion/Admin. Abgewiesen, der Reihe nach: festgeschrieben (409 `frozen`), offener Job
+  (`job_open`), X4 nicht fertig und keine Entwurfskopie (`not_extracted`), es fehlt Werk, dessen Land
+  oder Kurztitel, Herausgeber oder Fassung (`incomplete`, `details.missing`), keine `IRI_BASE`
+  (`no_iri_base`), X5 schuldet eine Prüfung oder eine Fundstelle ist ungeprüft (`not_checked`,
+  `details.unchecked`; Fundstellen verworfener Aussagen zählen nicht), Verstöße unter den Befunden ohne
+  `accept_violations` (`has_violations`, `details.violations`). Dann bekommen Werk
+  (`…/work/<land>/<kurztitel>`), Dokument (`…/doc/<herausgeber>/<kurztitel des Werks>/<fassung>`),
+  Knoten (Pfad ihrer Codes) und Aussagen (`<knoten>/s-<n>`, jede Nummer einmal) ihre IRIs; eine IRI,
+  die ein anderes Werk oder Dokument hält, weist ab (`iri_taken`, `details.iri`). Danach weist die
+  Datenbank jede Änderung an den Zeilen des Dokuments ab, nur der Rechtestatus bleibt änderbar. Audit
+  `document.freeze` mit Revision und angenommenen Verstößen; die Antwort ist das Dokument.
 - Abbrechen: `POST /api/v1/jobs/{id}/cancel` (Eigentümer des Jobs oder Admin, in der Oberfläche
   der Knopf „Abbrechen“ an jedem Auftrag). Ein wartender Job endet sofort, ein laufender beim
   nächsten Herzschlag seines Workers (alle `JOB_LEASE_S`/3); hält der Handler dann nicht an,

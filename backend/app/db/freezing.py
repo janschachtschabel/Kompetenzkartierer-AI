@@ -45,12 +45,15 @@ _VIOLATIONS = "SELECT count(*) FROM validation_finding WHERE document_id = %s AN
 _TAKEN = sql.SQL("SELECT 1 FROM {} WHERE iri = %s AND id <> %s LIMIT 1")
 
 
+FreezeCode = Literal["incomplete", "no_iri_base", "not_checked", "has_violations", "iri_taken"]
+
+
 class FreezeRefused(Exception):
     """The document is not frozen: ``code`` says why, ``details`` what of it."""
 
-    def __init__(self, code: str, message: str, details: Mapping[str, Any] | None = None) -> None:
+    def __init__(self, code: FreezeCode, message: str, details: Mapping[str, Any] | None = None) -> None:
         super().__init__(message)
-        self.code = code
+        self.code: FreezeCode = code
         self.details = dict(details or {})
 
 
