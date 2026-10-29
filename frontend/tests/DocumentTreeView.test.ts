@@ -121,6 +121,16 @@ describe("a document's tree page", () => {
     expect(await violations(wrapper.html())).toEqual([]);
   });
 
+  it("keeps the document's name in the tab while the row and the page change", async () => {
+    const wrapper = await open();
+    expect(document.title).toBe(`Baum: Lehrplan Physik · ${t("app.title")}`);
+
+    await wrapper.get("[data-key='statement:s1']").trigger("click");
+    await flushPromises();
+
+    expect(document.title).toBe(`Baum: Lehrplan Physik · ${t("app.title")}`);
+  });
+
   it("opens with the row and the page its address names", async () => {
     const wrapper = await open({ zeile: "node:a", seite: "7" });
 

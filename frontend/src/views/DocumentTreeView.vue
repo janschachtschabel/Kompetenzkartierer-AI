@@ -79,8 +79,9 @@ watch(
   () => props.id,
   () => void load(),
 );
-// The tab names the document once it is known; until then the router's name for the page stands
-watch(heading, (name) => {
+// The tab names the document once it is known; until then the router's name for the page stands. The
+// router names the page alone on each move, the query's too (router.afterEach): named again after it.
+watch([heading, () => route.fullPath], ([name]) => {
   if (document_.value) document.title = pageTitle(name);
 });
 </script>
