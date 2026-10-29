@@ -172,7 +172,10 @@ ungültig.
   seinen Kindern), dazu die Zahl der Knoten und Aussagen je Prüfstand. `editable`: Eigentümer und
   Redaktion/Admin dürfen jetzt bearbeiten, `reviewable`: Redaktion/Admin dürfen den Prüfstand setzen –
   beides nicht, solange ein Job des Dokuments wartet oder läuft, nicht, bevor X4 jedes Arbeitspaket gelesen
-  hat (eine Entwurfskopie gilt als gelesen), und nicht, sobald es festgeschrieben ist.
+  hat (eine Entwurfskopie gilt als gelesen), und nicht, sobald es festgeschrieben ist. In der Oberfläche
+  zeigt die Seite „Baum“ des Dokuments (`/dokumente/{id}/baum`, verlinkt von der Dokumentseite) den Baum mit
+  Filter nach Prüfstand, die gewählte Zeile mit Feldern und Fundstellen und daneben die Seite der Quelle mit
+  den genannten Blöcken als „Beleg“; Zeile und Seite stehen in der Adresse (`?zeile=…&seite=…`).
 - Blöcke des Dokuments: `GET /api/v1/documents/{id}/blocks?page=N` liest eine Seite der Konvertierung, aus
   der das Dokument gelesen wurde (Blöcke, fortlaufende Tabellen, gedruckte Seite, `pages`) – die Blöcke, die
   seine Fundstellen nennen, auch wenn die Datei des Eintrags seither neu geholt oder anders umgewandelt
