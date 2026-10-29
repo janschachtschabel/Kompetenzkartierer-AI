@@ -23,6 +23,9 @@ import { failureNotice, type Notice } from "@/notice";
 
 export type RowKey = `node:${string}` | `statement:${string}`;
 
+/** The query parameter of the row chosen in the tree's page (DocumentTreeView): "node:<id>", "statement:<id>". */
+export const ROW_PARAM = "zeile";
+
 interface RowPlace {
   key: RowKey;
   /** The node it stands under; none for one of the document's top. */

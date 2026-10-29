@@ -17,8 +17,8 @@ const files = [...sourceFiles(SRC, /\.(vue|ts|css)$/), join(process.cwd(), "inde
 const STORE_OR_CONSOLE =
   /\blocalStorage\b|\bconsole\s*(?:\.|\[)|\bdocument\.cookie\b|\bcookieStore\b|\bindexedDB\b|\bcaches\.(?:open|match)\(/;
 
-/** URLs that name a namespace, never fetched. */
-const NAMESPACES = /^(?:https?:)?\/\/www\.w3\.org\//i;
+/** URLs that name a namespace, never fetched: the W3C's, and the curriculum vocabularies' (cv:, the profiles'). */
+const NAMESPACES = /^(?:https?:)?\/\/(?:www\.w3\.org|w3id\.org\/wlo)\//i;
 
 /** The addresses `source` would fetch from elsewhere: with a scheme or protocol-relative, in any case. */
 function foreignAddresses(source: string): string[] {
@@ -39,6 +39,8 @@ describe("a third party", () => {
     expect(foreignAddresses('@import url("https://cdn.example.org/x.css");')).toHaveLength(1);
     expect(foreignAddresses("// see https://example.org/why")).toEqual([]);
     expect(foreignAddresses('<svg xmlns="http://www.w3.org/2000/svg">')).toEqual([]);
+    expect(foreignAddresses('const CV = "https://w3id.org/wlo/curriculum/vocab#";')).toEqual([]);
+    expect(foreignAddresses('fetch("https://w3id.org/other/x")')).toHaveLength(1); // only the curriculum's
   });
 
   it.each([

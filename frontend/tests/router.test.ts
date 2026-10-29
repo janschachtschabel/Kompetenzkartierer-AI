@@ -96,6 +96,17 @@ describe("the guards", () => {
     expect(blocks.meta.section).toBe("sources");
   });
 
+  it("keep a document's tree for accounts too, and hand it the document's id", async () => {
+    await router.push("/dokumente/0190-d1/baum?zeile=node:a");
+    expect(router.currentRoute.value.query[RETURN_PARAM]).toBe("/dokumente/0190-d1/baum?zeile=node:a");
+
+    const tree = router.resolve("/dokumente/0190-d1/baum");
+    expect(tree.name).toBe("documentTree");
+    expect(tree.params).toEqual({ id: "0190-d1" });
+    expect(tree.matched[0].props).toEqual({ default: true });
+    expect(tree.meta.section).toBe("sources");
+  });
+
   it("keep an account without the role off a page, to the start", async () => {
     // hiding an entry is convenience; the server refuses the route's requests anyway
     router.addRoute({ path: "/nur-admin", name: "nur-admin", component: BLANK, meta: { requiresRole: "admin" } });

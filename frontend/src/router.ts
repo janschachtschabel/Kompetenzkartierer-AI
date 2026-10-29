@@ -7,6 +7,7 @@ import { pageTitle } from "@/pageTitle";
 import { RETURN_PARAM } from "@/returnTarget";
 import { clearSession, ensureSession, hasRole } from "@/session";
 import ConversionView from "@/views/ConversionView.vue";
+import DocumentTreeView from "@/views/DocumentTreeView.vue";
 import DocumentView from "@/views/DocumentView.vue";
 import LoginView from "@/views/LoginView.vue";
 import SourceDetailView from "@/views/SourceDetailView.vue";
@@ -67,6 +68,15 @@ export const router = createRouter({
       props: true,
       // its own name once the document is loaded (DocumentView); it is reached from an entry
       meta: { title: "app.titles.document", requiresAuth: true, section: "sources" },
+    },
+    {
+      // the row chosen and the page of the source in the query (?zeile=node:<id>&seite=3, DocumentTreeView)
+      path: "/dokumente/:id/baum",
+      name: "documentTree",
+      component: DocumentTreeView,
+      props: true,
+      // its own name once the document is loaded; it is reached from the document's page
+      meta: { title: "app.titles.documentTree", requiresAuth: true, section: "sources" },
     },
     { path: "/:rest(.*)*", redirect: { name: "start" } },
   ],

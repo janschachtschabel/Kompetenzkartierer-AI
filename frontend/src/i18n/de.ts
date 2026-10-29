@@ -23,6 +23,7 @@ export const messages = {
       source: "Registereintrag",
       conversion: "Blöcke",
       document: "Dokument",
+      documentTree: "Baum des Dokuments",
     },
     roles: {
       admin: "Administration",
@@ -842,9 +843,11 @@ export const messages = {
         sector: "Bildungsbereich",
         regions: "Länder",
         source: "Registereintrag",
+        tree: "Knoten und Aussagen",
         created: "Angelegt",
       },
       sourceLink: "Zum Registereintrag",
+      treeLink: "Baum öffnen",
       noRegions: "keine angegeben",
       extraction: "Extraktion",
       jobLabel: "Extraktion",
@@ -885,6 +888,15 @@ export const messages = {
     },
     tree: {
       loadFailed: "Der Baum des Dokuments wurde nicht geladen.",
+      heading: "Baum: {title}",
+      back: "Zum Dokument",
+      treeHeading: "Knoten und Aussagen",
+      detail: {
+        heading: "Auswahl",
+        none: "Wähle im Baum eine Zeile: Hier stehen dann ihre Felder und Fundstellen, darunter ihre Stelle in der Quelle.",
+        node: "Knoten {name}",
+        statement: "Aussage",
+      },
       label: "Knoten und Aussagen des Dokuments",
       untitled: "ohne Titel",
       // what a row is, said to a screen reader before its label (TreeRow.vue)

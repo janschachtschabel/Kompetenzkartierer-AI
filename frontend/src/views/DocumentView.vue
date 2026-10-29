@@ -144,6 +144,12 @@ watch(
               {{ t("documents.page.sourceLink") }}
             </RouterLink>
           </dd>
+          <dt>{{ t("documents.page.facts.tree") }}</dt>
+          <dd>
+            <RouterLink data-test="document-tree" :to="{ name: 'documentTree', params: { id: document_.id } }">
+              {{ t("documents.page.treeLink") }}
+            </RouterLink>
+          </dd>
           <dt>{{ t("documents.page.facts.created") }}</dt>
           <dd><time :datetime="document_.created_at">{{ moment(document_.created_at) }}</time></dd>
         </dl>

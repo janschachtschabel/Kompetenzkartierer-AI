@@ -113,6 +113,9 @@ describe("a document's page", () => {
     expect(wrapper.text()).toContain(t("documents.sectors.school"));
     expect(wrapper.text()).toContain("Nordrhein-Westfalen");
     expect(wrapper.get("a[data-test=document-source]").attributes("href")).toBe("/quellen/s1");
+    // its nodes and statements on a page of their own
+    expect(wrapper.get("a[data-test=document-tree]").attributes("href")).toBe("/dokumente/d1/baum");
+    expect(wrapper.get("a[data-test=document-tree]").text()).toBe(t("documents.page.treeLink"));
     const rows = wrapper.findAll("tbody tr").map((row) => row.findAll("td").map((cell) => cell.text()));
     expect(rows.map((cells) => [cells[0], cells[1], cells[2]])).toEqual([
       [t("documents.stages.X1"), "1", t("documents.runStates.done")],
