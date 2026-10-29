@@ -15,7 +15,7 @@ German letters spelt out ("ä" as "ae", "ß" as "ss"), anything else between wor
 
 import re
 import unicodedata
-from collections.abc import Sequence
+from collections.abc import Container, Sequence
 from uuid import UUID
 
 _SPELT_OUT = str.maketrans({"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"})
@@ -83,13 +83,22 @@ def node_segments(siblings: Sequence[tuple[str, bool]]) -> list[str]:
             segment = f"pos-{slug(code)}" if assigned else slug(code)
         except ValueError:  # no ASCII letter or digit to name it by: its place names it
             segment = f"pos-{place}"
-        made, count = segment, 1
-        while made in taken or _STATEMENT.fullmatch(made):
-            count += 1
-            made = f"{segment}-{count}"
+        made = counted_on(segment, taken)
         taken.add(made)
         segments.append(made)
     return segments
+
+
+def counted_on(segment: str, taken: Container[str]) -> str:
+    """``segment`` where no sibling holds it, else the first of ``<segment>-2``, ``-3``, ... none holds; one
+    that reads as a statement's (``s-<n>``) is passed over, and under ``s``, whose every count would, the
+    count goes on from ``s-1`` ("s-1-2")."""
+    stem = "s-1" if segment == "s" else segment
+    made, count = segment, 1
+    while made in taken or _STATEMENT.fullmatch(made):
+        count += 1
+        made = f"{stem}-{count}"
+    return made
 
 
 def assign_code(position: int) -> str:

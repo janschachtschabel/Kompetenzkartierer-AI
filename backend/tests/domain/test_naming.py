@@ -75,6 +75,26 @@ def test_a_new_node_steps_past_a_segment_a_copied_sibling_holds_by_another_code(
     assert named.nodes == {added.id: f"{DOC}/lf-3-2"}
 
 
+def test_a_new_node_steps_past_a_copied_sibling_s_segment_to_none_a_statement_holds() -> None:
+    # counted on from "s", "s-2" would be the IRI of the parent's second statement
+    copied = node("LF 1", 1, iri=f"{DOC}/s")  # once "S", recoded in the copy
+    added = node("S", 2)
+
+    named = name_rows(DOC, [copied, added], [])
+
+    assert named.nodes == {added.id: f"{DOC}/s-1-2"}
+
+
+def test_a_segment_counted_on_is_none_a_later_new_sibling_takes() -> None:
+    copied = node("LF 9", 1, iri=f"{DOC}/lf-1")  # once "LF 1"
+    counted = node("LF 1", 2)  # past the copied one's segment: lf-1-2
+    printed = node("LF 1-2", 3)  # printed so: past the one counted on
+
+    named = name_rows(DOC, [copied, counted, printed], [])
+
+    assert named.nodes == {counted.id: f"{DOC}/lf-1-2", printed.id: f"{DOC}/lf-1-2-2"}
+
+
 def test_nothing_new_is_nothing_named() -> None:
     first = node("LF 1", 1, iri=f"{DOC}/lf-1", statement_serial=1)
 
