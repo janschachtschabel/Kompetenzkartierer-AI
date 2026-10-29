@@ -43,9 +43,7 @@ DOCUMENT_OF_NODE = f"""
 SELECT d.id, sector.notation FROM node n JOIN document d ON d.id = n.document_id {SECTOR}
 WHERE n.id = %(id)s AND {DOCUMENT_VISIBLE}
 """  # noqa: S608 - fixed parts
-_DOCUMENT = (
-    f"SELECT d.id, sector.notation FROM document d {SECTOR} WHERE d.id = %(id)s AND {DOCUMENT_VISIBLE}"  # noqa: S608
-)
+DOCUMENT = f"SELECT d.id, sector.notation FROM document d {SECTOR} WHERE d.id = %(id)s AND {DOCUMENT_VISIBLE}"  # noqa: S608
 _NODE = """
 SELECT revision, original_title, function_iri AS function, node_type_iri AS node_type, code,
     obligation_iri AS obligation
@@ -171,7 +169,7 @@ async def add_node(
     siblings there, an editor's proposal; its id. None where ``reader`` sees no such document, or the
     parent is no node of it. FieldError (a field the form asks for missing too) or a refusal of ``guard``."""
     async with connection.transaction():
-        target = await target_of(connection, _DOCUMENT, reader, document_id)
+        target = await target_of(connection, DOCUMENT, reader, document_id)
         if target is None:
             return None
         form = await form_for(connection, target.sector)
@@ -251,15 +249,20 @@ def text(value: FieldValue) -> str | None:
 
 
 async def guard(connection: psycopg.AsyncConnection, document_id: UUID) -> None:
-    """Hold the tree's lock, then refuse the change of a frozen document (DocumentFrozen), one beside its
-    open job (JobOpen) and one X4 has not done yet (NotExtracted)."""
+    """``guard_document``, then refuse the change of a tree X4 has not done yet (NotExtracted)."""
+    await guard_document(connection, document_id)
+    if "X4" not in await done_stages(connection, document_id):
+        raise NotExtracted(f"X4 has not read every package of the document {document_id}")
+
+
+async def guard_document(connection: psycopg.AsyncConnection, document_id: UUID) -> None:
+    """Hold the tree's lock, then refuse the change of a frozen document (DocumentFrozen) and one beside its
+    open job (JobOpen): the document's own fields, which X1 read before X4 (app/db/document_meta.py)."""
     await lock_tree(connection, document_id)
     if await frozen(connection, document_id):
         raise DocumentFrozen(f"the document {document_id} is frozen")
     if (job := await open_job(connection, unique_key(document_id))) is not None:
         raise JobOpen(job)
-    if "X4" not in await done_stages(connection, document_id):
-        raise NotExtracted(f"X4 has not read every package of the document {document_id}")
 
 
 async def frozen(connection: psycopg.AsyncConnection, document_id: UUID) -> bool:
