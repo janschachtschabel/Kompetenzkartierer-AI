@@ -30,15 +30,14 @@ from typing import Annotated
 from uuid import UUID
 
 import psycopg
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from app.api.deps import require_account
-from app.api.document_access import reader, visible_document
+from app.api.document_access import readable_content, reader, visible_document
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.api.jobs import JobOut, job_out
 from app.api.limits import admit_model_start
-from app.api.source_content import content_row
 from app.core.auth import Principal
 from app.core.logging import current_request_id
 from app.core.settings import Settings
@@ -240,7 +239,7 @@ async def start_extraction(document_id: UUID, request: Request, response: Respon
                 await lock_tree(connection, document.id)  # an edit's look and write see no job begun between
                 await _open(connection, key)  # following the one waiting or running reads no content
                 await _extractable(connection, document)
-                await _readable(connection, who, settings, document)
+                await readable_content(connection, who, settings, document)
                 await _admit(connection, who.account_id, settings, lambda: _open(connection, key))
                 job_id = await _enqueue(connection, who.account_id, document.id, KIND)
                 await record_audit(
@@ -291,7 +290,7 @@ async def start_repair(document_id: UUID, request: Request, response: Response, 
                 await lock_tree(connection, document.id)  # as the extraction's start
                 await _open(connection, key)
                 await _extractable(connection, document)
-                await _readable(connection, who, settings, document)
+                await readable_content(connection, who, settings, document)
                 if "X5" not in await done_stages(connection, document.id):
                     raise Refusal(409, "not_checked", "The document's extraction has not come to its check.")
                 if not await repairable_units(connection, document.id):
@@ -424,19 +423,6 @@ async def _being_extracted(
     for document in made:
         if (job_id := found.get(unique_key(document.id))) is not None:
             raise _BeingExtracted(document, job_id)
-
-
-async def _readable(
-    connection: psycopg.AsyncConnection, who: Principal, settings: Settings, document: Document
-) -> None:
-    """The entry's content still the owner's to read, as when the document was made - its own,
-    every entry while an editor, one of no account while THIRD_PARTY_MARKDOWN opens it."""
-    try:
-        await content_row(connection, who, settings, document.source_id)
-    except HTTPException as hidden:  # an entry no longer the owner's to see at all: hidden as well
-        if hidden.status_code != 404:
-            raise
-        raise Refusal(403, "file_hidden", "The content of this entry is no longer yours to read.") from None
 
 
 async def _enqueue(connection: psycopg.AsyncConnection, owner: UUID, document_id: UUID, kind: str) -> UUID:

@@ -5,10 +5,12 @@ answer as to a document that does not exist."""
 from uuid import UUID
 
 import psycopg
+from fastapi import HTTPException
 
 from app.api.errors import Refusal
-from app.api.source_content import EDITORS
+from app.api.source_content import EDITORS, content_row
 from app.core.auth import Principal
+from app.core.settings import Settings
 from app.db.documents import Document, get_document
 from app.db.source_queries import Reader
 
@@ -26,3 +28,16 @@ async def visible_document(
     if document is None:
         raise Refusal(404, "no_document", "No such document.")
     return document
+
+
+async def readable_content(
+    connection: psycopg.AsyncConnection, who: Principal, settings: Settings, document: Document
+) -> None:
+    """The entry's content still the owner's to read, as when the document was made - its own,
+    every entry while an editor, one of no account while THIRD_PARTY_MARKDOWN opens it."""
+    try:
+        await content_row(connection, who, settings, document.source_id)
+    except HTTPException as hidden:  # an entry no longer the owner's to see at all: hidden as well
+        if hidden.status_code != 404:
+            raise
+        raise Refusal(403, "file_hidden", "The content of this entry is no longer yours to read.") from None
