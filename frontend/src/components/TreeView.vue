@@ -110,6 +110,7 @@ function keyedRow(target: EventTarget | null): RowKey | null {
 function onKey(event: KeyboardEvent): void {
   if (event.altKey || event.ctrlKey || event.metaKey) return;
   const here = keyedRow(event.target) ?? tabStop.value;
+  if (here) at.value = here;
   const move = here ? keyMove(visible.value, here, event.key) : null;
   if (!move) return;
   event.preventDefault();
@@ -197,10 +198,10 @@ function flip(key: RowKey, on: boolean): void {
   margin: 0;
 }
 
-/* Empty, it takes no room - the grid's gap would stand twice - but stays in the page, so its first word is
-   read out. */
+/* Empty, it takes no room - as a cell of the grid its gap would stand twice - but stays in the page, so its
+   first word is read out. */
 .tree__status:empty {
-  margin-block-end: calc(-1 * var(--space-1));
+  position: absolute;
 }
 
 .tree__rows {

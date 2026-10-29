@@ -47,7 +47,7 @@ async function load({ moved = false } = {}): Promise<void> {
   const from = document.activeElement;
   shown.value = null;
   pastEnd.value = false;
-  hidden.value = false;
+  // a refusal of the content stands until an answer says otherwise: no pager meanwhile
   failure.value = null;
   pending.value = true;
   try {
@@ -55,11 +55,12 @@ async function load({ moved = false } = {}): Promise<void> {
     if (mine !== generation) return;
     shown.value = found;
     pages.value = found.pages;
+    hidden.value = false;
   } catch (error) {
     if (mine !== generation) return;
+    hidden.value = error instanceof ApiError && error.code === "file_hidden";
     if (error instanceof ApiError && error.code === "no_such_page") pastEnd.value = true;
-    else if (error instanceof ApiError && error.code === "file_hidden") hidden.value = true;
-    else failure.value = failureNotice(error, t("documents.tree.source.loadFailed"));
+    else if (!hidden.value) failure.value = failureNotice(error, t("documents.tree.source.loadFailed"));
   } finally {
     if (mine === generation) pending.value = false;
   }

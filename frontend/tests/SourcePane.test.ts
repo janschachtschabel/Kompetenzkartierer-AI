@@ -45,7 +45,7 @@ async function pane(number: number, cited: string[] = []): Promise<VueWrapper> {
   return shown;
 }
 
-describe("the source beside a row", () => {
+describe("the source under a row", () => {
   it("shows a page of the document's own conversion, the blocks its anchors name marked", async () => {
     const read = vi.spyOn(api, "getDocumentBlocks").mockImplementation((_id, number) => Promise.resolve(page(number)));
 
@@ -229,6 +229,26 @@ describe("the source beside a row", () => {
 
     expect(wrapper.get("[role=status]").text()).toBe(t("conversionPage.hiddenTitle"));
     expect(wrapper.find("[data-test=next]").exists()).toBe(false);
+  });
+
+  it("offers no pager while another page loads after a refusal of the content, and again once one shows", async () => {
+    let later: (found: DocumentPage) => void = () => undefined;
+    vi.spyOn(api, "getDocumentBlocks")
+      .mockResolvedValueOnce(page(3))
+      .mockRejectedValueOnce(new ApiError("forbidden", 403, "file_hidden"))
+      .mockReturnValueOnce(new Promise((resolve) => (later = resolve)));
+    const wrapper = await pane(3);
+    await wrapper.setProps({ page: 4 });
+    await flushPromises();
+
+    await wrapper.setProps({ page: 5 });
+    expect(wrapper.find(".loading").exists()).toBe(true);
+    expect(wrapper.find("[data-test=next]").exists()).toBe(false);
+    later(page(5));
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Erster auf 5");
+    expect(wrapper.find("[data-test=next]").exists()).toBe(true);
   });
 
   it("says the entry's content is no longer the reader's, with no retry that could change it", async () => {

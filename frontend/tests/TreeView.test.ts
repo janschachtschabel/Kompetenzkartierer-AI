@@ -192,6 +192,17 @@ describe("a document's tree", () => {
     expect(document.activeElement?.getAttribute("data-key")).toBe("statement:s1");
   });
 
+  it("puts the tab stop on the row a key opened, though a row was chosen from without", async () => {
+    const wrapper = tree();
+    (row(wrapper, "node:a1").element as HTMLElement).focus();
+    await wrapper.setProps({ selected: "node:b" });
+
+    await row(wrapper, "node:a1").trigger("keydown", { key: "ArrowRight" });
+
+    expect(row(wrapper, "node:a1").attributes("aria-expanded")).toBe("true");
+    expect(row(wrapper, "node:a1").attributes("tabindex")).toBe("0");
+  });
+
   it("says the choice is the row's it moved to, the one before no longer", async () => {
     const wrapper = tree();
     await row(wrapper, "statement:s1").trigger("click");
@@ -267,6 +278,10 @@ describe("a document's tree", () => {
     await wrapper.findAll(".status-filter button")[1]?.trigger("click"); // confirmed
     expect(items(wrapper).map(([key]) => key)).toEqual(["node:a", "statement:s2"]);
     expect(status.text()).toBe("1 Zeile passt zum Filter.");
+    // each says its place among the rows shown, not among all
+    for (const key of ["node:a", "statement:s2"]) {
+      expect([row(wrapper, key).attributes("aria-posinset"), row(wrapper, key).attributes("aria-setsize")], key).toEqual(["1", "1"]);
+    }
 
     await wrapper.findAll(".status-filter button")[2]?.trigger("click"); // and rejected
     expect(items(wrapper).map(([key]) => key)).toEqual(["node:a", "statement:s2", "node:b"]);
