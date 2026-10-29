@@ -1,12 +1,13 @@
 """A document's work and metadata, set by the editors before it is frozen (plan M1 9.6; Paket 9b H3, H4).
 
-The work is one there is or one made of a title, a country and a short title; the metadata are the
-issuer, the edition and the title X1 read off the document, as an editor puts them right. Both wait for
-the tree's lock and refuse a frozen document and one beside its open job (``guard_document``); the
-metadata also one X4 has not read yet (``guard``, NotExtracted): an extraction to come would write them
-over with what X1 reads, the work it leaves. A document named by its IRI - frozen once, or a draft
-copy of one - keeps its work, issuer and edition, which the IRI is made of (``DocumentNamed``); its
-title it may change. A change of the metadata owes X5 a check: the Kern export carries them.
+The work is one there is or one made of a title, a country and a short title; the metadata are the issuer, the
+edition and the title X1 read off the document, as an editor puts them right. Both wait for the tree's lock
+and refuse a frozen document and one beside its open job (``guard_document``); the metadata also one X4 has
+not read yet (``guard``, NotExtracted), as every edit of the tree: before X1 an extraction would write them
+over with what it reads (once done, X1 is passed over), the work it leaves. A document named by its IRI -
+frozen once, or a draft copy of one - keeps its work, issuer and edition, which the IRI is made of
+(``DocumentNamed``); its title it may change. A change of the metadata owes X5 a check: the Kern export
+carries them.
 
 simplify: who sees a document edits its metadata, as its tree (app/db/editing.py); the work is the
 editors' alone, which the API asks (app/api/document_meta.py).

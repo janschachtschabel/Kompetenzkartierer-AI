@@ -10,7 +10,8 @@ ready:
 
 A frozen document's draft copy is the next revision under its IRI (201, the copy): refused for a draft
 (409 ``not_frozen``), a revision a later one follows (``not_latest``) and beside an open draft of the
-IRI (``draft_open``, details.document_id). Audited as ``document.copy`` with the copy.
+IRI (``draft_open``, details.document_id), and where a row of it no longer fits today's vocabularies
+(``vocabulary_changed``, details.check). Audited as ``document.copy`` with the copy.
 """
 
 from typing import Annotated, assert_never
@@ -135,7 +136,10 @@ def _refusal(refused: FreezeRefused) -> Refusal:
             return Refusal(409, "no_iri_base", "The service names no IRI base to freeze under (IRI_BASE).")
         case "check_owed":
             return Refusal(
-                409, "check_owed", "X5 owes the document a check: check it again.", details=details
+                409,
+                "check_owed",
+                "X5 owes the document a check: check it, or go on with an extraction that never came to it.",
+                details=details,
             )
         case "has_violations":
             return Refusal(

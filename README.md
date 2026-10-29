@@ -165,10 +165,11 @@ ungültig.
   welcher Art der letzte Job ist.
 - Baum: `GET /api/v1/documents/{id}/tree` liest die Knoten und Aussagen eines Dokuments, wie der Editor sie
   zeigt (wer das Dokument lesen darf, in einem Snapshot): je Zeile die Felder des Formulars unter dessen
-  Schlüsseln, Herkunft, Prüfstand, Revision, `iri` (sobald das Dokument festgeschrieben wurde, sonst `null`)
-  und Fundstellen (Seiten, gedruckte Seite, Zitat, Fundart, Wert, Blöcke in Dokumentreihenfolge), je Knoten
-  die Zahl der Befunde je Schwere an ihm, seinen Fundstellen, seinen Aussagen und deren Fundstellen (nicht
-  an seinen Kindern), dazu die Zahl der Knoten und Aussagen je Prüfstand. `editable`: Eigentümer und
+  Schlüsseln, Herkunft, Prüfstand, Revision, `iri` (sobald das Dokument festgeschrieben wurde, sonst `null`;
+  in einer Entwurfskopie tragen die übernommenen Zeilen ihre schon, neue erst nach dem Festschreiben) und
+  Fundstellen (Seiten, gedruckte Seite, Zitat, Fundart, Wert, Blöcke in Dokumentreihenfolge), je Knoten die
+  Zahl der Befunde je Schwere an ihm, seinen Fundstellen, seinen Aussagen und deren Fundstellen (nicht an
+  seinen Kindern), dazu die Zahl der Knoten und Aussagen je Prüfstand. `editable`: Eigentümer und
   Redaktion/Admin dürfen jetzt bearbeiten, `reviewable`: Redaktion/Admin dürfen den Prüfstand setzen –
   beides nicht, solange ein Job des Dokuments wartet oder läuft, nicht, bevor X4 jedes Arbeitspaket gelesen
   hat (eine Entwurfskopie gilt als gelesen), und nicht, sobald es festgeschrieben ist.
@@ -215,11 +216,12 @@ ungültig.
   Redaktion/Admin (sonst 403 `not_editor`); 404 `no_work` für ein Werk, das es nicht gibt. Metadaten: `PATCH
   /api/v1/documents/{id}` setzt `issuer`, `edition` und `title` (ausgelassene bleiben, `null` oder leerer
   Text leert) – durch Eigentümer und Redaktion/Admin, 422 `invalid_field` wie beim Bearbeiten; eine Änderung
-  schuldet X5 eine Prüfung; erst wenn X4 fertig ist (409 `not_extracted`: eine Extraktion überschriebe sie
-  mit dem, was X1 liest), ein neues Werk mit speicherbarem Titel und einem Land des Regionenvokabulars (422
-  `invalid_field`). Beide nicht neben einem offenen Job und nicht festgeschrieben; hat das Dokument schon
-  seine IRI (festgeschrieben oder Entwurfskopie), bleiben Werk, Herausgeber und Fassung, aus denen sie
-  besteht (409 `named`). Audit `document.work` bzw. `document.edit`; die Antwort ist das Dokument.
+  schuldet X5 eine Prüfung; erst wenn X4 fertig ist, wie jede Bearbeitung des Baums (409 `not_extracted`;
+  vor X1 überschriebe eine Extraktion sie mit dem, was X1 liest), ein neues Werk mit speicherbarem Titel und
+  einem Land des Regionenvokabulars (422 `invalid_field`). Beide nicht neben einem offenen Job und nicht
+  festgeschrieben; hat das Dokument schon seine IRI (festgeschrieben oder Entwurfskopie), bleiben Werk,
+  Herausgeber und Fassung, aus denen sie besteht (409 `named`). Audit `document.work` bzw. `document.edit`;
+  die Antwort ist das Dokument.
 - Festschreiben: `POST /api/v1/documents/{id}/freeze` (`accept_violations`, Standard `false`), nur
   Redaktion/Admin. Abgewiesen, der Reihe nach: festgeschrieben (409 `frozen`), offener Job (`job_open`), X4
   nicht fertig und keine Entwurfskopie (`not_extracted`), es fehlt Werk, dessen Land oder Kurztitel,

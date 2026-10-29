@@ -673,7 +673,8 @@ export const messages = {
     no_iri_base: "Der Dienst hat keine IRI-Basis (IRI_BASE). Ohne sie lässt sich nichts festschreiben.",
     check_owed:
       "Die Prüfung steht aus: Das Dokument wurde noch nicht oder nicht seit den letzten Änderungen geprüft. " +
-      "Prüfe es, dann lässt es sich festschreiben.",
+      "Prüfe es – oder setze die Extraktion fort, wenn sie nie bis zur Prüfung kam –, dann lässt es sich " +
+      "festschreiben.",
     has_violations: "Die Befunde nennen Verstöße. Festschreiben geht nur, wenn du sie ausdrücklich annimmst.",
     iri_taken: "Ein anderes Werk oder Dokument hat diese IRI schon.",
     not_frozen: "Das Dokument ist noch nicht festgeschrieben. Ändere es direkt.",

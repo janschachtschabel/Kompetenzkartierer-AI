@@ -53,7 +53,7 @@ class StatementOut(BaseModel):
     origin: str
     review_status: str
     revision: int  # the change of the statement an edit of it names
-    iri: str | None  # given when its document was frozen (<node>/s-<n>)
+    iri: str | None  # given when its document was frozen (<node>/s-<n>); a draft copy's rows bring theirs
     text_hash: str
     anchors: list[AnchorOut]
 
@@ -68,7 +68,7 @@ class NodeRowOut(BaseModel):
     origin: str
     review_status: str
     revision: int
-    iri: str | None  # given when its document was frozen (the path of its codes)
+    iri: str | None  # given when its document was frozen (the path of its codes); a draft copy's bring theirs
     findings: SeverityCounts  # on the node and its anchors, its statements and theirs - not its children's
     anchors: list[AnchorOut]
 
