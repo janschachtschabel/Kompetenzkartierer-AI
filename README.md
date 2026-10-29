@@ -223,7 +223,8 @@ ungültig.
 - Festschreiben: `POST /api/v1/documents/{id}/freeze` (`accept_violations`, Standard `false`), nur
   Redaktion/Admin. Abgewiesen, der Reihe nach: festgeschrieben (409 `frozen`), offener Job
   (`job_open`), X4 nicht fertig und keine Entwurfskopie (`not_extracted`), es fehlt Werk, dessen Land
-  oder Kurztitel, Herausgeber oder Fassung (`incomplete`, `details.missing`), keine `IRI_BASE`
+  oder Kurztitel, Herausgeber oder Fassung, oder diese tragen keinen lateinischen Buchstaben und keine
+  Ziffer, aus denen die IRI würde (`incomplete`, `details.missing`), keine `IRI_BASE`
   (`no_iri_base`), X5 lief nie (eine Kopie: vor ihrem Prüfjob), schuldet eine Prüfung oder eine
   Fundstelle ist ungeprüft (`check_owed`,
   `details.unchecked`; Fundstellen verworfener Aussagen zählen nicht), Verstöße unter den Befunden ohne

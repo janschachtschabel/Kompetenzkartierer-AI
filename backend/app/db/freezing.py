@@ -1,16 +1,16 @@
 """A document frozen (plan M1 9.6; Paket 9b H5, H6): it gets its IRIs and changes no more - the database's
 triggers keep its rows as they are (migration freeze).
 
-Under the tree's lock, in this order, each refused with its own reason and nothing changed: frozen
-already (DocumentFrozen), beside its open job (JobOpen), its tree not all there (NotExtracted: X4 has
-not read every package, and it is no draft copy), short of its work, the work's country or short title,
-its issuer or edition (``incomplete``), no base to name it under (``no_iri_base``), X5 not done on it
-(a draft copy runs none until its check job), owing it a check or an anchor X5 has not checked
-(``check_owed``), violations among its findings the editors have not accepted (``has_violations``).
-Then the work gets its IRI where it has none, the document its own - issuer, the work's short title,
-edition (app/domain/iris.py) - where it has none, its nodes and statements theirs
-(app/domain/naming.py); an IRI another work or document holds refuses (``iri_taken``). The document is
-frozen last: after that, the triggers refuse every change.
+Under the tree's lock, in this order, each refused with its own reason and nothing changed: frozen already
+(DocumentFrozen), beside its open job (JobOpen), its tree not all there (NotExtracted: X4 has not read every
+package, and it is no draft copy), short of its work, the work's country or short title, its issuer or
+edition, or one with nothing to name the IRI by (``incomplete``), no base to name it under (``no_iri_base``),
+X5 not done on it (a draft copy runs none until its check job), owing it a check or an anchor X5 has not
+checked (``check_owed``), violations among its findings the editors have not accepted (``has_violations``).
+Then the work gets its IRI where it has none, the document its own - issuer, the work's short title, edition
+(app/domain/iris.py) - where it has none, its nodes and statements theirs (app/domain/naming.py); an IRI
+another work or document holds refuses (``iri_taken``). The document is frozen last: after that, the triggers
+refuse every change.
 """
 
 from collections.abc import Mapping
@@ -26,7 +26,7 @@ from app.db.documents import DocumentError
 from app.db.editing import CV, DocumentFrozen, JobOpen, NotExtracted, extracted, frozen
 from app.db.nodes import lock_tree
 from app.db.runs import done_stages, x5_owed
-from app.domain.iris import document_iri, work_iri
+from app.domain.iris import document_iri, slug, work_iri
 from app.domain.naming import NodeRow, StatementRow, name_rows
 from app.jobs.queue import open_job
 from app.pipeline.extraction import unique_key
@@ -92,7 +92,7 @@ async def freeze(
         missing = [name for name, lacking in (
             ("work", work_id is None), ("region", work_id is not None and region is None),
             ("short_title", work_id is not None and short_title is None),
-            ("issuer", issuer is None), ("edition", edition is None),
+            ("issuer", not _names(issuer)), ("edition", not _names(edition)),
         ) if lacking]  # fmt: skip
         if missing:
             raise FreezeRefused("incomplete", f"the document lacks {missing}", {"missing": missing})
@@ -119,6 +119,17 @@ async def freeze(
             (iri, document_id),
         )
         return Frozen(iri, revision, named[0], named[1], violations)
+
+
+def _names(text: str | None) -> bool:
+    """Whether ``text`` names a part of the document's IRI: a Greek letter or a bullet names none."""
+    if text is None:
+        return False
+    try:
+        slug(text)
+    except ValueError:
+        return False
+    return True
 
 
 async def _untaken(

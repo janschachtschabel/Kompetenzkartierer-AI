@@ -668,7 +668,8 @@ export const messages = {
       "wie sie sind.",
     no_work: "Dieses Werk gibt es nicht.",
     incomplete:
-      "Zum Festschreiben fehlt noch etwas: das Werk mit Land und Kurztitel, der Herausgeber oder die Fassung.",
+      "Zum Festschreiben fehlt noch etwas: das Werk mit Land und Kurztitel, der Herausgeber oder die Fassung " +
+      "(beide mit mindestens einem lateinischen Buchstaben oder einer Ziffer).",
     no_iri_base: "Der Dienst hat keine IRI-Basis (IRI_BASE). Ohne sie lässt sich nichts festschreiben.",
     check_owed:
       "Die Prüfung steht aus: Das Dokument wurde noch nicht oder nicht seit den letzten Änderungen geprüft. " +

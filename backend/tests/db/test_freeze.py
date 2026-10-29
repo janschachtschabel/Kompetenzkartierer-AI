@@ -153,6 +153,19 @@ async def test_a_document_short_of_its_work_issuer_or_edition_is_refused_with_wh
     assert none.value.details == {"missing": ["work", "issuer", "edition"]}
 
 
+async def test_an_issuer_or_edition_with_nothing_to_name_it_by_is_what_the_document_lacks(
+    connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # the document's IRI is named by them (app/domain/iris.py): a bullet or a Greek letter names nothing
+    await ready(connection, document)
+    await connection.execute("UPDATE document SET issuer = '•', edition = 'Ω' WHERE id = %s", (document.id,))
+
+    with pytest.raises(FreezeRefused) as unnamed:
+        await freeze(connection, document.id, BASE, accept_violations=False)
+
+    assert (unnamed.value.code, unnamed.value.details) == ("incomplete", {"missing": ["issuer", "edition"]})
+
+
 async def test_no_document_is_frozen_without_a_base_to_name_it_under(
     connection: psycopg.AsyncConnection, document: Any
 ) -> None:
