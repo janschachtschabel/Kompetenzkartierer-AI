@@ -10,12 +10,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from app.api.conversions import ContinuedOut, PageOut
+from app.api.conversions import PageOut, read_page
 from app.api.deps import require_account
 from app.api.document_access import readable_content, visible_document
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.core.auth import Principal
-from app.db.conversions import blocks_on_page, printed_pages, tables_running_onto
+from app.db.conversions import printed_pages
 
 router = APIRouter(prefix="/api/v1", tags=["documents"], responses=AUTH_RESPONSES)
 Account = Annotated[Principal, Depends(require_account)]
@@ -48,11 +48,7 @@ async def read_document_blocks(
         printed = await printed_pages(connection, document.conversion_id)
         if page > len(printed):
             raise Refusal(404, "no_such_page", f"The document's file has {len(printed)} pages.")
-        blocks = await blocks_on_page(connection, document.conversion_id, page)
-        running = await tables_running_onto(connection, document.conversion_id, page)
-    continued = [
-        ContinuedOut(id=table.block_id, page=table.page, cells=list(table.cells)) for table in running
-    ]
+        blocks, continued = await read_page(connection, document.conversion_id, page)
     return DocumentPageOut(
         page=page, pages=len(printed), printed_page=printed[page - 1], blocks=blocks, continued=continued
     )

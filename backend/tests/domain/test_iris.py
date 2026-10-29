@@ -224,3 +224,19 @@ def test_the_segments_are_those_9b_gave_for_every_group_of_siblings() -> None:
         siblings = [(draw.choice(codes), draw.random() < 0.2) for _ in range(draw.randint(1, 12))]
 
         assert node_segments(siblings) == _segments_as_in_9b(siblings), siblings
+
+
+def test_a_counter_gives_the_segments_9b_gave_past_what_the_siblings_brought() -> None:
+    # a draft copy's siblings bring their segments: counting on from memory must still step past each
+    segments = ["lf-1", "lf-1-2", "lf-1-3", "s", "s-1", "s-1-2", "s-1-3", "pos-2", "lf-1-2-2"]
+    draw = random.Random(11)  # noqa: S311 - the same draw of cases each run, no secret
+    for _ in range(2000):
+        brought = {draw.choice(segments) for _ in range(draw.randint(0, 5))}
+        asked = [draw.choice(segments) for _ in range(draw.randint(1, 10))]
+        taken, before = set(brought), []
+        for segment in asked:
+            before.append(_counted_on_as_in_9b(segment, taken))
+            taken.add(before[-1])
+        counter = SegmentCounter(set(brought))
+
+        assert [counter.take(segment) for segment in asked] == before, (brought, asked)

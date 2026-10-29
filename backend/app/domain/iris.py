@@ -94,7 +94,8 @@ class SegmentCounter:
 
     def __init__(self, taken: set[str] | None = None) -> None:
         self._taken = set() if taken is None else taken
-        # by segment, the count it was last given at: every count below it is taken, and stays so
+        # by segment, the count it was last given at: every count below it is taken, or a statement's,
+        # and stays so
         self._counts: dict[str, int] = {}
 
     def take(self, segment: str) -> str:

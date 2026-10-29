@@ -203,12 +203,20 @@ async def get_blocks(
             raise Refusal(409, "not_converted", "The conversion is not done.")
         if page > state.pages:
             raise Refusal(404, "no_such_page", f"The file has {state.pages} pages.")
-        blocks = await blocks_on_page(connection, state.id, page)
-        running = await tables_running_onto(connection, state.id, page)
-    continued = [
+        blocks, continued = await read_page(connection, state.id, page)
+    return PageOut(page=page, printed_page=state.printed_pages[page - 1], blocks=blocks, continued=continued)
+
+
+async def read_page(
+    connection: Any, conversion_id: UUID, page: int
+) -> tuple[list[Block], list[ContinuedOut]]:
+    """A page of a conversion as answered: its blocks in reading order, and the tables begun on an earlier
+    page that run onto it (also the document's page, app/api/document_blocks.py)."""
+    blocks = await blocks_on_page(connection, conversion_id, page)
+    running = await tables_running_onto(connection, conversion_id, page)
+    return blocks, [
         ContinuedOut(id=table.block_id, page=table.page, cells=list(table.cells)) for table in running
     ]
-    return PageOut(page=page, printed_page=state.printed_pages[page - 1], blocks=blocks, continued=continued)
 
 
 async def _conversion(

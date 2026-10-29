@@ -61,6 +61,15 @@ def test_a_document_s_page_is_read_off_its_own_conversion_though_the_entry_s_fil
     assert [block["text"] for block in entry.json()["blocks"]] == ["Neu"]  # the entry's, today's file
 
 
+def test_an_editor_reads_the_blocks_of_another_s_document(client: TestClient, url: str) -> None:
+    document, _ = a_document(client, url)
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+
+    answer = client.get(f"/api/v1/documents/{document}/blocks", params={"page": 2}, headers=editor)
+
+    assert (answer.status_code, [block["id"] for block in answer.json()["blocks"]]) == (200, ["p2-b1"])
+
+
 def test_a_page_past_the_end_or_a_document_the_caller_does_not_see_is_refused(
     client: TestClient, url: str
 ) -> None:
