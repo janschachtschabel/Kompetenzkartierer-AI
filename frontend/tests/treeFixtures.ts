@@ -75,7 +75,8 @@ export function form_(sector = "school"): Form {
     statement: [
       field("verbatim", "longtext", null, true),
       field("statement_kind", "concept", [value_(CV + "kind_learningOutcome", "Lernergebnis")], true),
-      field("addressees", "concepts", [value_(CV + "addr_learner", "Lernende")], true),
+      field("addressees", "concepts", [value_(CV + "addr_learner", "Lernende"), value_(CV + "addr_educator", "Lehrkräfte")], true),
+      field("levelText", "text"),
     ],
   };
 }

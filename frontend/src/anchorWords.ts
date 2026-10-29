@@ -3,18 +3,16 @@
 import type { TreeAnchor } from "@/api";
 import { LOCALE, messages, t } from "@/i18n/de";
 import { CV } from "@/reviewStatus";
-import { word } from "@/registerWords";
+import { conceptWord } from "@/registerWords";
 
 const MATCH = `${CV}match_`;
 const PERCENT = new Intl.NumberFormat(LOCALE, { style: "percent", maximumFractionDigits: 0 });
 
 /** How the passage was found; one the vocabulary does not hold as it is. */
 export function matchWord(iri: string | null): string {
-  if (iri === null) return t("documents.tree.anchors.unchecked");
-  const kind = iri.startsWith(MATCH) ? iri.slice(MATCH.length) : "";
-  return Object.hasOwn(messages.documents.tree.anchors.matches, kind)
-    ? word(messages.documents.tree.anchors.matches, kind)
-    : iri;
+  return iri === null
+    ? t("documents.tree.anchors.unchecked")
+    : conceptWord(messages.documents.tree.anchors.matches, MATCH, iri);
 }
 
 /** How it was found, with how close a fuzzy match came. */
