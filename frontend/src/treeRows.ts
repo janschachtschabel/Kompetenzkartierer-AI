@@ -62,14 +62,19 @@ export function ancestors(rows: ReadonlyMap<RowKey, Row>, key: RowKey): RowKey[]
   return above;
 }
 
+/** The rows of the review statuses ``statuses`` (IRIs), in the tree's order. */
+export function matchesOf(rows: ReadonlyMap<RowKey, Row>, statuses: ReadonlySet<string>): RowKey[] {
+  return [...rows.values()]
+    .filter((row) => statuses.has((row.kind === "node" ? row.node : row.statement).review_status))
+    .map((row) => row.key);
+}
+
 /** The rows of the review statuses ``statuses`` (IRIs) and the nodes above them. */
 export function keptBy(rows: ReadonlyMap<RowKey, Row>, statuses: ReadonlySet<string>): Set<RowKey> {
   const kept = new Set<RowKey>();
-  for (const row of rows.values()) {
-    const status = row.kind === "node" ? row.node.review_status : row.statement.review_status;
-    if (!statuses.has(status)) continue;
-    kept.add(row.key);
-    for (const above of ancestors(rows, row.key)) kept.add(above);
+  for (const key of matchesOf(rows, statuses)) {
+    kept.add(key);
+    for (const above of ancestors(rows, key)) kept.add(above);
   }
   return kept;
 }

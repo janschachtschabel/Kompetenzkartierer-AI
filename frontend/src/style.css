@@ -519,13 +519,13 @@ input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:dis
   background: var(--surface-subtle);
 }
 
-/* A toggle that is on: the wash, and a doubled border and bold text as well, so the state holds on a
-   screen without colour (WCAG 1.4.1). */
-.btn.secondary[aria-pressed="true"] {
+/* A toggle that is on: the wash and a doubled border, so the state holds on a screen without colour
+   (WCAG 1.4.1); no bold, which would shift the row of toggles. Under the pointer it keeps its wash. */
+.btn.secondary[aria-pressed="true"],
+.btn.secondary[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]) {
   background: var(--accent-wash);
   border-color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--accent);
-  font-weight: 700;
 }
 
 /* A page's word about itself - what it cannot do here, what is open to

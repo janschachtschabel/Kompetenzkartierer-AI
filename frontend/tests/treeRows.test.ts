@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { rowsOf, type RowKey } from "@/documentTree";
-import { ancestors, keptBy, visibleRows } from "@/treeRows";
+import { ancestors, keptBy, matchesOf, visibleRows } from "@/treeRows";
 
 import { CV, node_, statement_ } from "./treeFixtures";
 
@@ -48,6 +48,7 @@ describe("the rows a tree shows", () => {
     const kept = keptBy(ROWS, new Set([CV + "rev_confirmed"]));
 
     expect([...kept].sort()).toEqual(["node:a", "statement:s2"]);
+    expect(matchesOf(ROWS, new Set([CV + "rev_confirmed", CV + "rev_rejected"]))).toEqual(["statement:s2", "node:b"]);
     expect(shown(["node:a"], kept)).toEqual([
       ["node:a", 1, true, true, 1, 1],
       ["statement:s2", 2, false, false, 1, 1],

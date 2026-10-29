@@ -1,5 +1,6 @@
 import { mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, describe, expect, it } from "vitest";
+import { nextTick } from "vue";
 
 import TreeStatusFilter from "@/components/TreeStatusFilter.vue";
 
@@ -66,8 +67,11 @@ describe("the tree's filter by review status", () => {
 
     await wrapper.findAll("button")[1]?.trigger("click");
     expect(model).toEqual(new Set([CV + "rev_rejected"]));
+    (wrapper.get("button:last-of-type").element as HTMLElement).focus();
     await wrapper.get("button:last-of-type").trigger("click");
     expect(model).toEqual(new Set());
     expect(toggles(wrapper)).toHaveLength(3); // "all" is offered only while a status is on
+    await nextTick();
+    expect(document.activeElement).toBe(wrapper.findAll("button")[0]?.element); // not the page's top
   });
 });

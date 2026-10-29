@@ -5,7 +5,7 @@
  * would say nothing about the document - every status offered at nought too. Several may be on at once;
  * none on shows all.
  */
-import { computed } from "vue";
+import { computed, nextTick, ref } from "vue";
 
 import { t } from "@/i18n/de";
 import { REVIEW_STATUSES, statusIri, statusWord } from "@/reviewStatus";
@@ -27,6 +27,14 @@ const options = computed(() =>
   }),
 );
 
+const group = ref<HTMLElement | null>(null);
+
+// "all" goes as it is pressed: the keyboard stays in the filter, on its first toggle
+function showAll(): void {
+  selected.value = new Set();
+  void nextTick(() => group.value?.querySelector("button")?.focus());
+}
+
 function toggle(iri: string): void {
   const next = new Set(selected.value);
   if (!next.delete(iri)) next.add(iri);
@@ -35,7 +43,7 @@ function toggle(iri: string): void {
 </script>
 
 <template>
-  <div class="status-filter" role="group" :aria-label="t('documents.tree.filter.label')">
+  <div ref="group" class="status-filter" role="group" :aria-label="t('documents.tree.filter.label')">
     <button
       v-for="option in options"
       :key="option.iri"
@@ -46,7 +54,7 @@ function toggle(iri: string): void {
     >
       {{ option.text }}
     </button>
-    <button v-if="selected.size > 0" type="button" class="btn link" @click="selected = new Set()">
+    <button v-if="selected.size > 0" type="button" class="btn link" @click="showAll">
       {{ t("documents.tree.filter.all") }}
     </button>
   </div>

@@ -901,8 +901,6 @@ export const messages = {
       untitled: "ohne Titel",
       // what a row is, said to a screen reader before its label (TreeRow.vue)
       kinds: { node: "Knoten", statement: "Aussage" },
-      open: "Aufklappen",
-      close: "Zuklappen",
       findings: "{count} {count|Befund|Befunde}",
       matching: "{count} {count|Zeile passt|Zeilen passen} zum Filter.",
       noMatch: "Keine Zeile passt zum Filter.",

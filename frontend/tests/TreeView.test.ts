@@ -106,10 +106,12 @@ describe("a document's tree", () => {
     expect(row(wrapper, "statement:s1").text()).toContain("Sie messen.");
     expect(row(wrapper, "statement:s1").text()).toContain("Lernergebnis");
     expect(row(wrapper, "statement:s2").text()).toContain("Bestätigt");
-    // a row's name is its label, not the label of the button that opens it
-    const label = row(wrapper, "node:a").attributes("aria-labelledby") ?? "";
-    expect(document.getElementById(label)?.textContent).toContain("Knoten");
-    expect(document.getElementById(label)?.textContent).not.toContain("Zuklappen");
+    // a row's name says what it is first, its parts apart; the arrow is no part of it
+    expect(row(wrapper, "node:a").attributes("aria-label")).toBe(
+      "Knoten, LF 1, Optik, Inhaltsbereich, Vorgeschlagen, 2 Befunde",
+    );
+    expect(row(wrapper, "statement:s1").attributes("aria-label")).toBe("Aussage, Sie messen., Lernergebnis, Vorgeschlagen");
+    expect(row(wrapper, "node:b").attributes("aria-label")).toBe("Knoten, LF 2, ohne Titel, Verworfen");
   });
 
   it("goes through its rows with the keys, opens and closes nodes, and chooses one with Enter", async () => {
@@ -132,18 +134,79 @@ describe("a document's tree", () => {
 
     expect(selected).toBe("node:a1");
     expect(row(wrapper, "node:a1").attributes("aria-selected")).toBe("true");
+    expect(wrapper.findAll("[aria-selected]")).toHaveLength(1); // the others say nothing of it
     expect(items(wrapper).filter(([, , , tabindex]) => tabindex === "0").map(([key]) => key)).toEqual(["node:a1"]);
   });
 
-  it("chooses a row clicked, and opens or closes a node by its button without choosing it", async () => {
+  it("chooses a row clicked, and opens or closes a node by its arrow without choosing it", async () => {
     const wrapper = tree();
 
     await row(wrapper, "statement:s2").trigger("click");
     expect(selected).toBe("statement:s2");
-    await row(wrapper, "node:a1").get("button").trigger("click");
+    await row(wrapper, "node:a1").get(".tree__toggle").trigger("click");
 
     expect(row(wrapper, "node:a1").attributes("aria-expanded")).toBe("true");
     expect(selected).toBe("statement:s2");
+  });
+
+  it("leaves the keys at the row whose arrow was clicked; the arrow is the mouse's alone", async () => {
+    const wrapper = tree();
+    expect(row(wrapper, "node:a1").get(".tree__toggle").attributes("aria-hidden")).toBe("true");
+    expect(row(wrapper, "node:a1").find("button").exists()).toBe(false);
+
+    await row(wrapper, "node:a1").get(".tree__toggle").trigger("click");
+    await nextTick();
+    expect(document.activeElement?.getAttribute("data-key")).toBe("node:a1");
+    await press(wrapper, "ArrowDown");
+
+    expect(document.activeElement?.getAttribute("data-key")).toBe("statement:s3");
+  });
+
+  it("goes from the row a key is pressed on, and leaves keys with Alt, Ctrl or Meta to the browser", async () => {
+    const wrapper = tree();
+    (row(wrapper, "statement:s2").element as HTMLElement).focus();
+
+    await row(wrapper, "statement:s2").trigger("keydown", { key: "ArrowUp" });
+    await nextTick();
+    expect(document.activeElement?.getAttribute("data-key")).toBe("statement:s1");
+
+    const back = new KeyboardEvent("keydown", { key: "ArrowLeft", altKey: true, bubbles: true, cancelable: true });
+    row(wrapper, "node:a").element.dispatchEvent(back);
+    await nextTick();
+    expect(back.defaultPrevented).toBe(false);
+    expect(row(wrapper, "node:a").attributes("aria-expanded")).toBe("true");
+  });
+
+  it("goes to the first row with Home and chooses with Space", async () => {
+    const wrapper = tree();
+    (row(wrapper, "node:a1").element as HTMLElement).focus();
+
+    await row(wrapper, "node:a1").trigger("keydown", { key: "Home" });
+    await nextTick();
+    expect(document.activeElement?.getAttribute("data-key")).toBe("node:a");
+    await row(wrapper, "node:a").trigger("keydown", { key: " " });
+
+    expect(selected).toBe("node:a");
+  });
+
+  it("puts the tab stop on a row chosen from without, wherever the keys were", async () => {
+    const wrapper = tree();
+    (row(wrapper, "statement:s2").element as HTMLElement).focus();
+
+    await wrapper.setProps({ selected: "node:b" });
+
+    expect(row(wrapper, "node:b").attributes("tabindex")).toBe("0");
+  });
+
+  it("keeps what is open and the filter when it is read again", async () => {
+    const wrapper = tree();
+    await row(wrapper, "node:a1").get(".tree__toggle").trigger("click");
+    await wrapper.findAll(".status-filter button")[0]?.trigger("click"); // proposed
+
+    await wrapper.setProps({ rows: rowsOf(NODES) });
+
+    expect(row(wrapper, "node:a1").attributes("aria-expanded")).toBe("true");
+    expect(wrapper.get(".status-filter button").attributes("aria-pressed")).toBe("true");
   });
 
   it("opens the path to the row chosen and puts its tab stop there", () => {
@@ -182,12 +245,33 @@ describe("a document's tree", () => {
     ]);
   });
 
-  it("says so where no row is of the statuses chosen", async () => {
+  it("gives back, with the filter off, the nodes open before it", async () => {
+    const deep = statement_("deep", { review_status: CV + "rev_confirmed" });
+    const wrapper = tree([node_("x", { children: [node_("x1", { statements: [deep] })] })]);
+
+    await wrapper.findAll(".status-filter button")[1]?.trigger("click");
+    expect(row(wrapper, "node:x1").attributes("aria-expanded")).toBe("true");
+    await wrapper.findAll(".status-filter button")[1]?.trigger("click");
+
+    expect(row(wrapper, "node:x1").attributes("aria-expanded")).toBe("false");
+  });
+
+  it("opens the way to a row of the statuses chosen that a new reading brings", async () => {
+    const wrapper = tree([node_("x", { children: [node_("x1")] })]);
+    await wrapper.findAll(".status-filter button")[1]?.trigger("click"); // confirmed: none yet
+
+    const deep = statement_("deep", { review_status: CV + "rev_confirmed" });
+    await wrapper.setProps({ rows: rowsOf([node_("x", { children: [node_("x1", { statements: [deep] })] })]) });
+
+    expect(items(wrapper).map(([key]) => key)).toEqual(["node:x", "node:x1", "statement:deep"]);
+  });
+
+  it("says so where no row is of the statuses chosen, and shows no empty tree", async () => {
     const wrapper = tree([node_("c")]);
 
     await wrapper.findAll(".status-filter button")[1]?.trigger("click");
 
-    expect(wrapper.findAll("[role=treeitem]")).toHaveLength(0);
+    expect(wrapper.find("[role=tree]").exists()).toBe(false);
     expect(wrapper.get("[role=status]").text()).toBe("Keine Zeile passt zum Filter.");
   });
 
@@ -196,5 +280,6 @@ describe("a document's tree", () => {
 
     expect(wrapper.find("[role=tree]").exists()).toBe(false);
     expect(wrapper.text()).toContain("Noch keine Knoten");
+    expect(wrapper.find(".status-filter").exists()).toBe(false); // nothing to filter
   });
 });
