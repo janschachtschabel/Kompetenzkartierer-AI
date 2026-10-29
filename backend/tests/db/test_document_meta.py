@@ -99,13 +99,15 @@ async def test_the_metadata_set_owe_x5_a_check_and_the_same_again_changes_nothin
     given = {"issuer": "Ministerium für Schule", "edition": "2024", "title": "Kernlehrplan Physik"}
 
     assert await set_metadata(connection, owner(document), document.id, given) is True
-    after = await edited_at(connection, document)
+    first = await edited_at(connection, document)
     assert await set_metadata(connection, owner(document), document.id, given) is False
+    again = await edited_at(connection, document)
     assert await set_metadata(connection, owner(document), document.id, {"edition": "  "}) is True
 
     row = await one(connection, "SELECT issuer, edition, title FROM document WHERE id = %s", document.id)
     assert row == ("Ministerium für Schule", None, "Kernlehrplan Physik")  # a blank one is none
-    assert after is not None and await edited_at(connection, document) >= after
+    assert first is not None and again == first  # the same again owes nothing
+    assert await edited_at(connection, document) > first
 
 
 async def test_a_named_document_keeps_its_issuer_and_edition_and_takes_a_title(
