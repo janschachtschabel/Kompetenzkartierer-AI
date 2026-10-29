@@ -895,12 +895,18 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
 **Nachtrag 9c1 – Baum und Quellenbeleg lesen (29.10.)**
 
 - **Ansicht (9.7).** `/dokumente/:id/baum` (`DocumentTreeView`), von der Dokumentseite verlinkt: Baum,
-  gewählte Zeile, daneben die Quelle; Zeile und Quellenseite stehen in der Adresse
-  (`?zeile=node:<id>&seite=N`), eine gewählte Zeile springt zur Seite ihrer ersten Fundstelle.
+  daneben die gewählte Zeile und unter ihr die Quelle; Zeile und Quellenseite stehen in der Adresse
+  (`?zeile=node:<id>&seite=N`), eine gewählte Zeile springt zur Seite ihrer ersten Fundstelle, eine ohne
+  Fundstelle zu Seite 1. Die Seite steht immer ausdrücklich in der Adresse, auch 1: ein fehlendes `seite`
+  heißt „erste Fundstelle der Zeile“ (`pageOf` in `blockPages.ts`, auch für die Konvertierungsseite).
+  Abweichend von J6 führt die Ansicht die Auswahl in der Adresse, nicht `useDocumentTree`: das Composable
+  lädt Dokument, Baum und Formular, die Adresse gehört der Ansicht.
 - **Baum.** Flach statt rekursiv (`treeRows.ts`: `aria-level`, `-posinset`, `-setsize`), Tasten nach dem
   WAI-ARIA-Muster (`treeKeys.ts`), ein Tabstopp; Filter nach Prüfstand mit den Zählern des Servers
-  (`TreeStatusFilter`), der den Pfad zu den Treffern öffnet. Statt `TreeNodeItem.vue` mit provide/inject
-  beschriftet `TreeRow.vue` eine Zeile.
+  (`TreeStatusFilter`), der den Pfad zu den Treffern öffnet und beim Ausschalten zurückgibt, was vorher
+  offen war. Statt `TreeNodeItem.vue` mit provide/inject beschriftet `TreeRow.vue` eine Zeile; ihr Name ist
+  ein Satz aus denselben Teilen (`treeRowWords.ts`). Der Pfeil eines Knotens ist nur für die Maus
+  (`aria-hidden`), die Tasten öffnen und schließen per Pfeiltasten.
 - **Detail (9.8, lesend).** `RowDetail`: Felder in der Reihenfolge des Formulars (Pflichtfelder immer,
   sonst nur gefüllte), Listenwerte per Label, Herkunft, Prüfstand, Revision, IRI; Fundstellen mit Seite,
   Fundart in Worten, Zitat und Blöcken (`AnchorFacts`, `anchorWords.ts`).
@@ -909,8 +915,9 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   ihre Blöcke neu. `SourcePane` zeigt die Seite mit `BlockList` (erweitert: genannte Blöcke mit dem Wort
   „Beleg“ und einer Kante markiert; der Link zur Anfangsseite einer Tabelle behält die übrige Adresse).
 - **Nebenbei.** `SegmentCounter` statt `counted_on` (Zähler je Stamm, linear; Altlast aus 9b);
-  `readable_content` liegt in `document_access.py`; der Wächter `no-third-party` kennt den Namensraum
-  `w3id.org/wlo` als nie abgerufen.
+  `readable_content` liegt in `document_access.py`, `read_page` in `conversions.py` liest eine Seite für
+  beide Blockrouten; der Wächter `no-third-party` lässt von `w3id.org/wlo/curriculum` nur ganze
+  Namensraum-IRIs (auf `#`) durch – darunter leitet w3id weiter wie jede andere Adresse.
 - **Offen für 9c2.** Bearbeiten (Formulare, Konfliktauswahl, Anlegen, Löschen, Blockauswahl), Prüfstand
   setzen, Prüfjob in der Oberfläche, das Wort des Prüfjobs in `documentJobs.ts`, Verlassen-Schutz. Die
   Felder aus 9b in `CurriculumDocument` kommen mit 9d, das sie zeigt.
