@@ -3,10 +3,13 @@ in place of those before - with no model asked, so no model job; a document X5 h
 left to its extraction."""
 
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
+from app.db.draft_copy import copy_document
+from app.db.runs import x5_owed
 from app.jobs.outcome import PermanentError
 from app.jobs.queue import Job, account_lane, claim, enqueue
 from app.pipeline.extraction import CHECK_KIND
@@ -87,3 +90,28 @@ async def test_a_document_not_checked_yet_is_left_to_its_extraction(
     assert await rows(
         connection, "SELECT count(*) FROM extraction_run WHERE document_id = %s", document.id
     ) == [(0,)]
+
+
+async def test_a_draft_copy_is_checked_with_no_x5_of_its_own_and_x5_owes_it_nothing_after(
+    setup: Any, tmp_path: Path, database_url: str
+) -> None:
+    # a copy takes no runs along (app/db/draft_copy.py): its first check is this job's
+    pool, connection = setup
+    document = await extracted(setup, tmp_path, database_url, invent=())
+    await connection.execute(
+        "UPDATE document SET iri = 'https://example.org/kk/doc/a/b/1', frozen_at = now() WHERE id = %s",
+        (document.id,),
+    )
+    copy = await copy_document(connection, document.id)
+    assert await x5_owed(connection, copy)
+
+    made = await check_document(
+        context_of(pool, tmp_path, Quoting(), database_url),
+        await a_check(connection, SimpleNamespace(id=copy, owner_id=document.owner_id)),
+    )
+
+    assert made == {"document_id": str(copy), "checked": True}
+    assert await rows(
+        connection, "SELECT count(*) FROM extraction_run WHERE document_id = %s AND outcome = 'done'", copy
+    ) == [(1,)]
+    assert not await x5_owed(connection, copy)

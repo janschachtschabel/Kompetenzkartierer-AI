@@ -24,7 +24,8 @@ async def check_document(context: JobContext, job: Job) -> dict[str, Any]:
         document = None if document_id is None else await document_for_job(connection, document_id)
         if document is None:
             raise PermanentError("document_gone", "the document to check is gone")
-        if "X5" not in await done_stages(connection, document.id):
+        # a draft copy takes no runs along (app/db/draft_copy.py): its first check is this one
+        if document.copy_of is None and "X5" not in await done_stages(connection, document.id):
             raise PermanentError("document_not_checked", "the document's extraction has not come to X5")
         checked = "X5" in await stages_done_by(connection, job.id)
     if not checked:
