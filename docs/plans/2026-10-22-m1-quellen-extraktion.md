@@ -897,14 +897,17 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
 - **Ansicht (9.7).** `/dokumente/:id/baum` (`DocumentTreeView`), von der Dokumentseite verlinkt: Baum,
   daneben die gewählte Zeile und unter ihr die Quelle; Zeile und Quellenseite stehen in der Adresse
   (`?zeile=node:<id>&seite=N`), eine gewählte Zeile springt zur Seite ihrer ersten Fundstelle, eine ohne
-  Fundstelle zu Seite 1. Die Seite steht immer ausdrücklich in der Adresse, auch 1: ein fehlendes `seite`
-  heißt „erste Fundstelle der Zeile“ (`pageOf` in `blockPages.ts`, auch für die Konvertierungsseite).
+  Fundstelle zu Seite 1. Jeder Sprung und Link nennt die Seite ausdrücklich, auch 1; fehlt `seite`, gilt die
+  erste Fundstelle der Zeile, sonst 1 (`pageOf` in `blockPages.ts`, auch für die Konvertierungsseite; Seiten
+  nur bis zur Grenze der API, 100 000, ohne führende Nullen). Blättert eine im Baum gewählte Zeile die Quelle
+  um, bleibt die Tastatur im Baum; „Seite N zeigen“ einer Fundstelle nimmt sie zur Quelle mit.
   Abweichend von J6 führt die Ansicht die Auswahl in der Adresse, nicht `useDocumentTree`: das Composable
   lädt Dokument, Baum und Formular, die Adresse gehört der Ansicht.
 - **Baum.** Flach statt rekursiv (`treeRows.ts`: `aria-level`, `-posinset`, `-setsize`), Tasten nach dem
   WAI-ARIA-Muster (`treeKeys.ts`), ein Tabstopp; Filter nach Prüfstand mit den Zählern des Servers
   (`TreeStatusFilter`), der den Pfad zu den Treffern öffnet und beim Ausschalten zurückgibt, was vorher
-  offen war. Statt `TreeNodeItem.vue` mit provide/inject beschriftet `TreeRow.vue` eine Zeile; ihr Name ist
+  offen war, samt dem Weg zu einer inzwischen gewählten Zeile; ein eingeschalteter Prüfstand trägt ein
+  Häkchen. Statt `TreeNodeItem.vue` mit provide/inject beschriftet `TreeRow.vue` eine Zeile; ihr Name ist
   ein Satz aus denselben Teilen (`treeRowWords.ts`). Der Pfeil eines Knotens ist nur für die Maus
   (`aria-hidden`), die Tasten öffnen und schließen per Pfeiltasten.
 - **Detail (9.8, lesend).** `RowDetail`: Felder in der Reihenfolge des Formulars (Pflichtfelder immer,
