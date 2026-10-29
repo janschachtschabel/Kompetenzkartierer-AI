@@ -3,6 +3,7 @@ rows - nodes, statements and their addressees, anchors and their blocks, frame p
 their variants, its profile - their IRIs, origins, review statuses and revisions, under ids of their own;
 no findings and no runs, so X5 owes it a check. Of the latest revision alone, and one draft at most."""
 
+import re
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
@@ -11,7 +12,7 @@ import psycopg
 import pytest
 
 from app.db.anchors import new_entity
-from app.db.draft_copy import CopyRefused, copy_document
+from app.db.draft_copy import _DOCUMENT, _ROWS, CopyRefused, copy_document
 from app.db.editing import add_node, drop_node, edit_node, extracted
 from app.db.freezing import freeze
 from app.db.runs import x5_owed
@@ -25,6 +26,21 @@ pytestmark = [pytest.mark.pg, pytest.mark.anyio]
 __all__ = ["connection", "document", "url"]  # the fixtures, shared with test_editing
 
 CONFIRMED = CV + "rev_confirmed"
+INSERT = re.compile(r"INSERT INTO (\w+) \(([^)]*)\)")
+# What the copy leaves out of a table it copies, and why: an entity's kind is its table's, a run is the
+# frozen revision's, and the copy's own row comes with its times and is no frozen one
+LEFT_OUT = {
+    "document": {"kind", "created_at", "updated_at", "frozen_at"},
+    "specification": {"kind"}, "variant": {"kind"}, "anchor": {"kind"},
+    "frame_part": {"kind", "run_id"}, "node": {"kind", "run_id"}, "statement": {"kind", "run_id"},
+    "statement_addressee": set(), "anchor_block": set(), "document_profile": set(),
+}  # fmt: skip
+# The tables naming a document whose rows the copy does not take: the runs, their units and findings
+NOT_COPIED = {"extraction_run", "extraction_unit", "validation_finding"}
+_NAMING = """
+SELECT DISTINCT c.conrelid::regclass::text FROM pg_constraint c
+WHERE c.contype = 'f' AND c.confrelid = 'document'::regclass
+"""
 
 
 @dataclass(frozen=True)
@@ -262,3 +278,25 @@ async def test_a_row_today_s_vocabulary_no_longer_takes_refuses_the_copy_with_th
     assert await one(
         connection, "SELECT count(*), count(*) FILTER (WHERE frozen_at IS NULL) FROM document"
     ) == (1, 0)
+
+
+async def test_the_copy_takes_every_column_and_table_but_those_it_leaves_by_design(
+    connection: psycopg.AsyncConnection,
+) -> None:
+    # a column or a table a later migration adds is copied, or named here with the reason it is not
+    copied = {}
+    for query in (_DOCUMENT, *_ROWS):
+        found = INSERT.search(query)
+        assert found is not None
+        copied[found.group(1)] = {column.strip() for column in found.group(2).split(",")}
+    left_out = {}
+    for table, columns in copied.items():
+        cursor = await connection.execute(
+            "SELECT column_name FROM information_schema.columns WHERE table_name = %s", (table,)
+        )
+        left_out[table] = {name for (name,) in await cursor.fetchall()} - columns
+    cursor = await connection.execute(_NAMING)
+    naming = {table for (table,) in await cursor.fetchall()}
+
+    assert left_out == LEFT_OUT
+    assert naming - copied.keys() == NOT_COPIED
