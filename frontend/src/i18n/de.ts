@@ -883,6 +883,19 @@ export const messages = {
     },
     tree: {
       loadFailed: "Der Baum des Dokuments wurde nicht geladen.",
+      label: "Knoten und Aussagen des Dokuments",
+      untitled: "ohne Titel",
+      // what a row is, said to a screen reader before its label (TreeRow.vue)
+      kinds: { node: "Knoten", statement: "Aussage" },
+      open: "Aufklappen",
+      close: "Zuklappen",
+      findings: "{count} {count|Befund|Befunde}",
+      matching: "{count} {count|Zeile passt|Zeilen passen} zum Filter.",
+      noMatch: "Keine Zeile passt zum Filter.",
+      empty: {
+        title: "Noch keine Knoten",
+        body: "Die Extraktion hat in diesem Dokument noch keinen Knoten angelegt.",
+      },
       // cv:ReviewStatuses by notation without its "rev_" (reviewStatus.ts)
       statuses: { proposed: "Vorgeschlagen", confirmed: "Bestätigt", rejected: "Verworfen" },
       filter: {

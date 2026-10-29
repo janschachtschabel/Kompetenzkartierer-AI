@@ -18,6 +18,8 @@ export const GLYPHS = {
   map: ["M3.5 6.5 9 4.5l6 2 5.5-2v13l-5.5 2-6-2-5.5 2v-13Z", "M9 4.5v13", "M15 6.5v13"],
   /* The register of curriculum documents: a page with its corner turned. */
   document: ["M6.5 3.5h7l4 4v13h-11v-17Z", "M13.5 3.5v4h4", "M9 12h6", "M9 15.5h6"],
+  /* A node of the tree, closed; turned a quarter to the right while it is open. */
+  chevron: ["M9.5 6.5 15 12l-5.5 5.5"],
   /* Something failed, or is only partly there. */
   warning: ["M12 4 3 20a1 1 0 0 0 .87 1.5h16.26A1 1 0 0 0 21 20L12 4Z", "M12 10v4.5", "M12 18h.01"],
 };
