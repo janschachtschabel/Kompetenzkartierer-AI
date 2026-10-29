@@ -258,7 +258,7 @@ async def guard(connection: psycopg.AsyncConnection, document_id: UUID) -> None:
 
 async def guard_document(connection: psycopg.AsyncConnection, document_id: UUID) -> None:
     """Hold the tree's lock, then refuse the change of a frozen document (DocumentFrozen) and one beside its
-    open job (JobOpen): the document's own fields, which X1 read before X4 (app/db/document_meta.py)."""
+    open job (JobOpen): of what no stage writes, as the document's work (app/db/document_meta.py)."""
     await lock_tree(connection, document_id)
     if await frozen(connection, document_id):
         raise DocumentFrozen(f"the document {document_id} is frozen")

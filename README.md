@@ -211,15 +211,16 @@ ungültig.
   folgen darf (Eigentümer, Admin), sonst 409 `job_open`. Audit `check.start`. Geschuldet ist die
   Prüfung, sobald eine Reparatur oder eine Bearbeitung (`document.edited_at`) nach dem Start des
   letzten fertigen X5 begann.
-- Werk: `PATCH /api/v1/documents/{id}/work` setzt das Werk des Dokuments – ein vorhandenes
-  (`work_id`) oder ein neues (`title`, `region` wie `DE-NW`, `short_title` als Slug wie `lp-physik`) –,
-  nur durch Redaktion/Admin (sonst 403 `not_editor`); 404 `no_work` für ein Werk, das es nicht gibt.
-  Metadaten: `PATCH /api/v1/documents/{id}` setzt `issuer`, `edition` und `title` (ausgelassene
-  bleiben, `null` oder leerer Text leert) – durch Eigentümer und Redaktion/Admin, 422 `invalid_field`
-  wie beim Bearbeiten; eine Änderung schuldet X5 eine Prüfung. Beide nicht neben einem offenen Job
-  und nicht festgeschrieben; hat das Dokument schon seine IRI (festgeschrieben oder Entwurfskopie),
-  bleiben Werk, Herausgeber und Fassung, aus denen sie besteht (409 `named`). Audit `document.work`
-  bzw. `document.edit`; die Antwort ist das Dokument.
+- Werk: `PATCH /api/v1/documents/{id}/work` setzt das Werk des Dokuments – ein vorhandenes (`work_id`) oder
+  ein neues (`title`, `region` wie `DE-NW`, `short_title` als Slug wie `lp-physik`) –, nur durch
+  Redaktion/Admin (sonst 403 `not_editor`); 404 `no_work` für ein Werk, das es nicht gibt. Metadaten: `PATCH
+  /api/v1/documents/{id}` setzt `issuer`, `edition` und `title` (ausgelassene bleiben, `null` oder leerer
+  Text leert) – durch Eigentümer und Redaktion/Admin, 422 `invalid_field` wie beim Bearbeiten; eine Änderung
+  schuldet X5 eine Prüfung; erst wenn X4 fertig ist (409 `not_extracted`: eine Extraktion überschriebe sie
+  mit dem, was X1 liest), ein neues Werk mit speicherbarem Titel und einem Land des Regionenvokabulars (422
+  `invalid_field`). Beide nicht neben einem offenen Job und nicht festgeschrieben; hat das Dokument schon
+  seine IRI (festgeschrieben oder Entwurfskopie), bleiben Werk, Herausgeber und Fassung, aus denen sie
+  besteht (409 `named`). Audit `document.work` bzw. `document.edit`; die Antwort ist das Dokument.
 - Festschreiben: `POST /api/v1/documents/{id}/freeze` (`accept_violations`, Standard `false`), nur
   Redaktion/Admin. Abgewiesen, der Reihe nach: festgeschrieben (409 `frozen`), offener Job (`job_open`), X4
   nicht fertig und keine Entwurfskopie (`not_extracted`), es fehlt Werk, dessen Land oder Kurztitel,

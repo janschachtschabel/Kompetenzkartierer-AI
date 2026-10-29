@@ -11,7 +11,7 @@ import pytest
 
 from app.db.document_meta import DocumentNamed, ExistingWork, NewWork, set_metadata, set_work
 from app.db.documents import DocumentError, create_document
-from app.db.editing import DocumentFrozen, JobOpen
+from app.db.editing import DocumentFrozen, JobOpen, NotExtracted
 from app.db.source_queries import Reader
 from app.vocab.form_values import FieldError
 from tests.db.test_editing import an_open_job, document, edited_at, one
@@ -132,6 +132,22 @@ async def test_no_metadata_are_set_on_a_frozen_document_or_beside_its_job(
         with pytest.raises(refused):
             await set_metadata(connection, owner(document), target.id, {"title": "Neu"})
     assert await one(connection, "SELECT count(*) FROM document WHERE title = 'Neu'") == (0,)
+
+
+async def test_no_metadata_are_set_before_x4_for_x1_would_write_them_over(
+    connection: psycopg.AsyncConnection, document: Any
+) -> None:
+    # X1 reads the issuer, edition and title off the document (app/db/profile.py); a work it does not
+    early = await another(connection, document)
+
+    with pytest.raises(NotExtracted):
+        await set_metadata(connection, owner(document), early.id, {"issuer": "Ministerium"})
+    made = await set_work(connection, owner(document), early.id, PHYSICS)
+
+    assert await one(connection, "SELECT issuer, work_id FROM document WHERE id = %s", early.id) == (
+        None,
+        made,
+    )
 
 
 async def test_metadata_the_document_may_not_hold_is_refused_and_changes_nothing(

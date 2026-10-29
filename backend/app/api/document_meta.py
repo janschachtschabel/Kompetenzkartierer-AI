@@ -29,7 +29,7 @@ META_RESPONSES: Responses = {
     409: {
         "model": ErrorBody,
         "description": "job_open (details.job_id to the owner and the admins), frozen, named: the"
-        " document's IRI is made of it",
+        " document's IRI is made of it; not_extracted for the metadata: X4 has not read every package",
     },
 }
 

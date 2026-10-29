@@ -857,8 +857,9 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   keine Läufe; die Migration füllt die Spalte aus der alten Regel.
 - **Werk und Metadaten.** `PATCH /documents/{id}/work` (Redaktion/Admin; vorhandenes oder neues Werk)
   und `PATCH /documents/{id}` (`issuer`, `edition`, `title`; Eigentümer und Redaktion/Admin), unter
-  `guard_document` (Baumsperre, nicht festgeschrieben, kein offener Job – ohne X4-Bedingung, X1 liest
-  diese Felder vorher). Hat das Dokument eine IRI, bleiben Werk, Herausgeber und Fassung (409 `named`).
+  `guard_document` (Baumsperre, nicht festgeschrieben, kein offener Job), die Metadaten unter `guard`
+  (dazu X4 fertig: eine spätere Extraktion schriebe sie mit dem über, was X1 liest; das Werk liest X1
+  nicht). Ein neues Werk braucht einen speicherbaren Titel und ein Land des Regionenvokabulars (422). Hat das Dokument eine IRI, bleiben Werk, Herausgeber und Fassung (409 `named`).
   Eine Metadatenänderung schuldet X5 eine Prüfung.
 - **Festschreiben.** `POST /documents/{id}/freeze` (Redaktion/Admin) unter `lock_tree` (Offen 9a (7)):
   `frozen`, `job_open`, `not_extracted`, `incomplete` (`details.missing`), `no_iri_base`, `check_owed`

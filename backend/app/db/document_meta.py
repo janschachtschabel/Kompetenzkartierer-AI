@@ -2,8 +2,9 @@
 
 The work is one there is or one made of a title, a country and a short title; the metadata are the
 issuer, the edition and the title X1 read off the document, as an editor puts them right. Both wait for
-the tree's lock and refuse a frozen document and one beside its open job (``guard_document``) - not
-one X4 has not read yet: X1 read these first. A document named by its IRI - frozen once, or a draft
+the tree's lock and refuse a frozen document and one beside its open job (``guard_document``); the
+metadata also one X4 has not read yet (``guard``, NotExtracted): an extraction to come would write them
+over with what X1 reads, the work it leaves. A document named by its IRI - frozen once, or a draft
 copy of one - keeps its work, issuer and edition, which the IRI is made of (``DocumentNamed``); its
 title it may change. A change of the metadata owes X5 a check: the Kern export carries them.
 
@@ -21,7 +22,7 @@ from psycopg import sql
 
 from app.db.anchors import new_entity
 from app.db.documents import DocumentError, unknown_regions
-from app.db.editing import DOCUMENT, guard_document, mark_edited, target_of
+from app.db.editing import DOCUMENT, guard, guard_document, mark_edited, target_of
 from app.db.source_queries import Reader
 from app.domain.text import UNSTORABLE
 from app.vocab.form_values import FieldError
@@ -88,13 +89,13 @@ async def set_metadata(
 ) -> bool | None:
     """Set the metadata ``given`` (``METADATA``'s keys; a blank text, or None, none) - whether any
     changed; None where ``reader`` sees no such document. FieldError, DocumentNamed for the issuer or
-    edition of a named document, or a refusal of ``guard_document``, and then nothing is changed."""
+    edition of a named document, or a refusal of ``guard``, and then nothing is changed."""
     async with connection.transaction():
         target = await target_of(connection, DOCUMENT, reader, document_id)
         if target is None:
             return None
         values = {key: _text(key, value) for key, value in given.items()}
-        await guard_document(connection, document_id)
+        await guard(connection, document_id)
         cursor = await connection.execute(
             "SELECT title, issuer, edition, iri IS NOT NULL FROM document WHERE id = %s", (document_id,)
         )
