@@ -881,6 +881,9 @@ export const messages = {
       empty: "Aus diesem Eintrag ist noch kein Dokument angelegt.",
       loadFailed: "Die Dokumente wurden nicht geladen.",
     },
+    tree: {
+      loadFailed: "Der Baum des Dokuments wurde nicht geladen.",
+    },
   },
 } as const;
 
