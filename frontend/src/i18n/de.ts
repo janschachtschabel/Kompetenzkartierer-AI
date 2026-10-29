@@ -899,7 +899,7 @@ export const messages = {
       },
       label: "Knoten und Aussagen des Dokuments",
       untitled: "ohne Titel",
-      // what a row is, said to a screen reader before its label (TreeRow.vue)
+      // what a row is, said to a screen reader before its label (treeRowWords.ts)
       kinds: { node: "Knoten", statement: "Aussage" },
       findings: "{count} {count|Befund|Befunde}",
       matching: "{count} {count|Zeile passt|Zeilen passen} zum Filter.",

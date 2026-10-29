@@ -520,7 +520,8 @@ input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:dis
 }
 
 /* A toggle that is on: the wash and a doubled border, so the state holds on a screen without colour
-   (WCAG 1.4.1); no bold, which would shift the row of toggles. Under the pointer it keeps its wash. */
+   (WCAG 1.4.1), and a tick where the toggle draws one (TreeStatusFilter); no bold, which would shift the row
+   of toggles. Under the pointer it keeps its wash. */
 .btn.secondary[aria-pressed="true"],
 .btn.secondary[aria-pressed="true"]:hover:not(:disabled):not([aria-disabled="true"]) {
   background: var(--accent-wash);

@@ -6,7 +6,8 @@
  * arrow, the mouse's alone, opens or closes it and leaves the keys at its row. Each row is named by one
  * sentence (treeRowWords.ts); the row chosen alone says it is. At first the top nodes are open, and the path
  * to the row chosen; the filter by review status opens the way to the rows of those statuses, a status line
- * says how many there are, and turning the filter off gives back the nodes open before it.
+ * says how many there are, and turning the filter off gives back the nodes open before it, and the way to a
+ * row chosen meanwhile.
  */
 import { computed, nextTick, ref, watch, type ComponentPublicInstance } from "vue";
 
@@ -34,7 +35,7 @@ let openBefore: Set<RowKey> | null = null;
 
 const kept = computed(() => (statuses.value.size ? keptBy(props.rows, statuses.value) : null));
 const visible = computed(() => visibleRows(props.rows, expanded.value, kept.value));
-// each shown row with its words, worked out once as long as it shows the same (v-memo below)
+// each shown row with its words; a row whose place and state stay is not drawn again (v-memo below)
 const shownRows = computed(() => visible.value.map((shown) => ({ shown, parts: rowParts(shown.row, props.form) })));
 const tabStop = computed(() => {
   const shown = new Set(visible.value.map(({ row }) => row.key));
@@ -50,7 +51,8 @@ const matching = computed(() => {
 function open(keys: Iterable<RowKey>): void {
   const next = new Set(expanded.value);
   for (const key of keys) next.add(key);
-  expanded.value = next;
+  // none newly open: the rows shown stay as they are
+  if (next.size !== expanded.value.size) expanded.value = next;
 }
 
 function toggle(key: RowKey, on: boolean): void {
@@ -83,7 +85,7 @@ watch([statuses, () => props.rows], ([on, rows], [was]) => {
   if (on.size && !was?.size) openBefore = new Set(expanded.value);
   if (on.size) open(matchesOf(rows, on).flatMap((key) => ancestors(rows, key)));
   else if (openBefore) {
-    expanded.value = openBefore;
+    expanded.value = new Set([...openBefore, ...(selected.value ? ancestors(rows, selected.value) : [])]);
     openBefore = null;
   }
 });
@@ -98,10 +100,16 @@ function focusRow(key: RowKey): void {
   void nextTick(() => elements.get(key)?.focus());
 }
 
+// The row a key was pressed on: the tab stop moves with a row chosen from without (the browser's back),
+// the keys go on from where the reader is.
+function keyedRow(target: EventTarget | null): RowKey | null {
+  const item = target instanceof Element ? target.closest("[role=treeitem]") : null;
+  return (item?.getAttribute("data-key") as RowKey | null | undefined) ?? null;
+}
+
 function onKey(event: KeyboardEvent): void {
   if (event.altKey || event.ctrlKey || event.metaKey) return;
-  // the row focused: each one says so as it takes the focus (@focus), the arrow's too (flip)
-  const here = tabStop.value;
+  const here = keyedRow(event.target) ?? tabStop.value;
   const move = here ? keyMove(visible.value, here, event.key) : null;
   if (!move) return;
   event.preventDefault();
@@ -136,7 +144,16 @@ function flip(key: RowKey, on: boolean): void {
       <li
         v-for="item in shownRows"
         :key="item.shown.row.key"
-        v-memo="[item, item.shown.row.key === tabStop, item.shown.row.key === selected]"
+        v-memo="[
+          item.shown.row,
+          item.shown.expandable,
+          item.shown.expanded,
+          item.shown.posinset,
+          item.shown.setsize,
+          form,
+          item.shown.row.key === tabStop,
+          item.shown.row.key === selected,
+        ]"
         :ref="(element) => remember(item.shown.row.key, element as Element | null)"
         class="tree__row"
         :class="{ 'tree__row--selected': item.shown.row.key === selected }"
@@ -178,6 +195,12 @@ function flip(key: RowKey, on: boolean): void {
 
 .tree__status {
   margin: 0;
+}
+
+/* Empty, it takes no room - the grid's gap would stand twice - but stays in the page, so its first word is
+   read out. */
+.tree__status:empty {
+  margin-block-end: calc(-1 * var(--space-1));
 }
 
 .tree__rows {

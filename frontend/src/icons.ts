@@ -20,6 +20,8 @@ export const GLYPHS = {
   document: ["M6.5 3.5h7l4 4v13h-11v-17Z", "M13.5 3.5v4h4", "M9 12h6", "M9 15.5h6"],
   /* A node of the tree, closed; turned a quarter to the right while it is open. */
   chevron: ["M9.5 6.5 15 12l-5.5 5.5"],
+  /* A toggle that is on (the tree's filter by review status). */
+  check: ["M5 12.5 10 17.5 19 7"],
   /* Something failed, or is only partly there. */
   warning: ["M12 4 3 20a1 1 0 0 0 .87 1.5h16.26A1 1 0 0 0 21 20L12 4Z", "M12 10v4.5", "M12 18h.01"],
 };

@@ -63,6 +63,8 @@ describe("the tree's filter by review status", () => {
 
     expect(model).toEqual(new Set([CV + "rev_confirmed", CV + "rev_rejected"]));
     expect(toggles(wrapper).map(([, pressed]) => pressed)).toEqual(["false", "true", "true", undefined]);
+    // a tick before the word of a status on, besides the wash and the border: the state holds without colour
+    expect(wrapper.findAll(".status-filter__tick").map((tick) => tick.find("svg").exists())).toEqual([false, true, true]);
     expect(await violations(wrapper.html())).toEqual([]);
 
     await wrapper.findAll("button")[1]?.trigger("click");

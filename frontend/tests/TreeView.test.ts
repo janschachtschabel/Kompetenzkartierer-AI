@@ -6,7 +6,7 @@ import TreeView from "@/components/TreeView.vue";
 import { rowsOf, type RowKey } from "@/documentTree";
 
 import { violations } from "./axe";
-import { CV, SCHOOL, form_, node_, statement_ } from "./treeFixtures";
+import { CV, SCHOOL, form_, node_, statement_, value_ } from "./treeFixtures";
 
 let shown: VueWrapper | null = null;
 // the tree's v-model:selected, as the view would hold it
@@ -120,6 +120,8 @@ describe("a document's tree", () => {
 
     await press(wrapper, "ArrowDown");
     expect(document.activeElement?.getAttribute("data-key")).toBe("statement:s1");
+    // the tab stop goes along: one row holds it
+    expect(items(wrapper).filter(([, , , tabindex]) => tabindex === "0").map(([key]) => key)).toEqual(["statement:s1"]);
     await press(wrapper, "End");
     await press(wrapper, "ArrowUp");
     expect(document.activeElement?.getAttribute("data-key")).toBe("node:a1");
@@ -170,11 +172,51 @@ describe("a document's tree", () => {
     await nextTick();
     expect(document.activeElement?.getAttribute("data-key")).toBe("statement:s1");
 
-    const back = new KeyboardEvent("keydown", { key: "ArrowLeft", altKey: true, bubbles: true, cancelable: true });
-    row(wrapper, "node:a").element.dispatchEvent(back);
+    for (const modifier of ["altKey", "ctrlKey", "metaKey"]) {
+      const back = new KeyboardEvent("keydown", { key: "ArrowLeft", [modifier]: true, bubbles: true, cancelable: true });
+      row(wrapper, "node:a").element.dispatchEvent(back);
+      await nextTick();
+      expect(back.defaultPrevented, modifier).toBe(false);
+      expect(row(wrapper, "node:a").attributes("aria-expanded"), modifier).toBe("true");
+    }
+  });
+
+  it("goes from the row focused though a row was chosen from without meanwhile, as by the browser's back", async () => {
+    const wrapper = tree();
+    (row(wrapper, "statement:s2").element as HTMLElement).focus();
+    await wrapper.setProps({ selected: "node:b" });
+
+    await row(wrapper, "statement:s2").trigger("keydown", { key: "ArrowUp" });
     await nextTick();
-    expect(back.defaultPrevented).toBe(false);
-    expect(row(wrapper, "node:a").attributes("aria-expanded")).toBe("true");
+
+    expect(document.activeElement?.getAttribute("data-key")).toBe("statement:s1");
+  });
+
+  it("says the choice is the row's it moved to, the one before no longer", async () => {
+    const wrapper = tree();
+    await row(wrapper, "statement:s1").trigger("click");
+    (row(wrapper, "statement:s1").element as HTMLElement).focus();
+
+    await press(wrapper, "ArrowDown");
+    await press(wrapper, "Enter");
+
+    expect(selected).toBe("statement:s2");
+    expect(wrapper.findAll("[aria-selected]").map((item) => item.attributes("data-key"))).toEqual(["statement:s2"]);
+  });
+
+  it("names its rows anew by another form", async () => {
+    const wrapper = tree();
+    const other = form_();
+    other.node = other.node.map((field) =>
+      field.key === "node_type"
+        ? { ...field, values: [value_(SCHOOL + "Inhaltsbereich", "Inhaltsfeld", { broader: [CV + "fn_area"] })] }
+        : field,
+    );
+
+    await wrapper.setProps({ form: other });
+
+    expect(row(wrapper, "node:a").attributes("aria-label")).toContain("Inhaltsfeld");
+    expect(row(wrapper, "node:a").text()).toContain("Inhaltsfeld");
   });
 
   it("goes to the first row with Home and chooses with Space", async () => {
@@ -201,11 +243,12 @@ describe("a document's tree", () => {
   it("keeps what is open and the filter when it is read again", async () => {
     const wrapper = tree();
     await row(wrapper, "node:a1").get(".tree__toggle").trigger("click");
-    await wrapper.findAll(".status-filter button")[0]?.trigger("click"); // proposed
 
     await wrapper.setProps({ rows: rowsOf(NODES) });
+    expect(row(wrapper, "node:a1").attributes("aria-expanded")).toBe("true"); // no filter that would open it
+    await wrapper.findAll(".status-filter button")[0]?.trigger("click"); // proposed
+    await wrapper.setProps({ rows: rowsOf(NODES) });
 
-    expect(row(wrapper, "node:a1").attributes("aria-expanded")).toBe("true");
     expect(wrapper.get(".status-filter button").attributes("aria-pressed")).toBe("true");
   });
 
@@ -254,6 +297,18 @@ describe("a document's tree", () => {
     await wrapper.findAll(".status-filter button")[1]?.trigger("click");
 
     expect(row(wrapper, "node:x1").attributes("aria-expanded")).toBe("false");
+  });
+
+  it("keeps, with the filter off, the way to a row chosen under it open", async () => {
+    const deep = statement_("deep", { review_status: CV + "rev_confirmed" });
+    const wrapper = tree([node_("x", { children: [node_("x1", { statements: [deep] })] })]);
+    await wrapper.findAll(".status-filter button")[1]?.trigger("click"); // confirmed
+    await row(wrapper, "statement:deep").trigger("click");
+
+    await wrapper.findAll(".status-filter button")[1]?.trigger("click");
+
+    expect(items(wrapper).map(([key]) => key)).toEqual(["node:x", "node:x1", "statement:deep"]);
+    expect(row(wrapper, "statement:deep").attributes("tabindex")).toBe("0");
   });
 
   it("opens the way to a row of the statuses chosen that a new reading brings", async () => {

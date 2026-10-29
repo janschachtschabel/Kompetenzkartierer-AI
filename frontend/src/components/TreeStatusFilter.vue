@@ -7,6 +7,7 @@
  */
 import { computed, nextTick, ref } from "vue";
 
+import AppIcon from "@/components/AppIcon.vue";
 import { t } from "@/i18n/de";
 import { REVIEW_STATUSES, statusIri, statusWord } from "@/reviewStatus";
 
@@ -52,6 +53,10 @@ function toggle(iri: string): void {
       :aria-pressed="selected.has(option.iri) ? 'true' : 'false'"
       @click="toggle(option.iri)"
     >
+      <!-- its room kept while off, so the row of toggles does not shift -->
+      <span class="status-filter__tick" aria-hidden="true">
+        <AppIcon v-if="selected.has(option.iri)" name="check" />
+      </span>
       {{ option.text }}
     </button>
     <button v-if="selected.size > 0" type="button" class="btn link" @click="showAll">
@@ -66,5 +71,10 @@ function toggle(iri: string): void {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1);
+}
+
+.status-filter__tick {
+  display: inline-flex;
+  inline-size: 1em;
 }
 </style>
