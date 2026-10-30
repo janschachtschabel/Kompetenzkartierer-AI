@@ -214,7 +214,7 @@ describe("a change that met another stored meanwhile", () => {
 });
 
 describe("a change refused", () => {
-  it.each(["job_open", "frozen", "not_extracted", "no_form"])(
+  it.each(["job_open", "frozen", "not_extracted", "no_form", "file_hidden"])(
     "is refused for the tree closing meanwhile (%s): the reason kept, the draft too",
     async (code) => {
       vi.spyOn(api, "editStatement").mockRejectedValue(new ApiError("server", 409, code));

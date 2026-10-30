@@ -18,8 +18,8 @@ import { changedFields, draftOf, sameValue, type Draft } from "@/rowDraft";
 /** How a save went: the editor says each in its own way. */
 export type SaveOutcome = "saved" | "unchanged" | "undecided" | "conflict" | "invalid" | "closed" | "gone" | "failed";
 
-/** The refusals that close the tree to change, whoever asks. */
-const CLOSING: ReadonlySet<string> = new Set(["job_open", "frozen", "not_extracted", "no_form"]);
+/** The refusals that close the tree to change - whoever asks, or the reader whose content it no longer is. */
+const CLOSING: ReadonlySet<string> = new Set(["job_open", "frozen", "not_extracted", "no_form", "file_hidden"]);
 const GONE: ReadonlySet<string> = new Set(["no_node", "no_statement"]);
 
 export interface RowConflict {

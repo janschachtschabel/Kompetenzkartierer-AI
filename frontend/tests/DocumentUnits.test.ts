@@ -255,3 +255,15 @@ describe("a document's work packages", () => {
     expect(await violations(wrapper.html())).toEqual([]);
   });
 });
+
+describe("a document's units whose entry is no longer the reader's", () => {
+  it("says so, with no retry that could change it", async () => {
+    vi.spyOn(api, "getUnits").mockRejectedValue(new ApiError("forbidden", 403, "file_hidden"));
+
+    const wrapper = open();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(t("refusals.file_hidden"));
+    expect(wrapper.findAll("button").some((button) => button.text() === t("states.retry"))).toBe(false);
+  });
+});

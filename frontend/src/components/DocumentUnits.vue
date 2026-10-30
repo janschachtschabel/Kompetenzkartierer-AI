@@ -22,6 +22,7 @@ const heading = ref<HTMLElement | null>(null);
 const {
   shown: units,
   failure,
+  hidden,
   load,
   retry,
 } = useSectionReading<Unit[]>(() => getUnits(props.documentId), t("documents.units.loadFailed"), heading);
@@ -55,8 +56,15 @@ watch(() => props.refresh, load);
     <!-- tabindex -1: where the keyboard goes once a retry's button went with its notice -->
     <h2 id="document-units" ref="heading" tabindex="-1">{{ t("documents.units.heading") }}</h2>
     <template v-if="units === null">
+      <!-- no retry: none changes whose content it is -->
+      <EmptyState
+        v-if="hidden"
+        :level="3"
+        :title="t('conversionPage.hiddenTitle')"
+        :body="t('refusals.file_hidden')"
+      />
       <ErrorState
-        v-if="failure"
+        v-else-if="failure"
         :message="failure.text"
         :reason="failure.reason"
         :explanation="failure.explanation"
@@ -97,7 +105,7 @@ watch(() => props.refresh, load);
       </div>
     </template>
     <!-- in the page from the start, so a failure of a later reading is heard -->
-    <PartialState :notice="units !== null ? failure : null" retry @retry="retry()" />
+    <PartialState :notice="units !== null ? failure : null" :retry="!hidden" @retry="retry()" />
   </section>
 </template>
 

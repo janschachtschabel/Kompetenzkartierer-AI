@@ -3,9 +3,11 @@
 // reading counts: an answer overtaken by a later question is dropped. A retry the reader asks for
 // shows its waiting where nothing is shown yet, says a failure again even in the same words, and
 // takes the keyboard to the section's heading once its button went with the notice; a retry a
-// later reading overtook leaves both to that reading.
+// later reading overtook leaves both to that reading. Content no longer the reader's (403 file_hidden) is
+// said apart: no retry changes it.
 import { ref, shallowRef, watch, type Ref } from "vue";
 
+import { ApiError } from "@/api";
 import { focusIsFree } from "@/focusRescue";
 import { sayAnew } from "@/liveRegion";
 import { failureNotice, type Notice } from "@/notice";
@@ -14,6 +16,8 @@ export interface SectionReading<T> {
   /** What the last reading that counted gave; null before the first. */
   shown: Ref<T | null>;
   failure: Ref<Notice | null>;
+  /** The last reading was refused for the entry's content no longer the reader's: no retry changes it. */
+  hidden: Ref<boolean>;
   /** A reading is under way whose answer has not come: what is shown may be overtaken. */
   pending: Ref<boolean>;
   /** A reading as the page moves on: neither waiting nor keyboard change. */
@@ -30,6 +34,7 @@ export function useSectionReading<T>(
 ): SectionReading<T> {
   const shown = shallowRef<T | null>(null);
   const failure = ref<Notice | null>(null);
+  const hidden = ref(false);
   const pending = ref(false);
   let generation = 0;
   // where the reader's retry began, until what it asked for is shown; undefined: none asked
@@ -45,9 +50,11 @@ export function useSectionReading<T>(
       if (mine !== generation) return;
       shown.value = found;
       failure.value = null;
+      hidden.value = false;
     } catch (error) {
       if (mine !== generation) return;
       failure.value = failureNotice(error, loadFailed);
+      hidden.value = error instanceof ApiError && error.code === "file_hidden";
     }
     pending.value = false;
     answerRetry();
@@ -84,5 +91,5 @@ export function useSectionReading<T>(
     { flush: "post" },
   );
 
-  return { shown, failure, pending, load, retry };
+  return { shown, failure, hidden, pending, load, retry };
 }

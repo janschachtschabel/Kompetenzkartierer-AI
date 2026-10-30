@@ -30,6 +30,7 @@ const heading = ref<HTMLElement | null>(null);
 const {
   shown: page,
   failure,
+  hidden,
   pending,
   load,
   retry,
@@ -66,8 +67,15 @@ watch(() => props.refresh, load);
     <!-- tabindex -1: where the keyboard goes once what it pressed went with its state -->
     <h2 id="document-findings" ref="heading" tabindex="-1">{{ t("documents.findings.heading") }}</h2>
     <template v-if="page === null">
+      <!-- no retry: none changes whose content it is -->
+      <EmptyState
+        v-if="hidden"
+        :level="3"
+        :title="t('conversionPage.hiddenTitle')"
+        :body="t('refusals.file_hidden')"
+      />
       <ErrorState
-        v-if="failure"
+        v-else-if="failure"
         :message="failure.text"
         :reason="failure.reason"
         :explanation="failure.explanation"
@@ -128,7 +136,7 @@ watch(() => props.refresh, load);
       @started="onStarted"
     />
     <!-- in the page from the start, so a failure of a later reading is heard -->
-    <PartialState :notice="page !== null ? failure : null" retry @retry="retry()" />
+    <PartialState :notice="page !== null ? failure : null" :retry="!hidden" @retry="retry()" />
   </section>
 </template>
 
