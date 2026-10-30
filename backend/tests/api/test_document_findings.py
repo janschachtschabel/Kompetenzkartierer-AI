@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 from psycopg.types.json import Jsonb
 
 from tests.api.test_document_units import a_run
-from tests.api.test_documents import a_conversion, an_account, client, make, url
+from tests.api.test_documents import a_conversion, an_account, client, hidden_from_its_owner, make, url
 from tests.db.l1 import add_node, add_statement
 
 pytestmark = pytest.mark.pg
@@ -105,3 +105,18 @@ def test_the_editors_read_a_document_s_findings_and_to_another_it_is_none(
     )
     assert client.get(f"/api/v1/documents/{document}/findings", headers=stranger).status_code == 404
     assert client.get(f"/api/v1/documents/{document}/findings").status_code == 401
+
+
+def test_the_findings_of_a_document_whose_entry_is_no_longer_the_owner_s_are_the_editors_alone(
+    client: TestClient, url: str
+) -> None:
+    # a finding names the wording or the title of its row: the entry's content
+    owner, header = an_account(url)
+    document = make(client, url, header, a_conversion(url, owner))["document"]["id"]
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+    hidden_from_its_owner(url, document)
+
+    hidden = client.get(f"/api/v1/documents/{document}/findings", headers=header)
+
+    assert (hidden.status_code, hidden.json()["code"]) == (403, "file_hidden")
+    assert client.get(f"/api/v1/documents/{document}/findings", headers=editor).status_code == 200

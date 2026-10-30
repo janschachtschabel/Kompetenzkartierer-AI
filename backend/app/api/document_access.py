@@ -30,6 +30,16 @@ async def visible_document(
     return document
 
 
+async def readable_document(
+    connection: psycopg.AsyncConnection, who: Principal, settings: Settings, document_id: UUID
+) -> Document:
+    """The document, where the caller may read it (else 404 ``no_document``) and its entry's content (else 403
+    ``file_hidden``): its nodes, statements and findings are that content in the document's words."""
+    document = await visible_document(connection, who, document_id)
+    await readable_content(connection, who, settings, document)
+    return document
+
+
 async def readable_content(
     connection: psycopg.AsyncConnection, who: Principal, settings: Settings, document: Document
 ) -> None:

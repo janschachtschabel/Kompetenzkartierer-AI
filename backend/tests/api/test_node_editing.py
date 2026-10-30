@@ -14,7 +14,7 @@ from pydantic import TypeAdapter
 from app.api.edit_answers import FieldKey
 from app.vocab.forms import NODE_FIELDS, STATEMENT_FIELDS
 from tests.api.test_document_tree import a_document
-from tests.api.test_documents import an_account, client, rows, url
+from tests.api.test_documents import an_account, client, hidden_from_its_owner, rows, url
 from tests.db.l1 import CV, add_node, add_statement
 
 pytestmark = pytest.mark.pg
@@ -254,3 +254,28 @@ def test_the_editors_edit_any_node_and_to_another_it_is_none(client: TestClient,
     assert (added.status_code, added.json()["code"]) == (404, "no_document")
     assert client.patch(f"/api/v1/nodes/{made}", json=edit).status_code == 401
     assert client.delete(f"/api/v1/nodes/{made}", headers=editor).status_code == 422  # no revision named
+
+
+def test_a_node_whose_entry_is_no_longer_the_owner_s_to_read_is_changed_by_the_editors_alone(
+    client: TestClient, url: str
+) -> None:
+    # its fields are the entry's content in the document's words: no answer gives them, not even a stale one's
+    document, owner = a_document(client, url)
+    made = a_node(url, document)
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+    hidden_from_its_owner(url, document)
+    stale = {"expected_revision": 9, "fields": {}}
+
+    answers = [
+        client.patch(f"/api/v1/nodes/{made}", headers=owner, json=stale),
+        client.post(f"/api/v1/documents/{document}/nodes", headers=owner,
+                    json={"fields": {"original_title": "Licht", "function": CV + "fn_area"}}),
+        client.delete(f"/api/v1/nodes/{made}", headers=owner, params={"expected_revision": 9}),
+    ]  # fmt: skip
+
+    assert [(answer.status_code, answer.json()["code"]) for answer in answers] == [(403, "file_hidden")] * 3
+    assert "details" not in answers[0].json() or not answers[0].json()["details"]
+    edited = client.patch(
+        f"/api/v1/nodes/{made}", headers=editor, json={"expected_revision": 1, "fields": {"code": "2"}}
+    )
+    assert edited.status_code == 200, edited.text

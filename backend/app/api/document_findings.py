@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
 from app.api.deps import require_account
-from app.api.document_access import visible_document
+from app.api.document_access import readable_document
 from app.api.errors import AUTH_RESPONSES, ErrorBody
 from app.core.auth import Principal
 from app.db.findings import findings_of
@@ -58,11 +58,18 @@ class FindingsOut(BaseModel):
 @router.get(
     "/documents/{document_id}/findings",
     summary="The document's findings, gravest first",
-    responses={404: {"model": ErrorBody, "description": "no_document: none the caller may read"}},
+    responses={
+        403: {
+            "model": ErrorBody,
+            "description": "file_hidden: the entry's content is no longer yours to read",
+        },
+        404: {"model": ErrorBody, "description": "no_document: none the caller may read"},
+    },
 )
 async def read_findings(document_id: UUID, request: Request, who: Account) -> FindingsOut:
     async with request.app.state.pool.connection() as connection:
-        document = await visible_document(connection, who, document_id)
+        # a finding names its row's wording or title: the entry's content
+        document = await readable_document(connection, who, request.app.state.settings, document_id)
         page = await findings_of(connection, document_id)
         repairable: list[str] = []
         if document.owner_id == who.account_id and "X5" in await done_stages(connection, document_id):

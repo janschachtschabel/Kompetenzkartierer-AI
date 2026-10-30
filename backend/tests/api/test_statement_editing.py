@@ -10,7 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.api.test_document_tree import a_document
-from tests.api.test_documents import an_account, client, rows, url
+from tests.api.test_documents import an_account, client, hidden_from_its_owner, rows, url
 from tests.api.test_node_editing import a_node
 from tests.db.l1 import CV, add_run, add_statement
 
@@ -195,3 +195,31 @@ def test_to_another_a_statement_is_none_and_beside_an_open_job_it_stays(client: 
     )
     assert (busy.status_code, busy.json()["code"]) == (409, "job_open")
     assert client.delete(f"/api/v1/statements/{said}", params={"expected_revision": 1}).status_code == 401
+
+
+def test_a_statement_whose_entry_is_no_longer_the_owner_s_to_read_is_changed_by_the_editors_alone(
+    client: TestClient, url: str
+) -> None:
+    # its wording is the entry's content: no answer gives it, not even a stale one's
+    document, owner = a_document(client, url)
+    node = a_node(url, document)
+    said = a_statement(url, document, node)
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+    hidden_from_its_owner(url, document)
+
+    answers = [
+        client.patch(f"/api/v1/statements/{said}", headers=owner,
+                     json={"expected_revision": 9, "fields": {}}),
+        client.post(f"/api/v1/nodes/{node}/statements", headers=owner,
+                    json={"fields": {"verbatim": "Sie messen."}, "anchors": [{"page": 1}]}),
+        client.delete(f"/api/v1/statements/{said}", headers=owner, params={"expected_revision": 9}),
+    ]  # fmt: skip
+
+    assert [(answer.status_code, answer.json()["code"]) for answer in answers] == [(403, "file_hidden")] * 3
+    assert not answers[0].json().get("details")
+    edited = client.patch(
+        f"/api/v1/statements/{said}",
+        headers=editor,
+        json={"expected_revision": 1, "fields": {"lead_in": "Sie"}},
+    )
+    assert edited.status_code == 200, edited.text

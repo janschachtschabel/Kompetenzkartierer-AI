@@ -207,7 +207,10 @@ ungültig.
   Zeile wie im Baum. Abgewiesen: 409 `stale_revision` (mit `details.current`, der Zeile, wie sie
   steht), `job_open` (solange ein Job des Dokuments wartet oder läuft; die Job-ID für Eigentümer und
   Admins), `not_extracted` (X4 hat noch nicht jedes Arbeitspaket gelesen: erst fortsetzen), `frozen`,
-  `no_form`; 422 `invalid_field` (`details.field`, `details.problem`). Jede
+  `no_form`; 422 `invalid_field` (`details.field`, `details.problem`); 403 `file_hidden`, sobald der
+  Inhalt des Eintrags nicht mehr der des Eigentümers ist – vor jeder anderen Prüfung, sodass auch eine
+  veraltete Revision keine Zeile mehr zeigt (ebenso `GET …/findings`, deren Befunde Wortlaut und Titel
+  nennen). Jede
   Änderung steht im Audit (`node.edit`, `node.add`, `node.drop`, `statement.edit`, `statement.add`,
   `statement.reject`, `statement.delete`).
 - Prüfstand: `POST /api/v1/documents/{id}/review` (`status`: `proposed`, `confirmed` oder

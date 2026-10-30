@@ -13,9 +13,10 @@ from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.deps import require_account
-from app.api.document_access import reader
+from app.api.document_access import readable_document, reader
 from app.api.document_tree import StatementOut, statement_as_read
 from app.api.edit_answers import (
+    HIDDEN,
     REFUSED,
     STATEMENT_RESPONSES,
     TAKE_RESPONSES,
@@ -79,7 +80,7 @@ class TakenOut(BaseModel):
 @router.patch(
     "/statements/{statement_id}",
     summary="Set a statement's fields and anchors - the statement an editor's proposal after",
-    responses=answers(NO_STATEMENT, STATEMENT_RESPONSES),
+    responses=answers(NO_STATEMENT, STATEMENT_RESPONSES) | HIDDEN,
 )
 async def edit_a_statement(
     statement_id: UUID, body: StatementEditIn, request: Request, who: Account
@@ -93,6 +94,7 @@ async def edit_a_statement(
                 if target is None:
                     raise Refusal(404, "no_statement", "No such statement.")
                 document_id = target.document_id
+                await readable_document(connection, who, request.app.state.settings, document_id)
                 revision = await edit_statement(
                     connection,
                     reader(who),
@@ -119,7 +121,7 @@ async def edit_a_statement(
     "/nodes/{node_id}/statements",
     status_code=201,
     summary="Add a statement after the node's others - an editor's proposal",
-    responses=answers("no_node: none the caller may read", STATEMENT_RESPONSES),
+    responses=answers("no_node: none the caller may read", STATEMENT_RESPONSES) | HIDDEN,
 )
 async def add_a_statement(
     node_id: UUID, body: NewStatementIn, request: Request, who: Account
@@ -132,6 +134,7 @@ async def add_a_statement(
                 if target is None:
                     raise Refusal(404, "no_node", "No such node.")
                 document_id = target.document_id
+                await readable_document(connection, who, request.app.state.settings, document_id)
                 made = await add_statement(connection, reader(who), node_id, body.fields, _hand(body.anchors))
                 if made is None:  # taken away meanwhile
                     raise Refusal(404, "no_node", "No such node.")
@@ -145,7 +148,7 @@ async def add_a_statement(
 @router.delete(
     "/statements/{statement_id}",
     summary="Take a statement away: reject a run's, delete an editor's own",
-    responses=answers(NO_STATEMENT, TAKE_RESPONSES),
+    responses=answers(NO_STATEMENT, TAKE_RESPONSES) | HIDDEN,
 )
 async def take_a_statement(
     statement_id: UUID, expected_revision: Revision, request: Request, who: Account
@@ -158,6 +161,7 @@ async def take_a_statement(
                 if target is None:
                     raise Refusal(404, "no_statement", "No such statement.")
                 document_id = target.document_id
+                await readable_document(connection, who, request.app.state.settings, document_id)
                 taken = await drop_or_reject_statement(
                     connection, reader(who), statement_id, expected_revision
                 )

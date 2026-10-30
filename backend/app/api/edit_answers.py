@@ -64,6 +64,12 @@ def stale(row: str, current: BaseModel | None) -> Refusal:
     )
 
 
+# a row's change answers with the row: the entry's content, not the caller's once it is hidden from them
+HIDDEN: Responses = {
+    403: {"model": ErrorBody, "description": "file_hidden: the entry's content is no longer yours to read"}
+}
+
+
 def answers(not_found: str, refusals: Responses = EDIT_RESPONSES) -> Responses:
     """A change's answers beside its row: ``not_found`` the 404's description, and the ``refusals`` it
     gives - an edit's (a statement's with its anchors), a taking away's (no field, so no form), a review's."""

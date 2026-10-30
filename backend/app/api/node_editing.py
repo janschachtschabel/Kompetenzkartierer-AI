@@ -13,9 +13,9 @@ from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.deps import require_account
-from app.api.document_access import reader, visible_document
+from app.api.document_access import readable_document, reader
 from app.api.document_tree import NodeRowOut, node_as_read
-from app.api.edit_answers import REFUSED, TAKE_RESPONSES, Fields, answers, audit, refusal_of, stale
+from app.api.edit_answers import HIDDEN, REFUSED, TAKE_RESPONSES, Fields, answers, audit, refusal_of, stale
 from app.api.errors import AUTH_RESPONSES, Refusal
 from app.core.auth import Principal
 from app.db.editing import DOCUMENT_OF_NODE, StaleRevision, add_node, drop_node, edit_node, target_of
@@ -46,7 +46,7 @@ class DroppedOut(BaseModel):
 @router.patch(
     "/nodes/{node_id}",
     summary="Set a node's fields - the node an editor's proposal after",
-    responses=answers(NO_NODE),
+    responses=answers(NO_NODE) | HIDDEN,
 )
 async def edit_a_node(node_id: UUID, body: NodeEditIn, request: Request, who: Account) -> NodeRowOut:
     async with request.app.state.pool.connection() as connection:
@@ -57,6 +57,7 @@ async def edit_a_node(node_id: UUID, body: NodeEditIn, request: Request, who: Ac
                 if target is None:
                     raise Refusal(404, "no_node", "No such node.")
                 document_id = target.document_id
+                await readable_document(connection, who, request.app.state.settings, document_id)
                 revision = await edit_node(
                     connection, reader(who), node_id, body.expected_revision, body.fields
                 )
@@ -75,13 +76,13 @@ async def edit_a_node(node_id: UUID, body: NodeEditIn, request: Request, who: Ac
     "/documents/{document_id}/nodes",
     status_code=201,
     summary="Add a node after its siblings - an editor's proposal",
-    responses=answers("no_document, no_node: the parent"),
+    responses=answers("no_document, no_node: the parent") | HIDDEN,
 )
 async def add_a_node(document_id: UUID, body: NewNodeIn, request: Request, who: Account) -> NodeRowOut:
     async with request.app.state.pool.connection() as connection:
         try:
             async with connection.transaction():
-                await visible_document(connection, who, document_id)
+                await readable_document(connection, who, request.app.state.settings, document_id)
                 made = await add_node(connection, reader(who), document_id, body.parent_id, body.fields)
                 if made is None:
                     raise Refusal(404, "no_node", "No such parent node in the document.")
@@ -96,7 +97,7 @@ async def add_a_node(document_id: UUID, body: NewNodeIn, request: Request, who: 
 @router.delete(
     "/nodes/{node_id}",
     summary="Take a node away with its subtree and the findings on them",
-    responses=answers(NO_NODE, TAKE_RESPONSES),
+    responses=answers(NO_NODE, TAKE_RESPONSES) | HIDDEN,
 )
 async def drop_a_node(
     node_id: UUID, expected_revision: Revision, request: Request, who: Account
@@ -109,6 +110,7 @@ async def drop_a_node(
                 if target is None:
                     raise Refusal(404, "no_node", "No such node.")
                 document_id = target.document_id
+                await readable_document(connection, who, request.app.state.settings, document_id)
                 dropped = await drop_node(connection, reader(who), node_id, expected_revision)
                 if dropped is None:
                     raise Refusal(404, "no_node", "No such node.")

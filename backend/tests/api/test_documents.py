@@ -674,3 +674,12 @@ def test_a_document_s_runs_are_read_with_how_each_stands(client: TestClient, url
     ]
     _, stranger = an_account(url, "Fremde")
     assert client.get(f"/api/v1/documents/{document}/runs", headers=stranger).status_code == 404
+
+
+def hidden_from_its_owner(url: str, document: str) -> None:
+    """The document's entry taken from its owner: of no account, hidden while THIRD_PARTY_MARKDOWN is."""
+    with psycopg.connect(url, autocommit=True) as connection:
+        connection.execute(
+            "UPDATE source SET owner_id = NULL WHERE id = (SELECT source_id FROM document WHERE id = %s)",
+            (document,),
+        )
