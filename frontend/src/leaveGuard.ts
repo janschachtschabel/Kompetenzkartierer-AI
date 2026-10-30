@@ -3,12 +3,12 @@
 // the tab or reloading, the only way a page may ask there. Which moves of the same route take the draft
 // along is the page's to say (`goesWith`): on the tree page another row does, another page of the source
 // does not.
+import { computed, onBeforeUnmount, onMounted, ref, toValue, type MaybeRefOrGetter } from "vue";
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRouter, type RouteLocationNormalized } from "vue-router";
 
 // What the browser's question is given in the old way, where a page set a text of its own: any text but
 // none makes it ask; the words are the browser's.
 const ASK = "draft";
-import { computed, onBeforeUnmount, onMounted, ref, toValue, type MaybeRefOrGetter } from "vue";
-import { onBeforeRouteLeave, onBeforeRouteUpdate, useRouter, type RouteLocationNormalized } from "vue-router";
 
 export interface LeaveGuardOptions {
   /** A move within the route that takes the draft along; by default one to another path. */

@@ -53,7 +53,7 @@ watch(
 watch(
   () => props.tree,
   (now) => {
-    if (!now.editable && draftOpen.value && props.row) refused.value = props.row.key;
+    if (now.closed && draftOpen.value && props.row) refused.value = props.row.key;
   },
 );
 

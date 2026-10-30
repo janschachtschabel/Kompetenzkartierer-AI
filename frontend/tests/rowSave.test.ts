@@ -84,7 +84,7 @@ describe("saving a row's change", () => {
 
     const saved = editing.save();
     editing.draft.value = { ...editing.draft.value, levelText: "Stufe 3" }; // typed on meanwhile
-    answer(stored({ verbatim: "Neu." }, 4));
+    answer(stored({ verbatim: "Neu.", statement_kind: CV + "kind_other" }, 4)); // stored otherwise meanwhile
 
     expect(await saved).toBe("saved");
     expect([editing.draft.value.verbatim, editing.draft.value.levelText, editing.dirty.value]).toEqual([
@@ -92,6 +92,7 @@ describe("saving a row's change", () => {
       "Stufe 3",
       true,
     ]);
+    expect(editing.draft.value.statement_kind).toBe(CV + "kind_other");
     expect(editing.revision.value).toBe(4);
   });
 

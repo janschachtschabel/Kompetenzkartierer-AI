@@ -158,6 +158,8 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
 
   return {
     fields,
+    /** The row as the draft began from it, or as stored where a change met another. */
+    before,
     draft,
     revision,
     saving,

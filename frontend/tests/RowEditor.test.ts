@@ -157,6 +157,18 @@ describe("a row's editor", () => {
     expect(await violations(wrapper.html())).toEqual([]);
   });
 
+  it("keeps in the draft shown what the user changed, not what another changed meanwhile", async () => {
+    vi.spyOn(api, "editStatement").mockRejectedValue(new ApiError("server", 409, "job_open"));
+    const wrapper = editor();
+    await write(wrapper, "Mein Satz.");
+    await save(wrapper);
+
+    // the tree read anew: another set the kind meanwhile
+    await wrapper.setProps({ row: { ...ROW, statement: stored({ statement_kind: CV + "kind_other" }, 4) } as Row });
+
+    expect(wrapper.get(".row-editor__closed").findAll("dd").map((item) => item.text())).toEqual(["Mein Satz."]);
+  });
+
   it("says when the row is gone", async () => {
     vi.spyOn(api, "editStatement").mockRejectedValue(new ApiError("server", 404, "no_statement"));
     const wrapper = editor();

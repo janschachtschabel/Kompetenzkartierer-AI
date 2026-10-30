@@ -1,9 +1,9 @@
 // A row of a document's tree as its form edits it (plan M1 9.8, Paket 9c2 K9/K10): each field of the form as a
 // string - a text, a value's IRI - or, for a field of many, an array; none as empty. Compared as the server
 // stores them: a blank text is none, any other kept as written, its edges too; a list a set. A change names
-// only the fields changed, a list in the
-// order the form lists its values. A list whose values refine another field's (their `broader`: a node type
-// its function, a subkind its kind) offers those under that field's value chosen.
+// only the fields changed, a list in the order the form lists its values. A list whose values refine another
+// field's (their `broader`: a node type its function, a subkind its kind) offers those under that field's
+// value chosen.
 import type { EditFields, FieldValue, FormField, FormValue } from "@/api";
 
 /** A row's values by the keys of its form's fields. */

@@ -20,7 +20,7 @@ import { messages, t } from "@/i18n/de";
 import { sayAnew } from "@/liveRegion";
 import { refusalText } from "@/refusals";
 import { word } from "@/registerWords";
-import { changedFields, draftOf } from "@/rowDraft";
+import { changedFields } from "@/rowDraft";
 import { useRowSave, type SaveOutcome } from "@/rowSave";
 
 const props = defineProps<{
@@ -37,7 +37,7 @@ const props = defineProps<{
 const emit = defineEmits<{ closed: [code: string]; gone: []; dirty: [open: boolean] }>();
 
 const editing = useRowSave(toRef(props, "row"), toRef(props, "form"));
-const { fields, draft, saving, errors, problem, conflict, closed, dirty } = editing;
+const { fields, before, draft, saving, errors, problem, conflict, closed, dirty } = editing;
 const status = ref("");
 const formRef = ref<InstanceType<typeof RowForm> | null>(null);
 const panel = ref<InstanceType<typeof ConflictPanel> | null>(null);
@@ -45,10 +45,9 @@ const closedNotice = ref<HTMLElement | null>(null);
 // the tree closed: on this save, or under the draft as it was read anew
 const shut = computed(() => closed.value ?? props.closedBy ?? null);
 
-// the draft the tree closed on, in words, field by field
+// the draft the tree closed on, in words, field by field: what the user changed, not what another did since
 const kept = computed(() => {
-  const values = props.row.kind === "node" ? props.row.node.fields : props.row.statement.fields;
-  const changed = changedFields(fields.value, draftOf(fields.value, values), draft.value);
+  const changed = changedFields(fields.value, before.value, draft.value);
   return Object.entries(changed).map(([key, value]) => ({
     key,
     label: word(messages.documents.tree.fields, key),
@@ -136,5 +135,10 @@ async function submit(): Promise<void> {
 .row-editor__closed p,
 .row-editor__status {
   margin: 0;
+}
+
+/* A wording's lines and paragraphs kept, to copy as they were written. */
+.row-editor__closed dd {
+  white-space: pre-wrap;
 }
 </style>

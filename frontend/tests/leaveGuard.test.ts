@@ -96,6 +96,28 @@ describe("the guard of a draft", () => {
     expect(router.currentRoute.value.fullPath).toBe("/page/2");
   });
 
+  it("refuses a second back while it asks, and goes where the first was to go once the draft is to go", async () => {
+    const router = await at("/page/1");
+    await router.push("/page/2");
+    await router.push("/page/3");
+    dirty.value = true;
+
+    router.back();
+    await flushPromises();
+    router.back(); // a second press while the question is open
+    await flushPromises();
+    guard?.answer(true);
+    await flushPromises();
+
+    expect(router.currentRoute.value.fullPath).toBe("/page/2");
+    expect(router.options.history.location).toBe("/page/2");
+    // followed where the back already moved the history, not pushed anew: one more back goes on back
+    dirty.value = false;
+    router.back();
+    await flushPromises();
+    expect(router.currentRoute.value.fullPath).toBe("/page/1");
+  });
+
   it("lets the browser ask before the tab closes while a draft is open, and no more once the page is gone", async () => {
     const router = await at("/page/1");
     dirty.value = true;

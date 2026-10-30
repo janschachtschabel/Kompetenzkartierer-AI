@@ -92,6 +92,15 @@ describe("a change laid beside the row as another stored it", () => {
     expect(wrapper.find(".conflict-panel__clash").exists()).toBe(false);
   });
 
+  it("says, with nothing to decide and nothing taken in, that the change waits to be saved again", () => {
+    const wrapper = panel([], []);
+
+    expect(wrapper.get(".conflict-panel__intro").text()).toBe(
+      "Jemand hat diese Zeile inzwischen gespeichert. Deine Änderungen sind noch nicht gespeichert; speichere erneut.",
+    );
+    expect(wrapper.find(".conflict-panel__taken").exists()).toBe(false);
+  });
+
   it("takes the focus when asked, so that a screen reader reads where the change stands", () => {
     const wrapper = panel();
 

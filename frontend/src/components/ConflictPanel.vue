@@ -7,7 +7,7 @@
  * to the next; with none left, to the panel, whose intro says to save again. The editor takes the keyboard
  * to the panel as it appears (`focus`).
  */
-import { nextTick, ref, useId, watch } from "vue";
+import { computed, nextTick, ref, useId, watch } from "vue";
 
 import type { FormField } from "@/api";
 import { shownValue } from "@/formWords";
@@ -23,6 +23,12 @@ const id = useId();
 const section = ref<HTMLElement | null>(null);
 // the place of the field last decided, where the keyboard goes on once the list is shorter
 let decided: number | null = null;
+
+// what to do: decide each field, or - all taken in, or nothing to - save again
+const intro = computed(() => {
+  if (props.clashes.length) return t("documents.tree.conflict.intro");
+  return props.taken.length ? t("documents.tree.conflict.introNothing") : t("documents.tree.conflict.introAgain");
+});
 
 function label(key: string): string {
   return word(messages.documents.tree.fields, key);
@@ -69,7 +75,7 @@ defineExpose({ focus });
   >
     <h3 :id="`${id}-heading`">{{ t("documents.tree.conflict.heading") }}</h3>
     <p :id="`${id}-intro`" class="conflict-panel__intro">
-      {{ clashes.length ? t("documents.tree.conflict.intro") : t("documents.tree.conflict.introNothing") }}
+      {{ intro }}
     </p>
     <ul v-if="clashes.length" class="conflict-panel__list">
       <li v-for="(clash, index) in clashes" :key="clash.key" class="conflict-panel__clash">

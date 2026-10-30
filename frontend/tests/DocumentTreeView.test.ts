@@ -381,6 +381,25 @@ describe("a document's tree page", () => {
     expect(wrapper.get(".row-panel__closed").text()).toContain("läuft gerade ein Auftrag");
   });
 
+  it("reads a tree read anew that the caller may no longer change as it reads, with the reason", async () => {
+    vi.spyOn(api, "getTree")
+      .mockResolvedValueOnce(OPEN)
+      .mockRejectedValueOnce(new ApiError("network", 0))
+      .mockResolvedValue(tree_(NODES, { editable: false, reviewable: false })); // the role gone, not the tree closed
+    vi.spyOn(api, "editStatement").mockResolvedValue({ ...SAID_SAVED, revision: 2 });
+    const wrapper = await open({ zeile: "statement:s1" });
+    await wrapper.get(".row-form textarea").setValue("Sie messen genau.");
+    await wrapper.get(".row-form").trigger("submit");
+    await flushPromises();
+    await wrapper.get(".row-form textarea").setValue("Mein Entwurf.");
+
+    await wrapper.get(".document-tree__partial button").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find(".row-form").exists()).toBe(false);
+    expect(wrapper.get(".row-panel__closed").text()).toBe("Bearbeiten dürfen der Eigentümer und die Redaktion.");
+  });
+
   it("asks nothing of a draft that went with another document", async () => {
     vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
     const wrapper = await open({ zeile: "statement:s1" });

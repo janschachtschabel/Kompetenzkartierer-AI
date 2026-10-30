@@ -995,6 +995,8 @@ export const messages = {
           "Jemand hat diese Zeile geändert, während du sie bearbeitet hast. Entscheide bei jedem Feld unten, welcher Wert gilt, und speichere dann erneut.",
         introNothing:
           "Jemand hat diese Zeile geändert, während du sie bearbeitet hast. Diese Änderungen sind übernommen; speichere erneut, um deine dazuzulegen.",
+        introAgain:
+          "Jemand hat diese Zeile inzwischen gespeichert. Deine Änderungen sind noch nicht gespeichert; speichere erneut.",
         yours: "Dein Wert",
         stored: "Gespeichert",
         keep: "Meins behalten",
