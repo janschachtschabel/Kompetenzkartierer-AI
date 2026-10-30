@@ -36,8 +36,8 @@ describe("taking a row away", () => {
 
     expect(sent).toHaveBeenCalledWith("a", 4);
     expect(done).toEqual({ outcome: "dropped", nodes: 4, statements: 3 });
-    expect(dropWords(done)).toBe("Gelöscht: 4 Knoten und 3 Aussagen.");
-    expect(dropWords({ outcome: "dropped", nodes: 1, statements: 1 })).toBe("Gelöscht: 1 Knoten und 1 Aussage.");
+    expect(dropWords(done)).toBe("Gelöscht: der Knoten mit 3 Unterknoten und 3 Aussagen.");
+    expect(dropWords({ outcome: "dropped", nodes: 1, statements: 1 })).toBe("Gelöscht: der Knoten mit 0 Unterknoten und 1 Aussage.");
   });
 
   it("deletes an editor's own statement and rejects a run's, as the server decides", async () => {

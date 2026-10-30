@@ -99,7 +99,8 @@ function toHeading(): void {
 
 // heard even where the form went meanwhile (RowCreator's onCreated): the view reads the tree again
 function created(key: RowKey, target: CreateTarget): void {
-  added = key;
+  // the keyboard follows the new row only while its form is still shown
+  if (props.creating === target) added = key;
   status.value = sayAnew(status.value, t("documents.tree.create.created"));
   emit("created", key, target);
 }

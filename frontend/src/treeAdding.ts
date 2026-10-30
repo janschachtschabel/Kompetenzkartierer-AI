@@ -37,6 +37,8 @@ export function useTreeAdding({ documentId, tree, selectedRow, selected, draftOp
   });
 
   function begin(target: CreateTarget): void {
+    // the same row to add again: nothing to ask, nothing to begin anew
+    if (JSON.stringify(target) === JSON.stringify(creating.value)) return;
     if (draftOpen.value) pending.value = target;
     else creating.value = target;
   }
@@ -61,19 +63,21 @@ export function useTreeAdding({ documentId, tree, selectedRow, selected, draftOp
 
   /**
    * `target` added as `key`: the tree read again, and - its form still shown, the page still this one - the new
-   * row chosen, the form let go only then, with no draft left to ask about. Where the user went on meanwhile, the
-   * tree read again shows it.
+   * row chosen and the form let go, with no draft left to ask about. Where the user went on meanwhile, the tree
+   * read again shows it.
    */
   async function created(key: RowKey, target: CreateTarget): Promise<void> {
     await load();
     if (creating.value !== target || !atOwnRoute()) return;
     draftOpen.value = false;
     selected.value = key;
-    creating.value = null;
+    cancel();
   }
 
+  // the row being added goes, and one asked about with it: it was to go under the row chosen
   function cancel(): void {
     creating.value = null;
+    pending.value = null;
   }
 
   watch(

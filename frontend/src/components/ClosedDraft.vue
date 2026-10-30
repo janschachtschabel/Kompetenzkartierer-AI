@@ -37,8 +37,9 @@ defineExpose({ focus });
 <template>
   <section ref="section" class="closed-draft" tabindex="-1" :aria-label="t('documents.tree.form.closedLabel')">
     <p class="field__error" role="alert"><AppIcon name="warning" /> {{ refusalText(code) }}</p>
-    <p>{{ t("documents.tree.form.keptDraft") }}</p>
-    <dl class="facts">
+    <!-- nothing entered: no draft to copy -->
+    <p v-if="kept.length">{{ t("documents.tree.form.keptDraft") }}</p>
+    <dl v-if="kept.length" class="facts">
       <template v-for="entry in kept" :key="entry.key">
         <dt>{{ entry.label }}</dt>
         <dd><bdi>{{ entry.text }}</bdi></dd>

@@ -150,6 +150,14 @@ describe("a new row's form", () => {
     expect(again.emitted("gone")).toHaveLength(1);
   });
 
+  it("says why it closed, and no draft where nothing was entered", () => {
+    const wrapper = creator(AT_TOP, "frozen");
+
+    expect(wrapper.get(".row-creator__closed [role=alert]").text()).toBe(t("refusals.frozen"));
+    expect(wrapper.text()).not.toContain(t("documents.tree.form.keptDraft"));
+    expect(wrapper.find(".row-creator__closed dl").exists()).toBe(false);
+  });
+
   it("keeps the entries to copy once the tree, read anew, closed under them", async () => {
     const wrapper = creator(AT_TOP);
     await fillNode(wrapper);

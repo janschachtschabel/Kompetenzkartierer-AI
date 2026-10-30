@@ -481,7 +481,7 @@ describe("a document's tree page", () => {
     expect(sent).toHaveBeenCalledWith("a", 1);
     expect(read).toHaveBeenCalledTimes(2);
     expect(query()).toEqual({ seite: "4" });
-    expect(wrapper.get(".row-panel__status").text()).toBe("Gelöscht: 1 Knoten und 2 Aussagen.");
+    expect(wrapper.get(".row-panel__status").text()).toBe("Gelöscht: der Knoten mit 0 Unterknoten und 2 Aussagen.");
     expect(document.activeElement).toBe(wrapper.get(".row-panel h2").element);
   });
 
@@ -524,6 +524,33 @@ describe("a document's tree page", () => {
     expect(wrapper.get(".row-panel h2").text()).toBe(t("documents.tree.create.headingChild", { name: "LF 1 Optik" }));
   });
 
+  it("lets a row to add asked about go with the row it was to go under", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    const wrapper = await open({ zeile: "node:a" });
+    await wrapper.get(".row-form input").setValue("Optik neu");
+    await press(wrapper, t("documents.tree.create.child"));
+
+    void router.push({ name: "documentTree", params: { id: "d1" }, query: { zeile: "statement:s1" } });
+    await flushPromises();
+    await answer(wrapper, t("documents.tree.leave.confirm"));
+
+    expect(query()).toEqual({ zeile: "statement:s1" });
+    expect(wrapper.find("[role=dialog]").exists()).toBe(false);
+    expect(wrapper.find(".row-creator").exists()).toBe(false);
+  });
+
+  it("asks nothing and keeps the entries where the same row to add is asked for again", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    const wrapper = await open();
+    await press(wrapper, t("documents.tree.create.node"));
+    await wrapper.get(".row-creator input").setValue("Neu");
+
+    await press(wrapper, t("documents.tree.create.node"));
+
+    expect(wrapper.find("[role=dialog]").exists()).toBe(false);
+    expect((wrapper.get(".row-creator input").element as HTMLInputElement).value).toBe("Neu");
+  });
+
   it("asks in a new row's own words before another row takes its place", async () => {
     vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
     const wrapper = await open({ zeile: "node:a" });
@@ -558,7 +585,8 @@ describe("a document's tree page", () => {
   });
 
   it("reads the tree again for a row added after another row was chosen, the choice kept", async () => {
-    const read = vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    const withNew = tree_([{ ...NODES[0], children: [node_("n9", { fields: { original_title: "Neu", code: null } })] }]);
+    const read = vi.spyOn(api, "getTree").mockResolvedValueOnce(OPEN).mockResolvedValue(withNew);
     let added: (row: ReturnType<typeof node_>) => void = () => undefined;
     vi.spyOn(api, "addNode").mockReturnValue(new Promise((resolve) => (added = resolve)));
     const wrapper = await open({ zeile: "node:a" });
@@ -576,6 +604,13 @@ describe("a document's tree page", () => {
 
     expect(read).toHaveBeenCalledTimes(2);
     expect(query()).toEqual({ zeile: "statement:s1", seite: "5" });
+
+    // the new row chosen later in the tree, as any row: the keyboard stays there
+    const newRow = wrapper.get("[data-key='node:n9']");
+    (newRow.element as HTMLElement).focus();
+    await newRow.trigger("click");
+    await flushPromises();
+    expect(document.activeElement).toBe(newRow.element);
   });
 
   it("leaves the address of a page gone to alone when a row added there is answered late", async () => {

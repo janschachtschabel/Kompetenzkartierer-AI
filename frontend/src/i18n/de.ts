@@ -1015,10 +1015,10 @@ export const messages = {
         titleNode: "Knoten löschen?",
         titleStatement: "Aussage verwerfen oder löschen?",
         messageNode:
-          "Der Knoten wird gelöscht – mit {under} {under|Unterknoten|Unterknoten} und {statements} {statements|Aussage|Aussagen} und ihren Befunden.",
+          "Der Knoten wird gelöscht – mit {under} {under|Unterknoten|Unterknoten}, {statements} {statements|Aussage|Aussagen} und ihren Befunden.",
         messageStatement:
           "Eine Aussage, die die Extraktion gefunden hat, wird verworfen und bleibt im Baum; eine von Hand angelegte wird gelöscht.",
-        dropped: "Gelöscht: {nodes} {nodes|Knoten|Knoten} und {statements} {statements|Aussage|Aussagen}.",
+        dropped: "Gelöscht: der Knoten mit {under} {under|Unterknoten|Unterknoten} und {statements} {statements|Aussage|Aussagen}.",
         deleted: "Die Aussage ist gelöscht.",
         rejected: "Die Aussage ist verworfen; sie bleibt im Baum.",
         stale: "Die Zeile wurde inzwischen geändert; der Baum wird neu geladen. Prüfe sie, bevor du es noch einmal versuchst.",

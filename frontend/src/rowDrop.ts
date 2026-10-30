@@ -47,7 +47,8 @@ export async function dropRow(row: Row): Promise<DropOutcome> {
 export function dropWords(done: Exclude<DropOutcome, { outcome: "failed" | "gone" }>): string {
   switch (done.outcome) {
     case "dropped":
-      return t("documents.tree.drop.dropped", { nodes: done.nodes, statements: done.statements });
+      // the node itself not among those under it, as its dialog counts them
+      return t("documents.tree.drop.dropped", { under: done.nodes - 1, statements: done.statements });
     case "closed":
       return refusalText(done.code) ?? t("documents.tree.drop.failed");
     default:
