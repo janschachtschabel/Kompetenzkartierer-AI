@@ -955,6 +955,20 @@ export const messages = {
         unknownValue: "unbekannt: {iri}",
         save: "Änderungen speichern",
       },
+      // a change laid beside the row as another stored it (ConflictPanel.vue)
+      conflict: {
+        heading: "Inzwischen gespeichert",
+        intro:
+          "Jemand hat diese Zeile geändert, während du sie bearbeitet hast. Entscheide bei jedem Feld unten, welcher Wert gilt, und speichere dann erneut.",
+        introNothing:
+          "Jemand hat diese Zeile geändert, während du sie bearbeitet hast. Diese Änderungen sind übernommen; speichere erneut, um deine dazuzulegen.",
+        yours: "Dein Wert",
+        stored: "Gespeichert",
+        keep: "Meins behalten",
+        take: "Gespeichertes nehmen",
+        taken: "Übernommen, weil nur dort geändert:",
+        empty: "leer",
+      },
       anchors: {
         heading: "Fundstellen",
         none: "Keine Fundstelle.",
