@@ -28,7 +28,7 @@ WHERE n.document_id = %(id)s AND {DOCUMENT_VISIBLE} ORDER BY n.position
 """  # noqa: S608 - fixed parts
 _STATEMENTS = f"""
 SELECT s.id, s.node_id, s.position, s.verbatim, s.lead_in, s.statement_kind_iri, s.subkind_iri,
-    s.obligation_iri, s.details, s.origin_iri, s.review_status_iri, s.text_hash, s.revision, s.iri,
+    s.obligation_iri, s.details, s.origin_iri, s.review_status_iri, s.text_hash, s.revision, s.iri, s.by_hand,
     array(
         SELECT a.addressee_iri FROM statement_addressee a WHERE a.statement_id = s.id ORDER BY 1
     ) AS addressees
@@ -94,6 +94,7 @@ class TreeStatement:
     text_hash: str
     revision: int
     iri: str | None  # once its document was frozen
+    by_hand: bool  # an editor's own from the first: taking it away deletes it, a run's is rejected
     addressees: tuple[str, ...]
     anchors: tuple[TreeAnchor, ...]
 

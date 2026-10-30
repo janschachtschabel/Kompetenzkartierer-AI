@@ -99,6 +99,7 @@ def test_a_document_s_tree_is_read_with_its_form_s_fields_anchors_and_findings(
     assert (statement["id"], statement["position"], statement["review_status"], statement["revision"]) == (
         str(said), 1, REJECTED, 1,
     )  # fmt: skip
+    assert statement["by_hand"] is False  # a run's: taking it away rejects it
     [anchor] = statement["anchors"]
     assert {key: value for key, value in anchor.items() if key != "id"} == {
         "page_start": 1, "page_end": None, "printed_page": None, "quote": None, "match_kind": None,

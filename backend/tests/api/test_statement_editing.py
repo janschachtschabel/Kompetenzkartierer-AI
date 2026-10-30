@@ -118,10 +118,15 @@ def test_a_new_statement_comes_with_an_anchor_at_least(client: TestClient, url: 
     assert (row["position"], row["revision"], row["origin"], row["fields"]["verbatim"]) == (
         2, 1, HUMAN, "Sie prüfen.",
     )  # fmt: skip
+    assert row["by_hand"] is True  # an editor's own: taking it away deletes it
     nowhere = client.post(f"/api/v1/nodes/{uuid.uuid4()}/statements", headers=owner,
                           json={"fields": NEW, "anchors": [{"page": 1}]})  # fmt: skip
     assert (nowhere.status_code, nowhere.json()["code"]) == (404, "no_node")
     assert rows(url, "SELECT action FROM audit_log WHERE action LIKE 'statement.%%'") == [("statement.add",)]
+    # edited, it is still its editor's own
+    change = {"expected_revision": 1, "fields": {"verbatim": "Sie prüfen genau."}}
+    edited = client.patch(f"/api/v1/statements/{row['id']}", headers=owner, json=change)
+    assert (edited.status_code, edited.json()["by_hand"]) == (200, True), edited.text
 
 
 def test_a_run_s_statement_taken_away_is_rejected_and_an_editor_s_deleted(

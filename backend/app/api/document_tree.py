@@ -56,6 +56,7 @@ class StatementOut(BaseModel):
     revision: int  # the change of the statement an edit of it names
     iri: str | None  # given when its document was frozen (<node>/s-<n>); a draft copy's rows bring theirs
     text_hash: str
+    by_hand: bool  # an editor's own from the first: taking it away deletes it, a run's is rejected
     anchors: list[AnchorOut]
 
 
@@ -216,6 +217,7 @@ def _statement(statement: TreeStatement) -> StatementOut:
         revision=statement.revision,
         iri=statement.iri,
         text_hash=statement.text_hash,
+        by_hand=statement.by_hand,
         anchors=[_anchor(anchor) for anchor in statement.anchors],
     )
 
