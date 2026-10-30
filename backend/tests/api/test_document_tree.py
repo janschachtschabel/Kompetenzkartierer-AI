@@ -1,9 +1,11 @@
 """A document's tree through the API (plan M1 9.2): its nodes and statements with the fields of the editor's
 form, their anchors, the findings on each node counted, the nodes and statements counted by review
 status, and whether the caller may edit and review them now - not beside an open job, not once the
-document is frozen. Who may read the document reads it; to another it is none."""
+document is frozen - and, where none may, why. Who may read the document and its entry's content reads it;
+to another it is none."""
 
 import uuid
+from pathlib import Path
 from typing import Any
 
 import psycopg
@@ -11,11 +13,13 @@ import pytest
 from fastapi.testclient import TestClient
 from psycopg.types.json import Jsonb
 
+from app.api.app import create_app
 from app.vocab.forms import NODE_FIELDS, STATEMENT_FIELDS
 from tests.api.test_document_findings import finding
 from tests.api.test_document_units import a_run
-from tests.api.test_documents import a_conversion, an_account, client, end_job, make, url
+from tests.api.test_documents import PUBLIC, a_conversion, an_account, client, end_job, make, url
 from tests.db.l1 import CV, add_node, add_statement
+from tests.support import make_settings, selector_client
 
 pytestmark = pytest.mark.pg
 __all__ = ["client", "url"]  # the fixtures, shared with test_documents
@@ -111,9 +115,10 @@ def test_the_owner_edits_a_tree_and_the_editors_edit_and_review_it(client: TestC
     _, editor = an_account(url, "Redaktion", ("redaktion",))
     _, admin = an_account(url, "Verwaltung", ("admin",))
 
-    assert {key: tree(client, document, owner)[key] for key in ("editable", "reviewable")} == {
+    assert {key: tree(client, document, owner)[key] for key in ("editable", "reviewable", "closed")} == {
         "editable": True,
         "reviewable": False,
+        "closed": None,
     }
     for header in (editor, admin):
         read = tree(client, document, header)
@@ -126,7 +131,7 @@ def test_a_tree_beside_an_open_job_is_edited_and_reviewed_by_none(client: TestCl
 
     for header in (owner, editor):
         read = tree(client, document, header)
-        assert (read["editable"], read["reviewable"]) == (False, False)
+        assert (read["editable"], read["reviewable"], read["closed"]) == (False, False, "job_open")
 
 
 def test_a_tree_whose_extraction_has_not_read_every_package_is_edited_by_none(
@@ -137,7 +142,7 @@ def test_a_tree_whose_extraction_has_not_read_every_package_is_edited_by_none(
 
     for header in (owner, editor):
         read = tree(client, document, header)
-        assert (read["editable"], read["reviewable"]) == (False, False)
+        assert (read["editable"], read["reviewable"], read["closed"]) == (False, False, "not_extracted")
 
 
 def test_a_frozen_document_s_tree_is_edited_and_reviewed_by_none(client: TestClient, url: str) -> None:
@@ -151,7 +156,45 @@ def test_a_frozen_document_s_tree_is_edited_and_reviewed_by_none(client: TestCli
 
     for header in (owner, editor):
         read = tree(client, document, header)
-        assert (read["editable"], read["reviewable"]) == (False, False)
+        assert (read["editable"], read["reviewable"], read["closed"]) == (False, False, "frozen")
+
+
+def test_a_tree_closed_for_several_reasons_names_the_one_that_lasts_longest(
+    client: TestClient, url: str
+) -> None:
+    # frozen stays; a job ends soon and may be the extraction that has yet to read every package
+    running, owner = a_document(client, url, ended=False, extracted=False)
+    frozen, other = a_document(client, url, ended=False, name="Andere", digest=b"\x02" * 32)
+    with psycopg.connect(url, autocommit=True) as connection:
+        connection.execute(
+            "UPDATE document SET iri = 'https://example.org/curriculum/2', frozen_at = now() WHERE id = %s",
+            (frozen,),
+        )
+
+    assert tree(client, running, owner)["closed"] == "job_open"
+    assert tree(client, frozen, other)["closed"] == "frozen"
+
+
+def test_a_tree_whose_entry_is_no_longer_the_owner_s_to_read_is_refused_to_the_owner_alone(
+    client: TestClient, url: str, tmp_path: Path
+) -> None:
+    # made while THIRD_PARTY_MARKDOWN opened an entry of no account to every account, read while hidden:
+    # its statements are the entry's content in the document's words
+    owner, header = an_account(url)
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+    made = a_conversion(url, owner)
+    with psycopg.connect(url, autocommit=True) as connection:
+        connection.execute("UPDATE source SET owner_id = NULL WHERE id = %s", (made["source"],))
+    opened = make_settings(database_url=url, storage_dir=tmp_path, third_party_markdown="accounts")
+    with selector_client(create_app(opened), base_url=PUBLIC) as while_open:
+        started = make(while_open, url, header, made)
+    end_job(url, started["job"]["id"], "done")
+    path = f"/api/v1/documents/{started['document']['id']}/tree"
+
+    hidden = client.get(path, headers=header)
+
+    assert (hidden.status_code, hidden.json()["code"]) == (403, "file_hidden")
+    assert client.get(path, headers=editor).status_code == 200
 
 
 def test_a_tree_without_nodes_is_empty_and_to_another_the_document_is_none(

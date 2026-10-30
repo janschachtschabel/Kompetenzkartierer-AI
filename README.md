@@ -172,7 +172,10 @@ ungültig.
   seinen Kindern), dazu die Zahl der Knoten und Aussagen je Prüfstand. `editable`: Eigentümer und
   Redaktion/Admin dürfen jetzt bearbeiten, `reviewable`: Redaktion/Admin dürfen den Prüfstand setzen –
   beides nicht, solange ein Job des Dokuments wartet oder läuft, nicht, bevor X4 jedes Arbeitspaket gelesen
-  hat (eine Entwurfskopie gilt als gelesen), und nicht, sobald es festgeschrieben ist. In der Oberfläche
+  hat (eine Entwurfskopie gilt als gelesen), und nicht, sobald es festgeschrieben ist; `closed` nennt dann den
+  Grund für alle Leser (`frozen` vor `job_open` vor `not_extracted`, sonst `null`). Lesen darf den Baum, wer
+  das Dokument lesen darf (sonst 404 `no_document`) und den Inhalt des Eintrags (sonst 403 `file_hidden`):
+  die Aussagen sind dieser Inhalt in den Worten des Dokuments. In der Oberfläche
   zeigt die Seite „Baum“ des Dokuments (`/dokumente/{id}/baum`, verlinkt von der Dokumentseite) den Baum mit
   Filter nach Prüfstand, daneben die gewählte Zeile mit Feldern und Fundstellen und unter ihr die Seite der
   Quelle mit den genannten Blöcken als „Beleg“; Zeile und Seite stehen in der Adresse (`?zeile=…&seite=…`).

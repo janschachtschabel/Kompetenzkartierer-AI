@@ -1,16 +1,17 @@
 """A document's tree as the editor shows it (plan M1 9.2; app/db/tree.py): its nodes and statements, each
 with the fields of the editor's form by their keys (GET /profiles/{sector}/form), its anchors, origin,
 review status and revision; each node with the findings on it and its statements counted; the nodes and
-statements counted by review status - and whether the caller may edit the tree now and review it. Read
-in one snapshot, by who may read the document (app/api/document_access.py). A node or a statement alone
-reads as the tree has it, for the answer to its change.
+statements counted by review status - and whether the caller may edit the tree now and review it, and
+where nobody may, why. Read in one snapshot, by who may read the document and its entry's content
+(app/api/document_access.py): the statements are that content in the document's words. A node or a
+statement alone reads as the tree has it, for the answer to its change.
 
 Editing is the owner's and the editors' (Redaktion, Admin), reviewing the editors' alone; neither while
 a job of the document waits or runs (its extraction, repair or check), nor once it is frozen, nor before
 its extraction has read every package (X4).
 """
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 import psycopg
@@ -18,7 +19,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
 from app.api.deps import require_account
-from app.api.document_access import reader, visible_document
+from app.api.document_access import readable_content, reader, visible_document
 from app.api.document_findings import SeverityCounts
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.api.source_content import EDITORS
@@ -83,9 +84,13 @@ class ReviewCountsOut(BaseModel):
     statements: dict[str, int]
 
 
+Closed = Literal["frozen", "job_open", "not_extracted"]
+
+
 class TreeOut(BaseModel):
     editable: bool  # the caller may edit the nodes and statements now
     reviewable: bool  # the caller may set their review status now
+    closed: Closed | None  # why nobody may now, whoever reads (_closed)
     counts: ReviewCountsOut
     nodes: list[NodeOut]  # from the top, in their order
 
@@ -93,26 +98,44 @@ class TreeOut(BaseModel):
 @router.get(
     "/documents/{document_id}/tree",
     summary="The document's nodes and statements as the editor shows them",
-    responses={404: {"model": ErrorBody, "description": "no_document: none the caller may read"}},
+    responses={
+        403: {
+            "model": ErrorBody,
+            "description": "file_hidden: the entry's content is no longer yours to read",
+        },
+        404: {"model": ErrorBody, "description": "no_document: none the caller may read"},
+    },
 )
 async def read_document_tree(document_id: UUID, request: Request, who: Account) -> TreeOut:
     async with request.app.state.pool.connection() as connection, connection.transaction():
         await connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
         document = await visible_document(connection, who, document_id)
+        await readable_content(connection, who, request.app.state.settings, document)
         tree = await read_tree(connection, reader(who), document_id)
         job = await open_job(connection, unique_key(document_id))
         all_there = await extracted(connection, document_id)
     if tree is None:  # seen in the same snapshot as the document: never so
         raise Refusal(404, "no_document", "No such document.")
     editor = bool(who.roles & EDITORS)
-    open_to_change = job is None and document.frozen_at is None and all_there
+    closed = _closed(frozen=document.frozen_at is not None, job_open=job is not None, extracted=all_there)
     nodes, statements = review_counts(tree)
     return TreeOut(
-        editable=open_to_change and (editor or document.owner_id == who.account_id),
-        reviewable=open_to_change and editor,
+        editable=closed is None and (editor or document.owner_id == who.account_id),
+        reviewable=closed is None and editor,
+        closed=closed,
         counts=ReviewCountsOut(nodes=nodes, statements=statements),
         nodes=[_node(node) for node in tree],
     )
+
+
+def _closed(*, frozen: bool, job_open: bool, extracted: bool) -> Closed | None:
+    """Why the tree is closed to change, the reason that lasts longest first: frozen stays, a job ends
+    soon - and may be the extraction that has yet to read every package."""
+    if frozen:
+        return "frozen"
+    if job_open:
+        return "job_open"
+    return None if extracted else "not_extracted"
 
 
 async def node_as_read(
