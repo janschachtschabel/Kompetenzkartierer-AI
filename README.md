@@ -168,7 +168,8 @@ ungültig.
   zeigt (wer das Dokument lesen darf, in einem Snapshot): je Zeile die Felder des Formulars unter dessen
   Schlüsseln, Herkunft, Prüfstand, Revision, `iri` (sobald das Dokument festgeschrieben wurde, sonst `null`;
   in einer Entwurfskopie tragen die übernommenen Zeilen ihre schon, neue erst nach dem Festschreiben) und
-  Fundstellen (Seiten, gedruckte Seite, Zitat, Fundart, Wert, Blöcke in Dokumentreihenfolge), je Knoten die
+  Fundstellen (Seiten, gedruckte Seite, Zitat, Fundart, Wert, Blöcke in Dokumentreihenfolge), je Aussage
+  `by_hand` (von Hand angelegt: `DELETE` löscht sie; aus einem Lauf: sie wird verworfen), je Knoten die
   Zahl der Befunde je Schwere an ihm, seinen Fundstellen, seinen Aussagen und deren Fundstellen (nicht an
   seinen Kindern), dazu die Zahl der Knoten und Aussagen je Prüfstand. `editable`: Eigentümer und
   Redaktion/Admin dürfen jetzt bearbeiten, `reviewable`: Redaktion/Admin dürfen den Prüfstand setzen –
@@ -198,7 +199,8 @@ ungültig.
   fragen vorher nach. Die Redaktion setzt in der gewählten Zeile ihren „Prüfstand“ („Vorgeschlagen“,
   „Bestätigt“, „Verworfen“, der gesetzte gedrückt); danach wird der Baum neu gelesen, eine inzwischen
   geänderte Zeile gesagt. „Erneut prüfen“ neben „Knoten anlegen“ startet die Prüfung (X5) und folgt ihr bis
-  zum Ende; folgen darf ihr nur der Eigentümer – die Redaktion liest den Baum neu, wenn sie fertig ist.
+  zum Ende; folgen dürfen ihr Eigentümer und Admins – die übrige Redaktion liest den Baum neu, wenn sie fertig
+  ist.
 - Blöcke des Dokuments: `GET /api/v1/documents/{id}/blocks?page=N` liest eine Seite der Konvertierung, aus
   der das Dokument gelesen wurde (Blöcke, fortlaufende Tabellen, gedruckte Seite, `pages`) – die Blöcke, die
   seine Fundstellen nennen, auch wenn die Datei des Eintrags seither neu geholt oder anders umgewandelt
