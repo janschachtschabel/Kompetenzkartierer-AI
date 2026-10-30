@@ -997,8 +997,10 @@ export const messages = {
         child: "Unterknoten anlegen",
         statement: "Aussage anlegen",
         node: "Knoten anlegen",
-        headingNode: "Neuer Knoten",
-        headingStatement: "Neue Aussage",
+        headingTop: "Neuer Knoten auf oberster Ebene",
+        headingChild: "Neuer Knoten unter {name}",
+        headingStatement: "Neue Aussage zu {name}",
+        parentGone: "Die Zeile, unter der du anlegen wolltest, gibt es nicht mehr; der Baum wird neu geladen.",
         discard: {
           title: "Neue Zeile verwerfen?",
           message: "Die Zeile ist noch nicht angelegt. Verwirfst du sie, gehen deine Eingaben verloren.",

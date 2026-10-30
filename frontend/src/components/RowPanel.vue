@@ -35,7 +35,7 @@ const emit = defineEmits<{
   gone: [];
   dirty: [open: boolean];
   create: [kind: "node" | "statement"];
-  created: [key: RowKey];
+  created: [key: RowKey, target: CreateTarget];
   cancel: [];
 }>();
 
@@ -55,26 +55,38 @@ const reason = computed(() => {
   return props.tree.closed ? t(`documents.tree.closed.${props.tree.closed}`) : t("documents.tree.closed.noRole");
 });
 
+// a node by its code and title, as the tree names it
+function nodeName(row: Row | null): string {
+  if (row?.kind !== "node") return t("documents.tree.untitled");
+  const { code, original_title: title } = row.node.fields;
+  return [code, title].filter((part) => typeof part === "string" && part).join(" ") || t("documents.tree.untitled");
+}
+
+// a row being added says where it goes: at the top, or under the node chosen
 const heading = computed(() => {
-  if (props.creating) {
-    return t(props.creating.kind === "node" ? "documents.tree.create.headingNode" : "documents.tree.create.headingStatement");
+  const creating = props.creating;
+  if (creating?.kind === "statement") return t("documents.tree.create.headingStatement", { name: nodeName(props.row) });
+  if (creating) {
+    return creating.parent === null
+      ? t("documents.tree.create.headingTop")
+      : t("documents.tree.create.headingChild", { name: nodeName(props.row) });
   }
   const row = props.row;
   if (!row) return t("documents.tree.detail.heading");
   if (row.kind === "statement") return t("documents.tree.detail.statement");
-  const { code, original_title: title } = row.node.fields;
-  const name = [code, title].filter((part) => typeof part === "string" && part).join(" ");
-  return t("documents.tree.detail.node", { name: name || t("documents.tree.untitled") });
+  return t("documents.tree.detail.node", { name: nodeName(row) });
 });
 
-// the row just added, chosen as the tree is read again: the word that it was added stays for it
+// the row just added, chosen as the tree is read again: the word that it was added stays for it, and the
+// keyboard goes to its heading once the heading names it
 let added: RowKey | null = null;
 
 watch(
   () => props.row?.key,
   (key) => {
     if (key !== refused.value) refused.value = null;
-    if (key && key !== added) status.value = "";
+    if (key && key === added) toHeading();
+    else if (key) status.value = "";
     added = null;
   },
 );
@@ -83,16 +95,20 @@ watch(
 watch(
   () => props.tree,
   (now) => {
-    if (now.closed && draftOpen.value && props.row) refused.value = props.row.key;
+    // the editor's draft: a row being added keeps its own (RowCreator's closedBy)
+    if (now.closed && draftOpen.value && props.row && !props.creating) refused.value = props.row.key;
     else if (!now.closed && !now.editable) refused.value = null;
   },
 );
 
-// a row to add begins: the keyboard to the heading that says so, the button that began it gone or elsewhere
+// a row to add begins: the keyboard to the heading that says so, the button that began it gone or elsewhere;
+// what was said of the row before goes
 watch(
   () => props.creating,
   (now, was) => {
-    if (now && !was) void nextTick(() => headingRef.value?.focus());
+    if (!now || was) return;
+    status.value = "";
+    toHeading();
   },
 );
 
@@ -100,11 +116,11 @@ function toHeading(): void {
   void nextTick(() => headingRef.value?.focus());
 }
 
-function created(key: RowKey): void {
+// heard even where the form went meanwhile (RowCreator's onCreated): the view reads the tree again
+function created(key: RowKey, target: CreateTarget): void {
   added = key;
   status.value = sayAnew(status.value, t("documents.tree.create.created"));
-  toHeading();
-  emit("created", key);
+  emit("created", key, target);
 }
 
 function cancel(): void {
@@ -122,13 +138,15 @@ function closed(): void {
   emit("changed");
 }
 
-function gone(): void {
-  status.value = sayAnew(status.value, t("documents.tree.gone"));
+function gone(words = t("documents.tree.gone")): void {
+  status.value = sayAnew(status.value, words);
   toHeading();
   emit("gone");
 }
 
-function dropped(done: Exclude<DropOutcome, { outcome: "failed" }>): void {
+// heard even where another row was chosen meanwhile (RowActions' onDropped): then the tree is only read again
+function dropped(done: Exclude<DropOutcome, { outcome: "failed" }>, key: RowKey): void {
+  if (key !== props.row?.key) return emit("changed");
   if (done.outcome === "gone") return gone();
   status.value = sayAnew(status.value, dropWords(done));
   toHeading();
@@ -158,9 +176,10 @@ defineExpose({ addAnchor });
       :key="JSON.stringify(creating)"
       :target="creating"
       :form="form"
+      :closed-by="tree.editable ? null : tree.closed"
       @created="created"
       @closed="emit('changed')"
-      @gone="gone"
+      @gone="gone(t('documents.tree.create.parentGone'))"
       @cancel="cancel"
       @dirty="dirty"
     />

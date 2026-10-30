@@ -54,14 +54,32 @@ const heading = computed(() =>
 const source = ref<InstanceType<typeof SourcePane> | null>(null);
 const panel = ref<InstanceType<typeof RowPanel> | null>(null);
 
-const { creating, picking, createAtTop, create, created, cancel } = useTreeAdding({
+const { creating, pending, picking, createAtTop, create, answer: answerPending, created, cancel } = useTreeAdding({
   documentId: toRef(props, "id"),
   tree,
   selectedRow,
   selected,
   draftOpen,
   load,
+  atOwnRoute,
 });
+
+// what a draft going is asked in: a row being added's own words, else the editor's
+const discard = computed(() =>
+  creating.value
+    ? {
+        title: t("documents.tree.create.discard.title"),
+        message: t("documents.tree.create.discard.message"),
+        confirm: t("documents.tree.create.discard.confirm"),
+        cancel: t("documents.tree.create.discard.cancel"),
+      }
+    : {
+        title: t("documents.tree.leave.title"),
+        message: t("documents.tree.leave.message"),
+        confirm: t("documents.tree.leave.confirm"),
+        cancel: t("documents.tree.leave.cancel"),
+      },
+);
 
 // an anchor's page is there to be read: the keyboard goes along to it
 function showAnchor(at: number): void {
@@ -172,13 +190,13 @@ watch([heading, () => route.fullPath], ([name]) => {
       </div>
     </template>
     <ConfirmDialog
-      v-if="leaving"
-      :title="t('documents.tree.leave.title')"
-      :message="t('documents.tree.leave.message')"
-      :confirm-label="t('documents.tree.leave.confirm')"
-      :cancel-label="t('documents.tree.leave.cancel')"
-      @confirm="answer(true)"
-      @cancel="answer(false)"
+      v-if="leaving || pending"
+      :title="discard.title"
+      :message="discard.message"
+      :confirm-label="discard.confirm"
+      :cancel-label="discard.cancel"
+      @confirm="leaving ? answer(true) : answerPending(true)"
+      @cancel="leaving ? answer(false) : answerPending(false)"
     />
   </div>
 </template>

@@ -17,8 +17,12 @@ const ROWS = rowsOf([
 ]);
 const row = (key: "node:a" | "statement:s1") => ROWS.get(key) as Row;
 
+// how taking a row away went, as the panel hears it: by a function the actions are given
+let dropped = vi.fn();
+
 function actions(key: "node:a" | "statement:s1"): VueWrapper {
-  shown = mount(RowActions, { props: { row: row(key) }, attachTo: document.body });
+  dropped = vi.fn();
+  shown = mount(RowActions, { props: { row: row(key), onDropped: dropped }, attachTo: document.body });
   return shown;
 }
 
@@ -66,7 +70,7 @@ describe("the ways on from a row chosen", () => {
     await flushPromises();
 
     expect(sent).toHaveBeenCalledWith("a", 4);
-    expect(wrapper.emitted("dropped")).toEqual([[{ outcome: "dropped", nodes: 2, statements: 2 }]]);
+    expect(dropped).toHaveBeenCalledWith({ outcome: "dropped", nodes: 2, statements: 2 }, "node:a");
   });
 
   it("offer a statement only to be rejected or deleted, as the server decides", async () => {
@@ -82,7 +86,7 @@ describe("the ways on from a row chosen", () => {
       ?.trigger("click");
     await flushPromises();
 
-    expect(wrapper.emitted("dropped")).toEqual([[{ outcome: "rejected" }]]);
+    expect(dropped).toHaveBeenCalledWith({ outcome: "rejected" }, "statement:s1");
   });
 
   it("say a failure where it was asked, and tell nothing", async () => {
@@ -98,6 +102,27 @@ describe("the ways on from a row chosen", () => {
 
     const alert = wrapper.get(".row-actions__problem");
     expect([alert.attributes("role"), alert.text()]).toEqual(["alert", expect.stringContaining(t("documents.tree.drop.failed"))]);
-    expect(wrapper.emitted("dropped")).toBeUndefined();
+    expect(dropped).not.toHaveBeenCalled();
+  });
+
+  it("asks nothing more while it takes the row away, and tells how it went once another row is chosen", async () => {
+    let answer: (done: { outcome: "deleted" | "rejected"; revision: number | null }) => void = () => undefined;
+    vi.spyOn(api, "dropStatement").mockReturnValue(new Promise((resolve) => (answer = resolve)));
+    const wrapper = actions("statement:s1");
+    await button(wrapper, t("documents.tree.drop.statement")).trigger("click");
+    await wrapper
+      .findAll("[role=dialog] button")
+      .find((one) => one.text() === t("documents.tree.drop.statement"))
+      ?.trigger("click");
+
+    const again = button(wrapper, t("documents.tree.drop.statement"));
+    expect(again.attributes("aria-disabled")).toBe("true");
+    await again.trigger("click");
+    expect(wrapper.find("[role=dialog]").exists()).toBe(false);
+
+    wrapper.unmount();
+    answer({ outcome: "deleted", revision: null });
+    await flushPromises();
+    expect(dropped).toHaveBeenCalledWith({ outcome: "deleted" }, "statement:s1");
   });
 });

@@ -2,24 +2,26 @@
 /**
  * The ways on from a row chosen in a tree the caller may change (plan M1 9.8, Paket 9c2b L4, L5, L9): under a
  * node, a node or a statement to add; the row taken away once asked (rowDrop.ts) - a node with what goes with
- * it counted, a statement rejected or deleted as the server decides. How it went is told to the panel, a
- * failure said here, where it was asked. Which row and whether the tree is open is the panel's.
+ * it counted, a statement rejected or deleted as the server decides. How it went is told to the panel by a
+ * function (`onDropped`) with the row's key - heard even where another row was chosen meanwhile -, a failure
+ * said here, where it was asked. Which row and whether the tree is open is the panel's.
  */
 import { computed, ref } from "vue";
 
 import AppIcon from "@/components/AppIcon.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import NoticeText from "@/components/NoticeText.vue";
-import type { Row } from "@/documentTree";
+import type { Row, RowKey } from "@/documentTree";
 import { t } from "@/i18n/de";
 import type { Notice } from "@/notice";
 import { dropCounts, dropRow, type DropOutcome } from "@/rowDrop";
 
-const props = defineProps<{ row: Row }>();
-const emit = defineEmits<{
-  create: [kind: "node" | "statement"];
-  dropped: [done: Exclude<DropOutcome, { outcome: "failed" }>];
+const props = defineProps<{
+  row: Row;
+  /** How taking the row away went. A prop, not an event: these actions go with the row chosen. */
+  onDropped?: (done: Exclude<DropOutcome, { outcome: "failed" }>, key: RowKey) => void;
 }>();
+const emit = defineEmits<{ create: [kind: "node" | "statement"] }>();
 
 const asking = ref(false);
 const busy = ref(false);
@@ -37,13 +39,14 @@ const question = computed(() => {
 });
 
 async function drop(): Promise<void> {
+  const { key } = props.row;
   asking.value = false;
   busy.value = true;
   problem.value = null;
   const done = await dropRow(props.row);
   busy.value = false;
   if (done.outcome === "failed") problem.value = done.problem;
-  else emit("dropped", done);
+  else props.onDropped?.(done, key);
 }
 </script>
 

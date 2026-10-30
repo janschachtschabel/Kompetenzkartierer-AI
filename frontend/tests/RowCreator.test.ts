@@ -16,8 +16,12 @@ let shown: VueWrapper | null = null;
 const AT_TOP: CreateTarget = { kind: "node", document: "d1", parent: null };
 const UNDER_A: CreateTarget = { kind: "statement", node: "a" };
 
-function creator(target: CreateTarget): VueWrapper {
-  shown = mount(RowCreator, { props: { target, form: form_() }, attachTo: document.body });
+// a row added, as the panel hears it: by a function the form is given
+let created = vi.fn();
+
+function creator(target: CreateTarget, closedBy: string | null = null): VueWrapper {
+  created = vi.fn();
+  shown = mount(RowCreator, { props: { target, form: form_(), closedBy, onCreated: created }, attachTo: document.body });
   return shown;
 }
 
@@ -41,6 +45,11 @@ beforeEach(() => {
   vi.restoreAllMocks();
 });
 
+function unmountShown(): void {
+  shown?.unmount();
+  shown = null;
+}
+
 afterEach(() => {
   shown?.unmount();
   shown = null;
@@ -61,7 +70,7 @@ describe("a new row's form", () => {
     await submit(wrapper);
 
     expect(sent).toHaveBeenCalledWith("d1", null, { original_title: "Optik", function: CV + "fn_area" });
-    expect(wrapper.emitted("created")).toEqual([["node:n9"]]);
+    expect(created).toHaveBeenCalledWith("node:n9", AT_TOP);
   });
 
   it("takes the keyboard to a required field left empty", async () => {
@@ -95,7 +104,7 @@ describe("a new row's form", () => {
       { verbatim: "Sie messen.", statement_kind: CV + "kind_learningOutcome", addressees: [CV + "addr_learner"] },
       [{ page: 5 }],
     );
-    expect(wrapper.emitted("created")).toEqual([["statement:s9"]]);
+    expect(created).toHaveBeenCalledWith("statement:s9", UNDER_A);
   });
 
   it("lets an empty draft go at once, and asks before one with entries goes", async () => {
@@ -125,14 +134,50 @@ describe("a new row's form", () => {
     await fillNode(wrapper);
 
     await submit(wrapper);
-    const alert = wrapper.get(".row-creator__closed");
-    expect([alert.attributes("role"), alert.text()]).toEqual(["alert", t("refusals.job_open")]);
-    expect(document.activeElement).toBe(alert.element);
+    const kept = wrapper.get(".row-creator__closed");
+    expect(kept.get("[role=alert]").text()).toBe(t("refusals.job_open"));
+    expect(document.activeElement).toBe(kept.element);
     expect(wrapper.emitted("closed")).toEqual([["job_open"]]);
-    expect((wrapper.get("input").element as HTMLInputElement).value).toBe("Optik");
+    // no form left to add it, the entries kept to copy
+    expect(wrapper.find("form").exists()).toBe(false);
+    expect(kept.findAll("dd").map((one) => one.text())).toEqual(["Optik", "Bereich"]);
+    expect((wrapper.vm as unknown as { addAnchor: (code: string) => string }).addAnchor("page:3")).toBe("refused");
+    unmountShown();
 
-    await submit(wrapper);
-    expect(wrapper.emitted("gone")).toHaveLength(1);
+    const again = creator({ kind: "node", document: "d1", parent: "a" });
+    await fillNode(again);
+    await submit(again);
+    expect(again.emitted("gone")).toHaveLength(1);
+  });
+
+  it("keeps the entries to copy once the tree, read anew, closed under them", async () => {
+    const wrapper = creator(AT_TOP);
+    await fillNode(wrapper);
+
+    await wrapper.setProps({ closedBy: "frozen" });
+
+    expect(wrapper.find("form").exists()).toBe(false);
+    expect(wrapper.get(".row-creator__closed [role=alert]").text()).toBe(t("refusals.frozen"));
+    expect(button(wrapper, t("documents.tree.create.cancel")).exists()).toBe(true);
+  });
+
+  it("tells what it added even once it is gone, and lets nothing go while it adds", async () => {
+    let answer: (row: ReturnType<typeof node_>) => void = () => undefined;
+    vi.spyOn(api, "addNode").mockReturnValue(new Promise((resolve) => (answer = resolve)));
+    const wrapper = creator(AT_TOP);
+    await fillNode(wrapper);
+
+    await wrapper.get("form").trigger("submit");
+    const cancelling = button(wrapper, t("documents.tree.create.cancel"));
+    expect(cancelling.attributes("aria-disabled")).toBe("true");
+    await cancelling.trigger("click");
+    expect([wrapper.emitted("cancel"), wrapper.find("[role=dialog]").exists()]).toEqual([undefined, false]);
+
+    wrapper.unmount();
+    answer(node_("n9"));
+    await flushPromises();
+
+    expect(created).toHaveBeenCalledWith("node:n9", AT_TOP);
   });
 
   it("says another failure above the form, the draft kept to try again", async () => {
