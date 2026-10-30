@@ -123,7 +123,10 @@ export interface DocumentPage extends BlockPage {
   pages: number;
 }
 
-/** The document's nodes and statements; 404 `no_document` to one who may not read it. */
+/**
+ * The document's nodes and statements; 404 `no_document` to one who may not read it, 403 `file_hidden` where the
+ * entry's content is no longer the caller's.
+ */
 export function getTree(documentId: string): Promise<Tree> {
   return apiFetch<Tree>(`${documentPath(documentId)}/tree`);
 }

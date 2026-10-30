@@ -3,18 +3,20 @@
 // Where another stored a change meanwhile (409 stale_revision, details.current), what only the other changed
 // is taken in and what both changed is put before the user (rowConflict.rebase), the change then laid on the
 // stored row. Where the tree closed meanwhile (a job, frozen, X4 not done, no form) the reason is kept with the
-// draft. A field's problem stands at the field; any other failure above the form, the draft kept to try again.
+// draft. A field's problem stands at the field - a required field emptied before anything is asked - any other
+// failure above the form, the draft kept to try again. While a field both changed is undecided nothing is
+// saved; what the user typed while a change was saved is laid on the row as stored.
 import { computed, ref, shallowRef, watch, type Ref } from "vue";
 
-import { ApiError, editNode, editStatement, type FieldValue, type Form, type FormField } from "@/api";
+import { ApiError, editNode, editStatement, type EditFields, type FieldValue, type Form, type FormField } from "@/api";
 import type { Row } from "@/documentTree";
 import { messages, t } from "@/i18n/de";
 import { failureNotice, type Notice } from "@/notice";
 import { rebase, type Clash } from "@/rowConflict";
-import { changedFields, draftOf, type Draft } from "@/rowDraft";
+import { changedFields, draftOf, sameValue, type Draft } from "@/rowDraft";
 
 /** How a save went: the editor says each in its own way. */
-export type SaveOutcome = "saved" | "unchanged" | "conflict" | "invalid" | "closed" | "gone" | "failed";
+export type SaveOutcome = "saved" | "unchanged" | "undecided" | "conflict" | "invalid" | "closed" | "gone" | "failed";
 
 /** The refusals that close the tree to change, whoever asks. */
 const CLOSING: ReadonlySet<string> = new Set(["job_open", "frozen", "not_extracted", "no_form"]);
@@ -76,6 +78,12 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
       if (!current?.fields || typeof current.revision !== "number") return "gone";
       const stored = draftOf(fields.value, current.fields);
       const laid = rebase(fields.value, before.value, draft.value, stored);
+      // the other stored what the user asked: saved, by whoever
+      if (!Object.keys(changedFields(fields.value, stored, laid.draft)).length) {
+        stand(current.fields, current.revision);
+        conflict.value = null;
+        return "saved";
+      }
       before.value = stored;
       draft.value = laid.draft;
       revision.value = current.revision;
@@ -100,15 +108,26 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
     return "failed";
   }
 
+  // the required fields the change empties, each said at its field
+  function emptied(changed: EditFields): Record<string, string> {
+    const words = fields.value
+      .filter((field) => field.required && field.key in changed && sameValue(changed[field.key], null))
+      .map((field) => [field.key, t("documents.tree.problems.required")]);
+    return Object.fromEntries(words);
+  }
+
   async function save(): Promise<SaveOutcome> {
+    if (conflict.value?.clashes.length) return "undecided";
     const changed = changedFields(fields.value, before.value, draft.value);
-    errors.value = {};
+    errors.value = emptied(changed);
     problem.value = null;
+    if (Object.keys(errors.value).length) return "invalid";
     if (!Object.keys(changed).length) {
       conflict.value = null;
       return "unchanged";
     }
     const current = row.value;
+    const sent = draft.value;
     saving.value = true;
     try {
       const answer =
@@ -117,7 +136,10 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
           : await editStatement(current.statement.id, revision.value, changed);
       // another row chosen meanwhile (its draft given up): the tree read anew shows what was saved
       if (row.value.key !== current.key) return "saved";
+      const typed = draft.value;
       stand(answer.fields, answer.revision);
+      // typed on while it was saved: that stays, laid on the row as stored
+      if (typed !== sent) draft.value = rebase(fields.value, sent, typed, before.value).draft;
       conflict.value = null;
       return "saved";
     } catch (error) {

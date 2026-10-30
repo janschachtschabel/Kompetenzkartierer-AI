@@ -1,6 +1,7 @@
 // A row of a document's tree as its form edits it (plan M1 9.8, Paket 9c2 K9/K10): each field of the form as a
 // string - a text, a value's IRI - or, for a field of many, an array; none as empty. Compared as the server
-// stores them: a blank text is none, a list a set. A change names only the fields changed, a list in the
+// stores them: a blank text is none, any other kept as written, its edges too; a list a set. A change names
+// only the fields changed, a list in the
 // order the form lists its values. A list whose values refine another field's (their `broader`: a node type
 // its function, a subkind its kind) offers those under that field's value chosen.
 import type { EditFields, FieldValue, FormField, FormValue } from "@/api";
@@ -20,7 +21,7 @@ export function draftOf(fields: readonly FormField[], values: Record<string, Fie
 
 function normal(value: FieldValue | undefined): string | string[] | null {
   if (Array.isArray(value)) return value.length ? [...value].sort() : null;
-  return typeof value === "string" && value.trim() ? value.trim() : null;
+  return typeof value === "string" && value.trim() ? value : null;
 }
 
 export function sameValue(a: FieldValue | undefined, b: FieldValue | undefined): boolean {

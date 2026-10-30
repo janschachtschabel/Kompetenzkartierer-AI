@@ -28,7 +28,7 @@ describe("a row's draft", () => {
   it("takes a blank text, an empty list and none for the same, and lists in any order", () => {
     expect(sameValue("", null)).toBe(true);
     expect(sameValue("  ", "")).toBe(true);
-    expect(sameValue(" Optik ", "Optik")).toBe(true);
+    expect(sameValue(" Optik ", "Optik")).toBe(false); // the server keeps a text's edges
     expect(sameValue([], null)).toBe(true);
     expect(sameValue(["b", "a"], ["a", "b"])).toBe(true);
     expect(sameValue(["a"], ["a", "b"])).toBe(false);
@@ -45,6 +45,7 @@ describe("a row's draft", () => {
     };
 
     expect(changedFields(STATEMENT, before, draft)).toEqual({
+      verbatim: "Sie messen. ", // as written: an edge the user typed is theirs to save
       addressees: [CV + "addr_learner", CV + "addr_educator"], // in the order the form lists them
     });
     expect(changedFields(STATEMENT, before, { ...before, verbatim: "", levelText: "Stufe 1" })).toEqual({
@@ -67,6 +68,8 @@ describe("a field whose values hang under another's", () => {
     expect(parentField(NODE, field("node_type"))?.key).toBe("function");
     expect(parentField(NODE, field("function"))).toBeNull();
     expect(parentField(NODE, field("original_title"))).toBeNull();
+    const subkind = { ...field("levelText"), key: "subkind", kind: "concept" as const, values: [value_("urn:sub", "Unterart", { broader: [CV + "kind_learningOutcome"] })] };
+    expect(parentField([...STATEMENT, subkind], subkind)?.key).toBe("statement_kind");
     // values that refine values of their own field (a narrower type): no field above them
     const types = { ...field("node_type"), values: [value_("urn:a", "A"), value_("urn:b", "B", { broader: ["urn:a"] })] };
     expect(parentField([...NODE, types], types)).toBeNull();

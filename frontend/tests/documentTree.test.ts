@@ -108,6 +108,10 @@ describe("a document's tree", () => {
     await read.load();
 
     expect([read.hidden.value, read.missing.value, read.failure.value, read.tree.value]).toEqual([true, false, null, null]);
+
+    vi.spyOn(api, "getTree").mockResolvedValue(tree_([node_("a")])); // its content opened again
+    await read.load();
+    expect([read.hidden.value, read.tree.value?.nodes.length]).toEqual([false, 1]);
   });
 
   it("reads the form again for a document of another sector", async () => {

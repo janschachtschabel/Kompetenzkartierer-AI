@@ -70,10 +70,58 @@ describe("saving a row's change", () => {
   it("asks nothing where nothing changed", async () => {
     const sent = vi.spyOn(api, "editStatement");
     const { editing } = editor();
-    editing.draft.value = { ...editing.draft.value, verbatim: " Sie messen. " };
+    editing.draft.value = { ...editing.draft.value, verbatim: "Sie messen.", levelText: "  " };
 
     expect(await editing.save()).toBe("unchanged");
     expect(sent).not.toHaveBeenCalled();
+  });
+
+  it("keeps what the user typed while a change was saved, laid on the row as stored", async () => {
+    let answer: (row: TreeStatement) => void = () => undefined;
+    vi.spyOn(api, "editStatement").mockReturnValue(new Promise((resolve) => (answer = resolve)));
+    const { editing } = editor();
+    editing.draft.value = { ...editing.draft.value, verbatim: "Neu." };
+
+    const saved = editing.save();
+    editing.draft.value = { ...editing.draft.value, levelText: "Stufe 3" }; // typed on meanwhile
+    answer(stored({ verbatim: "Neu." }, 4));
+
+    expect(await saved).toBe("saved");
+    expect([editing.draft.value.verbatim, editing.draft.value.levelText, editing.dirty.value]).toEqual([
+      "Neu.",
+      "Stufe 3",
+      true,
+    ]);
+    expect(editing.revision.value).toBe(4);
+  });
+
+  it("says a required field emptied at the field, asking nothing", async () => {
+    const sent = vi.spyOn(api, "editStatement");
+    const { editing } = editor();
+    editing.draft.value = { ...editing.draft.value, verbatim: " ", addressees: [] };
+
+    expect(await editing.save()).toBe("invalid");
+
+    expect(sent).not.toHaveBeenCalled();
+    expect(editing.errors.value).toEqual({
+      verbatim: "Dieses Feld braucht einen Wert.",
+      addressees: "Dieses Feld braucht einen Wert.",
+    });
+  });
+
+  it("leaves a required field already empty to the server, the change naming it not", async () => {
+    const sent = vi.spyOn(api, "editStatement").mockResolvedValue(stored({ levelText: "Stufe 2" }, 4));
+    const shown = ref({ ...row("statement:s1"), statement: stored({ statement_kind: null }, 3) } as Row);
+    const editing = scope.run(() => useRowSave(shown, ref(form_())));
+    if (!editing) throw new Error("no scope");
+    editing.draft.value = { ...editing.draft.value, levelText: "Stufe 2" };
+
+    expect(await editing.save()).toBe("saved");
+    expect(sent).toHaveBeenCalledWith("s1", 3, { levelText: "Stufe 2" });
+
+    editing.draft.value = { ...editing.draft.value, levelText: "" }; // an optional field cleared
+    await editing.save();
+    expect(sent).toHaveBeenLastCalledWith("s1", 4, { levelText: null });
   });
 
   it("says it saves while it does", async () => {
@@ -118,6 +166,28 @@ describe("a change that met another stored meanwhile", () => {
     expect(editing.conflict.value).toBeNull();
   });
 
+  it("takes a change met by the same change stored meanwhile as saved", async () => {
+    vi.spyOn(api, "editStatement").mockRejectedValueOnce(stale(stored({ verbatim: "Gleich." }, 5)));
+    const { editing } = editor();
+    editing.draft.value = { ...editing.draft.value, verbatim: "Gleich." };
+
+    expect(await editing.save()).toBe("saved");
+
+    expect([editing.conflict.value, editing.revision.value, editing.dirty.value]).toEqual([null, 5, false]);
+  });
+
+  it("saves nothing while a field both changed is undecided", async () => {
+    const sent = vi
+      .spyOn(api, "editStatement")
+      .mockRejectedValueOnce(stale(stored({ verbatim: "Ihr Satz." }, 5)));
+    const { editing } = editor();
+    editing.draft.value = { ...editing.draft.value, verbatim: "Mein Satz." };
+    await editing.save();
+
+    expect(await editing.save()).toBe("undecided");
+    expect(sent).toHaveBeenCalledTimes(1);
+  });
+
   it("takes the stored value of a field when the user chooses it", async () => {
     vi.spyOn(api, "editStatement").mockRejectedValueOnce(stale(stored({ verbatim: "Ihr Satz." }, 5)));
     const { editing } = editor();
@@ -143,14 +213,25 @@ describe("a change that met another stored meanwhile", () => {
 });
 
 describe("a change refused", () => {
-  it("is refused for the tree closing meanwhile: the reason kept, the draft too", async () => {
-    vi.spyOn(api, "editStatement").mockRejectedValue(new ApiError("server", 409, "job_open"));
-    const { editing } = editor();
-    editing.draft.value = { ...editing.draft.value, verbatim: "Neu." };
+  it.each(["job_open", "frozen", "not_extracted", "no_form"])(
+    "is refused for the tree closing meanwhile (%s): the reason kept, the draft too",
+    async (code) => {
+      vi.spyOn(api, "editStatement").mockRejectedValue(new ApiError("server", 409, code));
+      const { editing } = editor();
+      editing.draft.value = { ...editing.draft.value, verbatim: "Neu." };
 
-    expect(await editing.save()).toBe("closed");
+      expect(await editing.save()).toBe("closed");
 
-    expect([editing.closed.value, editing.draft.value.verbatim]).toEqual(["job_open", "Neu."]);
+      expect([editing.closed.value, editing.draft.value.verbatim]).toEqual([code, "Neu."]);
+    },
+  );
+
+  it("finds a node gone as a statement", async () => {
+    vi.spyOn(api, "editNode").mockRejectedValue(new ApiError("server", 404, "no_node"));
+    const { editing } = editor("node:a");
+    editing.draft.value = { ...editing.draft.value, code: "9" };
+
+    expect(await editing.save()).toBe("gone");
   });
 
   it("states a field's problem at the field, one the form does not hold above it", async () => {
@@ -161,9 +242,9 @@ describe("a change refused", () => {
       .mockRejectedValueOnce(new ApiError("server", 422, "invalid_field", "Odd.", { field: "levelText", problem: "new" }))
       .mockRejectedValueOnce(new ApiError("server", 422, "invalid_field", "Unknown.", { field: "lead_in", problem: "x" }));
     const { editing } = editor();
-    editing.draft.value = { ...editing.draft.value, verbatim: "" };
+    editing.draft.value = { ...editing.draft.value, verbatim: "Neu." };
 
-    expect(await editing.save()).toBe("invalid");
+    expect(await editing.save()).toBe("invalid"); // the server's word for it, at the field
     expect(editing.errors.value).toEqual({ verbatim: "Dieses Feld braucht einen Wert." });
     expect(await editing.save()).toBe("invalid"); // a problem this app does not know yet, at a field it shows
     expect(editing.errors.value).toEqual({ levelText: "Dieser Wert lässt sich so nicht speichern." });
@@ -213,6 +294,21 @@ describe("the row edited", () => {
     await saved;
 
     expect([editing.draft.value.original_title, editing.revision.value]).toEqual(["Optik", 2]);
+  });
+
+  it("leaves another row chosen while a change failed as it is", async () => {
+    let refuse: (error: unknown) => void = () => undefined;
+    vi.spyOn(api, "editStatement").mockReturnValue(new Promise((_resolve, reject) => (refuse = reject)));
+    const { shown, editing } = editor();
+    editing.draft.value = { ...editing.draft.value, verbatim: "Neu." };
+    const saved = editing.save();
+
+    shown.value = row("node:a");
+    await nextTick();
+    refuse(new ApiError("server", 409, "job_open"));
+
+    expect(await saved).toBe("failed");
+    expect([editing.closed.value, editing.problem.value, editing.draft.value.original_title]).toEqual([null, null, "Optik"]);
   });
 
   it("takes the row read anew where the user changed nothing, and keeps the draft where they did", async () => {
