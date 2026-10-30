@@ -159,7 +159,6 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
     conflict.value = { ...now, clashes: now.clashes.filter((clash) => clash.key !== key) };
   }
 
-
   return {
     fields,
     /** The row as the draft began from it, or as stored where a change met another. */

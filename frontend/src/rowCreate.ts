@@ -41,16 +41,17 @@ export function useRowCreate(target: CreateTarget, form: Form) {
     // every field of the draft named: one left empty is one missing
     errors.value = emptiedRequired(drafted, { ...draft.value });
     problem.value = null;
+    closed.value = null;
     if (Object.keys(errors.value).length) return { outcome: "invalid" };
     const { [ANCHORS]: anchors, ...named } = changes.value;
     saving.value = true;
     try {
+      // added: busy until the form goes, so that it is not added twice
       return { outcome: "created", key: await add(named, anchors) };
     } catch (error) {
+      saving.value = false;
       const refusal = refusalOf(error, drafted, t("documents.tree.create.failed"));
       return { outcome: applyRefusal(refusal, { closed, errors, problem }) };
-    } finally {
-      saving.value = false;
     }
   }
 

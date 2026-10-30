@@ -73,10 +73,16 @@ export function anchorRequest(codes: readonly string[]): AnchorIn[] {
   return codes.map(decodeAnchor).filter((anchor): anchor is AnchorIn => anchor !== null);
 }
 
+/** The anchors `draft` holds - a statement's -; none for a node's. */
+export function heldAnchors(draft: Draft): string[] | null {
+  const held = draft[ANCHORS];
+  return Array.isArray(held) ? held : null;
+}
+
 // `draft` with its anchors as `change` makes them; as it is where it holds none - a node's
 function changeAnchors(draft: Draft, change: (held: string[]) => string[]): Draft {
-  const held = draft[ANCHORS];
-  return Array.isArray(held) ? { ...draft, [ANCHORS]: change(held) } : draft;
+  const held = heldAnchors(draft);
+  return held ? { ...draft, [ANCHORS]: change(held) } : draft;
 }
 
 /** `draft` with the place `code` names among its anchors, once and by its own code; none it cannot read. */
@@ -84,8 +90,7 @@ export function withAnchor(draft: Draft, code: string): Draft {
   const anchor = decodeAnchor(code);
   if (!anchor) return draft;
   const place = encodeAnchor(anchor);
-  const held = draft[ANCHORS];
-  if (Array.isArray(held) && held.includes(place)) return draft;
+  if (heldAnchors(draft)?.includes(place)) return draft;
   return changeAnchors(draft, (now) => [...now, place]);
 }
 
@@ -94,7 +99,8 @@ export function withoutAnchor(draft: Draft, code: string): Draft {
   return changeAnchors(draft, (held) => held.filter((one) => one !== code));
 }
 
-/** A code in words: its pages and how many blocks, or the page its passage was not found on. */
+/** A code in words: its pages and its blocks - by their ids, so that two of a page tell apart -, or the page
+ * its passage was not found on. */
 export function anchorCodeText(code: string): string {
   const anchor = decodeAnchor(code);
   if (!anchor) return code;
@@ -105,5 +111,5 @@ export function anchorCodeText(code: string): string {
   const first = Math.min(...pages);
   const last = Math.max(...pages);
   const where = pagesText({ page_start: first, page_end: last, printed_page: null });
-  return t("documents.tree.anchors.draftBlocks", { pages: where, count: anchor.blocks.length });
+  return t("documents.tree.anchors.draftBlocks", { pages: where, count: anchor.blocks.length, ids: anchor.blocks.join(", ") });
 }

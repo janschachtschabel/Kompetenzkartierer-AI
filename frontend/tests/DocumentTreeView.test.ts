@@ -337,9 +337,9 @@ describe("a document's tree page", () => {
     await wrapper.get("[data-test=take]").trigger("click");
     await flushPromises();
     expect(wrapper.findAll(".anchor-draft li span").map((one) => one.text())).toEqual([
-      "Seite 5: 1 Block",
-      "Seite 6: 1 Block",
-      "Seite 5: 1 Block",
+      "Seite 5: 1 Block (p5-b2)",
+      "Seite 6: 1 Block (p6-b1)",
+      "Seite 5: 1 Block (p5-b1)",
     ]);
     await wrapper.get(".row-form").trigger("submit");
     await flushPromises();

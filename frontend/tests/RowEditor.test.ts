@@ -207,7 +207,7 @@ describe("a statement's anchors in its editor", () => {
     const list = wrapper.get(".row-form .anchor-draft").element;
     const button = wrapper.get(".row-form__save").element;
     expect(list.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(entries(wrapper)).toEqual(["Seite 5: 1 Block"]);
+    expect(entries(wrapper)).toEqual(["Seite 5: 1 Block (p5-b2)"]);
     expect(await violations(wrapper.html())).toEqual([]);
     wrapper.unmount();
 
@@ -221,10 +221,10 @@ describe("a statement's anchors in its editor", () => {
     const wrapper = placedEditor();
 
     await addAnchor(wrapper, "blocks:p6-b1");
-    expect(entries(wrapper)).toEqual(["Seite 5: 1 Block", "Seite 6: 1 Block"]);
+    expect(entries(wrapper)).toEqual(["Seite 5: 1 Block (p5-b2)", "Seite 6: 1 Block (p6-b1)"]);
     expect(wrapper.emitted("dirty")?.at(-1)).toEqual([true]);
     await wrapper.findAll(".anchor-draft li button")[0]?.trigger("click");
-    expect(entries(wrapper)).toEqual(["Seite 6: 1 Block"]);
+    expect(entries(wrapper)).toEqual(["Seite 6: 1 Block (p6-b1)"]);
     await save(wrapper);
 
     expect(sent).toHaveBeenCalledWith("s1", 3, {}, [{ blocks: ["p6-b1"] }]);
@@ -252,9 +252,9 @@ describe("a statement's anchors in its editor", () => {
 
     const kept = () => wrapper.findAll(".row-editor__closed dd").map((one) => one.text());
     expect(wrapper.findAll(".row-editor__closed dt").map((one) => one.text())).toEqual(["Fundstellen"]);
-    expect(kept()).toEqual(["Seite 5: 1 Block; Seite 6: 1 Block"]);
+    expect(kept()).toEqual(["Seite 5: 1 Block (p5-b2); Seite 6: 1 Block (p6-b1)"]);
 
     await addAnchor(wrapper, "page:9");
-    expect(kept()).toEqual(["Seite 5: 1 Block; Seite 6: 1 Block"]);
+    expect(kept()).toEqual(["Seite 5: 1 Block (p5-b2); Seite 6: 1 Block (p6-b1)"]);
   });
 });

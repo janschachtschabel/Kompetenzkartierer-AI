@@ -132,7 +132,6 @@ const route = useRoute();
   outline-offset: 2px;
 }
 
-
 .block__kind {
   font-weight: 600;
 }

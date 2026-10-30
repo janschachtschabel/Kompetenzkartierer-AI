@@ -45,7 +45,7 @@ describe("a form's words", () => {
   });
 
   it("say a statement's anchors in a draft by their pages, each apart", () => {
-    expect(valueText(FIELDS, "anchors", ["blocks:p5-b2,p5-b3", "page:7"])).toBe("Seite 5: 2 Blöcke; Auf Seite 7 nicht gefunden");
+    expect(valueText(FIELDS, "anchors", ["blocks:p5-b2,p5-b3", "page:7"])).toBe("Seite 5: 2 Blöcke (p5-b2, p5-b3); Auf Seite 7 nicht gefunden");
     expect(shownValue(FIELDS, "anchors", [])).toBe("leer");
   });
 });

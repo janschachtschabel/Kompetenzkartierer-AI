@@ -1010,13 +1010,13 @@ export const messages = {
         titleNode: "Knoten löschen?",
         titleStatement: "Aussage verwerfen oder löschen?",
         messageNode:
-          "Der Knoten wird mit allem darunter gelöscht: {nodes} {nodes|Knoten|Knoten} und {statements} {statements|Aussage|Aussagen}, mit ihren Befunden.",
+          "Der Knoten wird gelöscht – mit {under} {under|Unterknoten|Unterknoten} und {statements} {statements|Aussage|Aussagen} und ihren Befunden.",
         messageStatement:
           "Eine Aussage, die die Extraktion gefunden hat, wird verworfen und bleibt im Baum; eine von Hand angelegte wird gelöscht.",
         dropped: "Gelöscht: {nodes} {nodes|Knoten|Knoten} und {statements} {statements|Aussage|Aussagen}.",
         deleted: "Die Aussage ist gelöscht.",
         rejected: "Die Aussage ist verworfen; sie bleibt im Baum.",
-        stale: "Die Zeile wurde inzwischen geändert; der Baum wird neu geladen. Prüfe sie, bevor du sie löschst.",
+        stale: "Die Zeile wurde inzwischen geändert; der Baum wird neu geladen. Prüfe sie, bevor du es noch einmal versuchst.",
         failed: "Die Zeile wurde nicht gelöscht.",
       },
       // why the tree only reads: the document's state (TreeOut.closed), else the caller's role (RowPanel.vue)
@@ -1075,7 +1075,7 @@ export const messages = {
         noPage: "ohne Seite",
         show: "Seite {page} in der Quelle zeigen",
         // an anchor of a draft (anchorDraft.ts): blocks chosen in the source, or the page a passage stands on unfound
-        draftBlocks: "{pages}: {count} {count|Block|Blöcke}",
+        draftBlocks: "{pages}: {count} {count|Block|Blöcke} ({ids})",
         draftPage: "Auf {pages} nicht gefunden",
         // the anchors of a statement's draft (AnchorDraftList.vue)
         draftHeading: "Fundstellen im Entwurf",

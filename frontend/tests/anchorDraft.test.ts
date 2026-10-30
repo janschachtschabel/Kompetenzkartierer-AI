@@ -7,6 +7,7 @@ import {
   anchorsOf,
   decodeAnchor,
   encodeAnchor,
+  heldAnchors,
   pageOfBlock,
   withAnchor,
   withoutAnchor,
@@ -81,10 +82,10 @@ describe("an anchor in a draft", () => {
     expect(anchorRequest(["page:0", "page:7"])).toEqual([{ page: 7 }]);
   });
 
-  it("says its pages and how many blocks, or the page it was not found on", () => {
-    expect(anchorCodeText("blocks:p5-b2,p5-b3")).toBe("Seite 5: 2 Blöcke");
-    expect(anchorCodeText("blocks:p5-b2")).toBe("Seite 5: 1 Block");
-    expect(anchorCodeText("blocks:p6-b1,p5-b9,p7-b2")).toBe("Seiten 5–7: 3 Blöcke");
+  it("says its pages and its blocks, or the page it was not found on", () => {
+    expect(anchorCodeText("blocks:p5-b2,p5-b3")).toBe("Seite 5: 2 Blöcke (p5-b2, p5-b3)");
+    expect(anchorCodeText("blocks:p5-b2")).toBe("Seite 5: 1 Block (p5-b2)");
+    expect(anchorCodeText("blocks:p6-b1,p5-b9,p7-b2")).toBe("Seiten 5–7: 3 Blöcke (p6-b1, p5-b9, p7-b2)");
     expect(anchorCodeText("page:5")).toBe("Auf Seite 5 nicht gefunden");
     // one it cannot read stands as written, not as nothing
     expect(anchorCodeText("blocks:x")).toBe("blocks:x");
@@ -111,6 +112,8 @@ describe("an anchor in a draft", () => {
 
   it("leaves a draft that holds no anchors - a node's - as it is", () => {
     const node = { original_title: "Optik" };
+    expect(heldAnchors(node)).toBeNull();
+    expect(heldAnchors({ anchors: ["page:3"] })).toEqual(["page:3"]);
 
     expect(withAnchor(node, "page:3")).toBe(node);
     expect(withoutAnchor(node, "page:3")).toBe(node);

@@ -56,7 +56,7 @@ describe("the ways on from a row chosen", () => {
     await button(wrapper, t("documents.tree.drop.node")).trigger("click");
     const dialog = wrapper.get("[role=dialog]");
     expect(dialog.text()).toContain(t("documents.tree.drop.titleNode"));
-    expect(dialog.text()).toContain("Der Knoten wird mit allem darunter gelöscht: 2 Knoten und 2 Aussagen, mit ihren Befunden.");
+    expect(dialog.text()).toContain("Der Knoten wird gelöscht – mit 1 Unterknoten und 2 Aussagen und ihren Befunden.");
     expect(await violations(wrapper.html())).toEqual([]);
     await button(wrapper, t("dialog.cancel")).trigger("click");
     expect(sent).not.toHaveBeenCalled();

@@ -109,6 +109,7 @@ describe("adding a row", () => {
     expect(await creating.save()).toEqual({ outcome: "closed" });
     expect(creating.closed.value).toBe("job_open");
     expect(await creating.save()).toEqual({ outcome: "gone" });
+    expect(creating.closed.value).toBeNull(); // tried again, the closing goes with it
     expect(await creating.save()).toEqual({ outcome: "failed" });
     expect(creating.problem.value?.text).toBe(t("documents.tree.create.failed"));
     // the draft kept to try again; tried again, the failure goes with it
@@ -128,6 +129,17 @@ describe("adding a row", () => {
     expect(creating.saving.value).toBe(true);
     answer(made("n9"));
     await saved;
+    // added: busy until it goes, so that it is not added twice
+    expect(creating.saving.value).toBe(true);
+  });
+
+  it("is no longer busy once a try failed", async () => {
+    vi.spyOn(api, "addNode").mockRejectedValue(new ApiError("network", 0));
+    const creating = creator(AT_TOP);
+    creating.draft.value = { ...creating.draft.value, original_title: "Optik", function: CV + "fn_area" };
+
+    await creating.save();
+
     expect(creating.saving.value).toBe(false);
   });
 });

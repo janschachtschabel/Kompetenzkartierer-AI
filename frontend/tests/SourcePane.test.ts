@@ -302,7 +302,7 @@ describe("the source a statement's anchor is chosen in", () => {
     await take(wrapper).trigger("click");
     expect(wrapper.emitted("anchor")).toEqual([["blocks:p3-b1,p3-b2"]]);
     expect(pressed(wrapper)).toEqual(["false", "false"]);
-    expect(said(wrapper)).toBe("Fundstelle übernommen: Seite 3: 2 Blöcke.");
+    expect(said(wrapper)).toBe("Fundstelle übernommen: Seite 3: 2 Blöcke (p3-b1, p3-b2).");
   });
 
   it("lets a block chosen go again", async () => {

@@ -32,7 +32,10 @@ export async function dropRow(row: Row): Promise<DropOutcome> {
     const taken = await dropStatement(row.statement.id, row.statement.revision);
     return { outcome: taken.outcome };
   } catch (error) {
-    if (error instanceof ApiError && error.code === "stale_revision") return { outcome: "stale" };
+    // changed meanwhile - or, the row as stored none, gone (edit_answers.stale)
+    if (error instanceof ApiError && error.code === "stale_revision") {
+      return error.details.current ? { outcome: "stale" } : { outcome: "gone" };
+    }
     // no fields: a field's problem cannot be one of taking a row away
     const refusal = refusalOf(error, [], t("documents.tree.drop.failed"));
     if (refusal.outcome === "gone" || refusal.outcome === "closed") return refusal;

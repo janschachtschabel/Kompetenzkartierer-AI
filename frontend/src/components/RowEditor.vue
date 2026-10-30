@@ -11,7 +11,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, ref, toRef, watch } from "vue";
 
-import { ANCHORS } from "@/anchorDraft";
+import { ANCHORS, heldAnchors } from "@/anchorDraft";
 import type { Form } from "@/api";
 import AnchorDraftList from "@/components/AnchorDraftList.vue";
 import AppIcon from "@/components/AppIcon.vue";
@@ -50,10 +50,7 @@ const anchorList = ref<InstanceType<typeof AnchorDraftList> | null>(null);
 const shut = computed(() => closed.value ?? props.closedBy ?? null);
 
 // a statement's anchors as its draft holds them; a node's draft holds none
-const anchors = computed(() => {
-  const held = draft.value[ANCHORS];
-  return Array.isArray(held) ? held : null;
-});
+const anchors = computed(() => heldAnchors(draft.value));
 
 // the draft the tree closed on, in words, field by field: what the user changed, not what another did since
 const kept = computed(() => {

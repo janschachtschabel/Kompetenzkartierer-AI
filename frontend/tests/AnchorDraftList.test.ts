@@ -29,13 +29,13 @@ describe("the anchors of a statement's draft", () => {
     const wrapper = list(["blocks:p5-b2,p5-b3", "page:7"]);
 
     expect(wrapper.get("h3").text()).toBe(t("documents.tree.anchors.draftHeading"));
-    expect(wrapper.findAll("li span").map((item) => item.text())).toEqual(["Seite 5: 2 Blöcke", "Auf Seite 7 nicht gefunden"]);
+    expect(wrapper.findAll("li span").map((item) => item.text())).toEqual(["Seite 5: 2 Blöcke (p5-b2, p5-b3)", "Auf Seite 7 nicht gefunden"]);
     expect(removers(wrapper).map((button) => button.text())).toEqual(["Entfernen", "Entfernen"]);
     const described = removers(wrapper).map((button) => {
       const id = button.attributes("aria-describedby") ?? "";
       return document.getElementById(id)?.textContent?.trim();
     });
-    expect(described).toEqual(["Seite 5: 2 Blöcke", "Auf Seite 7 nicht gefunden"]);
+    expect(described).toEqual(["Seite 5: 2 Blöcke (p5-b2, p5-b3)", "Auf Seite 7 nicht gefunden"]);
     expect(removers(wrapper).every((button) => button.attributes("type") === "button")).toBe(true);
     expect(await violations(wrapper.html())).toEqual([]);
   });
@@ -72,6 +72,12 @@ describe("the anchors of a statement's draft", () => {
     await nextTick();
 
     expect(document.activeElement).toBe(outside);
+  });
+
+  it("tells two anchors of as many blocks on one page apart, by their blocks", () => {
+    const wrapper = list(["blocks:p5-b2", "blocks:p5-b7"]);
+
+    expect(wrapper.findAll("li span").map((item) => item.text())).toEqual(["Seite 5: 1 Block (p5-b2)", "Seite 5: 1 Block (p5-b7)"]);
   });
 
   it("says how to choose one where there is none", async () => {

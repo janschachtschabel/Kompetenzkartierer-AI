@@ -8,7 +8,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 
-import { ANCHORS } from "@/anchorDraft";
+import { ANCHORS, heldAnchors } from "@/anchorDraft";
 import type { Form } from "@/api";
 import AnchorDraftList from "@/components/AnchorDraftList.vue";
 import AppIcon from "@/components/AppIcon.vue";
@@ -31,10 +31,7 @@ const closedNotice = ref<HTMLElement | null>(null);
 const asking = ref(false);
 
 // a statement's anchors as its draft holds them; a node's draft holds none
-const anchors = computed(() => {
-  const held = draft.value[ANCHORS];
-  return Array.isArray(held) ? held : null;
-});
+const anchors = computed(() => heldAnchors(draft.value));
 
 watch(dirty, (open) => emit("dirty", open), { immediate: true });
 onBeforeUnmount(() => emit("dirty", false));

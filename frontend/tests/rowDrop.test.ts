@@ -57,7 +57,7 @@ describe("taking a row away", () => {
 
   it("says a row changed meanwhile, gone, a closed tree, or another failure", async () => {
     vi.spyOn(api, "dropNode")
-      .mockRejectedValueOnce(new ApiError("server", 409, "stale_revision", "Changed.", { current: null }))
+      .mockRejectedValueOnce(new ApiError("server", 409, "stale_revision", "Changed.", { current: node_("c", { revision: 2 }) }))
       .mockRejectedValueOnce(new ApiError("server", 404, "no_node"))
       .mockRejectedValueOnce(new ApiError("server", 409, "frozen"))
       .mockRejectedValueOnce(new ApiError("network", 0));
@@ -71,5 +71,13 @@ describe("taking a row away", () => {
     expect(dropWords(stale)).toBe(t("documents.tree.drop.stale"));
     expect(dropWords(closed)).toBe(t("refusals.frozen"));
     expect(failed).toMatchObject({ outcome: "failed", problem: { text: t("documents.tree.drop.failed") } });
+  });
+
+  it("takes a row changed meanwhile into none at all as gone", async () => {
+    vi.spyOn(api, "dropNode").mockRejectedValue(
+      new ApiError("server", 409, "stale_revision", "Changed.", { current: null }),
+    );
+
+    expect(await dropRow(row("node:c"))).toEqual({ outcome: "gone" });
   });
 });

@@ -31,7 +31,9 @@ const question = computed(() => {
   if (row.kind === "statement") {
     return { title: t("documents.tree.drop.titleStatement"), message: t("documents.tree.drop.messageStatement") };
   }
-  return { title: t("documents.tree.drop.titleNode"), message: t("documents.tree.drop.messageNode", { ...dropCounts(row.node) }) };
+  // the node itself not among those under it
+  const { nodes, statements } = dropCounts(row.node);
+  return { title: t("documents.tree.drop.titleNode"), message: t("documents.tree.drop.messageNode", { under: nodes - 1, statements }) };
 });
 
 async function drop(): Promise<void> {
