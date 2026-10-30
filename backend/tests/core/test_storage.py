@@ -206,6 +206,8 @@ def test_a_write_syncs_the_folder_it_renamed_in(
         synced.append(stat.S_ISDIR(os.fstat(descriptor).st_mode))
         real_fsync(descriptor)
 
+    # the folder there already: a write that makes it syncs the folders above too (the test below)
+    storage.put("runs/0.json", b"{}")
     monkeypatch.setattr("app.core.storage.os.fsync", recording_fsync)
     storage.put("runs/1.json", b"{}")
 
