@@ -947,6 +947,13 @@ export const messages = {
       },
       notGiven: "nicht angegeben",
       assignedCode: "{code} (aus der Position vergeben)",
+      // the row's form (FormFieldInput.vue, RowForm.vue)
+      form: {
+        requiredLabel: "{label} (Pflichtfeld)",
+        choose: "Bitte wählen",
+        none: "keine Angabe",
+        unknownValue: "unbekannt: {iri}",
+      },
       anchors: {
         heading: "Fundstellen",
         none: "Keine Fundstelle.",
