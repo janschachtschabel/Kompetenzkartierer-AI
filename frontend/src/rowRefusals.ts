@@ -3,6 +3,7 @@
 // or another failure. Saving, adding and taking away say each the same way; a stale revision is the caller's,
 // as each meets it differently.
 import { ApiError, type EditFields, type FormField } from "@/api";
+import { ANCHORS } from "@/anchorDraft";
 import { messages, t } from "@/i18n/de";
 import { failureNotice, type Notice } from "@/notice";
 import { sameValue } from "@/rowDraft";
@@ -29,21 +30,24 @@ export function refusalOf(error: unknown, fields: readonly FormField[], failed: 
   const details = error instanceof ApiError ? error.details : {};
   if (code && GONE.has(code)) return { outcome: "gone" };
   if (code && CLOSING.has(code)) return { outcome: "closed", code };
-  if (code === "invalid_field") {
-    const field = details.field;
-    if (typeof field === "string" && fields.some((one) => one.key === field)) {
-      return { outcome: "invalid", errors: { [field]: problemText(details.problem) }, problem: null };
-    }
-    const problem = { text: failed, explanation: t("documents.tree.problems.elsewhere"), failed: true };
-    return { outcome: "invalid", errors: {}, problem };
-  }
+  // a statement without an anchor: a problem of its anchors' list
+  if (code === "anchor_missing") return invalidAt(fields, ANCHORS, t("refusals.anchor_missing"), failed);
+  if (code === "invalid_field") return invalidAt(fields, details.field, problemText(details.problem), failed);
   return { outcome: "failed", problem: failureNotice(error, failed) };
+}
+
+function invalidAt(fields: readonly FormField[], field: unknown, words: string, failed: string): Refusal {
+  if (typeof field === "string" && fields.some((one) => one.key === field)) {
+    return { outcome: "invalid", errors: { [field]: words }, problem: null };
+  }
+  const notice = { text: failed, explanation: t("documents.tree.problems.elsewhere"), failed: true };
+  return { outcome: "invalid", errors: {}, problem: notice };
 }
 
 /** The required fields the change empties, each said at its field - before anything is asked. */
 export function emptiedRequired(fields: readonly FormField[], changed: EditFields): Record<string, string> {
   const words = fields
     .filter((field) => field.required && field.key in changed && sameValue(changed[field.key], null))
-    .map((field) => [field.key, t("documents.tree.problems.required")]);
+    .map((field) => [field.key, t(field.key === ANCHORS ? "refusals.anchor_missing" : "documents.tree.problems.required")]);
   return Object.fromEntries(words);
 }

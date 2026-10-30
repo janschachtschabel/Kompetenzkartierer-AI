@@ -3,8 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { effectScope, nextTick, ref, type EffectScope } from "vue";
 
 import * as api from "@/api";
-import { ApiError, type TreeStatement } from "@/api";
+import { ApiError, type TreeAnchor, type TreeStatement } from "@/api";
 import { rowsOf, type Row, type RowKey } from "@/documentTree";
+import { t } from "@/i18n/de";
 import { useRowSave } from "@/rowSave";
 
 import { CV, form_, node_, statement_ } from "./treeFixtures";
@@ -326,5 +327,180 @@ describe("the row edited", () => {
     shown.value = again("Wieder anders.", 5);
     await flushPromises();
     expect([editing.draft.value.verbatim, editing.revision.value]).toEqual(["Mein Entwurf.", 4]);
+  });
+});
+
+describe("a statement's anchors in its draft", () => {
+  function placed(id: string, page: number, blocks: string[]): TreeAnchor {
+    return {
+      id,
+      page_start: page,
+      page_end: null,
+      printed_page: null,
+      quote: null,
+      match_kind: CV + (blocks.length ? "match_exact" : "match_not_found"),
+      match_score: null,
+      blocks,
+    };
+  }
+
+  const PLACED = statement_("s1", { ...SAID, anchors: [placed("q1", 5, ["p5-b2"]), placed("q2", 7, [])] });
+
+  function placedEditor() {
+    const found = rowsOf([node_("a", { ...NODE, statements: [PLACED] })]).get("statement:s1");
+    if (!found) throw new Error("no row");
+    const shown = ref(found);
+    const editing = scope.run(() => useRowSave(shown, ref(form_())));
+    if (!editing) throw new Error("no scope");
+    return { shown, editing };
+  }
+
+  function answered(anchors: TreeAnchor[], revision: number, fields: Record<string, unknown> = {}): TreeStatement {
+    return { ...PLACED, revision, anchors, fields: { ...PLACED.fields, ...fields } as TreeStatement["fields"] };
+  }
+
+  it("holds a statement's anchors as codes, a node none, and adds none to a node", () => {
+    const { editing } = placedEditor();
+    const node = editor("node:a").editing;
+
+    node.addAnchor("page:3");
+
+    expect(editing.draft.value.anchors).toEqual(["blocks:p5-b2", "page:7"]);
+    expect(editing.dirty.value).toBe(false);
+    expect("anchors" in node.draft.value).toBe(false);
+    expect(node.dirty.value).toBe(false);
+  });
+
+  it("takes an anchor in once, and one away; the same anchors in another order are no change", () => {
+    const { editing } = placedEditor();
+
+    editing.addAnchor("blocks:p6-b1");
+    editing.addAnchor("blocks:p6-b1");
+    expect(editing.draft.value.anchors).toEqual(["blocks:p5-b2", "page:7", "blocks:p6-b1"]);
+    expect(editing.dirty.value).toBe(true);
+
+    editing.removeAnchor("blocks:p6-b1");
+    editing.removeAnchor("blocks:p5-b2");
+    editing.addAnchor("blocks:p5-b2");
+    expect(editing.draft.value.anchors).toEqual(["page:7", "blocks:p5-b2"]);
+    expect(editing.dirty.value).toBe(false);
+  });
+
+  it("sends the anchors, all of them, once they changed - and none where only a field did", async () => {
+    const sent = vi
+      .spyOn(api, "editStatement")
+      .mockResolvedValueOnce(answered([placed("q1", 5, ["p5-b2"]), placed("q2", 7, []), placed("q3", 6, ["p6-b1"])], 4))
+      .mockResolvedValueOnce(answered([placed("q1", 5, ["p5-b2"])], 5, { verbatim: "Neu." }));
+    const { editing } = placedEditor();
+
+    editing.addAnchor("blocks:p6-b1");
+    expect(await editing.save()).toBe("saved");
+    expect(sent).toHaveBeenLastCalledWith("s1", 3, {}, [{ blocks: ["p5-b2"] }, { page: 7 }, { blocks: ["p6-b1"] }]);
+    // taken as the answer stores them
+    expect([editing.draft.value.anchors, editing.dirty.value]).toEqual([["blocks:p5-b2", "page:7", "blocks:p6-b1"], false]);
+
+    editing.draft.value = { ...editing.draft.value, verbatim: "Neu." };
+    await editing.save();
+    expect(sent.mock.calls[1]).toEqual(["s1", 4, { verbatim: "Neu." }]);
+    expect(editing.draft.value.anchors).toEqual(["blocks:p5-b2"]);
+  });
+
+  it("says the anchors emptied at their list, asking nothing", async () => {
+    const sent = vi.spyOn(api, "editStatement");
+    const { editing } = placedEditor();
+
+    editing.removeAnchor("blocks:p5-b2");
+    editing.removeAnchor("page:7");
+
+    expect(await editing.save()).toBe("invalid");
+    expect(editing.errors.value).toEqual({ anchors: t("refusals.anchor_missing") });
+    expect(sent).not.toHaveBeenCalled();
+  });
+
+  it("states the anchors' problem at their list", async () => {
+    vi.spyOn(api, "editStatement")
+      .mockRejectedValueOnce(
+        new ApiError("server", 422, "invalid_field", "No block.", { field: "anchors", problem: "unknown_block" }),
+      )
+      .mockRejectedValueOnce(new ApiError("server", 422, "invalid_field", "No page.", { field: "anchors", problem: "no_page" }))
+      .mockRejectedValueOnce(new ApiError("server", 422, "anchor_missing", "Name where."));
+    const { editing } = placedEditor();
+    editing.addAnchor("blocks:p6-b1");
+
+    expect(await editing.save()).toBe("invalid");
+    expect(editing.errors.value).toEqual({ anchors: "Ein Block, den die Umwandlung nicht hat." });
+    expect(await editing.save()).toBe("invalid");
+    expect(editing.errors.value).toEqual({ anchors: "Eine Seite, die die Datei nicht hat." });
+    expect(await editing.save()).toBe("invalid");
+    expect(editing.errors.value).toEqual({ anchors: t("refusals.anchor_missing") });
+    expect(editing.problem.value).toBeNull();
+  });
+
+  it("lays the anchors another stored meanwhile beside the user's: taken in, or put before the user", async () => {
+    const stale = (anchors: TreeAnchor[]) =>
+      new ApiError("server", 409, "stale_revision", "Changed meanwhile.", { current: answered(anchors, 5) });
+    vi.spyOn(api, "editStatement")
+      .mockRejectedValueOnce(stale([placed("q9", 9, [])]))
+      .mockRejectedValueOnce(stale([placed("q8", 8, [])]));
+    const only = placedEditor().editing;
+    only.draft.value = { ...only.draft.value, verbatim: "Mein Satz." };
+
+    expect(await only.save()).toBe("conflict");
+    expect(only.conflict.value?.taken).toEqual(["anchors"]);
+    expect(only.draft.value.anchors).toEqual(["page:9"]);
+
+    const both = placedEditor().editing;
+    both.addAnchor("blocks:p6-b1");
+    expect(await both.save()).toBe("conflict");
+    expect(both.conflict.value?.clashes).toEqual([
+      { key: "anchors", yours: ["blocks:p5-b2", "page:7", "blocks:p6-b1"], stored: ["page:8"] },
+    ]);
+  });
+
+  it("takes the anchors as the answer stores them, whatever order it gives their blocks in", async () => {
+    vi.spyOn(api, "editStatement").mockResolvedValueOnce(answered([placed("q1", 5, ["p5-b2", "p5-b3"])], 4));
+    const { editing } = placedEditor();
+    editing.removeAnchor("page:7");
+    editing.removeAnchor("blocks:p5-b2");
+    editing.addAnchor("blocks:p5-b3,p5-b2"); // as chosen
+
+    expect(await editing.save()).toBe("saved");
+    expect([editing.draft.value.anchors, editing.dirty.value]).toEqual([["blocks:p5-b2,p5-b3"], false]);
+
+    // the same place taken in again, its blocks chosen in another order: no change
+    editing.removeAnchor("blocks:p5-b2,p5-b3");
+    editing.addAnchor("blocks:p5-b3,p5-b2");
+    expect([editing.draft.value.anchors, editing.dirty.value]).toEqual([["blocks:p5-b2,p5-b3"], false]);
+    // and none it cannot read
+    editing.addAnchor("blocks:x");
+    expect(editing.draft.value.anchors).toEqual(["blocks:p5-b2,p5-b3"]);
+  });
+
+  it("lays what the user typed while a change was saved on the anchors as stored", async () => {
+    let answer: (row: TreeStatement) => void = () => undefined;
+    vi.spyOn(api, "editStatement").mockReturnValue(new Promise((resolve) => (answer = resolve)));
+    const { editing } = placedEditor();
+    editing.draft.value = { ...editing.draft.value, verbatim: "Neu." };
+
+    const saved = editing.save();
+    editing.draft.value = { ...editing.draft.value, lead_in: "Sie" }; // typed on meanwhile
+    answer(answered([placed("q1", 5, ["p5-b2"])], 4, { verbatim: "Neu." })); // stored otherwise meanwhile
+
+    expect(await saved).toBe("saved");
+    expect([editing.draft.value.anchors, editing.draft.value.lead_in]).toEqual([["blocks:p5-b2"], "Sie"]);
+  });
+
+  it("keeps an anchor taken in while a change was saved", async () => {
+    let answer: (row: TreeStatement) => void = () => undefined;
+    vi.spyOn(api, "editStatement").mockReturnValue(new Promise((resolve) => (answer = resolve)));
+    const { editing } = placedEditor();
+    editing.draft.value = { ...editing.draft.value, verbatim: "Neu." };
+
+    const saved = editing.save();
+    editing.addAnchor("blocks:p6-b1"); // taken in meanwhile
+    answer(answered(PLACED.anchors, 4, { verbatim: "Neu." }));
+
+    expect(await saved).toBe("saved");
+    expect([editing.draft.value.anchors, editing.dirty.value]).toEqual([["blocks:p5-b2", "page:7", "blocks:p6-b1"], true]);
   });
 });

@@ -5,10 +5,23 @@
 // stored row. Where the tree closed meanwhile (a job, frozen, X4 not done, no form) the reason is kept with the
 // draft. A field's problem stands at the field - a required field emptied before anything is asked - any other
 // failure above the form, the draft kept to try again. While a field both changed is undecided nothing is
-// saved; what the user typed while a change was saved is laid on the row as stored.
+// saved; what the user typed while a change was saved is laid on the row as stored. A statement's anchors are a
+// field of its draft beside the form's (anchorDraft.ts, Paket 9c2b L2), sent - all of them - once they changed.
 import { computed, ref, shallowRef, watch, type Ref } from "vue";
 
-import { ApiError, editNode, editStatement, type FieldValue, type Form, type FormField } from "@/api";
+import {
+  ApiError,
+  editNode,
+  editStatement,
+  type EditFields,
+  type FieldValue,
+  type Form,
+  type FormField,
+  type NodeRow,
+  type TreeAnchor,
+  type TreeStatement,
+} from "@/api";
+import { ANCHOR_FIELD, ANCHORS, anchorRequest, anchorsOf, decodeAnchor, encodeAnchor } from "@/anchorDraft";
 import type { Row } from "@/documentTree";
 import { t } from "@/i18n/de";
 import type { Notice } from "@/notice";
@@ -25,8 +38,18 @@ export interface RowConflict {
   stored: Draft;
 }
 
-function fieldsOf(row: Row): Record<string, FieldValue> {
-  return row.kind === "node" ? row.node.fields : row.statement.fields;
+interface Stored {
+  fields: Record<string, FieldValue>;
+  anchors?: TreeAnchor[];
+}
+
+function storedOf(row: Row): Stored {
+  return row.kind === "node" ? row.node : row.statement;
+}
+
+// by the keys of the draft - the anchors as their codes, which a node's draft does not hold
+function valuesOf(stored: Stored): Record<string, FieldValue> {
+  return { ...stored.fields, [ANCHORS]: anchorsOf(stored.anchors ?? []) };
 }
 
 function revisionOf(row: Row): number {
@@ -35,7 +58,9 @@ function revisionOf(row: Row): number {
 
 export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
   const fields = computed<FormField[]>(() => (row.value.kind === "node" ? form.value.node : form.value.statement));
-  const before = shallowRef<Draft>(draftOf(fields.value, fieldsOf(row.value)));
+  // the draft's: the form's, and a statement's anchors
+  const drafted = computed<FormField[]>(() => (row.value.kind === "node" ? fields.value : [...fields.value, ANCHOR_FIELD]));
+  const before = shallowRef<Draft>(draftOf(drafted.value, valuesOf(storedOf(row.value))));
   const draft = shallowRef<Draft>({ ...before.value });
   const revision = ref(revisionOf(row.value));
   const saving = ref(false);
@@ -43,10 +68,10 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
   const problem = shallowRef<Notice | null>(null);
   const conflict = shallowRef<RowConflict | null>(null);
   const closed = ref<string | null>(null);
-  const dirty = computed(() => Object.keys(changedFields(fields.value, before.value, draft.value)).length > 0);
+  const dirty = computed(() => Object.keys(changedFields(drafted.value, before.value, draft.value)).length > 0);
 
-  function stand(values: Record<string, FieldValue>, at: number): void {
-    before.value = draftOf(fields.value, values);
+  function stand(stored: Stored, at: number): void {
+    before.value = draftOf(drafted.value, valuesOf(stored));
     draft.value = { ...before.value };
     revision.value = at;
   }
@@ -58,21 +83,22 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
       problem.value = null;
       conflict.value = null;
       closed.value = null;
-      stand(fieldsOf(now), revisionOf(now));
-    } else if (!dirty.value) stand(fieldsOf(now), revisionOf(now));
+      stand(storedOf(now), revisionOf(now));
+    } else if (!dirty.value) stand(storedOf(now), revisionOf(now));
   });
 
   function refused(error: unknown): SaveOutcome {
     const code = error instanceof ApiError ? error.code : undefined;
     const details = error instanceof ApiError ? error.details : {};
     if (code === "stale_revision") {
-      const current = details.current as { fields?: Record<string, FieldValue>; revision?: number } | null;
+      const current = details.current as Partial<Stored> & { revision?: number } | null;
       if (!current?.fields || typeof current.revision !== "number") return "gone";
-      const stored = draftOf(fields.value, current.fields);
-      const laid = rebase(fields.value, before.value, draft.value, stored);
+      const now = { fields: current.fields, anchors: current.anchors };
+      const stored = draftOf(drafted.value, valuesOf(now));
+      const laid = rebase(drafted.value, before.value, draft.value, stored);
       // the other stored what the user asked: saved, by whoever
-      if (!Object.keys(changedFields(fields.value, stored, laid.draft)).length) {
-        stand(current.fields, current.revision);
+      if (!Object.keys(changedFields(drafted.value, stored, laid.draft)).length) {
+        stand(now, current.revision);
         conflict.value = null;
         return "saved";
       }
@@ -82,7 +108,7 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
       conflict.value = { clashes: laid.clashes, taken: laid.taken, stored };
       return "conflict";
     }
-    const refusal = refusalOf(error, fields.value, t("documents.tree.form.saveFailed"));
+    const refusal = refusalOf(error, drafted.value, t("documents.tree.form.saveFailed"));
     if (refusal.outcome === "closed") closed.value = refusal.code;
     if (refusal.outcome === "invalid") {
       errors.value = refusal.errors;
@@ -92,10 +118,19 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
     return refusal.outcome;
   }
 
+  // A statement's anchors go apart from its fields, and only where they changed: left out, they stay
+  function send(current: Row, changed: EditFields): Promise<NodeRow | TreeStatement> {
+    if (current.kind === "node") return editNode(current.node.id, revision.value, changed);
+    const { [ANCHORS]: anchors, ...named } = changed;
+    return Array.isArray(anchors)
+      ? editStatement(current.statement.id, revision.value, named, anchorRequest(anchors))
+      : editStatement(current.statement.id, revision.value, named);
+  }
+
   async function save(): Promise<SaveOutcome> {
     if (conflict.value?.clashes.length) return "undecided";
-    const changed = changedFields(fields.value, before.value, draft.value);
-    errors.value = emptiedRequired(fields.value, changed);
+    const changed = changedFields(drafted.value, before.value, draft.value);
+    errors.value = emptiedRequired(drafted.value, changed);
     problem.value = null;
     if (Object.keys(errors.value).length) return "invalid";
     if (!Object.keys(changed).length) {
@@ -106,16 +141,13 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
     const sent = draft.value;
     saving.value = true;
     try {
-      const answer =
-        current.kind === "node"
-          ? await editNode(current.node.id, revision.value, changed)
-          : await editStatement(current.statement.id, revision.value, changed);
+      const answer = await send(current, changed);
       // another row chosen meanwhile (its draft given up): the tree read anew shows what was saved
       if (row.value.key !== current.key) return "saved";
       const typed = draft.value;
-      stand(answer.fields, answer.revision);
+      stand(answer, answer.revision);
       // typed on while it was saved: that stays, laid on the row as stored
-      if (typed !== sent) draft.value = rebase(fields.value, sent, typed, before.value).draft;
+      if (typed !== sent) draft.value = rebase(drafted.value, sent, typed, before.value).draft;
       conflict.value = null;
       return "saved";
     } catch (error) {
@@ -130,6 +162,20 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
     if (!now) return;
     if (value !== undefined) draft.value = { ...draft.value, [key]: Array.isArray(value) ? [...value] : value };
     conflict.value = { ...now, clashes: now.clashes.filter((clash) => clash.key !== key) };
+  }
+
+  // a statement's anchors in the draft, as they are to be; a node's draft holds none to change
+  function changeAnchors(change: (held: string[]) => string[]): void {
+    const held = draft.value[ANCHORS];
+    if (Array.isArray(held)) draft.value = { ...draft.value, [ANCHORS]: change(held) };
+  }
+
+  // the code of the place `code` names, however its blocks were listed; none for one it cannot read
+  function addAnchor(code: string): void {
+    const anchor = decodeAnchor(code);
+    if (!anchor) return;
+    const place = encodeAnchor(anchor);
+    changeAnchors((held) => (held.includes(place) ? held : [...held, place]));
   }
 
   return {
@@ -149,5 +195,9 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
     keep: (key: string) => settle(key),
     /** Take the stored value of a field both changed. */
     take: (key: string) => settle(key, conflict.value?.stored[key]),
+    /** Take an anchor (its code, anchorDraft.ts) into a statement's draft, once. */
+    addAnchor,
+    /** Take an anchor out of a statement's draft. */
+    removeAnchor: (code: string) => changeAnchors((held) => held.filter((one) => one !== code)),
   };
 }

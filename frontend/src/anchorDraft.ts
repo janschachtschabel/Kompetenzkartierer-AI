@@ -1,19 +1,40 @@
 // A statement's anchors as its draft holds them (plan M1 9.8, Paket 9c2b L2): each a code - the blocks of the
 // conversion it stands in (`blocks:p5-b2,p5-b3`), or the page it stands on where no block holds it (`page:5`) -
-// so that a list of them compares, rebases and is kept like any field of many. Read off the anchors stored,
-// sent as the anchors an edit names (backend AnchorIn), said in words.
-import type { AnchorIn, TreeAnchor } from "@/api";
+// so that a list of them compares, rebases and is kept like any field of many. One place has one code: its
+// blocks once each, by page and number - the tree answers them in the document's order, a reader chooses them
+// in any; the server keeps them as a set. Read off the anchors stored, sent as the anchors an edit names
+// (backend AnchorIn), said in words.
+import type { AnchorIn, FormField, TreeAnchor } from "@/api";
 import { pagesText } from "@/anchorWords";
 import { t } from "@/i18n/de";
+
+/** The draft's key of a statement's anchors; no form's field has it (backend app/vocab/forms.py). */
+export const ANCHORS = "anchors";
+
+/** The anchors as a field of the draft beside the form's: compared, rebased and kept as one, not shown in the form. */
+export const ANCHOR_FIELD: FormField = { key: ANCHORS, kind: "concepts", required: true, many: true, most: null, values: null };
 
 const BLOCKS = "blocks:";
 const PAGE = "page:";
 // as the backend takes them (app/api/statement_editing.py BlockId, MOST_PAGE): pages from 1
-const BLOCK_ID = /^p([1-9][0-9]{0,4})-b[0-9]{1,6}$/;
+const BLOCK_ID = /^p([1-9][0-9]{0,4})-b([0-9]{1,6})$/;
 const PAGE_NUMBER = /^[1-9][0-9]{0,4}$/;
 
+// by page, then by number on it; an id written otherwise after them
+function place(id: string): [number, number] {
+  const found = BLOCK_ID.exec(id);
+  return found ? [Number(found[1]), Number(found[2])] : [Infinity, Infinity];
+}
+
+function byPlace(one: string, other: string): number {
+  const [page, number] = place(one);
+  const [otherPage, otherNumber] = place(other);
+  return page - otherPage || number - otherNumber;
+}
+
 export function encodeAnchor(anchor: AnchorIn): string {
-  return "blocks" in anchor ? BLOCKS + anchor.blocks.join(",") : PAGE + String(anchor.page);
+  if (!("blocks" in anchor)) return PAGE + String(anchor.page);
+  return BLOCKS + [...new Set(anchor.blocks)].sort(byPlace).join(",");
 }
 
 /** The anchor a code names; none for one written otherwise. */

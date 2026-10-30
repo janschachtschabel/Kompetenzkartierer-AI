@@ -43,4 +43,9 @@ describe("a form's words", () => {
     expect(shownValue(FIELDS, "original_title", null)).toBe("leer");
     expect(shownValue(FIELDS, "addressees", [CV + "addr_learner"])).toBe("Lernende");
   });
+
+  it("say a statement's anchors in a draft by their pages, each apart", () => {
+    expect(valueText(FIELDS, "anchors", ["blocks:p5-b2,p5-b3", "page:7"])).toBe("Seite 5: 2 Blöcke; Auf Seite 7 nicht gefunden");
+    expect(shownValue(FIELDS, "anchors", [])).toBe("leer");
+  });
 });

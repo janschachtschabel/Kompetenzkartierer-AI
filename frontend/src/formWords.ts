@@ -3,6 +3,7 @@
 // from the vocabulary since it was written - stands as its IRI rather than as nothing. Read beside another
 // value (a conflict, a draft kept), an empty one says so.
 import type { FieldValue, FormField } from "@/api";
+import { ANCHORS, anchorCodeText } from "@/anchorDraft";
 import { t } from "@/i18n/de";
 import { sameValue } from "@/rowDraft";
 
@@ -13,10 +14,12 @@ export function valueLabel(fields: readonly FormField[], key: string, iri: strin
 }
 
 /** The field's value as text: a list's values by their labels, a text itself (a text field offers no
- * values to name it by), none as nothing. */
+ * values to name it by), none as nothing; a statement's anchors in a draft each by its pages. */
 export function valueText(fields: readonly FormField[], key: string, value: FieldValue): string {
   if (value === null) return "";
-  return (Array.isArray(value) ? value : [value]).map((one) => valueLabel(fields, key, one)).join(", ");
+  const values = Array.isArray(value) ? value : [value];
+  if (key === ANCHORS) return values.map(anchorCodeText).join("; ");
+  return values.map((one) => valueLabel(fields, key, one)).join(", ");
 }
 
 /** The field's value to be read beside another: as `valueText`, an empty one as "leer". */

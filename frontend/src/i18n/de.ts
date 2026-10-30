@@ -920,6 +920,8 @@ export const messages = {
         statement_kind: "Art der Aussage",
         subkind: "Unterart",
         addressees: "Adressaten",
+        // not a field of the form: a statement's anchors in its draft (anchorDraft.ts)
+        anchors: "Fundstellen",
         codeText: "Code im Wortlaut",
         levelText: "Niveau im Wortlaut",
         timeText: "Zeit im Wortlaut",
@@ -970,6 +972,8 @@ export const messages = {
         not_storable: "Der Text enthält Zeichen, die sich nicht speichern lassen.",
         not_offered: "Diesen Wert bietet die Auswahlliste nicht an.",
         not_under: "Dieser Wert passt nicht zur gewählten Funktion oder Art.",
+        unknown_block: "Ein Block, den die Umwandlung nicht hat.",
+        no_page: "Eine Seite, die die Datei nicht hat.",
         other: "Dieser Wert lässt sich so nicht speichern.",
         elsewhere: "Ein Feld, das dieses Formular nicht zeigt, lässt sich so nicht setzen.",
       },

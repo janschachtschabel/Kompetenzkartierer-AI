@@ -23,6 +23,8 @@ describe("an anchor in a draft", () => {
   it("is written as its blocks or its page, and read back as it was", () => {
     expect(encodeAnchor({ blocks: ["p5-b2", "p5-b3"] })).toBe("blocks:p5-b2,p5-b3");
     expect(encodeAnchor({ page: 5 })).toBe("page:5");
+    // one place, one code: its blocks once each, by page and number, however they were chosen
+    expect(encodeAnchor({ blocks: ["p5-b3", "p5-b2", "p4-b10", "p4-b9", "p5-b3"] })).toBe("blocks:p4-b9,p4-b10,p5-b2,p5-b3");
 
     expect(decodeAnchor("blocks:p5-b2,p5-b3")).toEqual({ blocks: ["p5-b2", "p5-b3"] });
     expect(decodeAnchor("blocks:p5-b2")).toEqual({ blocks: ["p5-b2"] });
@@ -53,7 +55,7 @@ describe("an anchor in a draft", () => {
 
   it("is read off a stored anchor by its blocks, else its page; one with neither cannot be named", () => {
     const codes = anchorsOf([
-      anchor({ id: "a1", blocks: ["p5-b3", "p6-b1"] }),
+      anchor({ id: "a1", blocks: ["p6-b1", "p5-b3"] }),
       anchor({ id: "a2", blocks: [], page_start: 7 }),
       anchor({ id: "a3", blocks: [], page_start: null }),
       // the same place twice: once
