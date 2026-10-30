@@ -999,23 +999,33 @@ Der Rest von 9c2 ist noch einmal geteilt: 9c2b bringt Fundstellen per Blockauswa
 - **Prüfstand der Zeile.** `ReviewToggles` (im Plan `RowReview`; umbenannt, weil Windows Dateinamen ohne
   Groß/Klein vergleicht und `RowReview.test.ts` neben `rowReview.test.ts` nicht stehen kann) zeigt im Panel
   bei `tree.reviewable` drei Umschalter; der gesetzte ist gedrückt und fragt nichts. Ein Klick setzt genau
-  diese Zeile (`simplify`: kein Sammel-Prüfstand, die Route nimmt bis 2.000). Gesetzt, inzwischen geändert
-  (`stale_revision`) oder geschlossen (`job_open`, `frozen`, `not_extracted`): das Panel sagt es und liest den
-  Baum neu, die Tastatur bleibt am Umschalter; `not_editor` wird nur gesagt; ein Fehlschlag steht an der
-  Gruppe. Das Ergebnis kommt über eine Funktions-Prop (`onReviewed`), auch nach einem Zeilenwechsel.
+  diese Zeile (`simplify`: kein Sammel-Prüfstand, die Route nimmt bis 2.000). Gesetzt oder inzwischen geändert
+  (`stale_revision`): das Panel sagt es und liest den Baum neu, die Tastatur bleibt am Umschalter, der gesetzte
+  Prüfstand gedrückt, bis die Zeile neu gelesen ist. Geschlossen (`job_open`, `frozen`, `not_extracted`):
+  ebenso, die Tastatur aber zur Überschrift des Panels – die Umschalter gehen mit dem geschlossenen Baum. Eine
+  Zeile, die das Dokument nicht mehr hält (`stale_revision` ohne `current`), geht wie eine verschwundene;
+  `not_editor` wird nur gesagt; ein Fehlschlag steht an der Gruppe. Das Ergebnis kommt über eine Funktions-Prop
+  (`onReviewed`), auch nach einem Zeilenwechsel.
 - **Entwurf bleibt gültig.** Liest der Baum eine Zeile mit offenem Entwurf neu und sind ihre gespeicherten
   Felder und Fundstellen unverändert, übernimmt `rowSave` die neue Revision – sonst endete jedes Speichern
   nach einem Prüfstand in einem Schein-Konflikt.
 - **Von Hand oder aus dem Lauf.** Der Baum nennt je Aussage `by_hand`; `RowActions` bietet „Löschen“ (von
-  Hand) oder „Verwerfen“ (aus dem Lauf) mit eigenem Dialog, einer schon verworfenen Lauf-Aussage nichts – ihr
-  Prüfstand lässt sich zurücksetzen. Das ersetzt „Verwerfen oder löschen“ aus 9c2b.
+  Hand) oder „Verwerfen“ (aus dem Lauf) mit eigenem Dialog, einer schon verworfenen Lauf-Aussage nichts (auch
+  keinen leeren Block) – ihr Prüfstand lässt sich zurücksetzen. Das ersetzt „Verwerfen oder löschen“ aus 9c2b.
 - **Prüfjob.** `TreeTools` hält „Knoten anlegen“ und „Erneut prüfen“, angeboten bei `tree.editable` (der Plan
   sagte `editable || reviewable`; wer prüfen darf, darf bearbeiten, also dieselbe Menge). Gestartet, liest
-  die Seite den Baum neu und folgt dem Job (`JobProgress`, „Prüfung“); der Knopf bleibt, beschäftigt, bis der
-  Baum nach dem Ende neu gelesen ist, damit die Tastatur nicht verloren geht. Ein Job, dem die Redaktion nicht
-  folgen darf (404 in der Spur des Eigentümers), wird zur Notiz mit „Baum neu lesen“, die geht, sobald der
-  Baum nicht mehr durch einen Job geschlossen ist. Die Dokumentseite nennt den Job „Prüfung“ („Letzte
-  Prüfung: …“).
+  die Seite den Baum neu und folgt dem Job (`JobProgress`), benannt nach seiner Art – die Route gibt auch eine
+  wartende Extraktion oder Reparatur zurück, die keine „Prüfung“ ist. Der Knopf bleibt beschäftigt, solange der
+  Job wartet oder läuft; beendet (oder aus anderem Grund nicht mehr zu verfolgen) bleibt er, nicht mehr
+  beschäftigt, bis zum nächsten Lesen des Baums, damit die Tastatur nicht verloren geht und ein gescheitertes
+  Lesen einen Knopf lässt, der wirkt. Ein Job, dem die Redaktion nicht folgen darf (404 in der Spur des
+  Eigentümers), wird zur Notiz mit „Baum neu lesen“; jedes Lesen sagt dann, ob die Prüfung noch läuft, und die
+  Notiz geht, sobald ein Lesen den Baum nicht mehr durch einen Job geschlossen findet. Die Dokumentseite nennt
+  den Job „Prüfung“ („Letzte Prüfung: …“).
+- **Nach dem Review.** Die Befunde beider Scheiben (1 major, 9 minor, 8 Kleinigkeiten) sind behoben bis auf
+  einen: Notiz und Ansageregion tragen beim Verschwinden denselben Satz, wie überall in der App (die Region
+  sagt an, die Notiz bleibt stehen). Offen und vor 9c2c schon so: Geht die gewählte Zeile beim Lesen aus
+  anderem Grund verloren (von jemand anderem gelöscht), bleibt sie in der Adresse.
 
 ### Paket 10: Lexikon aus der Länderrecherche mit Stichprobe (3 PT)
 
