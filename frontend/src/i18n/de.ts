@@ -954,6 +954,20 @@ export const messages = {
         none: "keine Angabe",
         unknownValue: "unbekannt: {iri}",
         save: "Änderungen speichern",
+        saveFailed: "Die Änderung wurde nicht gespeichert.",
+      },
+      // a field's problem by the server's word for it (invalid_field details.problem; rowSave.ts)
+      problems: {
+        unknown: "Dieses Feld kennt das Formular nicht.",
+        required: "Dieses Feld braucht einen Wert.",
+        not_text: "Hier gehört ein Text hin.",
+        not_list: "Hier gehört eine Auswahl von Werten hin.",
+        too_long: "Der Text ist länger, als dieses Feld erlaubt.",
+        not_storable: "Der Text enthält Zeichen, die sich nicht speichern lassen.",
+        not_offered: "Diesen Wert bietet die Auswahlliste nicht an.",
+        not_under: "Dieser Wert passt nicht zur gewählten Funktion oder Art.",
+        other: "Dieser Wert lässt sich so nicht speichern.",
+        elsewhere: "Ein Feld, das dieses Formular nicht zeigt, lässt sich so nicht setzen.",
       },
       // a change laid beside the row as another stored it (ConflictPanel.vue)
       conflict: {
