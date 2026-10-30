@@ -856,6 +856,8 @@ export const messages = {
       none: "Noch keine Extraktion.",
       lastStatus: "Letzte Extraktion: {status}",
       lastRepairStatus: "Letzte Reparatur: {status}",
+      checkLabel: "Prüfung",
+      lastCheckStatus: "Letzte Prüfung: {status}",
       // its job is another's to follow, or gone: the document is asked after (DocumentExtraction.vue)
       following: "Der Stand wird weiter abgefragt, bis die Extraktion endet.",
       started: "Die Extraktion ist gestartet; ihr Stand steht hier.",
