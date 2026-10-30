@@ -1035,6 +1035,10 @@ export const messages = {
         // an anchor of a draft (anchorDraft.ts): blocks chosen in the source, or the page a passage stands on unfound
         draftBlocks: "{pages}: {count} {count|Block|Blöcke}",
         draftPage: "Auf {pages} nicht gefunden",
+        // the anchors of a statement's draft (AnchorDraftList.vue)
+        draftHeading: "Fundstellen im Entwurf",
+        draftNone: "Noch keine Fundstelle. Wähle in der Quelle die Blöcke, in denen die Aussage steht, und übernimm sie; steht sie in keinem, übernimm die Seite als nicht gefunden.",
+        remove: "Entfernen",
       },
       // cv:ReviewStatuses by notation without its "rev_" (reviewStatus.ts)
       statuses: { proposed: "Vorgeschlagen", confirmed: "Bestätigt", rejected: "Verworfen" },
