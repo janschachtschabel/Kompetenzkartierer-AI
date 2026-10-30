@@ -495,8 +495,8 @@ describe("a document's tree page", () => {
     const sent = vi.spyOn(api, "dropNode").mockResolvedValue({ nodes: 1, statements: 2 });
     const wrapper = await open({ zeile: "node:a", seite: "4" });
 
-    await press(wrapper, t("documents.tree.drop.node"));
-    const confirm = wrapper.findAll("[role=dialog] button").find((one) => one.text() === t("documents.tree.drop.node"));
+    await press(wrapper, t("documents.tree.drop.delete"));
+    const confirm = wrapper.findAll("[role=dialog] button").find((one) => one.text() === t("documents.tree.drop.delete"));
     await confirm?.trigger("click");
     await flushPromises();
 
@@ -850,8 +850,8 @@ describe("a document's tree page", () => {
     let dropped: (done: { nodes: number; statements: number }) => void = () => undefined;
     vi.spyOn(api, "dropNode").mockReturnValue(new Promise((resolve) => (dropped = resolve)));
     const wrapper = await open({ zeile: "node:a" });
-    await press(wrapper, t("documents.tree.drop.node"));
-    const confirm = wrapper.findAll("[role=dialog] button").find((one) => one.text() === t("documents.tree.drop.node"));
+    await press(wrapper, t("documents.tree.drop.delete"));
+    const confirm = wrapper.findAll("[role=dialog] button").find((one) => one.text() === t("documents.tree.drop.delete"));
     await confirm?.trigger("click");
 
     await wrapper.get("[data-key='statement:s1']").trigger("click");
@@ -884,7 +884,7 @@ describe("a document's tree page", () => {
     const labels = wrapper.findAll("button").map((one) => one.text());
     expect(labels).not.toContain(t("documents.tree.create.node"));
     expect(labels).not.toContain(t("documents.tree.create.child"));
-    expect(labels).not.toContain(t("documents.tree.drop.node"));
+    expect(labels).not.toContain(t("documents.tree.drop.delete"));
   });
 
   it("keeps the draft of a change the closing tree refused, until another row is chosen", async () => {

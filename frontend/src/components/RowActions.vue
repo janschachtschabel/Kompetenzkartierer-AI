@@ -32,10 +32,8 @@ const problem = ref<Notice | null>(null);
 // what taking the row away does: deletes a node or an editor's own statement, rejects a run's
 const rejects = computed(() => props.row.kind === "statement" && !props.row.statement.by_hand);
 // a run's statement rejected already: taking it away again would do nothing
-const offered = computed(
-  () => !(props.row.kind === "statement" && rejects.value && rowStatus(props.row) === "rejected"),
-);
-const dropLabel = computed(() => t(rejects.value ? "documents.tree.drop.reject" : "documents.tree.drop.node"));
+const offered = computed(() => !(rejects.value && rowStatus(props.row) === "rejected"));
+const dropLabel = computed(() => t(rejects.value ? "documents.tree.drop.reject" : "documents.tree.drop.delete"));
 const question = computed(() => {
   const row = props.row;
   if (row.kind === "statement") {
@@ -61,7 +59,8 @@ async function drop(): Promise<void> {
 </script>
 
 <template>
-  <div class="row-actions">
+  <!-- nothing to offer, nothing here: an empty cell would stand in the panel's grid -->
+  <div v-if="row.kind === 'node' || offered" class="row-actions">
     <template v-if="row.kind === 'node'">
       <button type="button" class="btn btn-sm secondary" @click="emit('create', 'node')">
         {{ t("documents.tree.create.child") }}
@@ -72,7 +71,6 @@ async function drop(): Promise<void> {
     </template>
     <!-- aria-disabled, not disabled: the button keeps the keyboard while the row is taken away -->
     <button
-      v-if="offered"
       type="button"
       class="btn btn-sm secondary danger"
       :aria-disabled="busy || undefined"

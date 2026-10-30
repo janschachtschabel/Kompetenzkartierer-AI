@@ -67,7 +67,7 @@ describe("the ways on from a row chosen", () => {
     const sent = vi.spyOn(api, "dropNode").mockResolvedValue({ nodes: 2, statements: 2 });
     const wrapper = actions("node:a");
 
-    await button(wrapper, t("documents.tree.drop.node")).trigger("click");
+    await button(wrapper, t("documents.tree.drop.delete")).trigger("click");
     const dialog = wrapper.get("[role=dialog]");
     expect(dialog.text()).toContain(t("documents.tree.drop.titleNode"));
     expect(dialog.text()).toContain("Der Knoten wird gelöscht – mit 1 Unterknoten, 5 Aussagen und ihren Befunden.");
@@ -75,8 +75,8 @@ describe("the ways on from a row chosen", () => {
     await button(wrapper, t("dialog.cancel")).trigger("click");
     expect(sent).not.toHaveBeenCalled();
 
-    await button(wrapper, t("documents.tree.drop.node")).trigger("click");
-    await wrapper.findAll("[role=dialog] button").find((one) => one.text() === t("documents.tree.drop.node"))?.trigger("click");
+    await button(wrapper, t("documents.tree.drop.delete")).trigger("click");
+    await wrapper.findAll("[role=dialog] button").find((one) => one.text() === t("documents.tree.drop.delete"))?.trigger("click");
     await flushPromises();
 
     expect(sent).toHaveBeenCalledWith("a", 4);
@@ -103,9 +103,9 @@ describe("the ways on from a row chosen", () => {
   it("offer an editor's own statement to be deleted, saying so", async () => {
     vi.spyOn(api, "dropStatement").mockResolvedValue({ outcome: "deleted", revision: null });
     const wrapper = actions("statement:own");
-    expect(wrapper.findAll("button").map((one) => one.text())).toEqual([t("documents.tree.drop.node")]);
+    expect(wrapper.findAll("button").map((one) => one.text())).toEqual([t("documents.tree.drop.delete")]);
 
-    await button(wrapper, t("documents.tree.drop.node")).trigger("click");
+    await button(wrapper, t("documents.tree.drop.delete")).trigger("click");
     expect(wrapper.get("[role=dialog]").text()).toContain(t("documents.tree.drop.titleDelete"));
     expect(wrapper.get("[role=dialog]").text()).toContain(t("documents.tree.drop.messageDelete"));
     expect(await violations(wrapper.html())).toEqual([]);
@@ -114,10 +114,11 @@ describe("the ways on from a row chosen", () => {
   it("offer nothing to take away where a run's statement stands rejected already, an editor's own still to delete", () => {
     const wrapper = actions("statement:gone");
     expect(wrapper.findAll("button")).toHaveLength(0);
+    expect(wrapper.find(".row-actions").exists()).toBe(false); // no empty cell in the panel's grid
     wrapper.unmount();
 
     const own = actions("statement:ownGone");
-    expect(own.findAll("button").map((one) => one.text())).toEqual([t("documents.tree.drop.node")]);
+    expect(own.findAll("button").map((one) => one.text())).toEqual([t("documents.tree.drop.delete")]);
   });
 
   it("say a failure where it was asked, and tell nothing", async () => {

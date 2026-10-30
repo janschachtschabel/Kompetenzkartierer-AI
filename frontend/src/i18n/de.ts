@@ -1028,7 +1028,7 @@ export const messages = {
       },
       // taking a row away (rowDrop.ts, RowActions.vue); dropped, deleted, rejected, stale by the outcome
       drop: {
-        node: "Löschen",
+        delete: "Löschen",
         reject: "Verwerfen",
         titleNode: "Knoten löschen?",
         titleReject: "Aussage verwerfen?",
