@@ -23,7 +23,7 @@ export function matchText(anchor: TreeAnchor): string {
 }
 
 /** Its physical pages, and the page the document prints where it prints one. */
-export function pagesText(anchor: TreeAnchor): string {
+export function pagesText(anchor: Pick<TreeAnchor, "page_start" | "page_end" | "printed_page">): string {
   const { page_start: first, page_end: last, printed_page: printed } = anchor;
   if (first === null) return t("documents.tree.anchors.noPage");
   const pages =
