@@ -75,3 +75,56 @@ describe("a page's blocks", () => {
     expect(href).toContain("zeile=node");
   });
 });
+
+describe("a page's blocks to choose an anchor from", () => {
+  async function choosing(picked: ReadonlySet<string> = new Set()): Promise<VueWrapper> {
+    await router.push({ name: "conversion", params: { id: "s1" } });
+    shown = mount(BlockList, {
+      props: {
+        blocks: [block("p3-b1", "Erster"), block("p3-b2", "Zweiter")],
+        continued: [RUNNING_ON],
+        page: 3,
+        picking: true,
+        picked,
+      },
+      global: { plugins: [router] },
+      attachTo: document.body,
+    });
+    return shown;
+  }
+
+  function toggles(wrapper: VueWrapper) {
+    return wrapper.findAll(".block button");
+  }
+
+  it("offer each block, a table run on too, as a toggle named by its id, and say which are chosen", async () => {
+    const wrapper = await choosing(new Set(["p2-b2", "p3-b2"]));
+
+    expect(toggles(wrapper).map((button) => button.attributes("aria-label"))).toEqual([
+      "Block p2-b2 als Fundstelle wählen",
+      "Block p3-b1 als Fundstelle wählen",
+      "Block p3-b2 als Fundstelle wählen",
+    ]);
+    expect(toggles(wrapper).map((button) => button.attributes("aria-pressed"))).toEqual(["true", "false", "true"]);
+    // the visible words are in the name, the state not by colour alone
+    expect(toggles(wrapper).map((button) => button.text())).toEqual(Array(3).fill("Als Fundstelle wählen"));
+    expect(toggles(wrapper).map((button) => button.find("svg").exists())).toEqual([true, false, true]);
+    expect(wrapper.findAll(".block").map((item) => item.classes("block--picked"))).toEqual([true, false, true]);
+    expect(await violations(wrapper.html())).toEqual([]);
+  });
+
+  it("ask for a block to be chosen or let go by its id", async () => {
+    const wrapper = await choosing();
+
+    await toggles(wrapper)[2]?.trigger("click");
+    await toggles(wrapper)[0]?.trigger("click");
+
+    expect(wrapper.emitted("toggle")).toEqual([["p3-b2"], ["p2-b2"]]);
+  });
+
+  it("offer none while no anchor is chosen", async () => {
+    const wrapper = await list();
+
+    expect(toggles(wrapper)).toHaveLength(0);
+  });
+});

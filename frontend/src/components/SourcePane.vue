@@ -9,11 +9,17 @@
  * nowhere; a move begun elsewhere (a row chosen in the tree) or a reader gone on meanwhile keeps their place,
  * and the view takes the keyboard along for an anchor's page (`focus`). The latest page asked for counts.
  * Why it shows none it says: a page past the end (with the way to the first), the content no longer the
- * reader's (which no retry changes, and no other page), a failed reading (with a retry).
+ * reader's (which no retry changes, and no other page), a failed reading (with a retry). While a statement's
+ * anchor is chosen (`picking`, Paket 9c2b L3) the blocks of the page shown are toggles; those chosen are taken
+ * as one anchor, or the page as one its passage was not found on, told to the view (`anchor`) and said. The
+ * choice is this page's for this statement: another page or another statement lets it go.
  */
 import { computed, nextTick, ref, useId, watch } from "vue";
 
+import { anchorCodeText, encodeAnchor } from "@/anchorDraft";
+import { useAnchorPick } from "@/anchorPick";
 import { ApiError, getDocumentBlocks, type DocumentPage } from "@/api";
+import AnchorPickBar from "@/components/AnchorPickBar.vue";
 import BlockList from "@/components/BlockList.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
@@ -24,8 +30,17 @@ import { t } from "@/i18n/de";
 import { sayAnew } from "@/liveRegion";
 import { failureNotice, type Notice } from "@/notice";
 
-const props = defineProps<{ documentId: string; page: number; cited: string[] }>();
-const emit = defineEmits<{ go: [page: number] }>();
+const props = withDefaults(
+  defineProps<{
+    documentId: string;
+    page: number;
+    cited: string[];
+    /** The statement whose anchor is chosen here (its row's key); none while none is. */
+    picking?: string | null;
+  }>(),
+  { picking: null },
+);
+const emit = defineEmits<{ go: [page: number]; anchor: [code: string] }>();
 
 const headingId = useId();
 const section = ref<HTMLElement | null>(null);
@@ -40,6 +55,7 @@ const failure = ref<Notice | null>(null);
 const status = ref("");
 const citedBlocks = computed(() => new Set(props.cited));
 const printed = computed(() => (shown.value?.page === props.page ? shown.value.printed_page : null));
+const { picked, toggle, take } = useAnchorPick([() => props.documentId, () => props.page, () => props.picking]);
 let generation = 0;
 
 async function load({ moved = false } = {}): Promise<void> {
@@ -95,6 +111,12 @@ watch(
   () => props.page,
   () => void load({ moved: true }),
 );
+// an anchor chosen goes to the view, and is said
+function give(code: string | null): void {
+  if (!code) return;
+  emit("anchor", code);
+  status.value = sayAnew(status.value, t("documents.tree.source.taken", { anchor: anchorCodeText(code) }));
+}
 </script>
 
 <template>
@@ -113,6 +135,13 @@ watch(
       <PagePicker :page="page" :pages="pages" @go="(to) => emit('go', to)" />
       <p v-if="cited.length" class="source__note">{{ t("documents.tree.source.citedNote") }}</p>
     </template>
+    <AnchorPickBar
+      v-if="picking && shown"
+      :count="picked.size"
+      :page="page"
+      @take="give(take())"
+      @not-found="give(encodeAnchor({ page }))"
+    />
     <!-- quiet: the move is said once the page shows -->
     <LoadingState v-if="pending" quiet />
     <EmptyState
@@ -150,6 +179,9 @@ watch(
       :continued="shown.continued"
       :page="shown.page"
       :cited="citedBlocks"
+      :picking="!!picking"
+      :picked="picked"
+      @toggle="toggle"
     />
     <!-- always in the page, so the first move is read out -->
     <p class="visually-hidden" role="status">{{ status }}</p>

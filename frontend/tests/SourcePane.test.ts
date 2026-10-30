@@ -261,3 +261,98 @@ describe("the source under a row", () => {
     expect(await violations(wrapper.html())).toEqual([]);
   });
 });
+
+describe("the source a statement's anchor is chosen in", () => {
+  async function choosing(number: number, picking: string | null = "statement:s1"): Promise<VueWrapper> {
+    vi.spyOn(api, "getDocumentBlocks").mockImplementation((_id, at) => Promise.resolve(page(at)));
+    await router.push({ name: "conversion", params: { id: "s1" } });
+    shown = mount(SourcePane, {
+      props: { documentId: "d1", page: number, cited: [], picking },
+      global: { plugins: [router] },
+      attachTo: document.body,
+    });
+    await flushPromises();
+    return shown;
+  }
+
+  const take = (wrapper: VueWrapper) => wrapper.get("[data-test=take]");
+  const toggle = (wrapper: VueWrapper, index: number) => wrapper.findAll(".block button")[index];
+  const pressed = (wrapper: VueWrapper) => wrapper.findAll(".block button").map((one) => one.attributes("aria-pressed"));
+  const said = (wrapper: VueWrapper) => wrapper.get("[role=status]").text();
+
+  it("takes the blocks chosen as one anchor, in their order, and lets the choice go", async () => {
+    const wrapper = await choosing(3);
+    expect(wrapper.text()).toContain(t("documents.tree.source.pickNote"));
+    expect([take(wrapper).text(), take(wrapper).attributes("aria-disabled")]).toEqual([
+      "Gewählte Blöcke als Fundstelle übernehmen (0)",
+      "true",
+    ]);
+    await take(wrapper).trigger("click");
+    expect(wrapper.emitted("anchor")).toBeUndefined(); // none chosen, none taken
+
+    await toggle(wrapper, 1)?.trigger("click");
+    await toggle(wrapper, 0)?.trigger("click");
+    expect(pressed(wrapper)).toEqual(["true", "true"]);
+    expect([take(wrapper).text(), take(wrapper).attributes("aria-disabled")]).toEqual([
+      "Gewählte Blöcke als Fundstelle übernehmen (2)",
+      undefined,
+    ]);
+    expect(await violations(wrapper.html())).toEqual([]);
+
+    await take(wrapper).trigger("click");
+    expect(wrapper.emitted("anchor")).toEqual([["blocks:p3-b1,p3-b2"]]);
+    expect(pressed(wrapper)).toEqual(["false", "false"]);
+    expect(said(wrapper)).toBe("Fundstelle übernommen: Seite 3: 2 Blöcke.");
+  });
+
+  it("lets a block chosen go again", async () => {
+    const wrapper = await choosing(3);
+
+    await toggle(wrapper, 0)?.trigger("click");
+    await toggle(wrapper, 0)?.trigger("click");
+
+    expect(pressed(wrapper)).toEqual(["false", "false"]);
+    expect(take(wrapper).text()).toContain("(0)");
+  });
+
+  it("takes the page shown as one the passage was not found on", async () => {
+    const wrapper = await choosing(3);
+
+    await wrapper.get("[data-test=not-found]").trigger("click");
+
+    expect(wrapper.get("[data-test=not-found]").text()).toBe("Auf Seite 3 nicht gefunden");
+    expect(wrapper.emitted("anchor")).toEqual([["page:3"]]);
+    expect(said(wrapper)).toBe("Fundstelle übernommen: Auf Seite 3 nicht gefunden.");
+  });
+
+  it("lets the choice go with another page, or another statement", async () => {
+    const wrapper = await choosing(3);
+    await toggle(wrapper, 0)?.trigger("click");
+
+    await wrapper.setProps({ page: 4 });
+    await flushPromises();
+    expect(pressed(wrapper)).toEqual(["false", "false"]);
+    expect(take(wrapper).text()).toContain("(0)");
+
+    await toggle(wrapper, 0)?.trigger("click");
+    await wrapper.setProps({ picking: "statement:s2" });
+    await flushPromises();
+    expect(take(wrapper).text()).toContain("(0)");
+  });
+
+  it("offers nothing to choose while no statement's anchor is, nor where no page shows", async () => {
+    const reading = await choosing(3, null);
+    expect(reading.find("[data-test=take]").exists()).toBe(false);
+    expect(reading.findAll(".block button")).toHaveLength(0);
+    reading.unmount();
+
+    vi.spyOn(api, "getDocumentBlocks").mockRejectedValue(new ApiError("forbidden", 403, "file_hidden"));
+    shown = mount(SourcePane, {
+      props: { documentId: "d1", page: 3, cited: [], picking: "statement:s1" },
+      global: { plugins: [router] },
+      attachTo: document.body,
+    });
+    await flushPromises();
+    expect(shown.find("[data-test=take]").exists()).toBe(false);
+  });
+});

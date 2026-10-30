@@ -7,19 +7,31 @@
  * page number in them is what a reader cites. A table run on from an earlier page comes first,
  * as on paper, under its block's ID, with the way to the page it begins on - the rest of the address
  * kept, as the document's tree keeps the row chosen there. The blocks `cited` - those a row's anchors
- * name (SourcePane) - are marked by the word "Beleg" and a stronger edge, not by a colour alone.
+ * name (SourcePane) - are marked by the word "Beleg" and a stronger edge, not by a colour alone. While an
+ * anchor is chosen (`picking`, Paket 9c2b L3) each block is a toggle named by its id, those `picked` pressed,
+ * ticked and edged; which are chosen is the caller's, told each `toggle`.
  */
 import { RouterLink, useRoute } from "vue-router";
 
 import type { Block, ContinuedTable } from "@/api";
 import { PAGE_PARAM } from "@/blockPages";
 import BlockTable from "@/components/BlockTable.vue";
+import BlockToggle from "@/components/BlockToggle.vue";
 import { messages, t } from "@/i18n/de";
 import { word } from "@/registerWords";
 
-withDefaults(defineProps<{ blocks: Block[]; continued: ContinuedTable[]; page: number; cited?: ReadonlySet<string> }>(), {
-  cited: () => new Set<string>(),
-});
+withDefaults(
+  defineProps<{
+    blocks: Block[];
+    continued: ContinuedTable[];
+    page: number;
+    cited?: ReadonlySet<string>;
+    picking?: boolean;
+    picked?: ReadonlySet<string>;
+  }>(),
+  { cited: () => new Set<string>(), picking: false, picked: () => new Set<string>() },
+);
+const emit = defineEmits<{ toggle: [id: string] }>();
 const route = useRoute();
 </script>
 
@@ -29,7 +41,7 @@ const route = useRoute();
       v-for="item in continued"
       :key="`continued-${item.id}`"
       class="block block--table"
-      :class="{ 'block--cited': cited.has(item.id) }"
+      :class="{ 'block--cited': cited.has(item.id), 'block--picked': picked.has(item.id) }"
       data-test="continued"
     >
       <p class="block__meta">
@@ -40,6 +52,7 @@ const route = useRoute();
         <RouterLink :to="{ query: { ...route.query, [PAGE_PARAM]: String(item.page) } }" replace>
           {{ t("conversionPage.tableStart", { page: item.page }) }}
         </RouterLink>
+        <BlockToggle v-if="picking" :id="item.id" :pressed="picked.has(item.id)" @toggle="emit('toggle', item.id)" />
       </p>
       <BlockTable :cells="item.cells" :page="page" continued />
     </li>
@@ -47,7 +60,7 @@ const route = useRoute();
       v-for="item in blocks"
       :key="item.id"
       class="block"
-      :class="[`block--${item.kind}`, { 'block--cited': cited.has(item.id) }]"
+      :class="[`block--${item.kind}`, { 'block--cited': cited.has(item.id), 'block--picked': picked.has(item.id) }]"
     >
       <p class="block__meta">
         <code class="block__id">{{ item.id }}</code>
@@ -55,6 +68,7 @@ const route = useRoute();
         <span v-if="item.kind !== 'text'" class="block__kind">{{ word(messages.conversionPage.kind, item.kind) }}</span>
         <span v-if="item.bold">{{ t("conversionPage.bold") }}</span>
         <span v-if="item.italic">{{ t("conversionPage.italic") }}</span>
+        <BlockToggle v-if="picking" :id="item.id" :pressed="picked.has(item.id)" @toggle="emit('toggle', item.id)" />
       </p>
       <BlockTable v-if="item.kind === 'table' && item.cells.length" :cells="item.cells" :page="item.page" />
       <!-- on one line: the text keeps its white space, the template's would show -->
@@ -111,6 +125,13 @@ const route = useRoute();
   font-weight: 700;
   color: var(--accent);
 }
+
+/* A block chosen for an anchor: an edge all round, beside its toggle's tick and wash. */
+.block--picked {
+  outline: 2px dashed var(--accent);
+  outline-offset: 2px;
+}
+
 
 .block__kind {
   font-weight: 600;

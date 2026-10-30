@@ -946,6 +946,13 @@ export const messages = {
         printedPage: "Seite {page} von {pages} (gedruckt {printed})",
         citedNote: "Mit „Beleg“ markiert: die Blöcke, die die gewählte Zeile nennt.",
         loadFailed: "Die Quelle wurde nicht geladen.",
+        // choosing a statement's anchor in the source (BlockList.vue, SourcePane.vue)
+        pick: "Block {id} als Fundstelle wählen",
+        pickLabel: "Als Fundstelle wählen",
+        pickNote: "Wähle die Blöcke, in denen die Aussage steht, und übernimm sie als Fundstelle.",
+        take: "Gewählte Blöcke als Fundstelle übernehmen ({count})",
+        notFound: "Auf Seite {page} nicht gefunden",
+        taken: "Fundstelle übernommen: {anchor}.",
       },
       notGiven: "nicht angegeben",
       assignedCode: "{code} (aus der Position vergeben)",
