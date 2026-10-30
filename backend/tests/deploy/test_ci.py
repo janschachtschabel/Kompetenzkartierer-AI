@@ -135,8 +135,13 @@ def test_the_smoke_test_starts_the_whole_service_and_asks_through_the_web_server
 @pytest.mark.parametrize(
     ("what", "pattern"),
     [
-        # no service waits for the vocabulary load: up -d stays green when it fails
-        ("the vocabulary load ended well", r"compose -f deploy/docker-compose\.yml wait vocab"),
+        # no service waits for the vocabulary load: up -d stays green when it fails; docker wait on its
+        # container, as the runner's compose wait found none once the load had ended
+        (
+            "the vocabulary load ended well",
+            r"test \"\$\(docker wait \"\$\(docker compose -f deploy/docker-compose\.yml"
+            r" ps -aq vocab\)\"\)\" = 0",
+        ),
         ("both workers run", r"ps -q --status running worker \| wc -l\)\" = 2"),
         # restart: unless-stopped brings a crashing worker back, running again for a while
         (
