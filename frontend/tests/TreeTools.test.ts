@@ -199,6 +199,9 @@ describe("the tree's tools", () => {
     await wrapper.setProps({ tree: tree_([], CLOSED) }); // read again, the check still running
     expect(wrapper.text()).toContain(t("documents.tree.check.lost"));
     expect(wrapper.get("[role=status]").text()).toBe(t("documents.tree.check.running"));
+    const said = wrapper.get("[role=status]").element.textContent;
+    await wrapper.setProps({ tree: tree_([], CLOSED) }); // a reading not asked for: nothing said anew
+    expect(wrapper.get("[role=status]").element.textContent).toBe(said);
     await wrapper.setProps({ tree: tree_([]) });
     await flushPromises();
 
@@ -233,6 +236,25 @@ describe("the tree's tools", () => {
     await wrapper.setProps({ tree: tree_([], CLOSED) });
 
     expect(wrapper.text()).toContain(t("documents.tree.check.lost"));
+    // the start's own reading, not one the note asked for: the note is not overtaken
+    expect(wrapper.get("[role=status]").text()).toBe(t("documents.tree.check.lost"));
+  });
+
+  it.each([
+    ["closed for another reason", { editable: false, reviewable: false, closed: "frozen" as const }],
+    ["open", {}],
+  ])("let the note go with a reading that finds the tree %s: no job closes it", async (_how, changes) => {
+    vi.spyOn(api, "startDocumentCheck").mockResolvedValue(check("queued"));
+    vi.spyOn(api, "getJob").mockRejectedValue(new ApiError("server", 404, "no_job"));
+    const wrapper = tools();
+    await start(wrapper);
+    await vi.advanceTimersByTimeAsync(1000);
+    await flushPromises();
+
+    await wrapper.setProps({ tree: tree_([], changes) });
+
+    expect(wrapper.find(".tree-tools__note").exists()).toBe(false);
+    expect(wrapper.get("[role=status]").text()).toBe(t("documents.tree.check.done"));
   });
 
   it("follow a check started anew in place of the note, and keep the note through a refusal", async () => {

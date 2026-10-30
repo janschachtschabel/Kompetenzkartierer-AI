@@ -86,15 +86,25 @@ async function onGone(why: JobGone): Promise<void> {
   if (focusIsFree()) readButton.value?.focus();
 }
 
+// the reader asked the tree to be read again under the note: the reading answers whether the check still runs
+let asked = false;
+
+function readAgain(): void {
+  asked = true;
+  emit("changed");
+}
+
 // Each reading: the button kept goes with how the tree stands; the note goes once no job closes the tree - the
-// check is done -, and while one does, a reading the note asked for is answered
+// check is done -, and while one does, a reading the note asked for is answered (another does not overtake it)
 watch(
   () => props.tree,
   async (tree) => {
     kept.value = false;
     if (!lost.value) return;
+    const answering = asked;
+    asked = false;
     if (tree.closed === "job_open") {
-      status.value = sayAnew(status.value, t("documents.tree.check.running"));
+      if (answering) status.value = sayAnew(status.value, t("documents.tree.check.running"));
       return;
     }
     lost.value = false;
@@ -136,7 +146,7 @@ watch(
     />
     <div v-if="lost" class="tree-tools__lost">
       <p class="tree-tools__note">{{ t("documents.tree.check.lost") }}</p>
-      <button ref="readButton" type="button" class="btn btn-sm secondary" @click="emit('changed')">
+      <button ref="readButton" type="button" class="btn btn-sm secondary" @click="readAgain">
         {{ t("documents.tree.check.readAgain") }}
       </button>
     </div>
