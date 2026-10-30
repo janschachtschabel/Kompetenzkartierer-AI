@@ -15,15 +15,13 @@ import { ANCHORS, heldAnchors, type AnchorTaking } from "@/anchorDraft";
 import type { Form } from "@/api";
 import AnchorDraftList from "@/components/AnchorDraftList.vue";
 import AppIcon from "@/components/AppIcon.vue";
+import ClosedDraft from "@/components/ClosedDraft.vue";
 import ConflictPanel from "@/components/ConflictPanel.vue";
 import NoticeText from "@/components/NoticeText.vue";
 import RowForm from "@/components/RowForm.vue";
 import type { Row } from "@/documentTree";
-import { shownValue } from "@/formWords";
-import { messages, t } from "@/i18n/de";
+import { t } from "@/i18n/de";
 import { sayAnew } from "@/liveRegion";
-import { refusalText } from "@/refusals";
-import { word } from "@/registerWords";
 import { useRowSave, type SaveOutcome } from "@/rowSave";
 
 const props = defineProps<{
@@ -44,22 +42,13 @@ const { fields, draft, saving, errors, problem, conflict, closed, changes, dirty
 const status = ref("");
 const formRef = ref<InstanceType<typeof RowForm> | null>(null);
 const panel = ref<InstanceType<typeof ConflictPanel> | null>(null);
-const closedNotice = ref<HTMLElement | null>(null);
+const closedNotice = ref<InstanceType<typeof ClosedDraft> | null>(null);
 const anchorList = ref<InstanceType<typeof AnchorDraftList> | null>(null);
 // the tree closed: on this save, or under the draft as it was read anew
 const shut = computed(() => closed.value ?? props.closedBy ?? null);
 
 // a statement's anchors as its draft holds them; a node's draft holds none
 const anchors = computed(() => heldAnchors(draft.value));
-
-// the draft the tree closed on, in words, field by field: what the user changed, not what another did since
-const kept = computed(() => {
-  return Object.entries(changes.value).map(([key, value]) => ({
-    key,
-    label: word(messages.documents.tree.fields, key),
-    text: shownValue(fields.value, key, value),
-  }));
-});
 
 watch(dirty, (open) => emit("dirty", open), { immediate: true });
 
@@ -99,22 +88,14 @@ async function submit(): Promise<void> {
 
 <template>
   <div class="row-editor">
-    <section
+    <ClosedDraft
       v-if="shut"
       ref="closedNotice"
       class="row-editor__closed"
-      tabindex="-1"
-      :aria-label="t('documents.tree.form.closedLabel')"
-    >
-      <p class="field__error" role="alert"><AppIcon name="warning" /> {{ refusalText(shut) }}</p>
-      <p>{{ t("documents.tree.form.keptDraft") }}</p>
-      <dl class="facts">
-        <template v-for="entry in kept" :key="entry.key">
-          <dt>{{ entry.label }}</dt>
-          <dd><bdi>{{ entry.text }}</bdi></dd>
-        </template>
-      </dl>
-    </section>
+      :code="shut"
+      :fields="fields"
+      :changes="changes"
+    />
     <template v-else>
       <p v-if="problem" class="field__error row-editor__problem" role="alert">
         <AppIcon name="warning" /> <NoticeText :notice="problem" />
@@ -150,18 +131,7 @@ async function submit(): Promise<void> {
   gap: var(--space-1);
 }
 
-.row-editor__closed {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.row-editor__closed p,
 .row-editor__status {
   margin: 0;
-}
-
-/* A wording's lines and paragraphs kept, to copy as they were written. */
-.row-editor__closed dd {
-  white-space: pre-wrap;
 }
 </style>
