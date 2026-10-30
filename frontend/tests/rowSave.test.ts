@@ -505,6 +505,22 @@ describe("a statement's anchors in its draft", () => {
     expect([editing.draft.value.anchors, editing.draft.value.lead_in]).toEqual([["blocks:p5-b2"], "Sie"]);
   });
 
+  it("keeps the revision read where a row read anew has other anchors, its fields alike", async () => {
+    const sent = vi.spyOn(api, "editStatement").mockResolvedValue(answered([placed("q1", 5, ["p5-b2"])], 5));
+    const { shown, editing } = placedEditor();
+    editing.draft.value = { ...editing.draft.value, verbatim: "Mein Entwurf." };
+
+    // another changed the anchors: no review set, a change the save is to meet
+    shown.value = rowsOf([node_("a", { ...NODE, statements: [answered([placed("q1", 5, ["p5-b2"])], 4)] })]).get(
+      "statement:s1",
+    ) as Row;
+    await flushPromises();
+    expect(editing.revision.value).toBe(3);
+    await editing.save();
+
+    expect(sent.mock.calls[0][1]).toBe(3);
+  });
+
   it("keeps an anchor taken in while a change was saved", async () => {
     let answer: (row: TreeStatement) => void = () => undefined;
     vi.spyOn(api, "editStatement").mockReturnValue(new Promise((resolve) => (answer = resolve)));

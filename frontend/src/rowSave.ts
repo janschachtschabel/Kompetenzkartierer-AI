@@ -88,8 +88,11 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
       closed.value = null;
       stand(storedOf(now), revisionOf(now));
     } else if (!dirty.value) stand(storedOf(now), revisionOf(now));
-    else if (!Object.keys(changedFields(drafted.value, before.value, draftOf(drafted.value, valuesOf(storedOf(now))))).length) {
-      revision.value = revisionOf(now);
+    else {
+      // the row as stored now, in the draft's fields and anchors: alike to what the draft began from, only the
+      // revision moved
+      const storedNow = draftOf(drafted.value, valuesOf(storedOf(now)));
+      if (!Object.keys(changedFields(drafted.value, before.value, storedNow)).length) revision.value = revisionOf(now);
     }
   });
 
