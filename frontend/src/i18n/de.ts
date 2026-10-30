@@ -953,6 +953,7 @@ export const messages = {
         choose: "Bitte wählen",
         none: "keine Angabe",
         unknownValue: "unbekannt: {iri}",
+        save: "Änderungen speichern",
       },
       anchors: {
         heading: "Fundstellen",
