@@ -1010,6 +1010,12 @@ export const messages = {
           cancel: "Weiter eintragen",
         },
       },
+      // a row's review status (rowReview.ts, RowReview.vue)
+      review: {
+        set: "Prüfstand: {status}.",
+        stale: "Die Zeile wurde inzwischen geändert; der Baum wird neu geladen. Setze den Prüfstand erneut.",
+        failed: "Der Prüfstand wurde nicht gesetzt.",
+      },
       // taking a row away (rowDrop.ts, RowActions.vue); dropped, deleted, rejected, stale by the outcome
       drop: {
         node: "Löschen",
