@@ -1,6 +1,6 @@
 // Setting a row's review status (plan M1 9.8, Paket 9c2c M2, M3): the editors' alone, for the row chosen at the
 // revision the tree shows - a node's or a statement's. A row changed meanwhile is not set but said, the tree to
-// be read again; a tree closed meanwhile (a job, frozen, X4 not done) is said too, as a caller who is no editor;
+// be read again, as a row the document no longer holds; a tree closed meanwhile (a job, frozen, X4 not done) is said too, as a caller who is no editor;
 // another failure is said where it was asked.
 import { ApiError, setReview, type ReviewItem } from "@/api";
 import type { Row } from "@/documentTree";
@@ -12,6 +12,8 @@ import { statusIri, statusOf, statusWord, type ReviewStatus } from "@/reviewStat
 export type ReviewOutcome =
   | { outcome: "set"; status: ReviewStatus }
   | { outcome: "stale" }
+  /** The document holds the row no more. */
+  | { outcome: "gone" }
   /** The tree closed to change: read it again. */
   | { outcome: "closed"; code: string }
   | { outcome: "refused"; code: string }
@@ -30,13 +32,27 @@ function itemOf(row: Row): ReviewItem {
     : { kind: "statement", id: row.statement.id, revision: row.statement.revision };
 }
 
+// the row as stored none (backend app/api/review.py: `details.stale`, its `current` null)
+function goneIn(details: Record<string, unknown>, id: string): boolean {
+  const stale = details.stale;
+  return (
+    Array.isArray(stale) &&
+    stale.some((one: unknown) => {
+      const entry = one as { id?: unknown; current?: unknown } | null;
+      return entry?.id === id && entry.current === null;
+    })
+  );
+}
+
 export async function reviewRow(documentId: string, row: Row, status: ReviewStatus): Promise<ReviewOutcome> {
   try {
     await setReview(documentId, status, [itemOf(row)]);
     return { outcome: "set", status };
   } catch (error) {
+    if (error instanceof ApiError && error.code === "stale_revision") {
+      return goneIn(error.details, itemOf(row).id) ? { outcome: "gone" } : { outcome: "stale" };
+    }
     const code = error instanceof ApiError ? error.code : undefined;
-    if (code === "stale_revision") return { outcome: "stale" };
     if (code && CLOSING.has(code)) return { outcome: "closed", code };
     if (code === "not_editor") return { outcome: "refused", code };
     return { outcome: "failed", problem: failureNotice(error, t("documents.tree.review.failed")) };
@@ -50,6 +66,8 @@ export function reviewWords(done: Exclude<ReviewOutcome, { outcome: "failed" }>)
       return t("documents.tree.review.set", { status: statusWord(statusIri(done.status)) });
     case "stale":
       return t("documents.tree.review.stale");
+    case "gone":
+      return t("documents.tree.gone");
     default:
       return refusalText(done.code) ?? t("documents.tree.review.failed");
   }

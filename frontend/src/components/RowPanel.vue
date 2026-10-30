@@ -11,8 +11,9 @@
  * keyboard at the heading as it begins, is cancelled or is added - not where another row chosen ends it. A row
  * taken away is said here, the keyboard at the heading: deleted, it leaves the address; rejected, changed
  * meanwhile or closed to change, the tree is read again. An editor sets the row's review status here
- * (ReviewToggles, Paket 9c2c M2/M3): set, changed meanwhile or closed to change, it is said here and the tree read
- * again, the keyboard left on its toggle; refused to the caller's role, only said.
+ * (ReviewToggles, Paket 9c2c M2/M3): set or changed meanwhile, it is said here and the tree read again, the keyboard
+ * left on its toggle; closed to change, the toggles go with the tree read again, the keyboard to the heading; the
+ * row no more, as a row found gone; refused to the caller's role, only said.
  */
 import { computed, nextTick, ref, useId, watch } from "vue";
 
@@ -144,7 +145,10 @@ function dropped(done: Exclude<DropOutcome, { outcome: "failed" }>, key: RowKey)
 
 // heard even where another row was chosen meanwhile (ReviewToggles' onReviewed): then the tree is only read again
 function reviewed(done: Exclude<ReviewOutcome, { outcome: "failed" }>, key: RowKey): void {
-  if (key === props.row?.key) status.value = sayAnew(status.value, reviewWords(done));
+  const here = key === props.row?.key;
+  if (here && done.outcome === "gone") return gone();
+  if (here) status.value = sayAnew(status.value, reviewWords(done));
+  if (here && done.outcome === "closed") toHeading();
   if (done.outcome !== "refused") emit("changed");
 }
 

@@ -594,6 +594,56 @@ describe("a document's tree page", () => {
     expect(wrapper.find(".review-toggles [role=alert]").exists()).toBe(false);
   });
 
+  it("takes the keyboard to the panel's heading where the tree, read again, closed under a review status", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValueOnce(OPEN).mockResolvedValue(RUNNING);
+    vi.spyOn(api, "setReview").mockRejectedValue(new ApiError("server", 409, "job_open"));
+    const wrapper = await open({ zeile: "statement:s1" });
+    (toggle(wrapper, "confirmed").element as HTMLElement).focus();
+
+    await toggle(wrapper, "confirmed").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find(".review-toggles").exists()).toBe(false);
+    expect(wrapper.get(".row-panel__status").text()).toBe(t("refusals.job_open"));
+    expect(document.activeElement).toBe(wrapper.get(".row-panel h2").element);
+  });
+
+  it("keeps another row chosen when the row whose status was set turns out gone", async () => {
+    const read = vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    let refuse: (error: ApiError) => void = () => undefined;
+    vi.spyOn(api, "setReview").mockReturnValue(new Promise((_resolve, reject) => (refuse = reject)));
+    const wrapper = await open({ zeile: "node:a" });
+    await toggle(wrapper, "confirmed").trigger("click");
+
+    await wrapper.get("[data-key='statement:s1']").trigger("click");
+    await flushPromises();
+    refuse(new ApiError("server", 409, "stale_revision", "Changed.", { stale: [{ kind: "node", id: "a", current: null }] }));
+    await flushPromises();
+
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(query()).toEqual({ zeile: "statement:s1", seite: "5" });
+    expect(wrapper.get(".row-panel__status").text()).toBe("");
+  });
+
+  it("lets a row the document no longer holds go when its review status is set, and says so", async () => {
+    const [node] = NODES;
+    vi.spyOn(api, "getTree")
+      .mockResolvedValueOnce(OPEN)
+      .mockResolvedValue(tree_([{ ...node, statements: [node.statements[1]] }]));
+    vi.spyOn(api, "setReview").mockRejectedValue(
+      new ApiError("server", 409, "stale_revision", "Changed.", { stale: [{ kind: "statement", id: "s1", current: null }] }),
+    );
+    const wrapper = await open({ zeile: "statement:s1" });
+    (toggle(wrapper, "confirmed").element as HTMLElement).focus();
+
+    await toggle(wrapper, "confirmed").trigger("click");
+    await flushPromises();
+
+    expect(query()).toEqual({});
+    expect(wrapper.get(".row-panel__status").text()).toBe(t("documents.tree.gone"));
+    expect(document.activeElement).toBe(wrapper.get(".row-panel h2").element);
+  });
+
   it("offers the review status to an editor beside the form, and to no one where the tree only reads", async () => {
     vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
     const wrapper = await open({ zeile: "statement:s1" });

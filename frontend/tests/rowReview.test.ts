@@ -63,4 +63,29 @@ describe("a row's review status", () => {
     expect(said(refused)).toBe(t("refusals.not_editor"));
     expect(failed).toMatchObject({ outcome: "failed", problem: { text: t("documents.tree.review.failed") } });
   });
+
+  it.each(["job_open", "frozen", "not_extracted"])("says the tree closed by %s, to be read again", async (code) => {
+    vi.spyOn(api, "setReview").mockRejectedValue(new ApiError("server", 409, code));
+
+    const done = await reviewRow("d1", row("node:a"), "confirmed");
+
+    expect(done).toEqual({ outcome: "closed", code });
+    expect(said(done)).toBe(t(`refusals.${code}`));
+  });
+
+  it("says a row the document no longer holds is gone, not changed", async () => {
+    const stale = (current: number | null, id = "a") =>
+      new ApiError("server", 409, "stale_revision", "Changed.", { stale: [{ kind: "node", id, current }] });
+    vi.spyOn(api, "setReview")
+      .mockRejectedValueOnce(stale(null))
+      .mockRejectedValueOnce(stale(3))
+      .mockRejectedValueOnce(stale(null, "other"));
+
+    const gone = await reviewRow("d1", row("node:a"), "confirmed");
+    const changed = await reviewRow("d1", row("node:a"), "confirmed");
+    const another = await reviewRow("d1", row("node:a"), "confirmed");
+
+    expect([gone, changed, another]).toEqual([{ outcome: "gone" }, { outcome: "stale" }, { outcome: "stale" }]);
+    expect(said(gone)).toBe(t("documents.tree.gone"));
+  });
 });
