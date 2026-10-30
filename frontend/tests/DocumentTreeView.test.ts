@@ -400,6 +400,43 @@ describe("a document's tree page", () => {
     expect(wrapper.get(".row-panel__closed").text()).toBe("Bearbeiten dürfen der Eigentümer und die Redaktion.");
   });
 
+  it("leaves the keyboard where it is when the tree asked again fails once more", async () => {
+    vi.spyOn(api, "getTree")
+      .mockResolvedValueOnce(OPEN)
+      .mockRejectedValue(new ApiError("network", 0)); // every reading again fails
+    vi.spyOn(api, "editStatement").mockResolvedValue({ ...SAID_SAVED, revision: 2 });
+    const wrapper = await open({ zeile: "statement:s1" });
+    await wrapper.get(".row-form textarea").setValue("Sie messen genau.");
+    await wrapper.get(".row-form").trigger("submit");
+    await flushPromises();
+
+    const retry = wrapper.get(".document-tree__partial button");
+    (retry.element as HTMLElement).focus();
+    await retry.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get(".document-tree__partial").text()).toContain(t("documents.tree.loadFailed"));
+    expect(document.activeElement).not.toBe(wrapper.get("#document-tree-rows").element);
+  });
+
+  it("lets a refused draft go where the tree read anew is closed to the caller's role, not to all", async () => {
+    vi.spyOn(api, "getTree")
+      .mockResolvedValueOnce(OPEN)
+      .mockRejectedValueOnce(new ApiError("network", 0))
+      .mockResolvedValue(tree_(NODES, { editable: false, reviewable: false })); // the role gone
+    vi.spyOn(api, "editStatement").mockRejectedValue(new ApiError("server", 409, "job_open"));
+    const wrapper = await open({ zeile: "statement:s1" });
+    await wrapper.get(".row-form textarea").setValue("Mein Satz.");
+    await wrapper.get(".row-form").trigger("submit");
+    await flushPromises(); // refused, the draft kept; reading the tree again fails
+
+    await wrapper.get(".document-tree__partial button").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find(".row-editor").exists()).toBe(false);
+    expect(wrapper.get(".row-panel__closed").text()).toBe("Bearbeiten dürfen der Eigentümer und die Redaktion.");
+  });
+
   it("asks nothing of a draft that went with another document", async () => {
     vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
     const wrapper = await open({ zeile: "statement:s1" });

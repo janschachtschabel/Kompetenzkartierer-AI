@@ -97,11 +97,13 @@ function showAnchor(at: number): void {
 const treeHeading = ref<HTMLElement | null>(null);
 
 // A reading again the reader asked for: its button goes with the notice, the keyboard to the tree's heading
-// where it still rests on the button or nowhere (as sectionReading.ts does for a section)
+// where it still rests on the button or nowhere, once the tree came (as sectionReading.ts does for a
+// section); failed again, or overtaken by a later reading, the keyboard is left to that
 async function readAgain(): Promise<void> {
   const from = document.activeElement;
   await load();
   await nextTick();
+  if (loading.value || failure.value) return;
   if (document.activeElement === from || focusIsFree()) treeHeading.value?.focus();
 }
 

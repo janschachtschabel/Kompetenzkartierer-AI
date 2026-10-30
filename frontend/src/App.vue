@@ -43,13 +43,19 @@ onMounted(() => {
 onUnmounted(() => stopFocusRescue?.());
 
 /** Only here: the token is gone from this tab; the server keeps it until an admin revokes it. */
-// The page is left first: a draft not yet saved is asked about while the account still holds it, and
-// where the user stays with it they stay signed in. On the sign-in page itself there is none to leave.
+// The page is left first: a draft not yet saved is asked about while the account still holds it. The
+// account goes once a move reaches the sign-in - this one, or the one made anew where a second move came
+// while the draft was asked about (leaveGuard.ts) - or where the sign-in already shows; where the user
+// stayed and went on elsewhere, it stays.
 async function signOut(): Promise<void> {
-  const held = await router.push({ name: "login" });
-  if (held && !isNavigationFailure(held, NavigationFailureType.duplicated)) return;
-  clearToken();
-  clearSession();
+  const stop = router.afterEach((to, _from, failure) => {
+    if (failure && !isNavigationFailure(failure, NavigationFailureType.duplicated)) return;
+    stop();
+    if (to.name !== "login") return;
+    clearToken();
+    clearSession();
+  });
+  await router.push({ name: "login" });
 }
 </script>
 

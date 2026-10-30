@@ -49,11 +49,13 @@ watch(
     if (key) status.value = "";
   },
 );
-// The tree read anew closed under an open draft: its editor stays, the draft shown to copy
+// The tree read anew closed under an open draft: its editor stays, the draft shown to copy. Closed to the
+// caller's role alone, the row reads as it reads, with that reason
 watch(
   () => props.tree,
   (now) => {
     if (now.closed && draftOpen.value && props.row) refused.value = props.row.key;
+    else if (!now.closed && !now.editable) refused.value = null;
   },
 );
 

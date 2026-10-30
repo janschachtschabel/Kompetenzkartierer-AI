@@ -110,6 +110,32 @@ describe("the shell for an account", () => {
     expect(push).toHaveBeenCalledWith({ name: "login" });
   });
 
+  it("signs out once the sign-in is reached by the move made anew after a draft was asked about", async () => {
+    const wrapper = await render();
+    const stay = router.beforeEach(() => false); // asked about, a second move came: this one held
+    await wrapper.get("button.shell__sign-out").trigger("click");
+    await flushPromises();
+    stay();
+    expect(api.getToken()).not.toBeNull();
+
+    await router.push({ name: "login" }); // the draft to go: the move made anew
+
+    expect([api.getToken(), session.value]).toEqual([null, null]);
+  });
+
+  it("keeps the account where the user, asked, went on elsewhere", async () => {
+    const wrapper = await render();
+    const stay = router.beforeEach(() => false);
+    await wrapper.get("button.shell__sign-out").trigger("click");
+    await flushPromises();
+    stay();
+
+    await router.push({ name: "sources" });
+    await router.push({ name: "login" }); // later, by another way: no sign-out pending any more
+
+    expect(api.getToken()).not.toBeNull();
+  });
+
   it("signs out on the sign-in page itself, where there is no page to leave", async () => {
     const wrapper = await render("/anmelden");
 
