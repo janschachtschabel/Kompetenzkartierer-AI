@@ -1012,9 +1012,12 @@ export const messages = {
       },
       // the document's tree checked again (treeCheck.ts, TreeTools.vue)
       check: {
+        button: "Erneut prüfen",
         failed: "Die Prüfung wurde nicht gestartet.",
+        lost: "Die Prüfung läuft im Konto des Eigentümers; lies den Baum neu, wenn sie fertig ist.",
+        readAgain: "Baum neu lesen",
       },
-      // a row's review status (rowReview.ts, RowReview.vue)
+      // a row's review status (rowReview.ts, ReviewToggles.vue)
       review: {
         label: "Prüfstand",
         set: "Prüfstand: {status}.",
