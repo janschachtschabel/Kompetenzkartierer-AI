@@ -955,6 +955,10 @@ export const messages = {
         unknownValue: "unbekannt: {iri}",
         save: "Änderungen speichern",
         saveFailed: "Die Änderung wurde nicht gespeichert.",
+        saved: "Gespeichert.",
+        unchanged: "Nichts geändert, nichts zu speichern.",
+        closedLabel: "Nicht gespeichert",
+        keptDraft: "Dein Entwurf, zum Abschreiben – er wurde nicht gespeichert:",
       },
       // a field's problem by the server's word for it (invalid_field details.problem; rowSave.ts)
       problems: {
