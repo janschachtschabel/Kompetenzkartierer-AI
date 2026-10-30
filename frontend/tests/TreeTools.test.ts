@@ -63,10 +63,6 @@ describe("the tree's tools", () => {
     expect(await violations(wrapper.html())).toEqual([]);
   });
 
-  it("offer an editor who does not own the document only the check", () => {
-    expect(names(tools({ editable: false }))).toEqual([t("documents.tree.check.button")]);
-  });
-
   it("offer nothing where the tree is closed", () => {
     expect(names(tools(CLOSED))).toEqual([]);
   });
@@ -131,7 +127,7 @@ describe("the tree's tools", () => {
   it("say where the check runs when its job is the owner's alone, the keyboard to reading the tree again", async () => {
     vi.spyOn(api, "startDocumentCheck").mockResolvedValue(check("queued"));
     vi.spyOn(api, "getJob").mockRejectedValue(new ApiError("server", 404, "no_job"));
-    const wrapper = tools({ editable: false });
+    const wrapper = tools();
 
     await start(wrapper);
     await vi.advanceTimersByTimeAsync(1000);
@@ -165,14 +161,14 @@ describe("the tree's tools", () => {
   it("let the note go once the tree is read open again, the keyboard back on the check", async () => {
     vi.spyOn(api, "startDocumentCheck").mockResolvedValue(check("queued"));
     vi.spyOn(api, "getJob").mockRejectedValue(new ApiError("server", 404, "no_job"));
-    const wrapper = tools({ editable: false });
+    const wrapper = tools();
     await start(wrapper);
     await vi.advanceTimersByTimeAsync(1000);
     await flushPromises();
 
     await wrapper.setProps({ tree: tree_([], CLOSED) }); // read again, the check still running
     expect(wrapper.text()).toContain(t("documents.tree.check.lost"));
-    await wrapper.setProps({ tree: tree_([], { editable: false }) });
+    await wrapper.setProps({ tree: tree_([]) });
     await flushPromises();
 
     expect(wrapper.text()).not.toContain(t("documents.tree.check.lost"));
@@ -182,7 +178,7 @@ describe("the tree's tools", () => {
   it("keep the note where the tree, read again after the job was gone, is closed by it", async () => {
     vi.spyOn(api, "startDocumentCheck").mockResolvedValue(check("queued"));
     vi.spyOn(api, "getJob").mockRejectedValue(new ApiError("server", 404, "no_job"));
-    const wrapper = tools({ editable: false });
+    const wrapper = tools();
     await checkButton(wrapper).trigger("click"); // the tree not yet read again
     await vi.advanceTimersByTimeAsync(1000);
     await flushPromises();
@@ -198,7 +194,7 @@ describe("the tree's tools", () => {
       .mockRejectedValueOnce(new ApiError("server", 409, "job_open"))
       .mockResolvedValue({ ...check("queued"), id: "j2" });
     vi.spyOn(api, "getJob").mockRejectedValueOnce(new ApiError("server", 404, "no_job")).mockResolvedValue(check("running"));
-    const wrapper = tools({ editable: false });
+    const wrapper = tools();
     await checkButton(wrapper).trigger("click"); // the tree still read open: the check offered again
     await vi.advanceTimersByTimeAsync(1000);
     await flushPromises();

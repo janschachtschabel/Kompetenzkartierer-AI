@@ -37,7 +37,8 @@ const checkButton = ref<HTMLElement | null>(null);
 const readButton = ref<HTMLElement | null>(null);
 
 const busy = computed(() => starting.value || running.value);
-const offered = computed(() => props.tree.editable || props.tree.reviewable || busy.value);
+// whoever may edit the tree - its owner, an editor - may check it (an editor who may review may edit too)
+const offered = computed(() => props.tree.editable || busy.value);
 
 async function check(): Promise<void> {
   if (busy.value) return; // the button stays focusable while busy, so it can be pressed again
