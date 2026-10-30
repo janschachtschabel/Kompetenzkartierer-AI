@@ -15,6 +15,7 @@ export function statement_(id: string, changes: Partial<TreeStatement> = {}): Tr
     revision: 1,
     iri: null,
     text_hash: "h",
+    by_hand: false,
     anchors: [],
     ...changes,
   };

@@ -38,6 +38,8 @@ export interface TreeStatement {
   /** Given when its document was frozen; a draft copy's rows bring theirs. */
   iri: string | null;
   text_hash: string;
+  /** An editor's own from the first: taking it away deletes it; a run's is rejected and kept. */
+  by_hand: boolean;
   anchors: TreeAnchor[];
 }
 
@@ -137,6 +139,21 @@ export interface Taken {
   revision: number | null;
 }
 
+/** A review status by its cv:ReviewStatuses name without "rev_" (backend ReviewIn). */
+export type ReviewStatus = "proposed" | "confirmed" | "rejected";
+
+/** A row a review names, at the revision it was read at (backend ReviewItemIn). */
+export interface ReviewItem {
+  kind: "node" | "statement";
+  id: string;
+  revision: number;
+}
+
+/** Each row a review named, once, in the order asked, at its revision after (backend ReviewOut). */
+export interface Reviewed {
+  revisions: { id: string; revision: number }[];
+}
+
 /** A page of the document's own conversion, with the count of its pages (backend DocumentPageOut). */
 export interface DocumentPage extends BlockPage {
   pages: number;
@@ -226,6 +243,18 @@ export function dropNode(id: string, revision: number): Promise<Dropped> {
 export function dropStatement(id: string, revision: number): Promise<Taken> {
   return apiFetch<Taken>(`/api/v1/statements/${encodeURIComponent(id)}?expected_revision=${revision}`, {
     method: "DELETE",
+  });
+}
+
+/**
+ * Set the review status of the rows named, all or none - the editors alone (403 `not_editor`). 409
+ * `stale_revision` (details.stale: each row changed or gone, its revision now or null), `job_open`, `frozen`,
+ * `not_extracted`.
+ */
+export function setReview(documentId: string, status: ReviewStatus, items: ReviewItem[]): Promise<Reviewed> {
+  return apiFetch<Reviewed>(`${documentPath(documentId)}/review`, {
+    method: "POST",
+    body: JSON.stringify({ status, items }),
   });
 }
 

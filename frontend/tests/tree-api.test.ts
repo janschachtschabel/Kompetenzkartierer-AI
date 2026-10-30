@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   addNode,
   addStatement,
+  CHECK_KIND,
   dropNode,
   dropStatement,
   editNode,
@@ -10,6 +11,8 @@ import {
   getDocumentBlocks,
   getForm,
   getTree,
+  setReview,
+  startDocumentCheck,
 } from "@/api";
 
 function answer(status: number, body: unknown): Response {
@@ -132,6 +135,25 @@ describe("the tree's requests", () => {
     expect(call(1)[1].body).toBeUndefined();
     expect(dropped).toEqual({ nodes: 3, statements: 4 });
     expect(taken).toEqual({ outcome: "rejected", revision: 8 });
+  });
+
+  it("set the review status of rows at once, and start the document's check", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(answer(200, { revisions: [{ id: "s1", revision: 4 }] }))
+      .mockResolvedValueOnce(answer(202, { id: "j1", kind: "extract.check", status: "queued" }));
+
+    const set = await setReview("d/1", "confirmed", [{ kind: "statement", id: "s1", revision: 3 }]);
+    const job = await startDocumentCheck("d/1");
+
+    expect([call(0)[0], call(0)[1].method]).toEqual(["/api/v1/documents/d%2F1/review", "POST"]);
+    expect(JSON.parse(call(0)[1].body as string)).toEqual({
+      status: "confirmed",
+      items: [{ kind: "statement", id: "s1", revision: 3 }],
+    });
+    expect([call(1)[0], call(1)[1].method]).toEqual(["/api/v1/documents/d%2F1/check", "POST"]);
+    expect(call(1)[1].body).toBeUndefined();
+    expect(set.revisions).toEqual([{ id: "s1", revision: 4 }]);
+    expect(job.kind).toBe(CHECK_KIND);
   });
 
   it("give a change of a row changed meanwhile back with the row as stored", async () => {

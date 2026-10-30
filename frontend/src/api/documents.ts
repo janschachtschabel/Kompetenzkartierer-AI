@@ -28,6 +28,9 @@ export interface CurriculumDocument {
 /** The job kind of a document's repair: X6, then X5 again (backend app/pipeline/x6_repair.py). */
 export const REPAIR_KIND = "extract.repair";
 
+/** The job kind of a document checked again: X5, with no model (backend app/api/document_check.py). */
+export const CHECK_KIND = "extract.check";
+
 /** How grave a finding is (backend app/domain/l1.py, Severity). */
 export type FindingSeverity = "violation" | "warning" | "info";
 
@@ -117,6 +120,15 @@ export function startExtraction(documentId: string): Promise<Job> {
 /** Starts the document's repair; the extraction or repair waiting or running where there is one. */
 export function startRepair(documentId: string): Promise<Job> {
   return apiFetch<Job>(`${documentPath(documentId)}/repair`, { method: "POST" });
+}
+
+/**
+ * Checks the document again (X5, no model asked): the job made, or the one of the document waiting or running
+ * where the caller may follow it. It goes in the owner's lane: who is not the owner follows it no further than
+ * this answer. 409 `not_checked`, `frozen`, `job_open`; 403 `file_hidden`.
+ */
+export function startDocumentCheck(documentId: string): Promise<Job> {
+  return apiFetch<Job>(`${documentPath(documentId)}/check`, { method: "POST" });
 }
 
 /** The documents the caller may read, of one entry where `sourceId` names it; the newest first. */
