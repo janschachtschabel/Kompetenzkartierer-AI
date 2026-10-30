@@ -5,7 +5,7 @@
  * for a visitor, the way in. The routed page renders in the one main region.
  */
 import { computed, onMounted, onUnmounted } from "vue";
-import { RouterLink, RouterView, useRoute, useRouter } from "vue-router";
+import { isNavigationFailure, NavigationFailureType, RouterLink, RouterView, useRoute, useRouter } from "vue-router";
 
 import { clearToken, getToken } from "@/api";
 import AppIcon from "@/components/AppIcon.vue";
@@ -43,10 +43,13 @@ onMounted(() => {
 onUnmounted(() => stopFocusRescue?.());
 
 /** Only here: the token is gone from this tab; the server keeps it until an admin revokes it. */
+// The page is left first: a draft not yet saved is asked about while the account still holds it, and
+// where the user stays with it they stay signed in. On the sign-in page itself there is none to leave.
 async function signOut(): Promise<void> {
+  const held = await router.push({ name: "login" });
+  if (held && !isNavigationFailure(held, NavigationFailureType.duplicated)) return;
   clearToken();
   clearSession();
-  await router.push({ name: "login" });
 }
 </script>
 

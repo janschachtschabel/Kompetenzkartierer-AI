@@ -103,10 +103,32 @@ describe("the shell for an account", () => {
     const push = vi.spyOn(router, "push");
 
     await wrapper.get("button.shell__sign-out").trigger("click");
+    await flushPromises();
 
     expect(api.getToken()).toBeNull();
     expect(session.value).toBeNull();
     expect(push).toHaveBeenCalledWith({ name: "login" });
+  });
+
+  it("signs out on the sign-in page itself, where there is no page to leave", async () => {
+    const wrapper = await render("/anmelden");
+
+    await wrapper.get("button.shell__sign-out").trigger("click");
+    await flushPromises();
+
+    expect([api.getToken(), session.value]).toEqual([null, null]);
+  });
+
+  it("stays signed in where the page it would leave keeps the user, a draft asked about", async () => {
+    const wrapper = await render();
+    const stay = router.beforeEach(() => false); // the leave guard's answer: stay with the draft
+
+    await wrapper.get("button.shell__sign-out").trigger("click");
+    await flushPromises();
+    stay();
+
+    expect(api.getToken()).not.toBeNull();
+    expect(session.value).not.toBeNull();
   });
 });
 
@@ -128,6 +150,7 @@ describe("the shell while an account is held but not loaded", () => {
     const push = vi.spyOn(router, "push");
 
     await wrapper.get("header button.shell__sign-out").trigger("click");
+    await flushPromises();
 
     expect(api.getToken()).toBeNull();
     expect(push).toHaveBeenCalledWith({ name: "login" });
