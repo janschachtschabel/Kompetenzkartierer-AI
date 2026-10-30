@@ -1003,6 +1003,22 @@ export const messages = {
           cancel: "Weiter eintragen",
         },
       },
+      // taking a row away (rowDrop.ts, RowActions.vue); dropped, deleted, rejected, stale by the outcome
+      drop: {
+        node: "Löschen",
+        statement: "Verwerfen oder löschen",
+        titleNode: "Knoten löschen?",
+        titleStatement: "Aussage verwerfen oder löschen?",
+        messageNode:
+          "Der Knoten wird mit allem darunter gelöscht: {nodes} {nodes|Knoten|Knoten} und {statements} {statements|Aussage|Aussagen}, mit ihren Befunden.",
+        messageStatement:
+          "Eine Aussage, die die Extraktion gefunden hat, wird verworfen und bleibt im Baum; eine von Hand angelegte wird gelöscht.",
+        dropped: "Gelöscht: {nodes} {nodes|Knoten|Knoten} und {statements} {statements|Aussage|Aussagen}.",
+        deleted: "Die Aussage ist gelöscht.",
+        rejected: "Die Aussage ist verworfen; sie bleibt im Baum.",
+        stale: "Die Zeile wurde inzwischen geändert; der Baum wird neu geladen. Prüfe sie, bevor du sie löschst.",
+        failed: "Die Zeile wurde nicht gelöscht.",
+      },
       // why the tree only reads: the document's state (TreeOut.closed), else the caller's role (RowPanel.vue)
       closed: {
         frozen: "Das Dokument ist festgeschrieben; Änderungen gehen nur in einer Entwurfskopie.",

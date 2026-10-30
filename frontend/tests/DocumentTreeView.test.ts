@@ -457,12 +457,45 @@ describe("a document's tree page", () => {
     expect((wrapper.get(".row-creator input").element as HTMLInputElement).value).toBe("Neu");
   });
 
+  it("takes a node away once asked: it leaves the address, the panel says what went", async () => {
+    const read = vi.spyOn(api, "getTree").mockResolvedValueOnce(OPEN).mockResolvedValue(tree_([]));
+    const sent = vi.spyOn(api, "dropNode").mockResolvedValue({ nodes: 1, statements: 2 });
+    const wrapper = await open({ zeile: "node:a", seite: "4" });
+
+    await press(wrapper, t("documents.tree.drop.node"));
+    const confirm = wrapper.findAll("[role=dialog] button").find((one) => one.text() === t("documents.tree.drop.node"));
+    await confirm?.trigger("click");
+    await flushPromises();
+
+    expect(sent).toHaveBeenCalledWith("a", 1);
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(query()).toEqual({ seite: "4" });
+    expect(wrapper.get(".row-panel__status").text()).toBe("Gelöscht: 1 Knoten und 2 Aussagen.");
+    expect(document.activeElement).toBe(wrapper.get(".row-panel h2").element);
+  });
+
+  it("rejects a statement a run found, which stays chosen, the tree read again", async () => {
+    const read = vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    vi.spyOn(api, "dropStatement").mockResolvedValue({ outcome: "rejected", revision: 2 });
+    const wrapper = await open({ zeile: "statement:s1" });
+
+    await press(wrapper, t("documents.tree.drop.statement"));
+    const confirm = wrapper.findAll("[role=dialog] button").find((one) => one.text() === t("documents.tree.drop.statement"));
+    await confirm?.trigger("click");
+    await flushPromises();
+
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(query()).toEqual({ zeile: "statement:s1" });
+    expect(wrapper.get(".row-panel__status").text()).toBe(t("documents.tree.drop.rejected"));
+  });
+
   it("offers no row to add where the tree only reads", async () => {
     const wrapper = await open({ zeile: "node:a" });
 
     const labels = wrapper.findAll("button").map((one) => one.text());
     expect(labels).not.toContain(t("documents.tree.create.node"));
     expect(labels).not.toContain(t("documents.tree.create.child"));
+    expect(labels).not.toContain(t("documents.tree.drop.node"));
   });
 
   it("keeps the draft of a change the closing tree refused, until another row is chosen", async () => {

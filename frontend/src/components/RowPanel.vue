@@ -8,7 +8,9 @@
  * the keyboard taken to the panel's heading, not lost with the editor. An anchor chosen in the source goes on to
  * the editor (`addAnchor`). Where the tree is open a node chosen offers a node or a statement to add under it
  * (RowActions); a row being added (`creating`, the view's) takes the place of the row chosen (RowCreator), the
- * keyboard at the heading as it begins, is cancelled or is added - not where another row chosen ends it.
+ * keyboard at the heading as it begins, is cancelled or is added - not where another row chosen ends it. A row
+ * taken away is said here, the keyboard at the heading: deleted, it leaves the address; rejected, changed
+ * meanwhile or closed to change, the tree is read again.
  */
 import { computed, nextTick, ref, useId, watch } from "vue";
 
@@ -21,6 +23,7 @@ import type { Row, RowKey } from "@/documentTree";
 import { t } from "@/i18n/de";
 import { sayAnew } from "@/liveRegion";
 import type { CreateTarget } from "@/rowCreate";
+import { dropWords, type DropOutcome } from "@/rowDrop";
 
 const props = withDefaults(defineProps<{ row: Row | null; tree: Tree; form: Form; creating?: CreateTarget | null }>(), {
   creating: null,
@@ -124,6 +127,15 @@ function gone(): void {
   emit("gone");
 }
 
+function dropped(done: Exclude<DropOutcome, { outcome: "failed" }>): void {
+  if (done.outcome === "gone") return gone();
+  status.value = sayAnew(status.value, dropWords(done));
+  toHeading();
+  // no more: out of the address, as a row found gone
+  if (done.outcome === "dropped" || done.outcome === "deleted") emit("gone");
+  else emit("changed");
+}
+
 /** An anchor chosen in the source, into the draft of the statement added or edited. */
 function addAnchor(code: string): void {
   if (creator.value) creator.value.addAnchor(code);
@@ -153,7 +165,13 @@ defineExpose({ addAnchor });
       @dirty="dirty"
     />
     <template v-else-if="row">
-      <RowActions v-if="tree.editable" :row="row" @create="(kind) => emit('create', kind)" />
+      <RowActions
+        v-if="tree.editable"
+        :key="row.key"
+        :row="row"
+        @create="(kind) => emit('create', kind)"
+        @dropped="dropped"
+      />
       <RowEditor
         v-if="editing"
         ref="editor"

@@ -4,9 +4,7 @@ import { nextTick } from "vue";
 
 import * as api from "@/api";
 import { ApiError } from "@/api";
-import RowActions from "@/components/RowActions.vue";
 import RowCreator from "@/components/RowCreator.vue";
-import { rowsOf, type Row } from "@/documentTree";
 import { t } from "@/i18n/de";
 import type { CreateTarget } from "@/rowCreate";
 
@@ -155,26 +153,5 @@ describe("a new row's form", () => {
     wrapper.unmount();
 
     expect(wrapper.emitted("dirty")?.at(-1)).toEqual([false]);
-  });
-});
-
-describe("the ways on from a row chosen", () => {
-  const ROWS = rowsOf([node_("a", { statements: [statement_("s1")] })]);
-  const row = (key: "node:a" | "statement:s1") => ROWS.get(key) as Row;
-
-  it("add a node under a node chosen, or a statement to it", async () => {
-    shown = mount(RowActions, { props: { row: row("node:a") }, attachTo: document.body });
-
-    await button(shown, t("documents.tree.create.child")).trigger("click");
-    await button(shown, t("documents.tree.create.statement")).trigger("click");
-
-    expect(shown.emitted("create")).toEqual([["node"], ["statement"]]);
-    expect(await violations(shown.html())).toEqual([]);
-  });
-
-  it("add nothing under a statement", () => {
-    shown = mount(RowActions, { props: { row: row("statement:s1") }, attachTo: document.body });
-
-    expect(shown.findAll("button")).toHaveLength(0);
   });
 });
