@@ -12,9 +12,8 @@
  * Wide, the tree and the side stand side by side.
  */
 import { computed, nextTick, onMounted, ref, toRef, watch } from "vue";
-import { RouterLink, useRoute, useRouter, type LocationQuery } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
 
-import { PAGE_PARAM, pageOf } from "@/blockPages";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
@@ -23,68 +22,30 @@ import PartialState from "@/components/PartialState.vue";
 import RowPanel from "@/components/RowPanel.vue";
 import SourcePane from "@/components/SourcePane.vue";
 import TreeView from "@/components/TreeView.vue";
-import { ROW_PARAM, useDocumentTree, type Row, type RowKey } from "@/documentTree";
+import { ROW_PARAM, useDocumentTree } from "@/documentTree";
 import { focusIsFree } from "@/focusRescue";
 import { t } from "@/i18n/de";
 import { useLeaveGuard } from "@/leaveGuard";
 import { pageTitle } from "@/pageTitle";
+import { useTreeAddress } from "@/treeAddress";
 
 const props = defineProps<{ id: string }>();
 const route = useRoute();
-const router = useRouter();
 const { document: document_, tree, form, rows, loading, missing, hidden, failure, load } = useDocumentTree(
   toRef(props, "id"),
 );
+const { selectedRow, selected, page, cited, showPage, leaveRow, atOwnRoute } = useTreeAddress(rows);
 // a change not yet saved in the row's form: another row or page takes it along, another page of the source not
 const draftOpen = ref(false);
 const { leaving, answer } = useLeaveGuard(draftOpen, {
   goesWith: (to, from) => to.path !== from.path || to.query[ROW_PARAM] !== from.query[ROW_PARAM],
 });
 
-function anchorsOf(row: Row | null): { page_start: number | null; blocks: string[] }[] {
-  if (!row) return [];
-  return row.kind === "node" ? row.node.anchors : row.statement.anchors;
-}
-
-function firstPage(row: Row | null): number | null {
-  return anchorsOf(row).find((anchor) => anchor.page_start !== null)?.page_start ?? null;
-}
-
-// Only under the route the page was mounted at (as ConversionView): a leaving transition keeps it mounted
-// under the next page's address, whose query names no row or page of this one
-const ownRoute = route.name;
-const query = computed<LocationQuery>((before) => (route.name === ownRoute ? route.query : (before ?? {})));
-
-const selectedRow = computed<Row | null>(() => {
-  const key = query.value[ROW_PARAM];
-  return typeof key === "string" ? (rows.value.get(key as RowKey) ?? null) : null;
-});
-
-const selected = computed<RowKey | null>({
-  get: () => selectedRow.value?.key ?? null,
-  set: (key) => {
-    const row = key ? (rows.value.get(key) ?? null) : null;
-    const at = firstPage(row);
-    // a row without anchors shows the first page, not the page of the row before
-    void router.replace({
-      query: { ...route.query, [ROW_PARAM]: key ?? undefined, [PAGE_PARAM]: at ? String(at) : undefined },
-    });
-  },
-});
-
-const page = computed(() => pageOf(query.value[PAGE_PARAM]) ?? firstPage(selectedRow.value) ?? 1);
-
-const cited = computed(() => [...new Set(anchorsOf(selectedRow.value).flatMap((anchor) => anchor.blocks))]);
-
 const heading = computed(() =>
   document_.value
     ? t("documents.tree.heading", { title: document_.value.title || t("documents.untitled") })
     : t("app.titles.documentTree"),
 );
-
-function showPage(at: number): void {
-  void router.replace({ query: { ...route.query, [PAGE_PARAM]: String(at) } });
-}
 
 const source = ref<InstanceType<typeof SourcePane> | null>(null);
 
@@ -110,7 +71,7 @@ async function readAgain(): Promise<void> {
 // the row is no more, its draft with it: out of the address, the tree read anew
 function rowGone(): void {
   draftOpen.value = false;
-  void router.replace({ query: { ...route.query, [ROW_PARAM]: undefined } });
+  leaveRow();
   void load();
 }
 
@@ -122,7 +83,7 @@ watch(
 // The tab names the document once it is known; until then the router's name for the page stands. The
 // router names the page alone on each move, the query's too (router.afterEach): named again after it.
 watch([heading, () => route.fullPath], ([name]) => {
-  if (route.name === ownRoute && document_.value) document.title = pageTitle(name);
+  if (atOwnRoute() && document_.value) document.title = pageTitle(name);
 });
 </script>
 
