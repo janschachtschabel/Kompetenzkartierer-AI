@@ -8,6 +8,7 @@ import { computed, shallowRef, watch, type Ref, type WritableComputedRef } from 
 
 import type { Tree } from "@/api";
 import type { Row, RowKey } from "@/documentTree";
+import { t } from "@/i18n/de";
 import type { CreateTarget } from "@/rowCreate";
 
 export interface TreeAddingOf {
@@ -80,5 +81,22 @@ export function useTreeAdding({ documentId, tree, selectedRow, selected, draftOp
     () => cancel(),
   );
 
-  return { creating, pending, picking, createAtTop, create, answer, created, cancel };
+  /** What a draft going is asked in: a row being added's own words, else the editor's. */
+  const discardWords = computed(() =>
+    creating.value
+      ? {
+          title: t("documents.tree.create.discard.title"),
+          message: t("documents.tree.create.discard.message"),
+          confirm: t("documents.tree.create.discard.confirm"),
+          cancel: t("documents.tree.create.discard.cancel"),
+        }
+      : {
+          title: t("documents.tree.leave.title"),
+          message: t("documents.tree.leave.message"),
+          confirm: t("documents.tree.leave.confirm"),
+          cancel: t("documents.tree.leave.cancel"),
+        },
+  );
+
+  return { creating, pending, picking, discardWords, createAtTop, create, answer, created, cancel };
 }

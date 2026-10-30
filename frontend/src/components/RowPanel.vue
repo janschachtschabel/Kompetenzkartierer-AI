@@ -25,6 +25,7 @@ import type { AnchorTaking } from "@/anchorDraft";
 import { sayAnew } from "@/liveRegion";
 import type { CreateTarget } from "@/rowCreate";
 import { dropWords, type DropOutcome } from "@/rowDrop";
+import { panelHeading } from "@/rowHeading";
 
 const props = withDefaults(defineProps<{ row: Row | null; tree: Tree; form: Form; creating?: CreateTarget | null }>(), {
   creating: null,
@@ -55,27 +56,7 @@ const reason = computed(() => {
   return props.tree.closed ? t(`documents.tree.closed.${props.tree.closed}`) : t("documents.tree.closed.noRole");
 });
 
-// a node by its code and title, as the tree names it
-function nodeName(row: Row | null): string {
-  if (row?.kind !== "node") return t("documents.tree.untitled");
-  const { code, original_title: title } = row.node.fields;
-  return [code, title].filter((part) => typeof part === "string" && part).join(" ") || t("documents.tree.untitled");
-}
-
-// a row being added says where it goes: at the top, or under the node chosen
-const heading = computed(() => {
-  const creating = props.creating;
-  if (creating?.kind === "statement") return t("documents.tree.create.headingStatement", { name: nodeName(props.row) });
-  if (creating) {
-    return creating.parent === null
-      ? t("documents.tree.create.headingTop")
-      : t("documents.tree.create.headingChild", { name: nodeName(props.row) });
-  }
-  const row = props.row;
-  if (!row) return t("documents.tree.detail.heading");
-  if (row.kind === "statement") return t("documents.tree.detail.statement");
-  return t("documents.tree.detail.node", { name: nodeName(row) });
-});
+const heading = computed(() => panelHeading(props.row, props.creating));
 
 // the row just added, chosen as the tree is read again: the word that it was added stays for it, and the
 // keyboard goes to its heading once the heading names it

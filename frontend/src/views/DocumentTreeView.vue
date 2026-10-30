@@ -54,32 +54,16 @@ const heading = computed(() =>
 const source = ref<InstanceType<typeof SourcePane> | null>(null);
 const panel = ref<InstanceType<typeof RowPanel> | null>(null);
 
-const { creating, pending, picking, createAtTop, create, answer: answerPending, created, cancel } = useTreeAdding({
-  documentId: toRef(props, "id"),
-  tree,
-  selectedRow,
-  selected,
-  draftOpen,
-  load,
-  atOwnRoute,
-});
-
-// what a draft going is asked in: a row being added's own words, else the editor's
-const discard = computed(() =>
-  creating.value
-    ? {
-        title: t("documents.tree.create.discard.title"),
-        message: t("documents.tree.create.discard.message"),
-        confirm: t("documents.tree.create.discard.confirm"),
-        cancel: t("documents.tree.create.discard.cancel"),
-      }
-    : {
-        title: t("documents.tree.leave.title"),
-        message: t("documents.tree.leave.message"),
-        confirm: t("documents.tree.leave.confirm"),
-        cancel: t("documents.tree.leave.cancel"),
-      },
-);
+const { creating, pending, picking, discardWords: discard, createAtTop, create, answer: answerPending, created, cancel } =
+  useTreeAdding({
+    documentId: toRef(props, "id"),
+    tree,
+    selectedRow,
+    selected,
+    draftOpen,
+    load,
+    atOwnRoute,
+  });
 
 // an anchor's page is there to be read: the keyboard goes along to it
 function showAnchor(at: number): void {
