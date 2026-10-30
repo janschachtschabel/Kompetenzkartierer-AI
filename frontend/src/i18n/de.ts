@@ -1024,13 +1024,14 @@ export const messages = {
       // taking a row away (rowDrop.ts, RowActions.vue); dropped, deleted, rejected, stale by the outcome
       drop: {
         node: "Löschen",
-        statement: "Verwerfen oder löschen",
+        reject: "Verwerfen",
         titleNode: "Knoten löschen?",
-        titleStatement: "Aussage verwerfen oder löschen?",
+        titleReject: "Aussage verwerfen?",
+        titleDelete: "Aussage löschen?",
         messageNode:
           "Der Knoten wird gelöscht – mit {under} {under|Unterknoten|Unterknoten}, {statements} {statements|Aussage|Aussagen} und ihren Befunden.",
-        messageStatement:
-          "Eine Aussage, die die Extraktion gefunden hat, wird verworfen und bleibt im Baum; eine von Hand angelegte wird gelöscht.",
+        messageReject: "Die Aussage bleibt im Baum, als verworfen; ihr Prüfstand lässt sich zurücksetzen.",
+        messageDelete: "Die von Hand angelegte Aussage wird gelöscht, mit ihren Fundstellen und Befunden.",
         dropped: "Gelöscht: der Knoten mit {under} {under|Unterknoten|Unterknoten} und {statements} {statements|Aussage|Aussagen}.",
         deleted: "Die Aussage ist gelöscht.",
         rejected: "Die Aussage ist verworfen; sie bleibt im Baum.",

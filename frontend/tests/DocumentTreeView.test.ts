@@ -490,8 +490,8 @@ describe("a document's tree page", () => {
     vi.spyOn(api, "dropStatement").mockResolvedValue({ outcome: "rejected", revision: 2 });
     const wrapper = await open({ zeile: "statement:s1" });
 
-    await press(wrapper, t("documents.tree.drop.statement"));
-    const confirm = wrapper.findAll("[role=dialog] button").find((one) => one.text() === t("documents.tree.drop.statement"));
+    await press(wrapper, t("documents.tree.drop.reject"));
+    const confirm = wrapper.findAll("[role=dialog] button").find((one) => one.text() === t("documents.tree.drop.reject"));
     await confirm?.trigger("click");
     await flushPromises();
 
@@ -671,8 +671,8 @@ describe("a document's tree page", () => {
     vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
     vi.spyOn(api, "dropStatement").mockResolvedValue({ outcome: "rejected", revision: 2 });
     const wrapper = await open({ zeile: "statement:s1" });
-    await press(wrapper, t("documents.tree.drop.statement"));
-    const confirm = wrapper.findAll("[role=dialog] button").find((one) => one.text() === t("documents.tree.drop.statement"));
+    await press(wrapper, t("documents.tree.drop.reject"));
+    const confirm = wrapper.findAll("[role=dialog] button").find((one) => one.text() === t("documents.tree.drop.reject"));
     await confirm?.trigger("click");
     await flushPromises();
     expect(wrapper.get(".row-panel__status").text()).toBe(t("documents.tree.drop.rejected"));

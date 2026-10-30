@@ -2,9 +2,10 @@
 /**
  * The ways on from a row chosen in a tree the caller may change (plan M1 9.8, Paket 9c2b L4, L5, L9): under a
  * node, a node or a statement to add; the row taken away once asked (rowDrop.ts) - a node with what goes with
- * it counted, a statement rejected or deleted as the server decides. How it went is told to the panel by a
- * function (`onDropped`) with the row's key - heard even where another row was chosen meanwhile -, a failure
- * said here, where it was asked. Which row and whether the tree is open is the panel's.
+ * it counted, an editor's own statement deleted, a run's rejected and kept (Paket 9c2c M5: `by_hand`), none
+ * offered for a run's statement rejected already, whose review status is set back instead. How it went is told
+ * to the panel by a function (`onDropped`) with the row's key - heard even where another row was chosen
+ * meanwhile -, a failure said here, where it was asked. Which row and whether the tree is open is the panel's.
  */
 import { computed, ref } from "vue";
 
@@ -15,6 +16,7 @@ import type { Row, RowKey } from "@/documentTree";
 import { t } from "@/i18n/de";
 import type { Notice } from "@/notice";
 import { dropCounts, dropRow, type DropOutcome } from "@/rowDrop";
+import { rowStatus } from "@/rowReview";
 
 const props = defineProps<{
   row: Row;
@@ -27,11 +29,19 @@ const asking = ref(false);
 const busy = ref(false);
 const problem = ref<Notice | null>(null);
 
-const dropLabel = computed(() => t(props.row.kind === "node" ? "documents.tree.drop.node" : "documents.tree.drop.statement"));
+// what taking the row away does: deletes a node or an editor's own statement, rejects a run's
+const rejects = computed(() => props.row.kind === "statement" && !props.row.statement.by_hand);
+// a run's statement rejected already: taking it away again would do nothing
+const offered = computed(
+  () => !(props.row.kind === "statement" && rejects.value && rowStatus(props.row) === "rejected"),
+);
+const dropLabel = computed(() => t(rejects.value ? "documents.tree.drop.reject" : "documents.tree.drop.node"));
 const question = computed(() => {
   const row = props.row;
   if (row.kind === "statement") {
-    return { title: t("documents.tree.drop.titleStatement"), message: t("documents.tree.drop.messageStatement") };
+    return rejects.value
+      ? { title: t("documents.tree.drop.titleReject"), message: t("documents.tree.drop.messageReject") }
+      : { title: t("documents.tree.drop.titleDelete"), message: t("documents.tree.drop.messageDelete") };
   }
   // the node itself not among those under it
   const { nodes, statements } = dropCounts(row.node);
@@ -62,6 +72,7 @@ async function drop(): Promise<void> {
     </template>
     <!-- aria-disabled, not disabled: the button keeps the keyboard while the row is taken away -->
     <button
+      v-if="offered"
       type="button"
       class="btn btn-sm secondary danger"
       :aria-disabled="busy || undefined"

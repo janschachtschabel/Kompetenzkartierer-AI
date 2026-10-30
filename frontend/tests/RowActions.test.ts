@@ -8,19 +8,29 @@ import { rowsOf, type Row } from "@/documentTree";
 import { t } from "@/i18n/de";
 
 import { violations } from "./axe";
-import { node_, statement_ } from "./treeFixtures";
+import { CV, node_, statement_ } from "./treeFixtures";
 
 let shown: VueWrapper | null = null;
 
 const ROWS = rowsOf([
-  node_("a", { revision: 4, statements: [statement_("s1", { revision: 7 })], children: [node_("b", { statements: [statement_("s2")] })] }),
+  node_("a", {
+    revision: 4,
+    statements: [
+      statement_("s1", { revision: 7 }),
+      statement_("own", { position: 2, by_hand: true }),
+      statement_("gone", { position: 3, review_status: CV + "rev_rejected" }),
+      statement_("ownGone", { position: 4, by_hand: true, review_status: CV + "rev_rejected" }),
+    ],
+    children: [node_("b", { statements: [statement_("s2")] })],
+  }),
 ]);
-const row = (key: "node:a" | "statement:s1") => ROWS.get(key) as Row;
+type Key = "node:a" | "statement:s1" | "statement:own" | "statement:gone" | "statement:ownGone";
+const row = (key: Key) => ROWS.get(key) as Row;
 
 // how taking a row away went, as the panel hears it: by a function the actions are given
 let dropped = vi.fn();
 
-function actions(key: "node:a" | "statement:s1"): VueWrapper {
+function actions(key: Key): VueWrapper {
   dropped = vi.fn();
   shown = mount(RowActions, { props: { row: row(key), onDropped: dropped }, attachTo: document.body });
   return shown;
@@ -60,7 +70,7 @@ describe("the ways on from a row chosen", () => {
     await button(wrapper, t("documents.tree.drop.node")).trigger("click");
     const dialog = wrapper.get("[role=dialog]");
     expect(dialog.text()).toContain(t("documents.tree.drop.titleNode"));
-    expect(dialog.text()).toContain("Der Knoten wird gelöscht – mit 1 Unterknoten, 2 Aussagen und ihren Befunden.");
+    expect(dialog.text()).toContain("Der Knoten wird gelöscht – mit 1 Unterknoten, 5 Aussagen und ihren Befunden.");
     expect(await violations(wrapper.html())).toEqual([]);
     await button(wrapper, t("dialog.cancel")).trigger("click");
     expect(sent).not.toHaveBeenCalled();
@@ -73,30 +83,51 @@ describe("the ways on from a row chosen", () => {
     expect(dropped).toHaveBeenCalledWith({ outcome: "dropped", nodes: 2, statements: 2 }, "node:a");
   });
 
-  it("offer a statement only to be rejected or deleted, as the server decides", async () => {
+  it("offer a run's statement to be rejected, saying it stays", async () => {
     vi.spyOn(api, "dropStatement").mockResolvedValue({ outcome: "rejected", revision: 8 });
     const wrapper = actions("statement:s1");
-    expect(wrapper.findAll("button").map((one) => one.text())).toEqual([t("documents.tree.drop.statement")]);
+    expect(wrapper.findAll("button").map((one) => one.text())).toEqual([t("documents.tree.drop.reject")]);
 
-    await button(wrapper, t("documents.tree.drop.statement")).trigger("click");
-    expect(wrapper.get("[role=dialog]").text()).toContain(t("documents.tree.drop.messageStatement"));
+    await button(wrapper, t("documents.tree.drop.reject")).trigger("click");
+    expect(wrapper.get("[role=dialog]").text()).toContain(t("documents.tree.drop.titleReject"));
+    expect(wrapper.get("[role=dialog]").text()).toContain(t("documents.tree.drop.messageReject"));
     await wrapper
       .findAll("[role=dialog] button")
-      .find((one) => one.text() === t("documents.tree.drop.statement"))
+      .find((one) => one.text() === t("documents.tree.drop.reject"))
       ?.trigger("click");
     await flushPromises();
 
     expect(dropped).toHaveBeenCalledWith({ outcome: "rejected" }, "statement:s1");
   });
 
+  it("offer an editor's own statement to be deleted, saying so", async () => {
+    vi.spyOn(api, "dropStatement").mockResolvedValue({ outcome: "deleted", revision: null });
+    const wrapper = actions("statement:own");
+    expect(wrapper.findAll("button").map((one) => one.text())).toEqual([t("documents.tree.drop.node")]);
+
+    await button(wrapper, t("documents.tree.drop.node")).trigger("click");
+    expect(wrapper.get("[role=dialog]").text()).toContain(t("documents.tree.drop.titleDelete"));
+    expect(wrapper.get("[role=dialog]").text()).toContain(t("documents.tree.drop.messageDelete"));
+    expect(await violations(wrapper.html())).toEqual([]);
+  });
+
+  it("offer nothing to take away where a run's statement stands rejected already, an editor's own still to delete", () => {
+    const wrapper = actions("statement:gone");
+    expect(wrapper.findAll("button")).toHaveLength(0);
+    wrapper.unmount();
+
+    const own = actions("statement:ownGone");
+    expect(own.findAll("button").map((one) => one.text())).toEqual([t("documents.tree.drop.node")]);
+  });
+
   it("say a failure where it was asked, and tell nothing", async () => {
     vi.spyOn(api, "dropStatement").mockRejectedValue(new ApiError("network", 0));
     const wrapper = actions("statement:s1");
 
-    await button(wrapper, t("documents.tree.drop.statement")).trigger("click");
+    await button(wrapper, t("documents.tree.drop.reject")).trigger("click");
     await wrapper
       .findAll("[role=dialog] button")
-      .find((one) => one.text() === t("documents.tree.drop.statement"))
+      .find((one) => one.text() === t("documents.tree.drop.reject"))
       ?.trigger("click");
     await flushPromises();
 
@@ -109,13 +140,13 @@ describe("the ways on from a row chosen", () => {
     let answer: (done: { outcome: "deleted" | "rejected"; revision: number | null }) => void = () => undefined;
     vi.spyOn(api, "dropStatement").mockReturnValue(new Promise((resolve) => (answer = resolve)));
     const wrapper = actions("statement:s1");
-    await button(wrapper, t("documents.tree.drop.statement")).trigger("click");
+    await button(wrapper, t("documents.tree.drop.reject")).trigger("click");
     await wrapper
       .findAll("[role=dialog] button")
-      .find((one) => one.text() === t("documents.tree.drop.statement"))
+      .find((one) => one.text() === t("documents.tree.drop.reject"))
       ?.trigger("click");
 
-    const again = button(wrapper, t("documents.tree.drop.statement"));
+    const again = button(wrapper, t("documents.tree.drop.reject"));
     expect(again.attributes("aria-disabled")).toBe("true");
     await again.trigger("click");
     expect(wrapper.find("[role=dialog]").exists()).toBe(false);
