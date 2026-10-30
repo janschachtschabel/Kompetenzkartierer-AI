@@ -957,6 +957,35 @@ Löschen, Prüfstand und Prüfjob.
   der Editor über eine Funktions-Prop, damit ein Speichern, das nach einem Zeilenwechsel ankommt, den Baum
   trotzdem neu lesen lässt.
 
+**Nachtrag 9c2b – Fundstellen, Anlegen, Löschen (30.10.)**
+
+Der Rest von 9c2 ist noch einmal geteilt: 9c2b bringt Fundstellen per Blockauswahl, Anlegen und Löschen,
+9c2c den Prüfstand der Zeile und den Prüfjob.
+
+- **Fundstellen als Feld des Entwurfs.** `anchorDraft.ts` schreibt eine Fundstelle als Kode – ihre Blöcke
+  (`blocks:p5-b2,p5-b3`) oder die Seite, auf der sie unauffindbar steht (`page:5`) –, damit Vergleich,
+  Konflikt, „Dein Entwurf“ und Verlassen-Schutz sie wie ein Listenfeld nehmen (`ANCHOR_FIELD` neben den
+  Feldern des Formulars). Ein Ort hat genau einen Kode: Blöcke einmal, nach Seite und Nummer – der Baum
+  liefert sie in Dokumentreihenfolge, die Wahl in Klickreihenfolge; ohne das sah ein gespeicherter Entwurf
+  weiter geändert aus. Eine Fundstelle ohne Blöcke und Seite lässt sich nicht benennen und fehlt im Entwurf
+  (`simplify`). Gesendet werden die Fundstellen nur, wenn sie sich geändert haben (offener Punkt aus 9a);
+  `anchor_missing` und `invalid_field` an `anchors` stehen an der Liste (`AnchorDraftList`).
+- **Blockauswahl.** `SourcePane` bekommt `picking` (die Aussage, für die gewählt wird); jeder Block ist ein
+  Schalter (`BlockToggle`, `aria-pressed`, Häkchen), `AnchorPickBar` übernimmt die Wahl als eine Fundstelle
+  oder die Seite als nicht gefunden. Die Wahl (`anchorPick.ts`) geht mit Seite, Aussage und Dokument und
+  zählt für den Verlassen-Schutz nicht (L10).
+- **Anlegen.** `rowCreate.ts` hält den leeren Entwurf, meldet fehlende Pflichtfelder und eine fehlende
+  Fundstelle vor jeder Anfrage und sendet die ausgefüllten Felder; `RowCreator` steht im Panel an der Stelle
+  der gewählten Zeile, fragt vor dem Verwerfen von Eingaben, und `treeAdding.ts` liest nach dem Anlegen den
+  Baum neu und wählt die neue Zeile. Die Tastatur geht zur Panel-Überschrift, wenn das Anlegen beginnt,
+  abgebrochen wird oder gelingt, nicht wenn eine andere Zeile im Baum es beendet.
+- **Löschen.** `RowActions` fragt per Dialog (beim Knoten mit Zahl der Unterknoten und Aussagen aus dem
+  Baum, `rowDrop.dropCounts`); das Panel sagt den Ausgang; ein gelöschter Knoten, eine gelöschte Aussage
+  verlassen die Adresse, eine verworfene bleibt gewählt.
+- **Gemeinsame Ablehnungen.** `rowRefusals.ts` (`refusalOf`, `applyRefusal`, `emptiedRequired`) sagt
+  Speichern, Anlegen und Löschen gleich; `treeAddress.ts` hält Zeile und Seite der Adresse (aus der Ansicht
+  gezogen, bevor die Verdrahtung dazukam).
+
 ### Paket 10: Lexikon aus der Länderrecherche mit Stichprobe (3 PT)
 
 | # | Aufgabe | Dateien | Test zuerst | Nachweis |

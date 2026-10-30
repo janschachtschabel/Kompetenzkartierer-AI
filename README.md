@@ -186,7 +186,14 @@ ungültig.
   behalten“ / „Gespeichertes nehmen“); ein Fehler steht am Feld; schließt sich der Baum (Job, festgeschrieben,
   X4) beim Speichern oder beim Neulesen, bleibt der Entwurf zum Abschreiben stehen. Sonst sagt die Seite,
   warum sie nur liest. Ein ungespeicherter Entwurf fragt nach, bevor eine andere Zeile oder eine andere Seite
-  der App ihn verdrängt (eine andere Seite der Quelle nicht); der Browser fragt vor dem Schließen.
+  der App ihn verdrängt (eine andere Seite der Quelle nicht); der Browser fragt vor dem Schließen. Bei einer
+  Aussage im offenen Baum sind die Blöcke der gezeigten Quellenseite Schalter: „Gewählte Blöcke als Fundstelle
+  übernehmen“ legt sie als eine Fundstelle in den Entwurf, „Auf Seite N nicht gefunden“ die Seite; der Entwurf
+  listet seine Fundstellen mit „Entfernen“, und Speichern sendet sie – alle – nur, wenn sie sich geändert
+  haben. Ein gewählter Knoten bietet „Unterknoten anlegen“ und „Aussage anlegen“, der Baum „Knoten anlegen“
+  (oberste Ebene); eine neue Aussage braucht eine Fundstelle; angelegt, wird der Baum neu gelesen und die neue
+  Zeile gewählt. „Löschen“ (Knoten, mit Zahl der Unterknoten und Aussagen) und „Verwerfen oder löschen“
+  (Aussage: eine extrahierte wird verworfen, eine von Hand angelegte gelöscht) fragen vorher nach.
 - Blöcke des Dokuments: `GET /api/v1/documents/{id}/blocks?page=N` liest eine Seite der Konvertierung, aus
   der das Dokument gelesen wurde (Blöcke, fortlaufende Tabellen, gedruckte Seite, `pages`) – die Blöcke, die
   seine Fundstellen nennen, auch wenn die Datei des Eintrags seither neu geholt oder anders umgewandelt
