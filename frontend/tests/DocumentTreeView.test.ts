@@ -166,6 +166,32 @@ describe("a document's tree page", () => {
     expect(api.getDocumentBlocks).toHaveBeenLastCalledWith("d1", 7);
   });
 
+  it("goes to the page of the first anchor that names one", async () => {
+    const unplaced = { ...anchor("q0", 1, []), page_start: null, page_end: null };
+    vi.mocked(api.getTree).mockResolvedValue(
+      tree_([node_("a", { statements: [statement_("s1", { anchors: [unplaced, anchor("q1", 6, ["p6-b1"])] })] })]),
+    );
+    const wrapper = await open();
+
+    await wrapper.get("[data-key='statement:s1']").trigger("click");
+    await flushPromises();
+
+    expect(query()).toEqual({ zeile: "statement:s1", seite: "6" });
+  });
+
+  it("changes the row and the page in place: back leaves the tree page, not the row before", async () => {
+    const wrapper = await open();
+    const steps = window.history.length;
+
+    await wrapper.get("[data-key='statement:s1']").trigger("click");
+    await flushPromises();
+    await wrapper.get("[data-test=next]").trigger("click");
+    await flushPromises();
+
+    expect(query()).toEqual({ zeile: "statement:s1", seite: "6" });
+    expect(window.history.length).toBe(steps);
+  });
+
   it("reads a page the address writes otherwise than as a whole number as none: the first anchor's", async () => {
     await open({ zeile: "statement:s1", seite: "0x10" });
 
