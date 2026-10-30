@@ -10,7 +10,9 @@
  * (RowActions); a row being added (`creating`, the view's) takes the place of the row chosen (RowCreator), the
  * keyboard at the heading as it begins, is cancelled or is added - not where another row chosen ends it. A row
  * taken away is said here, the keyboard at the heading: deleted, it leaves the address; rejected, changed
- * meanwhile or closed to change, the tree is read again.
+ * meanwhile or closed to change, the tree is read again. An editor sets the row's review status here
+ * (ReviewToggles, Paket 9c2c M2/M3): set, changed meanwhile or closed to change, it is said here and the tree read
+ * again, the keyboard left on its toggle; refused to the caller's role, only said.
  */
 import { computed, nextTick, ref, useId, watch } from "vue";
 
@@ -19,6 +21,7 @@ import RowActions from "@/components/RowActions.vue";
 import RowCreator from "@/components/RowCreator.vue";
 import RowDetail from "@/components/RowDetail.vue";
 import RowEditor from "@/components/RowEditor.vue";
+import ReviewToggles from "@/components/ReviewToggles.vue";
 import type { Row, RowKey } from "@/documentTree";
 import { t } from "@/i18n/de";
 import type { AnchorTaking } from "@/anchorDraft";
@@ -26,10 +29,12 @@ import { sayAnew } from "@/liveRegion";
 import type { CreateTarget } from "@/rowCreate";
 import { dropWords, type DropOutcome } from "@/rowDrop";
 import { panelHeading } from "@/rowHeading";
+import { reviewWords, type ReviewOutcome } from "@/rowReview";
 
-const props = withDefaults(defineProps<{ row: Row | null; tree: Tree; form: Form; creating?: CreateTarget | null }>(), {
-  creating: null,
-});
+const props = withDefaults(
+  defineProps<{ row: Row | null; tree: Tree; form: Form; documentId: string; creating?: CreateTarget | null }>(),
+  { creating: null },
+);
 const emit = defineEmits<{
   show: [page: number];
   changed: [];
@@ -137,6 +142,12 @@ function dropped(done: Exclude<DropOutcome, { outcome: "failed" }>, key: RowKey)
   else emit("changed");
 }
 
+// heard even where another row was chosen meanwhile (ReviewToggles' onReviewed): then the tree is only read again
+function reviewed(done: Exclude<ReviewOutcome, { outcome: "failed" }>, key: RowKey): void {
+  if (key === props.row?.key) status.value = sayAnew(status.value, reviewWords(done));
+  if (done.outcome !== "refused") emit("changed");
+}
+
 /** An anchor chosen in the source, into the draft of the statement added or edited; how it went. */
 function addAnchor(code: string): AnchorTaking {
   return (creator.value ?? editor.value)?.addAnchor(code) ?? "refused";
@@ -173,6 +184,7 @@ defineExpose({ addAnchor });
         @create="(kind) => emit('create', kind)"
         @dropped="dropped"
       />
+      <ReviewToggles v-if="tree.reviewable" :key="row.key" :row="row" :document-id="documentId" :on-reviewed="reviewed" />
       <RowEditor
         v-if="editing"
         ref="editor"

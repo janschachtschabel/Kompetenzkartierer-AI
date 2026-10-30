@@ -10,9 +10,11 @@
  * failure said above it (Paket 9c2 K12). A draft not yet saved is asked about before another row or another
  * page takes its place, the browser asking before the tab closes (K8); another page of the source keeps it.
  * A statement chosen in a tree open to the caller has its anchor chosen in the source, which goes to its
- * draft (Paket 9c2b L3, L9). There a node is added at the tree's top, or a node or a statement under a node
- * chosen, in the panel (L4); added, the tree is read again and the new row chosen; another row chosen lets it
- * go, a draft with entries asked about first (L10). Wide, the tree and the side stand side by side.
+ * draft (Paket 9c2b L3, L9). There a node is added at the tree's top (TreeTools), or a node or a statement under
+ * a node chosen, in the panel (L4); added, the tree is read again and the new row chosen; another row chosen lets
+ * it go, a draft with entries asked about first (L10). There, too, the tree is checked again, its job followed
+ * (TreeTools, Paket 9c2c M6), and an editor sets a row's review status in the panel (M2). Wide, the tree and the
+ * side stand side by side.
  */
 import { computed, nextTick, onMounted, ref, toRef, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
@@ -24,6 +26,7 @@ import LoadingState from "@/components/LoadingState.vue";
 import PartialState from "@/components/PartialState.vue";
 import RowPanel from "@/components/RowPanel.vue";
 import SourcePane from "@/components/SourcePane.vue";
+import TreeTools from "@/components/TreeTools.vue";
 import TreeView from "@/components/TreeView.vue";
 import { ROW_PARAM, useDocumentTree } from "@/documentTree";
 import { focusIsFree } from "@/focusRescue";
@@ -139,11 +142,8 @@ watch([heading, () => route.fullPath], ([name]) => {
         <section class="document-tree__tree" aria-labelledby="document-tree-rows">
           <!-- tabindex -1: where the keyboard goes after a reading again -->
           <h2 id="document-tree-rows" ref="treeHeading" tabindex="-1">{{ t("documents.tree.treeHeading") }}</h2>
-          <p v-if="tree.editable" class="document-tree__add">
-            <button type="button" class="btn btn-sm secondary" @click="createAtTop">
-              {{ t("documents.tree.create.node") }}
-            </button>
-          </p>
+          <!-- keyed by the document: a check of the one before is not followed here -->
+          <TreeTools :key="id" :tree="tree" :document-id="id" @create-top="createAtTop" @changed="load()" />
           <TreeView v-model:selected="selected" :rows="rows" :form="form" :counts="tree.counts" />
         </section>
         <div class="document-tree__side">
@@ -152,6 +152,7 @@ watch([heading, () => route.fullPath], ([name]) => {
             :row="selectedRow"
             :tree="tree"
             :form="form"
+            :document-id="id"
             :creating="creating"
             @show="showAnchor"
             @changed="load()"
@@ -186,8 +187,7 @@ watch([heading, () => route.fullPath], ([name]) => {
 </template>
 
 <style scoped>
-.document-tree__back,
-.document-tree__add {
+.document-tree__back {
   margin: 0;
 }
 

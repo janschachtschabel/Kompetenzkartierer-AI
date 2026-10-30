@@ -21,7 +21,13 @@ const ROW = rowsOf(NODES).get("node:a") as Row;
 describe("the panel of a row being added", () => {
   it("gives the form why the tree, read anew, closed under it", async () => {
     shown = mount(RowPanel, {
-      props: { row: ROW, tree: tree_(NODES), form: form_(), creating: { kind: "node", document: "d1", parent: "a" } },
+      props: {
+        row: ROW,
+        tree: tree_(NODES),
+        form: form_(),
+        documentId: "d1",
+        creating: { kind: "node", document: "d1", parent: "a" },
+      },
       attachTo: document.body,
     });
     await shown.get(".row-creator input").setValue("Neu");

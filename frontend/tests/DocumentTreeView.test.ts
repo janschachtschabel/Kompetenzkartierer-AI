@@ -3,13 +3,24 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RouterView } from "vue-router";
 
 import * as api from "@/api";
-import { ApiError, type CurriculumDocument, type DocumentPage, type Tree, type TreeAnchor, type TreeStatement } from "@/api";
+import {
+  ApiError,
+  CHECK_KIND,
+  type CurriculumDocument,
+  type DocumentPage,
+  type Job,
+  type Tree,
+  type TreeAnchor,
+  type TreeStatement,
+} from "@/api";
 import { t } from "@/i18n/de";
+import { statusIri, statusWord } from "@/reviewStatus";
 import { router } from "@/router";
 import DocumentTreeView from "@/views/DocumentTreeView.vue";
 
 import { violations } from "./axe";
 import { block } from "./conversions";
+import { job } from "./registerEntries";
 import { CV, form_, node_, statement_, tree_ } from "./treeFixtures";
 
 let shown: VueWrapper | null = null;
@@ -107,6 +118,16 @@ async function press(wrapper: VueWrapper, label: string): Promise<void> {
   await flushPromises();
 }
 
+// a review status's toggle in the panel, by its word
+function toggle(wrapper: VueWrapper, status: "proposed" | "confirmed" | "rejected") {
+  const found = wrapper.findAll(".review-toggles button").find((one) => one.text() === statusWord(statusIri(status)));
+  if (!found) throw new Error(status);
+  return found;
+}
+
+const checkJob = (status: Job["status"]): Job => ({ ...job(status), kind: CHECK_KIND });
+const RUNNING = tree_(NODES, { editable: false, reviewable: false, closed: "job_open" });
+
 function query(): Record<string, unknown> {
   return { ...router.currentRoute.value.query };
 }
@@ -124,6 +145,7 @@ afterEach(() => {
   shown?.unmount();
   shown = null;
   document.body.innerHTML = "";
+  vi.useRealTimers();
 });
 
 describe("a document's tree page", () => {
@@ -498,6 +520,130 @@ describe("a document's tree page", () => {
     expect(read).toHaveBeenCalledTimes(2);
     expect(query()).toEqual({ zeile: "statement:s1" });
     expect(wrapper.get(".row-panel__status").text()).toBe(t("documents.tree.drop.rejected"));
+  });
+
+  it("sets the review status of the row chosen, says so and reads the tree again, the row and the keyboard staying", async () => {
+    const [node] = NODES;
+    const confirmed = { ...node.statements[0], revision: 2, review_status: CV + "rev_confirmed" };
+    const read = vi
+      .spyOn(api, "getTree")
+      .mockResolvedValueOnce(OPEN)
+      .mockResolvedValue(tree_([{ ...node, statements: [confirmed, node.statements[1]] }]));
+    const sent = vi.spyOn(api, "setReview").mockResolvedValue({ revisions: [{ id: "s1", revision: 2 }] });
+    const wrapper = await open({ zeile: "statement:s1" });
+    expect(toggle(wrapper, "proposed").attributes("aria-pressed")).toBe("true");
+    (toggle(wrapper, "confirmed").element as HTMLElement).focus();
+
+    await toggle(wrapper, "confirmed").trigger("click");
+    await flushPromises();
+
+    expect(sent).toHaveBeenCalledWith("d1", "confirmed", [{ kind: "statement", id: "s1", revision: 1 }]);
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(query()).toEqual({ zeile: "statement:s1" });
+    const word = statusWord(statusIri("confirmed"));
+    expect(wrapper.get(".row-panel__status").text()).toBe(t("documents.tree.review.set", { status: word }));
+    expect(toggle(wrapper, "confirmed").attributes("aria-pressed")).toBe("true");
+    expect(document.activeElement).toBe(toggle(wrapper, "confirmed").element);
+  });
+
+  it.each([
+    ["stale_revision", t("documents.tree.review.stale"), 2],
+    ["job_open", t("refusals.job_open"), 2],
+    ["not_editor", t("refusals.not_editor"), 1],
+  ])("says why a review status was not set (%s), the tree read again where it changed", async (code, words, reads) => {
+    const read = vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    vi.spyOn(api, "setReview").mockRejectedValue(new ApiError("server", 409, code));
+    const wrapper = await open({ zeile: "node:a" });
+
+    await toggle(wrapper, "rejected").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get(".row-panel__status").text()).toBe(words);
+    expect(read).toHaveBeenCalledTimes(reads);
+    expect(query()).toEqual({ zeile: "node:a" });
+  });
+
+  it("reads the tree again for a review status set after another row was chosen, saying nothing of it there", async () => {
+    const read = vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    let reviewed: (done: { revisions: { id: string; revision: number }[] }) => void = () => undefined;
+    vi.spyOn(api, "setReview").mockReturnValue(new Promise((resolve) => (reviewed = resolve)));
+    const wrapper = await open({ zeile: "node:a" });
+    await toggle(wrapper, "confirmed").trigger("click");
+
+    await wrapper.get("[data-key='statement:s1']").trigger("click");
+    await flushPromises();
+    reviewed({ revisions: [{ id: "a", revision: 2 }] });
+    await flushPromises();
+
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(query()).toEqual({ zeile: "statement:s1", seite: "5" });
+    expect(wrapper.get(".row-panel__status").text()).toBe("");
+  });
+
+  it("says a review status that failed at its toggles, and lets it go with another row chosen", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    vi.spyOn(api, "setReview").mockRejectedValue(new ApiError("network", 0));
+    const wrapper = await open({ zeile: "node:a" });
+
+    await toggle(wrapper, "confirmed").trigger("click");
+    await flushPromises();
+    expect(wrapper.get(".review-toggles [role=alert]").text()).toContain(t("documents.tree.review.failed"));
+    await wrapper.get("[data-key='statement:s1']").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find(".review-toggles [role=alert]").exists()).toBe(false);
+  });
+
+  it("offers the review status to an editor beside the form, and to no one where the tree only reads", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    const wrapper = await open({ zeile: "statement:s1" });
+    expect(wrapper.get(".review-toggles").attributes("role")).toBe("group");
+    expect(await violations(wrapper.html())).toEqual([]);
+    shown?.unmount();
+
+    vi.spyOn(api, "getTree").mockResolvedValue(tree_(NODES, { reviewable: false })); // an owner who is no editor
+    expect((await open({ zeile: "statement:s1" })).find(".review-toggles").exists()).toBe(false);
+    shown?.unmount();
+
+    vi.spyOn(api, "getTree").mockResolvedValue(TREE);
+    expect((await open({ zeile: "statement:s1" })).find(".review-toggles").exists()).toBe(false);
+  });
+
+  it("checks the tree again, reading it again as the check starts and once it has ended", async () => {
+    vi.useFakeTimers();
+    const read = vi.spyOn(api, "getTree").mockResolvedValueOnce(OPEN).mockResolvedValueOnce(RUNNING).mockResolvedValue(OPEN);
+    const started = vi.spyOn(api, "startDocumentCheck").mockResolvedValue(checkJob("queued"));
+    vi.spyOn(api, "getJob").mockResolvedValue(checkJob("done"));
+    const wrapper = await open();
+
+    await press(wrapper, t("documents.tree.check.button"));
+    expect(started).toHaveBeenCalledWith("d1");
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(wrapper.get(".job").text()).toContain(t("documents.page.checkLabel"));
+    expect(wrapper.findAll("button").map((one) => one.text())).not.toContain(t("documents.tree.create.node"));
+    await vi.advanceTimersByTimeAsync(1000);
+    await flushPromises();
+
+    expect(read).toHaveBeenCalledTimes(3);
+    expect(wrapper.get(".job .status-badge").text()).toBe(t("jobs.status.done"));
+    expect(wrapper.findAll("button").map((one) => one.text())).toContain(t("documents.tree.create.node"));
+  });
+
+  it("says a check an editor started runs in the owner's account, and reads the tree again on request", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ own: false }));
+    const read = vi.spyOn(api, "getTree").mockResolvedValueOnce(OPEN).mockResolvedValue(RUNNING);
+    vi.spyOn(api, "startDocumentCheck").mockResolvedValue(checkJob("queued"));
+    vi.spyOn(api, "getJob").mockRejectedValue(new ApiError("server", 404, "no_job"));
+    const wrapper = await open();
+
+    await press(wrapper, t("documents.tree.check.button"));
+    await vi.advanceTimersByTimeAsync(1000);
+    await flushPromises();
+    expect(wrapper.text()).toContain(t("documents.tree.check.lost"));
+    await press(wrapper, t("documents.tree.check.readAgain"));
+
+    expect(read).toHaveBeenCalledTimes(3);
   });
 
   it("asks before adding a row takes a draft's place, the draft kept where the user stays", async () => {
