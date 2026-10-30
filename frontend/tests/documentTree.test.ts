@@ -99,6 +99,17 @@ describe("a document's tree", () => {
     expect(other.failure.value?.text).toBeTruthy();
   });
 
+  it("is hidden where the entry's content is no longer the caller's, neither missing nor failed", async () => {
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_());
+    vi.spyOn(api, "getTree").mockRejectedValue(new api.ApiError("forbidden", 403, "file_hidden"));
+    vi.spyOn(api, "getForm").mockResolvedValue(form_());
+    const read = useDocumentTree(ref("d1"));
+
+    await read.load();
+
+    expect([read.hidden.value, read.missing.value, read.failure.value, read.tree.value]).toEqual([true, false, null, null]);
+  });
+
   it("reads the form again for a document of another sector", async () => {
     const documents = vi.spyOn(api, "getDocument").mockResolvedValue(document_());
     vi.spyOn(api, "getTree").mockResolvedValue(tree_([node_("a")]));

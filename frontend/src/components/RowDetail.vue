@@ -3,7 +3,8 @@
  * A node's or a statement's detail, as it reads (plan M1 9.7, Paket 9c J8): its fields in the order of the
  * sector's form, by their labels - the required ones always, "nicht angegeben" where empty, the others where
  * they hold a value - a list's values by their labels; where it comes from, its review status, its revision
- * and, once its document is frozen, its IRI; then its anchors, each able to show its page in the source.
+ * and, once its document is frozen, its IRI; then its anchors, each able to show its page in the source. Beside
+ * the row's form (RowEditor) it leaves the fields to the form (`fields` false).
  */
 import { computed } from "vue";
 
@@ -15,24 +16,24 @@ import { messages, t } from "@/i18n/de";
 import { CV, statusWord } from "@/reviewStatus";
 import { conceptWord, word } from "@/registerWords";
 
-const props = defineProps<{ row: Row; form: Form }>();
+const props = withDefaults(defineProps<{ row: Row; form: Form; fields?: boolean }>(), { fields: true });
 const emit = defineEmits<{ show: [page: number] }>();
 
 const ORIGIN = `${CV}orig_`;
 
 const item = computed(() => (props.row.kind === "node" ? props.row.node : props.row.statement));
-const fields = computed<FormField[]>(() => (props.row.kind === "node" ? props.form.node : props.form.statement));
+const formFields = computed<FormField[]>(() => (props.row.kind === "node" ? props.form.node : props.form.statement));
 
 function filled(value: FieldValue | undefined): boolean {
   return Array.isArray(value) ? value.length > 0 : typeof value === "string" && value.trim() !== "";
 }
 
 const shown = computed(() =>
-  fields.value
-    .filter((field) => field.required || filled(item.value.fields[field.key]))
+  formFields.value
+    .filter((field) => props.fields && (field.required || filled(item.value.fields[field.key])))
     .map((field) => {
       const value = item.value.fields[field.key] ?? null;
-      let text = filled(value) ? valueText(fields.value, field.key, value) : t("documents.tree.notGiven");
+      let text = filled(value) ? valueText(formFields.value, field.key, value) : t("documents.tree.notGiven");
       if (field.key === "code" && props.row.kind === "node" && props.row.node.code_assigned && filled(value)) {
         text = t("documents.tree.assignedCode", { code: text });
       }

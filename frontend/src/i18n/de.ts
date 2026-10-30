@@ -973,6 +973,14 @@ export const messages = {
         other: "Dieser Wert lässt sich so nicht speichern.",
         elsewhere: "Ein Feld, das dieses Formular nicht zeigt, lässt sich so nicht setzen.",
       },
+      // why the tree only reads: the document's state (TreeOut.closed), else the caller's role (RowPanel.vue)
+      closed: {
+        frozen: "Das Dokument ist festgeschrieben; Änderungen gehen nur in einer Entwurfskopie.",
+        job_open: "Zu diesem Dokument läuft gerade ein Auftrag; bearbeiten lässt es sich wieder, sobald er fertig ist.",
+        not_extracted: "Die Extraktion hat noch nicht jedes Arbeitspaket gelesen; bearbeiten lässt es sich danach.",
+        noRole: "Bearbeiten dürfen der Eigentümer und die Redaktion.",
+      },
+      gone: "Diese Zeile gibt es nicht mehr; der Baum ist neu geladen.",
       // a change laid beside the row as another stored it (ConflictPanel.vue)
       conflict: {
         heading: "Inzwischen gespeichert",

@@ -122,4 +122,14 @@ describe("a row's detail", () => {
     const bare = detail("statement:s2");
     expect(bare.text()).toContain("Keine Fundstelle.");
   });
+
+  it("leaves the fields to the form beside it where asked, keeping where the row comes from and its anchors", () => {
+    shown = mount(RowDetail, {
+      props: { row: ROWS.get("statement:s1") as Row, form: form_(), fields: false },
+      attachTo: document.body,
+    });
+
+    expect(facts(shown).map(([term]) => term)).toEqual(["Herkunft", "Prüfstand", "Revision"]);
+    expect(shown.findAll(".row-detail__anchors > li")).toHaveLength(2);
+  });
 });

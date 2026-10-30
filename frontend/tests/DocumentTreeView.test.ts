@@ -42,7 +42,7 @@ function anchor(id: string, page: number, blocks: string[]): TreeAnchor {
   };
 }
 
-const TREE = tree_([
+const NODES = [
   node_("a", {
     fields: { original_title: "Optik", code: "LF 1", function: CV + "fn_area" },
     anchors: [anchor("t1", 4, ["p4-b1"])],
@@ -54,7 +54,9 @@ const TREE = tree_([
       statement_("s2", { position: 2, fields: { verbatim: "Ohne Fundstelle." } }),
     ],
   }),
-]);
+];
+const TREE = tree_(NODES, { editable: false, reviewable: false, closed: "frozen" });
+const OPEN = tree_(NODES);
 
 function page(number: number): DocumentPage {
   return {
@@ -220,6 +222,115 @@ describe("a document's tree page", () => {
 
     expect(wrapper.text()).toContain(t("documents.page.notFoundTitle"));
     expect(wrapper.find("[role=tree]").exists()).toBe(false);
+  });
+
+  it("says why the tree only reads: the document's state, or the caller's role", async () => {
+    const wrapper = await open({ zeile: "statement:s1" });
+
+    expect(wrapper.get(".row-panel__closed").text()).toBe(
+      "Das Dokument ist festgeschrieben; Änderungen gehen nur in einer Entwurfskopie.",
+    );
+    expect(wrapper.find(".row-form").exists()).toBe(false);
+    expect(wrapper.get(".row-detail").text()).toContain("Sie messen.");
+    shown?.unmount();
+
+    vi.spyOn(api, "getTree").mockResolvedValue(tree_(NODES, { editable: false, reviewable: false }));
+    const other = await open({ zeile: "statement:s1" });
+    expect(other.get(".row-panel__closed").text()).toBe("Bearbeiten dürfen der Eigentümer und die Redaktion.");
+  });
+
+  it("shows the row chosen in its form where the tree is open, its origin and anchors beside", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+
+    const wrapper = await open({ zeile: "statement:s1" });
+
+    expect((wrapper.get(".row-form textarea").element as HTMLTextAreaElement).value).toBe("Sie messen.");
+    expect(wrapper.find(".row-panel__closed").exists()).toBe(false);
+    expect(wrapper.get(".row-detail").text()).not.toContain("Sie messen.");
+    expect(wrapper.get(".row-detail").text()).toContain("Fundstellen");
+    expect(await violations(wrapper.html())).toEqual([]);
+  });
+
+  it("reads the tree again once a change is saved, the row staying chosen", async () => {
+    const read = vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    vi.spyOn(api, "editStatement").mockImplementation((id, revision, fields) =>
+      Promise.resolve({ ...statement_(id), revision: revision + 1, fields: { verbatim: String(fields.verbatim) } }),
+    );
+    const wrapper = await open({ zeile: "statement:s1" });
+
+    await wrapper.get(".row-form textarea").setValue("Sie messen genau.");
+    await wrapper.get(".row-form").trigger("submit");
+    await flushPromises();
+
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(query()).toEqual({ zeile: "statement:s1" });
+    expect(wrapper.get(".row-editor__status").text()).toBe("Gespeichert.");
+  });
+
+  it("keeps the draft of a change the closing tree refused, until another row is chosen", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValueOnce(OPEN).mockResolvedValue(
+      tree_(NODES, { editable: false, reviewable: false, closed: "job_open" }),
+    );
+    vi.spyOn(api, "editStatement").mockRejectedValue(new ApiError("server", 409, "job_open"));
+    const wrapper = await open({ zeile: "statement:s1" });
+
+    await wrapper.get(".row-form textarea").setValue("Mein Satz.");
+    await wrapper.get(".row-form").trigger("submit");
+    await flushPromises();
+
+    expect(api.getTree).toHaveBeenCalledTimes(2);
+    expect(wrapper.get(".row-editor__closed").text()).toContain("Mein Satz.");
+    await wrapper.get("[data-key='statement:s2']").trigger("click");
+    await flushPromises();
+    expect(wrapper.find(".row-editor__closed").exists()).toBe(false);
+    expect(wrapper.get(".row-panel__closed").text()).toContain("läuft gerade ein Auftrag");
+    await wrapper.get("[data-key='statement:s1']").trigger("click"); // back: the draft is given up, no form
+    await flushPromises();
+    expect(wrapper.find(".row-form").exists()).toBe(false);
+  });
+
+  it("lets a row found gone go, says so and reads the tree again", async () => {
+    const read = vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    vi.spyOn(api, "editStatement").mockRejectedValue(new ApiError("server", 404, "no_statement"));
+    const wrapper = await open({ zeile: "statement:s1", seite: "5" });
+
+    await wrapper.get(".row-form textarea").setValue("Neu.");
+    await wrapper.get(".row-form").trigger("submit");
+    await flushPromises();
+
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(query()).toEqual({ seite: "5" });
+    expect(wrapper.get(".row-panel__status").text()).toBe("Diese Zeile gibt es nicht mehr; der Baum ist neu geladen.");
+  });
+
+  it("says a tree whose entry's content is no longer the caller's is theirs no more, with no retry", async () => {
+    vi.spyOn(api, "getTree").mockRejectedValue(new ApiError("forbidden", 403, "file_hidden"));
+
+    const wrapper = await open();
+
+    expect(wrapper.text()).toContain(t("refusals.file_hidden"));
+    expect(wrapper.findAll("button").some((button) => button.text() === t("states.retry"))).toBe(false);
+  });
+
+  it("keeps the tree where reading it again fails, says so and reads again on request", async () => {
+    const read = vi
+      .spyOn(api, "getTree")
+      .mockResolvedValueOnce(OPEN)
+      .mockRejectedValueOnce(new ApiError("network", 0))
+      .mockResolvedValue(OPEN);
+    vi.spyOn(api, "editStatement").mockResolvedValue({ ...statement_("s1"), revision: 2 });
+    const wrapper = await open({ zeile: "statement:s1" });
+    await wrapper.get(".row-form textarea").setValue("Neu.");
+    await wrapper.get(".row-form").trigger("submit");
+    await flushPromises();
+
+    expect(wrapper.findAll("[role=treeitem]")).toHaveLength(3);
+    expect(wrapper.get(".document-tree__partial").text()).toContain(t("documents.tree.loadFailed"));
+    await wrapper.get(".document-tree__partial button").trigger("click");
+    await flushPromises();
+
+    expect(read).toHaveBeenCalledTimes(3);
+    expect(wrapper.get(".document-tree__partial").text()).toBe("");
   });
 
   it("says a reading failed, and reads again on request", async () => {

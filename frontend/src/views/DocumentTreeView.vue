@@ -1,11 +1,13 @@
 <script setup lang="ts">
 /**
  * A document's tree page (plan M1 9.7-9.9, Paket 9c J2): its nodes and statements as a tree (TreeView), the
- * row chosen with its fields and anchors (RowDetail), and under it the source - a page of the conversion the
- * document was read off, the blocks the row's anchors name marked (SourcePane). The row chosen and the page
- * of the source stand in the address (?zeile=node:<id>&seite=3), so back, forward and a reload keep them; a
- * row chosen goes to the page of its first anchor, the keyboard staying in the tree, and an anchor's page
- * takes the keyboard along to the source. Wide, the tree and the side stand side by side.
+ * row chosen - in its form where the tree is open, as it reads where not (RowPanel) - and under it the source:
+ * a page of the conversion the document was read off, the blocks the row's anchors name marked (SourcePane).
+ * The row chosen and the page of the source stand in the address (?zeile=node:<id>&seite=3), so back, forward
+ * and a reload keep them; a row chosen goes to the page of its first anchor, the keyboard staying in the tree,
+ * and an anchor's page takes the keyboard along to the source. A saved change reads the tree again, the row
+ * staying chosen; a row found gone leaves the address. Where a later reading fails the tree stays, the
+ * failure said above it (Paket 9c2 K12). Wide, the tree and the side stand side by side.
  */
 import { computed, onMounted, ref, toRef, watch } from "vue";
 import { RouterLink, useRoute, useRouter, type LocationQuery } from "vue-router";
@@ -14,7 +16,8 @@ import { PAGE_PARAM, pageOf } from "@/blockPages";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
-import RowDetail from "@/components/RowDetail.vue";
+import PartialState from "@/components/PartialState.vue";
+import RowPanel from "@/components/RowPanel.vue";
 import SourcePane from "@/components/SourcePane.vue";
 import TreeView from "@/components/TreeView.vue";
 import { ROW_PARAM, useDocumentTree, type Row, type RowKey } from "@/documentTree";
@@ -24,7 +27,11 @@ import { pageTitle } from "@/pageTitle";
 const props = defineProps<{ id: string }>();
 const route = useRoute();
 const router = useRouter();
-const { document: document_, tree, form, rows, loading, missing, failure, load } = useDocumentTree(toRef(props, "id"));
+const { document: document_, tree, form, rows, loading, missing, hidden, failure, load } = useDocumentTree(
+  toRef(props, "id"),
+);
+// a change not yet saved in the row's form (the leave guard)
+const draftOpen = ref(false);
 
 function anchorsOf(row: Row | null): { page_start: number | null; blocks: string[] }[] {
   if (!row) return [];
@@ -67,15 +74,6 @@ const heading = computed(() =>
     : t("app.titles.documentTree"),
 );
 
-const detailHeading = computed(() => {
-  const row = selectedRow.value;
-  if (!row) return t("documents.tree.detail.heading");
-  if (row.kind === "statement") return t("documents.tree.detail.statement");
-  const { code, original_title: title } = row.node.fields;
-  const name = [code, title].filter((part) => typeof part === "string" && part).join(" ");
-  return t("documents.tree.detail.node", { name: name || t("documents.tree.untitled") });
-});
-
 function showPage(at: number): void {
   void router.replace({ query: { ...route.query, [PAGE_PARAM]: String(at) } });
 }
@@ -86,6 +84,12 @@ const source = ref<InstanceType<typeof SourcePane> | null>(null);
 function showAnchor(at: number): void {
   showPage(at);
   source.value?.focus();
+}
+
+// the row is no more: out of the address, the tree read anew
+function rowGone(): void {
+  void router.replace({ query: { ...route.query, [ROW_PARAM]: undefined } });
+  void load();
 }
 
 onMounted(() => void load());
@@ -116,6 +120,13 @@ watch([heading, () => route.fullPath], ([name]) => {
       :title="t('documents.page.notFoundTitle')"
       :body="t('documents.page.notFoundBody')"
     />
+    <!-- no retry: none changes whose content it is -->
+    <EmptyState
+      v-else-if="hidden"
+      :level="2"
+      :title="t('conversionPage.hiddenTitle')"
+      :body="t('refusals.file_hidden')"
+    />
     <ErrorState
       v-else-if="failure && !tree"
       :message="failure.text"
@@ -123,22 +134,27 @@ watch([heading, () => route.fullPath], ([name]) => {
       :explanation="failure.explanation"
       @retry="load()"
     />
-    <div v-else-if="tree && form" class="document-tree__panes">
-      <section class="document-tree__tree" aria-labelledby="document-tree-rows">
-        <h2 id="document-tree-rows">{{ t("documents.tree.treeHeading") }}</h2>
-        <TreeView v-model:selected="selected" :rows="rows" :form="form" :counts="tree.counts" />
-      </section>
-      <div class="document-tree__side">
-        <section aria-labelledby="document-tree-detail">
-          <h2 id="document-tree-detail">
-            <bdi>{{ detailHeading }}</bdi>
-          </h2>
-          <RowDetail v-if="selectedRow" :row="selectedRow" :form="form" @show="showAnchor" />
-          <p v-else>{{ t("documents.tree.detail.none") }}</p>
+    <template v-else-if="tree && form">
+      <PartialState class="document-tree__partial" :notice="failure" retry @retry="load()" />
+      <div class="document-tree__panes">
+        <section class="document-tree__tree" aria-labelledby="document-tree-rows">
+          <h2 id="document-tree-rows">{{ t("documents.tree.treeHeading") }}</h2>
+          <TreeView v-model:selected="selected" :rows="rows" :form="form" :counts="tree.counts" />
         </section>
-        <SourcePane ref="source" :document-id="id" :page="page" :cited="cited" @go="showPage" />
+        <div class="document-tree__side">
+          <RowPanel
+            :row="selectedRow"
+            :tree="tree"
+            :form="form"
+            @show="showAnchor"
+            @changed="load()"
+            @gone="rowGone"
+            @dirty="(open) => (draftOpen = open)"
+          />
+          <SourcePane ref="source" :document-id="id" :page="page" :cited="cited" @go="showPage" />
+        </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 

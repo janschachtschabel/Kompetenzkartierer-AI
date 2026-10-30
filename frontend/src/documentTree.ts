@@ -3,7 +3,8 @@
  * (GET …/tree) and the form of its sector, read together; each row by its key, in the tree's order - a node,
  * its statements, then its children, a level deeper each. The latest reading counts: an answer a later one
  * overtook is dropped. A reading that fails keeps what was shown of the same document and says so; a
- * document the caller may not read is missing, as the document page says (404 or an id that is no UUID, 422).
+ * document the caller may not read is missing, as the document page says (404 or an id that is no UUID, 422);
+ * one whose entry's content is no longer the caller's is hidden (403 file_hidden): the tree is that content.
  */
 import { computed, ref, shallowRef, type Ref } from "vue";
 
@@ -77,18 +78,21 @@ export function useDocumentTree(documentId: Ref<string>) {
   const form = shallowRef<Form | null>(null);
   const loading = ref(true);
   const missing = ref(false);
+  // the entry's content no longer the caller's (403 file_hidden): the tree is that content
+  const hidden = ref(false);
   const failure = ref<Notice | null>(null);
   const rows = computed(() => rowsOf(tree.value?.nodes ?? []));
   let generation = 0;
   // the id of the document shown, as it was asked for: the server's may be written otherwise
   let shownId: string | null = null;
 
-  /** The document and its tree; a 404 or 422 of either is a document missing. */
-  async function documentAndTree(id: string): Promise<[CurriculumDocument, Tree] | "missing"> {
+  /** The document and its tree; a 404 or 422 of either is a document missing, file_hidden one hidden. */
+  async function documentAndTree(id: string): Promise<[CurriculumDocument, Tree] | "missing" | "hidden"> {
     try {
       return await Promise.all([getDocument(id), getTree(id)]);
     } catch (error) {
       if (error instanceof ApiError && (error.status === 404 || error.status === 422)) return "missing";
+      if (error instanceof ApiError && error.code === "file_hidden") return "hidden";
       throw error;
     }
   }
@@ -104,11 +108,13 @@ export function useDocumentTree(documentId: Ref<string>) {
     loading.value = true;
     failure.value = null;
     missing.value = false;
+    hidden.value = false;
     try {
       const read = await documentAndTree(id);
       if (mine !== generation) return;
-      if (read === "missing") {
-        missing.value = true;
+      if (read === "missing" || read === "hidden") {
+        missing.value = read === "missing";
+        hidden.value = read === "hidden";
         document_.value = null;
         tree.value = null;
         shownId = null;
@@ -131,5 +137,5 @@ export function useDocumentTree(documentId: Ref<string>) {
     }
   }
 
-  return { document: document_, tree, form, rows, loading, missing, failure, load };
+  return { document: document_, tree, form, rows, loading, missing, hidden, failure, load };
 }
