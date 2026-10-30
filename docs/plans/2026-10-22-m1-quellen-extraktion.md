@@ -985,6 +985,14 @@ Der Rest von 9c2 ist noch einmal geteilt: 9c2b bringt Fundstellen per Blockauswa
 - **Gemeinsame Ablehnungen.** `rowRefusals.ts` (`refusalOf`, `applyRefusal`, `emptiedRequired`) sagt
   Speichern, Anlegen und Löschen gleich; `treeAddress.ts` hält Zeile und Seite der Adresse (aus der Ansicht
   gezogen, bevor die Verdrahtung dazukam).
+- **Nach dem Review.** Ein Anlegen über einem offenen Entwurf fragt zuerst (sonst verdrängte es ihn wortlos;
+  der Verlassen-Schutz sieht nur Adresswechsel). Angelegtes und Gelöschtes melden die Komponenten über
+  Funktions-Props (`onCreated`, `onDropped`), weil Vue 3.5 Ereignisse ausgehängter Komponenten verwirft: auch
+  nach einem Zeilenwechsel wird der Baum neu gelesen, gewählt wird die neue Zeile nur, solange ihr Formular und
+  die Seite noch stehen. Ein geschlossener Baum unter einem Anlege-Entwurf zeigt die Eingaben zum Abschreiben
+  (`ClosedDraft`, wie der Editor). Fundstellen im Entwurf nennen ihre Blöcke (zwei gleich große auf einer Seite
+  lasen sich gleich, auch im Konflikt); die Quelle sagt, ob der Entwurf eine Fundstelle angenommen hat
+  (`taken`/`held`/`refused`); die Knöpfe zum Übernehmen stehen unter den Blöcken (L3).
 
 ### Paket 10: Lexikon aus der Länderrecherche mit Stichprobe (3 PT)
 
