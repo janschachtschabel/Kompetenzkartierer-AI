@@ -994,6 +994,29 @@ Der Rest von 9c2 ist noch einmal geteilt: 9c2b bringt Fundstellen per Blockauswa
   lasen sich gleich, auch im Konflikt); die Quelle sagt, ob der Entwurf eine Fundstelle angenommen hat
   (`taken`/`held`/`refused`); die Knöpfe zum Übernehmen stehen unter den Blöcken (L3).
 
+**Nachtrag 9c2c – Prüfstand, Prüfjob, Löschen oder Verwerfen (30.10.)**
+
+- **Prüfstand der Zeile.** `ReviewToggles` (im Plan `RowReview`; umbenannt, weil Windows Dateinamen ohne
+  Groß/Klein vergleicht und `RowReview.test.ts` neben `rowReview.test.ts` nicht stehen kann) zeigt im Panel
+  bei `tree.reviewable` drei Umschalter; der gesetzte ist gedrückt und fragt nichts. Ein Klick setzt genau
+  diese Zeile (`simplify`: kein Sammel-Prüfstand, die Route nimmt bis 2.000). Gesetzt, inzwischen geändert
+  (`stale_revision`) oder geschlossen (`job_open`, `frozen`, `not_extracted`): das Panel sagt es und liest den
+  Baum neu, die Tastatur bleibt am Umschalter; `not_editor` wird nur gesagt; ein Fehlschlag steht an der
+  Gruppe. Das Ergebnis kommt über eine Funktions-Prop (`onReviewed`), auch nach einem Zeilenwechsel.
+- **Entwurf bleibt gültig.** Liest der Baum eine Zeile mit offenem Entwurf neu und sind ihre gespeicherten
+  Felder und Fundstellen unverändert, übernimmt `rowSave` die neue Revision – sonst endete jedes Speichern
+  nach einem Prüfstand in einem Schein-Konflikt.
+- **Von Hand oder aus dem Lauf.** Der Baum nennt je Aussage `by_hand`; `RowActions` bietet „Löschen“ (von
+  Hand) oder „Verwerfen“ (aus dem Lauf) mit eigenem Dialog, einer schon verworfenen Lauf-Aussage nichts – ihr
+  Prüfstand lässt sich zurücksetzen. Das ersetzt „Verwerfen oder löschen“ aus 9c2b.
+- **Prüfjob.** `TreeTools` hält „Knoten anlegen“ und „Erneut prüfen“, angeboten bei `tree.editable` (der Plan
+  sagte `editable || reviewable`; wer prüfen darf, darf bearbeiten, also dieselbe Menge). Gestartet, liest
+  die Seite den Baum neu und folgt dem Job (`JobProgress`, „Prüfung“); der Knopf bleibt, beschäftigt, bis der
+  Baum nach dem Ende neu gelesen ist, damit die Tastatur nicht verloren geht. Ein Job, dem die Redaktion nicht
+  folgen darf (404 in der Spur des Eigentümers), wird zur Notiz mit „Baum neu lesen“, die geht, sobald der
+  Baum nicht mehr durch einen Job geschlossen ist. Die Dokumentseite nennt den Job „Prüfung“ („Letzte
+  Prüfung: …“).
+
 ### Paket 10: Lexikon aus der Länderrecherche mit Stichprobe (3 PT)
 
 | # | Aufgabe | Dateien | Test zuerst | Nachweis |

@@ -193,8 +193,12 @@ ungültig.
   sie sich geändert haben. Ein gewählter Knoten bietet „Unterknoten anlegen“ und „Aussage anlegen“, der Baum
   „Knoten anlegen“ (oberste Ebene); eine neue Aussage braucht eine Fundstelle; ein offener Entwurf fragt vorher
   nach; angelegt, wird der Baum neu gelesen und die neue Zeile gewählt. „Löschen“ (Knoten, mit Zahl der
-  Unterknoten und Aussagen) und „Verwerfen oder löschen“ (Aussage: eine extrahierte wird verworfen, eine von
-  Hand angelegte gelöscht) fragen vorher nach.
+  Unterknoten und Aussagen; eine von Hand angelegte Aussage, mit ihren Fundstellen) und „Verwerfen“ (die
+  Aussage eines Laufs, die verworfen im Baum bleibt; einer schon verworfenen bietet die Seite es nicht mehr an)
+  fragen vorher nach. Die Redaktion setzt in der gewählten Zeile ihren „Prüfstand“ („Vorgeschlagen“,
+  „Bestätigt“, „Verworfen“, der gesetzte gedrückt); danach wird der Baum neu gelesen, eine inzwischen
+  geänderte Zeile gesagt. „Erneut prüfen“ neben „Knoten anlegen“ startet die Prüfung (X5) und folgt ihr bis
+  zum Ende; folgen darf ihr nur der Eigentümer – die Redaktion liest den Baum neu, wenn sie fertig ist.
 - Blöcke des Dokuments: `GET /api/v1/documents/{id}/blocks?page=N` liest eine Seite der Konvertierung, aus
   der das Dokument gelesen wurde (Blöcke, fortlaufende Tabellen, gedruckte Seite, `pages`) – die Blöcke, die
   seine Fundstellen nennen, auch wenn die Datei des Eintrags seither neu geholt oder anders umgewandelt
