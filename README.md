@@ -144,7 +144,8 @@ ungültig.
   er den Inhalt des Eintrags lesen darf (403 `file_hidden`), nicht für ein festgeschriebenes Dokument (409
   `frozen`) und keine Entwurfskopie (409 `not_extractable`; wie die Reparatur); `GET
   /api/v1/documents?source_id=…`, `/documents/{id}`, `/documents/{id}/runs`, `/documents/{id}/units`,
-  `/documents/{id}/findings` lesen sie (jedes Dokument mit `issuer`, `edition`, `work` – Id, Titel, Land,
+  `/documents/{id}/findings` lesen sie (`units` und `findings` nur, wer auch den Inhalt des Eintrags lesen
+  darf, sonst 403 `file_hidden` – ihre Pfade und Befunde nennen Titel und Wortlaut; jedes Dokument mit `issuer`, `edition`, `work` – Id, Titel, Land,
   Kurztitel, IRI –, `iri`, `revision`, `frozen_at` und `copy_of`, der Revision, die eine Entwurfskopie
   kopiert; die Job-ID nur für Eigentümer und Admins, den Fehlercode des letzten Jobs,
   `extraction.error_code`, alle Leser; `units`: die Arbeitspakete mit Stand `done` samt Zahl der Aussagen,
@@ -225,7 +226,8 @@ ungültig.
 - Erneut prüfen: `POST /api/v1/documents/{id}/check` startet den Job `extract.check` (X5 erneut, ohne
   Modell) – durch Eigentümer und Redaktion/Admin, sobald X5 das Dokument einmal geprüft hat (sonst 409
   `not_checked`: die Extraktion fortsetzen) – eine Entwurfskopie sofort, sie bringt keine Läufe ihrer
-  Vorlage mit –, nicht, sobald es festgeschrieben ist (409 `frozen`). Kein Modelljob: weder Budget noch
+  Vorlage mit –, nicht, sobald es festgeschrieben ist (409 `frozen`), und wie Extraktion und Reparatur nur,
+  wer den Inhalt des Eintrags lesen darf (403 `file_hidden`). Kein Modelljob: weder Budget noch
   Startgrenzen lassen ihn zu. Er läuft in der Spur des Eigentümers wie jeder Job des Dokuments: folgen (`GET
   /api/v1/jobs/{id}`) und abbrechen dürfen Eigentümer und Admins, wer ihn startete, sieht ihn in der Antwort
   (202). Er teilt den Schlüssel der Extraktion; wartet oder läuft ein Job des Dokuments, kommt dieser zurück
