@@ -1016,6 +1016,7 @@ export const messages = {
       },
       // a row's review status (rowReview.ts, RowReview.vue)
       review: {
+        label: "Prüfstand",
         set: "Prüfstand: {status}.",
         stale: "Die Zeile wurde inzwischen geändert; der Baum wird neu geladen. Setze den Prüfstand erneut.",
         failed: "Der Prüfstand wurde nicht gesetzt.",
