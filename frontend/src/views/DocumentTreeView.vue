@@ -7,12 +7,15 @@
  * and a reload keep them; a row chosen goes to the page of its first anchor, the keyboard staying in the tree,
  * and an anchor's page takes the keyboard along to the source. A saved change reads the tree again, the row
  * staying chosen; a row found gone leaves the address. Where a later reading fails the tree stays, the
- * failure said above it (Paket 9c2 K12). Wide, the tree and the side stand side by side.
+ * failure said above it (Paket 9c2 K12). A draft not yet saved is asked about before another row or another
+ * page takes its place, the browser asking before the tab closes (K8); another page of the source keeps it.
+ * Wide, the tree and the side stand side by side.
  */
 import { computed, onMounted, ref, toRef, watch } from "vue";
 import { RouterLink, useRoute, useRouter, type LocationQuery } from "vue-router";
 
 import { PAGE_PARAM, pageOf } from "@/blockPages";
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
@@ -22,6 +25,7 @@ import SourcePane from "@/components/SourcePane.vue";
 import TreeView from "@/components/TreeView.vue";
 import { ROW_PARAM, useDocumentTree, type Row, type RowKey } from "@/documentTree";
 import { t } from "@/i18n/de";
+import { useLeaveGuard } from "@/leaveGuard";
 import { pageTitle } from "@/pageTitle";
 
 const props = defineProps<{ id: string }>();
@@ -30,8 +34,11 @@ const router = useRouter();
 const { document: document_, tree, form, rows, loading, missing, hidden, failure, load } = useDocumentTree(
   toRef(props, "id"),
 );
-// a change not yet saved in the row's form (the leave guard)
+// a change not yet saved in the row's form: another row or page takes it along, another page of the source not
 const draftOpen = ref(false);
+const { leaving, answer } = useLeaveGuard(draftOpen, {
+  goesWith: (to, from) => to.path !== from.path || to.query[ROW_PARAM] !== from.query[ROW_PARAM],
+});
 
 function anchorsOf(row: Row | null): { page_start: number | null; blocks: string[] }[] {
   if (!row) return [];
@@ -86,8 +93,9 @@ function showAnchor(at: number): void {
   source.value?.focus();
 }
 
-// the row is no more: out of the address, the tree read anew
+// the row is no more, its draft with it: out of the address, the tree read anew
 function rowGone(): void {
+  draftOpen.value = false;
   void router.replace({ query: { ...route.query, [ROW_PARAM]: undefined } });
   void load();
 }
@@ -155,6 +163,15 @@ watch([heading, () => route.fullPath], ([name]) => {
         </div>
       </div>
     </template>
+    <ConfirmDialog
+      v-if="leaving"
+      :title="t('documents.tree.leave.title')"
+      :message="t('documents.tree.leave.message')"
+      :confirm-label="t('documents.tree.leave.confirm')"
+      :cancel-label="t('documents.tree.leave.cancel')"
+      @confirm="answer(true)"
+      @cancel="answer(false)"
+    />
   </div>
 </template>
 

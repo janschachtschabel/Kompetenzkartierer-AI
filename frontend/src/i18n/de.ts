@@ -981,6 +981,13 @@ export const messages = {
         noRole: "Bearbeiten dürfen der Eigentümer und die Redaktion.",
       },
       gone: "Diese Zeile gibt es nicht mehr; der Baum ist neu geladen.",
+      // a draft asked about before it goes (DocumentTreeView.vue, leaveGuard.ts)
+      leave: {
+        title: "Änderungen verwerfen?",
+        message: "Deine Änderungen an dieser Zeile sind nicht gespeichert. Gehst du weiter, gehen sie verloren.",
+        confirm: "Verwerfen",
+        cancel: "Weiter bearbeiten",
+      },
       // a change laid beside the row as another stored it (ConflictPanel.vue)
       conflict: {
         heading: "Inzwischen gespeichert",

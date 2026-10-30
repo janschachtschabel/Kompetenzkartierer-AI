@@ -1,5 +1,6 @@
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { RouterView } from "vue-router";
 
 import * as api from "@/api";
 import { ApiError, type CurriculumDocument, type DocumentPage, type TreeAnchor } from "@/api";
@@ -73,6 +74,22 @@ async function open(query: Record<string, string> = {}): Promise<VueWrapper> {
   shown = mount(DocumentTreeView, { props: { id: "d1" }, global: { plugins: [router] }, attachTo: document.body });
   await flushPromises();
   return shown;
+}
+
+// as the app shows it, in a RouterView: the guards of a route's view need one
+async function openInView(query: Record<string, string> = {}): Promise<VueWrapper> {
+  await router.push({ name: "documentTree", params: { id: "d1" }, query });
+  shown = mount(RouterView, { global: { plugins: [router] }, attachTo: document.body });
+  await flushPromises();
+  return shown;
+}
+
+async function answer(wrapper: VueWrapper, label: string): Promise<void> {
+  await wrapper
+    .findAll("[role=dialog] button")
+    .find((button) => button.text() === label)
+    ?.trigger("click");
+  await flushPromises();
 }
 
 function query(): Record<string, unknown> {
@@ -272,7 +289,7 @@ describe("a document's tree page", () => {
       tree_(NODES, { editable: false, reviewable: false, closed: "job_open" }),
     );
     vi.spyOn(api, "editStatement").mockRejectedValue(new ApiError("server", 409, "job_open"));
-    const wrapper = await open({ zeile: "statement:s1" });
+    const wrapper = await openInView({ zeile: "statement:s1" });
 
     await wrapper.get(".row-form textarea").setValue("Mein Satz.");
     await wrapper.get(".row-form").trigger("submit");
@@ -282,6 +299,7 @@ describe("a document's tree page", () => {
     expect(wrapper.get(".row-editor__closed").text()).toContain("Mein Satz.");
     await wrapper.get("[data-key='statement:s2']").trigger("click");
     await flushPromises();
+    await answer(wrapper, "Verwerfen"); // the draft, though refused, is asked about before it goes
     expect(wrapper.find(".row-editor__closed").exists()).toBe(false);
     expect(wrapper.get(".row-panel__closed").text()).toContain("läuft gerade ein Auftrag");
     await wrapper.get("[data-key='statement:s1']").trigger("click"); // back: the draft is given up, no form
@@ -292,7 +310,7 @@ describe("a document's tree page", () => {
   it("lets a row found gone go, says so and reads the tree again", async () => {
     const read = vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
     vi.spyOn(api, "editStatement").mockRejectedValue(new ApiError("server", 404, "no_statement"));
-    const wrapper = await open({ zeile: "statement:s1", seite: "5" });
+    const wrapper = await openInView({ zeile: "statement:s1", seite: "5" }); // its draft goes unasked
 
     await wrapper.get(".row-form textarea").setValue("Neu.");
     await wrapper.get(".row-form").trigger("submit");
@@ -331,6 +349,80 @@ describe("a document's tree page", () => {
 
     expect(read).toHaveBeenCalledTimes(3);
     expect(wrapper.get(".document-tree__partial").text()).toBe("");
+  });
+
+  it("asks before a draft goes with another row: staying keeps row and draft, discarding moves on", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    const wrapper = await openInView({ zeile: "statement:s1" });
+    await wrapper.get(".row-form textarea").setValue("Mein Entwurf.");
+
+    await wrapper.get("[data-key='statement:s2']").trigger("click");
+    await flushPromises();
+    expect(wrapper.get("[role=dialog]").text()).toContain("Änderungen verwerfen?");
+    await answer(wrapper, "Weiter bearbeiten");
+
+    expect(query()).toEqual({ zeile: "statement:s1" });
+    expect((wrapper.get(".row-form textarea").element as HTMLTextAreaElement).value).toBe("Mein Entwurf.");
+    await wrapper.get("[data-key='statement:s2']").trigger("click");
+    await flushPromises();
+    await answer(wrapper, "Verwerfen");
+    expect(query()).toEqual({ zeile: "statement:s2" });
+    expect(wrapper.find("[role=dialog]").exists()).toBe(false);
+  });
+
+  it("refuses a second move while it asks, and makes the move asked about once it is to go", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    const wrapper = await openInView({ zeile: "statement:s1" });
+    await wrapper.get(".row-form textarea").setValue("Mein Entwurf.");
+    await wrapper.get("[data-key='statement:s2']").trigger("click");
+    await flushPromises();
+
+    const second = await router.push({ name: "document", params: { id: "d1" } }); // a second press, say
+    await answer(wrapper, "Verwerfen");
+
+    expect(second).toBeTruthy(); // refused: a navigation failure, not a move
+    expect(router.currentRoute.value.name).toBe("documentTree");
+    expect(query()).toEqual({ zeile: "statement:s2" });
+  });
+
+  it("lets the source's page change and a saved row go unasked", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    vi.spyOn(api, "editStatement").mockImplementation((id, revision, fields) =>
+      Promise.resolve({ ...statement_(id), revision: revision + 1, fields: { verbatim: String(fields.verbatim) } }),
+    );
+    const wrapper = await openInView({ zeile: "statement:s1" });
+    await wrapper.get(".row-form textarea").setValue("Mein Entwurf.");
+
+    await wrapper.get("[data-test=next]").trigger("click");
+    await flushPromises();
+    expect(wrapper.find("[role=dialog]").exists()).toBe(false);
+    await wrapper.get(".row-form").trigger("submit");
+    await flushPromises();
+    await wrapper.get("[data-key='statement:s2']").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find("[role=dialog]").exists()).toBe(false);
+    expect(query()).toMatchObject({ zeile: "statement:s2" });
+  });
+
+  it("asks before a draft goes with the page, and the browser before the tab closes", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    const wrapper = await openInView({ zeile: "statement:s1" });
+    const unload = (): boolean => {
+      const event = new Event("beforeunload", { cancelable: true });
+      window.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+    expect(unload()).toBe(false);
+    await wrapper.get(".row-form textarea").setValue("Mein Entwurf.");
+    expect(unload()).toBe(true);
+
+    void router.push({ name: "document", params: { id: "d1" } });
+    await flushPromises();
+    expect(wrapper.get("[role=dialog]").text()).toContain("Änderungen verwerfen?");
+    await answer(wrapper, "Verwerfen");
+
+    expect(router.currentRoute.value.name).toBe("document");
   });
 
   it("says a reading failed, and reads again on request", async () => {
