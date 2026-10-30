@@ -82,6 +82,17 @@ describe("the tree's tools", () => {
     expect(progress.get(".status-badge").text()).toBe(t("jobs.status.running"));
   });
 
+  it("name a job the start met by its kind: an extraction waiting is no check", async () => {
+    const extracting: Job = { ...check("running"), kind: "extract.run" };
+    vi.spyOn(api, "startDocumentCheck").mockResolvedValue(extracting);
+    vi.spyOn(api, "getJob").mockResolvedValue(extracting);
+    const wrapper = tools();
+
+    await start(wrapper);
+
+    expect(wrapper.getComponent(JobProgress).props("label")).toBe(t("documents.page.jobLabel"));
+  });
+
   it("keep the check's button while its job waits or runs, busy, the keyboard on it: a press starts nothing", async () => {
     const started = vi.spyOn(api, "startDocumentCheck").mockResolvedValue(check("queued"));
     vi.spyOn(api, "getJob").mockResolvedValue(check("running"));
@@ -117,11 +128,26 @@ describe("the tree's tools", () => {
     await start(wrapper);
     await vi.advanceTimersByTimeAsync(1000);
     expect(wrapper.emitted("changed")).toHaveLength(2);
+    // ended, the tree not yet read again - or its reading failed: the button stays, a press starts the check again
+    expect(checkButton(wrapper).attributes("aria-disabled")).toBeUndefined();
+    expect(document.activeElement).toBe(checkButton(wrapper).element);
     await wrapper.setProps({ tree: tree_([]) });
 
     expect(wrapper.getComponent(JobProgress).get(".status-badge").text()).toBe(t("jobs.status.done"));
     expect(checkButton(wrapper).attributes("aria-disabled")).toBeUndefined();
     expect(document.activeElement).toBe(checkButton(wrapper).element);
+  });
+
+  it("let the button go with a reading after the end that finds the tree closed", async () => {
+    vi.spyOn(api, "startDocumentCheck").mockResolvedValue(check("queued"));
+    vi.spyOn(api, "getJob").mockResolvedValue(check("done"));
+    const wrapper = tools();
+    await start(wrapper);
+    await vi.advanceTimersByTimeAsync(1000);
+
+    await wrapper.setProps({ tree: tree_([], { ...CLOSED, closed: "frozen" }) });
+
+    expect(names(wrapper)).toEqual([]);
   });
 
   it("say where the check runs when its job is the owner's alone, the keyboard to reading the tree again", async () => {
@@ -156,6 +182,9 @@ describe("the tree's tools", () => {
 
     expect(wrapper.getComponent(JobProgress).text()).toContain(t("jobs.goneReasons.forbidden"));
     expect(wrapper.text()).not.toContain(t("documents.tree.check.lost"));
+    // the button kept, no longer busy, until the tree is read again: the keyboard is not left on nothing
+    expect(checkButton(wrapper).attributes("aria-disabled")).toBeUndefined();
+    expect(document.activeElement).toBe(checkButton(wrapper).element);
   });
 
   it("let the note go once the tree is read open again, the keyboard back on the check", async () => {
@@ -166,13 +195,31 @@ describe("the tree's tools", () => {
     await vi.advanceTimersByTimeAsync(1000);
     await flushPromises();
 
+    await button(wrapper, t("documents.tree.check.readAgain")).trigger("click");
     await wrapper.setProps({ tree: tree_([], CLOSED) }); // read again, the check still running
     expect(wrapper.text()).toContain(t("documents.tree.check.lost"));
+    expect(wrapper.get("[role=status]").text()).toBe(t("documents.tree.check.running"));
     await wrapper.setProps({ tree: tree_([]) });
     await flushPromises();
 
     expect(wrapper.text()).not.toContain(t("documents.tree.check.lost"));
+    expect(wrapper.get("[role=status]").text()).toBe(t("documents.tree.check.done"));
     expect(document.activeElement).toBe(checkButton(wrapper).element);
+  });
+
+  it("let the note go with a reading that finds the check done, though none found it running", async () => {
+    vi.spyOn(api, "startDocumentCheck").mockResolvedValue(check("queued"));
+    vi.spyOn(api, "getJob").mockRejectedValue(new ApiError("server", 404, "no_job"));
+    const wrapper = tools();
+    await checkButton(wrapper).trigger("click"); // the reading after the start failed: the tree stays as it was
+    await vi.advanceTimersByTimeAsync(1000);
+    await flushPromises();
+    expect(wrapper.find(".tree-tools__note").exists()).toBe(true);
+
+    await wrapper.setProps({ tree: tree_([]) });
+
+    expect(wrapper.find(".tree-tools__note").exists()).toBe(false);
+    expect(wrapper.get("[role=status]").text()).toBe(t("documents.tree.check.done"));
   });
 
   it("keep the note where the tree, read again after the job was gone, is closed by it", async () => {

@@ -29,7 +29,7 @@ describe("checking a document's tree again", () => {
   it("starts the check, or meets the one waiting, and gives its job", async () => {
     const sent = vi.spyOn(api, "startDocumentCheck").mockResolvedValue(job("j1"));
 
-    expect(await startTreeCheck("d1")).toEqual({ outcome: "started", jobId: "j1" });
+    expect(await startTreeCheck("d1")).toEqual({ outcome: "started", jobId: "j1", kind: CHECK_KIND });
     expect(sent).toHaveBeenCalledWith("d1");
   });
 

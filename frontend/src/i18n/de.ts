@@ -1016,6 +1016,8 @@ export const messages = {
         failed: "Die Prüfung wurde nicht gestartet.",
         lost: "Die Prüfung läuft im Konto des Eigentümers; lies den Baum neu, wenn sie fertig ist.",
         readAgain: "Baum neu lesen",
+        running: "Die Prüfung läuft noch.",
+        done: "Die Prüfung ist fertig; der Baum ist neu gelesen.",
       },
       // a row's review status (rowReview.ts, ReviewToggles.vue)
       review: {
