@@ -5,7 +5,8 @@
  * with why it only reads - the document's state (`tree.closed`), or the caller's role. A change the closing
  * tree refused keeps its editor, the draft shown to copy, until another row is chosen - so does a draft the
  * tree, read anew, closed under. A row found gone is said in a status line the panel holds from the start,
- * the keyboard taken to the panel's heading, not lost with the editor.
+ * the keyboard taken to the panel's heading, not lost with the editor. An anchor chosen in the source goes on to
+ * the editor (`addAnchor`).
  */
 import { computed, nextTick, ref, useId, watch } from "vue";
 
@@ -21,6 +22,7 @@ const emit = defineEmits<{ show: [page: number]; changed: []; gone: []; dirty: [
 
 const headingId = useId();
 const headingRef = ref<HTMLElement | null>(null);
+const editor = ref<InstanceType<typeof RowEditor> | null>(null);
 // the row whose change the closing tree refused: its editor stays, the draft shown to copy
 const refused = ref<RowKey | null>(null);
 const status = ref("");
@@ -74,6 +76,13 @@ function gone(): void {
   void nextTick(() => headingRef.value?.focus());
   emit("gone");
 }
+
+/** An anchor chosen in the source, into the draft of the statement edited. */
+function addAnchor(code: string): void {
+  editor.value?.addAnchor(code);
+}
+
+defineExpose({ addAnchor });
 </script>
 
 <template>
@@ -86,6 +95,7 @@ function gone(): void {
     <template v-if="row">
       <RowEditor
         v-if="editing"
+        ref="editor"
         :key="row.key"
         :row="row"
         :form="form"

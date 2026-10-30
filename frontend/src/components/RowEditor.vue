@@ -5,11 +5,15 @@
  * a field's problem (the keyboard to the field), a failure above the form. Where the tree closed meanwhile it
  * says why and keeps the draft to copy, with no form left to save it - so too where the tree, read anew,
  * closed under the draft (`closedBy`). It tells the view whether a draft is open (the leave guard; none once
- * it is gone) and when a save changed the tree, closed it or found the row gone.
+ * it is gone) and when a save changed the tree, closed it or found the row gone. A statement's anchors stand
+ * in its form (AnchorDraftList, Paket 9c2b L3); one chosen in the source comes by `addAnchor`, while the form
+ * is there to save it.
  */
 import { computed, nextTick, onBeforeUnmount, ref, toRef, watch } from "vue";
 
+import { ANCHORS } from "@/anchorDraft";
 import type { Form } from "@/api";
+import AnchorDraftList from "@/components/AnchorDraftList.vue";
 import AppIcon from "@/components/AppIcon.vue";
 import ConflictPanel from "@/components/ConflictPanel.vue";
 import NoticeText from "@/components/NoticeText.vue";
@@ -20,7 +24,6 @@ import { messages, t } from "@/i18n/de";
 import { sayAnew } from "@/liveRegion";
 import { refusalText } from "@/refusals";
 import { word } from "@/registerWords";
-import { changedFields } from "@/rowDraft";
 import { useRowSave, type SaveOutcome } from "@/rowSave";
 
 const props = defineProps<{
@@ -37,18 +40,24 @@ const props = defineProps<{
 const emit = defineEmits<{ closed: [code: string]; gone: []; dirty: [open: boolean] }>();
 
 const editing = useRowSave(toRef(props, "row"), toRef(props, "form"));
-const { fields, before, draft, saving, errors, problem, conflict, closed, dirty } = editing;
+const { fields, draft, saving, errors, problem, conflict, closed, changes, dirty } = editing;
 const status = ref("");
 const formRef = ref<InstanceType<typeof RowForm> | null>(null);
 const panel = ref<InstanceType<typeof ConflictPanel> | null>(null);
 const closedNotice = ref<HTMLElement | null>(null);
+const anchorList = ref<InstanceType<typeof AnchorDraftList> | null>(null);
 // the tree closed: on this save, or under the draft as it was read anew
 const shut = computed(() => closed.value ?? props.closedBy ?? null);
 
+// a statement's anchors as its draft holds them; a node's draft holds none
+const anchors = computed(() => {
+  const held = draft.value[ANCHORS];
+  return Array.isArray(held) ? held : null;
+});
+
 // the draft the tree closed on, in words, field by field: what the user changed, not what another did since
 const kept = computed(() => {
-  const changed = changedFields(fields.value, before.value, draft.value);
-  return Object.entries(changed).map(([key, value]) => ({
+  return Object.entries(changes.value).map(([key, value]) => ({
     key,
     label: word(messages.documents.tree.fields, key),
     text: shownValue(fields.value, key, value),
@@ -56,6 +65,13 @@ const kept = computed(() => {
 });
 
 watch(dirty, (open) => emit("dirty", open), { immediate: true });
+
+/** Take an anchor chosen in the source into the draft - not once the tree closed on it, kept to copy. */
+function addAnchor(code: string): void {
+  if (!shut.value) editing.addAnchor(code);
+}
+
+defineExpose({ addAnchor });
 // gone with its row, its document or its tree: no draft left to ask about
 onBeforeUnmount(() => emit("dirty", false));
 
@@ -74,7 +90,8 @@ async function submit(): Promise<void> {
   else if (outcome === "conflict" || outcome === "undecided") panel.value?.focus();
   else if (outcome === "invalid") {
     const first = Object.keys(errors.value)[0];
-    if (first) formRef.value?.focusField(first);
+    if (first === ANCHORS) anchorList.value?.focus();
+    else if (first) formRef.value?.focusField(first);
   } else if (outcome === "closed" && closed.value) {
     closedNotice.value?.focus();
     emit("closed", closed.value);
@@ -114,7 +131,15 @@ async function submit(): Promise<void> {
         @keep="editing.keep"
         @take="editing.take"
       />
-      <RowForm ref="formRef" v-model="draft" :fields="fields" :errors="errors" :saving="saving" @submit="submit" />
+      <RowForm ref="formRef" v-model="draft" :fields="fields" :errors="errors" :saving="saving" @submit="submit">
+        <AnchorDraftList
+          v-if="anchors"
+          ref="anchorList"
+          :codes="anchors"
+          :error="errors[ANCHORS] ?? null"
+          @remove="editing.removeAnchor"
+        />
+      </RowForm>
     </template>
     <!-- always in the page, so the first word is read out -->
     <p class="row-editor__status" role="status">{{ status }}</p>

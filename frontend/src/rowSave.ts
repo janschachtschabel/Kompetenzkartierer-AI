@@ -68,7 +68,8 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
   const problem = shallowRef<Notice | null>(null);
   const conflict = shallowRef<RowConflict | null>(null);
   const closed = ref<string | null>(null);
-  const dirty = computed(() => Object.keys(changedFields(drafted.value, before.value, draft.value)).length > 0);
+  const changes = computed(() => changedFields(drafted.value, before.value, draft.value));
+  const dirty = computed(() => Object.keys(changes.value).length > 0);
 
   function stand(stored: Stored, at: number): void {
     before.value = draftOf(drafted.value, valuesOf(stored));
@@ -189,6 +190,8 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
     problem,
     conflict,
     closed,
+    /** What the draft changes, as a change sends it - a statement's anchors as their codes. */
+    changes,
     dirty,
     save,
     /** Keep the user's value of a field both changed. */

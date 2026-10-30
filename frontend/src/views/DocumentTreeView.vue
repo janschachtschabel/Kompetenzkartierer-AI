@@ -9,7 +9,8 @@
  * staying chosen; a row found gone leaves the address. Where a later reading fails the tree stays, the
  * failure said above it (Paket 9c2 K12). A draft not yet saved is asked about before another row or another
  * page takes its place, the browser asking before the tab closes (K8); another page of the source keeps it.
- * Wide, the tree and the side stand side by side.
+ * A statement chosen in a tree open to the caller has its anchor chosen in the source, which goes to its
+ * draft (Paket 9c2b L3, L9). Wide, the tree and the side stand side by side.
  */
 import { computed, nextTick, onMounted, ref, toRef, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
@@ -48,6 +49,13 @@ const heading = computed(() =>
 );
 
 const source = ref<InstanceType<typeof SourcePane> | null>(null);
+const panel = ref<InstanceType<typeof RowPanel> | null>(null);
+
+// the statement whose anchor the source offers to choose: one chosen in a tree the caller may change
+const picking = computed(() => {
+  const row = selectedRow.value;
+  return tree.value?.editable && row?.kind === "statement" ? row.key : null;
+});
 
 // an anchor's page is there to be read: the keyboard goes along to it
 function showAnchor(at: number): void {
@@ -127,6 +135,7 @@ watch([heading, () => route.fullPath], ([name]) => {
         </section>
         <div class="document-tree__side">
           <RowPanel
+            ref="panel"
             :row="selectedRow"
             :tree="tree"
             :form="form"
@@ -135,7 +144,15 @@ watch([heading, () => route.fullPath], ([name]) => {
             @gone="rowGone"
             @dirty="(open) => (draftOpen = open)"
           />
-          <SourcePane ref="source" :document-id="id" :page="page" :cited="cited" @go="showPage" />
+          <SourcePane
+            ref="source"
+            :document-id="id"
+            :page="page"
+            :cited="cited"
+            :picking="picking"
+            @go="showPage"
+            @anchor="(code) => panel?.addAnchor(code)"
+          />
         </div>
       </div>
     </template>

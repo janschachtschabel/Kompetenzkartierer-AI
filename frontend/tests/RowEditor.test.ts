@@ -1,8 +1,9 @@
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
 
 import * as api from "@/api";
-import { ApiError, type TreeStatement } from "@/api";
+import { ApiError, type TreeAnchor, type TreeStatement } from "@/api";
 import RowEditor from "@/components/RowEditor.vue";
 import { rowsOf, type Row } from "@/documentTree";
 import { t } from "@/i18n/de";
@@ -177,5 +178,83 @@ describe("a row's editor", () => {
     await save(wrapper);
 
     expect(wrapper.emitted("gone")).toHaveLength(1);
+  });
+});
+
+describe("a statement's anchors in its editor", () => {
+  function placed(id: string, page: number, blocks: string[]): TreeAnchor {
+    return { id, page_start: page, page_end: null, printed_page: null, quote: null, match_kind: null, match_score: null, blocks };
+  }
+
+  const PLACED = statement_("s1", { ...SAID, anchors: [placed("q1", 5, ["p5-b2"])] });
+  const PLACED_ROW = rowsOf([node_("a", { statements: [PLACED] })]).get("statement:s1") as Row;
+
+  function placedEditor(): VueWrapper {
+    shown = mount(RowEditor, { props: { row: PLACED_ROW, form: form_(), onSaved: vi.fn() }, attachTo: document.body });
+    return shown;
+  }
+
+  async function addAnchor(wrapper: VueWrapper, code: string): Promise<void> {
+    (wrapper.vm as unknown as { addAnchor: (code: string) => void }).addAnchor(code);
+    await nextTick();
+  }
+
+  const entries = (wrapper: VueWrapper) => wrapper.findAll(".anchor-draft li span").map((one) => one.text());
+
+  it("lists the draft's anchors in its form, before the button that saves them; a node's editor none", async () => {
+    const wrapper = placedEditor();
+
+    const list = wrapper.get(".row-form .anchor-draft").element;
+    const button = wrapper.get(".row-form__save").element;
+    expect(list.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(entries(wrapper)).toEqual(["Seite 5: 1 Block"]);
+    expect(await violations(wrapper.html())).toEqual([]);
+    wrapper.unmount();
+
+    const node = rowsOf([node_("a", { statements: [PLACED] })]).get("node:a") as Row;
+    shown = mount(RowEditor, { props: { row: node, form: form_() }, attachTo: document.body });
+    expect(shown.find(".anchor-draft").exists()).toBe(false);
+  });
+
+  it("takes an anchor chosen in the source and lets one go, the draft open; saving sends them all", async () => {
+    const sent = vi.spyOn(api, "editStatement").mockResolvedValue({ ...PLACED, revision: 4, anchors: [placed("q2", 6, ["p6-b1"])] });
+    const wrapper = placedEditor();
+
+    await addAnchor(wrapper, "blocks:p6-b1");
+    expect(entries(wrapper)).toEqual(["Seite 5: 1 Block", "Seite 6: 1 Block"]);
+    expect(wrapper.emitted("dirty")?.at(-1)).toEqual([true]);
+    await wrapper.findAll(".anchor-draft li button")[0]?.trigger("click");
+    expect(entries(wrapper)).toEqual(["Seite 6: 1 Block"]);
+    await save(wrapper);
+
+    expect(sent).toHaveBeenCalledWith("s1", 3, {}, [{ blocks: ["p6-b1"] }]);
+    expect(wrapper.emitted("dirty")?.at(-1)).toEqual([false]);
+  });
+
+  it("takes the keyboard to the anchors where their problem is said", async () => {
+    vi.spyOn(api, "editStatement").mockRejectedValue(
+      new ApiError("server", 422, "invalid_field", "No block.", { field: "anchors", problem: "unknown_block" }),
+    );
+    const wrapper = placedEditor();
+    await addAnchor(wrapper, "blocks:p6-b1");
+
+    await save(wrapper);
+
+    expect(document.activeElement).toBe(wrapper.get(".anchor-draft").element);
+    expect(wrapper.get(".anchor-draft .field__error").text()).toBe("Ein Block, den die Umwandlung nicht hat.");
+  });
+
+  it("keeps the anchors changed in the draft it shows once the tree closed, and takes no more", async () => {
+    vi.spyOn(api, "editStatement").mockRejectedValue(new ApiError("server", 409, "job_open"));
+    const wrapper = placedEditor();
+    await addAnchor(wrapper, "blocks:p6-b1");
+    await save(wrapper);
+
+    const kept = () => wrapper.findAll(".row-editor__closed dd").map((one) => one.text());
+    expect(wrapper.findAll(".row-editor__closed dt").map((one) => one.text())).toEqual(["Fundstellen"]);
+    expect(kept()).toEqual(["Seite 5: 1 Block; Seite 6: 1 Block"]);
+
+    await addAnchor(wrapper, "page:9");
+    expect(kept()).toEqual(["Seite 5: 1 Block; Seite 6: 1 Block"]);
   });
 });

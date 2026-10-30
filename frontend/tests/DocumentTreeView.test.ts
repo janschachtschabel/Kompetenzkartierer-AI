@@ -318,6 +318,41 @@ describe("a document's tree page", () => {
     expect(wrapper.get(".row-editor__status").text()).toBe("Gespeichert.");
   });
 
+  it("takes a statement's anchor chosen in the source into its draft, and saves it with the others", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    const sent = vi.spyOn(api, "editStatement").mockImplementation((id, revision) =>
+      Promise.resolve({ ...statement_(id), revision: revision + 1 }),
+    );
+    const wrapper = await open({ zeile: "statement:s1" });
+    expect(api.getDocumentBlocks).toHaveBeenLastCalledWith("d1", 5);
+
+    await wrapper.findAll(".block button")[0]?.trigger("click");
+    await wrapper.get("[data-test=take]").trigger("click");
+    await flushPromises();
+    expect(wrapper.findAll(".anchor-draft li span").map((one) => one.text())).toEqual([
+      "Seite 5: 1 Block",
+      "Seite 6: 1 Block",
+      "Seite 5: 1 Block",
+    ]);
+    await wrapper.get(".row-form").trigger("submit");
+    await flushPromises();
+
+    expect(sent).toHaveBeenCalledWith("s1", 1, {}, [{ blocks: ["p5-b2"] }, { blocks: ["p6-b1"] }, { blocks: ["p5-b1"] }]);
+  });
+
+  it("offers no anchor to choose for a node, nor where the tree only reads", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    const node = await open({ zeile: "node:a" });
+    expect(node.find("[data-test=take]").exists()).toBe(false);
+    expect(node.findAll(".block button")).toHaveLength(0);
+    node.unmount();
+
+    vi.mocked(api.getTree).mockResolvedValue(TREE);
+    const reading = await open({ zeile: "statement:s1" });
+    expect(reading.find("[data-test=take]").exists()).toBe(false);
+    expect(reading.findAll(".block button")).toHaveLength(0);
+  });
+
   it("keeps the draft of a change the closing tree refused, until another row is chosen", async () => {
     vi.spyOn(api, "getTree").mockResolvedValueOnce(OPEN).mockResolvedValue(
       tree_(NODES, { editable: false, reviewable: false, closed: "job_open" }),
