@@ -118,6 +118,25 @@ export interface Form {
 /** The fields a change names, by the keys of the form: left out stays, none (or a blank text) clears. */
 export type EditFields = Record<string, FieldValue>;
 
+/**
+ * Where a statement stands, as an edit names it (backend AnchorIn): blocks of the document's conversion - its
+ * pages follow from them -, or the page it stands on where no block holds it.
+ */
+export type AnchorIn = { blocks: string[] } | { page: number };
+
+/** What taking a node away took with it: the node and those under it, and their statements (backend DroppedOut). */
+export interface Dropped {
+  nodes: number;
+  statements: number;
+}
+
+/** What taking a statement away did (backend TakenOut): an editor's own deleted, a run's rejected and kept. */
+export interface Taken {
+  outcome: "deleted" | "rejected";
+  /** The rejected statement's after; none once deleted. */
+  revision: number | null;
+}
+
 /** A page of the document's own conversion, with the count of its pages (backend DocumentPageOut). */
 export interface DocumentPage extends BlockPage {
   pages: number;
@@ -153,11 +172,60 @@ export function editNode(id: string, revision: number, fields: EditFields): Prom
   });
 }
 
-/** Change a statement's fields as `editNode` a node's; its anchors stay as they are. */
-export function editStatement(id: string, revision: number, fields: EditFields): Promise<TreeStatement> {
+/**
+ * Change a statement's fields as `editNode` a node's, and with `anchors` all its anchors in their place
+ * (at most 20); left out, they stay as they are. 422 `invalid_field` with details.field `anchors` (problem
+ * `unknown_block`, `no_page`), `anchor_missing`.
+ */
+export function editStatement(
+  id: string,
+  revision: number,
+  fields: EditFields,
+  anchors?: AnchorIn[],
+): Promise<TreeStatement> {
   return apiFetch<TreeStatement>(`/api/v1/statements/${encodeURIComponent(id)}`, {
     method: "PATCH",
-    body: JSON.stringify({ expected_revision: revision, fields }),
+    // left out where undefined: the anchors stay
+    body: JSON.stringify({ expected_revision: revision, fields, anchors }),
+  });
+}
+
+/**
+ * Add a node after its siblings: under `parentId`, or at the document's top where none; the node as it then
+ * stands. 404 `no_document`, `no_node` (the parent); refusals as `editNode`'s.
+ */
+export function addNode(documentId: string, parentId: string | null, fields: EditFields): Promise<NodeRow> {
+  return apiFetch<NodeRow>(`${documentPath(documentId)}/nodes`, {
+    method: "POST",
+    body: JSON.stringify({ parent_id: parentId, fields }),
+  });
+}
+
+/**
+ * Add a statement after the node's others, with one anchor at least (422 `anchor_missing` without); the
+ * statement as it then stands. 404 `no_node`; refusals as `editStatement`'s.
+ */
+export function addStatement(nodeId: string, fields: EditFields, anchors: AnchorIn[]): Promise<TreeStatement> {
+  return apiFetch<TreeStatement>(`/api/v1/nodes/${encodeURIComponent(nodeId)}/statements`, {
+    method: "POST",
+    body: JSON.stringify({ fields, anchors }),
+  });
+}
+
+/**
+ * Take a node away with its subtree and the findings on them, read at revision `revision`. 409
+ * `stale_revision` as `editNode`'s, `job_open`, `frozen`, `not_extracted`.
+ */
+export function dropNode(id: string, revision: number): Promise<Dropped> {
+  return apiFetch<Dropped>(`/api/v1/nodes/${encodeURIComponent(id)}?expected_revision=${revision}`, {
+    method: "DELETE",
+  });
+}
+
+/** Take a statement away as `dropNode` a node: an editor's own is deleted, a run's rejected and kept. */
+export function dropStatement(id: string, revision: number): Promise<Taken> {
+  return apiFetch<Taken>(`/api/v1/statements/${encodeURIComponent(id)}?expected_revision=${revision}`, {
+    method: "DELETE",
   });
 }
 

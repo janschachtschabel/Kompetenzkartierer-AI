@@ -1,6 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { editNode, editStatement, getDocumentBlocks, getForm, getTree } from "@/api";
+import {
+  addNode,
+  addStatement,
+  dropNode,
+  dropStatement,
+  editNode,
+  editStatement,
+  getDocumentBlocks,
+  getForm,
+  getTree,
+} from "@/api";
 
 function answer(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -67,6 +77,61 @@ describe("the tree's requests", () => {
     // no anchors: a statement's stay as they are
     expect(JSON.parse(call(1)[1].body as string)).toEqual({ expected_revision: 7, fields: { verbatim: "Sie messen." } });
     expect(row.revision).toBe(4);
+  });
+
+  it("set a statement's anchors, all of them, where a change names them", async () => {
+    await editStatement("s1", 2, {}, [{ blocks: ["p5-b2", "p5-b3"] }, { page: 6 }]);
+    await editStatement("s1", 3, {}, []);
+
+    expect(JSON.parse(call(0)[1].body as string)).toEqual({
+      expected_revision: 2,
+      fields: {},
+      anchors: [{ blocks: ["p5-b2", "p5-b3"] }, { page: 6 }],
+    });
+    // an empty list is a change too, not left out
+    expect(JSON.parse(call(1)[1].body as string)).toEqual({ expected_revision: 3, fields: {}, anchors: [] });
+  });
+
+  it("add a node at the top or under a parent, which goes in the body", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(answer(201, { id: "n9", revision: 1 }));
+
+    const made = await addNode("d/1", null, { original_title: "Optik" });
+    await addNode("d1", "n/1", { original_title: "Linsen" });
+
+    expect([call(0)[0], call(0)[1].method]).toEqual(["/api/v1/documents/d%2F1/nodes", "POST"]);
+    expect(JSON.parse(call(0)[1].body as string)).toEqual({ parent_id: null, fields: { original_title: "Optik" } });
+    expect(call(1)[0]).toBe("/api/v1/documents/d1/nodes");
+    expect(JSON.parse(call(1)[1].body as string)).toEqual({ parent_id: "n/1", fields: { original_title: "Linsen" } });
+    expect(made).toMatchObject({ id: "n9", revision: 1 });
+  });
+
+  it("add a statement to a node with its fields and anchors", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(answer(201, { id: "s9", revision: 1 }));
+
+    const made = await addStatement("n/1", { verbatim: "Sie messen." }, [{ page: 5 }]);
+
+    expect([call(0)[0], call(0)[1].method]).toEqual(["/api/v1/nodes/n%2F1/statements", "POST"]);
+    expect(JSON.parse(call(0)[1].body as string)).toEqual({
+      fields: { verbatim: "Sie messen." },
+      anchors: [{ page: 5 }],
+    });
+    expect(made).toMatchObject({ id: "s9" });
+  });
+
+  it("take a node or a statement away at the revision it was read at, without a body", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(answer(200, { nodes: 3, statements: 4 }))
+      .mockResolvedValueOnce(answer(200, { outcome: "rejected", revision: 8 }));
+
+    const dropped = await dropNode("n/1", 3);
+    const taken = await dropStatement("s/1", 7);
+
+    expect([call(0)[0], call(0)[1].method]).toEqual(["/api/v1/nodes/n%2F1?expected_revision=3", "DELETE"]);
+    expect(call(0)[1].body).toBeUndefined();
+    expect([call(1)[0], call(1)[1].method]).toEqual(["/api/v1/statements/s%2F1?expected_revision=7", "DELETE"]);
+    expect(call(1)[1].body).toBeUndefined();
+    expect(dropped).toEqual({ nodes: 3, statements: 4 });
+    expect(taken).toEqual({ outcome: "rejected", revision: 8 });
   });
 
   it("give a change of a row changed meanwhile back with the row as stored", async () => {
