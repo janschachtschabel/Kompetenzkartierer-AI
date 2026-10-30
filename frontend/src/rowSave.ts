@@ -8,19 +8,16 @@
 // saved; what the user typed while a change was saved is laid on the row as stored.
 import { computed, ref, shallowRef, watch, type Ref } from "vue";
 
-import { ApiError, editNode, editStatement, type EditFields, type FieldValue, type Form, type FormField } from "@/api";
+import { ApiError, editNode, editStatement, type FieldValue, type Form, type FormField } from "@/api";
 import type { Row } from "@/documentTree";
-import { messages, t } from "@/i18n/de";
-import { failureNotice, type Notice } from "@/notice";
+import { t } from "@/i18n/de";
+import type { Notice } from "@/notice";
 import { rebase, type Clash } from "@/rowConflict";
-import { changedFields, draftOf, sameValue, type Draft } from "@/rowDraft";
+import { changedFields, draftOf, type Draft } from "@/rowDraft";
+import { emptiedRequired, refusalOf } from "@/rowRefusals";
 
 /** How a save went: the editor says each in its own way. */
 export type SaveOutcome = "saved" | "unchanged" | "undecided" | "conflict" | "invalid" | "closed" | "gone" | "failed";
-
-/** The refusals that close the tree to change - whoever asks, or the reader whose content it no longer is. */
-const CLOSING: ReadonlySet<string> = new Set(["job_open", "frozen", "not_extracted", "no_form", "file_hidden"]);
-const GONE: ReadonlySet<string> = new Set(["no_node", "no_statement"]);
 
 export interface RowConflict {
   clashes: Clash[];
@@ -34,11 +31,6 @@ function fieldsOf(row: Row): Record<string, FieldValue> {
 
 function revisionOf(row: Row): number {
   return row.kind === "node" ? row.node.revision : row.statement.revision;
-}
-
-function problemText(problem: unknown): string {
-  const words: Record<string, string> = messages.documents.tree.problems;
-  return typeof problem === "string" && Object.hasOwn(words, problem) ? words[problem] : t("documents.tree.problems.other");
 }
 
 export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
@@ -90,36 +82,20 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
       conflict.value = { clashes: laid.clashes, taken: laid.taken, stored };
       return "conflict";
     }
-    if (code && GONE.has(code)) return "gone";
-    if (code && CLOSING.has(code)) {
-      closed.value = code;
-      return "closed";
+    const refusal = refusalOf(error, fields.value, t("documents.tree.form.saveFailed"));
+    if (refusal.outcome === "closed") closed.value = refusal.code;
+    if (refusal.outcome === "invalid") {
+      errors.value = refusal.errors;
+      problem.value = refusal.problem;
     }
-    if (code === "invalid_field") {
-      const field = details.field;
-      if (typeof field === "string" && fields.value.some((one) => one.key === field)) {
-        errors.value = { [field]: problemText(details.problem) };
-      } else {
-        problem.value = { text: t("documents.tree.form.saveFailed"), explanation: t("documents.tree.problems.elsewhere"), failed: true };
-      }
-      return "invalid";
-    }
-    problem.value = failureNotice(error, t("documents.tree.form.saveFailed"));
-    return "failed";
-  }
-
-  // the required fields the change empties, each said at its field
-  function emptied(changed: EditFields): Record<string, string> {
-    const words = fields.value
-      .filter((field) => field.required && field.key in changed && sameValue(changed[field.key], null))
-      .map((field) => [field.key, t("documents.tree.problems.required")]);
-    return Object.fromEntries(words);
+    if (refusal.outcome === "failed") problem.value = refusal.problem;
+    return refusal.outcome;
   }
 
   async function save(): Promise<SaveOutcome> {
     if (conflict.value?.clashes.length) return "undecided";
     const changed = changedFields(fields.value, before.value, draft.value);
-    errors.value = emptied(changed);
+    errors.value = emptiedRequired(fields.value, changed);
     problem.value = null;
     if (Object.keys(errors.value).length) return "invalid";
     if (!Object.keys(changed).length) {
