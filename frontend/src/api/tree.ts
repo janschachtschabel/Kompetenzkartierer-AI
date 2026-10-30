@@ -1,6 +1,7 @@
-// A document's nodes and statements as the editor reads them (backend app/api/document_tree.py), the form
-// their fields follow (app/api/profiles.py), and the pages of the conversion the document was read off -
-// the blocks its anchors name (app/api/document_blocks.py).
+// A document's nodes and statements as the editor reads them (backend app/api/document_tree.py) and changes
+// them (app/api/node_editing.py, statement_editing.py), the form their fields follow (app/api/profiles.py),
+// and the pages of the conversion the document was read off - the blocks its anchors name
+// (app/api/document_blocks.py).
 import type { BlockPage } from "./conversions";
 import type { FindingSeverity } from "./documents";
 import { apiFetch } from "./http";
@@ -40,7 +41,8 @@ export interface TreeStatement {
   anchors: TreeAnchor[];
 }
 
-export interface TreeNode {
+/** A node as a change of it answers: without its statements and children (backend NodeRowOut). */
+export interface NodeRow {
   id: string;
   position: number;
   /** By the keys of the form's node fields, each of them. */
@@ -54,15 +56,23 @@ export interface TreeNode {
   /** On the node and its anchors, its statements and theirs - not its children's. */
   findings: Record<FindingSeverity, number>;
   anchors: TreeAnchor[];
+}
+
+export interface TreeNode extends NodeRow {
   statements: TreeStatement[];
   children: TreeNode[];
 }
+
+/** Why nobody may change the tree now, whoever reads it: the reason that lasts longest. */
+export type TreeClosed = "frozen" | "job_open" | "not_extracted";
 
 export interface Tree {
   /** The caller may edit the nodes and statements now. */
   editable: boolean;
   /** The caller may set their review status now. */
   reviewable: boolean;
+  /** Why nobody may change it now; none while it is open. */
+  closed: TreeClosed | null;
   /** By review status (cv:ReviewStatuses), each of them. */
   counts: { nodes: Record<string, number>; statements: Record<string, number> };
   /** From the top, in their order. */
@@ -105,6 +115,9 @@ export interface Form {
   statement: FormField[];
 }
 
+/** The fields a change names, by the keys of the form: left out stays, none (or a blank text) clears. */
+export type EditFields = Record<string, FieldValue>;
+
 /** A page of the document's own conversion, with the count of its pages (backend DocumentPageOut). */
 export interface DocumentPage extends BlockPage {
   pages: number;
@@ -123,6 +136,26 @@ export function getForm(sector: string): Promise<Form> {
 /** Page `page` (from 1) of the conversion the document was read off; 403 `file_hidden`, 404 `no_such_page`. */
 export function getDocumentBlocks(documentId: string, page: number): Promise<DocumentPage> {
   return apiFetch<DocumentPage>(`${documentPath(documentId)}/blocks?page=${page}`);
+}
+
+/**
+ * Change a node's fields, the change read at revision `revision`; the node as it then stands. 409
+ * `stale_revision` (details.current: the node as stored, none where it is gone), `job_open`, `frozen`,
+ * `not_extracted`, `no_form`; 422 `invalid_field` (details.field, details.problem).
+ */
+export function editNode(id: string, revision: number, fields: EditFields): Promise<NodeRow> {
+  return apiFetch<NodeRow>(`/api/v1/nodes/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ expected_revision: revision, fields }),
+  });
+}
+
+/** Change a statement's fields as `editNode` a node's; its anchors stay as they are. */
+export function editStatement(id: string, revision: number, fields: EditFields): Promise<TreeStatement> {
+  return apiFetch<TreeStatement>(`/api/v1/statements/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ expected_revision: revision, fields }),
+  });
 }
 
 function documentPath(id: string): string {

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getDocumentBlocks, getForm, getTree } from "@/api";
+import { editNode, editStatement, getDocumentBlocks, getForm, getTree } from "@/api";
 
 function answer(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -50,5 +50,33 @@ describe("the tree's requests", () => {
     );
 
     await expect(getDocumentBlocks("d1", 1)).rejects.toMatchObject({ kind: "forbidden", code: "file_hidden" });
+  });
+
+  it("change a node and a statement by the fields changed and the revision they were read at", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(answer(200, { id: "n1", revision: 4 }));
+
+    const row = await editNode("n1", 3, { original_title: "Optik", addressees: ["a", "b"], code: null });
+    await editStatement("s/1", 7, { verbatim: "Sie messen." });
+
+    expect([call(0)[0], call(0)[1].method]).toEqual(["/api/v1/nodes/n1", "PATCH"]);
+    expect(JSON.parse(call(0)[1].body as string)).toEqual({
+      expected_revision: 3,
+      fields: { original_title: "Optik", addressees: ["a", "b"], code: null },
+    });
+    expect([call(1)[0], call(1)[1].method]).toEqual(["/api/v1/statements/s%2F1", "PATCH"]);
+    // no anchors: a statement's stay as they are
+    expect(JSON.parse(call(1)[1].body as string)).toEqual({ expected_revision: 7, fields: { verbatim: "Sie messen." } });
+    expect(row.revision).toBe(4);
+  });
+
+  it("give a change of a row changed meanwhile back with the row as stored", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      answer(409, { code: "stale_revision", message: "Changed meanwhile.", details: { current: { id: "n1", revision: 5 } } }),
+    );
+
+    await expect(editNode("n1", 3, {})).rejects.toMatchObject({
+      code: "stale_revision",
+      details: { current: { id: "n1", revision: 5 } },
+    });
   });
 });

@@ -39,7 +39,7 @@ export function node_(id: string, changes: Partial<TreeNode> = {}): TreeNode {
 }
 
 export function tree_(nodes: TreeNode[], changes: Partial<Tree> = {}): Tree {
-  return { editable: true, reviewable: true, counts: { nodes: {}, statements: {} }, nodes, ...changes };
+  return { editable: true, reviewable: true, closed: null, counts: { nodes: {}, statements: {} }, nodes, ...changes };
 }
 
 export function value_(iri: string, label: string, changes: Partial<FormValue> = {}): FormValue {
