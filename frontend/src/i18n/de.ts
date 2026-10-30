@@ -984,6 +984,10 @@ export const messages = {
         other: "Dieser Wert lässt sich so nicht speichern.",
         elsewhere: "Ein Feld, das dieses Formular nicht zeigt, lässt sich so nicht setzen.",
       },
+      // adding a row (rowCreate.ts, RowCreator.vue)
+      create: {
+        failed: "Die Zeile wurde nicht angelegt.",
+      },
       // why the tree only reads: the document's state (TreeOut.closed), else the caller's role (RowPanel.vue)
       closed: {
         frozen: "Das Dokument ist festgeschrieben; Änderungen gehen nur in einer Entwurfskopie.",

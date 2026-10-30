@@ -2,6 +2,8 @@
 // gone, the tree closed, a field's problem - at the field where the form holds it, above the form where not -,
 // or another failure. Saving, adding and taking away say each the same way; a stale revision is the caller's,
 // as each meets it differently.
+import type { Ref } from "vue";
+
 import { ApiError, type EditFields, type FormField } from "@/api";
 import { ANCHORS } from "@/anchorDraft";
 import { messages, t } from "@/i18n/de";
@@ -42,6 +44,24 @@ function invalidAt(fields: readonly FormField[], field: unknown, words: string, 
   }
   const notice = { text: failed, explanation: t("documents.tree.problems.elsewhere"), failed: true };
   return { outcome: "invalid", errors: {}, problem: notice };
+}
+
+/** Where a refusal's words go: why the tree closed, the fields' problems, a problem above the form. */
+export interface RefusalState {
+  closed: Ref<string | null>;
+  errors: Ref<Record<string, string>>;
+  problem: Ref<Notice | null>;
+}
+
+/** Lay `refusal` on `state`; what it said. */
+export function applyRefusal(refusal: Refusal, state: RefusalState): Refusal["outcome"] {
+  if (refusal.outcome === "closed") state.closed.value = refusal.code;
+  if (refusal.outcome === "invalid") {
+    state.errors.value = refusal.errors;
+    state.problem.value = refusal.problem;
+  }
+  if (refusal.outcome === "failed") state.problem.value = refusal.problem;
+  return refusal.outcome;
 }
 
 /** The required fields the change empties, each said at its field - before anything is asked. */

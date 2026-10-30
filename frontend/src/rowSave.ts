@@ -27,7 +27,7 @@ import { t } from "@/i18n/de";
 import type { Notice } from "@/notice";
 import { rebase, type Clash } from "@/rowConflict";
 import { changedFields, draftOf, type Draft } from "@/rowDraft";
-import { emptiedRequired, refusalOf } from "@/rowRefusals";
+import { applyRefusal, emptiedRequired, refusalOf } from "@/rowRefusals";
 
 /** How a save went: the editor says each in its own way. */
 export type SaveOutcome = "saved" | "unchanged" | "undecided" | "conflict" | "invalid" | "closed" | "gone" | "failed";
@@ -110,13 +110,7 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
       return "conflict";
     }
     const refusal = refusalOf(error, drafted.value, t("documents.tree.form.saveFailed"));
-    if (refusal.outcome === "closed") closed.value = refusal.code;
-    if (refusal.outcome === "invalid") {
-      errors.value = refusal.errors;
-      problem.value = refusal.problem;
-    }
-    if (refusal.outcome === "failed") problem.value = refusal.problem;
-    return refusal.outcome;
+    return applyRefusal(refusal, { closed, errors, problem });
   }
 
   // A statement's anchors go apart from its fields, and only where they changed: left out, they stay
