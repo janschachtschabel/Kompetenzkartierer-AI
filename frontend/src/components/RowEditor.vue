@@ -3,10 +3,11 @@
  * The editor of a row of a document's tree (plan M1 9.8, Paket 9c2 K4-K7): its form (RowForm) and how a save
  * went (rowSave.ts) - saved, nothing to save, a change met another (ConflictPanel, the keyboard taken there),
  * a field's problem (the keyboard to the field), a failure above the form. Where the tree closed meanwhile it
- * says why and keeps the draft to copy, with no form left to save it. It tells the view whether a draft is
- * open (the leave guard) and when a save changed the tree, closed it or found the row gone.
+ * says why and keeps the draft to copy, with no form left to save it - so too where the tree, read anew,
+ * closed under the draft (`closedBy`). It tells the view whether a draft is open (the leave guard; none once
+ * it is gone) and when a save changed the tree, closed it or found the row gone.
  */
-import { computed, nextTick, ref, toRef, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, toRef, watch } from "vue";
 
 import type { Form } from "@/api";
 import AppIcon from "@/components/AppIcon.vue";
@@ -22,8 +23,18 @@ import { word } from "@/registerWords";
 import { changedFields, draftOf } from "@/rowDraft";
 import { useRowSave, type SaveOutcome } from "@/rowSave";
 
-const props = defineProps<{ row: Row; form: Form }>();
-const emit = defineEmits<{ saved: []; closed: [code: string]; gone: []; dirty: [open: boolean] }>();
+const props = defineProps<{
+  row: Row;
+  form: Form;
+  /** Why the tree, read anew, closed while a draft was open; none while it is open. */
+  closedBy?: string | null;
+  /**
+   * A change saved. A prop, not an event: a save that lands after another row was chosen - this editor
+   * unmounted meanwhile, its events no longer heard - still has the tree read anew.
+   */
+  onSaved?: () => void;
+}>();
+const emit = defineEmits<{ closed: [code: string]; gone: []; dirty: [open: boolean] }>();
 
 const editing = useRowSave(toRef(props, "row"), toRef(props, "form"));
 const { fields, draft, saving, errors, problem, conflict, closed, dirty } = editing;
@@ -31,6 +42,8 @@ const status = ref("");
 const formRef = ref<InstanceType<typeof RowForm> | null>(null);
 const panel = ref<InstanceType<typeof ConflictPanel> | null>(null);
 const closedNotice = ref<HTMLElement | null>(null);
+// the tree closed: on this save, or under the draft as it was read anew
+const shut = computed(() => closed.value ?? props.closedBy ?? null);
 
 // the draft the tree closed on, in words, field by field
 const kept = computed(() => {
@@ -44,6 +57,8 @@ const kept = computed(() => {
 });
 
 watch(dirty, (open) => emit("dirty", open), { immediate: true });
+// gone with its row, its document or its tree: no draft left to ask about
+onBeforeUnmount(() => emit("dirty", false));
 
 async function submit(): Promise<void> {
   const outcome = await editing.save();
@@ -56,7 +71,7 @@ async function submit(): Promise<void> {
   };
   const words = said[outcome];
   status.value = words ? sayAnew(status.value, words) : "";
-  if (outcome === "saved") emit("saved");
+  if (outcome === "saved") props.onSaved?.();
   else if (outcome === "conflict" || outcome === "undecided") panel.value?.focus();
   else if (outcome === "invalid") {
     const first = Object.keys(errors.value)[0];
@@ -71,13 +86,13 @@ async function submit(): Promise<void> {
 <template>
   <div class="row-editor">
     <section
-      v-if="closed"
+      v-if="shut"
       ref="closedNotice"
       class="row-editor__closed"
       tabindex="-1"
       :aria-label="t('documents.tree.form.closedLabel')"
     >
-      <p class="field__error" role="alert"><AppIcon name="warning" /> {{ refusalText(closed) }}</p>
+      <p class="field__error" role="alert"><AppIcon name="warning" /> {{ refusalText(shut) }}</p>
       <p>{{ t("documents.tree.form.keptDraft") }}</p>
       <dl class="facts">
         <template v-for="entry in kept" :key="entry.key">

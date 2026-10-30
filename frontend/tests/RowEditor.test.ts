@@ -22,8 +22,12 @@ function stored(fields: Record<string, unknown>, revision: number): TreeStatemen
   return { ...SAID, revision, fields: { ...SAID.fields, ...fields } as TreeStatement["fields"] };
 }
 
+// a change saved, as the panel hears it: by a function the editor is given
+let saved = vi.fn();
+
 function editor(): VueWrapper {
-  shown = mount(RowEditor, { props: { row: ROW, form: form_() }, attachTo: document.body });
+  saved = vi.fn();
+  shown = mount(RowEditor, { props: { row: ROW, form: form_(), onSaved: saved }, attachTo: document.body });
   return shown;
 }
 
@@ -58,7 +62,7 @@ describe("a row's editor", () => {
 
     expect(sent).toHaveBeenCalledWith("s1", 3, { verbatim: "Sie messen genau." });
     expect(wrapper.get("[role=status]").text()).toBe("Gespeichert.");
-    expect(wrapper.emitted("saved")).toHaveLength(1);
+    expect(saved).toHaveBeenCalledTimes(1);
     expect(wrapper.emitted("dirty")?.at(-1)).toEqual([false]);
     expect(await violations(wrapper.html())).toEqual([]);
   });

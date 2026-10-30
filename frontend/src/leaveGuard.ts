@@ -3,6 +3,10 @@
 // the tab or reloading, the only way a page may ask there. Which moves of the same route take the draft
 // along is the page's to say (`goesWith`): on the tree page another row does, another page of the source
 // does not.
+
+// What the browser's question is given in the old way, where a page set a text of its own: any text but
+// none makes it ask; the words are the browser's.
+const ASK = "draft";
 import { computed, onBeforeUnmount, onMounted, ref, toValue, type MaybeRefOrGetter } from "vue";
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRouter, type RouteLocationNormalized } from "vue-router";
 
@@ -41,7 +45,7 @@ export function useLeaveGuard(dirty: MaybeRefOrGetter<boolean>, options: LeaveGu
 
   onBeforeRouteLeave(guard);
   onBeforeRouteUpdate((to, from) => {
-    if (question.value && !released) {
+    if (question.value) {
       overtaken = true;
       return false;
     }
@@ -72,7 +76,7 @@ export function useLeaveGuard(dirty: MaybeRefOrGetter<boolean>, options: LeaveGu
     if (!toValue(dirty)) return;
     event.preventDefault();
     // the old way some browsers still ask for
-    event.returnValue = "";
+    event.returnValue = ASK;
   }
 
   onMounted(() => window.addEventListener("beforeunload", warnBeforeUnload));

@@ -980,7 +980,7 @@ export const messages = {
         not_extracted: "Die Extraktion hat noch nicht jedes Arbeitspaket gelesen; bearbeiten lässt es sich danach.",
         noRole: "Bearbeiten dürfen der Eigentümer und die Redaktion.",
       },
-      gone: "Diese Zeile gibt es nicht mehr; der Baum ist neu geladen.",
+      gone: "Diese Zeile gibt es nicht mehr; der Baum wird neu geladen.",
       // a draft asked about before it goes (DocumentTreeView.vue, leaveGuard.ts)
       leave: {
         title: "Änderungen verwerfen?",

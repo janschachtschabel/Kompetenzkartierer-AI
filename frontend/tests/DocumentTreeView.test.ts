@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RouterView } from "vue-router";
 
 import * as api from "@/api";
-import { ApiError, type CurriculumDocument, type DocumentPage, type TreeAnchor } from "@/api";
+import { ApiError, type CurriculumDocument, type DocumentPage, type TreeAnchor, type TreeStatement } from "@/api";
 import { t } from "@/i18n/de";
 import { router } from "@/router";
 import DocumentTreeView from "@/views/DocumentTreeView.vue";
@@ -57,6 +57,10 @@ const NODES = [
   }),
 ];
 const TREE = tree_(NODES, { editable: false, reviewable: false, closed: "frozen" });
+// statement s1 as a change of its wording answers
+const SAID_SAVED = statement_("s1", {
+  fields: { verbatim: "Sie messen genau.", statement_kind: CV + "kind_learningOutcome", addressees: [CV + "addr_learner"] },
+});
 const OPEN = tree_(NODES);
 
 function page(number: number): DocumentPage {
@@ -69,7 +73,8 @@ function page(number: number): DocumentPage {
   };
 }
 
-async function open(query: Record<string, string> = {}): Promise<VueWrapper> {
+// as a leaving transition keeps the page: mounted on its own, it stays when the address leaves it
+async function openOutside(query: Record<string, string> = {}): Promise<VueWrapper> {
   await router.push({ name: "documentTree", params: { id: "d1" }, query });
   shown = mount(DocumentTreeView, { props: { id: "d1" }, global: { plugins: [router] }, attachTo: document.body });
   await flushPromises();
@@ -77,12 +82,15 @@ async function open(query: Record<string, string> = {}): Promise<VueWrapper> {
 }
 
 // as the app shows it, in a RouterView: the guards of a route's view need one
-async function openInView(query: Record<string, string> = {}): Promise<VueWrapper> {
+async function open(query: Record<string, string> = {}): Promise<VueWrapper> {
   await router.push({ name: "documentTree", params: { id: "d1" }, query });
   shown = mount(RouterView, { global: { plugins: [router] }, attachTo: document.body });
   await flushPromises();
   return shown;
 }
+
+// a held answer to a change, given when the test says
+let answerSave: (row: TreeStatement) => void = () => undefined;
 
 async function answer(wrapper: VueWrapper, label: string): Promise<void> {
   await wrapper
@@ -207,7 +215,7 @@ describe("a document's tree page", () => {
 
   it("reads no row or page of the address it is left for, nor names its tab", async () => {
     // a leaving transition keeps the page mounted under the next page's address
-    await open({ zeile: "statement:s1", seite: "6" });
+    await openOutside({ zeile: "statement:s1", seite: "6" });
     vi.mocked(api.getDocumentBlocks).mockClear();
 
     await router.push({ name: "document", params: { id: "d1" } });
@@ -289,7 +297,7 @@ describe("a document's tree page", () => {
       tree_(NODES, { editable: false, reviewable: false, closed: "job_open" }),
     );
     vi.spyOn(api, "editStatement").mockRejectedValue(new ApiError("server", 409, "job_open"));
-    const wrapper = await openInView({ zeile: "statement:s1" });
+    const wrapper = await open({ zeile: "statement:s1" });
 
     await wrapper.get(".row-form textarea").setValue("Mein Satz.");
     await wrapper.get(".row-form").trigger("submit");
@@ -310,7 +318,7 @@ describe("a document's tree page", () => {
   it("lets a row found gone go, says so and reads the tree again", async () => {
     const read = vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
     vi.spyOn(api, "editStatement").mockRejectedValue(new ApiError("server", 404, "no_statement"));
-    const wrapper = await openInView({ zeile: "statement:s1", seite: "5" }); // its draft goes unasked
+    const wrapper = await open({ zeile: "statement:s1", seite: "5" }); // its draft goes unasked
 
     await wrapper.get(".row-form textarea").setValue("Neu.");
     await wrapper.get(".row-form").trigger("submit");
@@ -318,7 +326,76 @@ describe("a document's tree page", () => {
 
     expect(read).toHaveBeenCalledTimes(2);
     expect(query()).toEqual({ seite: "5" });
-    expect(wrapper.get(".row-panel__status").text()).toBe("Diese Zeile gibt es nicht mehr; der Baum ist neu geladen.");
+    expect(wrapper.get(".row-panel__status").text()).toBe("Diese Zeile gibt es nicht mehr; der Baum wird neu geladen.");
+    expect(document.activeElement).toBe(wrapper.get(".row-panel h2").element); // not lost with the editor
+  });
+
+  it("reads the tree again for a change saved after another row was chosen", async () => {
+    const read = vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    vi.spyOn(api, "editStatement").mockReturnValue(new Promise((resolve) => (answerSave = resolve)));
+    const wrapper = await open({ zeile: "statement:s1" });
+    await wrapper.get(".row-form textarea").setValue("Neu.");
+    await wrapper.get(".row-form").trigger("submit");
+
+    await wrapper.get("[data-key='statement:s2']").trigger("click");
+    await flushPromises();
+    await answer(wrapper, "Verwerfen");
+    answerSave(statement_("s1", { revision: 2, fields: { verbatim: "Neu." } }));
+    await flushPromises();
+
+    expect(read).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps a draft the tree, read anew, closed on - its reason said - and asks nothing of a draft gone", async () => {
+    vi.spyOn(api, "getTree")
+      .mockResolvedValueOnce(OPEN)
+      .mockRejectedValueOnce(new ApiError("network", 0))
+      .mockResolvedValue(tree_(NODES, { editable: false, reviewable: false, closed: "job_open" }));
+    vi.spyOn(api, "editStatement").mockResolvedValue({ ...statement_("s1"), revision: 2, fields: { verbatim: "Erst." } });
+    const wrapper = await open({ zeile: "statement:s1" });
+    await wrapper.get(".row-form textarea").setValue("Erst.");
+    await wrapper.get(".row-form").trigger("submit");
+    await flushPromises(); // saved; reading the tree again fails
+    await wrapper.get(".row-form textarea").setValue("Mein Entwurf.");
+
+    await wrapper.get(".document-tree__partial button").trigger("click");
+    await flushPromises();
+
+    const kept = wrapper.get(".row-editor__closed");
+    expect(kept.text()).toContain(t("refusals.job_open"));
+    expect(kept.text()).toContain("Mein Entwurf.");
+  });
+
+  it("reads a row saved and then closed as it reads, with no draft to keep", async () => {
+    vi.spyOn(api, "getTree")
+      .mockResolvedValueOnce(OPEN)
+      .mockResolvedValue(tree_(NODES, { editable: false, reviewable: false, closed: "job_open" }));
+    vi.spyOn(api, "editStatement").mockResolvedValue({ ...SAID_SAVED, revision: 2 });
+    const wrapper = await open({ zeile: "statement:s1" });
+    await wrapper.get(".row-form textarea").setValue("Sie messen genau.");
+
+    await wrapper.get(".row-form").trigger("submit");
+    await flushPromises();
+
+    expect(wrapper.find(".row-editor").exists()).toBe(false);
+    expect(wrapper.get(".row-panel__closed").text()).toContain("läuft gerade ein Auftrag");
+  });
+
+  it("asks nothing of a draft that went with another document", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    const wrapper = await open({ zeile: "statement:s1" });
+    await wrapper.get(".row-form textarea").setValue("Mein Entwurf.");
+
+    void router.push({ name: "documentTree", params: { id: "d2" } });
+    await flushPromises();
+    await answer(wrapper, "Verwerfen");
+
+    const event = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(event);
+    expect([router.currentRoute.value.params.id, event.defaultPrevented]).toEqual(["d2", false]);
+    await wrapper.get("[data-key='statement:s2']").trigger("click");
+    await flushPromises();
+    expect(wrapper.find("[role=dialog]").exists()).toBe(false);
   });
 
   it("says a tree whose entry's content is no longer the caller's is theirs no more, with no retry", async () => {
@@ -353,7 +430,7 @@ describe("a document's tree page", () => {
 
   it("asks before a draft goes with another row: staying keeps row and draft, discarding moves on", async () => {
     vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
-    const wrapper = await openInView({ zeile: "statement:s1" });
+    const wrapper = await open({ zeile: "statement:s1" });
     await wrapper.get(".row-form textarea").setValue("Mein Entwurf.");
 
     await wrapper.get("[data-key='statement:s2']").trigger("click");
@@ -372,7 +449,7 @@ describe("a document's tree page", () => {
 
   it("refuses a second move while it asks, and makes the move asked about once it is to go", async () => {
     vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
-    const wrapper = await openInView({ zeile: "statement:s1" });
+    const wrapper = await open({ zeile: "statement:s1" });
     await wrapper.get(".row-form textarea").setValue("Mein Entwurf.");
     await wrapper.get("[data-key='statement:s2']").trigger("click");
     await flushPromises();
@@ -390,7 +467,7 @@ describe("a document's tree page", () => {
     vi.spyOn(api, "editStatement").mockImplementation((id, revision, fields) =>
       Promise.resolve({ ...statement_(id), revision: revision + 1, fields: { verbatim: String(fields.verbatim) } }),
     );
-    const wrapper = await openInView({ zeile: "statement:s1" });
+    const wrapper = await open({ zeile: "statement:s1" });
     await wrapper.get(".row-form textarea").setValue("Mein Entwurf.");
 
     await wrapper.get("[data-test=next]").trigger("click");
@@ -407,7 +484,7 @@ describe("a document's tree page", () => {
 
   it("asks before a draft goes with the page, and the browser before the tab closes", async () => {
     vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
-    const wrapper = await openInView({ zeile: "statement:s1" });
+    const wrapper = await open({ zeile: "statement:s1" });
     const unload = (): boolean => {
       const event = new Event("beforeunload", { cancelable: true });
       window.dispatchEvent(event);
