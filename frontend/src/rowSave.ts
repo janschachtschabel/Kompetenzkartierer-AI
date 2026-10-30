@@ -21,7 +21,7 @@ import {
   type TreeAnchor,
   type TreeStatement,
 } from "@/api";
-import { ANCHOR_FIELD, ANCHORS, anchorRequest, anchorsOf, decodeAnchor, encodeAnchor } from "@/anchorDraft";
+import { ANCHOR_FIELD, ANCHORS, anchorRequest, anchorsOf, withAnchor, withoutAnchor } from "@/anchorDraft";
 import type { Row } from "@/documentTree";
 import { t } from "@/i18n/de";
 import type { Notice } from "@/notice";
@@ -165,19 +165,6 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
     conflict.value = { ...now, clashes: now.clashes.filter((clash) => clash.key !== key) };
   }
 
-  // a statement's anchors in the draft, as they are to be; a node's draft holds none to change
-  function changeAnchors(change: (held: string[]) => string[]): void {
-    const held = draft.value[ANCHORS];
-    if (Array.isArray(held)) draft.value = { ...draft.value, [ANCHORS]: change(held) };
-  }
-
-  // the code of the place `code` names, however its blocks were listed; none for one it cannot read
-  function addAnchor(code: string): void {
-    const anchor = decodeAnchor(code);
-    if (!anchor) return;
-    const place = encodeAnchor(anchor);
-    changeAnchors((held) => (held.includes(place) ? held : [...held, place]));
-  }
 
   return {
     fields,
@@ -199,8 +186,8 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
     /** Take the stored value of a field both changed. */
     take: (key: string) => settle(key, conflict.value?.stored[key]),
     /** Take an anchor (its code, anchorDraft.ts) into a statement's draft, once. */
-    addAnchor,
+    addAnchor: (code: string) => (draft.value = withAnchor(draft.value, code)),
     /** Take an anchor out of a statement's draft. */
-    removeAnchor: (code: string) => changeAnchors((held) => held.filter((one) => one !== code)),
+    removeAnchor: (code: string) => (draft.value = withoutAnchor(draft.value, code)),
   };
 }

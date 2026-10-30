@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import type { TreeAnchor } from "@/api";
-import { anchorCodeText, anchorRequest, anchorsOf, decodeAnchor, encodeAnchor, pageOfBlock } from "@/anchorDraft";
+import {
+  anchorCodeText,
+  anchorRequest,
+  anchorsOf,
+  decodeAnchor,
+  encodeAnchor,
+  pageOfBlock,
+  withAnchor,
+  withoutAnchor,
+} from "@/anchorDraft";
 
 import { CV } from "./treeFixtures";
 
@@ -88,4 +97,23 @@ describe("an anchor in a draft", () => {
     expect(pageOfBlock("p5-b")).toBeNull();
     expect(pageOfBlock("x")).toBeNull();
   });
+
+  it("is taken into a draft's anchors once, as its place's code, and out again", () => {
+    const draft = { verbatim: "Sie messen.", anchors: ["page:7"] };
+
+    const taken = withAnchor(draft, "blocks:p5-b3,p5-b2");
+    expect(taken).toEqual({ verbatim: "Sie messen.", anchors: ["page:7", "blocks:p5-b2,p5-b3"] });
+    expect(withAnchor(taken, "blocks:p5-b2,p5-b3")).toBe(taken);
+    expect(withAnchor(draft, "blocks:x")).toBe(draft); // none it cannot read
+    expect(withoutAnchor(taken, "page:7")).toEqual({ verbatim: "Sie messen.", anchors: ["blocks:p5-b2,p5-b3"] });
+    expect(draft.anchors).toEqual(["page:7"]); // a new draft each time
+  });
+
+  it("leaves a draft that holds no anchors - a node's - as it is", () => {
+    const node = { original_title: "Optik" };
+
+    expect(withAnchor(node, "page:3")).toBe(node);
+    expect(withoutAnchor(node, "page:3")).toBe(node);
+  });
 });
+

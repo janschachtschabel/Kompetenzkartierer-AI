@@ -7,6 +7,7 @@
 import type { AnchorIn, FormField, TreeAnchor } from "@/api";
 import { pagesText } from "@/anchorWords";
 import { t } from "@/i18n/de";
+import type { Draft } from "@/rowDraft";
 
 /** The draft's key of a statement's anchors; no form's field has it (backend app/vocab/forms.py). */
 export const ANCHORS = "anchors";
@@ -70,6 +71,27 @@ export function anchorsOf(anchors: readonly TreeAnchor[]): string[] {
 /** The anchors an edit names, in the draft's order; the codes are the draft's own (`anchorsOf`, `encodeAnchor`). */
 export function anchorRequest(codes: readonly string[]): AnchorIn[] {
   return codes.map(decodeAnchor).filter((anchor): anchor is AnchorIn => anchor !== null);
+}
+
+// `draft` with its anchors as `change` makes them; as it is where it holds none - a node's
+function changeAnchors(draft: Draft, change: (held: string[]) => string[]): Draft {
+  const held = draft[ANCHORS];
+  return Array.isArray(held) ? { ...draft, [ANCHORS]: change(held) } : draft;
+}
+
+/** `draft` with the place `code` names among its anchors, once and by its own code; none it cannot read. */
+export function withAnchor(draft: Draft, code: string): Draft {
+  const anchor = decodeAnchor(code);
+  if (!anchor) return draft;
+  const place = encodeAnchor(anchor);
+  const held = draft[ANCHORS];
+  if (Array.isArray(held) && held.includes(place)) return draft;
+  return changeAnchors(draft, (now) => [...now, place]);
+}
+
+/** `draft` without the anchor `code`. */
+export function withoutAnchor(draft: Draft, code: string): Draft {
+  return changeAnchors(draft, (held) => held.filter((one) => one !== code));
 }
 
 /** A code in words: its pages and how many blocks, or the page its passage was not found on. */
