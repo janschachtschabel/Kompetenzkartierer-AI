@@ -319,8 +319,9 @@ describe("the source a statement's anchor is chosen in", () => {
     const wrapper = await choosing(3);
 
     const note = wrapper.findAll("p").find((one) => one.text() === t("documents.tree.source.pickNote"));
+    if (!note) throw new Error("no way to choose said");
     const blocks = wrapper.get(".blocks").element;
-    expect(note?.element.compareDocumentPosition(blocks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(note.element.compareDocumentPosition(blocks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(blocks.compareDocumentPosition(take(wrapper).element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 

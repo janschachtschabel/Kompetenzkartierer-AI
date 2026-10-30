@@ -4,7 +4,7 @@ import * as api from "@/api";
 import { ApiError } from "@/api";
 import { rowsOf, type Row } from "@/documentTree";
 import { t } from "@/i18n/de";
-import { dropCounts, dropRow, dropWords } from "@/rowDrop";
+import { dropCounts, dropRow, dropWords, type DropOutcome } from "@/rowDrop";
 
 import { node_, statement_ } from "./treeFixtures";
 
@@ -18,6 +18,12 @@ const TREE = node_("a", {
 });
 const ROWS = rowsOf([TREE]);
 const row = (key: "node:a" | "node:c" | "statement:s1") => ROWS.get(key) as Row;
+
+// the words of an outcome the panel says itself; a failure or a gone row is said elsewhere
+function said(done: DropOutcome): string {
+  if (done.outcome === "failed" || done.outcome === "gone") throw new Error(`not said by dropWords: ${done.outcome}`);
+  return dropWords(done);
+}
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -36,7 +42,7 @@ describe("taking a row away", () => {
 
     expect(sent).toHaveBeenCalledWith("a", 4);
     expect(done).toEqual({ outcome: "dropped", nodes: 4, statements: 3 });
-    expect(dropWords(done)).toBe("Gelöscht: der Knoten mit 3 Unterknoten und 3 Aussagen.");
+    expect(said(done)).toBe("Gelöscht: der Knoten mit 3 Unterknoten und 3 Aussagen.");
     expect(dropWords({ outcome: "dropped", nodes: 1, statements: 1 })).toBe("Gelöscht: der Knoten mit 0 Unterknoten und 1 Aussage.");
   });
 
@@ -51,8 +57,8 @@ describe("taking a row away", () => {
 
     expect(sent).toHaveBeenCalledWith("s1", 7);
     expect([deleted, rejected]).toEqual([{ outcome: "deleted" }, { outcome: "rejected" }]);
-    expect(dropWords(deleted)).toBe(t("documents.tree.drop.deleted"));
-    expect(dropWords(rejected)).toBe(t("documents.tree.drop.rejected"));
+    expect(said(deleted)).toBe(t("documents.tree.drop.deleted"));
+    expect(said(rejected)).toBe(t("documents.tree.drop.rejected"));
   });
 
   it("says a row changed meanwhile, gone, a closed tree, or another failure", async () => {
@@ -68,8 +74,8 @@ describe("taking a row away", () => {
     const failed = await dropRow(row("node:c"));
 
     expect([stale, gone, closed]).toEqual([{ outcome: "stale" }, { outcome: "gone" }, { outcome: "closed", code: "frozen" }]);
-    expect(dropWords(stale)).toBe(t("documents.tree.drop.stale"));
-    expect(dropWords(closed)).toBe(t("refusals.frozen"));
+    expect(said(stale)).toBe(t("documents.tree.drop.stale"));
+    expect(said(closed)).toBe(t("refusals.frozen"));
     expect(failed).toMatchObject({ outcome: "failed", problem: { text: t("documents.tree.drop.failed") } });
   });
 
