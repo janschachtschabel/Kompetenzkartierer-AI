@@ -60,7 +60,7 @@ async function drop(): Promise<void> {
 
 <template>
   <!-- nothing to offer, nothing here: an empty cell would stand in the panel's grid -->
-  <div v-if="row.kind === 'node' || offered" class="row-actions">
+  <div v-if="offered" class="row-actions">
     <template v-if="row.kind === 'node'">
       <button type="button" class="btn btn-sm secondary" @click="emit('create', 'node')">
         {{ t("documents.tree.create.child") }}

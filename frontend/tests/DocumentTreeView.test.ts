@@ -608,6 +608,24 @@ describe("a document's tree page", () => {
     expect(document.activeElement).toBe(wrapper.get(".row-panel h2").element);
   });
 
+  it("leaves the keyboard in the tree when a status asked for a row no longer chosen meets a closed tree", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    let refuse: (error: ApiError) => void = () => undefined;
+    vi.spyOn(api, "setReview").mockReturnValue(new Promise((_resolve, reject) => (refuse = reject)));
+    const wrapper = await open({ zeile: "node:a" });
+    await toggle(wrapper, "confirmed").trigger("click");
+    const other = wrapper.get("[data-key='statement:s1']");
+    await other.trigger("click");
+    (other.element as HTMLElement).focus();
+    await flushPromises();
+
+    refuse(new ApiError("server", 409, "job_open"));
+    await flushPromises();
+
+    expect(document.activeElement).toBe(wrapper.get("[data-key='statement:s1']").element);
+    expect(wrapper.get(".row-panel__status").text()).toBe("");
+  });
+
   it("keeps another row chosen when the row whose status was set turns out gone", async () => {
     const read = vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
     let refuse: (error: ApiError) => void = () => undefined;
