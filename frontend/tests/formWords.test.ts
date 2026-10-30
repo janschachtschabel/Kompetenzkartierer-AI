@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { FormField, FormValue } from "@/api";
-import { valueLabel, valueText } from "@/formWords";
+import { shownValue, valueLabel, valueText } from "@/formWords";
 
 import { CV } from "./treeFixtures";
 
@@ -35,5 +35,12 @@ describe("a form's words", () => {
     expect(valueText(FIELDS, "addressees", [CV + "addr_learner", CV + "addr_educator"])).toBe("Lernende, Lehrkräfte");
     expect(valueText(FIELDS, "original_title", null)).toBe("");
     expect(valueText(FIELDS, "addressees", [])).toBe("");
+  });
+
+  it("show a value to be read beside another: an empty one as such, a list's by its labels", () => {
+    expect(shownValue(FIELDS, "addressees", [])).toBe("leer");
+    expect(shownValue(FIELDS, "original_title", "  ")).toBe("leer");
+    expect(shownValue(FIELDS, "original_title", null)).toBe("leer");
+    expect(shownValue(FIELDS, "addressees", [CV + "addr_learner"])).toBe("Lernende");
   });
 });

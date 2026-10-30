@@ -10,11 +10,11 @@
 import { nextTick, ref, useId, watch } from "vue";
 
 import type { FormField } from "@/api";
-import { valueText } from "@/formWords";
+import { shownValue } from "@/formWords";
 import { messages, t } from "@/i18n/de";
 import { word } from "@/registerWords";
 import type { Clash } from "@/rowConflict";
-import { sameValue, type Draft } from "@/rowDraft";
+import type { Draft } from "@/rowDraft";
 
 const props = defineProps<{ fields: FormField[]; clashes: Clash[]; taken: string[]; stored: Draft }>();
 const emit = defineEmits<{ keep: [key: string]; take: [key: string] }>();
@@ -29,9 +29,7 @@ function label(key: string): string {
 }
 
 function shown(key: string, value: string | string[] | undefined): string {
-  return value === undefined || sameValue(value, null)
-    ? t("documents.tree.conflict.empty")
-    : valueText(props.fields, key, value);
+  return shownValue(props.fields, key, value);
 }
 
 function decide(index: number, key: string, how: "keep" | "take"): void {
@@ -61,9 +59,16 @@ defineExpose({ focus });
 </script>
 
 <template>
-  <section ref="section" class="conflict-panel" tabindex="-1" :aria-labelledby="`${id}-heading`">
+  <!-- focused as it appears, read with its intro: what to do -->
+  <section
+    ref="section"
+    class="conflict-panel"
+    tabindex="-1"
+    :aria-labelledby="`${id}-heading`"
+    :aria-describedby="`${id}-intro`"
+  >
     <h3 :id="`${id}-heading`">{{ t("documents.tree.conflict.heading") }}</h3>
-    <p class="conflict-panel__intro">
+    <p :id="`${id}-intro`" class="conflict-panel__intro">
       {{ clashes.length ? t("documents.tree.conflict.intro") : t("documents.tree.conflict.introNothing") }}
     </p>
     <ul v-if="clashes.length" class="conflict-panel__list">
@@ -72,11 +77,11 @@ defineExpose({ focus });
         <dl class="conflict-panel__values">
           <div>
             <dt>{{ t("documents.tree.conflict.yours") }}</dt>
-            <dd>{{ shown(clash.key, clash.yours) }}</dd>
+            <dd><bdi>{{ shown(clash.key, clash.yours) }}</bdi></dd>
           </div>
           <div>
             <dt>{{ t("documents.tree.conflict.stored") }}</dt>
-            <dd>{{ shown(clash.key, clash.stored) }}</dd>
+            <dd><bdi>{{ shown(clash.key, clash.stored) }}</bdi></dd>
           </div>
         </dl>
         <span class="conflict-panel__actions">
@@ -102,7 +107,7 @@ defineExpose({ focus });
     <div v-if="taken.length" class="conflict-panel__taken">
       <p>{{ t("documents.tree.conflict.taken") }}</p>
       <ul>
-        <li v-for="key in taken" :key="key">{{ label(key) }}: {{ shown(key, stored[key]) }}</li>
+        <li v-for="key in taken" :key="key">{{ label(key) }}: <bdi>{{ shown(key, stored[key]) }}</bdi></li>
       </ul>
     </div>
   </section>
@@ -143,7 +148,7 @@ defineExpose({ focus });
 
 .conflict-panel__values div {
   display: grid;
-  grid-template-columns: minmax(6rem, auto) 1fr;
+  grid-template-columns: minmax(6rem, auto) minmax(0, 1fr);
   gap: var(--space-1);
 }
 
@@ -151,9 +156,11 @@ defineExpose({ focus });
   color: var(--text-muted);
 }
 
-.conflict-panel__values dd {
+.conflict-panel__values dd,
+.conflict-panel__taken li {
   margin: 0;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .conflict-panel__actions {

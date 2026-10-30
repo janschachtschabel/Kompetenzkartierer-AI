@@ -79,18 +79,34 @@ describe("a row's editor", () => {
       .mockRejectedValueOnce(
         new ApiError("server", 409, "stale_revision", "Changed.", { current: stored({ verbatim: "Ihr Satz." }, 5) }),
       )
-      .mockResolvedValueOnce(stored({ verbatim: "Ihr Satz." }, 5));
+      .mockResolvedValueOnce(stored({ verbatim: "Mein Satz." }, 6));
     const wrapper = editor();
     await write(wrapper, "Mein Satz.");
     await save(wrapper);
 
     expect(document.activeElement).toBe(wrapper.get(".conflict-panel").element);
-    await wrapper.findAll(".conflict-panel button")[1]?.trigger("click"); // take the stored
-    expect((wrapper.get("textarea, input").element as HTMLInputElement).value).toBe("Ihr Satz.");
+    expect(await violations(wrapper.html())).toEqual([]);
+    (wrapper.get("textarea").element as HTMLElement).focus(); // saving again from the form
+    await save(wrapper); // undecided: not saved, said, the keyboard back to the choice
+    expect(sent).toHaveBeenCalledTimes(1);
+    expect(wrapper.get("[role=status]").text()).toBe("Entscheide zuerst bei jedem Feld oben, welcher Wert gilt.");
+    expect(document.activeElement).toBe(wrapper.get(".conflict-panel").element);
+    await wrapper.findAll(".conflict-panel button")[0]?.trigger("click"); // keep mine
     await save(wrapper);
 
-    expect(sent).toHaveBeenCalledTimes(1); // the stored value taken: nothing left to save
+    expect(sent).toHaveBeenLastCalledWith("s1", 5, { verbatim: "Mein Satz." });
     expect(wrapper.find(".conflict-panel").exists()).toBe(false);
+  });
+
+  it("says each time a click finds nothing to save", async () => {
+    const wrapper = editor();
+
+    await save(wrapper);
+    const first = wrapper.get("[role=status]").text();
+    await save(wrapper);
+
+    expect(first).toBe("Nichts geändert, nichts zu speichern.");
+    expect(wrapper.get("[role=status]").element.textContent).not.toBe(first); // told anew, to be read anew
   });
 
   it("states a field's problem at the field and takes the keyboard there", async () => {
@@ -121,6 +137,7 @@ describe("a row's editor", () => {
     vi.spyOn(api, "editStatement").mockRejectedValue(new ApiError("server", 409, "job_open"));
     const wrapper = editor();
     await write(wrapper, "Mein Satz.");
+    await wrapper.get("input[type=text]").setValue("Stufe 3");
 
     await save(wrapper);
 
@@ -129,6 +146,9 @@ describe("a row's editor", () => {
     expect(notice.get("[role=alert]").text()).toBe(t("refusals.job_open"));
     expect(document.activeElement).toBe(notice.element);
     expect(notice.text()).toMatch(/Dein Entwurf.*Wortlaut.*Mein Satz\./s);
+    // a term and its value side by side, as the facts' grid lays them out
+    expect(notice.findAll("dl > *").map((item) => item.element.tagName)).toEqual(["DT", "DD", "DT", "DD"]);
+    expect(notice.findAll("dd").map((item) => item.text())).toEqual(["Mein Satz.", "Stufe 3"]);
     expect(wrapper.find("form").exists()).toBe(false);
     expect(await violations(wrapper.html())).toEqual([]);
   });

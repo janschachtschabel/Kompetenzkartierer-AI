@@ -88,7 +88,7 @@ describe("a field of a row's form", () => {
   it("keeps a value the form does not know as a choice of its own, so that saving does not drop it", () => {
     const wrapper = input(field("function"), "urn:retired");
 
-    expect(wrapper.findAll("option").at(-1)?.text()).toBe("unbekannt: urn:retired");
+    expect(wrapper.findAll("option").at(-1)?.text()).toBe("unbekannt: \u2068urn:retired\u2069"); // set apart
     expect((wrapper.get("select").element as HTMLSelectElement).value).toBe("urn:retired");
   });
 
@@ -104,7 +104,7 @@ describe("a field of a row's form", () => {
     expect(wrapper.findAll("fieldset label").map((label) => label.text())).toEqual([
       "Lernende",
       "Lehrkräfte",
-      "unbekannt: urn:retired",
+      "unbekannt: \u2068urn:retired\u2069",
     ]);
     await wrapper.findAll("input[type=checkbox]")[1]?.setValue(true);
     expect(model).toEqual([CV + "addr_learner", "urn:retired", CV + "addr_educator"]);
@@ -124,7 +124,12 @@ describe("a field of a row's form", () => {
   it("ties a problem of a list of many to its group", async () => {
     const wrapper = input(field("addressees"), [], "Dieses Feld braucht einen Wert.");
 
-    expect(wrapper.get("fieldset").attributes("aria-describedby")).toBe(wrapper.get(".field__error").attributes("id"));
+    const error = wrapper.get(".field__error").attributes("id");
+    expect(wrapper.get("fieldset").attributes("aria-describedby")).toBe(error);
+    // each box says so itself: a screen reader reads the box focused, not always its group
+    for (const box of wrapper.findAll("input[type=checkbox]")) {
+      expect([box.attributes("aria-invalid"), box.attributes("aria-describedby")]).toEqual(["true", error]);
+    }
     expect(await violations(wrapper.html())).toEqual([]);
   });
 

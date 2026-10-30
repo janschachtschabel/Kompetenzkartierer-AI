@@ -9,6 +9,7 @@
 import { computed, ref, useId } from "vue";
 
 import type { FormField, FormValue } from "@/api";
+import { isolate } from "@/bidi";
 import AppIcon from "@/components/AppIcon.vue";
 import { messages, t } from "@/i18n/de";
 import { word } from "@/registerWords";
@@ -33,9 +34,14 @@ const unknown = computed(() => {
 // the boxes of a field of many: the values offered, then those held the form does not know
 const boxes = computed(() => [
   ...props.values.map((value) => ({ iri: value.iri, label: value.label })),
-  ...unknown.value.map((iri) => ({ iri, label: t("documents.tree.form.unknownValue", { iri }) })),
+  ...unknown.value.map((iri) => ({ iri, label: unknownLabel(iri) })),
 ]);
 const described = computed(() => (props.error ? errorId : undefined));
+
+// an IRI set apart from the words around it: its own direction does not turn them
+function unknownLabel(iri: string): string {
+  return t("documents.tree.form.unknownValue", { iri: isolate(iri) });
+}
 
 function focus(): void {
   (control.value ?? group.value?.querySelector("input"))?.focus();
@@ -48,7 +54,15 @@ defineExpose({ focus });
   <fieldset v-if="field.many" ref="group" class="form-field__group" :aria-describedby="described">
     <legend>{{ name }}</legend>
     <div v-for="(box, index) in boxes" :key="box.iri" class="field checkbox-field">
-      <input :id="`${id}-${index}`" v-model="model" type="checkbox" :value="box.iri" />
+      <!-- each box says it too: a screen reader reads the box focused, not always its group -->
+      <input
+        :id="`${id}-${index}`"
+        v-model="model"
+        type="checkbox"
+        :value="box.iri"
+        :aria-invalid="error ? true : undefined"
+        :aria-describedby="described"
+      />
       <label :for="`${id}-${index}`">{{ box.label }}</label>
     </div>
     <p v-if="error" :id="errorId" class="field__error"><AppIcon name="warning" /> {{ error }}</p>
@@ -67,7 +81,7 @@ defineExpose({ focus });
         {{ field.required ? t("documents.tree.form.choose") : t("documents.tree.form.none") }}
       </option>
       <option v-for="value in values" :key="value.iri" :value="value.iri">{{ value.label }}</option>
-      <option v-for="iri in unknown" :key="iri" :value="iri">{{ t("documents.tree.form.unknownValue", { iri }) }}</option>
+      <option v-for="iri in unknown" :key="iri" :value="iri">{{ unknownLabel(iri) }}</option>
     </select>
     <textarea
       v-else-if="field.kind === 'longtext'"
@@ -109,5 +123,10 @@ defineExpose({ focus });
 
 .form-field__group .field {
   margin-block-end: var(--space-0);
+}
+
+/* An IRI as a box's label breaks anywhere rather than widen the page (SC 1.4.10). */
+.form-field__group label {
+  overflow-wrap: anywhere;
 }
 </style>

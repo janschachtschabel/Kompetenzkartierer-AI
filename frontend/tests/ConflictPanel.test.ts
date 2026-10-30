@@ -99,5 +99,8 @@ describe("a change laid beside the row as another stored it", () => {
 
     expect(document.activeElement).toBe(wrapper.get("section").element);
     expect(wrapper.get("section").attributes("aria-labelledby")).toBe(wrapper.get("h3").attributes("id"));
+    // focused, it is read with what to do, not its name alone
+    const intro = wrapper.get(".conflict-panel__intro").attributes("id");
+    expect([Boolean(intro), wrapper.get("section").attributes("aria-describedby")]).toEqual([true, intro]);
   });
 });

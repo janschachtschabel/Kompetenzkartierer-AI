@@ -1001,6 +1001,7 @@ export const messages = {
         take: "Gespeichertes nehmen",
         taken: "Übernommen, weil nur dort geändert:",
         empty: "leer",
+        undecided: "Entscheide zuerst bei jedem Feld oben, welcher Wert gilt.",
       },
       anchors: {
         heading: "Fundstellen",

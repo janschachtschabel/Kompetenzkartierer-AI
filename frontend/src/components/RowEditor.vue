@@ -14,13 +14,13 @@ import ConflictPanel from "@/components/ConflictPanel.vue";
 import NoticeText from "@/components/NoticeText.vue";
 import RowForm from "@/components/RowForm.vue";
 import type { Row } from "@/documentTree";
-import { valueText } from "@/formWords";
+import { shownValue } from "@/formWords";
 import { messages, t } from "@/i18n/de";
 import { sayAnew } from "@/liveRegion";
 import { refusalText } from "@/refusals";
 import { word } from "@/registerWords";
 import { changedFields, draftOf } from "@/rowDraft";
-import { useRowSave } from "@/rowSave";
+import { useRowSave, type SaveOutcome } from "@/rowSave";
 
 const props = defineProps<{ row: Row; form: Form }>();
 const emit = defineEmits<{ saved: []; closed: [code: string]; gone: []; dirty: [open: boolean] }>();
@@ -39,21 +39,25 @@ const kept = computed(() => {
   return Object.entries(changed).map(([key, value]) => ({
     key,
     label: word(messages.documents.tree.fields, key),
-    text: value === null ? t("documents.tree.conflict.empty") : valueText(fields.value, key, value),
+    text: shownValue(fields.value, key, value),
   }));
 });
 
 watch(dirty, (open) => emit("dirty", open), { immediate: true });
 
 async function submit(): Promise<void> {
-  status.value = "";
   const outcome = await editing.save();
   await nextTick();
-  if (outcome === "saved") {
-    status.value = sayAnew(status.value, t("documents.tree.form.saved"));
-    emit("saved");
-  } else if (outcome === "unchanged") status.value = sayAnew(status.value, t("documents.tree.form.unchanged"));
-  else if (outcome === "conflict") panel.value?.focus();
+  // said anew after each click, so that the same words are read again
+  const said: Partial<Record<SaveOutcome, string>> = {
+    saved: t("documents.tree.form.saved"),
+    unchanged: t("documents.tree.form.unchanged"),
+    undecided: t("documents.tree.conflict.undecided"),
+  };
+  const words = said[outcome];
+  status.value = words ? sayAnew(status.value, words) : "";
+  if (outcome === "saved") emit("saved");
+  else if (outcome === "conflict" || outcome === "undecided") panel.value?.focus();
   else if (outcome === "invalid") {
     const first = Object.keys(errors.value)[0];
     if (first) formRef.value?.focusField(first);
@@ -76,10 +80,10 @@ async function submit(): Promise<void> {
       <p class="field__error" role="alert"><AppIcon name="warning" /> {{ refusalText(closed) }}</p>
       <p>{{ t("documents.tree.form.keptDraft") }}</p>
       <dl class="facts">
-        <div v-for="entry in kept" :key="entry.key">
+        <template v-for="entry in kept" :key="entry.key">
           <dt>{{ entry.label }}</dt>
-          <dd>{{ entry.text }}</dd>
-        </div>
+          <dd><bdi>{{ entry.text }}</bdi></dd>
+        </template>
       </dl>
     </section>
     <template v-else>
