@@ -440,11 +440,15 @@ describe("a document's tree page", () => {
 
     expect(wrapper.findAll("[role=treeitem]")).toHaveLength(3);
     expect(wrapper.get(".document-tree__partial").text()).toContain(t("documents.tree.loadFailed"));
-    await wrapper.get(".document-tree__partial button").trigger("click");
+    const retry = wrapper.get(".document-tree__partial button");
+    (retry.element as HTMLElement).focus();
+    await retry.trigger("click");
     await flushPromises();
 
     expect(read).toHaveBeenCalledTimes(3);
     expect(wrapper.get(".document-tree__partial").text()).toBe("");
+    // the button gone with the notice: the keyboard to the tree's heading, not lost
+    expect(document.activeElement).toBe(wrapper.get("#document-tree-rows").element);
   });
 
   it("asks before a draft goes with another row: staying keeps row and draft, discarding moves on", async () => {

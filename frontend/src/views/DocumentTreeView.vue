@@ -11,7 +11,7 @@
  * page takes its place, the browser asking before the tab closes (K8); another page of the source keeps it.
  * Wide, the tree and the side stand side by side.
  */
-import { computed, onMounted, ref, toRef, watch } from "vue";
+import { computed, nextTick, onMounted, ref, toRef, watch } from "vue";
 import { RouterLink, useRoute, useRouter, type LocationQuery } from "vue-router";
 
 import { PAGE_PARAM, pageOf } from "@/blockPages";
@@ -24,6 +24,7 @@ import RowPanel from "@/components/RowPanel.vue";
 import SourcePane from "@/components/SourcePane.vue";
 import TreeView from "@/components/TreeView.vue";
 import { ROW_PARAM, useDocumentTree, type Row, type RowKey } from "@/documentTree";
+import { focusIsFree } from "@/focusRescue";
 import { t } from "@/i18n/de";
 import { useLeaveGuard } from "@/leaveGuard";
 import { pageTitle } from "@/pageTitle";
@@ -93,6 +94,17 @@ function showAnchor(at: number): void {
   source.value?.focus();
 }
 
+const treeHeading = ref<HTMLElement | null>(null);
+
+// A reading again the reader asked for: its button goes with the notice, the keyboard to the tree's heading
+// where it still rests on the button or nowhere (as sectionReading.ts does for a section)
+async function readAgain(): Promise<void> {
+  const from = document.activeElement;
+  await load();
+  await nextTick();
+  if (document.activeElement === from || focusIsFree()) treeHeading.value?.focus();
+}
+
 // the row is no more, its draft with it: out of the address, the tree read anew
 function rowGone(): void {
   draftOpen.value = false;
@@ -143,10 +155,11 @@ watch([heading, () => route.fullPath], ([name]) => {
       @retry="load()"
     />
     <template v-else-if="tree && form">
-      <PartialState class="document-tree__partial" :notice="failure" retry @retry="load()" />
+      <PartialState class="document-tree__partial" :notice="failure" retry @retry="readAgain" />
       <div class="document-tree__panes">
         <section class="document-tree__tree" aria-labelledby="document-tree-rows">
-          <h2 id="document-tree-rows">{{ t("documents.tree.treeHeading") }}</h2>
+          <!-- tabindex -1: where the keyboard goes after a reading again -->
+          <h2 id="document-tree-rows" ref="treeHeading" tabindex="-1">{{ t("documents.tree.treeHeading") }}</h2>
           <TreeView v-model:selected="selected" :rows="rows" :form="form" :counts="tree.counts" />
         </section>
         <div class="document-tree__side">
