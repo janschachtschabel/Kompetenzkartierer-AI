@@ -1010,6 +1010,10 @@ export const messages = {
           cancel: "Weiter eintragen",
         },
       },
+      // the document's tree checked again (treeCheck.ts, TreeTools.vue)
+      check: {
+        failed: "Die Prüfung wurde nicht gestartet.",
+      },
       // a row's review status (rowReview.ts, RowReview.vue)
       review: {
         set: "Prüfstand: {status}.",
