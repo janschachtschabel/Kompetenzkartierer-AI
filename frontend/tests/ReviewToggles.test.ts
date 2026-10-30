@@ -23,6 +23,7 @@ function toggles(): VueWrapper {
 }
 
 const buttons = (wrapper: VueWrapper) => wrapper.findAll("button");
+const pressed = (wrapper: VueWrapper) => buttons(wrapper).map((one) => one.attributes("aria-pressed"));
 const button = (wrapper: VueWrapper, label: string) => {
   const found = buttons(wrapper).find((one) => one.text() === label);
   if (!found) throw new Error(label);
@@ -68,6 +69,22 @@ describe("a row's review status to choose", () => {
     expect(reviewed).toHaveBeenCalledWith({ outcome: "set", status: "rejected" }, "statement:s1");
   });
 
+  it("shows the status just set pressed until the row is read again, and the row's own from then", async () => {
+    const sent = vi.spyOn(api, "setReview").mockResolvedValue({ revisions: [{ id: "s1", revision: 6 }] });
+    const wrapper = toggles();
+
+    await button(wrapper, "Verworfen").trigger("click");
+    await flushPromises();
+    expect(pressed(wrapper)).toEqual(["false", "false", "true"]);
+    await button(wrapper, "Verworfen").trigger("click"); // the status it stands at now asks nothing
+    expect(sent).toHaveBeenCalledTimes(1);
+
+    const reread = rowsOf([node_("a", { statements: [statement_("s1", { revision: 7, review_status: CV + "rev_proposed" })] })]);
+    await wrapper.setProps({ row: reread.get("statement:s1") as Row });
+
+    expect(pressed(wrapper)).toEqual(["true", "false", "false"]); // as read: another set it since
+  });
+
   it("asks nothing more while it sets one, and tells how it went once it is gone", async () => {
     let answer: (done: { revisions: { id: string; revision: number }[] }) => void = () => undefined;
     const sent = vi.spyOn(api, "setReview").mockReturnValue(new Promise((resolve) => (answer = resolve)));
@@ -93,6 +110,7 @@ describe("a row's review status to choose", () => {
     await button(wrapper, "Verworfen").trigger("click");
     await flushPromises();
     expect(reviewed).toHaveBeenCalledWith({ outcome: "stale" }, "statement:s1");
+    expect(pressed(wrapper)).toEqual(["false", "true", "false"]); // nothing set
 
     await button(wrapper, "Vorgeschlagen").trigger("click");
     await flushPromises();

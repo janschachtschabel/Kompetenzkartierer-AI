@@ -3,10 +3,10 @@
  * The review status of the row chosen, to set (plan M1 9.8, Paket 9c2c M2, M3; rowReview.ts): the editors' alone,
  * where the tree is open - which the panel decides. The three statuses as toggles in a group named for it, the
  * row's own pressed and ticked, not by colour alone, and asking nothing; another sets it for this row. While it
- * sets one nothing more is asked. How it went is told by a function (`onReviewed`) with the row's key - heard
+ * sets one nothing more is asked; set, it shows pressed until the row is read again, which then says how it stands. How it went is told by a function (`onReviewed`) with the row's key - heard
  * even where another row was chosen meanwhile -, a failure said here, where it was asked.
  */
-import { computed, ref, useId } from "vue";
+import { computed, ref, useId, watch } from "vue";
 
 import AppIcon from "@/components/AppIcon.vue";
 import NoticeText from "@/components/NoticeText.vue";
@@ -26,7 +26,13 @@ const props = defineProps<{
 const labelId = useId();
 const busy = ref(false);
 const problem = ref<Notice | null>(null);
-const current = computed(() => rowStatus(props.row));
+// the status just set: the row the panel holds shows it only once the tree is read again
+const pending = ref<ReviewStatus | null>(null);
+const current = computed(() => pending.value ?? rowStatus(props.row));
+watch(
+  () => props.row,
+  () => (pending.value = null),
+);
 
 async function choose(status: ReviewStatus): Promise<void> {
   if (busy.value || status === current.value) return;
@@ -35,6 +41,7 @@ async function choose(status: ReviewStatus): Promise<void> {
   problem.value = null;
   const done = await reviewRow(props.documentId, props.row, status);
   busy.value = false;
+  if (done.outcome === "set") pending.value = done.status;
   if (done.outcome === "failed") problem.value = done.problem;
   else props.onReviewed?.(done, key);
 }
