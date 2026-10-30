@@ -328,6 +328,21 @@ describe("the row edited", () => {
     await flushPromises();
     expect([editing.draft.value.verbatim, editing.revision.value]).toEqual(["Mein Entwurf.", 4]);
   });
+
+  it("takes the revision of a row read anew whose stored fields stayed - a review set - and keeps the draft", async () => {
+    const sent = vi.spyOn(api, "editStatement").mockResolvedValue(stored({ verbatim: "Mein Entwurf." }, 5));
+    const { shown, editing } = editor();
+    const said = row("statement:s1");
+    if (said.kind !== "statement") throw new Error("a statement");
+    editing.draft.value = { ...editing.draft.value, verbatim: "Mein Entwurf." };
+
+    shown.value = { ...said, statement: { ...stored({}, 4), review_status: CV + "rev_confirmed" } };
+    await flushPromises();
+    expect([editing.draft.value.verbatim, editing.revision.value, editing.dirty.value]).toEqual(["Mein Entwurf.", 4, true]);
+
+    expect(await editing.save()).toBe("saved");
+    expect(sent).toHaveBeenCalledWith("s1", 4, { verbatim: "Mein Entwurf." });
+  });
 });
 
 describe("a statement's anchors in its draft", () => {

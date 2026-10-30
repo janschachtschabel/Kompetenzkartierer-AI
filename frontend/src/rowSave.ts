@@ -77,7 +77,9 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
     revision.value = at;
   }
 
-  // Another row begins anew; the same row read again is taken unless the user changed it
+  // Another row begins anew; the same row read again is taken unless the user changed it. Changed, the draft
+  // stays - and where only the row's revision moved, its stored fields as the draft began from them (a review
+  // set), the draft goes on from that revision rather than meet itself as a change of another's
   watch(row, (now, was) => {
     if (now.key !== was.key) {
       errors.value = {};
@@ -86,6 +88,9 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
       closed.value = null;
       stand(storedOf(now), revisionOf(now));
     } else if (!dirty.value) stand(storedOf(now), revisionOf(now));
+    else if (!Object.keys(changedFields(drafted.value, before.value, draftOf(drafted.value, valuesOf(storedOf(now))))).length) {
+      revision.value = revisionOf(now);
+    }
   });
 
   function refused(error: unknown): SaveOutcome {
