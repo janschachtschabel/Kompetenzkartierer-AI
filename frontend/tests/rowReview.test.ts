@@ -37,8 +37,16 @@ describe("a row's review status", () => {
 
     expect(sent).toHaveBeenNthCalledWith(1, "d1", "rejected", [{ kind: "statement", id: "s1", revision: 5 }]);
     expect(sent).toHaveBeenNthCalledWith(2, "d1", "confirmed", [{ kind: "node", id: "a", revision: 2 }]);
-    expect(done).toEqual({ outcome: "set", status: "rejected" });
+    expect(done).toEqual({ outcome: "set", status: "rejected", revision: 6 });
     expect(said(done)).toBe("Prüfstand: Verworfen.");
+  });
+
+  it("sends a revision given in place of the one the row was read at: the one a status just set left", async () => {
+    const sent = vi.spyOn(api, "setReview").mockResolvedValue({ revisions: [{ id: "s1", revision: 7 }] });
+
+    await reviewRow("d1", row("statement:s1"), "proposed", 6);
+
+    expect(sent).toHaveBeenCalledWith("d1", "proposed", [{ kind: "statement", id: "s1", revision: 6 }]);
   });
 
   it("says a row changed meanwhile, a tree closed, a caller who is no editor, or another failure", async () => {

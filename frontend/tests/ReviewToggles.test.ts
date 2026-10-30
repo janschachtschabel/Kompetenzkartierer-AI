@@ -66,7 +66,23 @@ describe("a row's review status to choose", () => {
     await flushPromises();
 
     expect(sent).toHaveBeenCalledWith("d1", "rejected", [{ kind: "statement", id: "s1", revision: 5 }]);
-    expect(reviewed).toHaveBeenCalledWith({ outcome: "set", status: "rejected" }, "statement:s1");
+    expect(reviewed).toHaveBeenCalledWith({ outcome: "set", status: "rejected", revision: 6 }, "statement:s1");
+  });
+
+  it("sets another before the row is read again at the revision the last left, not the one read", async () => {
+    const sent = vi
+      .spyOn(api, "setReview")
+      .mockResolvedValueOnce({ revisions: [{ id: "s1", revision: 6 }] })
+      .mockResolvedValueOnce({ revisions: [{ id: "s1", revision: 7 }] });
+    const wrapper = toggles();
+
+    await button(wrapper, "Verworfen").trigger("click");
+    await flushPromises();
+    await button(wrapper, "Vorgeschlagen").trigger("click");
+    await flushPromises();
+
+    expect(sent).toHaveBeenLastCalledWith("d1", "proposed", [{ kind: "statement", id: "s1", revision: 6 }]);
+    expect(pressed(wrapper)).toEqual(["true", "false", "false"]);
   });
 
   it("shows the status just set pressed until the row is read again, and the row's own from then", async () => {
@@ -98,7 +114,7 @@ describe("a row's review status to choose", () => {
     wrapper.unmount();
     answer({ revisions: [{ id: "s1", revision: 6 }] });
     await flushPromises();
-    expect(reviewed).toHaveBeenCalledWith({ outcome: "set", status: "rejected" }, "statement:s1");
+    expect(reviewed).toHaveBeenCalledWith({ outcome: "set", status: "rejected", revision: 6 }, "statement:s1");
   });
 
   it("tells a row changed meanwhile or a tree closed, and says another failure where it was asked", async () => {
