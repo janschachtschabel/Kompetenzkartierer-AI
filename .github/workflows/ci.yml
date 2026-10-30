@@ -22,7 +22,8 @@ concurrency:
 jobs:
   backend:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # the tests with coverage took about 36 minutes on a hosted runner (78 % after 28, 2026-10-30)
+    timeout-minutes: 60
     services:
       postgres:
         image: pgvector/pgvector:pg17@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f
