@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 from psycopg.types.json import Jsonb
 
 from app.pipeline.x2_segments import WorkPackage
-from tests.api.test_documents import a_conversion, an_account, client, make, url
+from tests.api.test_documents import a_conversion, an_account, client, hidden_from_its_owner, make, url
 from tests.db.l1 import CV, add_entity
 
 pytestmark = pytest.mark.pg
@@ -81,3 +81,18 @@ def test_to_one_who_may_not_read_the_document_its_units_are_none(client: TestCli
 
     assert client.get(f"/api/v1/documents/{document}/units", headers=stranger).status_code == 404
     assert client.get(f"/api/v1/documents/{document}/units").status_code == 401
+
+
+def test_the_units_of_a_document_whose_entry_is_no_longer_the_owner_s_are_the_editors_alone(
+    client: TestClient, url: str
+) -> None:
+    # a unit's path is the titles above it: the entry's content
+    owner, header = an_account(url)
+    document = make(client, url, header, a_conversion(url, owner))["document"]["id"]
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+    hidden_from_its_owner(url, document)
+
+    hidden = client.get(f"/api/v1/documents/{document}/units", headers=header)
+
+    assert (hidden.status_code, hidden.json()["code"]) == (403, "file_hidden")
+    assert client.get(f"/api/v1/documents/{document}/units", headers=editor).status_code == 200

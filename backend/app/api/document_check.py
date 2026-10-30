@@ -16,7 +16,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request, Response
 
 from app.api.deps import require_account
-from app.api.document_access import visible_document
+from app.api.document_access import readable_document
 from app.api.edit_answers import audit
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.api.jobs import JobOut, job_out
@@ -38,6 +38,10 @@ Account = Annotated[Principal, Depends(require_account)]
     status_code=202,
     responses={
         200: {"model": JobOut, "description": "A job of the document waiting or running: none is made"},
+        403: {
+            "model": ErrorBody,
+            "description": "file_hidden: the entry's content is no longer yours to read",
+        },
         404: {"model": ErrorBody, "description": "no_document: none the caller may read"},
         409: {
             "model": ErrorBody,
@@ -52,7 +56,8 @@ async def start_check(document_id: UUID, request: Request, response: Response, w
         lane = None  # the job just made is shown to who started it, though it is in the owner's lane
         try:
             async with connection.transaction():
-                document = await visible_document(connection, who, document_id)
+                # as its extraction and its repair: the check reads the entry's content
+                document = await readable_document(connection, who, request.app.state.settings, document_id)
                 key = unique_key(document.id)
                 await lock_tree(connection, document.id)  # as the extraction's start (app/api/documents.py)
                 if await frozen(connection, document.id):

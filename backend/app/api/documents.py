@@ -34,7 +34,7 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from app.api.deps import require_account
-from app.api.document_access import readable_content, reader, visible_document
+from app.api.document_access import readable_content, readable_document, reader, visible_document
 from app.api.errors import AUTH_RESPONSES, ErrorBody, Refusal
 from app.api.jobs import JobOut, job_out
 from app.api.limits import admit_model_start
@@ -347,11 +347,18 @@ async def read_runs(document_id: UUID, request: Request, who: Account) -> list[R
 @router.get(
     "/documents/{document_id}/units",
     summary="The document's units, each with how far the extraction has come with it",
-    responses={404: {"model": ErrorBody, "description": "no_document: none the caller may read"}},
+    responses={
+        403: {
+            "model": ErrorBody,
+            "description": "file_hidden: the entry's content is no longer yours to read",
+        },
+        404: {"model": ErrorBody, "description": "no_document: none the caller may read"},
+    },
 )
 async def read_units(document_id: UUID, request: Request, who: Account) -> list[UnitOut]:
     async with request.app.state.pool.connection() as connection:
-        await visible_document(connection, who, document_id)
+        # a unit's path is the titles above it: the entry's content
+        await readable_document(connection, who, request.app.state.settings, document_id)
         units = await document_units(connection, document_id)
     return [
         UnitOut(

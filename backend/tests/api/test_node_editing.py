@@ -279,3 +279,19 @@ def test_a_node_whose_entry_is_no_longer_the_owner_s_to_read_is_changed_by_the_e
         f"/api/v1/nodes/{made}", headers=editor, json={"expected_revision": 1, "fields": {"code": "2"}}
     )
     assert edited.status_code == 200, edited.text
+
+
+def test_to_a_stranger_a_node_whose_entry_is_hidden_is_none_as_any_other(
+    client: TestClient, url: str
+) -> None:
+    # no 403 that tells a stranger the node is there: who may not see the document meets none
+    document, _ = a_document(client, url)
+    made = a_node(url, document)
+    _, stranger = an_account(url, "Fremde")
+    hidden_from_its_owner(url, document)
+
+    answer = client.patch(
+        f"/api/v1/nodes/{made}", headers=stranger, json={"expected_revision": 1, "fields": {}}
+    )
+
+    assert (answer.status_code, answer.json()["code"]) == (404, "no_node")

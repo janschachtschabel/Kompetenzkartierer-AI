@@ -16,6 +16,7 @@ from tests.api.test_documents import (
     an_account,
     client,
     end_job,
+    hidden_from_its_owner,
     make,
     rows,
     spend_all,
@@ -137,3 +138,17 @@ def test_beside_an_open_job_that_one_is_given_back_to_whom_may_follow_it(
         409, "job_open", {},
     )  # fmt: skip
     assert rows(url, "SELECT count(*) FROM job WHERE kind = 'extract.check'") == [(0,)]
+
+
+def test_a_document_whose_entry_is_no_longer_the_owner_s_is_checked_by_the_editors_alone(
+    client: TestClient, url: str
+) -> None:
+    # as its extraction and its repair: the check reads the entry's content
+    document, header, _ = checked_once(client, url)
+    _, editor = an_account(url, "Redaktion", ("redaktion",))
+    hidden_from_its_owner(url, document)
+
+    hidden = client.post(f"/api/v1/documents/{document}/check", headers=header)
+
+    assert (hidden.status_code, hidden.json()["code"]) == (403, "file_hidden")
+    assert client.post(f"/api/v1/documents/{document}/check", headers=editor).status_code == 202
