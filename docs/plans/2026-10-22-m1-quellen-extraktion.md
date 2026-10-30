@@ -947,6 +947,15 @@ Löschen, Prüfstand und Prüfjob.
 - **Ansicht.** `RowPanel` zeigt bei offenem Baum Formular und daneben Herkunft, Prüfstand und Fundstellen
   (RowDetail ohne Felder), sonst die Leseansicht mit dem Grund. `leaveGuard.ts` fragt vor einer anderen
   Zeile oder Seite (nicht vor einer anderen Seite der Quelle) und lässt den Browser vor dem Schließen fragen.
+- **Nach dem Review.** Was während eines Speicherns weitergetippt wird, bleibt (per `rebase` auf die Antwort
+  gelegt); solange ein Konflikt unentschieden ist, speichert nichts; ein geleertes Pflichtfeld meldet der
+  Client am Feld, ohne zu fragen, ein unbekanntes Problem an einem bekannten Feld steht ebenfalls am Feld
+  (`problems.other`, Abweichung von K7); Randleerzeichen gelten als Änderung, wie der Server sie speichert. Die
+  Konfliktauswahl wird beim Erscheinen fokussiert und mit ihrem Hinweis vorgelesen (`aria-describedby`)
+  statt über eine `role=alert`-Region (Abweichung von J11). Schließt sich der Baum beim Neulesen unter einem
+  offenen Entwurf, bleibt er wie bei einer Ablehnung beim Speichern stehen (`closedBy`). Gespeichertes meldet
+  der Editor über eine Funktions-Prop, damit ein Speichern, das nach einem Zeilenwechsel ankommt, den Baum
+  trotzdem neu lesen lässt.
 
 ### Paket 10: Lexikon aus der Länderrecherche mit Stichprobe (3 PT)
 

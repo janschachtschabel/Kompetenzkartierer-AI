@@ -183,8 +183,9 @@ ungültig.
   sendet nur geänderte Felder mit der gelesenen Revision und liest den Baum neu; hat inzwischen jemand die
   Zeile geändert, übernimmt es dessen Felder und legt die von beiden geänderten zur Wahl vor („Meins
   behalten“ / „Gespeichertes nehmen“); ein Fehler steht am Feld; schließt sich der Baum (Job, festgeschrieben,
-  X4) beim Speichern, bleibt der Entwurf zum Abschreiben stehen. Sonst sagt die Seite, warum sie nur liest.
-  Ein ungespeicherter Entwurf fragt nach, bevor eine andere Zeile oder Seite ihn verdrängt.
+  X4) beim Speichern oder beim Neulesen, bleibt der Entwurf zum Abschreiben stehen. Sonst sagt die Seite,
+  warum sie nur liest. Ein ungespeicherter Entwurf fragt nach, bevor eine andere Zeile oder eine andere Seite
+  der App ihn verdrängt (eine andere Seite der Quelle nicht); der Browser fragt vor dem Schließen.
 - Blöcke des Dokuments: `GET /api/v1/documents/{id}/blocks?page=N` liest eine Seite der Konvertierung, aus
   der das Dokument gelesen wurde (Blöcke, fortlaufende Tabellen, gedruckte Seite, `pages`) – die Blöcke, die
   seine Fundstellen nennen, auch wenn die Datei des Eintrags seither neu geholt oder anders umgewandelt
