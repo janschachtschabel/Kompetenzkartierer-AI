@@ -132,8 +132,9 @@ async def test_a_job_three_leases_long_keeps_its_lease_and_ends_done(pool: Async
 @pytest.mark.pg
 @pytest.mark.parametrize(
     "bad",
-    # no JSON (a UUID, NaN, too deep to write), or JSON the database refuses (NUL, a lone surrogate)
-    [uuid.uuid4(), float("nan"), deeply_nested(5000), "a" + chr(0) + "b", "a" + chr(0xD800) + "b"],
+    # no JSON (a UUID, NaN, too deep to write), or JSON the database refuses (NUL, a lone surrogate);
+    # too deep on every platform: CPython's C recursion limit is lower on Windows, where 5000 sufficed
+    [uuid.uuid4(), float("nan"), deeply_nested(100_000), "a" + chr(0) + "b", "a" + chr(0xD800) + "b"],
     ids=["uuid", "nan", "too-deep", "nul", "surrogate"],
 )
 async def test_a_result_that_is_no_json_fails_its_job_and_the_worker_goes_on(
