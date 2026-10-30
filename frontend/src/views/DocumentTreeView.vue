@@ -10,7 +10,9 @@
  * failure said above it (Paket 9c2 K12). A draft not yet saved is asked about before another row or another
  * page takes its place, the browser asking before the tab closes (K8); another page of the source keeps it.
  * A statement chosen in a tree open to the caller has its anchor chosen in the source, which goes to its
- * draft (Paket 9c2b L3, L9). Wide, the tree and the side stand side by side.
+ * draft (Paket 9c2b L3, L9). There a node is added at the tree's top, or a node or a statement under a node
+ * chosen, in the panel (L4); added, the tree is read again and the new row chosen; another row chosen lets it
+ * go, a draft with entries asked about first (L10). Wide, the tree and the side stand side by side.
  */
 import { computed, nextTick, onMounted, ref, toRef, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
@@ -28,6 +30,7 @@ import { focusIsFree } from "@/focusRescue";
 import { t } from "@/i18n/de";
 import { useLeaveGuard } from "@/leaveGuard";
 import { pageTitle } from "@/pageTitle";
+import { useTreeAdding } from "@/treeAdding";
 import { useTreeAddress } from "@/treeAddress";
 
 const props = defineProps<{ id: string }>();
@@ -51,10 +54,13 @@ const heading = computed(() =>
 const source = ref<InstanceType<typeof SourcePane> | null>(null);
 const panel = ref<InstanceType<typeof RowPanel> | null>(null);
 
-// the statement whose anchor the source offers to choose: one chosen in a tree the caller may change
-const picking = computed(() => {
-  const row = selectedRow.value;
-  return tree.value?.editable && row?.kind === "statement" ? row.key : null;
+const { creating, picking, createAtTop, create, created, cancel } = useTreeAdding({
+  documentId: toRef(props, "id"),
+  tree,
+  selectedRow,
+  selected,
+  draftOpen,
+  load,
 });
 
 // an anchor's page is there to be read: the keyboard goes along to it
@@ -131,6 +137,11 @@ watch([heading, () => route.fullPath], ([name]) => {
         <section class="document-tree__tree" aria-labelledby="document-tree-rows">
           <!-- tabindex -1: where the keyboard goes after a reading again -->
           <h2 id="document-tree-rows" ref="treeHeading" tabindex="-1">{{ t("documents.tree.treeHeading") }}</h2>
+          <p v-if="tree.editable" class="document-tree__add">
+            <button type="button" class="btn btn-sm secondary" @click="createAtTop">
+              {{ t("documents.tree.create.node") }}
+            </button>
+          </p>
           <TreeView v-model:selected="selected" :rows="rows" :form="form" :counts="tree.counts" />
         </section>
         <div class="document-tree__side">
@@ -139,10 +150,14 @@ watch([heading, () => route.fullPath], ([name]) => {
             :row="selectedRow"
             :tree="tree"
             :form="form"
+            :creating="creating"
             @show="showAnchor"
             @changed="load()"
             @gone="rowGone"
             @dirty="(open) => (draftOpen = open)"
+            @create="create"
+            @created="created"
+            @cancel="cancel"
           />
           <SourcePane
             ref="source"
@@ -169,7 +184,8 @@ watch([heading, () => route.fullPath], ([name]) => {
 </template>
 
 <style scoped>
-.document-tree__back {
+.document-tree__back,
+.document-tree__add {
   margin: 0;
 }
 

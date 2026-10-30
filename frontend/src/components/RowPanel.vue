@@ -6,23 +6,39 @@
  * tree refused keeps its editor, the draft shown to copy, until another row is chosen - so does a draft the
  * tree, read anew, closed under. A row found gone is said in a status line the panel holds from the start,
  * the keyboard taken to the panel's heading, not lost with the editor. An anchor chosen in the source goes on to
- * the editor (`addAnchor`).
+ * the editor (`addAnchor`). Where the tree is open a node chosen offers a node or a statement to add under it
+ * (RowActions); a row being added (`creating`, the view's) takes the place of the row chosen (RowCreator), the
+ * keyboard at the heading as it begins, is cancelled or is added - not where another row chosen ends it.
  */
 import { computed, nextTick, ref, useId, watch } from "vue";
 
 import type { Form, Tree } from "@/api";
+import RowActions from "@/components/RowActions.vue";
+import RowCreator from "@/components/RowCreator.vue";
 import RowDetail from "@/components/RowDetail.vue";
 import RowEditor from "@/components/RowEditor.vue";
 import type { Row, RowKey } from "@/documentTree";
 import { t } from "@/i18n/de";
 import { sayAnew } from "@/liveRegion";
+import type { CreateTarget } from "@/rowCreate";
 
-const props = defineProps<{ row: Row | null; tree: Tree; form: Form }>();
-const emit = defineEmits<{ show: [page: number]; changed: []; gone: []; dirty: [open: boolean] }>();
+const props = withDefaults(defineProps<{ row: Row | null; tree: Tree; form: Form; creating?: CreateTarget | null }>(), {
+  creating: null,
+});
+const emit = defineEmits<{
+  show: [page: number];
+  changed: [];
+  gone: [];
+  dirty: [open: boolean];
+  create: [kind: "node" | "statement"];
+  created: [key: RowKey];
+  cancel: [];
+}>();
 
 const headingId = useId();
 const headingRef = ref<HTMLElement | null>(null);
 const editor = ref<InstanceType<typeof RowEditor> | null>(null);
+const creator = ref<InstanceType<typeof RowCreator> | null>(null);
 // the row whose change the closing tree refused: its editor stays, the draft shown to copy
 const refused = ref<RowKey | null>(null);
 const status = ref("");
@@ -36,6 +52,9 @@ const reason = computed(() => {
 });
 
 const heading = computed(() => {
+  if (props.creating) {
+    return t(props.creating.kind === "node" ? "documents.tree.create.headingNode" : "documents.tree.create.headingStatement");
+  }
   const row = props.row;
   if (!row) return t("documents.tree.detail.heading");
   if (row.kind === "statement") return t("documents.tree.detail.statement");
@@ -44,11 +63,15 @@ const heading = computed(() => {
   return t("documents.tree.detail.node", { name: name || t("documents.tree.untitled") });
 });
 
+// the row just added, chosen as the tree is read again: the word that it was added stays for it
+let added: RowKey | null = null;
+
 watch(
   () => props.row?.key,
   (key) => {
     if (key !== refused.value) refused.value = null;
-    if (key) status.value = "";
+    if (key && key !== added) status.value = "";
+    added = null;
   },
 );
 // The tree read anew closed under an open draft: its editor stays, the draft shown to copy. Closed to the
@@ -60,6 +83,30 @@ watch(
     else if (!now.closed && !now.editable) refused.value = null;
   },
 );
+
+// a row to add begins: the keyboard to the heading that says so, the button that began it gone or elsewhere
+watch(
+  () => props.creating,
+  (now, was) => {
+    if (now && !was) void nextTick(() => headingRef.value?.focus());
+  },
+);
+
+function toHeading(): void {
+  void nextTick(() => headingRef.value?.focus());
+}
+
+function created(key: RowKey): void {
+  added = key;
+  status.value = sayAnew(status.value, t("documents.tree.create.created"));
+  toHeading();
+  emit("created", key);
+}
+
+function cancel(): void {
+  toHeading();
+  emit("cancel");
+}
 
 function dirty(open: boolean): void {
   draftOpen.value = open;
@@ -73,13 +120,14 @@ function closed(): void {
 
 function gone(): void {
   status.value = sayAnew(status.value, t("documents.tree.gone"));
-  void nextTick(() => headingRef.value?.focus());
+  toHeading();
   emit("gone");
 }
 
-/** An anchor chosen in the source, into the draft of the statement edited. */
+/** An anchor chosen in the source, into the draft of the statement added or edited. */
 function addAnchor(code: string): void {
-  editor.value?.addAnchor(code);
+  if (creator.value) creator.value.addAnchor(code);
+  else editor.value?.addAnchor(code);
 }
 
 defineExpose({ addAnchor });
@@ -91,8 +139,21 @@ defineExpose({ addAnchor });
     <h2 :id="headingId" ref="headingRef" tabindex="-1">
       <bdi>{{ heading }}</bdi>
     </h2>
-    <p v-if="reason && !editing" class="row-panel__closed">{{ reason }}</p>
-    <template v-if="row">
+    <p v-if="reason && !editing && !creating" class="row-panel__closed">{{ reason }}</p>
+    <RowCreator
+      v-if="creating"
+      ref="creator"
+      :key="JSON.stringify(creating)"
+      :target="creating"
+      :form="form"
+      @created="created"
+      @closed="emit('changed')"
+      @gone="gone"
+      @cancel="cancel"
+      @dirty="dirty"
+    />
+    <template v-else-if="row">
+      <RowActions v-if="tree.editable" :row="row" @create="(kind) => emit('create', kind)" />
       <RowEditor
         v-if="editing"
         ref="editor"

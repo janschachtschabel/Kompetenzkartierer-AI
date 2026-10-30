@@ -11,7 +11,13 @@ import FormFieldInput from "@/components/FormFieldInput.vue";
 import { t } from "@/i18n/de";
 import { offeredValues, type Draft } from "@/rowDraft";
 
-const props = defineProps<{ fields: FormField[]; errors: Record<string, string>; saving: boolean }>();
+const props = defineProps<{
+  fields: FormField[];
+  errors: Record<string, string>;
+  saving: boolean;
+  /** What its button does, where it does not save a change: adding a row. */
+  saveLabel?: string;
+}>();
 const draft = defineModel<Draft>({ required: true });
 const emit = defineEmits<{ submit: [] }>();
 
@@ -53,7 +59,7 @@ defineExpose({ focusField });
     <slot />
     <!-- aria-disabled, not disabled: a disabled button drops the focus it holds -->
     <button type="submit" class="btn primary row-form__save" :aria-disabled="saving || undefined">
-      {{ t("documents.tree.form.save") }}
+      {{ saveLabel ?? t("documents.tree.form.save") }}
     </button>
   </form>
 </template>

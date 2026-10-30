@@ -987,6 +987,21 @@ export const messages = {
       // adding a row (rowCreate.ts, RowCreator.vue)
       create: {
         failed: "Die Zeile wurde nicht angelegt.",
+        save: "Anlegen",
+        cancel: "Abbrechen",
+        created: "Angelegt.",
+        // the ways on from a row chosen (RowActions.vue), and at the tree's top (DocumentTreeView.vue)
+        child: "Unterknoten anlegen",
+        statement: "Aussage anlegen",
+        node: "Knoten anlegen",
+        headingNode: "Neuer Knoten",
+        headingStatement: "Neue Aussage",
+        discard: {
+          title: "Neue Zeile verwerfen?",
+          message: "Die Zeile ist noch nicht angelegt. Verwirfst du sie, gehen deine Eingaben verloren.",
+          confirm: "Verwerfen",
+          cancel: "Weiter eintragen",
+        },
       },
       // why the tree only reads: the document's state (TreeOut.closed), else the caller's role (RowPanel.vue)
       closed: {

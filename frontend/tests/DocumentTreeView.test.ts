@@ -100,6 +100,13 @@ async function answer(wrapper: VueWrapper, label: string): Promise<void> {
   await flushPromises();
 }
 
+async function press(wrapper: VueWrapper, label: string): Promise<void> {
+  const found = wrapper.findAll("button").find((one) => one.text() === label);
+  if (!found) throw new Error(label);
+  await found.trigger("click");
+  await flushPromises();
+}
+
 function query(): Record<string, unknown> {
   return { ...router.currentRoute.value.query };
 }
@@ -351,6 +358,111 @@ describe("a document's tree page", () => {
     const reading = await open({ zeile: "statement:s1" });
     expect(reading.find("[data-test=take]").exists()).toBe(false);
     expect(reading.findAll(".block button")).toHaveLength(0);
+  });
+
+  it("adds a node at the tree's top, and shows it chosen once it is", async () => {
+    const added = tree_([...NODES, node_("n9", { position: 2, fields: { original_title: "Neu", code: null } })]);
+    vi.spyOn(api, "getTree").mockResolvedValueOnce(OPEN).mockResolvedValue(added);
+    const sent = vi.spyOn(api, "addNode").mockResolvedValue(node_("n9"));
+    const wrapper = await open();
+
+    await press(wrapper, t("documents.tree.create.node"));
+    expect(wrapper.get(".row-panel h2").text()).toBe(t("documents.tree.create.headingNode"));
+    expect(document.activeElement).toBe(wrapper.get(".row-panel h2").element);
+    expect(wrapper.findAll(".block button")).toHaveLength(0); // a node has no anchor to choose
+    await wrapper.get(".row-creator input").setValue("Neu");
+    await wrapper.get(".row-creator select").setValue(CV + "fn_area");
+    await wrapper.get(".row-creator form").trigger("submit");
+    await flushPromises();
+
+    expect(sent).toHaveBeenCalledWith("d1", null, { original_title: "Neu", function: CV + "fn_area" });
+    expect(query()).toEqual({ zeile: "node:n9" });
+    expect(wrapper.find(".row-creator").exists()).toBe(false);
+    expect(wrapper.get(".row-panel__status").text()).toBe(t("documents.tree.create.created"));
+    expect(wrapper.get(".row-panel h2").text()).toBe("Knoten Neu");
+    expect(document.activeElement).toBe(wrapper.get(".row-panel h2").element);
+  });
+
+  it("adds a statement to a node chosen, its anchor chosen in the source", async () => {
+    const s9 = statement_("s9", { position: 3, anchors: [anchor("q9", 4, ["p4-b1"])] });
+    const added = tree_([{ ...NODES[0], statements: [...NODES[0].statements, s9] }]);
+    vi.spyOn(api, "getTree").mockResolvedValueOnce(OPEN).mockResolvedValue(added);
+    const sent = vi.spyOn(api, "addStatement").mockResolvedValue(s9);
+    const wrapper = await open({ zeile: "node:a" });
+
+    await press(wrapper, t("documents.tree.create.statement"));
+    expect(wrapper.get(".row-panel h2").text()).toBe(t("documents.tree.create.headingStatement"));
+    await wrapper.findAll(".block button")[0]?.trigger("click");
+    await wrapper.get("[data-test=take]").trigger("click");
+    await wrapper.get(".row-creator textarea").setValue("Sie messen.");
+    await wrapper.get(".row-creator select").setValue(CV + "kind_learningOutcome");
+    await wrapper.get(".row-creator input[type=checkbox]").setValue(true);
+    await wrapper.get(".row-creator form").trigger("submit");
+    await flushPromises();
+
+    expect(sent).toHaveBeenCalledWith(
+      "a",
+      { verbatim: "Sie messen.", statement_kind: CV + "kind_learningOutcome", addressees: [CV + "addr_learner"] },
+      [{ blocks: ["p4-b1"] }],
+    );
+    expect(query()).toEqual({ zeile: "statement:s9", seite: "4" });
+  });
+
+  it("adds a node under the node chosen", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    const sent = vi.spyOn(api, "addNode").mockResolvedValue(node_("n9"));
+    const wrapper = await open({ zeile: "node:a" });
+
+    await press(wrapper, t("documents.tree.create.child"));
+    await wrapper.get(".row-creator input").setValue("Linsen");
+    await wrapper.get(".row-creator select").setValue(CV + "fn_unit");
+    await wrapper.get(".row-creator form").trigger("submit");
+    await flushPromises();
+
+    expect(sent).toHaveBeenCalledWith("d1", "a", { original_title: "Linsen", function: CV + "fn_unit" });
+  });
+
+  it("lets a new row go when cancelled, the keyboard at the panel, or when another row is chosen", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    const wrapper = await open({ zeile: "node:a" });
+
+    await press(wrapper, t("documents.tree.create.child"));
+    const cancelling = wrapper.findAll(".row-creator button").find((one) => one.text() === t("documents.tree.create.cancel"));
+    (cancelling?.element as HTMLElement).focus();
+    await press(wrapper, t("documents.tree.create.cancel"));
+    expect(wrapper.find(".row-creator").exists()).toBe(false);
+    expect(wrapper.get(".row-panel h2").text()).toBe("Knoten LF 1 Optik");
+    expect(document.activeElement).toBe(wrapper.get(".row-panel h2").element);
+
+    await press(wrapper, t("documents.tree.create.child"));
+    const row = wrapper.get("[data-key='statement:s1']");
+    (row.element as HTMLElement).focus();
+    await row.trigger("click");
+    await flushPromises();
+    expect(wrapper.find(".row-creator").exists()).toBe(false);
+    expect(document.activeElement).toBe(row.element);
+  });
+
+  it("asks before a new row's entries go with another row chosen", async () => {
+    vi.spyOn(api, "getTree").mockResolvedValue(OPEN);
+    const wrapper = await open({ zeile: "node:a" });
+    await press(wrapper, t("documents.tree.create.child"));
+    await wrapper.get(".row-creator input").setValue("Neu");
+
+    await wrapper.get("[data-key='statement:s1']").trigger("click");
+    await flushPromises();
+    await answer(wrapper, t("documents.tree.leave.cancel"));
+
+    expect(query()).toEqual({ zeile: "node:a" });
+    expect((wrapper.get(".row-creator input").element as HTMLInputElement).value).toBe("Neu");
+  });
+
+  it("offers no row to add where the tree only reads", async () => {
+    const wrapper = await open({ zeile: "node:a" });
+
+    const labels = wrapper.findAll("button").map((one) => one.text());
+    expect(labels).not.toContain(t("documents.tree.create.node"));
+    expect(labels).not.toContain(t("documents.tree.create.child"));
   });
 
   it("keeps the draft of a change the closing tree refused, until another row is chosen", async () => {
