@@ -194,9 +194,10 @@ describe("a statement's anchors in its editor", () => {
     return shown;
   }
 
-  async function addAnchor(wrapper: VueWrapper, code: string): Promise<void> {
-    (wrapper.vm as unknown as { addAnchor: (code: string) => void }).addAnchor(code);
+  async function addAnchor(wrapper: VueWrapper, code: string): Promise<string> {
+    const taking = (wrapper.vm as unknown as { addAnchor: (code: string) => string }).addAnchor(code);
     await nextTick();
+    return taking;
   }
 
   const entries = (wrapper: VueWrapper) => wrapper.findAll(".anchor-draft li span").map((one) => one.text());
@@ -220,7 +221,8 @@ describe("a statement's anchors in its editor", () => {
     const sent = vi.spyOn(api, "editStatement").mockResolvedValue({ ...PLACED, revision: 4, anchors: [placed("q2", 6, ["p6-b1"])] });
     const wrapper = placedEditor();
 
-    await addAnchor(wrapper, "blocks:p6-b1");
+    expect(await addAnchor(wrapper, "blocks:p6-b1")).toBe("taken");
+    expect(await addAnchor(wrapper, "blocks:p6-b1")).toBe("held");
     expect(entries(wrapper)).toEqual(["Seite 5: 1 Block (p5-b2)", "Seite 6: 1 Block (p6-b1)"]);
     expect(wrapper.emitted("dirty")?.at(-1)).toEqual([true]);
     await wrapper.findAll(".anchor-draft li button")[0]?.trigger("click");
@@ -241,7 +243,7 @@ describe("a statement's anchors in its editor", () => {
     await save(wrapper);
 
     expect(document.activeElement).toBe(wrapper.get(".anchor-draft").element);
-    expect(wrapper.get(".anchor-draft .field__error").text()).toBe("Ein Block, den die Umwandlung nicht hat.");
+    expect(wrapper.get(".anchor-draft .field__error").text()).toBe(t("documents.tree.problems.unknown_block"));
   });
 
   it("keeps the anchors changed in the draft it shows once the tree closed, and takes no more", async () => {
@@ -254,7 +256,7 @@ describe("a statement's anchors in its editor", () => {
     expect(wrapper.findAll(".row-editor__closed dt").map((one) => one.text())).toEqual(["Fundstellen"]);
     expect(kept()).toEqual(["Seite 5: 1 Block (p5-b2); Seite 6: 1 Block (p6-b1)"]);
 
-    await addAnchor(wrapper, "page:9");
+    expect(await addAnchor(wrapper, "page:9")).toBe("refused");
     expect(kept()).toEqual(["Seite 5: 1 Block (p5-b2); Seite 6: 1 Block (p6-b1)"]);
   });
 });

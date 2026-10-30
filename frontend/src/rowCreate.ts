@@ -66,8 +66,13 @@ export function useRowCreate(target: CreateTarget, form: Form) {
     changes,
     dirty,
     save,
-    /** Take an anchor (its code, anchorDraft.ts) into a statement's draft, once. */
-    addAnchor: (code: string) => (draft.value = withAnchor(draft.value, code)),
+    /** Take an anchor (its code, anchorDraft.ts) into a statement's draft, once; whether the draft changed. */
+    addAnchor: (code: string): boolean => {
+      const now = withAnchor(draft.value, code);
+      if (now === draft.value) return false;
+      draft.value = now;
+      return true;
+    },
     /** Take an anchor out of a statement's draft. */
     removeAnchor: (code: string) => (draft.value = withoutAnchor(draft.value, code)),
   };

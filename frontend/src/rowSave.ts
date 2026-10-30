@@ -178,8 +178,13 @@ export function useRowSave(row: Ref<Row>, form: Ref<Form>) {
     keep: (key: string) => settle(key),
     /** Take the stored value of a field both changed. */
     take: (key: string) => settle(key, conflict.value?.stored[key]),
-    /** Take an anchor (its code, anchorDraft.ts) into a statement's draft, once. */
-    addAnchor: (code: string) => (draft.value = withAnchor(draft.value, code)),
+    /** Take an anchor (its code, anchorDraft.ts) into a statement's draft, once; whether the draft changed. */
+    addAnchor: (code: string): boolean => {
+      const now = withAnchor(draft.value, code);
+      if (now === draft.value) return false;
+      draft.value = now;
+      return true;
+    },
     /** Take an anchor out of a statement's draft. */
     removeAnchor: (code: string) => (draft.value = withoutAnchor(draft.value, code)),
   };

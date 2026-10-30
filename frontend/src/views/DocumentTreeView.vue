@@ -165,8 +165,8 @@ watch([heading, () => route.fullPath], ([name]) => {
             :page="page"
             :cited="cited"
             :picking="picking"
+            :take-anchor="(code) => panel?.addAnchor(code) ?? 'refused'"
             @go="showPage"
-            @anchor="(code) => panel?.addAnchor(code)"
           />
         </div>
       </div>

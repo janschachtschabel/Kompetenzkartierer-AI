@@ -21,6 +21,7 @@ import RowDetail from "@/components/RowDetail.vue";
 import RowEditor from "@/components/RowEditor.vue";
 import type { Row, RowKey } from "@/documentTree";
 import { t } from "@/i18n/de";
+import type { AnchorTaking } from "@/anchorDraft";
 import { sayAnew } from "@/liveRegion";
 import type { CreateTarget } from "@/rowCreate";
 import { dropWords, type DropOutcome } from "@/rowDrop";
@@ -136,10 +137,9 @@ function dropped(done: Exclude<DropOutcome, { outcome: "failed" }>): void {
   else emit("changed");
 }
 
-/** An anchor chosen in the source, into the draft of the statement added or edited. */
-function addAnchor(code: string): void {
-  if (creator.value) creator.value.addAnchor(code);
-  else editor.value?.addAnchor(code);
+/** An anchor chosen in the source, into the draft of the statement added or edited; how it went. */
+function addAnchor(code: string): AnchorTaking {
+  return (creator.value ?? editor.value)?.addAnchor(code) ?? "refused";
 }
 
 defineExpose({ addAnchor });

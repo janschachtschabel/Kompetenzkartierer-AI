@@ -75,9 +75,11 @@ defineExpose({ focus });
 </template>
 
 <style scoped>
+/* clear of the button that saves, as a field of the form is */
 .anchor-draft {
   display: grid;
   gap: var(--space-1);
+  margin-block-end: var(--space-2);
 }
 
 .anchor-draft h3,

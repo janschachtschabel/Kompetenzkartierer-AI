@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as api from "@/api";
 import { ApiError, type DocumentPage } from "@/api";
+import type { AnchorTaking } from "@/anchorDraft";
 import SourcePane from "@/components/SourcePane.vue";
 import { t } from "@/i18n/de";
 import { router } from "@/router";
@@ -263,11 +264,14 @@ describe("the source under a row", () => {
 });
 
 describe("the source a statement's anchor is chosen in", () => {
+  let taking = vi.fn<(code: string) => AnchorTaking>(() => "taken");
+
   async function choosing(number: number, picking: string | null = "statement:s1"): Promise<VueWrapper> {
+    taking = vi.fn<(code: string) => AnchorTaking>(() => "taken");
     vi.spyOn(api, "getDocumentBlocks").mockImplementation((_id, at) => Promise.resolve(page(at)));
     await router.push({ name: "conversion", params: { id: "s1" } });
     shown = mount(SourcePane, {
-      props: { documentId: "d1", page: number, cited: [], picking },
+      props: { documentId: "d1", page: number, cited: [], picking, takeAnchor: taking },
       global: { plugins: [router] },
       attachTo: document.body,
     });
@@ -279,6 +283,7 @@ describe("the source a statement's anchor is chosen in", () => {
   const toggle = (wrapper: VueWrapper, index: number) => wrapper.findAll(".block button")[index];
   const pressed = (wrapper: VueWrapper) => wrapper.findAll(".block button").map((one) => one.attributes("aria-pressed"));
   const said = (wrapper: VueWrapper) => wrapper.get("[role=status]").text();
+  const shownSaid = (wrapper: VueWrapper) => wrapper.get(".anchor-pick__said").text();
 
   it("takes the blocks chosen as one anchor, in their order, and lets the choice go", async () => {
     const wrapper = await choosing(3);
@@ -288,9 +293,10 @@ describe("the source a statement's anchor is chosen in", () => {
       "true",
     ]);
     await take(wrapper).trigger("click");
-    expect(wrapper.emitted("anchor")).toBeUndefined(); // none chosen, none taken
+    expect(taking).not.toHaveBeenCalled(); // none chosen, none taken
 
     await toggle(wrapper, 1)?.trigger("click");
+    expect(take(wrapper).text()).toBe("Gewählten Block als Fundstelle übernehmen (1)");
     await toggle(wrapper, 0)?.trigger("click");
     expect(pressed(wrapper)).toEqual(["true", "true"]);
     expect([take(wrapper).text(), take(wrapper).attributes("aria-disabled")]).toEqual([
@@ -299,10 +305,36 @@ describe("the source a statement's anchor is chosen in", () => {
     ]);
     expect(await violations(wrapper.html())).toEqual([]);
 
+    (take(wrapper).element as HTMLElement).focus();
     await take(wrapper).trigger("click");
-    expect(wrapper.emitted("anchor")).toEqual([["blocks:p3-b1,p3-b2"]]);
+    expect(taking).toHaveBeenCalledWith("blocks:p3-b1,p3-b2");
     expect(pressed(wrapper)).toEqual(["false", "false"]);
-    expect(said(wrapper)).toBe("Fundstelle übernommen: Seite 3: 2 Blöcke (p3-b1, p3-b2).");
+    expect(said(wrapper)).toBe("Fundstelle übernommen – Seite 3: 2 Blöcke (p3-b1, p3-b2).");
+    // said where it was taken too, the keyboard kept there
+    expect(shownSaid(wrapper)).toBe("Fundstelle übernommen – Seite 3: 2 Blöcke (p3-b1, p3-b2).");
+    expect(document.activeElement).toBe(take(wrapper).element);
+  });
+
+  it("offers to take them after the blocks, the way to choose before them", async () => {
+    const wrapper = await choosing(3);
+
+    const note = wrapper.findAll("p").find((one) => one.text() === t("documents.tree.source.pickNote"));
+    const blocks = wrapper.get(".blocks").element;
+    expect(note?.element.compareDocumentPosition(blocks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(blocks.compareDocumentPosition(take(wrapper).element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("says an anchor the draft holds already, or one it takes no more", async () => {
+    const wrapper = await choosing(3);
+
+    taking.mockReturnValueOnce("held");
+    await wrapper.get("[data-test=not-found]").trigger("click");
+    expect(said(wrapper)).toBe("Diese Fundstelle steht schon im Entwurf – Auf Seite 3 nicht gefunden.");
+
+    taking.mockReturnValueOnce("refused");
+    await wrapper.get("[data-test=not-found]").trigger("click");
+    expect(said(wrapper)).toBe(t("documents.tree.source.refused"));
+    expect(shownSaid(wrapper)).toBe(t("documents.tree.source.refused"));
   });
 
   it("lets a block chosen go again", async () => {
@@ -320,22 +352,29 @@ describe("the source a statement's anchor is chosen in", () => {
 
     await wrapper.get("[data-test=not-found]").trigger("click");
 
-    expect(wrapper.get("[data-test=not-found]").text()).toBe("Auf Seite 3 nicht gefunden");
-    expect(wrapper.emitted("anchor")).toEqual([["page:3"]]);
-    expect(said(wrapper)).toBe("Fundstelle übernommen: Auf Seite 3 nicht gefunden.");
+    expect(wrapper.get("[data-test=not-found]").text()).toBe("Seite 3 als „nicht gefunden“ übernehmen");
+    expect(taking).toHaveBeenCalledWith("page:3");
+    expect(said(wrapper)).toBe("Fundstelle übernommen – Auf Seite 3 nicht gefunden.");
   });
 
-  it("lets the choice go with another page, or another statement", async () => {
+  it("lets the choice and what it said go with another page, another statement or document", async () => {
     const wrapper = await choosing(3);
     await toggle(wrapper, 0)?.trigger("click");
+    await wrapper.get("[data-test=not-found]").trigger("click");
 
     await wrapper.setProps({ page: 4 });
     await flushPromises();
     expect(pressed(wrapper)).toEqual(["false", "false"]);
     expect(take(wrapper).text()).toContain("(0)");
+    expect(wrapper.find(".anchor-pick__said").exists()).toBe(false);
 
     await toggle(wrapper, 0)?.trigger("click");
     await wrapper.setProps({ picking: "statement:s2" });
+    await flushPromises();
+    expect(take(wrapper).text()).toContain("(0)");
+
+    await toggle(wrapper, 0)?.trigger("click");
+    await wrapper.setProps({ documentId: "d2" });
     await flushPromises();
     expect(take(wrapper).text()).toContain("(0)");
   });

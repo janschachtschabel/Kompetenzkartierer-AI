@@ -8,7 +8,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 
-import { ANCHORS, heldAnchors } from "@/anchorDraft";
+import { ANCHORS, heldAnchors, type AnchorTaking } from "@/anchorDraft";
 import type { Form } from "@/api";
 import AnchorDraftList from "@/components/AnchorDraftList.vue";
 import AppIcon from "@/components/AppIcon.vue";
@@ -60,9 +60,10 @@ function discard(): void {
   emit("cancel");
 }
 
-/** Take an anchor chosen in the source into a statement's draft. */
-function addAnchor(code: string): void {
-  creating.addAnchor(code);
+/** Take an anchor chosen in the source into a statement's draft - not once the tree closed on it. */
+function addAnchor(code: string): AnchorTaking {
+  if (closed.value) return "refused";
+  return creating.addAnchor(code) ? "taken" : "held";
 }
 
 defineExpose({ addAnchor });

@@ -10,13 +10,14 @@
  * and the view takes the keyboard along for an anchor's page (`focus`). The latest page asked for counts.
  * Why it shows none it says: a page past the end (with the way to the first), the content no longer the
  * reader's (which no retry changes, and no other page), a failed reading (with a retry). While a statement's
- * anchor is chosen (`picking`, Paket 9c2b L3) the blocks of the page shown are toggles; those chosen are taken
- * as one anchor, or the page as one its passage was not found on, told to the view (`anchor`) and said. The
- * choice is this page's for this statement: another page or another statement lets it go.
+ * anchor is chosen (`picking`, Paket 9c2b L3) the blocks of the page shown are toggles, the way to take them
+ * after them; those chosen are taken as one anchor, or the page as one its passage was not found on, handed to
+ * the draft (`takeAnchor`) and how it went said. The choice is this page's for this statement: another page,
+ * statement or document lets it go, and what was said of it.
  */
 import { computed, nextTick, ref, useId, watch } from "vue";
 
-import { anchorCodeText, encodeAnchor } from "@/anchorDraft";
+import { anchorCodeText, encodeAnchor, type AnchorTaking } from "@/anchorDraft";
 import { useAnchorPick } from "@/anchorPick";
 import { ApiError, getDocumentBlocks, type DocumentPage } from "@/api";
 import AnchorPickBar from "@/components/AnchorPickBar.vue";
@@ -37,10 +38,12 @@ const props = withDefaults(
     cited: string[];
     /** The statement whose anchor is chosen here (its row's key); none while none is. */
     picking?: string | null;
+    /** Hand an anchor chosen (its code) to the draft; how it went. */
+    takeAnchor?: (code: string) => AnchorTaking;
   }>(),
-  { picking: null },
+  { picking: null, takeAnchor: (): AnchorTaking => "refused" },
 );
-const emit = defineEmits<{ go: [page: number]; anchor: [code: string] }>();
+const emit = defineEmits<{ go: [page: number] }>();
 
 const headingId = useId();
 const section = ref<HTMLElement | null>(null);
@@ -55,7 +58,13 @@ const failure = ref<Notice | null>(null);
 const status = ref("");
 const citedBlocks = computed(() => new Set(props.cited));
 const printed = computed(() => (shown.value?.page === props.page ? shown.value.printed_page : null));
-const { picked, toggle, take } = useAnchorPick([() => props.documentId, () => props.page, () => props.picking]);
+const resets = [() => props.documentId, () => props.page, () => props.picking];
+const { picked, toggle, take } = useAnchorPick(resets);
+// how the last anchor taken went, in sight beside the way to take one
+const taken = ref<string | null>(null);
+watch(resets, () => {
+  taken.value = null;
+});
 let generation = 0;
 
 async function load({ moved = false } = {}): Promise<void> {
@@ -111,11 +120,12 @@ watch(
   () => props.page,
   () => void load({ moved: true }),
 );
-// an anchor chosen goes to the view, and is said
+// an anchor chosen goes to the draft, and how it went is said
 function give(code: string | null): void {
   if (!code) return;
-  emit("anchor", code);
-  status.value = sayAnew(status.value, t("documents.tree.source.taken", { anchor: anchorCodeText(code) }));
+  const words = t(`documents.tree.source.${props.takeAnchor(code)}`, { anchor: anchorCodeText(code) });
+  taken.value = words;
+  status.value = sayAnew(status.value, words);
 }
 </script>
 
@@ -135,13 +145,7 @@ function give(code: string | null): void {
       <PagePicker :page="page" :pages="pages" @go="(to) => emit('go', to)" />
       <p v-if="cited.length" class="source__note">{{ t("documents.tree.source.citedNote") }}</p>
     </template>
-    <AnchorPickBar
-      v-if="picking && shown"
-      :count="picked.size"
-      :page="page"
-      @take="give(take())"
-      @not-found="give(encodeAnchor({ page }))"
-    />
+    <p v-if="picking && shown" class="source__note">{{ t("documents.tree.source.pickNote") }}</p>
     <!-- quiet: the move is said once the page shows -->
     <LoadingState v-if="pending" quiet />
     <EmptyState
@@ -182,6 +186,14 @@ function give(code: string | null): void {
       :picking="!!picking"
       :picked="picked"
       @toggle="toggle"
+    />
+    <AnchorPickBar
+      v-if="picking && shown"
+      :count="picked.size"
+      :page="page"
+      :said="taken"
+      @take="give(take())"
+      @not-found="give(encodeAnchor({ page }))"
     />
     <!-- always in the page, so the first move is read out -->
     <p class="visually-hidden" role="status">{{ status }}</p>

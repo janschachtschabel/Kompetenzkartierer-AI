@@ -11,7 +11,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, ref, toRef, watch } from "vue";
 
-import { ANCHORS, heldAnchors } from "@/anchorDraft";
+import { ANCHORS, heldAnchors, type AnchorTaking } from "@/anchorDraft";
 import type { Form } from "@/api";
 import AnchorDraftList from "@/components/AnchorDraftList.vue";
 import AppIcon from "@/components/AppIcon.vue";
@@ -64,8 +64,9 @@ const kept = computed(() => {
 watch(dirty, (open) => emit("dirty", open), { immediate: true });
 
 /** Take an anchor chosen in the source into the draft - not once the tree closed on it, kept to copy. */
-function addAnchor(code: string): void {
-  if (!shut.value) editing.addAnchor(code);
+function addAnchor(code: string): AnchorTaking {
+  if (shut.value) return "refused";
+  return editing.addAnchor(code) ? "taken" : "held";
 }
 
 defineExpose({ addAnchor });

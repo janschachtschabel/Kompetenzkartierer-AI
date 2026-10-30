@@ -374,8 +374,8 @@ describe("a statement's anchors in its draft", () => {
   it("takes an anchor in once, and one away; the same anchors in another order are no change", () => {
     const { editing } = placedEditor();
 
-    editing.addAnchor("blocks:p6-b1");
-    editing.addAnchor("blocks:p6-b1");
+    expect(editing.addAnchor("blocks:p6-b1")).toBe(true);
+    expect(editing.addAnchor("blocks:p6-b1")).toBe(false); // held already
     expect(editing.draft.value.anchors).toEqual(["blocks:p5-b2", "page:7", "blocks:p6-b1"]);
     expect(editing.dirty.value).toBe(true);
 
@@ -428,9 +428,9 @@ describe("a statement's anchors in its draft", () => {
     editing.addAnchor("blocks:p6-b1");
 
     expect(await editing.save()).toBe("invalid");
-    expect(editing.errors.value).toEqual({ anchors: "Ein Block, den die Umwandlung nicht hat." });
+    expect(editing.errors.value).toEqual({ anchors: t("documents.tree.problems.unknown_block") });
     expect(await editing.save()).toBe("invalid");
-    expect(editing.errors.value).toEqual({ anchors: "Eine Seite, die die Datei nicht hat." });
+    expect(editing.errors.value).toEqual({ anchors: t("documents.tree.problems.no_page") });
     expect(await editing.save()).toBe("invalid");
     expect(editing.errors.value).toEqual({ anchors: t("refusals.anchor_missing") });
     expect(editing.problem.value).toBeNull();

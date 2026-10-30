@@ -83,7 +83,8 @@ describe("adding a row", () => {
     expect(creating.errors.value).toEqual({ anchors: t("refusals.anchor_missing") });
     expect(sent).not.toHaveBeenCalled();
 
-    creating.addAnchor("blocks:p5-b3,p5-b2");
+    expect(creating.addAnchor("blocks:p5-b3,p5-b2")).toBe(true);
+    expect(creating.addAnchor("blocks:p5-b2,p5-b3")).toBe(false); // held already
     creating.addAnchor("page:7");
     creating.removeAnchor("page:7");
     expect(await creating.save()).toEqual({ outcome: "created", key: "statement:s9" });

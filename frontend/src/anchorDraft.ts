@@ -9,6 +9,9 @@ import { pagesText } from "@/anchorWords";
 import { t } from "@/i18n/de";
 import type { Draft } from "@/rowDraft";
 
+/** How an anchor chosen in the source went: into the draft, there already, or refused - the draft closed. */
+export type AnchorTaking = "taken" | "held" | "refused";
+
 /** The draft's key of a statement's anchors; no form's field has it (backend app/vocab/forms.py). */
 export const ANCHORS = "anchors";
 
