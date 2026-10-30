@@ -925,6 +925,29 @@ Paket 8 ist geteilt: 8a = 8.1–8.5 (X5), 8b = 8.6 (X6 Reparatur, dazu die Oberf
   setzen, Prüfjob in der Oberfläche, das Wort des Prüfjobs in `documentJobs.ts`, Verlassen-Schutz. Die
   Felder aus 9b in `CurriculumDocument` kommen mit 9d, das sie zeigt.
 
+**Nachtrag 9c2a – bestehende Zeilen bearbeiten (30.10.)**
+
+9c2 ist geteilt: 9c2a bearbeitet bestehende Zeilen, 9c2b bringt Fundstellen per Blockauswahl, Anlegen,
+Löschen, Prüfstand und Prüfjob.
+
+- **Backend.** `GET …/tree` prüft den Inhalt des Eintrags wie die Blockroute (403 `file_hidden`;
+  Nutzerentscheidung 30.10.: die Aussagen sind dieser Inhalt). `TreeOut.closed` nennt, warum niemand ändern
+  darf (`frozen` vor `job_open` vor `not_extracted`), damit die Oberfläche es sagen kann.
+- **Formular (9.8).** `RowForm` baut je Feld des Formulars ein `FormFieldInput` (Text, langer Text, ein
+  Listenwert, mehrere); Pflicht steht im Text der Beschriftung; ein Listenwert, den das Formular nicht mehr
+  kennt, bleibt als „unbekannt: …“ wählbar; eine Liste, deren Werte die eines anderen Feldes verfeinern
+  (`broader`), bietet nur die unter dessen Wahl an – das Elternfeld wird aus den Werten abgeleitet, kein
+  fester Name. `rowDraft.ts` vergleicht wie der Server (leerer Text = keiner, Listen als Menge).
+- **Speichern und Konflikt.** `rowSave.ts` sendet nur geänderte Felder mit der gelesenen Revision; bei
+  `stale_revision` übernimmt es, was nur der andere änderte, und legt Konflikte vor (`rowConflict.ts`,
+  `ConflictPanel` – nicht `RowConflict`, weil Testdateien flach liegen und Windows Groß/Klein nicht
+  unterscheidet). `invalid_field` steht am Feld (`documents.tree.problems.*`), `job_open`/`frozen`/
+  `not_extracted`/`no_form` lassen den Entwurf als „Dein Entwurf“ stehen, bis eine andere Zeile gewählt
+  wird. Nach dem Speichern liest die Ansicht den Baum neu; scheitert das, bleibt er stehen (PartialState).
+- **Ansicht.** `RowPanel` zeigt bei offenem Baum Formular und daneben Herkunft, Prüfstand und Fundstellen
+  (RowDetail ohne Felder), sonst die Leseansicht mit dem Grund. `leaveGuard.ts` fragt vor einer anderen
+  Zeile oder Seite (nicht vor einer anderen Seite der Quelle) und lässt den Browser vor dem Schließen fragen.
+
 ### Paket 10: Lexikon aus der Länderrecherche mit Stichprobe (3 PT)
 
 | # | Aufgabe | Dateien | Test zuerst | Nachweis |
