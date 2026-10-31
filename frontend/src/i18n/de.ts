@@ -882,6 +882,11 @@ export const messages = {
           edition: "die Fassung",
         },
       },
+      // its title, issuer and edition and its work (documentMeta.ts, DocumentEdition.vue)
+      edition: {
+        saveFailed: "Die Angaben wurden nicht gespeichert.",
+        workFailed: "Das Werk wurde nicht gesetzt.",
+      },
       // the document's revision: frozen and copied (documentRevision.ts, RevisionNotice.vue)
       revision: {
         copyFailed: "Die Entwurfskopie wurde nicht angelegt.",

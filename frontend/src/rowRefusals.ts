@@ -21,7 +21,8 @@ export type Refusal =
   | { outcome: "invalid"; errors: Record<string, string>; problem: Notice | null }
   | { outcome: "failed"; problem: Notice };
 
-function problemText(problem: unknown): string {
+/** The words of a field's problem by the server's word for it (invalid_field `details.problem`). */
+export function problemText(problem: unknown): string {
   const words: Record<string, string> = messages.documents.tree.problems;
   return typeof problem === "string" && Object.hasOwn(words, problem) ? words[problem] : t("documents.tree.problems.other");
 }
