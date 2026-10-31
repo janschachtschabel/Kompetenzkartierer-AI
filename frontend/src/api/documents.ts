@@ -152,6 +152,60 @@ export function startDocumentCheck(documentId: string): Promise<Job> {
   return apiFetch<Job>(`${documentPath(documentId)}/check`, { method: "POST" });
 }
 
+/** A document's title, issuer and edition to change: one left out stays, null empties it. */
+export interface MetaFields {
+  title?: string | null;
+  issuer?: string | null;
+  edition?: string | null;
+}
+
+/** A work to make for the document: its title, a region of the vocabulary and the short title its IRI takes. */
+export interface NewWork {
+  title: string;
+  region: string;
+  short_title: string;
+}
+
+/**
+ * Changes the document's title, issuer or edition, by its owner or an editor (backend app/api/document_meta.py).
+ * 422 `invalid_field` (`details.field`, `problem`); 409 `frozen`, `job_open`, `not_extracted`, `named` (an IRI
+ * holds the issuer and the edition).
+ */
+export function editDocument(documentId: string, fields: MetaFields): Promise<CurriculumDocument> {
+  return apiFetch<CurriculumDocument>(documentPath(documentId), { method: "PATCH", body: JSON.stringify(fields) });
+}
+
+/**
+ * Sets the document's work, a new one or one there is, by an editor. 403 `not_editor`; 422 `invalid_field`;
+ * 409 `frozen`, `job_open`, `named`; 404 `no_work`.
+ */
+export function setWork(documentId: string, work: NewWork | { work_id: string }): Promise<CurriculumDocument> {
+  return apiFetch<CurriculumDocument>(`${documentPath(documentId)}/work`, {
+    method: "PATCH",
+    body: JSON.stringify(work),
+  });
+}
+
+/**
+ * Freezes the document, by an editor: its rows get their IRIs and change no more. Its violations are taken only
+ * when `acceptViolations` says so. 409 `frozen`, `job_open`, `not_extracted`, `incomplete` (`details.missing`),
+ * `no_iri_base`, `check_owed`, `has_violations` (`details.violations`), `iri_taken`; 403 `not_editor`.
+ */
+export function freezeDocument(documentId: string, acceptViolations: boolean): Promise<CurriculumDocument> {
+  return apiFetch<CurriculumDocument>(`${documentPath(documentId)}/freeze`, {
+    method: "POST",
+    ...(acceptViolations ? { body: JSON.stringify({ accept_violations: true }) } : {}),
+  });
+}
+
+/**
+ * Copies a frozen document as a draft, by an editor: the copy (201). 409 `not_frozen`, `draft_open`
+ * (`details.document_id`), `not_latest`, `vocabulary_changed`; 403 `not_editor`.
+ */
+export function copyDocument(documentId: string): Promise<CurriculumDocument> {
+  return apiFetch<CurriculumDocument>(`${documentPath(documentId)}/draft-copy`, { method: "POST" });
+}
+
 /** The documents the caller may read, of one entry where `sourceId` names it; the newest first. */
 export function listDocuments(sourceId?: string): Promise<CurriculumDocument[]> {
   const query = sourceId ? `?${new URLSearchParams({ source_id: sourceId })}` : "";

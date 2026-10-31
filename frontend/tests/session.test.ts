@@ -10,7 +10,7 @@ vi.mock("@/api", async (importOriginal) => ({
 }));
 
 const api = await import("@/api");
-const { clearSession, ensureSession, hasRole, session, sessionFailure, sessionState, setSession } =
+const { clearSession, ensureSession, hasRole, isEditor, session, sessionFailure, sessionState, setSession } =
   await import("@/session");
 
 const ME: Me = { id: "0190-a", name: "Erste Admin", roles: ["admin"] };
@@ -74,6 +74,17 @@ describe("the session", () => {
 
     expect(hasRole("redaktion")).toBe(true);
     expect(hasRole("admin")).toBe(false);
+  });
+
+  it("tells an editor: the editorial team or an admin, not a user, not a visitor", () => {
+    setSession({ ...ME, roles: ["redaktion"] });
+    expect(isEditor()).toBe(true);
+    setSession({ ...ME, roles: ["admin"] });
+    expect(isEditor()).toBe(true);
+    setSession({ ...ME, roles: ["nutzer"] });
+    expect(isEditor()).toBe(false);
+    clearSession();
+    expect(isEditor()).toBe(false);
   });
 
   it("is empty once cleared, and so has no role", () => {

@@ -26,6 +26,11 @@ export function hasRole(role: Role): boolean {
   return current.value?.roles.includes(role) ?? false;
 }
 
+/** The editorial team or an admin: who may set a work, freeze and copy (backend EDITORS). */
+export function isEditor(): boolean {
+  return hasRole("redaktion") || hasRole("admin");
+}
+
 /** The account the sign-in has already checked: it need not be asked for twice. */
 export function setSession(me: Me): void {
   generation += 1;
