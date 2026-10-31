@@ -888,6 +888,18 @@ export const messages = {
       edition: {
         saveFailed: "Die Angaben wurden nicht gespeichert.",
         workFailed: "Das Werk wurde nicht gesetzt.",
+        // the title, issuer and edition (DocumentMetaForm.vue)
+        metaHeading: "Titel, Herausgeber und Fassung",
+        title: "Titel",
+        titleHint: "Wie der Lehrplan sich selbst nennt.",
+        issuer: "Herausgeber",
+        issuerHint: "Wer den Lehrplan herausgibt, etwa das Ministerium. Daraus entsteht beim Festschreiben die IRI.",
+        edition: "Fassung",
+        editionHint: "Welche Fassung, etwa das Jahr oder die Auflage. Auch sie geht in die IRI ein.",
+        named: "Das Dokument hat seine IRI: Herausgeber und Fassung bleiben, wie sie sind.",
+        save: "Angaben speichern",
+        saved: "Gespeichert.",
+        unchanged: "Nichts geändert.",
       },
       // the document's revision: frozen and copied (documentRevision.ts, RevisionNotice.vue)
       revision: {
