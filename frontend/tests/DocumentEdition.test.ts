@@ -101,6 +101,22 @@ describe("a document's work and edition", () => {
     expect(wrapper.find("form").exists()).toBe(false);
   });
 
+  it("say a work set, and take the keyboard to their heading once the work form goes with it", async () => {
+    const wrapper = await edition(documentOf(), EDITOR);
+    (wrapper.findComponent(WorkForm).get("button[type=submit]").element as HTMLElement).focus();
+
+    wrapper.findComponent(WorkForm).vm.$emit("saved");
+    await flushPromises();
+    expect(wrapper.get(".edition__status").text()).toBe(t("documents.page.edition.workSaved"));
+    expect(wrapper.emitted("changed")).toHaveLength(1);
+    await wrapper.setProps({ document: documentOf({ work: KLP }) });
+    await flushPromises();
+
+    expect(wrapper.findComponent(WorkForm).exists()).toBe(false);
+    expect(globalThis.document.activeElement).toBe(wrapper.get("h2").element);
+    expect(await violations(wrapper.html())).toEqual([]);
+  });
+
   it("have the page read the document again for a change saved below", async () => {
     const wrapper = await edition(documentOf(), EDITOR);
 

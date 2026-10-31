@@ -76,8 +76,7 @@ describe("the form of a document's work", () => {
     await flushPromises();
 
     expect(sent).toHaveBeenCalledWith("d1", { work_id: "w1" });
-    expect(wrapper.get("[role=status]").text()).toBe(t("documents.page.edition.workSaved"));
-    expect(wrapper.emitted("changed")).toHaveLength(1);
+    expect(wrapper.emitted("saved")).toHaveLength(1); // said where the form goes with it (DocumentEdition)
   });
 
   it("asks for a work to choose before it sends", async () => {
@@ -101,7 +100,7 @@ describe("the form of a document's work", () => {
     await flushPromises();
 
     expect(sent).toHaveBeenCalledWith("d1", { title: "Kernlehrplan Physik", region: "DE-NW", short_title: "klp-physik" });
-    expect(wrapper.emitted("changed")).toHaveLength(1);
+    expect(wrapper.emitted("saved")).toHaveLength(1);
   });
 
   it("says a short title the IRI cannot take at its field, sending nothing", async () => {
@@ -185,6 +184,20 @@ describe("the form of a document's work", () => {
 
     expect(wrapper.get("[role=alert]").text()).toContain(refusalText("named"));
     expect(wrapper.emitted("changed")).toHaveLength(1);
+  });
+
+  it("shows only that the works are read until they are: no field to type in goes from under the user", async () => {
+    let read: (documents: ReturnType<typeof documentOf>[]) => void = () => undefined;
+    vi.mocked(api.listDocuments).mockReturnValueOnce(new Promise((resolve) => (read = resolve)));
+    shown = mount(WorkForm, { props: { document: documentOf() }, attachTo: document.body });
+    await flushPromises();
+
+    expect(shown.text()).toContain(t("documents.page.edition.worksLoading"));
+    expect(shown.findAll("input, select, button")).toHaveLength(0);
+    read(OTHERS);
+    await flushPromises();
+
+    expect(control<HTMLSelectElement>(shown, t("documents.page.edition.workChosen")).element.tagName).toBe("SELECT");
   });
 
   it("offers only a new work where none is known, and where the works were not read, saying so", async () => {

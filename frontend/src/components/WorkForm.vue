@@ -3,9 +3,10 @@
  * A document's work, set by an editor while the document has none and no IRI (plan M1 9.10, Paket 9d1 N5;
  * documentMeta.ts): one there is - the works of the documents the caller sees, there being no list of works - or a
  * new one, its title, its land and the short title its IRI takes. What is missing or a short title the IRI cannot
- * take is said at its field before anything is sent, the keyboard taken there. Set, it says so and the page reads the document again
- * (`changed`); the server's problem with a field stands at that field; a document named or frozen meanwhile is said
- * and read again, another refusal said.
+ * take is said at its field before anything is sent, the keyboard taken there. Until the works are read only that is
+ * shown, so no field goes from under the user. Set, the section is told (`saved`): the form goes with the work, the
+ * section says it; the server's problem with a field stands at that field; a document named or frozen meanwhile is
+ * said and read again (`changed`), another refusal said.
  */
 import { nextTick, onMounted, ref, useId } from "vue";
 
@@ -14,13 +15,12 @@ import AppIcon from "@/components/AppIcon.vue";
 import NoticeText from "@/components/NoticeText.vue";
 import { knownWorks, saveWork, shortTitleOk, workWords } from "@/documentMeta";
 import { messages, t } from "@/i18n/de";
-import { sayAnew } from "@/liveRegion";
 import type { Notice } from "@/notice";
 import { refusalText } from "@/refusals";
 import { word } from "@/registerWords";
 
 const props = defineProps<{ document: CurriculumDocument }>();
-const emit = defineEmits<{ changed: [] }>();
+const emit = defineEmits<{ saved: []; changed: [] }>();
 
 type Field = "work_id" | "title" | "region" | "short_title";
 
@@ -33,7 +33,6 @@ const mode = ref<"existing" | "new">("new");
 const chosen = ref("");
 const fresh = ref({ title: "", region: "", short_title: "" });
 const busy = ref(false);
-const status = ref("");
 // a field's problem, said at the field; or one of the whole form, above the button
 const fieldError = ref<{ field: Field; text: string } | null>(null);
 const failure = ref<Notice | null>(null);
@@ -52,7 +51,6 @@ function describedBy(field: Field, hint = false): string | undefined {
 async function faultAt(field: Field, text: string): Promise<void> {
   failure.value = null;
   fieldError.value = { field, text };
-  status.value = "";
   await nextTick();
   document.getElementById(`${id}-${field}`)?.focus();
 }
@@ -79,8 +77,7 @@ async function onSubmit(): Promise<void> {
   const done = await saveWork(props.document.id, work);
   busy.value = false;
   if (done.outcome === "saved") {
-    status.value = sayAnew(status.value, t("documents.page.edition.workSaved"));
-    emit("changed");
+    emit("saved");
   } else if (done.outcome === "invalid") {
     const field = (["title", "region", "short_title"] as const).find((one) => one === done.field);
     if (field) await faultAt(field, done.problem);
@@ -112,6 +109,7 @@ onMounted(async () => {
     <p v-if="loading" class="field__hint">{{ t("documents.page.edition.worksLoading") }}</p>
     <p v-else-if="loadFailed" class="field__hint">{{ t("documents.page.edition.worksFailed") }}</p>
     <p v-else-if="!works.length" class="field__hint">{{ t("documents.page.edition.workNone") }}</p>
+    <template v-if="!loading">
     <fieldset v-if="works.length" class="work-form__choice">
       <legend>{{ t("documents.page.edition.workWhich") }}</legend>
       <label><input v-model="mode" type="radio" value="existing" /> {{ t("documents.page.edition.workExisting") }}</label>
@@ -188,8 +186,7 @@ onMounted(async () => {
     <button type="submit" class="btn secondary" :aria-disabled="busy || undefined">
       {{ t("documents.page.edition.workSave") }}
     </button>
-    <!-- always in the page, so a screen reader hears each change of its text -->
-    <p class="work-form__status" role="status">{{ status }}</p>
+    </template>
   </form>
 </template>
 
@@ -217,8 +214,21 @@ onMounted(async () => {
   gap: var(--space-2);
 }
 
-/* Empty, it takes no room - as a cell of the grid its gap would stand twice - but stays in the page. */
-.work-form__status:empty {
-  position: absolute;
+.work-form__choice label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 24px;
+}
+
+/* The radio beside its name, as .extraction-start__box has it: the rule for every input would stretch it across
+   the label and push the name to the next line. WCAG 2.5.8: 24px at least. */
+.work-form__choice input[type="radio"] {
+  flex: none;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
 }
 </style>
