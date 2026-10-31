@@ -886,6 +886,12 @@ export const messages = {
       },
       // its title, issuer and edition and its work (documentMeta.ts, DocumentEdition.vue)
       edition: {
+        // the section (DocumentEdition.vue)
+        heading: "Werk und Fassung",
+        iri: "IRI",
+        revision: "Revision",
+        none: "nicht angegeben",
+        noIri: "noch keine; sie entsteht beim Festschreiben",
         saveFailed: "Die Angaben wurden nicht gespeichert.",
         workFailed: "Das Werk wurde nicht gesetzt.",
         // the title, issuer and edition (DocumentMetaForm.vue)

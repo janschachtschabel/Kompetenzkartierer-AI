@@ -12,8 +12,9 @@ import {
   type MetaFields,
   type NewWork,
 } from "@/api";
-import { t } from "@/i18n/de";
+import { messages, t } from "@/i18n/de";
 import { failureNotice, type Notice } from "@/notice";
+import { word } from "@/registerWords";
 import { problemText } from "@/rowRefusals";
 
 /** The three fields as the form holds them, a text each. */
@@ -48,6 +49,13 @@ export function metaChanges(document: CurriculumDocument, draft: MetaDraft): Met
 /** As the backend takes a work's short title, the last part of its IRI. */
 export function shortTitleOk(text: string): boolean {
   return text.length <= 200 && SHORT_TITLE.test(text);
+}
+
+/** A work in words: its title, then its land and short title where it has them. */
+export function workWords(work: DocumentWork): string {
+  const land = work.region ? word(messages.sources.countries, work.region) : "";
+  const facts = [land, work.short_title].filter(Boolean).join(", ");
+  return facts ? `${work.title} (${facts})` : work.title;
 }
 
 /** The works of `documents`, each once, by title. */

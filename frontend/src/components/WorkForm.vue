@@ -12,7 +12,7 @@ import { computed, onMounted, ref, useId } from "vue";
 import { listDocuments, type CurriculumDocument, type DocumentWork } from "@/api";
 import AppIcon from "@/components/AppIcon.vue";
 import NoticeText from "@/components/NoticeText.vue";
-import { knownWorks, saveWork, shortTitleOk } from "@/documentMeta";
+import { knownWorks, saveWork, shortTitleOk, workWords } from "@/documentMeta";
 import { messages, t } from "@/i18n/de";
 import { sayAnew } from "@/liveRegion";
 import type { Notice } from "@/notice";
@@ -42,13 +42,8 @@ const problem = computed<Notice | null>(() =>
   fieldError.value ? { text: fieldError.value.text, failed: true } : failure.value,
 );
 
-function regionWord(code: string | null): string {
-  return code ? word(messages.sources.countries, code) : "";
-}
-
-function workWords(work: DocumentWork): string {
-  const facts = [regionWord(work.region), work.short_title].filter(Boolean).join(", ");
-  return facts ? `${work.title} (${facts})` : work.title;
+function regionWord(code: string): string {
+  return word(messages.sources.countries, code);
 }
 
 /** The field's hint where it has one, and the error where it is this field's. */

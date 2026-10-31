@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as api from "@/api";
 import { ApiError, type DocumentWork } from "@/api";
-import { knownWorks, metaChanges, saveMeta, saveWork, shortTitleOk } from "@/documentMeta";
+import { knownWorks, metaChanges, saveMeta, saveWork, shortTitleOk, workWords } from "@/documentMeta";
 import { t } from "@/i18n/de";
 
 import { documentOf } from "./documentFixtures";
@@ -32,6 +32,13 @@ describe("a work's short title", () => {
     expect(["", "KLP", "klp physik", "klp--physik", "-klp", "klp-", "kläp", "a".repeat(201)].map(shortTitleOk)).toEqual(
       [false, false, false, false, false, false, false, false],
     );
+  });
+});
+
+describe("a work in words", () => {
+  it("is its title, then its land and short title where it has them", () => {
+    expect(workWords({ ...work("w1", "Kernlehrplan"), short_title: "klp" })).toBe("Kernlehrplan (Nordrhein-Westfalen, klp)");
+    expect(workWords({ ...work("w1", "Kernlehrplan"), region: null })).toBe("Kernlehrplan");
   });
 });
 
