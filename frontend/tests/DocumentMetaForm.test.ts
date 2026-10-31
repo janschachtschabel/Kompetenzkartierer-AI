@@ -146,6 +146,27 @@ describe("the form of a document's title, issuer and edition", () => {
     expect(wrapper.text()).toContain(t("documents.page.edition.named"));
   });
 
+  it("takes values read meanwhile into the fields left as they were, and holds nothing stale after a save", async () => {
+    const bare = documentOf({ title: "Alt", issuer: null, edition: null });
+    const sent = vi.spyOn(api, "editDocument").mockResolvedValue({ ...bare, title: "Neu", issuer: "MSB", edition: "2019" });
+    const wrapper = form(bare);
+
+    await title(wrapper).setValue("Neu");
+    await wrapper.setProps({ document: { ...bare, issuer: "MSB", edition: "2019" } }); // the extraction filled them
+    expect([title(wrapper).element.value, issuer(wrapper).element.value, edition(wrapper).element.value]).toEqual([
+      "Neu",
+      "MSB",
+      "2019",
+    ]);
+    await save(wrapper);
+    await flushPromises();
+    await save(wrapper);
+
+    expect(sent).toHaveBeenCalledTimes(1);
+    expect(sent).toHaveBeenCalledWith("d1", { title: "Neu" });
+    expect(wrapper.get("[role=status]").text()).toBe(t("documents.page.edition.unchanged"));
+  });
+
   it("keeps an entry not yet saved where the document is read again, and takes the saved values after a save", async () => {
     vi.spyOn(api, "editDocument").mockResolvedValue({ ...DOCUMENT, issuer: "Ministerium" });
     const wrapper = form();

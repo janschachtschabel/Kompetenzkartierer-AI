@@ -36,12 +36,16 @@ const CLOSING: ReadonlySet<string> = new Set(["frozen", "named"]);
 const REFUSED: ReadonlySet<string> = new Set(["job_open", "not_extracted", "not_editor", "no_work"]);
 const SHORT_TITLE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-/** The fields the draft changes, trimmed; one emptied as null. */
+/**
+ * The fields the draft changes, both sides trimmed - the server stores a text as sent, so a stored value may end on
+ * a space -; one emptied as null. With an IRI the issuer and the edition stand as they are: never a change.
+ */
 export function metaChanges(document: CurriculumDocument, draft: MetaDraft): MetaFields {
   const changes: MetaFields = {};
-  for (const key of ["title", "issuer", "edition"] as const) {
+  const keys = document.iri === null ? (["title", "issuer", "edition"] as const) : (["title"] as const);
+  for (const key of keys) {
     const value = draft[key].trim() || null;
-    if (value !== (document[key] ?? null)) changes[key] = value;
+    if (value !== (document[key]?.trim() || null)) changes[key] = value;
   }
   return changes;
 }

@@ -26,6 +26,20 @@ describe("a document's title, issuer and edition to save", () => {
   });
 });
 
+describe("a document's stored values against the draft", () => {
+  it("are trimmed alike: a value stored with a space at its end is no change", () => {
+    const document = documentOf({ title: "Lehrplan Physik", issuer: "MSB ", edition: " 2019" });
+
+    expect(metaChanges(document, { title: "Lehrplan Physik", issuer: "MSB", edition: "2019" })).toEqual({});
+  });
+
+  it("leave the issuer and the edition out once the document has its IRI: they stand as they are", () => {
+    const named = documentOf({ iri: "https://example.org/kk/doc/x", issuer: "MSB", edition: "2019" });
+
+    expect(metaChanges(named, { title: "Neu", issuer: "Anders", edition: "" })).toEqual({ title: "Neu" });
+  });
+});
+
 describe("a work's short title", () => {
   it("is lower-case letters and digits in words joined by single hyphens, 200 at most", () => {
     expect(["klp", "klp-physik-2019", "a".repeat(200)].map(shortTitleOk)).toEqual([true, true, true]);

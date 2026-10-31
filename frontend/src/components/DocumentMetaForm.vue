@@ -4,8 +4,9 @@
  * only what changed is sent, an emptied field as none. Once the document has its IRI the issuer and the edition it
  * is made of stand as they are, the title still to change. Saved, it says so and the page reads the document again
  * (`changed`); a field's problem stands at the field and above the button, the entry kept; a document closed to the
- * change meanwhile is said and read again, another refusal said. An entry not yet saved stays where the document is
- * read again for another reason; one saved takes the values read.
+ * change meanwhile is said and read again, another refusal said. Read again, each field the user left as it was takes
+ * the value read - the extraction may have filled it meanwhile -, an entry not yet saved stays; saved, the fields sent
+ * take the values the server stored.
  */
 import { computed, ref, useId, watch } from "vue";
 
@@ -22,6 +23,7 @@ const props = defineProps<{ document: CurriculumDocument }>();
 const emit = defineEmits<{ changed: [] }>();
 
 type Field = keyof MetaDraft;
+const FIELDS: readonly Field[] = ["title", "issuer", "edition"];
 
 const id = useId();
 const draftOf = (document: CurriculumDocument): MetaDraft => ({
@@ -38,15 +40,20 @@ const failure = ref<Notice | null>(null);
 const failedField = ref<Field | null>(null);
 
 const named = computed(() => props.document.iri !== null);
-const dirty = computed(() => Object.keys(metaChanges(base.value, draft.value)).length > 0);
+
+// The document read anew: a field left as it was, or one just saved, takes the value read; an entry stays
+function rebase(now: CurriculumDocument, saved: readonly string[] = []): void {
+  const was = draftOf(base.value);
+  const next = draftOf(now);
+  for (const key of FIELDS) {
+    if (saved.includes(key) || draft.value[key].trim() === was[key].trim()) draft.value[key] = next[key];
+  }
+  base.value = now;
+}
 
 watch(
   () => props.document,
-  (now) => {
-    if (dirty.value) return;
-    base.value = now;
-    draft.value = draftOf(now);
-  },
+  (now) => rebase(now),
 );
 
 /** The field's hint, and the error where it is this field's. */
@@ -74,11 +81,11 @@ async function onSubmit(): Promise<void> {
   const done = await saveMeta(props.document.id, changes);
   busy.value = false;
   if (done.outcome === "saved") {
-    base.value = done.document;
+    rebase(done.document, Object.keys(changes));
     status.value = sayAnew(status.value, t("documents.page.edition.saved"));
     emit("changed");
   } else if (done.outcome === "invalid") {
-    const field = (["title", "issuer", "edition"] as const).find((one) => one === done.field) ?? null;
+    const field = FIELDS.find((one) => one === done.field) ?? null;
     refuse(done.problem, field);
   } else if (done.outcome === "failed") {
     failure.value = done.problem;
