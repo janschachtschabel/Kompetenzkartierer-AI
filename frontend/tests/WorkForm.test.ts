@@ -28,6 +28,16 @@ const control = <T extends HTMLElement = HTMLInputElement>(wrapper: VueWrapper, 
 };
 const save = (wrapper: VueWrapper) => wrapper.get("form").trigger("submit");
 
+// a field's error, inside its field and named by it, the keyboard on the field
+function errorAt(wrapper: VueWrapper, input: { attributes: (name: string) => string | undefined; element: Element }) {
+  const error = wrapper.get(`#${input.attributes("id")}-error`);
+  expect(input.attributes("aria-invalid")).toBe("true");
+  expect(input.attributes("aria-describedby")).toContain(error.attributes("id"));
+  expect(globalThis.document.activeElement).toBe(input.element);
+  expect(wrapper.find("[role=alert]").exists()).toBe(false);
+  return error.text();
+}
+
 async function fillNew(wrapper: VueWrapper, shortTitle = "klp-physik"): Promise<void> {
   await control(wrapper, t("documents.page.edition.workNew")).setValue(true);
   await control(wrapper, t("documents.page.edition.workTitle")).setValue("Kernlehrplan Physik");
@@ -77,8 +87,9 @@ describe("the form of a document's work", () => {
     await save(wrapper);
 
     expect(sent).not.toHaveBeenCalled();
-    expect(wrapper.get("[role=alert]").text()).toContain(t("documents.page.edition.workChoose"));
-    expect(control(wrapper, t("documents.page.edition.workChosen")).attributes("aria-invalid")).toBe("true");
+    expect(errorAt(wrapper, control(wrapper, t("documents.page.edition.workChosen")))).toContain(
+      t("documents.page.edition.workChoose"),
+    );
   });
 
   it("makes a new work of its title, its land and its short title", async () => {
@@ -102,9 +113,8 @@ describe("the form of a document's work", () => {
 
     const short = control(wrapper, t("documents.page.edition.workShortTitle"));
     expect(sent).not.toHaveBeenCalled();
-    expect(short.attributes("aria-invalid")).toBe("true");
-    expect(short.attributes("aria-describedby")).toContain(wrapper.get("[role=alert]").attributes("id"));
-    expect(wrapper.get("[role=alert]").text()).toContain(t("documents.page.edition.workShortTitleBad"));
+    expect(errorAt(wrapper, short)).toContain(t("documents.page.edition.workShortTitleBad"));
+    expect(short.attributes("aria-describedby")).toContain(`${short.attributes("id")}-hint`);
     expect(await violations(wrapper.html())).toEqual([]);
   });
 
@@ -117,7 +127,9 @@ describe("the form of a document's work", () => {
     await save(wrapper);
 
     expect(sent).not.toHaveBeenCalled();
-    expect(control(wrapper, t("documents.page.edition.workTitle")).attributes("aria-invalid")).toBe("true");
+    expect(errorAt(wrapper, control(wrapper, t("documents.page.edition.workTitle")))).toContain(
+      t("documents.tree.problems.required"),
+    );
   });
 
   it("asks for the new work's land before it sends", async () => {
@@ -129,8 +141,9 @@ describe("the form of a document's work", () => {
     await save(wrapper);
 
     expect(sent).not.toHaveBeenCalled();
-    expect(control(wrapper, t("documents.page.edition.workRegion")).attributes("aria-invalid")).toBe("true");
-    expect(wrapper.get("[role=alert]").text()).toContain(t("documents.page.edition.workRegionChoose"));
+    expect(errorAt(wrapper, control(wrapper, t("documents.page.edition.workRegion")))).toContain(
+      t("documents.page.edition.workRegionChoose"),
+    );
   });
 
   it("says the server's problem with a field at the field", async () => {
@@ -143,8 +156,23 @@ describe("the form of a document's work", () => {
     await save(wrapper);
     await flushPromises();
 
-    expect(control(wrapper, t("documents.page.edition.workRegion")).attributes("aria-invalid")).toBe("true");
+    expect(errorAt(wrapper, control(wrapper, t("documents.page.edition.workRegion")))).toContain(
+      t("documents.tree.problems.not_offered"),
+    );
+  });
+
+  it("says a problem of a field the form does not hold above the button", async () => {
+    vi.spyOn(api, "setWork").mockRejectedValue(
+      new ApiError("server", 422, "invalid_field", "Bad.", { field: "colour", problem: "not_offered" }),
+    );
+    const wrapper = await form();
+
+    await fillNew(wrapper);
+    await save(wrapper);
+    await flushPromises();
+
     expect(wrapper.get("[role=alert]").text()).toContain(t("documents.tree.problems.not_offered"));
+    expect(wrapper.find("[aria-invalid]").exists()).toBe(false);
   });
 
   it("says a document named meanwhile and has it read again", async () => {

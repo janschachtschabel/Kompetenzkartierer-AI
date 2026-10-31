@@ -3,12 +3,12 @@
  * A document's title, issuer and edition (plan M1 9.10, Paket 9d1 N5; documentMeta.ts), by its owner or an editor:
  * only what changed is sent, an emptied field as none. Once the document has its IRI the issuer and the edition it
  * is made of stand as they are, the title still to change. Saved, it says so and the page reads the document again
- * (`changed`); a field's problem stands at the field and above the button, the entry kept; a document closed to the
- * change meanwhile is said and read again, another refusal said. Read again, each field the user left as it was takes
- * the value read - the extraction may have filled it meanwhile -, an entry not yet saved stays; saved, the fields sent
- * take the values the server stored.
+ * (`changed`); a field's problem stands at the field, the keyboard taken there and the entry kept; a document closed
+ * to the change meanwhile is said and read again, another refusal said. Read again, each field the user left as it
+ * was takes the value read - the extraction may have filled it meanwhile -, an entry not yet saved stays; saved, the
+ * fields sent take the values the server stored.
  */
-import { computed, ref, useId, watch } from "vue";
+import { computed, nextTick, ref, useId, watch } from "vue";
 
 import type { CurriculumDocument } from "@/api";
 import AppIcon from "@/components/AppIcon.vue";
@@ -36,10 +36,38 @@ const base = ref(props.document);
 const draft = ref(draftOf(props.document));
 const busy = ref(false);
 const status = ref("");
+// a field's problem, said at the field; or one of the whole form, above the button
+const fieldError = ref<{ field: Field; text: string } | null>(null);
 const failure = ref<Notice | null>(null);
-const failedField = ref<Field | null>(null);
 
 const named = computed(() => props.document.iri !== null);
+// each field as the form shows it; with an IRI the issuer and the edition only to read
+const inputs = computed(() => [
+  {
+    key: "title" as const,
+    label: t("documents.page.edition.title"),
+    hint: t("documents.page.edition.titleHint"),
+    max: 1000,
+    autocomplete: "off",
+    locked: false,
+  },
+  {
+    key: "issuer" as const,
+    label: t("documents.page.edition.issuer"),
+    hint: named.value ? t("documents.page.edition.named") : t("documents.page.edition.issuerHint"),
+    max: 500,
+    autocomplete: "organization",
+    locked: named.value,
+  },
+  {
+    key: "edition" as const,
+    label: t("documents.page.edition.edition"),
+    hint: named.value ? t("documents.page.edition.named") : t("documents.page.edition.editionHint"),
+    max: 200,
+    autocomplete: "off",
+    locked: named.value,
+  },
+]);
 
 // The document read anew: a field left as it was, or one just saved, takes the value read; an entry stays
 function rebase(now: CurriculumDocument, saved: readonly string[] = []): void {
@@ -56,27 +84,33 @@ watch(
   (now) => rebase(now),
 );
 
-/** The field's hint, and the error where it is this field's. */
+/** The field's hint, and its error where it has one. */
 function describedBy(field: Field): string {
   const hint = `${id}-${field}-hint`;
-  return failedField.value === field ? `${hint} ${id}-error` : hint;
+  return fieldError.value?.field === field ? `${hint} ${id}-${field}-error` : hint;
 }
 
-function refuse(text: string, field: Field | null = null): void {
+// a field's problem at the field, the keyboard taken there: it reads the problem with the field's name
+async function faultAt(field: Field, text: string): Promise<void> {
+  fieldError.value = { field, text };
+  await nextTick();
+  document.getElementById(`${id}-${field}`)?.focus();
+}
+
+function refuse(text: string): void {
   failure.value = { text: sayAnew(failure.value?.text ?? "", text), failed: true };
-  failedField.value = field;
-  status.value = "";
 }
 
 async function onSubmit(): Promise<void> {
   if (busy.value) return; // the button stays focusable while busy, so it can be pressed again
   const changes = metaChanges(base.value, draft.value);
   failure.value = null;
-  failedField.value = null;
+  fieldError.value = null;
   if (!Object.keys(changes).length) {
     status.value = sayAnew(status.value, t("documents.page.edition.unchanged"));
     return;
   }
+  status.value = "";
   busy.value = true;
   const done = await saveMeta(props.document.id, changes);
   busy.value = false;
@@ -85,8 +119,9 @@ async function onSubmit(): Promise<void> {
     status.value = sayAnew(status.value, t("documents.page.edition.saved"));
     emit("changed");
   } else if (done.outcome === "invalid") {
-    const field = FIELDS.find((one) => one === done.field) ?? null;
-    refuse(done.problem, field);
+    const field = FIELDS.find((one) => one === done.field);
+    if (field) await faultAt(field, done.problem);
+    else refuse(done.problem);
   } else if (done.outcome === "failed") {
     failure.value = done.problem;
   } else {
@@ -99,52 +134,24 @@ async function onSubmit(): Promise<void> {
 <template>
   <form class="meta-form" novalidate @submit.prevent="onSubmit">
     <h3>{{ t("documents.page.edition.metaHeading") }}</h3>
-    <div class="field">
-      <label :for="`${id}-title`">{{ t("documents.page.edition.title") }}</label>
+    <div v-for="input in inputs" :key="input.key" class="field">
+      <label :for="`${id}-${input.key}`">{{ input.label }}</label>
       <input
-        :id="`${id}-title`"
-        v-model="draft.title"
+        :id="`${id}-${input.key}`"
+        v-model="draft[input.key]"
         type="text"
-        maxlength="1000"
-        autocomplete="off"
-        :aria-invalid="failedField === 'title' || undefined"
-        :aria-describedby="describedBy('title')"
+        :maxlength="input.max"
+        :autocomplete="input.autocomplete"
+        :readonly="input.locked"
+        :aria-invalid="fieldError?.field === input.key || undefined"
+        :aria-describedby="describedBy(input.key)"
       />
-      <p :id="`${id}-title-hint`" class="field__hint">{{ t("documents.page.edition.titleHint") }}</p>
-    </div>
-    <div class="field">
-      <label :for="`${id}-issuer`">{{ t("documents.page.edition.issuer") }}</label>
-      <input
-        :id="`${id}-issuer`"
-        v-model="draft.issuer"
-        type="text"
-        maxlength="500"
-        autocomplete="organization"
-        :readonly="named"
-        :aria-invalid="failedField === 'issuer' || undefined"
-        :aria-describedby="describedBy('issuer')"
-      />
-      <p :id="`${id}-issuer-hint`" class="field__hint">
-        {{ named ? t("documents.page.edition.named") : t("documents.page.edition.issuerHint") }}
+      <p v-if="fieldError?.field === input.key" :id="`${id}-${input.key}-error`" class="field__error">
+        <AppIcon name="warning" /> {{ fieldError.text }}
       </p>
+      <p :id="`${id}-${input.key}-hint`" class="field__hint">{{ input.hint }}</p>
     </div>
-    <div class="field">
-      <label :for="`${id}-edition`">{{ t("documents.page.edition.edition") }}</label>
-      <input
-        :id="`${id}-edition`"
-        v-model="draft.edition"
-        type="text"
-        maxlength="200"
-        autocomplete="off"
-        :readonly="named"
-        :aria-invalid="failedField === 'edition' || undefined"
-        :aria-describedby="describedBy('edition')"
-      />
-      <p :id="`${id}-edition-hint`" class="field__hint">
-        {{ named ? t("documents.page.edition.named") : t("documents.page.edition.editionHint") }}
-      </p>
-    </div>
-    <p v-if="failure" :id="`${id}-error`" class="field__error meta-form__error" role="alert">
+    <p v-if="failure" class="field__error meta-form__error" role="alert">
       <AppIcon name="warning" /> <NoticeText :notice="failure" />
     </p>
     <!-- aria-disabled, not disabled: a disabled button drops the focus it holds -->

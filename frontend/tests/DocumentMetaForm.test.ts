@@ -35,6 +35,16 @@ const title = (wrapper: VueWrapper) => field(wrapper, t("documents.page.edition.
 const save = (wrapper: VueWrapper) => wrapper.get("form").trigger("submit");
 const status = (wrapper: VueWrapper) => wrapper.get("[role=status]").text();
 
+// a field's error, inside its field and named by it, the keyboard on the field
+function errorAt(wrapper: VueWrapper, input: { attributes: (name: string) => string | undefined; element: Element }) {
+  const error = wrapper.get(`#${input.attributes("id")}-error`);
+  expect(input.attributes("aria-invalid")).toBe("true");
+  expect(input.attributes("aria-describedby")).toContain(error.attributes("id"));
+  expect(globalThis.document.activeElement).toBe(input.element);
+  expect(wrapper.find("[role=alert]").exists()).toBe(false);
+  return error.text();
+}
+
 beforeEach(() => {
   vi.restoreAllMocks();
 });
@@ -82,7 +92,7 @@ describe("the form of a document's title, issuer and edition", () => {
     expect(status(wrapper)).toBe(t("documents.page.edition.unchanged"));
   });
 
-  it("says a field's problem at the field and above the button", async () => {
+  it("says a field's problem at the field, the keyboard taken there", async () => {
     vi.spyOn(api, "editDocument").mockRejectedValue(
       new ApiError("server", 422, "invalid_field", "Bad.", { field: "issuer", problem: "too_long" }),
     );
@@ -92,13 +102,24 @@ describe("the form of a document's title, issuer and edition", () => {
     await save(wrapper);
     await flushPromises();
 
-    const alert = wrapper.get("[role=alert]");
-    expect(alert.text()).toContain(t("documents.tree.problems.too_long"));
-    expect(issuer(wrapper).attributes("aria-invalid")).toBe("true");
-    expect(issuer(wrapper).attributes("aria-describedby")).toContain(alert.attributes("id"));
+    expect(errorAt(wrapper, issuer(wrapper))).toContain(t("documents.tree.problems.too_long"));
     expect(title(wrapper).attributes("aria-invalid")).toBeUndefined();
     expect(issuer(wrapper).element.value).toBe("Ministerium"); // the entry kept
     expect(await violations(wrapper.html())).toEqual([]);
+  });
+
+  it("says a problem of a field the form does not hold above the button", async () => {
+    vi.spyOn(api, "editDocument").mockRejectedValue(
+      new ApiError("server", 422, "invalid_field", "Bad.", { field: "sector", problem: "not_offered" }),
+    );
+    const wrapper = form();
+
+    await issuer(wrapper).setValue("Ministerium");
+    await save(wrapper);
+    await flushPromises();
+
+    expect(wrapper.get("[role=alert]").text()).toContain(t("documents.tree.problems.not_offered"));
+    expect(wrapper.find("[aria-invalid]").exists()).toBe(false);
   });
 
   it("says a document closed to the change meanwhile and has it read again", async () => {
