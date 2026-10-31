@@ -870,6 +870,22 @@ export const messages = {
       resume: "Extraktion fortsetzen",
       resumeFailed: "Die Extraktion wurde nicht gestartet.",
       notOwn: "Die Extraktion startet nur, wer das Dokument angelegt hat.",
+      // the document frozen (documentRevision.ts, DocumentFreeze.vue)
+      freeze: {
+        failed: "Das Dokument wurde nicht festgeschrieben.",
+        // what its IRI still lacks, item by item (backend details.missing)
+        missing: {
+          work: "das Werk",
+          region: "das Land des Werks",
+          short_title: "der Kurztitel des Werks",
+          issuer: "der Herausgeber",
+          edition: "die Fassung",
+        },
+      },
+      // the document's revision: frozen and copied (documentRevision.ts, RevisionNotice.vue)
+      revision: {
+        copyFailed: "Die Entwurfskopie wurde nicht angelegt.",
+      },
       runs: "Läufe der Stufen",
       runsTable: "Tabelle der Läufe",
       noRuns: "Noch keine Läufe.",
