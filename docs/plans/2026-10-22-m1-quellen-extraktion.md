@@ -1048,6 +1048,17 @@ Das Backend bleibt, wie 9b es brachte.
   Entwurfskopie nennt ihre Vorlage. Extraktion und Reparatur bietet die Seite dort nicht mehr an; ein „Fortsetzen“,
   das eine Prüfung antrifft, sagt sie als Prüfung (Offen 9a (8)).
 - **Rollen.** `isEditor()` (Redaktion oder Admin) entscheidet, was angeboten wird; der Server bleibt der Wächter.
+- **Nach dem Review** (A 0/0/2/2, B 0/3/7/4). Das Formular der Angaben zieht feldweise nach: ein Feld, das der
+  Nutzer ließ, nimmt den neu gelesenen Wert, gespeicherte Felder den gespeicherten – sonst hielt es nach einem
+  Neulesen leere Felder und löschte beim nächsten Speichern, was die Extraktion gefüllt hatte; gespeicherte Werte
+  werden wie der Entwurf getrimmt, und mit IRI sind Herausgeber und Fassung nie eine Änderung. Ein Feldfehler steht
+  am Feld, die Tastatur geht dorthin. Das gesetzte Werk sagt der Abschnitt, die Tastatur geht zu seiner
+  Überschrift, wenn das Formular mit dem Werk geht; das Formular zeigt bis zum Laden der Werke nur, dass sie
+  geladen werden. Ein neu festgeschriebenes Dokument – durch das Festschreiben oder ein Neulesen, das es so findet –
+  nimmt die Tastatur zum Hinweis (eine benannte Region, mit der IRI), wo sie frei ist, sonst sagt die Seite es.
+  `simplify`: Das Werk wird nur angeboten, solange es keines gibt (Wechsel über `PATCH …/work`); Festschreiben
+  nimmt das Gespeicherte, ein offener Eintrag im Formular geht (kein Verlassen-Schutz). Offen und älter: Scheitert
+  ein späteres Lesen der Dokumentseite, ersetzt sie sich durch den Fehlerzustand und nimmt offene Einträge mit.
 
 ### Paket 10: Lexikon aus der Länderrecherche mit Stichprobe (3 PT)
 
