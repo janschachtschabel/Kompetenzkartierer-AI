@@ -874,6 +874,28 @@ export const messages = {
       notOwn: "Die Extraktion startet nur, wer das Dokument angelegt hat.",
       // the document frozen (documentRevision.ts, DocumentFreeze.vue)
       freeze: {
+        // the section and its questions (DocumentFreeze.vue, FreezeDialog.vue)
+        heading: "Festschreiben",
+        intro:
+          "Festgeschrieben bekommen Knoten und Aussagen ihre IRIs, und das Dokument ändert sich nicht mehr. " +
+          "Vorher brauchen Werk, Herausgeber und Fassung einen Wert, und die Prüfung muss den letzten Stand " +
+          "kennen.",
+        button: "Festschreiben",
+        title: "Dokument festschreiben?",
+        message: "„{title}“, Revision {revision}, wird festgeschrieben. Das lässt sich nicht zurücknehmen.",
+        follows: {
+          iris: "Knoten und Aussagen bekommen ihre IRIs.",
+          fixed: "Baum, Angaben und Werk lassen sich danach nicht mehr ändern.",
+          noJobs: "Es wird nichts mehr extrahiert, geprüft oder repariert.",
+          copy: "Weiter geht es in einer Entwurfskopie („Als Entwurf kopieren“).",
+        },
+        violationsTitle: "Trotz Verstößen festschreiben?",
+        violationsMessage:
+          "Die Befunde nennen {count} {count|Verstoß|Verstöße}. Festschreiben nimmt {count|ihn|sie} an; " +
+          "{count|er bleibt|sie bleiben} am Dokument stehen.",
+        violationsConfirm: "Trotzdem festschreiben",
+        incomplete: "Zum Festschreiben fehlt noch: {missing}.",
+        toTree: "Zum Baum: dort „Erneut prüfen“",
         failed: "Das Dokument wurde nicht festgeschrieben.",
         // what its IRI still lacks, item by item (backend details.missing)
         missing: {
