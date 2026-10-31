@@ -284,14 +284,15 @@ ungültig.
   seiner Funktion herausnahm (`vocabulary_changed`, `details.check`: die Prüfung, an der sie scheitert).
   Audit `document.copy`.
   In der Oberfläche nennt die Dokumentseite unter „Werk und Fassung“ Herausgeber, Fassung, Werk, IRI und
-  Revision; bis zum Festschreiben ändern Eigentümer und Redaktion dort Titel, Herausgeber und Fassung (mit
-  IRI nur noch den Titel), und die Redaktion setzt das Werk, solange es keines hat – ein bekanntes aus den
-  Dokumenten, die sie sieht, oder ein neues mit Titel, Land und Kurztitel; ein Wechsel geht nur über
-  `PATCH …/work`. Festgeschrieben wird, was gespeichert ist; ein ungespeicherter Eintrag geht verloren. „Festschreiben“ (Redaktion) fragt vorher, mit den Folgen;
-  nennen die Befunde Verstöße, fragt es noch einmal mit ihrer Zahl. Was der IRI fehlt, nennt es einzeln, eine
-  ausstehende Prüfung mit dem Weg zum Baum. Festgeschrieben steht oben, wann und als welche Revision, dazu für
-  die Redaktion „Als Entwurf kopieren“, das die Seite der Kopie öffnet; eine Entwurfskopie nennt ihre
-  Vorlage. Extraktion und Reparatur bietet die Seite dort nicht mehr an.
+  Revision; bis zum Festschreiben ändern Eigentümer und Redaktion dort Titel, Herausgeber und Fassung (mit IRI
+  nur noch den Titel), und die Redaktion setzt das Werk, solange es keines hat – ein bekanntes aus den
+  Dokumenten, die sie sieht, oder ein neues mit Titel, Land und Kurztitel; ein Wechsel geht nur über `PATCH
+  …/work`. Festgeschrieben wird, was gespeichert ist; ein ungespeicherter Eintrag geht verloren.
+  „Festschreiben“ (Redaktion) fragt vorher, mit den Folgen; nennen die Befunde Verstöße, fragt es noch einmal
+  mit ihrer Zahl. Was der IRI fehlt, nennt es einzeln, eine ausstehende Prüfung mit dem Weg zum Baum.
+  Festgeschrieben steht oben, wann und als welche Revision, dazu für die Redaktion „Als Entwurf kopieren“, das
+  die Seite der Kopie öffnet; eine Entwurfskopie nennt ihre Vorlage. Extraktion und Reparatur bietet die Seite
+  dort nicht mehr an.
 - Abbrechen: `POST /api/v1/jobs/{id}/cancel` (Eigentümer des Jobs oder Admin, in der Oberfläche
   der Knopf „Abbrechen“ an jedem Auftrag). Ein wartender Job endet sofort, ein laufender beim
   nächsten Herzschlag seines Workers (alle `JOB_LEASE_S`/3); hält der Handler dann nicht an,

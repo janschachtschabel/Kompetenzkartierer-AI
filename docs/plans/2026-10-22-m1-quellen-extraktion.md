@@ -1059,6 +1059,12 @@ Das Backend bleibt, wie 9b es brachte.
   `simplify`: Das Werk wird nur angeboten, solange es keines gibt (Wechsel über `PATCH …/work`); Festschreiben
   nimmt das Gespeicherte, ein offener Eintrag im Formular geht (kein Verlassen-Schutz). Offen und älter: Scheitert
   ein späteres Lesen der Dokumentseite, ersetzt sie sich durch den Fehlerzustand und nimmt offene Einträge mit.
+- **Nach der Nachprüfung** (0/0/3/4). Ein Feld, das während des Speicherns weiter getippt wurde, behält den Text;
+  einen Feldfehler holt die Tastatur nur vom Knopf oder aus dem Nichts zum Feld, sonst (auch Enter im Feld) sagt
+  eine Statusregion „Feld: Problem“; die Überschrift von „Werk und Fassung“ nimmt die Tastatur nur, wenn sie im
+  Werk-Formular war; ein gesetztes Werk lässt das Formular beschäftigt, bis es geht – ein zweiter Klick legte ein
+  zweites Werk an. Größen über N12: WorkForm (~240 Zeilen, ein Viertel Stil) und DocumentView (~235, Verdrahtung)
+  bleiben so, beide mit einer Verantwortung.
 
 ### Paket 10: Lexikon aus der Länderrecherche mit Stichprobe (3 PT)
 
