@@ -68,7 +68,7 @@ function job(): Job {
   };
 }
 
-function open(props: { own?: boolean; busy?: boolean; refresh?: number } = {}): VueWrapper {
+function open(props: { own?: boolean; busy?: boolean; refresh?: number; closed?: boolean } = {}): VueWrapper {
   shown = mount(DocumentFindings, {
     props: { documentId: "d1", own: true, busy: false, refresh: 0, ...props },
     attachTo: document.body,
@@ -192,6 +192,15 @@ describe("a document's findings", () => {
 });
 
 describe("a document's repair offered with its findings", () => {
+  it("is offered no more once the document is frozen", async () => {
+    vi.spyOn(api, "getFindings").mockResolvedValue(page({ repairable: ["E1"] }));
+
+    const wrapper = open({ closed: true });
+    await flushPromises();
+
+    expect(wrapper.find("[data-test=repair-offer]").exists()).toBe(false);
+  });
+
   it("is offered to its owner for the work packages the findings name, and started", async () => {
     vi.spyOn(api, "getFindings").mockResolvedValue(page({ repairable: ["E1", "E3"] }));
     const start = vi.spyOn(api, "startRepair").mockResolvedValue(job());

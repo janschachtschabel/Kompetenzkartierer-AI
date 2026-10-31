@@ -15,8 +15,10 @@
  * and the keyboard goes to the section's heading where what it rested on went with the state it
  * belonged to. `led`: the start form led here to an extraction that ran already for the PDF.
  *
- * The document's job may be a repair (started beside its findings, DocumentFindings.vue): it is
- * followed here alike, named as one (documentJobs.ts). Whether a job of the document waits or runs -
+ * The document's job may be a repair (started beside its findings, DocumentFindings.vue) or a check
+ * (the tree's TreeTools.vue): it is followed here alike, named as one and said as one where a start met
+ * it (documentJobs.ts). A frozen document and a draft copy are not extracted (Paket 9d1 N8): no start is
+ * offered there, the page says why. Whether a job of the document waits or runs -
  * followed, asked after, or started here and not yet read with the document - the page is told
  * (`busy`): no repair is offered beside it.
  */
@@ -24,7 +26,6 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
 import {
   ApiError,
-  REPAIR_KIND,
   getDocument,
   startExtraction,
   type CurriculumDocument,
@@ -36,7 +37,7 @@ import { isolate } from "@/bidi";
 import AppIcon from "@/components/AppIcon.vue";
 import JobProgress from "@/components/JobProgress.vue";
 import NoticeText from "@/components/NoticeText.vue";
-import { jobLabel, lastStatus } from "@/documentJobs";
+import { jobLabel, lastStatus, startedWords } from "@/documentJobs";
 import { focusIsFree } from "@/focusRescue";
 import { t } from "@/i18n/de";
 import { jobFailureText } from "@/jobMessages";
@@ -140,7 +141,7 @@ async function resume(): Promise<void> {
     const job = await startExtraction(props.document.id);
     started.value = job.id;
     startedKind.value = job.kind;
-    say(job.kind === REPAIR_KIND ? t("documents.page.repairRunning") : t("documents.page.started"));
+    say(startedWords(job.kind));
     // the button went with the state it belonged to: the keyboard goes to the section's heading,
     // where it was left on nothing
     await nextTick();
@@ -222,6 +223,8 @@ onUnmounted(() => asking?.stop());
     <template v-else>
       <p class="extraction__note" data-test="extraction-last">{{ lastLine }}</p>
       <p v-if="unfollowed" class="extraction__note">{{ t("documents.page.following") }}</p>
+      <p v-else-if="document.frozen_at" class="extraction__note">{{ t("documents.page.frozenNoExtraction") }}</p>
+      <p v-else-if="document.copy_of" class="extraction__note">{{ t("documents.page.copyNoExtraction") }}</p>
       <div v-else-if="document.own" class="extraction__start">
         <p v-if="startFailure" class="field__error" role="alert">
           <AppIcon name="warning" /> <NoticeText :notice="startFailure" />

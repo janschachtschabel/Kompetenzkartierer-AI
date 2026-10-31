@@ -869,6 +869,9 @@ export const messages = {
       ledToRunning:
         "Für diese PDF lief schon eine Extraktion – hier ist sie. Bereich und Länder aus dem Formular " +
         "wurden nicht übernommen; ist sie beendet, kannst du ein weiteres Dokument anlegen.",
+      // a frozen document and a draft copy are not extracted (DocumentExtraction.vue)
+      frozenNoExtraction: "Das Dokument ist festgeschrieben: Es wird nichts mehr extrahiert.",
+      copyNoExtraction: "Eine Entwurfskopie wird nicht extrahiert; prüfen lässt sie sich im Baum.",
       resume: "Extraktion fortsetzen",
       resumeFailed: "Die Extraktion wurde nicht gestartet.",
       notOwn: "Die Extraktion startet nur, wer das Dokument angelegt hat.",

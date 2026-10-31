@@ -167,6 +167,35 @@ describe("a document's page", () => {
     expect(extractionStatus(wrapper)).toBe(t("documents.page.repairRunning"));
   });
 
+  it("says a check the start met as one, by its own kind", async () => {
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ extraction: { kind: "extract.run", job_id: "j1", status: "cancelled", error_code: null } }));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    const checking = { ...job("running", "j9"), kind: "extract.check" };
+    vi.spyOn(api, "startExtraction").mockResolvedValue(checking);
+    vi.mocked(api.getJob).mockResolvedValue(checking);
+    const wrapper = await open();
+
+    await wrapper.get("[data-test=extraction-resume]").trigger("click");
+    await flushPromises();
+
+    expect(extraction(wrapper).get(".job__label").text()).toBe(t("documents.page.checkLabel"));
+    expect(extractionStatus(wrapper)).toBe(t("documents.page.checkRunning"));
+  });
+
+  it("offers no extraction to start for a frozen document or a draft copy, saying why", async () => {
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ iri: "https://example.org/kk/doc/x", frozen_at: "2026-10-31T10:00:00Z" }));
+    const frozen = await open();
+    expect(frozen.find("[data-test=extraction-resume]").exists()).toBe(false);
+    expect(extraction(frozen).text()).toContain(t("documents.page.frozenNoExtraction"));
+    frozen.unmount();
+
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ copy_of: "d0", revision: 2, extraction: null }));
+    const copy = await open();
+    expect(copy.find("[data-test=extraction-resume]").exists()).toBe(false);
+    expect(extraction(copy).text()).toContain(t("documents.page.copyNoExtraction"));
+  });
+
   it("says a start refused in its own words", async () => {
     vi.spyOn(api, "getDocument").mockResolvedValue(document_());
     vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);

@@ -23,7 +23,11 @@ import { focusIsFree } from "@/focusRescue";
 import { t } from "@/i18n/de";
 import { useSectionReading } from "@/sectionReading";
 
-const props = defineProps<{ documentId: string; own: boolean; busy: boolean; refresh: number }>();
+const props = withDefaults(
+  // closed: the document is frozen, no repair goes to it any more
+  defineProps<{ documentId: string; own: boolean; busy: boolean; refresh: number; closed?: boolean }>(),
+  { closed: false },
+);
 const emit = defineEmits<{ started: [job: Job] }>();
 
 const heading = ref<HTMLElement | null>(null);
@@ -129,7 +133,7 @@ watch(() => props.refresh, load);
       </div>
     </template>
     <FindingsRepair
-      v-if="own && page"
+      v-if="own && !closed && page"
       :document-id="documentId"
       :repairable="page.repairable"
       :busy="busy || pending || failure !== null"
