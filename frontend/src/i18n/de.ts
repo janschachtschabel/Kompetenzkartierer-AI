@@ -958,7 +958,15 @@ export const messages = {
       },
       // the document's revision: frozen and copied (documentRevision.ts, RevisionNotice.vue)
       revision: {
+        frozen: "Festgeschrieben am {date}, Revision {revision}.",
+        frozenText: "Baum, Angaben und Werk bleiben, wie sie sind; weiter geht es in einer Entwurfskopie.",
+        copy: "Als Entwurf kopieren",
         copyFailed: "Die Entwurfskopie wurde nicht angelegt.",
+        toDraft: "Zum offenen Entwurf",
+        draft: "Entwurfskopie von Revision {revision}.",
+        draftText: "Bearbeite und prüfe sie, dann schreibe sie fest; bis dahin gilt die festgeschriebene Fassung.",
+        toOriginal: "Zur festgeschriebenen Fassung",
+        copied: "Entwurfskopie angelegt.",
       },
       runs: "Läufe der Stufen",
       runsTable: "Tabelle der Läufe",
