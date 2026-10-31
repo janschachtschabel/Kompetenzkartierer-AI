@@ -1028,6 +1028,27 @@ Der Rest von 9c2 ist noch einmal geteilt: 9c2b bringt Fundstellen per Blockauswa
   sagt an, die Notiz bleibt stehen). Offen und vor 9c2c schon so: Geht die gewählte Zeile beim Lesen aus
   anderem Grund verloren (von jemand anderem gelöscht), bleibt sie in der Adresse.
 
+**Nachtrag 9d1 – Festschreiben in der Oberfläche (31.10.)**
+
+9d ist geteilt: 9d1 (dieser Nachtrag) bringt Werk und Fassung, Festschreiben und die Entwurfskopie auf die
+Dokumentseite; 9d2 folgt mit Quelltyp, Lizenz und Abrufkette, Befunden je Knoten und den Revisionen einer IRI.
+Das Backend bleibt, wie 9b es brachte.
+
+- **Werk und Fassung** (`DocumentEdition`): Herausgeber, Fassung, Werk, IRI und Revision; Titel, Herausgeber
+  und Fassung ändern Eigentümer und Redaktion (`DocumentMetaForm`, nur Geändertes, mit IRI nur der Titel),
+  das Werk setzt die Redaktion (`WorkForm`). Es gibt keine Liste der Werke: angeboten werden die Werke der
+  Dokumente, die der Aufrufer sieht (`GET /documents`, die 100 jüngsten; `simplify`) – eine zweite Fassung
+  aus einer neuen Quelle bekäme sonst ein zweites Werk mit derselben IRI und scheiterte an `iri_taken`.
+- **Festschreiben** (`DocumentFreeze`, `FreezeDialog`): nur Redaktion, gefragt mit den Folgen, Fokus auf
+  „Abbrechen“; Verstöße fragen noch einmal mit ihrer Zahl (`accept_violations`); `incomplete` nennt das
+  Fehlende einzeln, `check_owed` verweist auf den Baum („Erneut prüfen“). Festgeschrieben geht die Tastatur
+  zum Hinweis oben auf der Seite.
+- **Revision** (`RevisionNotice`): festgeschrieben mit Datum und Revision und „Als Entwurf kopieren“ für die
+  Redaktion (öffnet die Kopie, die das einmal sagt; `draft_open` mit dem Weg zum offenen Entwurf); eine
+  Entwurfskopie nennt ihre Vorlage. Extraktion und Reparatur bietet die Seite dort nicht mehr an; ein „Fortsetzen“,
+  das eine Prüfung antrifft, sagt sie als Prüfung (Offen 9a (8)).
+- **Rollen.** `isEditor()` (Redaktion oder Admin) entscheidet, was angeboten wird; der Server bleibt der Wächter.
+
 ### Paket 10: Lexikon aus der Länderrecherche mit Stichprobe (3 PT)
 
 | # | Aufgabe | Dateien | Test zuerst | Nachweis |
