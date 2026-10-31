@@ -5,7 +5,7 @@
  * editor (documentRevision.ts): copied, the copy's page opens and says so once (`copied`); a draft open already is
  * named with the way to it where the server names it; a document no longer frozen is read again (`changed`); another
  * refusal said. A draft copy says which revision it copies, with the way to it, and what is to do. Neither, no notice.
- * The page sends the keyboard here once the document is frozen (`focus`).
+ * The page sends the keyboard here once the document is frozen (`focus`): a region named by its first line.
  */
 import { computed, nextTick, onMounted, ref, useId } from "vue";
 import { RouterLink } from "vue-router";
@@ -24,6 +24,7 @@ const props = withDefaults(defineProps<{ document: CurriculumDocument; copied?: 
 const emit = defineEmits<{ changed: [] }>();
 
 const textId = useId();
+const labelId = useId();
 const root = ref<HTMLElement | null>(null);
 const busy = ref(false);
 const problem = ref<Notice | null>(null);
@@ -75,11 +76,20 @@ defineExpose({ focus: () => root.value?.focus() });
 
 <template>
   <!-- tabindex -1: where the keyboard goes once the document is frozen -->
-  <div v-if="frozenAt || original" ref="root" class="page-notice revision-notice" tabindex="-1">
+  <div
+    v-if="frozenAt || original"
+    ref="root"
+    class="page-notice revision-notice"
+    role="region"
+    :aria-labelledby="labelId"
+    tabindex="-1"
+  >
     <template v-if="frozenAt">
       <div class="page-notice__row">
         <p :id="textId" class="page-notice__text">
-          <strong>{{ t("documents.page.revision.frozen", { date: momentFormat.format(new Date(frozenAt)), revision: document.revision }) }}</strong>
+          <strong :id="labelId">{{
+            t("documents.page.revision.frozen", { date: momentFormat.format(new Date(frozenAt)), revision: document.revision })
+          }}</strong>
           {{ t("documents.page.revision.frozenText") }}
         </p>
         <!-- aria-disabled, not disabled: a disabled button drops the focus it holds -->
@@ -95,6 +105,9 @@ defineExpose({ focus: () => root.value?.focus() });
           {{ t("documents.page.revision.copy") }}
         </button>
       </div>
+      <p v-if="document.iri" class="page-notice__text revision-notice__iri">
+        {{ t("documents.page.revision.iri", { iri: document.iri }) }}
+      </p>
       <p v-if="problem" class="page-notice__failure" role="alert">
         <AppIcon name="warning" /> <NoticeText :notice="problem" />
         <template v-if="openDraft">
@@ -106,7 +119,7 @@ defineExpose({ focus: () => root.value?.focus() });
       </p>
     </template>
     <p v-else-if="original" class="page-notice__text">
-      <strong>{{ t("documents.page.revision.draft", { revision: document.revision - 1 }) }}</strong>
+      <strong :id="labelId">{{ t("documents.page.revision.draft", { revision: document.revision - 1 }) }}</strong>
       {{ t("documents.page.revision.draftText") }}
       <RouterLink data-test="copy-of" :to="{ name: 'document', params: { id: original } }">
         {{ t("documents.page.revision.toOriginal") }}
@@ -120,5 +133,10 @@ defineExpose({ focus: () => root.value?.focus() });
 <style scoped>
 .revision-notice {
   max-width: var(--reading-width);
+}
+
+/* An IRI is one long word: it breaks rather than pushing the page sideways at 320px. */
+.revision-notice__iri {
+  overflow-wrap: anywhere;
 }
 </style>

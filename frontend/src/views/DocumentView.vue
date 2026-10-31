@@ -8,8 +8,10 @@
  * while a job of the document waits or runs: one followed under the extraction, or one just started
  * and not yet read with the document. Which revision it is stands at the top (RevisionNotice: frozen,
  * with the draft copy for an editor; or a draft copy); its work and edition beside its facts
- * (DocumentEdition); an editor freezes it below its findings (DocumentFreeze, plan M1 9.10, Paket 9d1),
- * the keyboard then taken to the notice that says so.
+ * (DocumentEdition); an editor freezes it below its findings (DocumentFreeze, plan M1 9.10, Paket 9d1).
+ * A document newly frozen - by the freeze, or a reading that finds it so under a form - is said: the
+ * keyboard, where nothing holds it, goes to the notice, which names itself; held elsewhere, it stays and a
+ * region says it.
  */
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
@@ -27,6 +29,7 @@ import LoadingState from "@/components/LoadingState.vue";
 import RevisionNotice from "@/components/RevisionNotice.vue";
 import { focusIsFree } from "@/focusRescue";
 import { messages, momentFormat, t } from "@/i18n/de";
+import { sayAnew } from "@/liveRegion";
 import { failureNotice, type Notice } from "@/notice";
 import { pageTitle } from "@/pageTitle";
 import { word } from "@/registerWords";
@@ -45,6 +48,8 @@ const led = ref(false);
 // A frozen document's notice led here to the draft copy it made (RevisionNotice.vue)
 const copied = ref(false);
 const notice = ref<InstanceType<typeof RevisionNotice> | null>(null);
+// what the page says of the document as a whole: that it was frozen, where the keyboard was elsewhere
+const said = ref("");
 // bumped as the extraction moves on: the work packages and the findings are read again
 const unitsRead = ref(0);
 // a job of the document waits or runs, as DocumentExtraction follows it
@@ -99,13 +104,22 @@ function repairing(): void {
   moved();
 }
 
-// Frozen: the page shows it so at once, the keyboard - left on the button that went - taken to the notice
-async function frozen(document: CurriculumDocument): Promise<void> {
+// Frozen: the page shows it so at once and reads the rest again
+function frozen(document: CurriculumDocument): void {
   document_.value = document;
-  await nextTick();
-  if (focusIsFree()) notice.value?.focus();
   void load();
 }
+
+// The same document newly frozen: what went with it took the keyboard along, or the user is elsewhere
+watch(
+  () => [document_.value?.id, document_.value?.frozen_at ?? null] as const,
+  async ([id, at], [wasId, wasAt]) => {
+    if (!at || wasAt || id !== wasId) return;
+    await nextTick();
+    if (focusIsFree()) notice.value?.focus();
+    else said.value = sayAnew(said.value, t("documents.page.revision.frozenSaid"));
+  },
+);
 
 function moment(value: string): string {
   return momentFormat.format(new Date(value));
@@ -206,6 +220,8 @@ watch(
       />
       <DocumentRuns class="document__section" :runs="runs" />
     </template>
+    <!-- always in the page, so a screen reader hears what it says of the document -->
+    <p class="visually-hidden" role="status" data-test="document-status">{{ said }}</p>
   </div>
 </template>
 

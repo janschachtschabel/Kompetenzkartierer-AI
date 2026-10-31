@@ -47,7 +47,13 @@ describe("the notice of a frozen document", () => {
     const wrapper = notice(FROZEN);
 
     const date = momentFormat.format(new Date(FROZEN.frozen_at as string));
-    expect(wrapper.text()).toContain(t("documents.page.revision.frozen", { date, revision: 2 }));
+    const line = t("documents.page.revision.frozen", { date, revision: 2 });
+    expect(wrapper.text()).toContain(line);
+    expect(wrapper.text()).toContain(t("documents.page.revision.iri", { iri: "https://example.org/kk/doc/x" }));
+    // a region named by its first line: focused, it says what it is
+    const root = wrapper.get(".revision-notice");
+    expect(root.attributes("role")).toBe("region");
+    expect(globalThis.document.getElementById(root.attributes("aria-labelledby") ?? "")?.textContent).toBe(line);
     expect(wrapper.text()).toContain(t("documents.page.revision.frozenText"));
     const button = copyButton(wrapper);
     expect(button.text()).toBe(t("documents.page.revision.copy"));
@@ -154,6 +160,10 @@ describe("the notice of a draft copy", () => {
     const wrapper = notice(COPY);
 
     expect(wrapper.text()).toContain(t("documents.page.revision.draft", { revision: 2 }));
+    const root = wrapper.get(".revision-notice");
+    expect(globalThis.document.getElementById(root.attributes("aria-labelledby") ?? "")?.textContent).toBe(
+      t("documents.page.revision.draft", { revision: 2 }),
+    );
     expect(wrapper.text()).toContain(t("documents.page.revision.draftText"));
     expect(wrapper.get("[data-test=copy-of]").attributes("href")).toBe("/dokumente/d1");
     expect(wrapper.find("[data-test=copy]").exists()).toBe(false);

@@ -847,6 +847,83 @@ describe("a document's revision on its page", () => {
     expect(extraction(wrapper).text()).toContain(t("documents.page.frozenNoExtraction"));
   });
 
+  it("says a document frozen where the keyboard went elsewhere meanwhile, leaving it there", async () => {
+    setSession(EDITOR);
+    const frozen = document_({ work: WORK, iri: "https://example.org/kk/doc/x", frozen_at: "2026-10-31T10:00:00Z" });
+    vi.spyOn(api, "getDocument").mockResolvedValueOnce(document_({ work: WORK })).mockResolvedValue(frozen);
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    let answer: (document: typeof frozen) => void = () => undefined;
+    vi.spyOn(api, "freezeDocument").mockReturnValue(new Promise((resolve) => (answer = resolve)));
+    const wrapper = await open();
+    await wrapper.get("[data-test=freeze]").trigger("click");
+    await flushPromises();
+    await wrapper.get("[data-test=confirm]").trigger("click");
+
+    const elsewhere = wrapper.get("[data-test=document-tree]").element as HTMLElement;
+    elsewhere.focus();
+    answer(frozen);
+    await flushPromises();
+
+    expect(document.activeElement).toBe(elsewhere);
+    expect(wrapper.get("[data-test=document-status]").text()).toBe(t("documents.page.revision.frozenSaid"));
+  });
+
+  it("takes the keyboard to the notice where a reading finds the document frozen under a form", async () => {
+    setSession(EDITOR);
+    const frozen = document_({ work: WORK, iri: "https://example.org/kk/doc/x", frozen_at: "2026-10-31T10:00:00Z" });
+    vi.spyOn(api, "getDocument").mockResolvedValueOnce(document_({ work: WORK })).mockResolvedValue(frozen);
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    vi.spyOn(api, "editDocument").mockRejectedValue(new ApiError("server", 409, "frozen"));
+    const wrapper = await open();
+    const issuer = wrapper.findAll("label").find((one) => one.text() === t("documents.page.edition.issuer"));
+    await wrapper.get(`#${issuer?.attributes("for")}`).setValue("Ministerium");
+    const save = wrapper.get(".meta-form button[type=submit]");
+    (save.element as HTMLElement).focus();
+
+    await wrapper.get(".meta-form").trigger("submit");
+    await flushPromises();
+
+    expect(wrapper.find(".meta-form").exists()).toBe(false);
+    expect(document.activeElement).toBe(wrapper.get(".revision-notice").element);
+  });
+
+  it("leaves the keyboard where it is on a page opened frozen, and on a frozen document read again", async () => {
+    setSession(EDITOR);
+    const frozen = document_({ work: WORK, iri: "https://example.org/kk/doc/x", frozen_at: "2026-10-31T10:00:00Z" });
+    // each reading a document of its own, as the server's answers are
+    vi.spyOn(api, "getDocument").mockImplementation(() => Promise.resolve({ ...frozen }));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    vi.spyOn(api, "copyDocument").mockRejectedValue(new ApiError("server", 409, "not_frozen"));
+    const wrapper = await open();
+    expect(document.activeElement).not.toBe(wrapper.get(".revision-notice").element);
+
+    const copy = wrapper.get("[data-test=copy]");
+    (copy.element as HTMLElement).focus();
+    await copy.trigger("click"); // refused: the page reads the document again, still frozen
+    await flushPromises();
+
+    expect(api.getDocument).toHaveBeenCalledTimes(2);
+    expect(document.activeElement).toBe(wrapper.get("[data-test=copy]").element);
+    expect(wrapper.get("[data-test=document-status]").text()).toBe("");
+  });
+
+  it("shows the document frozen as the freeze answers, before it is read again", async () => {
+    setSession(EDITOR);
+    const frozen = document_({ work: WORK, iri: "https://example.org/kk/doc/x", frozen_at: "2026-10-31T10:00:00Z" });
+    vi.spyOn(api, "getDocument").mockResolvedValueOnce(document_({ work: WORK })).mockReturnValue(new Promise(() => {}));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    vi.spyOn(api, "freezeDocument").mockResolvedValue(frozen);
+    const wrapper = await open();
+
+    await wrapper.get("[data-test=freeze]").trigger("click");
+    await flushPromises();
+    await wrapper.get("[data-test=confirm]").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find(".revision-notice").exists()).toBe(true);
+    expect(wrapper.find("[data-test=freeze]").exists()).toBe(false);
+  });
+
   it("says a draft copy made, once, where its page was opened for that", async () => {
     window.history.replaceState({ ...window.history.state, copied: true }, "");
     vi.spyOn(api, "getDocument").mockResolvedValue(document_({ id: "d3", copy_of: "d1", revision: 2, extraction: null }));

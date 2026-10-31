@@ -963,6 +963,9 @@ export const messages = {
       revision: {
         frozen: "Festgeschrieben am {date}, Revision {revision}.",
         frozenText: "Baum, Angaben und Werk bleiben, wie sie sind; weiter geht es in einer Entwurfskopie.",
+        iri: "IRI: {iri}",
+        // said where the keyboard was elsewhere as the document was frozen (DocumentView.vue)
+        frozenSaid: "Das Dokument ist festgeschrieben.",
         copy: "Als Entwurf kopieren",
         copyFailed: "Die Entwurfskopie wurde nicht angelegt.",
         toDraft: "Zum offenen Entwurf",
