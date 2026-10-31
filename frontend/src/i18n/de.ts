@@ -931,6 +931,8 @@ export const messages = {
         save: "Angaben speichern",
         saved: "Gespeichert.",
         unchanged: "Nichts geändert.",
+        // a field's problem said where the keyboard stayed elsewhere (DocumentMetaForm.vue, WorkForm.vue)
+        fieldProblem: "{field}: {problem}",
         // the work (WorkForm.vue)
         workHeading: "Werk",
         workIntro:

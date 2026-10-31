@@ -99,6 +99,7 @@ describe("the form of a document's title, issuer and edition", () => {
     const wrapper = form();
 
     await issuer(wrapper).setValue("Ministerium");
+    (wrapper.get("button[type=submit]").element as HTMLElement).focus(); // pressed
     await save(wrapper);
     await flushPromises();
 
@@ -106,6 +107,48 @@ describe("the form of a document's title, issuer and edition", () => {
     expect(title(wrapper).attributes("aria-invalid")).toBeUndefined();
     expect(issuer(wrapper).element.value).toBe("Ministerium"); // the entry kept
     expect(await violations(wrapper.html())).toEqual([]);
+  });
+
+  it("keeps what the user typed on while a save ran", async () => {
+    let answer: (saved: CurriculumDocument) => void = () => undefined;
+    const sent = vi
+      .spyOn(api, "editDocument")
+      .mockReturnValueOnce(new Promise((resolve) => (answer = resolve)))
+      .mockResolvedValue({ ...DOCUMENT, title: "Neuer Titel" });
+    const wrapper = form();
+
+    await title(wrapper).setValue("Neu");
+    await save(wrapper);
+    await title(wrapper).setValue("Neuer Titel");
+    answer({ ...DOCUMENT, title: "Neu" });
+    await flushPromises();
+    expect(title(wrapper).element.value).toBe("Neuer Titel");
+    await save(wrapper);
+    await flushPromises();
+
+    expect(sent).toHaveBeenLastCalledWith("d1", { title: "Neuer Titel" });
+  });
+
+  it("says a field's problem where the keyboard went elsewhere meanwhile, leaving it there", async () => {
+    let refuse: (error: ApiError) => void = () => undefined;
+    vi.spyOn(api, "editDocument").mockReturnValue(new Promise((_resolve, reject) => (refuse = reject)));
+    const wrapper = form();
+
+    await issuer(wrapper).setValue("Ministerium");
+    (wrapper.get("button[type=submit]").element as HTMLElement).focus();
+    await save(wrapper);
+    (title(wrapper).element as HTMLElement).focus();
+    refuse(new ApiError("server", 422, "invalid_field", "Bad.", { field: "issuer", problem: "too_long" }));
+    await flushPromises();
+
+    expect(globalThis.document.activeElement).toBe(title(wrapper).element);
+    expect(issuer(wrapper).attributes("aria-invalid")).toBe("true");
+    expect(status(wrapper)).toBe(
+      t("documents.page.edition.fieldProblem", {
+        field: t("documents.page.edition.issuer"),
+        problem: t("documents.tree.problems.too_long"),
+      }),
+    );
   });
 
   it("says a problem of a field the form does not hold above the button", async () => {

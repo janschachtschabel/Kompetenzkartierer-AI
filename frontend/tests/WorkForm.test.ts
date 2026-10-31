@@ -117,6 +117,40 @@ describe("the form of a document's work", () => {
     expect(await violations(wrapper.html())).toEqual([]);
   });
 
+  it("says a short title's problem where the keyboard rests on that field, Enter pressed there", async () => {
+    const sent = vi.spyOn(api, "setWork");
+    const wrapper = await form();
+
+    await fillNew(wrapper, "KLP Physik");
+    const short = control(wrapper, t("documents.page.edition.workShortTitle"));
+    (short.element as HTMLElement).focus();
+    await save(wrapper);
+
+    expect(sent).not.toHaveBeenCalled();
+    expect(globalThis.document.activeElement).toBe(short.element);
+    expect(short.attributes("aria-invalid")).toBe("true");
+    expect(wrapper.get("[role=status]").text()).toBe(
+      t("documents.page.edition.fieldProblem", {
+        field: t("documents.page.edition.workShortTitle"),
+        problem: t("documents.page.edition.workShortTitleBad"),
+      }),
+    );
+  });
+
+  it("sets nothing more once the work is set: the form goes with it", async () => {
+    const sent = vi.spyOn(api, "setWork").mockResolvedValue(documentOf({ work: KLP }));
+    const wrapper = await form();
+
+    await control<HTMLSelectElement>(wrapper, t("documents.page.edition.workChosen")).setValue("w1");
+    await save(wrapper);
+    await flushPromises();
+    await save(wrapper);
+    await flushPromises();
+
+    expect(sent).toHaveBeenCalledTimes(1);
+    expect(wrapper.get("button[type=submit]").attributes("aria-disabled")).toBe("true");
+  });
+
   it("asks for the new work's title before it sends", async () => {
     const sent = vi.spyOn(api, "setWork");
     const wrapper = await form();

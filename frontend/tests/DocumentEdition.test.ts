@@ -117,6 +117,22 @@ describe("a document's work and edition", () => {
     expect(await violations(wrapper.html())).toEqual([]);
   });
 
+  it("leave the keyboard where it rests when a reading finds a work set by another, out of the work form", async () => {
+    const held = await edition(documentOf(), EDITOR);
+    const button = held.findComponent(DocumentMetaForm).get("button[type=submit]");
+    (button.element as HTMLElement).focus();
+    await held.setProps({ document: documentOf({ work: KLP }) });
+    await flushPromises();
+    expect(globalThis.document.activeElement).toBe(button.element);
+    held.unmount();
+
+    const free = await edition(documentOf(), EDITOR);
+    (globalThis.document.activeElement as HTMLElement | null)?.blur();
+    await free.setProps({ document: documentOf({ work: KLP }) });
+    await flushPromises();
+    expect(globalThis.document.activeElement).not.toBe(free.get("h2").element);
+  });
+
   it("have the page read the document again for a change saved below", async () => {
     const wrapper = await edition(documentOf(), EDITOR);
 

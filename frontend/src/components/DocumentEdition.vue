@@ -4,7 +4,7 @@
  * revision as they stand - what is not there said as such. Until it is frozen its owner and the editors change its
  * title, issuer and edition (DocumentMetaForm); an editor sets its work while it has none and no IRI (WorkForm). A
  * change saved below has the page read the document again (`changed`). A work set is said here, the work form going
- * with it; the keyboard, left on nothing as the form goes, is taken to the section's heading.
+ * with it; the keyboard it held, left on nothing as the form goes, is taken to the section's heading.
  */
 import { computed, nextTick, ref, watch } from "vue";
 
@@ -26,6 +26,7 @@ const maySetWork = computed(
   () => open.value && isEditor() && props.document.work === null && props.document.iri === null,
 );
 const heading = ref<HTMLElement | null>(null);
+const workForm = ref<InstanceType<typeof WorkForm> | null>(null);
 const status = ref("");
 
 function workSaved(): void {
@@ -33,10 +34,13 @@ function workSaved(): void {
   emit("changed");
 }
 
+// Run before the page changes: whether the keyboard was in the work form is noted while the form is still there
 watch(maySetWork, async (now, was) => {
   if (now || !was) return;
+  const form: unknown = workForm.value?.$el;
+  const held = form instanceof Element && form.contains(document.activeElement);
   await nextTick();
-  if (focusIsFree()) heading.value?.focus();
+  if (held && focusIsFree()) heading.value?.focus();
 });
 </script>
 
@@ -57,7 +61,7 @@ watch(maySetWork, async (now, was) => {
       <dd>{{ document.revision }}</dd>
     </dl>
     <DocumentMetaForm v-if="mayChange" :document="document" @changed="emit('changed')" />
-    <WorkForm v-if="maySetWork" :document="document" @saved="workSaved" @changed="emit('changed')" />
+    <WorkForm v-if="maySetWork" ref="workForm" :document="document" @saved="workSaved" @changed="emit('changed')" />
     <!-- always in the section, so a screen reader hears what a form said before it went -->
     <p class="visually-hidden edition__status" role="status">{{ status }}</p>
   </section>

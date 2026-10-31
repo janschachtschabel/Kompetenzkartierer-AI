@@ -924,6 +924,26 @@ describe("a document's revision on its page", () => {
     expect(wrapper.find("[data-test=freeze]").exists()).toBe(false);
   });
 
+  it("keeps the keyboard on the notice where a reading finds the document frozen and its work set at once", async () => {
+    setSession(EDITOR);
+    vi.spyOn(api, "listDocuments").mockResolvedValue([document_({ id: "d7", work: WORK })]);
+    const frozen = document_({ work: WORK, iri: "https://example.org/kk/doc/x", frozen_at: "2026-10-31T10:00:00Z" });
+    vi.spyOn(api, "getDocument").mockResolvedValueOnce(document_()).mockResolvedValue(frozen);
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    vi.spyOn(api, "setWork").mockRejectedValue(new ApiError("server", 409, "frozen"));
+    const wrapper = await open();
+    const choose = wrapper.findAll(".work-form select")[0];
+    await choose.setValue("w1");
+    const button = wrapper.get(".work-form button[type=submit]");
+    (button.element as HTMLElement).focus();
+
+    await wrapper.get(".work-form").trigger("submit");
+    await flushPromises();
+
+    expect(wrapper.find(".work-form").exists()).toBe(false);
+    expect(document.activeElement).toBe(wrapper.get(".revision-notice").element);
+  });
+
   it("says a draft copy made where the page moves on to it from the frozen one", async () => {
     vi.spyOn(api, "getRuns").mockResolvedValue([]);
     vi.spyOn(api, "getDocument").mockImplementation((id) =>

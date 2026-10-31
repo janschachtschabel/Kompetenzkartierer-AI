@@ -3,17 +3,19 @@
  * A document's title, issuer and edition (plan M1 9.10, Paket 9d1 N5; documentMeta.ts), by its owner or an editor:
  * only what changed is sent, an emptied field as none. Once the document has its IRI the issuer and the edition it
  * is made of stand as they are, the title still to change. Saved, it says so and the page reads the document again
- * (`changed`); a field's problem stands at the field, the keyboard taken there and the entry kept; a document closed
- * to the change meanwhile is said and read again, another refusal said. Read again, each field the user left as it
- * was takes the value read - the extraction may have filled it meanwhile -, an entry not yet saved stays; saved, the
- * fields sent take the values the server stored.
+ * (`changed`); a field's problem stands at the field, the entry kept - the keyboard taken there from the button or
+ * from nothing, else the problem said where the keyboard rests -; a document closed to the change meanwhile is said and
+ * read again, another refusal said. Read again, each field the user left as it was takes the value read - the
+ * extraction may have filled it meanwhile -, an entry not yet saved stays; saved, a field still holding what was sent
+ * takes what the server stored, one typed on meanwhile keeps it.
  */
 import { computed, nextTick, ref, useId, watch } from "vue";
 
-import type { CurriculumDocument } from "@/api";
+import type { CurriculumDocument, MetaFields } from "@/api";
 import AppIcon from "@/components/AppIcon.vue";
 import NoticeText from "@/components/NoticeText.vue";
 import { metaChanges, saveMeta, type MetaDraft } from "@/documentMeta";
+import { focusIsFree } from "@/focusRescue";
 import { t } from "@/i18n/de";
 import { sayAnew } from "@/liveRegion";
 import type { Notice } from "@/notice";
@@ -39,6 +41,7 @@ const status = ref("");
 // a field's problem, said at the field; or one of the whole form, above the button
 const fieldError = ref<{ field: Field; text: string } | null>(null);
 const failure = ref<Notice | null>(null);
+const submit = ref<HTMLElement | null>(null);
 
 const named = computed(() => props.document.iri !== null);
 // each field as the form shows it; with an IRI the issuer and the edition only to read
@@ -69,12 +72,14 @@ const inputs = computed(() => [
   },
 ]);
 
-// The document read anew: a field left as it was, or one just saved, takes the value read; an entry stays
-function rebase(now: CurriculumDocument, saved: readonly string[] = []): void {
+// The document read anew: a field still holding what it held - read before, or sent - takes the value read; an
+// entry made meanwhile stays
+function rebase(now: CurriculumDocument, sent: MetaFields = {}): void {
   const was = draftOf(base.value);
   const next = draftOf(now);
   for (const key of FIELDS) {
-    if (saved.includes(key) || draft.value[key].trim() === was[key].trim()) draft.value[key] = next[key];
+    const held = key in sent ? (sent[key] ?? "") : was[key];
+    if (draft.value[key].trim() === held.trim()) draft.value[key] = next[key];
   }
   base.value = now;
 }
@@ -90,11 +95,17 @@ function describedBy(field: Field): string {
   return fieldError.value?.field === field ? `${hint} ${id}-${field}-error` : hint;
 }
 
-// a field's problem at the field, the keyboard taken there: it reads the problem with the field's name
+// A field's problem at the field. The keyboard goes there from the button or from nothing - the field reads the
+// problem with its name -; resting elsewhere, or on the field already, it stays and the problem is said
 async function faultAt(field: Field, text: string): Promise<void> {
   fieldError.value = { field, text };
   await nextTick();
-  document.getElementById(`${id}-${field}`)?.focus();
+  if (document.activeElement === submit.value || focusIsFree()) {
+    document.getElementById(`${id}-${field}`)?.focus();
+    return;
+  }
+  const label = inputs.value.find((input) => input.key === field)?.label ?? "";
+  status.value = sayAnew(status.value, t("documents.page.edition.fieldProblem", { field: label, problem: text }));
 }
 
 function refuse(text: string): void {
@@ -115,7 +126,7 @@ async function onSubmit(): Promise<void> {
   const done = await saveMeta(props.document.id, changes);
   busy.value = false;
   if (done.outcome === "saved") {
-    rebase(done.document, Object.keys(changes));
+    rebase(done.document, changes);
     status.value = sayAnew(status.value, t("documents.page.edition.saved"));
     emit("changed");
   } else if (done.outcome === "invalid") {
@@ -155,7 +166,7 @@ async function onSubmit(): Promise<void> {
       <AppIcon name="warning" /> <NoticeText :notice="failure" />
     </p>
     <!-- aria-disabled, not disabled: a disabled button drops the focus it holds -->
-    <button type="submit" class="btn primary" :aria-disabled="busy || undefined">
+    <button ref="submit" type="submit" class="btn primary" :aria-disabled="busy || undefined">
       {{ t("documents.page.edition.save") }}
     </button>
     <!-- always in the page, so a screen reader hears each change of its text -->
