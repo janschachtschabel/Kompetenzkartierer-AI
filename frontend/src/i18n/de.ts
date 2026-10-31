@@ -863,6 +863,8 @@ export const messages = {
       started: "Die Extraktion ist gestartet; ihr Stand steht hier.",
       // a start gave back the document's repair, waiting or running (one job of a document at a time)
       repairRunning: "Es läuft schon eine Reparatur des Dokuments; ihr Stand steht hier.",
+      // or its check, waiting or running (documentJobs.startedWords)
+      checkRunning: "Die Prüfung läuft; ihr Stand steht hier.",
       // the start form led here: for this PDF one ran already, and what the form chose was not taken
       ledToRunning:
         "Für diese PDF lief schon eine Extraktion – hier ist sie. Bereich und Länder aus dem Formular " +

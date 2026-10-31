@@ -9,6 +9,12 @@ export function jobLabel(kind: string): string {
   return kind === CHECK_KIND ? t("documents.page.checkLabel") : t("documents.page.jobLabel");
 }
 
+/** What a start of the extraction set going, said by its kind: a start meets the document's job of any kind. */
+export function startedWords(kind: string): string {
+  if (kind === REPAIR_KIND) return t("documents.page.repairRunning");
+  return kind === CHECK_KIND ? t("documents.page.checkRunning") : t("documents.page.started");
+}
+
 /** How the latest job of the document stands, by its kind. */
 export function lastStatus(latest: { kind: string; status: JobStatus }): string {
   const status = t(`jobs.status.${latest.status}`);
