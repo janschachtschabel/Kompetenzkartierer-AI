@@ -900,6 +900,33 @@ export const messages = {
         save: "Angaben speichern",
         saved: "Gespeichert.",
         unchanged: "Nichts geändert.",
+        // the work (WorkForm.vue)
+        workHeading: "Werk",
+        workIntro:
+          "Das Werk fasst die Fassungen eines Lehrplans zusammen. Sein Land und sein Kurztitel gehen in die IRI des " +
+          "Werks und des Dokuments ein.",
+        worksLoading: "Die bekannten Werke werden geladen …",
+        worksFailed: "Die bekannten Werke wurden nicht geladen; ein neues lässt sich trotzdem anlegen.",
+        workNone: "Noch ist kein Werk bekannt: Lege das erste an.",
+        workWhich: "Welches Werk?",
+        workExisting: "Ein bekanntes Werk",
+        workNew: "Ein neues Werk",
+        workChosen: "Bekanntes Werk",
+        workChoosePlaceholder: "Werk wählen …",
+        workChoose: "Wähle ein Werk.",
+        workTitle: "Titel des Werks",
+        workRegion: "Land des Werks",
+        workRegionPlaceholder: "Land wählen …",
+        workRegionChoose: "Wähle das Land des Werks.",
+        workShortTitle: "Kurztitel",
+        workShortTitleHint:
+          "Kleinbuchstaben und Ziffern, Wörter mit einem Bindestrich verbunden, etwa „klp-physik“: der letzte Teil " +
+          "der IRI des Werks.",
+        workShortTitleBad:
+          "Der Kurztitel braucht Kleinbuchstaben oder Ziffern, Wörter mit je einem Bindestrich verbunden – ohne " +
+          "Umlaute, Leerzeichen und Bindestrich am Anfang oder Ende.",
+        workSave: "Werk setzen",
+        workSaved: "Werk gesetzt.",
       },
       // the document's revision: frozen and copied (documentRevision.ts, RevisionNotice.vue)
       revision: {
