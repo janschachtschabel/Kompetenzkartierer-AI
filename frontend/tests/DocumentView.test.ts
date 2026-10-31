@@ -7,6 +7,7 @@ import { isolate } from "@/bidi";
 import { t } from "@/i18n/de";
 import { jobFailureText } from "@/jobMessages";
 import { router } from "@/router";
+import { clearSession, setSession } from "@/session";
 import DocumentView from "@/views/DocumentView.vue";
 
 import { violations } from "./axe";
@@ -86,7 +87,8 @@ afterEach(() => {
   shown = null;
   vi.useRealTimers();
   document.body.innerHTML = "";
-  window.history.replaceState({ ...window.history.state, ledToRunning: undefined }, "");
+  window.history.replaceState({ ...window.history.state, ledToRunning: undefined, copied: undefined }, "");
+  clearSession();
 });
 
 function ledHere(): void {
@@ -220,6 +222,7 @@ describe("a document's page", () => {
     const headings = wrapper.findAll("h2").map((heading) => heading.attributes("id"));
     expect(headings).toEqual([
       "document-facts",
+      "document-edition",
       "document-extraction",
       "document-units",
       "document-findings",
@@ -804,6 +807,55 @@ describe("a document's repair on its page", () => {
     await flushPromises();
 
     expect(wrapper.find("[data-test=repair-start]").exists()).toBe(false);
+  });
+});
+
+describe("a document's revision on its page", () => {
+  const EDITOR = { id: "a2", name: "Redakteurin", roles: ["redaktion" as const] };
+  const WORK = { id: "w1", title: "Kernlehrplan Physik", region: "DE-NW", short_title: "klp-physik", iri: null };
+
+  it("says its work and edition to everyone, and offers freezing to an editor alone", async () => {
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ work: WORK, issuer: "MSB", edition: "2019" }));
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    const owner = await open();
+    expect(owner.find("section[aria-labelledby=document-edition]").exists()).toBe(true);
+    expect(owner.find("[data-test=freeze]").exists()).toBe(false);
+    owner.unmount();
+
+    setSession(EDITOR);
+    const editor = await open();
+    expect(editor.find("[data-test=freeze]").exists()).toBe(true);
+  });
+
+  it("freezes the document, the keyboard taken to the notice that says so, its start no longer offered", async () => {
+    setSession(EDITOR);
+    const frozen = document_({ work: WORK, iri: "https://example.org/kk/doc/x", frozen_at: "2026-10-31T10:00:00Z" });
+    vi.spyOn(api, "getDocument").mockResolvedValueOnce(document_({ work: WORK })).mockResolvedValue(frozen);
+    vi.spyOn(api, "getRuns").mockResolvedValue(RUNS);
+    vi.spyOn(api, "freezeDocument").mockResolvedValue(frozen);
+    const wrapper = await open();
+
+    await wrapper.get("[data-test=freeze]").trigger("click");
+    await flushPromises();
+    await wrapper.get("[data-test=confirm]").trigger("click");
+    await flushPromises();
+
+    const notice = wrapper.get(".revision-notice");
+    expect(notice.text()).toContain(t("documents.page.revision.frozenText"));
+    expect(document.activeElement).toBe(notice.element);
+    expect(wrapper.find("[data-test=freeze]").exists()).toBe(false);
+    expect(extraction(wrapper).text()).toContain(t("documents.page.frozenNoExtraction"));
+  });
+
+  it("says a draft copy made, once, where its page was opened for that", async () => {
+    window.history.replaceState({ ...window.history.state, copied: true }, "");
+    vi.spyOn(api, "getDocument").mockResolvedValue(document_({ id: "d3", copy_of: "d1", revision: 2, extraction: null }));
+    vi.spyOn(api, "getRuns").mockResolvedValue([]);
+
+    const wrapper = await open("d3");
+
+    expect(wrapper.get(".revision-notice [role=status]").text()).toBe(t("documents.page.revision.copied"));
+    expect(window.history.state.copied).toBeUndefined();
   });
 });
 

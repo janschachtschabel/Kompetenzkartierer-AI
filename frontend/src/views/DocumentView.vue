@@ -6,19 +6,26 @@
  * stages (DocumentRuns). The page reads the document again when its extraction has moved on or a
  * repair was started, its work packages and findings at each progress too. No repair is offered
  * while a job of the document waits or runs: one followed under the extraction, or one just started
- * and not yet read with the document.
+ * and not yet read with the document. Which revision it is stands at the top (RevisionNotice: frozen,
+ * with the draft copy for an editor; or a draft copy); its work and edition beside its facts
+ * (DocumentEdition); an editor freezes it below its findings (DocumentFreeze, plan M1 9.10, Paket 9d1),
+ * the keyboard then taken to the notice that says so.
  */
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 
 import { ApiError, getDocument, getRuns, type CurriculumDocument, type Run } from "@/api";
+import DocumentEdition from "@/components/DocumentEdition.vue";
 import DocumentExtraction from "@/components/DocumentExtraction.vue";
 import DocumentFindings from "@/components/DocumentFindings.vue";
+import DocumentFreeze from "@/components/DocumentFreeze.vue";
 import DocumentRuns from "@/components/DocumentRuns.vue";
 import DocumentUnits from "@/components/DocumentUnits.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import LoadingState from "@/components/LoadingState.vue";
+import RevisionNotice from "@/components/RevisionNotice.vue";
+import { focusIsFree } from "@/focusRescue";
 import { messages, momentFormat, t } from "@/i18n/de";
 import { failureNotice, type Notice } from "@/notice";
 import { pageTitle } from "@/pageTitle";
@@ -35,6 +42,9 @@ const failure = ref<Notice | null>(null);
 let generation = 0;
 // The start form led here to an extraction that ran already for the PDF (ExtractionStart.vue)
 const led = ref(false);
+// A frozen document's notice led here to the draft copy it made (RevisionNotice.vue)
+const copied = ref(false);
+const notice = ref<InstanceType<typeof RevisionNotice> | null>(null);
 // bumped as the extraction moves on: the work packages and the findings are read again
 const unitsRead = ref(0);
 // a job of the document waits or runs, as DocumentExtraction follows it
@@ -42,13 +52,13 @@ const jobOpen = ref(false);
 // a repair was started, the document not read again since
 const repairStarted = ref(false);
 
-/** Whether a start led here, said once: read again later, or come back to, the page no longer says so. */
-function ledHere(): boolean {
+/** Whether the page that led here said `key`, said once: read again later, or come back to, the page no longer says so. */
+function ledHere(key: "ledToRunning" | "copied"): boolean {
   const state: unknown = window.history.state;
-  if (typeof state !== "object" || state === null || (state as Record<string, unknown>).ledToRunning !== true) {
+  if (typeof state !== "object" || state === null || (state as Record<string, unknown>)[key] !== true) {
     return false;
   }
-  window.history.replaceState({ ...state, ledToRunning: undefined }, "");
+  window.history.replaceState({ ...state, [key]: undefined }, "");
   return true;
 }
 
@@ -89,12 +99,21 @@ function repairing(): void {
   moved();
 }
 
+// Frozen: the page shows it so at once, the keyboard - left on the button that went - taken to the notice
+async function frozen(document: CurriculumDocument): Promise<void> {
+  document_.value = document;
+  await nextTick();
+  if (focusIsFree()) notice.value?.focus();
+  void load();
+}
+
 function moment(value: string): string {
   return momentFormat.format(new Date(value));
 }
 
 onMounted(() => {
-  led.value = ledHere();
+  led.value = ledHere("ledToRunning");
+  copied.value = ledHere("copied");
   void load();
 });
 // The tab names the document once it is known; until then the router's name for the page stands
@@ -105,7 +124,8 @@ watch(
   () => props.id,
   () => {
     document_.value = null;
-    led.value = ledHere();
+    led.value = ledHere("ledToRunning");
+    copied.value = ledHere("copied");
     void load();
   },
 );
@@ -131,6 +151,7 @@ watch(
       @retry="load()"
     />
     <template v-else-if="document_">
+      <RevisionNotice ref="notice" :key="document_.id" :document="document_" :copied="copied" @changed="load()" />
       <section class="document__section" aria-labelledby="document-facts">
         <h2 id="document-facts">{{ t("documents.page.facts.heading") }}</h2>
         <dl class="facts">
@@ -154,6 +175,7 @@ watch(
           <dd><time :datetime="document_.created_at">{{ moment(document_.created_at) }}</time></dd>
         </dl>
       </section>
+      <DocumentEdition :key="document_.id" class="document__section" :document="document_" @changed="load()" />
       <!-- keyed: what a start of the document before gave back late stays with that one -->
       <DocumentExtraction
         :key="document_.id"
@@ -172,7 +194,15 @@ watch(
         :own="document_.own"
         :busy="jobOpen || repairStarted"
         :refresh="unitsRead"
+        :closed="document_.frozen_at !== null"
         @started="repairing()"
+      />
+      <DocumentFreeze
+        :key="document_.id"
+        class="document__section"
+        :document="document_"
+        @frozen="frozen"
+        @changed="load()"
       />
       <DocumentRuns class="document__section" :runs="runs" />
     </template>
