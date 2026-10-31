@@ -174,6 +174,23 @@ describe("the form of a document's work", () => {
     expect(wrapper.find("[aria-invalid]").exists()).toBe(false);
   });
 
+  it("says a refusal and another failure above the button, reading nothing again", async () => {
+    vi.spyOn(api, "setWork")
+      .mockRejectedValueOnce(new ApiError("forbidden", 403, "not_editor"))
+      .mockRejectedValueOnce(new ApiError("network", 0));
+    const wrapper = await form();
+
+    await control<HTMLSelectElement>(wrapper, t("documents.page.edition.workChosen")).setValue("w1");
+    await save(wrapper);
+    await flushPromises();
+    expect(wrapper.get("[role=alert]").text()).toContain(refusalText("not_editor"));
+    await save(wrapper);
+    await flushPromises();
+
+    expect(wrapper.get("[role=alert]").text()).toContain(t("documents.page.edition.workFailed"));
+    expect(wrapper.emitted("changed")).toBeUndefined();
+  });
+
   it("says a document named meanwhile and has it read again", async () => {
     vi.spyOn(api, "setWork").mockRejectedValue(new ApiError("server", 409, "named"));
     const wrapper = await form();

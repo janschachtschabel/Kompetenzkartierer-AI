@@ -146,6 +146,18 @@ describe("the form of a document's title, issuer and edition", () => {
     expect(wrapper.emitted("changed")).toBeUndefined();
   });
 
+  it("says another failure as one, the entry kept", async () => {
+    vi.spyOn(api, "editDocument").mockRejectedValue(new ApiError("network", 0));
+    const wrapper = form();
+
+    await issuer(wrapper).setValue("Ministerium");
+    await save(wrapper);
+    await flushPromises();
+
+    expect(wrapper.get("[role=alert]").text()).toContain(t("documents.page.edition.saveFailed"));
+    expect(issuer(wrapper).element.value).toBe("Ministerium");
+  });
+
   it("sends nothing more while it saves", async () => {
     const sent = vi.spyOn(api, "editDocument").mockReturnValue(new Promise(() => {}));
     const wrapper = form();

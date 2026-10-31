@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as api from "@/api";
 import { ApiError, type CurriculumDocument, type Me } from "@/api";
+import { isolate } from "@/bidi";
 import DocumentFreeze from "@/components/DocumentFreeze.vue";
 import { t } from "@/i18n/de";
 import { refusalText } from "@/refusals";
@@ -69,7 +70,7 @@ describe("freezing a document", () => {
     await flushPromises();
 
     expect(dialog(wrapper).text()).toContain(t("documents.page.freeze.title"));
-    expect(dialog(wrapper).text()).toContain(t("documents.page.freeze.message", { title: "Kernlehrplan Physik", revision: 2 }));
+    expect(dialog(wrapper).text()).toContain(t("documents.page.freeze.message", { title: isolate("Kernlehrplan Physik"), revision: 2 }));
     const list = dialog(wrapper).get("ul");
     expect(list.findAll("li")).toHaveLength(4);
     expect(dialog(wrapper).attributes("aria-describedby")).toContain(list.attributes("id"));
@@ -130,7 +131,11 @@ describe("freezing a document", () => {
 
     await confirmFreeze(wrapper);
 
-    const missing = [t("documents.page.freeze.missing.work"), t("documents.page.freeze.missing.issuer")].join(", ");
+    // a German list: "das Werk und der Herausgeber"
+    const missing = new Intl.ListFormat("de-DE").format([
+      t("documents.page.freeze.missing.work"),
+      t("documents.page.freeze.missing.issuer"),
+    ]);
     expect(wrapper.get("[role=alert]").text()).toContain(t("documents.page.freeze.incomplete", { missing }));
   });
 
@@ -158,6 +163,15 @@ describe("freezing a document", () => {
 
     expect(wrapper.get("[role=alert]").text()).toContain(refusalText("no_iri_base"));
     expect(wrapper.emitted("changed")).toHaveLength(1);
+  });
+
+  it("says another failure as one", async () => {
+    vi.spyOn(api, "freezeDocument").mockRejectedValue(new ApiError("network", 0));
+    const wrapper = section();
+
+    await confirmFreeze(wrapper);
+
+    expect(wrapper.get("[role=alert]").text()).toContain(t("documents.page.freeze.failed"));
   });
 
   it("asks nothing more while it freezes", async () => {

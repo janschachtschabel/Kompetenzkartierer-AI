@@ -135,6 +135,16 @@ describe("the notice of a frozen document", () => {
     expect(wrapper.emitted("changed")).toHaveLength(1);
   });
 
+  it("says another failure as one", async () => {
+    vi.spyOn(api, "copyDocument").mockRejectedValue(new ApiError("network", 0));
+    const wrapper = notice(FROZEN);
+
+    await copyButton(wrapper).trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get("[role=alert]").text()).toContain(t("documents.page.revision.copyFailed"));
+  });
+
   it("copies nothing more while it copies", async () => {
     const sent = vi.spyOn(api, "copyDocument").mockReturnValue(new Promise(() => {}));
     const wrapper = notice(FROZEN);

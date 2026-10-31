@@ -924,6 +924,25 @@ describe("a document's revision on its page", () => {
     expect(wrapper.find("[data-test=freeze]").exists()).toBe(false);
   });
 
+  it("says a draft copy made where the page moves on to it from the frozen one", async () => {
+    vi.spyOn(api, "getRuns").mockResolvedValue([]);
+    vi.spyOn(api, "getDocument").mockImplementation((id) =>
+      Promise.resolve(
+        id === "d3"
+          ? document_({ id: "d3", copy_of: "d1", revision: 2, extraction: null })
+          : document_({ iri: "https://example.org/kk/doc/x", frozen_at: "2026-10-31T10:00:00Z" }),
+      ),
+    );
+    const wrapper = await open();
+
+    window.history.replaceState({ ...window.history.state, copied: true }, "");
+    await wrapper.setProps({ id: "d3" });
+    await flushPromises();
+
+    expect(wrapper.get(".revision-notice [role=status]").text()).toBe(t("documents.page.revision.copied"));
+    expect(window.history.state.copied).toBeUndefined();
+  });
+
   it("says a draft copy made, once, where its page was opened for that", async () => {
     window.history.replaceState({ ...window.history.state, copied: true }, "");
     vi.spyOn(api, "getDocument").mockResolvedValue(document_({ id: "d3", copy_of: "d1", revision: 2, extraction: null }));

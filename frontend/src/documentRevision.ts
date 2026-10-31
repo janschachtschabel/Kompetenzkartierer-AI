@@ -31,6 +31,7 @@ const FREEZE_REFUSED: ReadonlySet<string> = new Set([
   "no_iri_base",
   "iri_taken",
   "not_editor",
+  // one naming no count of its violations: said by its code, there being nothing to ask about
   "has_violations",
 ]);
 const COPY_REFUSED: ReadonlySet<string> = new Set(["not_latest", "vocabulary_changed", "not_editor"]);

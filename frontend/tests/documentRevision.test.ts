@@ -62,8 +62,11 @@ describe("freezing a document", () => {
   });
 
   it("says another failure as one", async () => {
-    vi.spyOn(api, "freezeDocument").mockRejectedValue(new ApiError("network", 0));
+    vi.spyOn(api, "freezeDocument")
+      .mockRejectedValueOnce(new ApiError("server", 404, "no_document"))
+      .mockRejectedValueOnce(new ApiError("network", 0));
 
+    expect(await freeze("d1", false)).toMatchObject({ outcome: "failed" });
     expect(await freeze("d1", false)).toMatchObject({
       outcome: "failed",
       problem: { text: t("documents.page.freeze.failed") },
@@ -116,8 +119,11 @@ describe("copying a frozen document as a draft", () => {
   });
 
   it("says another failure as one", async () => {
-    vi.spyOn(api, "copyDocument").mockRejectedValue(new ApiError("network", 0));
+    vi.spyOn(api, "copyDocument")
+      .mockRejectedValueOnce(new ApiError("server", 404, "no_document"))
+      .mockRejectedValueOnce(new ApiError("network", 0));
 
+    expect(await copy("d1")).toMatchObject({ outcome: "failed" });
     expect(await copy("d1")).toMatchObject({
       outcome: "failed",
       problem: { text: t("documents.page.revision.copyFailed") },

@@ -6,6 +6,7 @@
  */
 import { useId } from "vue";
 
+import { isolate } from "@/bidi";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import { t } from "@/i18n/de";
 
@@ -18,7 +19,7 @@ const listId = useId();
 <template>
   <ConfirmDialog
     :title="t('documents.page.freeze.title')"
-    :message="t('documents.page.freeze.message', { title, revision })"
+    :message="t('documents.page.freeze.message', { title: isolate(title), revision })"
     :confirm-label="t('documents.page.freeze.button')"
     :described-by="listId"
     @confirm="emit('confirm')"

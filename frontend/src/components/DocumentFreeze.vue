@@ -15,7 +15,7 @@ import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import FreezeDialog from "@/components/FreezeDialog.vue";
 import NoticeText from "@/components/NoticeText.vue";
 import { freeze, missingWords } from "@/documentRevision";
-import { t } from "@/i18n/de";
+import { LOCALE, t } from "@/i18n/de";
 import type { Notice } from "@/notice";
 import { refusalText } from "@/refusals";
 import { isEditor } from "@/session";
@@ -54,7 +54,7 @@ async function run(acceptViolations: boolean): Promise<void> {
     case "incomplete": {
       const missing = missingWords(done.missing);
       const text = missing.length
-        ? t("documents.page.freeze.incomplete", { missing: missing.join(", ") })
+        ? t("documents.page.freeze.incomplete", { missing: new Intl.ListFormat(LOCALE).format(missing) })
         : (refusalText("incomplete") ?? t("documents.page.freeze.failed"));
       problem.value = { text, failed: true };
       return;
