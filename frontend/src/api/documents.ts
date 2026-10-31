@@ -8,6 +8,16 @@ import type { Job, JobStatus } from "./jobs";
 /** A notation of cv:EducationSectors (backend ontology/ontologie/cur-vokabular.ttl). */
 export type Sector = "elementary" | "school" | "vocational" | "higher" | "adult";
 
+/** The work a document is an edition of (backend WorkOut): its IRI once a document of it was frozen. */
+export interface DocumentWork {
+  id: string;
+  title: string;
+  /** An ISO 3166-2 code of the region vocabulary. */
+  region: string | null;
+  short_title: string | null;
+  iri: string | null;
+}
+
 export interface CurriculumDocument {
   id: string;
   source_id: string;
@@ -19,6 +29,17 @@ export interface CurriculumDocument {
   sector: string;
   /** ISO 3166-2 codes, "DE" for all Länder. */
   regions: string[];
+  /** Who issued it and which edition it is: with the work, what its IRI is made of (plan M1 9b). */
+  issuer: string | null;
+  edition: string | null;
+  work: DocumentWork | null;
+  /** Given at the first freeze; a draft copy carries its frozen original's. */
+  iri: string | null;
+  /** 1 for the first, one up for each draft copy. */
+  revision: number;
+  frozen_at: string | null;
+  /** The frozen document a draft copy was made of. */
+  copy_of: string | null;
   created_at: string;
   /** The latest extraction job, whatever became of it; its id only for who may follow it - the
    * owner, an admin - null for an editor, who reads the status; why it failed, for every reader. */

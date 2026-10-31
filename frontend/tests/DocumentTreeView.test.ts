@@ -6,7 +6,6 @@ import * as api from "@/api";
 import {
   ApiError,
   CHECK_KIND,
-  type CurriculumDocument,
   type DocumentPage,
   type Job,
   type Tree,
@@ -22,24 +21,11 @@ import { violations } from "./axe";
 import { block } from "./conversions";
 import { job } from "./registerEntries";
 import { CV, form_, node_, statement_, tree_ } from "./treeFixtures";
+import { documentOf } from "./documentFixtures";
 
 let shown: VueWrapper | null = null;
 
-function document_(changes: Partial<CurriculumDocument> = {}): CurriculumDocument {
-  return {
-    id: "d1",
-    source_id: "s1",
-    conversion_id: "c1",
-    own: true,
-    title: "Lehrplan Physik",
-    document_type_iri: null,
-    sector: "school",
-    regions: ["DE-NW"],
-    created_at: "2026-10-29T10:00:00Z",
-    extraction: null,
-    ...changes,
-  };
-}
+const document_ = documentOf;
 
 function anchor(id: string, page: number, blocks: string[]): TreeAnchor {
   return {

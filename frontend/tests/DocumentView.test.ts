@@ -10,23 +10,17 @@ import { router } from "@/router";
 import DocumentView from "@/views/DocumentView.vue";
 
 import { violations } from "./axe";
+import { documentOf } from "./documentFixtures";
 
 let shown: VueWrapper | null = null;
 
 function document_(changes: Partial<CurriculumDocument> = {}): CurriculumDocument {
-  return {
-    id: "d1",
-    source_id: "s1",
-    conversion_id: "c1",
-    own: true,
+  return documentOf({
     title: "Kernlehrplan Physik",
-    document_type_iri: null,
-    sector: "school",
-    regions: ["DE-NW"],
     created_at: "2026-10-24T10:00:00Z",
     extraction: { kind: "extract.run", job_id: "j1", status: "done", error_code: null },
     ...changes,
-  };
+  });
 }
 
 const NO_FINDINGS: FindingsPage = { counts: { violation: 0, warning: 0, info: 0 }, findings: [], truncated: false, repairable: [] };

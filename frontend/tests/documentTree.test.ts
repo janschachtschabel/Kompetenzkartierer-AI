@@ -3,26 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
 
 import * as api from "@/api";
-import type { CurriculumDocument, Form, Tree } from "@/api";
+import type { Form, Tree } from "@/api";
 import { rowsOf, useDocumentTree } from "@/documentTree";
 
 import { form_, node_, statement_, tree_ } from "./treeFixtures";
+import { documentOf } from "./documentFixtures";
 
-function document_(changes: Partial<CurriculumDocument> = {}): CurriculumDocument {
-  return {
-    id: "d1",
-    source_id: "s1",
-    conversion_id: "c1",
-    own: true,
-    title: "Lehrplan Physik",
-    document_type_iri: null,
-    sector: "school",
-    regions: ["DE-NW"],
-    created_at: "2026-10-29T10:00:00Z",
-    extraction: null,
-    ...changes,
-  };
-}
+const document_ = documentOf;
 
 
 beforeEach(() => {

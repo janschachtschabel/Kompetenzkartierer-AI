@@ -8,6 +8,7 @@ import { messages, t } from "@/i18n/de";
 import { router } from "@/router";
 
 import { violations } from "./axe";
+import { documentOf } from "./documentFixtures";
 
 let shown: VueWrapper | null = null;
 
@@ -22,18 +23,11 @@ function open(country: string | null = "DE-NW"): VueWrapper {
 
 function started(): DocumentStarted {
   return {
-    document: {
-      id: "d1",
-      source_id: "s1",
-      conversion_id: "c1",
-      own: true,
+    document: documentOf({
       title: null,
-      document_type_iri: null,
-      sector: "school",
-      regions: ["DE-NW"],
       created_at: "2026-10-24T12:00:00Z",
       extraction: { kind: "extract.run", job_id: "j1", status: "queued", error_code: null },
-    },
+    }),
     job: {
       id: "j1",
       kind: "extract.run",

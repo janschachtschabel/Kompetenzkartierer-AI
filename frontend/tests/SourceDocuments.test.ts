@@ -8,23 +8,12 @@ import { momentFormat, t } from "@/i18n/de";
 import { router } from "@/router";
 
 import { violations } from "./axe";
+import { documentOf } from "./documentFixtures";
 
 let shown: VueWrapper | null = null;
 
 function made(id: string, changes: Partial<CurriculumDocument> = {}): CurriculumDocument {
-  return {
-    id,
-    source_id: "s1",
-    conversion_id: "c1",
-    own: true,
-    title: null,
-    document_type_iri: null,
-    sector: "school",
-    regions: ["DE-NW"],
-    created_at: "2026-10-24T10:00:00Z",
-    extraction: null,
-    ...changes,
-  };
+  return documentOf({ id, title: null, created_at: "2026-10-24T10:00:00Z", ...changes });
 }
 
 async function open(): Promise<VueWrapper> {
